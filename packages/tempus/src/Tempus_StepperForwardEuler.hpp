@@ -11,18 +11,17 @@ template<class Scalar>
  */
 class StepperForwardEuler : virtual public Stepper
 {
-  public:
+public:
 
-    /// Constructor
-    StepperForwardEuler(
-      const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+  /// Constructor
+  StepperForwardEuler(
+    const RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
-    /// Destructor
-    virtual ~StepperForwardEuler();
-    //@}
+  /// Destructor
+  virtual ~StepperForwardEuler();
 
-    /// \name Basic stepper methods
-    //@{
+  /// \name Basic stepper methods
+  //@{
     /// Take the specified timestep, dt, and return true if successful.
     virtual bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory);
 
@@ -30,32 +29,32 @@ class StepperForwardEuler : virtual public Stepper
       const RCP<tempus::StepperState<Scalar> >& stepperState);
 
     virtual RCP<tempus::StepperState<Scalar> > getStepperState();
-    //@}
+  //@}
 
-    /// \name ParameterList methods
-    //@{
+  /// \name ParameterList methods
+  //@{
     virtual void setParameterList(RCP<ParameterList> const& pl);
     virtual RCP<ParameterList> getNonconstParameterList();
     virtual RCP<ParameterList> unsetParameterList();
     virtual RCP<const ParameterList> getValidParameters() const;
-    //@}
+  //@}
 
-    /// \name Accessor methods
-    //@{
+  /// \name Overridden from Teuchos::Describable
+  //@{
     virtual std::string description() const;
-    virtual void describe( Teuchos::FancyOStream        & out,
-                           const Teuchos::EVerbosityLevel verbLevel) const;
-    //@}
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
-  protected:
+protected:
 
-    RCP<ParameterList>                        pList;
-    RCP<const Thyra::ModelEvaluator<Scalar> > model;
+  RCP<ParameterList>                        pList;
+  RCP<const Thyra::ModelEvaluator<Scalar> > model;
 
-    Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;
-    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs;
 
-    RCP<tempus::StepperState<Scalar> > stepperState;
+  RCP<tempus::StepperState<Scalar> > stepperState;
 };
 } // namespace tempus
 #endif // TEMPUS_STEPPERFORWARDEULER_HPP

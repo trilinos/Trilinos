@@ -33,74 +33,61 @@ class SolutionState :
   public Teuchos::Describable,
   public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
 {
-  public:
+public:
 
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-    /// Destructor
-    virtual ~SolutionState() {};
+  /// Destructor
+  virtual ~SolutionState() {};
 
-    /** \brief Default constructor. */
-    SolutionState();
+  /** \brief Default constructor. */
+  SolutionState();
 
-    /** \brief. */
-    SolutionState(
-      const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-      const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState);
+  /** \brief. */
+  SolutionState(
+    const RCP<SolutionStateMetaData<Scalar> > ssmd,
+    const RCP<Thyra::VectorBase<Scalar> >& x,
+    const RCP<Thyra::VectorBase<Scalar> >& xdot,
+    const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+    const RCP<tempus::StepperState<Scalar> >& stepperState);
 
-    SolutionState(
-      const Scalar time,
-      const Scalar dt,
-      const int    iStep,
-      const Scalar errorAbs,
-      const Scalar errorRel,
-      const int    order,
-      const int    nFailures,
-      const int    nConsecutiveFailures,
-      const SolutionStatus status,
-      const bool   output,
-      const bool   isAccepted,
-      const bool   isRestartable,
-      const bool   isInterpolated,
-      const Scalar accuracy,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-      const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState);
+  SolutionState(
+    const Scalar time,
+    const Scalar dt,
+    const int    iStep,
+    const Scalar errorAbs,
+    const Scalar errorRel,
+    const int    order,
+    const int    nFailures,
+    const int    nConsecutiveFailures,
+    const SolutionStatus status,
+    const bool   output,
+    const bool   isAccepted,
+    const bool   isRestartable,
+    const bool   isInterpolated,
+    const Scalar accuracy,
+    const RCP<Thyra::VectorBase<Scalar> >& x,
+    const RCP<Thyra::VectorBase<Scalar> >& xdot,
+    const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+    const RCP<tempus::StepperState<Scalar> >& stepperState);
 
-    /// This is a shallow copy constructor, use clone for a deep copy
-    SolutionState(const SolutionState<Scalar>& ss_);
+  /// This is a shallow copy constructor, use clone for a deep copy
+  SolutionState(const SolutionState<Scalar>& ss_);
 
-    /// This is a deep copy and copies the underlying vectors
-    virtual RCP<SolutionState<Scalar> > clone() const;
+  /// This is a deep copy and copies the underlying vectors
+  virtual RCP<SolutionState<Scalar> > clone() const;
 
-    /// Meta Data for the solution state
-    Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData;
+  /// Get time
+  virtual Scalar getTime() const{return metaData->time;}
 
-    /// Solution
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
+  /// Get index
+  virtual Scalar getIndex() const{return metaData->iStep;}
 
-    /// Time derivative of the solution
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot;
+  /// Get time step
+  virtual Scalar getTimeStep() const{return metaData->dt;}
 
-    /// Second time derivative of the solution
-    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot;
-
-    /// StepperState for this SolutionState
-    Teuchos::RCP<tempus::StepperState<Scalar> > stepperState;
-
-    /// Get time
-    virtual Scalar getTime() const{return metaData->time;}
-
-    /// Get index
-    virtual Scalar getIndex() const{return metaData->iStep;}
-
-    /// Get time step
-    virtual Scalar getTimeStep() const{return metaData->dt;}
-
+  /// \name Accessor methods
+  //@{
     /// Get the current solution, x.
     virtual RCP<const Thyra::VectorBase<Scalar> > getX() {return x;}
 
@@ -109,45 +96,66 @@ class SolutionState :
 
     /// Get the current time second derivative of the solution, xdotdot.
     virtual RCP<const Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
+  //@}
 
-    /// Less than comparison for sorting based on time:
+
+  /// \name Comparison methods
+  //@{
+    /// Less than comparison for sorting based on time
     bool operator< (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator<= (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator< (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator<= (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator> (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator>= (const SolutionState<Scalar>& ss) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator> (const Scalar& t) const;
 
-    /// Less than comparison for sorting based on time:
+    /// Less than comparison for sorting based on time
     bool operator>= (const Scalar& t) const;
 
-    /// Equality comparison for matching:
+    /// Equality comparison for matching
     bool operator== (const SolutionState<Scalar>& ss) const;
 
-    /// Equality comparison for matching:
+    /// Equality comparison for matching
     bool operator== (const Scalar& t) const;
+  //@}
 
-    /// Inherited from Describable:
-    /** \brief . */
+  /// \name Overridden from Teuchos::Describable
+  //@{
     virtual std::string description() const;
+    virtual void describe(Teuchos::FancyOStream          &out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
-    /** \brief . */
-    /** \brief . */
-    virtual void describe( Teuchos::FancyOStream          &out,
-                           const Teuchos::EVerbosityLevel verbLevel) const;
+  // Member Data
+protected:
+
+  /// Meta Data for the solution state
+  RCP<SolutionStateMetaData<Scalar> > metaData;
+
+  /// Solution
+  RCP<const Thyra::VectorBase<Scalar> > x;
+
+  /// Time derivative of the solution
+  RCP<const Thyra::VectorBase<Scalar> > xdot;
+
+  /// Second time derivative of the solution
+  RCP<const Thyra::VectorBase<Scalar> > xdotdot;
+
+  /// StepperState for this SolutionState
+  RCP<tempus::StepperState<Scalar> > stepperState;
 
 };
 } // namespace tempus

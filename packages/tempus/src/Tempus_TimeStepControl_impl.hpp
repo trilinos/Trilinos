@@ -44,7 +44,7 @@ namespace {
       Constant_name,
       Variable_name);
 
-  const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType> >
+  const RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType> >
     StepTypeValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType>(
           StepType_names,
@@ -80,20 +80,20 @@ namespace tempus {
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl()
 {
-  paramList = getValidParameters();
-  this->setParameterList(paramList);
+  pList = getValidParameters();
+  this->setParameterList(pList);
 }
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(
-  RCP<Teuchos::ParameterList> paramList_ = Teuchos::null )
+  RCP<ParameterList> pList_ = Teuchos::null )
 {
-  if ( paramList_ == Teuchos::null )
-    paramList = getValidParameters();
+  if ( pList_ == Teuchos::null )
+    pList = getValidParameters();
   else
-    paramList = paramList_;
+    pList = pList_;
 
-  this->setParameterList(paramList);
+  this->setParameterList(pList);
 }
 
 template<class Scalar>
@@ -114,7 +114,7 @@ TimeStepControl<Scalar>::TimeStepControl( const TimeStepControl<Scalar>& tsc_ )
     outputTimes  (tsc_.outputTimes),
     nFailuresMax           (tsc_.nFailuresMax),
     nConsecutiveFailuresMax(tsc_.nConsecutiveFailuresMax),
-    paramList    (tsc_.paramList  )
+    pList        (tsc_.pList  )
 {}
 
 
@@ -322,29 +322,29 @@ void TimeStepControl<Scalar>::describe(
         << "stepType     = " << stepType     << std::endl
         << "nFailuresMax = " << nFailuresMax << std::endl
         << "nConsecutiveFailuresMax = " << nConsecutiveFailuresMax << std::endl
-        << "paramList    = " << paramList    << std::endl;
+        << "pList        = " << pList        << std::endl;
 }
 
 
 template <class Scalar>
 void TimeStepControl<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& paramList_)
+  RCP<ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(paramList_) );
-  paramList_->validateParameters(*this->getValidParameters());
-  paramList = paramList_;
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
+  pList_->validateParameters(*this->getValidParameters());
+  pList = pList_;
 
-  Teuchos::readVerboseObjectSublist(&*paramList,this);
+  Teuchos::readVerboseObjectSublist(&*pList,this);
 
-  timeMin     = paramList->get<double>(timeMin_name    , timeMin_default    );
-  timeMax     = paramList->get<double>(timeMax_name    , timeMax_default    );
+  timeMin     = pList->get<double>(timeMin_name    , timeMin_default    );
+  timeMax     = pList->get<double>(timeMax_name    , timeMax_default    );
   TEUCHOS_TEST_FOR_EXCEPTION(
     (timeMin > timeMax ), std::logic_error,
     "Error - Inconsistent time range.\n"
     "    (timeMin = "<<timeMin<<") > (timeMax = "<<timeMax<<")\n");
 
-  dtMin       = paramList->get<double>(dtMin_name      , dtMin_default      );
-  dtMax       = paramList->get<double>(dtMax_name      , dtMax_default      );
+  dtMin       = pList->get<double>(dtMin_name      , dtMin_default      );
+  dtMax       = pList->get<double>(dtMax_name      , dtMax_default      );
   TEUCHOS_TEST_FOR_EXCEPTION(
     (dtMin < ST::zero() ), std::logic_error,
     "Error - Negative minimum time step.  dtMin = "<<dtMin<<")\n");
@@ -356,15 +356,15 @@ void TimeStepControl<Scalar>::setParameterList(
     "Error - Inconsistent time step range.\n"
     "    (dtMin = "<<dtMin<<") > (dtMax = "<<dtMax<<")\n");
 
-  iStepMin    = paramList->get<int>   (iStepMin_name   , iStepMin_default   );
-  iStepMax    = paramList->get<int>   (iStepMax_name   , iStepMax_default   );
+  iStepMin    = pList->get<int>   (iStepMin_name   , iStepMin_default   );
+  iStepMax    = pList->get<int>   (iStepMax_name   , iStepMax_default   );
   TEUCHOS_TEST_FOR_EXCEPTION(
     (iStepMin > iStepMax ), std::logic_error,
     "Error - Inconsistent time index range.\n"
     "    (iStepMin = "<<iStepMin<<") > (iStepMax = "<<iStepMax<<")\n");
 
-  errorMaxAbs = paramList->get<double>(errorMaxAbs_name, errorMaxAbs_default);
-  errorMaxRel = paramList->get<double>(errorMaxRel_name, errorMaxRel_default);
+  errorMaxAbs = pList->get<double>(errorMaxAbs_name, errorMaxAbs_default);
+  errorMaxRel = pList->get<double>(errorMaxRel_name, errorMaxRel_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (errorMaxAbs < ST::zero() ), std::logic_error,
     "Error - Negative maximum time step.  errorMaxAbs = "<<errorMaxAbs<<")\n");
@@ -372,8 +372,8 @@ void TimeStepControl<Scalar>::setParameterList(
     (errorMaxRel < ST::zero() ), std::logic_error,
     "Error - Negative maximum time step.  errorMaxRel = "<<errorMaxRel<<")\n");
 
-  orderMin    = paramList->get<int>   (orderMin_name   , orderMin_default   );
-  orderMax    = paramList->get<int>   (orderMax_name   , orderMax_default   );
+  orderMin    = pList->get<int>   (orderMin_name   , orderMin_default   );
+  orderMax    = pList->get<int>   (orderMax_name   , orderMax_default   );
   TEUCHOS_TEST_FOR_EXCEPTION(
     (orderMin < ST::zero() ), std::logic_error,
     "Error - Negative minimum order.  orderMin = "<<orderMin<<")\n");
@@ -386,9 +386,9 @@ void TimeStepControl<Scalar>::setParameterList(
     "    (orderMin = "<<orderMin<<") > (orderMax = "<<orderMax<<")\n");
 
   stepType = StepTypePolicyValidator->getIntegralValue(
-      *paramList, StepType_name, StepType_default);
+      *pList, StepType_name, StepType_default);
 
-  dtConstant  = paramList->get<double>(dtConstant_name , dtConstant_default);
+  dtConstant  = pList->get<double>(dtConstant_name , dtConstant_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (dtConstant < ST::zero() ), std::logic_error,
     "Error - Negative constant time step.  dtConstant = "<<dtConstant<<")\n");
@@ -403,7 +403,7 @@ void TimeStepControl<Scalar>::setParameterList(
   {
     outputTimes.clear();
     std::string str =
-      paramList->get<std::string>(outputTimeList_name,outputTimeList_default);
+      pList->get<std::string>(outputTimeList_name, outputTimeList_default);
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
@@ -418,7 +418,7 @@ void TimeStepControl<Scalar>::setParameterList(
     }
 
     Scalar outputTimeInterval =
-     paramList->get<double>(outputTimeInterval_name,outputTimeInterval_default);
+     pList->get<double>(outputTimeInterval_name, outputTimeInterval_default);
     Scalar output_t = timeMin;
     while ( output_t <= timeMax ) {
       outputTimes.push_back(output_t);
@@ -433,7 +433,7 @@ void TimeStepControl<Scalar>::setParameterList(
   {
     outputIndices.clear();
     std::string str =
-      paramList->get<std::string>(outputIndexList_name,outputIndexList_default);
+      pList->get<std::string>(outputIndexList_name, outputIndexList_default);
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
@@ -448,7 +448,7 @@ void TimeStepControl<Scalar>::setParameterList(
     }
 
     Scalar outputIndexInterval =
-      paramList->get<int>(outputIndexInterval_name,outputIndexInterval_default);
+      pList->get<int>(outputIndexInterval_name, outputIndexInterval_default);
     Scalar output_i = iStepMin;
     while ( output_i <= iStepMax ) {
       outputIndices.push_back(output_i);
@@ -459,21 +459,21 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices.begin(),outputIndices.end());
   }
 
-  nFailuresMax = paramList->get<unsigned int>(
+  nFailuresMax = pList->get<unsigned int>(
     nFailuresMax_name, nFailuresMax_default);
-  nConsecutiveFailuresMax = paramList->get<unsigned int>(
+  nConsecutiveFailuresMax = pList->get<unsigned int>(
     nConsecutiveFailuresMax_name, nConsecutiveFailuresMax_default);
 }
 
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList> TimeStepControl<Scalar>::getValidParameters() const
+RCP<const ParameterList> TimeStepControl<Scalar>::getValidParameters() const
 {
-  static RCP<Teuchos::ParameterList> validPL;
+  static RCP<ParameterList> validPL;
 
   if (is_null(validPL)) {
 
-    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     pl->set(timeMin_name    , timeMin_default    , "Minimum simulation time");
@@ -520,19 +520,19 @@ RCP<const Teuchos::ParameterList> TimeStepControl<Scalar>::getValidParameters() 
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 TimeStepControl<Scalar>::getNonconstParameterList()
 {
-  return(paramList);
+  return(pList);
 }
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList> TimeStepControl<Scalar>::unsetParameterList()
+RCP<ParameterList> TimeStepControl<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList> temp_param_list = paramList;
-  paramList = Teuchos::null;
-  return(temp_param_list);
+  RCP<ParameterList> temp_plist = pList;
+  pList = Teuchos::null;
+  return(temp_plist);
 }
 
 

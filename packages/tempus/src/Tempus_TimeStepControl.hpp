@@ -1,9 +1,11 @@
 #ifndef TEMPUS_TIMESTEPCONTROL_HPP
 #define TEMPUS_TIMESTEPCONTROL_HPP
 
+// Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-
+#include "Teuchos_ParameterList.hpp"
+// Tempus
 #include "Tempus_StepType.hpp"
 
 namespace tempus {
@@ -39,7 +41,7 @@ public:
   TimeStepControl();
 
   /** \brief. */
-  TimeStepControl( RCP<Teuchos::ParameterList> paramList_ = Teuchos::null );
+  TimeStepControl( RCP<ParameterList> pList_ = Teuchos::null );
 
   /** \brief. */
   // This is a copy constructor
@@ -76,27 +78,23 @@ public:
   unsigned int nFailuresMax;            ///< Maximum number of stepper failures
   unsigned int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
 
-  RCP<Teuchos::ParameterList> paramList;
+  RCP<ParameterList> pList;
 
-  /// Inherited from Describable:
-  /** \brief . */
-  virtual std::string description() const;
+  /// \name Overridden from Teuchos::ParameterListAcceptor
+  //@{
+    virtual void setParameterList(RCP<ParameterList> const& pl);
+    virtual RCP<const ParameterList> getValidParameters() const;
+    virtual RCP<const ParameterList> getParameterList() const;
+    virtual RCP<ParameterList> getNonconstParameterList();
+    virtual RCP<ParameterList> unsetParameterList();
+  //@}
 
-  /** \brief . */
-  virtual void describe( Teuchos::FancyOStream          &out,
-                         const Teuchos::EVerbosityLevel verbLevel) const;
-
-  /// Redefined from Teuchos::ParameterListAcceptor
-  /** \brief . */
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
-
-  /** \brief . */
-  RCP<Teuchos::ParameterList> getNonconstParameterList();
-
-  /** \brief . */
-  RCP<Teuchos::ParameterList> unsetParameterList();
-
-  RCP<const Teuchos::ParameterList> getValidParameters() const;
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual std::string description() const;
+    virtual void describe(Teuchos::FancyOStream          &out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
 };
 } // namespace tempus

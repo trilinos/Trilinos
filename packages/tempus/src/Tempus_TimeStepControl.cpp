@@ -3,11 +3,11 @@
 
 namespace tempus {
 
-template class TimeStepControl< double >;
+template class TimeStepControl<double>;
 
-template Teuchos::RCP< TimeStepControl< double > > TimeStepControl();
+template RCP<TimeStepControl<double> > TimeStepControl();
 
-template Teuchos::RCP< TimeStepControl< double > >
-TimeStepControl( RCP<Teuchos::ParameterList> paramList_ = Teuchos::null );
+template RCP<TimeStepControl<double> >
+TimeStepControl(RCP<ParameterList> pList_ = Teuchos::null);
 
 } // namespace tempus

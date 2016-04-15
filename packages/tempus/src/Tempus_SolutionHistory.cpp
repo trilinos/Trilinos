@@ -3,9 +3,9 @@
 
 namespace tempus {
 
-template class SolutionHistory< double >;
+template class SolutionHistory<double>;
 
-template Teuchos::RCP< SolutionHistory< double > >
-SolutionHistory( RCP<Teuchos::ParameterList> pList_ = Teuchos::null );
+template RCP<SolutionHistory<double> >
+SolutionHistory(RCP<ParameterList> pList_ = Teuchos::null);
 
 } // namespace tempus

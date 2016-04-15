@@ -94,7 +94,7 @@ void StepperForwardEuler<Scalar>::describe(
 
 template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& pList_)
+  RCP<ParameterList> const& pList_)
 {
   TEUCHOS_TEST_FOR_EXCEPT( !is_null(pList_) );
   pList_->validateParameters(*this->getValidParameters());
@@ -105,15 +105,15 @@ void StepperForwardEuler<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList> StepperForwardEuler<Scalar>::getValidParameters() const
+RCP<const ParameterList> StepperForwardEuler<Scalar>::getValidParameters() const
 {
-  static RCP<Teuchos::ParameterList> validPL;
+  static RCP<ParameterList> validPL;
   return validPL;
 }
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 StepperForwardEuler<Scalar>::getNonconstParameterList()
 {
   return(pList);
@@ -121,9 +121,9 @@ StepperForwardEuler<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList> StepperForwardEuler<Scalar>::unsetParameterList()
+RCP<ParameterList> StepperForwardEuler<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList> temp_plist = pList;
+  RCP<ParameterList> temp_plist = pList;
   pList = Teuchos::null;
   return(temp_plist);
 }

@@ -25,7 +25,7 @@ namespace {
   Teuchos::Array<std::string> Stepper_names = Teuchos::tuple<std::string>(
       ForwardEuler_name);
 
-  const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType> >
+  const RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType> >
     StepperValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType>(
           Stepper_names,
@@ -37,7 +37,6 @@ namespace {
 
 
 namespace tempus {
-
 
 template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
@@ -163,7 +162,7 @@ void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 
 template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
-  RCP<Teuchos::ParameterList> const& pList_)
+  RCP<ParameterList> const& pList_)
 {
   TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
   pList_->validateParameters(*this->getValidParameters());
@@ -213,13 +212,13 @@ void IntegratorBasic<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
+RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
 {
-  static RCP<Teuchos::ParameterList> validPL;
+  static RCP<ParameterList> validPL;
 
   if (is_null(validPL)) {
 
-    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    RCP<ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     pl->set(initTime_name, initTime_default,
@@ -248,7 +247,7 @@ RCP<const Teuchos::ParameterList> IntegratorBasic<Scalar>::getValidParameters() 
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList>
+RCP<ParameterList>
 IntegratorBasic<Scalar>::getNonconstParameterList()
 {
   return(pList);
@@ -256,9 +255,9 @@ IntegratorBasic<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<Teuchos::ParameterList> IntegratorBasic<Scalar>::unsetParameterList()
+RCP<ParameterList> IntegratorBasic<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList> temp_param_list = pList;
+  RCP<ParameterList> temp_param_list = pList;
   pList = Teuchos::null;
   return(temp_param_list);
 }

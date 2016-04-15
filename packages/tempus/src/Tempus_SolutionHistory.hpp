@@ -1,6 +1,11 @@
 #ifndef TEMPUS_SOLUTIONHISTORY_HPP
 #define TEMPUS_SOLUTIONHISTORY_HPP
 
+// Teuchos
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Teuchos_ParameterList.hpp"
+// Tempus
 #include "Tempus_SolutionState.hpp"
 
 
@@ -39,78 +44,76 @@ enum HistoryPolicy {
 template<class Scalar>
 class SolutionHistory
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::ParameterListAcceptor,
     virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >,
+    virtual public Teuchos::ParameterListAcceptor,
     virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
 
-  /** \brief. */
-  SolutionHistory( RCP<Teuchos::ParameterList> pList_ = Teuchos::null );
-
-  /// Set the interpolator for this history
-  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
-
-  /** \brief . */
-  RCP<InterpolatorBase<Scalar> > getNonconstInterpolator();
-
-  /** \brief . */
-  RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
-
-  /// Unset the interpolator for this history
-  RCP<InterpolatorBase<Scalar> > unSetInterpolator();
-
-
-  /// Set the maximum storage of this history
-  void setStorage(int storage);
-
-  /// Get the maximum storage of this history
-  int getStorage() const;
-
-  /** \brief . */
-  HistoryPolicy getHistoryPolicy();
+  /// Contructor
+  SolutionHistory( RCP<ParameterList> pList_ = Teuchos::null );
 
   /// Destructor
   ~SolutionHistory() {};
 
-  /// Add solution state to history
-  void addState( const RCP<SolutionState<Scalar> >& state );
+  /// \name Basic SolutionHistory Methods
+  //@{
+    /// Add solution state to history
+    void addState( const RCP<SolutionState<Scalar> >& state );
 
-  /// Return the current minimum time of the SolutionStates
-  Scalar minTime() const;
+    /// Find solution state at requested time (no interpolation)
+    RCP<SolutionState<Scalar> > findState(const Scalar time) const;
 
-  /// Return the current maximum time of the SolutionStates
-  Scalar maxTime() const;
+    /// Generate and interpolate a new solution state at requested time
+    RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
+  //@}
 
-  /// Find solution state at requested time (no interpolation)
-  RCP<SolutionState<Scalar> > findState(const Scalar time) const;
+  /// \name Accessor methods
+  //@{
+    /// Set the maximum storage of this history
+    void setStorage(int storage);
 
-  /// Generate and interpolate a new solution state at requested time
-  RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
+    /// Get the maximum storage of this history
+    int getStorage() const;
 
-  /// Redefined from Teuchos::Describable
-  /** \brief . */
-  std::string description() const;
+    HistoryPolicy getHistoryPolicy();
 
-  /** \brief . */
-  void describe(Teuchos::FancyOStream          &out,
-                const Teuchos::EVerbosityLevel verbLevel) const;
+    /// Return the current minimum time of the SolutionStates
+    Scalar minTime() const;
 
-  /// Redefined from Teuchos::ParameterListAcceptor
-  /** \brief . */
-  void setParameterList(RCP<Teuchos::ParameterList> const& pList);
+    /// Return the current maximum time of the SolutionStates
+    Scalar maxTime() const;
+  //@}
 
-  /** \brief . */
-  RCP<Teuchos::ParameterList> getNonconstParameterList();
+  /// \name Overridden from Teuchos::ParameterListAcceptor
+  //@{
+    virtual void setParameterList(RCP<ParameterList> const& pl);
+    virtual RCP<const ParameterList> getValidParameters() const;
+    virtual RCP<const ParameterList> getParameterList() const;
+    virtual RCP<ParameterList> getNonconstParameterList();
+    virtual RCP<ParameterList> unsetParameterList();
+  //@}
 
-  /** \brief . */
-  RCP<Teuchos::ParameterList> unsetParameterList();
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual std::string description() const;
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
-  RCP<const Teuchos::ParameterList> getValidParameters() const;
+  /// \name Interpolation Methods
+  //@{
+    /// Set the interpolator for this history
+    void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
+    RCP<InterpolatorBase<Scalar> > getNonconstInterpolator();
+    RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
+    /// Unset the interpolator for this history
+    RCP<InterpolatorBase<Scalar> > unSetInterpolator();
+  //@}
 
 private:
 
-  RCP<Teuchos::ParameterList> pList;
+  RCP<ParameterList> pList;
   RCP<Array<SolutionState<Scalar> > > history;
   RCP<InterpolatorBase<Scalar> > interpolator;
   HistoryPolicy historyPolicy;
@@ -125,7 +128,7 @@ private:
  */
 template<class Scalar>
 RCP<SolutionHistory<Scalar> > solutionHistory(
-  RCP<Teuchos::ParameterList> pList_ = Teuchos::null )
+  RCP<ParameterList> pList_ = Teuchos::null )
 {
   RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList_));
   return sh;

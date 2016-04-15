@@ -13,11 +13,11 @@ SolutionState<Scalar>::SolutionState()
 }
 
 template<class Scalar>
-SolutionState(const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData_,
-              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_,
-              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot_,
-              const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
-              const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState_)
+SolutionState(const RCP<SolutionStateMetaData<Scalar> > metaData_,
+              const RCP<Thyra::VectorBase<Scalar> >& x_,
+              const RCP<Thyra::VectorBase<Scalar> >& xdot_,
+              const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
+              const RCP<tempus::StepperState<Scalar> >& stepperState_)
   : metaData     (metaData_),
     x            (x_),
     xdot         (xdot_),
@@ -41,10 +41,10 @@ SolutionState<Scalar>::SolutionState(
   const bool   isInterpolated_,
   const bool   isRestartable_,
   const Scalar accuracy_,
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x_,
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot_,
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
-  const Teuchos::RCP<tempus::StepperState<Scalar> >& stepperState_)
+  const RCP<Thyra::VectorBase<Scalar> >& x_,
+  const RCP<Thyra::VectorBase<Scalar> >& xdot_,
+  const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
+  const RCP<tempus::StepperState<Scalar> >& stepperState_)
   : x            (x_),
     xdot         (xdot_),
     xdotdot      (xdotdot_),

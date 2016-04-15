@@ -3,13 +3,12 @@
 
 namespace tempus {
 
-template class IntegratorBasic< double >;
+template class IntegratorBasic<double>;
 
-template Teuchos::RCP< IntegratorBasic< double > >
-IntegratorBasic(
-  RCP<ParameterList>              parameterList,
-  RCP<Thyra::VectorBase<double> > x,
-  RCP<Thyra::VectorBase<double> > xdot=Teuchos::null,
-  RCP<Thyra::VectorBase<double> > xdotdot=Teuchos::null );
+template RCP<IntegratorBasic<double> >
+IntegratorBasic(RCP<ParameterList>              parameterList,
+                RCP<Thyra::VectorBase<double> > x,
+                RCP<Thyra::VectorBase<double> > xdot=Teuchos::null,
+                RCP<Thyra::VectorBase<double> > xdotdot=Teuchos::null);
 
 } // namespace tempus

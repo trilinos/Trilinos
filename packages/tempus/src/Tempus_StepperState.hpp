@@ -7,6 +7,7 @@
 
 
 namespace tempus {
+
 template<class Scalar>
 /** \brief StepperState is a simple class to hold state information about the stepper.
  *
@@ -30,23 +31,23 @@ class StepperState :
   public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
 
 {
-  public:
-    /// Constructor
-    virtual StepperState(std::string name_):(stepperName=name_){}
+public:
+  /// Constructor
+  virtual StepperState(std::string name_):(stepperName=name_){}
 
-    /// Destructor
-    virtual ~StepperState();
+  /// Destructor
+  virtual ~StepperState();
 
-    /// This is a deep copy
-    virtual RCP<StepperState<Scalar> > clone() const
-    {
-       RCP<StepperState<Scalar> > ss_out =
-         Teuchos::rcp(new StepperState<Scalar> (this->stepperName));
-       return ss_out;
-    }
+  /// This is a deep copy
+  virtual RCP<StepperState<Scalar> > clone() const
+  {
+     RCP<StepperState<Scalar> > ss_out =
+       Teuchos::rcp(new StepperState<Scalar> (this->stepperName));
+     return ss_out;
+  }
 
-    /// \name Accessor methods
-    //@{
+  /// \name Overridden from Teuchos::Describable
+  //@{
     virtual std::string description() const
     {
       std::string name = "tempus::StepperState";
@@ -58,9 +59,9 @@ class StepperState :
       out << description() << "::describe" << std::endl;
       out << "  stepperName = " << stepperName << std::endl;
     }
-    //@}
+  //@}
 
-    std::string stepperName;  ///< Name of the creating Stepper.
+  std::string stepperName;  ///< Name of the creating Stepper.
 
 };
 } // namespace tempus

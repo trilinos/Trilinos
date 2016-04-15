@@ -3,17 +3,17 @@
 
 namespace tempus {
 
-template class StepperForwardEuler< double >;
+template class StepperForwardEuler<double>;
 
-template Teuchos::RCP< StepperForwardEuler< double > >
+template RCP<StepperForwardEuler<double> >
 StepperForwardEuler(
-  RCP<Teuchos::ParameterList> parameterList,
+  RCP<ParameterList> parameterList,
   RCP<Thyra::ModelEvaluator<double> > model,
   RCP<Thyra::NonlinearSolverBase<double> > solver = Teuchos::null);
 
-template Teuchos::RCP< StepperForwardEuler< double > >
+template RCP<StepperForwardEuler<double> >
 StepperForwardEuler(
-  RCP<Teuchos::ParameterList>& parameterList,
+  RCP<ParameterList>& parameterList,
   Array<RCP<Thyra::ModelEvaluator<double> > > models,
   Array<RCP<Thyra::NonlinearSolverBase<double> > >  solvers =Teuchos::null);
 

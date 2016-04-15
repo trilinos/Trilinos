@@ -1,12 +1,16 @@
 #ifndef TEMPUS_STEPPER_HPP
 #define TEMPUS_STEPPER_HPP
 
+//Teuchos
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+// Thyra
 #include "Thyra_ModelEvaluator.hpp"
 
 
 namespace tempus {
+
 template<class Scalar>
 /** \brief Thyra Base interface for time steppers.
  *
@@ -37,15 +41,17 @@ template<class Scalar>
  *     BDF steppers.
  */
 class Stepper
+  : virtual public Teuchos::Describable,
+    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >,
+    virtual public Teuchos::ParameterListAcceptor
 {
-  public:
+public:
 
-    /// Destructor
-    virtual ~Stepper();
-    //@}
+  /// Destructor
+  virtual ~Stepper();
 
-    /// \name Basic stepper methods
-    //@{
+  /// \name Basic stepper methods
+  //@{
     /// Take the specified timestep, dt, and return true if successful.
     virtual bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
@@ -53,44 +59,44 @@ class Stepper
       const RCP<tempus::StepperState<Scalar> >& stepperState) = 0;
 
     virtual RCP<tempus::StepperState<Scalar> > getStepperState() = 0;
-    //@}
+  //@}
 
-    /// \name ParameterList methods
-    //@{
+  /// \name Overridden from Teuchos::ParameterListAcceptor
+  //@{
     virtual void setParameterList(RCP<ParameterList> const& pl);
     virtual RCP<ParameterList> getNonconstParameterList();
     virtual RCP<ParameterList> unsetParameterList();
     virtual RCP<const ParameterList> getValidParameters() const;
-    //@}
+  //@}
 
-    /// \name Accessor methods
-    //@{
+  /// \name Overridden from Teuchos::Describable
+  //@{
     virtual std::string description() const;
-    virtual void describe( Teuchos::FancyOStream        & out,
-                           const Teuchos::EVerbosityLevel verbLevel) const;
-    //@}
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
-    /// \name Error estimation methods
-    //@{
+  /// \name Error estimation methods
+  //@{
 
-    //@}
+  //@}
 
-    /// \name Observer methods
-    //@{
+  /// \name Observer methods
+  //@{
 
-    //@}
+  //@}
 
-    /// \name Adjoint methods
-    //@{
-    //virtual Scalar takeAdjointStep();
-    //@}
+  /// \name Adjoint methods
+  //@{
+  //virtual Scalar takeAdjointStep();
+  //@}
 
-    /// \name Solution history methods
-    //@{
+  /// \name Solution history methods
+  //@{
 
-    /// Functionality like InterpolationBuffer for multi-step methods, BDF.
+  /// Functionality like InterpolationBuffer for multi-step methods, BDF.
 
-    //@}
+  //@}
 
 };
 } // namespace tempus
