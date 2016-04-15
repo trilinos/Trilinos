@@ -201,7 +201,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   ArrayTools<ExecSpaceType>::
   dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,

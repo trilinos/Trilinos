@@ -252,7 +252,7 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFieldsViewType;
     typedef Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactorsViewType;
-    typedef FunctorArray::F_scaleFields<inoutFieldsViewType, inputFactorsViewType> FunctorType;
+    typedef FunctorArrayTools::F_scaleFields<inoutFieldsViewType, inputFactorsViewType> FunctorType;
     typedef typename ExecSpace< typename inoutFieldsViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
     const size_type loopSize = inoutFields.dimension(0)*inoutFields.dimension(1)*inoutFields.dimension(2);

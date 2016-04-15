@@ -254,7 +254,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   ArrayTools<ExecSpaceType>::
   crossProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
@@ -551,7 +550,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValuetype,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   ArrayTools<ExecSpaceType>::
   outerProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
@@ -1109,7 +1107,6 @@ namespace Intrepid2 {
   template<typename outputValueType,     class ...outputProperties,
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   ArrayTools<SpT>::Internal::matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                  const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
