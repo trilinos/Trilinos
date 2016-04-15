@@ -307,10 +307,10 @@ namespace Intrepid2 {
             const auto kend = ma_x_x_d_d.dimension(2);
             const auto lend = ma_x_x_d_d.dimension(3);
             
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
-                for (auto k=0;k<kend;++k) 
-                  for (auto l=0;l<lend;++l) 
+            for (size_t i=0;i<iend;++i)
+              for (size_t j=0;j<jend;++j)
+                for (size_t k=0;k<kend;++k)
+                  for (size_t l=0;l<lend;++l)
                     ma_x_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
@@ -319,9 +319,9 @@ namespace Intrepid2 {
             const auto kend = va_x_x_d.dimension(2);
 
             {
-              for (auto i=0;i<iend;++i) 
-                for (auto j=0;j<jend;++j) 
-                  for (auto k=0;k<kend;++k) 
+              for (size_t i=0;i<iend;++i)
+                for (size_t j=0;j<jend;++j)
+                  for (size_t k=0;k<kend;++k)
                     va_x_x_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
             }
           }
@@ -371,7 +371,7 @@ namespace Intrepid2 {
           
           { 
             value_type val = 0;
-            for (auto i=0;i<detA_x_x.dimension(0);++i) 
+            for (size_t i=0;i<detA_x_x.dimension(0);++i) 
               val += rst::Serial::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
                                        Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
 
@@ -443,9 +443,9 @@ namespace Intrepid2 {
             const auto jend = va_x_x_d.dimension(1);
             const auto kend = va_x_x_d.dimension(2);
             
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
-                for (auto k=0;k<kend;++k) 
+            for (size_t i=0;i<iend;++i)
+              for (size_t j=0;j<jend;++j)
+                for (size_t k=0;k<kend;++k)
                   va_x_x_d(i,j,k) = 2.0;
           }
           
@@ -480,10 +480,10 @@ namespace Intrepid2 {
             const auto kend = ma_x_d_d.dimension(2);
             const auto lend = ma_x_d_d.dimension(3);
             
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
-                for (auto k=0;k<kend;++k) 
-                  for (auto l=0;l<lend;++l) 
+            for (size_t i=0;i<iend;++i)
+              for (size_t j=0;j<jend;++j)
+                for (size_t k=0;k<kend;++k)
+                  for (size_t l=0;l<lend;++l)
                     ma_x_d_d(i,j,k,l) = Teuchos::ScalarTraits<value_type>::random();
           }
           {
@@ -491,9 +491,9 @@ namespace Intrepid2 {
             const auto jend = va_x_d.dimension(1);
             const auto kend = va_x_d.dimension(2);
             
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
-                for (auto k=0;k<kend;++k) 
+            for (size_t i=0;i<iend;++i)
+              for (size_t j=0;j<jend;++j)
+                for (size_t k=0;k<kend;++k)
                   va_x_d(i,j,k) = Teuchos::ScalarTraits<value_type>::random();
           }
           
@@ -598,8 +598,8 @@ namespace Intrepid2 {
             const auto iend = va_x_d.dimension(0);
             const auto jend = va_x_d.dimension(1);
             
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
+            for (size_t i=0;i<iend;++i)
+              for (size_t j=0;j<jend;++j)
                 va_x_d(i,j) = 2.0;
           }
           rst::dot(vdot_x, va_x_d, va_x_d); // dot = a'*a
