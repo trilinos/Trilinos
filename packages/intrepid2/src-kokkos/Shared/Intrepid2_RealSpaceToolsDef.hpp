@@ -774,7 +774,6 @@ namespace Intrepid2 {
   template<typename SpT>
   template<typename inoutDiffArrayValueType, class ...inoutDiffArrayProperties,
            typename inArrayValueType,        class ...inArrayProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   RealSpaceTools<SpT>::
   subtract( /**/  Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> inoutDiffArray,
