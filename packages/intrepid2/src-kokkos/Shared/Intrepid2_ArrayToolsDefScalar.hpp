@@ -83,6 +83,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cl, bf, pt;
+        size_type outputRank(_output.rank()), rightRank(_rightInput.rank());
 
         if (_hasField) 
           Util::unrollIndex( cl, bf, pt, 
@@ -97,13 +98,18 @@ namespace Intrepid2 {
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
 
-        const auto right = ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
-        
-        const auto left = Kokkos::subdynrankview(_leftInput, cl, pt);
+        const auto right = (outputRank == rightRank) ?
+                             ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/          Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
+                             ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                             /**/          Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
 
-        const size_type iend  = result.dimension(2);
-        const size_type jend  = result.dimension(3);
+ 
+        const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subdynrankview(_leftInput, cl, 0) :
+                            /**/                           Kokkos::subdynrankview(_leftInput, cl, pt);
+
+        const size_type iend  = result.dimension(0);
+        const size_type jend  = result.dimension(1);
 
         const auto val = left();
         if (_reciprocal)

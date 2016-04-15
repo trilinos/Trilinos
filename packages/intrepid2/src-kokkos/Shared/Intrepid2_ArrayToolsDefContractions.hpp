@@ -158,10 +158,19 @@ namespace Intrepid2 {
         const size_type jend = field.dimension(2);
 
         value_type tmp(0);        
-        for (size_type qp = 0; qp < npts; ++qp) 
-          for (size_type i = 0; i < iend; ++i) 
-            for (size_type j = 0; j < jend; ++j) 
-              tmp += field(qp, i, j) * data(qp, i, j);
+
+        if(data.dimension(1) != 1)
+          for (size_type qp = 0; qp < npts; ++qp)
+            for (size_type i = 0; i < iend; ++i)
+              for (size_type j = 0; j < jend; ++j)
+                tmp += field(qp, i, j) * data(qp, i, j);
+        else
+          for (size_type qp = 0; qp < npts; ++qp)
+            for (size_type i = 0; i < iend; ++i)
+              for (size_type j = 0; j < jend; ++j)
+                tmp += field(qp, i, j) * data(qp, 0, j);
+
+
         result() = value_type(_sumInto)*result() + tmp;
       }
     };
@@ -485,8 +494,7 @@ namespace Intrepid2 {
                                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Rank of output argument must equal 2!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(0) != inputData.dimension(0), dbgInfo, 
                                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Zeroth dimensions (number of integration domains) of the fields and data input containers must agree!");
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(1) != inputFields.dimension(2) &&
-                                      inputData.dimension(1) != 1, dbgInfo, 
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inputData.dimension(1) != inputFields.dimension(2) && inputData.dimension(1) != 1, dbgInfo,
                                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Second dimension of the fields input container and first dimension of data input container (number of integration points) must agree or first data dimension must be 1!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inputFields.dimension(3) != inputData.dimension(2), dbgInfo, 
                                       ">>> ERROR (ArrayTools::contractDataFieldTensor): Third dimension of the fields input container and second dimension of data input container (first tensor dimension) must agree!");
