@@ -56,7 +56,7 @@ namespace Intrepid2 {
   getCubatureFromData( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                        Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
                        const CubatureData cubData ) const {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 2, std::invalid_argument,
                                   ">>> ERROR (CubatureDirect): cubPoints must be rank 2." );

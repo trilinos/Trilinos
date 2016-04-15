@@ -286,7 +286,7 @@ namespace Intrepid2 {
         
         // two-dimensional base containers
         for (auto dim=3; dim>0; dim--) {
-          size_t i0=4, i1=5;
+          ordinal_type i0=4, i1=5;
           DynRankView ConstructWithLabel(ma_x_x_d_d, i0, i1, dim, dim);
           DynRankView ConstructWithLabel(mb_x_x_d_d, i0, i1, dim, dim);
           DynRankView ConstructWithLabel(mc_x_x_d_d, i0, i1, dim, dim);
@@ -371,9 +371,15 @@ namespace Intrepid2 {
           
           { 
             value_type val = 0;
-            for (size_t i=0;i<detA_x_x.dimension(0);++i) 
+<<<<<<< HEAD
+            for (auto i=0;i<detA_x_x.dimension(0);++i) 
               val += rst::Serial::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
                                        Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
+=======
+            for (size_t i=0;i<detA_x_x.dimension(0);++i)
+              val += rst::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
+                               Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
+>>>>>>> Intrepid2: refactoring. Fixes to avoid warnings
 
             const value_type diff = std::abs(val - value_type(i0*i1));
             if (diff  > tol) {

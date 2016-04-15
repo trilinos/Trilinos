@@ -43,102 +43,99 @@
 /** \file   Intrepid_HCURL_QUAD_I1_FEM.hpp
     \brief  Header file for the Intrepid2::HCURL_QUAD_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal and K. Peterson.
+            Kokkorized by Kyungjoo Kim
  */
 
-#ifndef INTREPID2_HCURL_QUAD_I1_FEM_HPP
-#define INTREPID2_HCURL_QUAD_I1_FEM_HPP
+#ifndef __INTREPID2_HCURL_QUAD_I1_FEM_HPP__
+#define __INTREPID2_HCURL_QUAD_I1_FEM_HPP__
+
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
   
-/** \class  Intrepid2::Basis_HCURL_QUAD_I1_FEM
-    \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Quadrilateral cell 
+  /** \class  Intrepid2::Basis_HCURL_QUAD_I1_FEM
+      \brief  Implementation of the default H(curl)-compatible FEM basis of degree 1 on Quadrilateral cell 
   
-            Implements Nedelec basis of the first kind of degree 1 on the reference Quadrilateral cell. 
-            The basis has cardinality 4 and spans an INCOMPLETE bi-linear polynomial space. Basis functions 
-            are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
+      Implements Nedelec basis of the first kind of degree 1 on the reference Quadrilateral cell. 
+      The basis has cardinality 4 and spans an INCOMPLETE bi-linear polynomial space. Basis functions 
+      are dual to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
-  \verbatim
-  ===================================================================================================
-  |         |           degree-of-freedom-tag table                    |                            |
-  |   DoF   |----------------------------------------------------------|       DoF definition       |
-  | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                            |
-  |=========|==============|==============|==============|=============|============================|
-  |    0    |       1      |       0      |       0      |      1      |   L_0(u) = (u.t)( 0,-1)    |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    1    |       1      |       1      |       0      |      1      |   L_1(u) = (u.t)( 1, 0)    |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    2    |       1      |       2      |       0      |      1      |   L_2(u) = (u.t)( 0, 1)    |
-  |---------|--------------|--------------|--------------|-------------|----------------------------|
-  |    3    |       1      |       3      |       0      |      1      |   L_3(u) = (u.t)(-1, 0)    |
-  |=========|==============|==============|==============|=============|============================|
-  |   MAX   |  maxScDim=1  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                            |
-  |=========|==============|==============|==============|=============|============================|
-  \endverbatim
+      \verbatim
+      ===================================================================================================
+      |         |           degree-of-freedom-tag table                    |                            |
+      |   DoF   |----------------------------------------------------------|       DoF definition       |
+      | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                            |
+      |=========|==============|==============|==============|=============|============================|
+      |    0    |       1      |       0      |       0      |      1      |   L_0(u) = (u.t)( 0,-1)    |
+      |---------|--------------|--------------|--------------|-------------|----------------------------|
+      |    1    |       1      |       1      |       0      |      1      |   L_1(u) = (u.t)( 1, 0)    |
+      |---------|--------------|--------------|--------------|-------------|----------------------------|
+      |    2    |       1      |       2      |       0      |      1      |   L_2(u) = (u.t)( 0, 1)    |
+      |---------|--------------|--------------|--------------|-------------|----------------------------|
+      |    3    |       1      |       3      |       0      |      1      |   L_3(u) = (u.t)(-1, 0)    |
+      |=========|==============|==============|==============|=============|============================|
+      |   MAX   |  maxScDim=1  |  maxScOrd=3  |  maxDfOrd=0  |      -      |                            |
+      |=========|==============|==============|==============|=============|============================|
+      \endverbatim
   
-    \remarks
-    \li     In the DoF functional \f${\bf t}\f$ is an edge tangent. Direction of edge  
-            tangents follows the vertex order of the edges in the cell topology and runs from 
-            edge vertex 0 to edge vertex 1, whereas their length is set equal to the edge length. For 
-            example, edge 1 of all Quadrilateral reference cells has vertex order {1,2}, i.e., its tangent 
-            runs from vertex 1 of the reference Quadrilateral to vertex 2 of that cell. On the reference 
-            Quadrilateral the coordinates of these vertices are (1,-1) and (1,1), respectively. Therefore, 
-            the tangent to edge 1 is (1,1) - (1,-1) = (0,2). Because its length already equals edge length, 
-            no further rescaling of the edge tangent is needed.
+      \remarks
+      \li     In the DoF functional \f${\bf t}\f$ is an edge tangent. Direction of edge  
+      tangents follows the vertex order of the edges in the cell topology and runs from 
+      edge vertex 0 to edge vertex 1, whereas their length is set equal to the edge length. For 
+      example, edge 1 of all Quadrilateral reference cells has vertex order {1,2}, i.e., its tangent 
+      runs from vertex 1 of the reference Quadrilateral to vertex 2 of that cell. On the reference 
+      Quadrilateral the coordinates of these vertices are (1,-1) and (1,1), respectively. Therefore, 
+      the tangent to edge 1 is (1,1) - (1,-1) = (0,2). Because its length already equals edge length, 
+      no further rescaling of the edge tangent is needed.
   
-    \li     The length of the edge tangent equals the edge length. As a result, the DoF functional 
-            is the value of the tangent component of a vector field at the edge midpoint times the 
-            edge length. The resulting basis is equivalent to a basis defined by using the edge 
-            circulation as a DoF functional. Note that all edges of reference Quadrilateral<> cells 
-            have length 2.  
+      \li     The length of the edge tangent equals the edge length. As a result, the DoF functional 
+      is the value of the tangent component of a vector field at the edge midpoint times the 
+      edge length. The resulting basis is equivalent to a basis defined by using the edge 
+      circulation as a DoF functional. Note that all edges of reference Quadrilateral<> cells 
+      have length 2.  
   
- */
-  
-template<class Scalar, class ArrayScalar> 
-class Basis_HCURL_QUAD_I1_FEM : public Basis<Scalar, ArrayScalar>, public DofCoordsInterface<ArrayScalar> {
-private:
-  
-  /** \brief  Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
-   */
-  void initializeTags();
-  
-public:
-
-  /** \brief  Constructor.
-    */
-  Basis_HCURL_QUAD_I1_FEM();
-  
-    
-  /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 
-    
-              Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
-              I/O array arguments see Section \ref basis_md_array_sec.
-  
-      \param  outputValues      [out] - rank-3 array with the computed basis values
-      \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
-      \param  operatorType      [in]  - operator applied to basis functions    
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const EOperator        operatorType) const;
-  
-  
-  /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const ArrayScalar &    cellVertices,
-                 const EOperator        operatorType = OPERATOR_VALUE) const;
-
-  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-              <strong>reference Quadrilateral</strong>.
-
-      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-                                     dimensioned (F,D)
   */
-  void getDofCoords(ArrayScalar & DofCoords) const;
-};
+  
+  template<typename ExecSpaceType>
+  class Basis_HCURL_QUAD_I1_FEM : public Basis<ExecSpaceType> {
+  public:
+
+    /** \brief  Constructor.
+     */
+    Basis_HCURL_QUAD_I1_FEM();
+  
+    
+    /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 
+    
+        Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
+        points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
+        I/O array arguments see Section \ref basis_md_array_sec.
+  
+        \param  outputValues      [out] - rank-3 array with the computed basis values
+        \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
+        \param  operatorType      [in]  - operator applied to basis functions    
+    */
+    template<typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties,
+             typename scratchValueType,     class ...scratchProperties>
+    void
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
+               const EOperator operatorType  = OPERATOR_VALUE ) const;
+  
+  
+    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+        <strong>reference Quadrilateral</strong>.
+
+        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+        dimensioned (F,D)
+    */
+    template<typename dofCoordValueType, class ...dofCoordProperties>
+    void
+    getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
+
+  };
 }// namespace Intrepid2
 
 #include "Intrepid2_HCURL_QUAD_I1_FEMDef.hpp"
