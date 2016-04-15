@@ -54,7 +54,7 @@ SolutionHistory<Scalar>::SolutionHistory(
   // Create history, an array of solution states.
   history = rcp(new Array<SolutionState<Scalar> >);
 
-  if ( pList_ == Teuchos::null ) {
+  if (pList_ == Teuchos::null) {
     pList     = Teuchos::null;
     interpolator  = Teuchos::null;
     storage_limit = StorageLimit_default;
@@ -63,8 +63,8 @@ SolutionHistory<Scalar>::SolutionHistory(
     this->setParameterList(pList_);
   }
 
-  if ( Teuchos::as<int>(this->getVerbLevel()) >=
-       Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"SolutionHistory::SolutionHistory");
     *out << this->description() << std::endl;
@@ -80,12 +80,12 @@ void SolutionHistory<Scalar>::addState(
   if (Teuchos::as<int>(history->size()+1) > storage_limit) {
     switch (historyPolicy) {
     case HISTORY_POLICY_INVALID: {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - history policy is HISTORY_POLICY_INVALID.\n");
       break;
     }
     case HISTORY_POLICY_STATIC: {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - history will overflow and policy is HISTORY_POLICY_STATIC.  "
         "This state can not be added\n");
       break;
@@ -110,7 +110,7 @@ void SolutionHistory<Scalar>::addState(
     case HISTORY_POLICY_UNLIMITED:
       break;
     default: {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - unknown history policy.\n");
     }
   }
@@ -125,6 +125,34 @@ void SolutionHistory<Scalar>::addState(
     }
     history->insert(state_it, state_);
   }
+}
+
+template<class Scalar>
+void SolutionHistory<Scalar>::removeState(
+  const RCP<SolutionState<Scalar> >& state_)
+{
+  if (history->size() != 0) {
+    Array<SolutionState<Scalar> >::reverse_iterator state_it =history->rbegin();
+    for (state_it; state_it < history->rend(); ++state_it) {
+      if (state_ == state_it) break;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->rend(), std::logic_error,
+      "Error - removeState() Could not remove state = "
+      // << state_it->describe()
+      );
+
+    history->erase(state_it);
+  }
+  return;
+}
+
+
+template<class Scalar>
+void SolutionHistory<Scalar>::removeState(const Scalar time) const
+{
+  RCP<SolutionState<Scalar> > tmpState = findState(time);
+  removeState(tmpState);
 }
 
 
@@ -164,10 +192,63 @@ SolutionHistory<Scalar>::interpolateState(const Scalar time) const
     "        time = "<< time <<"\n");
 
   // Interpolate the state.
-  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Error - Implement interpolation.\n");
   //SolutionState<Scalar> state_out;
   //interpolate<Scalar>(*interpolator, history, time_vec, &state_out);
+}
+
+
+template<class Scalar>
+RCP<SolutionState<Scalar> > SolutionHistory::getCurrentState() const
+{
+  return currentState;
+}
+
+
+template<class Scalar>
+RCP<SolutionState<Scalar> > SolutionHistory::getWorkingState() const
+{
+  return workingState;
+}
+
+/** Initialize the working state
+ *
+ *  <b>Tasks:</b>
+ *    -# Get the working state by creating a new SolutionState or
+ *       use the last SolutionState in the SolutionHistory.
+ *    -# Set working state to current state (deepcopy).
+ *       This is making the initial guess for the next time step
+ *       equal to the current time step.
+ */
+template<class Scalar>
+RCP<SolutionState<Scalar> > SolutionHistory::initWorkingState()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(history->size() == 0, std::logic_error,
+    "Error - SolutionHistory::initWorkingState()\n"
+    "Can not initialize working state without at least one solution state!\n");
+
+  if (history->size() < storage_limit) {
+    workingState->clone(currentState);
+  } else {
+    workingState = history->back();
+    workingState->deepcopy(currentState);
+  }
+}
+
+
+template<class Scalar>
+void SolutionHistory::promoteWorkingState()
+{
+  RCP<MetaData<Scalar> > md = workingState->metaData;
+  md->time += dt;
+  md->iStep++;
+  md->nConsecutiveFailures = std::max(0,md->nConsecutiveFailures-1)
+  md->status = SolutionStatus::PASSING;
+  md->isAccepted = true;
+  md->isRestartable = true;
+  md->isInterpolated = false;
+  currentState = workingState;
 }
 
 
@@ -242,8 +323,8 @@ void SolutionHistory<Scalar>::describe(
     out << "number of states = " << history->size() << std::endl;
     out << "time range       = (" << history->front()->getTime() << ", "
                                   << history->back()->getTime() << ")" << std::endl;
-  } else if ( Teuchos::as<int>(verbLevel) >=
-              Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+  } else if (Teuchos::as<int>(verbLevel) >=
+             Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "SolutionStates: " << std::endl;
     for (Teuchos::Ordinal i=0; i<history->size() ; ++i) {
       out << "SolutionState[" << i << "] = " << std::endl;
@@ -257,7 +338,7 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   RCP<ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
   pList_->validateParameters(*this->getValidParameters());
   pList = pList_;
 
@@ -273,7 +354,7 @@ void SolutionHistory<Scalar>::setParameterList(
   else
     historyPolicy = HISTORY_POLICY_KEEP_NEWEST;
 
-  int storage_limit = pList->get( StorageLimit_name, StorageLimit_default);
+  int storage_limit = pList->get(StorageLimit_name, StorageLimit_default);
   setStorage(storage_limit);
 }
 
@@ -288,7 +369,7 @@ RCP<const ParameterList> SolutionHistory<Scalar>::getValidParameters() const
     RCP<ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
-    pl->set( Selection_name, Selection_default,
+    pl->set(Selection_name, Selection_default,
       "History Policy sets the memory storage.  "
       "'Keep Newest' - will retain the single newest solution state.  "
       "'Undo' - will retain two solution states in order to do a single undo.  "
@@ -296,7 +377,7 @@ RCP<const ParameterList> SolutionHistory<Scalar>::getValidParameters() const
       "'Unlimited' - will not remove any solution states!",
       PolicyValidator);
 
-    pl->set( StorageLimit_name, StorageLimit_default,
+    pl->set(StorageLimit_name, StorageLimit_default,
       "Storage limit for the solution history.");
 
     validPL = pl;
@@ -332,8 +413,8 @@ void SolutionHistory<Scalar>::setInterpolator(
   } else {
     interpolator = interpolator_;
   }
-  if ( Teuchos::as<int>(this->getVerbLevel()) >=
-       Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
     *out << "interpolator = " << interpolator_->description() << std::endl;

@@ -88,7 +88,7 @@ template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(
   RCP<ParameterList> pList_ = Teuchos::null )
 {
-  if ( pList_ == Teuchos::null )
+  if (pList_ == Teuchos::null)
     pList = getValidParameters();
   else
     pList = pList_;
@@ -97,7 +97,7 @@ TimeStepControl<Scalar>::TimeStepControl(
 }
 
 template<class Scalar>
-TimeStepControl<Scalar>::TimeStepControl( const TimeStepControl<Scalar>& tsc_ )
+TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
   : timeMin      (tsc_.timeMin    ),
     timeMax      (tsc_.timeMax    ),
     dtMin        (tsc_.dtMin      ),
@@ -157,7 +157,7 @@ void TimeStepControl::getNextTimeStep(
     <<nConsecutiveFailuresMax<<")\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ( dt <= ST::zero() ), std::out_of_range,
+    (dt <= ST::zero()), std::out_of_range,
     "Error - Time step size is less than or equal zero.\n"
     "        dt = " << dt << "\n");
 
@@ -330,7 +330,7 @@ template <class Scalar>
 void TimeStepControl<Scalar>::setParameterList(
   RCP<ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
   pList_->validateParameters(*this->getValidParameters());
   pList = pList_;
 
@@ -407,7 +407,7 @@ void TimeStepControl<Scalar>::setParameterList(
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-    while ( (pos != std::string::npos) || (lastPos != std::string::npos) ) {
+    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
       std::string token = str.substr(lastPos,pos-lastPos);
       outputTimes.push_back(Scalar(std::stod(token)));
       if(pos==std::string::npos)
@@ -420,7 +420,7 @@ void TimeStepControl<Scalar>::setParameterList(
     Scalar outputTimeInterval =
      pList->get<double>(outputTimeInterval_name, outputTimeInterval_default);
     Scalar output_t = timeMin;
-    while ( output_t <= timeMax ) {
+    while (output_t <= timeMax) {
       outputTimes.push_back(output_t);
       output_t += outputTimeInterval;
     }
@@ -437,7 +437,7 @@ void TimeStepControl<Scalar>::setParameterList(
     std::string delimiters(",");
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-    while ( (pos != std::string::npos) || (lastPos != std::string::npos) ) {
+    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
       std::string token = str.substr(lastPos,pos-lastPos);
       outputIndices.push_back(int(std::stoi(token)));
       if(pos==std::string::npos)
@@ -450,7 +450,7 @@ void TimeStepControl<Scalar>::setParameterList(
     Scalar outputIndexInterval =
       pList->get<int>(outputIndexInterval_name, outputIndexInterval_default);
     Scalar output_i = iStepMin;
-    while ( output_i <= iStepMax ) {
+    while (output_i <= iStepMax) {
       outputIndices.push_back(output_i);
       output_i += outputIndexInterval;
     }

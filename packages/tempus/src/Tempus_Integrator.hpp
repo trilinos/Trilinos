@@ -68,8 +68,8 @@ public:
   /// \name Overridden from Teuchos::Describable
   //@{
     virtual std::string description() const;
-    virtual void describe( Teuchos::FancyOStream        & out,
-                           const Teuchos::EVerbosityLevel verbLevel) const;
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
   /// \name Accessor methods
@@ -90,11 +90,12 @@ protected:
 
   RCP<ParameterList>               pList;
   RCP<SolutionHistory<Scalar> >    solutionHistory;
-  Ptr<SolutionState<Scalar> >      workingState;
   RCP<TimeStepControl<Scalar> >    timeStepControl;
   RCP<IntegratorObserver<Scalar> > integratorObserver;
   RCP<Stepper<Scalar> >            stepper;
 
+  RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
+  RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
 };
 } // namespace tempus
 #endif // TEMPUS_INTEGRATOR_HPP

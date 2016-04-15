@@ -57,7 +57,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
 {}
 
 template<class Scalar>
-SolutionStateMetaData<Scalar>::SolutionStateMetaData( const SolutionStateMetaData<Scalar>& ssmd_ )
+SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_)
   :time          (ssmd_.time),
    dt            (ssmd_.dt),
    iStep         (ssmd_.iStep),

@@ -96,7 +96,7 @@ template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
   RCP<ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( !is_null(pList_) );
+  TEUCHOS_TEST_FOR_EXCEPT(!is_null(pList_));
   pList_->validateParameters(*this->getValidParameters());
   pList = pList_;
 

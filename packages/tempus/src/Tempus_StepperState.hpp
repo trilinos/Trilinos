@@ -53,8 +53,8 @@ public:
       std::string name = "tempus::StepperState";
       return(name);
     }
-    virtual void describe( Teuchos::FancyOStream        & out,
-                           const Teuchos::EVerbosityLevel verbLevel) const
+    virtual void describe(Teuchos::FancyOStream        & out,
+                          const Teuchos::EVerbosityLevel verbLevel) const
     {
       out << description() << "::describe" << std::endl;
       out << "  stepperName = " << stepperName << std::endl;

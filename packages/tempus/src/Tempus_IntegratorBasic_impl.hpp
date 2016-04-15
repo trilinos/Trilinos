@@ -50,7 +50,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList> tsc_pl = Teuchos::sublist(pList, TimeStepControl_name);
   timeStepControl = rcp(new TimeStepControl<Scalar>(tsc_pl));
 
-  if ( pList_ == Teuchos::null )
+  if (pList_ == Teuchos::null)
     pList = getValidParameters();
   else
     pList = pList_;
@@ -70,17 +70,18 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList> s_pl = Teuchos::sublist(pList, s);
   stepper = rcp(new Stepper<Scalar>(s_pl));
 
-  // Create working solution state
-  workingState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
-                                               stepper->getStepperState());
+  // Create current solution state
+  RCP<SolutionState<Scalar> > currentState =
+    rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
+                                  stepper->getStepperState());
 
   // Create solution history
   RCP<ParameterList> sh_pl = Teuchos::sublist(pList, SolutionHistory_name);
   solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
-  solutionHistory->addState(workingState);
+  solutionHistory->addState(currentState);
 
-  if ( Teuchos::as<int>(this->getVerbLevel()) >=
-       Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+  if (Teuchos::as<int>(this->getVerbLevel()) >=
+      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
     *out << this->description() << std::endl;
@@ -108,7 +109,7 @@ void IntegratorBasic<Scalar>::describe(
   out << "integratorObserver = " <<integratorObserver->description()<<std::endl;
   out << "stepper            = " << stepper        ->description()<<std::endl;
 
-  if ( Teuchos::as<int>(verbLevel) >=
+  if (Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "solutionHistory    = " << solutionHistory   ->describe()<<std::endl;
     out << "workingState       = " << workingState      ->describe()<<std::endl;
@@ -128,12 +129,12 @@ void IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
   bool integratorStatus = true;
   bool stepperStatus = true;
 
-  while ( timeStepControl->timeInRange(workingState->getTime()) and
-          timeStepControl->indexInRange(workingState->getIndex()) ){
+  while (timeStepControl->timeInRange(currentState->getTime()) and
+         timeStepControl->indexInRange(currentState->getIndex())){
 
     integratorObserver->observeStartTimeStep();
 
-    workingState = solutionHistory->setWorkingState();
+    workingState = solutionHistory->initWorkingState();
 
     timeStepControl->getNextTimeStep(workingState->metaData,
                                      stepperStatus, integratorStatus);
@@ -164,7 +165,7 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
   RCP<ParameterList> const& pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT( is_null(pList_) );
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
   pList_->validateParameters(*this->getValidParameters());
   pList = pList_;
 

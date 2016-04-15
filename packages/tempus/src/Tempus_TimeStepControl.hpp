@@ -41,7 +41,7 @@ public:
   TimeStepControl();
 
   /** \brief. */
-  TimeStepControl( RCP<ParameterList> pList_ = Teuchos::null );
+  TimeStepControl(RCP<ParameterList> pList_ = Teuchos::null);
 
   /** \brief. */
   // This is a copy constructor

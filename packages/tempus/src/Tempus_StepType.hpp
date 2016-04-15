@@ -13,7 +13,7 @@ enum StepType {
 
 /** \brief Convert StepType to string. */
 inline
-const char* toString( const StepType stepType )
+const char* toString(const StepType stepType)
 {
   switch(stepType) {
     case CONSTANT_STEP_SIZE:
@@ -36,7 +36,7 @@ enum SolutionStatus {
 
 /** \brief Convert StepType to string. */
 inline
-const char* toString( const SolutionStatus status )
+const char* toString(const SolutionStatus status)
 {
   switch(status) {
     case PASSING:

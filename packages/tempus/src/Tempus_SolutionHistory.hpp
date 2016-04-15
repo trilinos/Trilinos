@@ -51,7 +51,7 @@ class SolutionHistory
 public:
 
   /// Contructor
-  SolutionHistory( RCP<ParameterList> pList_ = Teuchos::null );
+  SolutionHistory(RCP<ParameterList> pList_ = Teuchos::null);
 
   /// Destructor
   ~SolutionHistory() {};
@@ -59,13 +59,32 @@ public:
   /// \name Basic SolutionHistory Methods
   //@{
     /// Add solution state to history
-    void addState( const RCP<SolutionState<Scalar> >& state );
+    void addState(const RCP<SolutionState<Scalar> >& state);
+
+    /// Remove solution state
+    void removeState(const RCP<SolutionState<Scalar> >& state);
+
+    /// Remove solution state based on time
+    void removeState(const Scalar time);
 
     /// Find solution state at requested time (no interpolation)
     RCP<SolutionState<Scalar> > findState(const Scalar time) const;
 
     /// Generate and interpolate a new solution state at requested time
     RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
+
+    /// Return the current state, i.e., the last accepted state
+    RCP<SolutionState<Scalar> > getCurrentState() const;
+
+    /// Return the working state
+    RCP<SolutionState<Scalar> > getWorkingState() const;
+
+    /// Initialize the working state
+    RCP<SolutionState<Scalar> > initWorkingState();
+
+    /// Promote the working state to current state
+    void promoteWorkingState();
+
   //@}
 
   /// \name Accessor methods
@@ -111,14 +130,16 @@ public:
     RCP<InterpolatorBase<Scalar> > unSetInterpolator();
   //@}
 
-private:
+protected:
 
-  RCP<ParameterList> pList;
+  RCP<ParameterList>                  pList;
   RCP<Array<SolutionState<Scalar> > > history;
-  RCP<InterpolatorBase<Scalar> > interpolator;
-  HistoryPolicy historyPolicy;
-  int storage_limit;
+  RCP<InterpolatorBase<Scalar> >      interpolator;
+  HistoryPolicy                       historyPolicy;
+  int                                 storage_limit;
 
+  RCP<SolutionState<Scalar> > currentState;   ///< The last accepted state
+  RCP<SolutionState<Scalar> > workingState;   ///< The state being worked on
 };
 
 

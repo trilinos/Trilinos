@@ -89,68 +89,68 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const SolutionState<Scalar>& ss) const
 {
-  return( this->metaData->time < ss->metaData->time );
+  return (this->metaData->time < ss->metaData->time);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const SolutionState<Scalar>& ss) const
 {
-  return( this->metaData->time <= ss.metaData->time );
+  return (this->metaData->time <= ss.metaData->time);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const Scalar& t) const
 {
-  return( this->metaData->time < t );
+  return (this->metaData->time < t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator<= (const Scalar& t) const
 {
-  return( this->metaData->time <= t );
+  return (this->metaData->time <= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const SolutionState<Scalar>& ss) const
 {
-  return( this->metaData->time > ss.metaData->time );
+  return (this->metaData->time > ss.metaData->time);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const SolutionState<Scalar>& ss) const
 {
-  return( this->metaData->time >= ss.metaData->time );
+  return (this->metaData->time >= ss.metaData->time);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator> (const Scalar& t) const
 {
-  return( this->metaData->time > t );
+  return (this->metaData->time > t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator>= (const Scalar& t) const
 {
-  return( this->metaData->time >= t );
+  return (this->metaData->time >= t);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const SolutionState<Scalar>& ss) const
 {
-  return( this->metaData->time == ss.metaData->time );
+  return (this->metaData->time == ss.metaData->time);
 }
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator== (const Scalar& t) const
 {
-  return( this->metaData->time == t );
+  return (this->metaData->time == t);
 }
 
 template<class Scalar>
 std::string SolutionState<Scalar>::description() const
 {
   std::string name = "Tempus::SolutionState";
-  return(name);
+  return (name);
 }
 
 template<class Scalar>
