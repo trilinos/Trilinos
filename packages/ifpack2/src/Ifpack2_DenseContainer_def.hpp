@@ -931,7 +931,7 @@ DenseContainer<MatrixType, LocalScalarType, true>::
 description () const
 {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << "Ifpack::DenseContainer: ";
   if (isInitialized()) {
     if (isComputed()) {
       oss << "{status = initialized, computed";
