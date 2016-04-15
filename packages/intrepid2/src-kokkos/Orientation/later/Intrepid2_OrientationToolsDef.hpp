@@ -91,7 +91,7 @@ namespace Intrepid2 {
     int ort = 0;
     switch (numVertex) {
     case 2: {// edge
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ), std::invalid_argument,
                                   ">>> ERROR (Intrepid::Orientation::getOrientation): " \
                                   "Invalid subCellVerts, same vertex ids are repeated");
@@ -100,7 +100,7 @@ namespace Intrepid2 {
       break;
     }
     case 3: {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ||
                                     subCellVerts[0] == subCellVerts[2] ||
                                     subCellVerts[1] == subCellVerts[2] ), std::invalid_argument,
@@ -118,7 +118,7 @@ namespace Intrepid2 {
       break;
     }
     case 4: {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( ( subCellVerts[0] == subCellVerts[1] ||
                                     subCellVerts[0] == subCellVerts[2] ||
                                     subCellVerts[0] == subCellVerts[3] ||
@@ -194,7 +194,7 @@ namespace Intrepid2 {
   inline
   void
   Orientation::setEdgeOrientation(const int numEdge, const int edgeOrt[]) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
                                 "Invalid numEdge (3--12)");
@@ -207,7 +207,7 @@ namespace Intrepid2 {
   inline
   void
   Orientation::getEdgeOrientation(int *edgeOrt, const int numEdge) const {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 3 <= numEdge && numEdge <= 12 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): " \
                                 "Invalid numEdge (3--12)");
@@ -219,7 +219,7 @@ namespace Intrepid2 {
   inline
   void
   Orientation::setFaceOrientation(const int numFace, const int faceOrt[]) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
                                 "Invalid numFace (4--6)");
@@ -234,7 +234,7 @@ namespace Intrepid2 {
   inline
   void
   Orientation::getFaceOrientation(int *faceOrt, const int numFace) const {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 4 <= numFace && numFace <= 6 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
                                 "Invalid numFace (4--6)");
@@ -393,7 +393,7 @@ namespace Intrepid2 {
   void
   OrientationTools<Scalar>::CoeffMatrix::import(const OrientationTools<Scalar>::DenseMatrix &b,
                                                 const bool transpose) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( NumRows() == b.NumRows() && NumCols() == b.NumCols() ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::Orientation::CoeffMatrix::import): "
                                 "Matrix dimensions are not matched");
@@ -502,7 +502,7 @@ namespace Intrepid2 {
   OrientationTools<Scalar>::getModifiedLinePoint(double &ot,
                                                  const double pt,
                                                  const int ort) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt && pt <= 1.0 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedLinePoint): "
                                 "Input point is out of range [-1, 1].");
@@ -529,7 +529,7 @@ namespace Intrepid2 {
                                pt0,
                                pt1 };
 
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( 0.0 <= lambda[0] && lambda[0] <= 1.0 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedTrianglePoint): " \
                                 "Computed bicentric coordinate (lamba[0]) is out of range [0, 1].");
@@ -565,7 +565,7 @@ namespace Intrepid2 {
                                                           const double pt0,
                                                           const double pt1,
                                                           const int ort) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( -1.0 <= pt0 && pt0 <= 1.0 ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedQuadrilateralPoint): " \
                                 "Input point(0) is out of range [-1, 1].");
@@ -626,7 +626,7 @@ namespace Intrepid2 {
       const unsigned int ndofEdge = cellBasis.getDofTag(ordEdge)[3];
 
       // reference points between (-1 , 1)
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( !(ndofEdge == PointTools::getLatticeSize<Scalar>(lineTopo, degree, 1)),
                                   std::logic_error,
                                   ">>> ERROR (Intrepid::OrientationTools::getEdgeCoeffMatrix_HGRAD): " \
@@ -766,7 +766,7 @@ namespace Intrepid2 {
       const unsigned int ndofFace = cellBasis.getDofTag(ordFace)[3];
 
       // reference points in triangle
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION( !(ndofFace == PointTools::getLatticeSize<Scalar>(faceTopo, degree, 1)),
                                   std::logic_error,
                                   ">>> ERROR (Intrepid::OrientationTools::getTriangleCoeffMatrix_HGRAD): " \
@@ -993,7 +993,7 @@ namespace Intrepid2 {
   bool OrientationTools<Scalar>::isLeftHandedCell(const ArrayType & pts) {
     // From all the tests, nodes seems to be fed as 1 dimensional array
     // with 1 x npts x ndim
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( pts.dimension(0) != 1, std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::isLeftHandedCell): " \
                                 "Node point array is supposed to have 1 dimensional array.");
@@ -1038,7 +1038,7 @@ namespace Intrepid2 {
                                                         const ArrayType &             refPoints,
                                                         const shards::CellTopology &  cellTopo,
                                                         const int                     cellOrt) {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     {
       const int cellDim = cellTopo.getDimension();
       TEUCHOS_TEST_FOR_EXCEPTION( !(hasReferenceCell(cellTopo) ), std::invalid_argument,
@@ -1096,7 +1096,7 @@ namespace Intrepid2 {
     const unsigned int numBasis = basis.getCardinality();
     const unsigned int numPts   = refValues.dimension(1);
 
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( numBasis <= outValues.dimension(0) ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getBasisFunctionsByTopology): " \
                                 "Basis cardinality is bigger than outValues dimension(0).");
@@ -1213,7 +1213,7 @@ namespace Intrepid2 {
     const int numPts = refValues.dimension(1);
 
 
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !( numBasis <= outValues.dimension(0) ), std::invalid_argument,
                                 ">>> ERROR (Intrepid::OrientationTools::getModifiedBasisFunctions): " \
                                 "Basis cardinality is bigger than outValues dimension(0).");

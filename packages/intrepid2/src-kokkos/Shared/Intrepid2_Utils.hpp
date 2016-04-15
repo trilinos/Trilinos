@@ -54,21 +54,6 @@
 
 namespace Intrepid2 {
 
-  //
-  // replicate for each test header
-  // #define INTREPID2_TEST_ERROR_EXPECTED( S )                         \
-  //   {                                                                \
-  //     try {                                                          \
-  //       S ;                                                          \
-  //     }                                                              \
-  //     catch (std::logic_error err) {                                 \
-  //       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-  //       *outStream << err.what() << '\n';                            \
-  //       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-  //     };                                                             \
-  //   }
-  //
-  
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
     printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \

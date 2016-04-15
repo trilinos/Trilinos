@@ -89,7 +89,7 @@ namespace Intrepid2 {
   CubatureTensor<ExecSpaceType>::
   getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
     INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
                                   cubPoints.dimension(1)  < this->getDimension() ||

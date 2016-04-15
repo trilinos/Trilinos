@@ -190,7 +190,7 @@ namespace Intrepid2 {
     value_type r_val(0);
 
     const auto iend = inVec1.dimension(0);
-    for (auto i=0;i<iend;++i)
+    for (size_t i=0;i<iend;++i)
       r_val += inVec1(i)*inVec2(i);
 
     return r_val;
@@ -246,7 +246,7 @@ namespace Intrepid2 {
       
       INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != absArray.rank(), std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::absval): Array arguments must have identical ranks!");
-      for (auto i=0;i<inArray.rank();++i) {
+      for (size_t i=0;i<inArray.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != absArray.dimension(i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::absval): Dimensions of array arguments do not agree!");
       }
@@ -256,7 +256,6 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<absArrayValueType,absArrayProperties...>            absArrayViewType;
     typedef          Kokkos::DynRankView<inArrayValueType, inArrayProperties...>             inArrayViewType;
     typedef          FunctorRealSpaceTools::F_absval<absArrayViewType,inArrayViewType>       FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType; 
     
     const auto loopSize = inArray.dimension(0);
     Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -318,7 +317,7 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::vectorNorm): Ranks of norm and vector array arguments are incompatible!");
       INTREPID2_TEST_FOR_EXCEPTION( inVecs.rank() < 2 || inVecs.rank() > 3, std::invalid_argument, 
                                       ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
-      for (auto i=0;i<inVecs.rank()-1;++i) {
+      for (size_t i=0;i<inVecs.rank()-1;++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inVecs.dimension(i) != normArray.dimension(i), std::invalid_argument, 
                                         ">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
       }
@@ -393,7 +392,7 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument, 
                                       ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
-      for (auto i=0;i<inMats.rank();++i) {
+      for (size_t i=0;i<inMats.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != transposeMats.dimension(i), std::invalid_argument, 
                                         ">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
       }
@@ -523,7 +522,7 @@ namespace Intrepid2 {
                                       ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
       INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument, 
                                       ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
-      for (auto i=0;i<inMats.rank();++i) {
+      for (size_t i=0;i<inMats.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inverseMats.dimension(i), std::invalid_argument, 
                                         ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
       }
@@ -637,10 +636,10 @@ namespace Intrepid2 {
         const auto lend = _sumArray.dimension(3);
         const auto mend = _sumArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _sumArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) + _inArray2(i,j,k,l,m);
       }
     };
@@ -727,10 +726,10 @@ namespace Intrepid2 {
         const auto lend = _diffArray.dimension(3);
         const auto mend = _diffArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _diffArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) - _inArray2(i,j,k,l,m);
       }
     };
@@ -765,7 +764,7 @@ namespace Intrepid2 {
     typedef          FunctorRealSpaceTools::F_subtract<diffArrayViewType,inArray1ViewType,inArray2ViewType> FunctorType;
     typedef typename ExecSpace<typename inArray1ViewType::execution_space,SpT>::ExecSpaceType               ExecSpaceType;
 
-    const auto loopSize = diffArray.dimension(0);
+    const size_t loopSize = diffArray.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(diffArray, inArray1, inArray2) );
   }
@@ -816,10 +815,10 @@ namespace Intrepid2 {
         const auto lend = _inArray.dimension(3);
         const auto mend = _inArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _scaledArray(i,j,k,l,m) = _alpha*_inArray(i,j,k,l,m);
       }
     };
@@ -1133,10 +1132,7 @@ namespace Intrepid2 {
     }
 #endif
                                                                                                                                                               
-    typedef          Kokkos::DynRankView<vecProdValueType,vecProdProperties...>                       vecProdViewtype;                                                                          
     typedef          Kokkos::DynRankView<inLeftValueType, inLeftProperties...>                        inLeftViewType;                                                                           
-    typedef          Kokkos::DynRankView<inRightValueType,inRightProperties...>                       inRightViewType;
-    typedef          FunctorRealSpaceTools::F_vecprod<vecProdViewtype,inLeftViewType,inRightViewType> FunctorType;
     typedef typename ExecSpace<typename inLeftViewType::execution_space,SpT>::ExecSpaceType           ExecSpaceType;                                                        
 
     const auto r = inLeft.rank();

@@ -72,7 +72,7 @@ namespace Intrepid2 {
         Teuchos testings and std::vectors
   */
 
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class ArrayTools {
   public:
 
@@ -108,7 +108,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename leftFieldValueType,   class ...leftFieldProperties,
              typename rightFieldValueType,  class ...rightFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractFieldFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                               const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
@@ -138,7 +137,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename leftFieldValueType,   class ...leftFieldProperties,
              typename rightFieldValueType,  class ...rightFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractFieldFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                               const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
@@ -169,7 +167,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename leftFieldValueType,   class ...leftFieldProperties,
              typename rightFieldValueType,  class ...rightFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractFieldFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                               const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
@@ -196,7 +193,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>    inputData,
@@ -224,7 +220,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -253,7 +248,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -278,7 +272,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataDataScalar( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -303,7 +296,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataDataVector( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -329,7 +321,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     contractDataDataTensor( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -368,7 +359,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -406,7 +396,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -445,7 +434,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                           const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -480,7 +468,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                          const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -511,7 +498,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     crossProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -540,7 +526,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     crossProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -571,7 +556,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     outerProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -601,7 +585,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValuetype,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     outerProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValuetype, inputDataLeftProperties...>  inputDataLeft,
@@ -645,7 +628,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     matvecProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -687,7 +669,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     matvecProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>    outputData,
                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...> inputDataLeft,
@@ -731,7 +712,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     matmatProductDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
@@ -774,7 +754,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     matmatProductDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -799,7 +778,6 @@ namespace Intrepid2 {
     */
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     cloneFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                  const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields );
@@ -825,7 +803,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputFactorValueType, class ...inputFactorProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     cloneScaleFields( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                       const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors,
@@ -848,7 +825,6 @@ namespace Intrepid2 {
     */
     template<typename inoutFieldValueType,  class ...inoutFieldProperties,
              typename inputFactorValueType, class ...inputFactorProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     scaleFields( /**/  Kokkos::DynRankView<inoutFieldValueType, inoutFieldProperties...>  inoutFields,
                  const Kokkos::DynRankView<inputFactorValueType,inputFactorProperties...> inputFactors );
@@ -865,7 +841,6 @@ namespace Intrepid2 {
       template<typename outputFieldValueType, class ...outputFieldProperties,
                typename leftFieldValueType,   class ...leftFieldProperties,
                typename rightFieldValueType,  class ...rightFieldProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       contractFieldField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                           const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
@@ -875,7 +850,6 @@ namespace Intrepid2 {
       template<typename outputFieldValueType, class ...outputFieldProperties,
                typename inputDataValueType,   class ...inputDataProperties,
                typename inputFieldValuetype,  class ...inputFieldProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       contractDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>      outputFields,
                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>        inputData,
@@ -885,7 +859,6 @@ namespace Intrepid2 {
       template<typename outputDataValueType,     class ...outputDataProperties,
                typename inputDataLeftValueType,  class ...inputDataLeftProperties,
                typename inputDataRightValueType, class ...inputDataRightProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       contractDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>          outputData,
                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
@@ -895,7 +868,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       scalarMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>     output,
                       const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  left,
@@ -906,7 +878,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                    const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
@@ -916,7 +887,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       crossProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                     const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
@@ -926,7 +896,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       outerProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                     const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
@@ -936,7 +905,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       matvecProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
@@ -947,7 +915,6 @@ namespace Intrepid2 {
       template<typename outputValueType,     class ...outputProperties,
                typename leftInputValueType,  class ...leftInputProperties,
                typename rightInputValueType, class ...rightInputProperties>
-      KOKKOS_INLINE_FUNCTION
       static void
       matmatProduct( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                      const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
