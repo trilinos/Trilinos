@@ -173,8 +173,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(0) != inputData.dimension(0), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
         for (size_type i=2;i<inputData.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i+1), std::invalid_argument,
-                                          ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i+1) of inputFields");
+          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i), std::invalid_argument,
+                                          ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i) of inputFields");
         }
       }
     }
@@ -224,7 +224,7 @@ namespace Intrepid2 {
       } else {
         INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.rank() < 2 || inputDataLeft.rank() > 4, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.rank() != (inputDataLeft()-1), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.rank() != (inputDataLeft.rank()-1), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != 2, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");

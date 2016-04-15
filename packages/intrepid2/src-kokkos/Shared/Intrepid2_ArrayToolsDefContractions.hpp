@@ -157,7 +157,7 @@ namespace Intrepid2 {
 
         value_type tmp(0);        
 
-        if(data.dimension(1) != 1)
+        if(_inputData.dimension(1) != 1)
           for (size_type qp = 0; qp < npts; ++qp)
             for (size_type i = 0; i < iend; ++i)
               for (size_type j = 0; j < jend; ++j)
@@ -166,7 +166,7 @@ namespace Intrepid2 {
           for (size_type qp = 0; qp < npts; ++qp)
             for (size_type i = 0; i < iend; ++i)
               for (size_type j = 0; j < jend; ++j)
-                tmp += field(qp, i, j) * data(qp, 0, j);
+                tmp += field(qp, i, j) * data(0, i, j);
 
 
         result() = value_type(_sumInto)*result() + tmp;
