@@ -94,10 +94,10 @@ namespace Intrepid2 {
         const auto lend = _inArray.dimension(3);
         const auto mend = _inArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _absArray(i,j,k,l,m) = Util::abs(_inArray(i,j,k,l,m));
       }
     };
@@ -144,32 +144,32 @@ namespace Intrepid2 {
     const auto mend = inVec.dimension(4);
     switch(normType) {
     case NORM_TWO:{
-      for (auto i=0;i<iend;++i)
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+      for (size_t i=0;i<iend;++i)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 norm += inVec(i,j,k,l,m)*inVec(i,j,k,l,m);
       norm = sqrt(norm);
       break;
     }
     case NORM_INF:{
-      for (auto i=0;i<iend;++i)
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m) {
+      for (size_t i=0;i<iend;++i)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m) {
                 const value_type current = Util::abs(inVec(i,j,k,l,m));
                 norm = (norm < current ? current : norm);
               }
       break;
     }
     case NORM_ONE:{
-      for (auto i=0;i<iend;++i)
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+      for (size_t i=0;i<iend;++i)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 norm += Util::abs(inVec(i,j,k,l,m));
       break;
     }
@@ -295,9 +295,9 @@ namespace Intrepid2 {
                      r == 3 ? Kokkos::subdynrankview(_inMats, i,    Kokkos::ALL(), Kokkos::ALL()) :
                      /**/     Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL()) );
 
-        for (auto i=0;i<src.dimension(0);++i) {
+        for (size_t i=0;i<src.dimension(0);++i) {
           dst(i, i) = src(i, i);
-          for (auto j=i+1;j<src.dimension(1);++j) {
+          for (size_t j=i+1;j<src.dimension(1);++j) {
             dst(i, j) = src(j, i);
             dst(j, i) = src(i, j);
           }
@@ -577,10 +577,10 @@ namespace Intrepid2 {
         const auto lend = _sumArray.dimension(3);
         const auto mend = _sumArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _sumArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) + _inArray2(i,j,k,l,m);
       }
     };
@@ -662,10 +662,10 @@ namespace Intrepid2 {
         const auto lend = _diffArray.dimension(3);
         const auto mend = _diffArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _diffArray(i,j,k,l,m) = _inArray1(i,j,k,l,m) - _inArray2(i,j,k,l,m);
       }
     };
@@ -745,10 +745,10 @@ namespace Intrepid2 {
         const auto lend = _inArray.dimension(3);
         const auto mend = _inArray.dimension(4);
 
-        for (auto j=0;j<jend;++j)
-          for (auto k=0;k<kend;++k)
-            for (auto l=0;l<lend;++l)
-              for (auto m=0;m<mend;++m)
+        for (size_t j=0;j<jend;++j)
+          for (size_t k=0;k<kend;++k)
+            for (size_t l=0;l<lend;++l)
+              for (size_t m=0;m<mend;++m)
                 _scaledArray(i,j,k,l,m) = _alpha*_inArray(i,j,k,l,m);
       }
     };
@@ -795,7 +795,7 @@ namespace Intrepid2 {
     value_type r_val(0);
 
     const auto iend = inVec1.dimension(0);
-    for (auto i=0;i<iend;++i)
+    for (size_t i=0;i<iend;++i)
       r_val += inVec1(i)*inVec2(i);
 
     return r_val;
@@ -941,8 +941,8 @@ namespace Intrepid2 {
         const auto iend = result.dimension(0);
         const auto jend = vec.dimension(0);
 
-        for (auto i=0;i<iend;++i) 
-          for (auto j=0;j<jend;++j)
+        for (size_t i=0;i<iend;++i)
+          for (size_t j=0;j<jend;++j)
             result(i) += mat(i, j)*vec(j); 
       }
     };
