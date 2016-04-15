@@ -100,51 +100,34 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
 
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
-  entity_vector.clear();
+    if(numNodes > 0)
+    {
+        entity_vector.clear();
 
-  if(numNodes==0)
-      return;
+        unsigned numElems = mesh.num_connectivity(nodes[0], rank);
+        entity_vector.reserve(numElems);
 
-  unsigned maxNumEntities = 0;
-  for(unsigned i=0; i<numNodes; ++i)
-      maxNumEntities += mesh.num_connectivity(nodes[i],rank);
+        const Entity* elems = mesh.begin(nodes[0], rank);
+        for(unsigned j = 0; j < numElems; ++j)
+            if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
+                entity_vector.push_back(elems[j]);
 
-  if(maxNumEntities < numNodes)
-      return;
+        for(unsigned i = 1; i < numNodes; ++i)
+        {
+            const Entity* elemsBegin = mesh.begin(nodes[i], rank);
+            const Entity* elemsEnd = mesh.end(nodes[i], rank);
 
-  entity_vector.reserve(maxNumEntities);
-
-  for(unsigned i=0; i<numNodes; ++i) {
-    const Entity* entities = mesh.begin(nodes[i],rank);
-    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
-    for(unsigned j=0;j<numEntities;++j)
-        if(mesh.identifier(entities[j])>id && mesh.bucket(entities[j]).owned())
-            entity_vector.push_back(entities[j]);
-  }
-
-  std::sort(entity_vector.begin(), entity_vector.end());
-
-  size_t counter = 1;
-  unsigned numUniqueEntities = 0;
-
-  for(size_t i=0; i<entity_vector.size(); i += counter)
-  {
-      if(entity_vector.size()-i < numNodes) break;
-
-      counter = 1;
-
-      while((i+counter) < entity_vector.size() && (entity_vector[i] == entity_vector[i+counter]))
-      {
-          ++counter;
-      }
-
-      if(counter >= numNodes)
-      {
-          entity_vector[numUniqueEntities++] = entity_vector[i];
-      }
-  }
-
-  entity_vector.resize(numUniqueEntities);
+            for(size_t j=0; j<entity_vector.size(); j++)
+            {
+                auto iter = std::find(elemsBegin, elemsEnd, entity_vector[j]);
+                if(iter == elemsEnd)
+                {
+                    std::swap(entity_vector[j], entity_vector.back());
+                    entity_vector.resize(entity_vector.size() - 1);
+                }
+            }
+        }
+    }
 }
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes)
