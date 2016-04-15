@@ -189,14 +189,16 @@ protected:
     void add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &meshIndex, impl::LocalId local_elem_id, std::vector<stk::mesh::GraphEdge> &graphEdges,
                                         std::vector<stk::mesh::GraphEdge> &coincidentGraphEdges, bool only_consider_upper_symmetry = true) const;
 
-    impl::SerialElementDataVector get_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
-                                                                       stk::mesh::EntityId elementId,
-                                                                       stk::topology elementTopology,
-                                                                       stk::mesh::EntityVector& scratchNodeVector) const;
-    impl::ParallelElementDataVector get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
+    void fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
+                                               stk::mesh::EntityId elementId,
+                                               stk::topology elementTopology,
+                                               stk::mesh::EntityVector& scratchNodeVector,
+                                               impl::SerialElementDataVector& connectedElementDataVector) const;
+    void get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                                           stk::mesh::EntityId elementId,
                                                                           stk::topology elementTopology,
-                                                                          stk::mesh::EntityVector& scratchEntityVector) const;
+                                                                          stk::mesh::EntityVector& scratchEntityVector,
+                                                                          impl::ParallelElementDataVector& connectedElementDataVector) const;
 
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
@@ -364,29 +366,28 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
 }
 
 template<typename SideData>
-std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
+void get_elements_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
                                                            const stk::mesh::EntityVector &sideNodesOfReceivedElement,
-                                                           stk::mesh::EntityVector& scratchEntityVector)
+                                                           stk::mesh::EntityVector& scratchEntityVector,
+                                                           std::vector<SideData>& connectedElementDataVector)
 {
     impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), scratchEntityVector);
     stk::util::sort_and_unique(scratchEntityVector);
-
-    std::vector<SideData> connectedElementDataVector;
     impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, scratchEntityVector, sideNodesOfReceivedElement, connectedElementDataVector);
-
-    return connectedElementDataVector;
 }
 
 template<typename SideData>
-std::vector<SideData> get_elements_with_larger_ids_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
-                                                                           const stk::mesh::EntityVector &sideNodesOfReceivedElement, stk::mesh::EntityVector& localElementsConnectedToReceivedSideNodes)
+void get_elements_with_larger_ids_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId,
+                                                                           stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
+                                                                           const stk::mesh::EntityVector &sideNodesOfReceivedElement,
+                                                                           stk::mesh::EntityVector& localElementsConnectedToReceivedSideNodes,
+                                                                           std::vector<SideData>& connectedElementDataVector)
 {
     impl::find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(elementId, bulkData, stk::topology::ELEMENT_RANK, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), localElementsConnectedToReceivedSideNodes);
 
-    std::vector<SideData> connectedElementDataVector;
-    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
-
-    return connectedElementDataVector;
+    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper,
+                                               localElementsConnectedToReceivedSideNodes,
+                                               sideNodesOfReceivedElement, connectedElementDataVector);
 }
 
 inline impl::ElemSideToProcAndFaceId gather_element_side_ids_to_send(const stk::mesh::BulkData& bulkData)

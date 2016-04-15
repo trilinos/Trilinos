@@ -284,16 +284,24 @@ void ElemElemGraph::clear_data_members()
     m_num_parallel_edges = 0;
 }
 
-impl::SerialElementDataVector ElemElemGraph::get_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
-                                                                                  stk::mesh::EntityId elementId, stk::topology elementTopology, stk::mesh::EntityVector& scratchNodeVector) const
+void ElemElemGraph::fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
+                                                                                  stk::mesh::EntityId elementId,
+                                                                                  stk::topology elementTopology,
+                                                                                  stk::mesh::EntityVector& scratchEntityVector,
+                                                                                  impl::SerialElementDataVector& connectedElementDataVector) const
 {
-    return impl::get_elements_with_larger_ids_connected_via_sidenodes<impl::SerialElementData>(m_bulk_data, elementId, elementTopology, m_idMapper, sideNodesOfReceivedElement, scratchNodeVector);
+    connectedElementDataVector.clear();
+    impl::get_elements_with_larger_ids_connected_via_sidenodes<impl::SerialElementData>(m_bulk_data, elementId, elementTopology, m_idMapper, sideNodesOfReceivedElement,
+                                                                                        scratchEntityVector, connectedElementDataVector);
 }
 
-impl::ParallelElementDataVector ElemElemGraph::get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement, stk::mesh::EntityId elementId, stk::topology elementTopology,
-                                                                                     stk::mesh::EntityVector& scratchEntityVector) const
+void ElemElemGraph::get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement, stk::mesh::EntityId elementId, stk::topology elementTopology,
+                                                                                     stk::mesh::EntityVector& scratchEntityVector,
+                                                                                     impl::ParallelElementDataVector& connectedElementDataVector) const
 {
-    return impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(m_bulk_data, elementId, elementTopology, m_idMapper, sideNodesOfReceivedElement, scratchEntityVector);
+    connectedElementDataVector.clear();
+    impl::get_elements_connected_via_sidenodes<impl::ParallelElementData>(m_bulk_data, elementId, elementTopology, m_idMapper,
+                                                                                 sideNodesOfReceivedElement, scratchEntityVector, connectedElementDataVector);
 }
 
 
@@ -317,12 +325,13 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
     coincidentGraphEdges.clear();
     stk::mesh::EntityId elemGlobalId = m_bulk_data.identifier(element);
     if(!only_consider_upper_symmetry) elemGlobalId = 0;
-    stk::mesh::EntityVector scratchNodeVector;
+    stk::mesh::EntityVector scratchEntityVector;
     stk::mesh::EntityVector side_nodes;
+    impl::SerialElementDataVector connectedElementDataVector;
     for(int side_index=0; side_index<num_sides; ++side_index)
     {
         impl::fill_element_side_nodes_from_topology(m_bulk_data, element, side_index, side_nodes);
-        impl::SerialElementDataVector connectedElementDataVector = get_elements_attached_to_local_nodes(side_nodes, elemGlobalId, meshIndex.bucket->topology(), scratchNodeVector);
+        fill_elements_attached_to_local_nodes(side_nodes, elemGlobalId, meshIndex.bucket->topology(), scratchEntityVector, connectedElementDataVector);
         for (const impl::SerialElementData & otherElem: connectedElementDataVector)
         {
             if(local_elem_id != otherElem.get_element_local_id())
@@ -428,12 +437,13 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId & elementS
 {
     std::vector<impl::SharedEdgeInfo> newlySharedEdges;
     stk::mesh::EntityVector scratchEntityVector;
+    impl::ParallelElementDataVector localElementsAttachedToReceivedNodes;
     for (SideNodeToReceivedElementDataMap::value_type & receivedElementDataForNodes: elementSidesReceived)
     {
         for(const stk::mesh::impl::ParallelElementData &remoteElementData : receivedElementDataForNodes.second)
         {
-            impl::ParallelElementDataVector localElementsAttachedToReceivedNodes = get_elements_attached_to_remote_nodes(remoteElementData.get_side_nodes(), remoteElementData.get_element_identifier(),
-                                                                                                                         remoteElementData.get_element_topology(), scratchEntityVector);
+             get_elements_attached_to_remote_nodes(remoteElementData.get_side_nodes(), remoteElementData.get_element_identifier(),
+                                                   remoteElementData.get_element_topology(), scratchEntityVector, localElementsAttachedToReceivedNodes);
             for(const impl::ParallelElementData &localElemAttachedToNodes : localElementsAttachedToReceivedNodes)
                 create_parallel_graph_edge(localElemAttachedToNodes, remoteElementData, elementSidesToSend, newlySharedEdges);
         }

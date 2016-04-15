@@ -27,10 +27,8 @@ namespace impl
 
 bool are_side_nodes_degenerate(const stk::mesh::EntityVector &sideNodes)
 {
-    std::set<stk::mesh::Entity> sortedNodes;
-
-    for(const stk::mesh::Entity& node : sideNodes)
-        sortedNodes.insert(node);
+    stk::mesh::EntityVector sortedNodes = sideNodes;
+    stk::util::sort_and_unique(sortedNodes);
 
     return sortedNodes.size() != sideNodes.size();
 }
