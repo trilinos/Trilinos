@@ -547,7 +547,7 @@ namespace Intrepid2 {
     }
 #endif
     // body
-    ArrayTools<ExecSpaceType>::Internal::outerProductDataField(  outputFields,
+    ArrayTools<ExecSpaceType>::Internal::outerProduct(  outputFields,
                                                                  inputData,
                                                                  inputFields,
                                                                  true );
@@ -659,7 +659,7 @@ namespace Intrepid2 {
     }
 #endif
     // body
-    ArrayTools<ExecSpaceType>::Internal::outerProductDataData( outputData,
+    ArrayTools<ExecSpaceType>::Internal::outerProduct( outputData,
                                                                inputDataLeft,
                                                                inputDataRight,
                                                                false );
@@ -679,7 +679,7 @@ namespace Intrepid2 {
                  const bool hasField,
                  const bool isTranspose ) {
 
-    typedef typename leftInputValueType::value_type value_type;
+    typedef leftInputValueType value_type;
 
     struct Functor {
       Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
@@ -1077,7 +1077,7 @@ namespace Intrepid2 {
                  const bool hasField,
                  const bool isTranspose ) {
 
-    typedef typename leftInputValueType::value_type value_type;
+    typedef leftInputValueType value_type;
 
     struct Functor {
       Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
