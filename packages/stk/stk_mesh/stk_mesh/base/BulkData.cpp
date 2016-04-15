@@ -1316,13 +1316,12 @@ void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
 
 void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
 {
-
   procs.clear();
   int num = keys.size();
   std::vector<int> procs_tmp;
+  std::vector<int> result;
   for (int i = 0; i < num; ++i)
   {
-
     comm_shared_procs(keys[i], procs_tmp);
 
     if (i == 0)
@@ -1330,7 +1329,7 @@ void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, st
     else
     {
       // subsequent loops keep the intersection
-      std::vector<int> result;
+      result.clear();
       std::back_insert_iterator<std::vector<int> > result_itr(result);
       std::set_intersection(procs.begin(),
                             procs.end(),

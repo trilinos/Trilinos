@@ -61,13 +61,15 @@ protected:
     stk::diag::Timer childTimer;
     MPI_Comm communicator;
 
+    double duration;
+
 private:
     void time_algorithm()
     {
         stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer, communicator);
         double startTime = stk::wall_time();
         run_algorithm_to_time();
-        duration = stk::wall_time() - startTime;
+        duration += stk::wall_time() - startTime;
     }
 
     void generate_output()
@@ -75,8 +77,6 @@ private:
         print_output_for_pass_fail_test(duration, get_value_to_output_as_iteration_count(), communicator);
         print_output_for_graph_generation(duration, rootTimer, communicator);
     }
-
-    double duration;
 };
 
 }

@@ -144,6 +144,8 @@ public:
             deleteElemTimer("delete elements", CHILDMASK2, rootTimer),
             createGraphTimer("create graph", CHILDMASK2, rootTimer)
     {
+        double startTime = stk::wall_time();
+
         enabledTimerSet.setEnabledTimerMask(CHILDMASK2);
         {
             print_memory(bulk.parallel(), "Before elem graph creation");
@@ -154,6 +156,8 @@ public:
 
         elemGraphUpdater = new ElemElemGraphUpdaterWithTiming(bulk, *elemGraph, addElemTimer, deleteElemTimer);
         bulk.register_observer(elemGraphUpdater);
+
+        duration += stk::wall_time() - startTime;
     }
 
     ~ElementGraphPerformance()

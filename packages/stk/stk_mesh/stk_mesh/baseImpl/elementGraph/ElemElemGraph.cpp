@@ -1210,8 +1210,6 @@ void ElemElemGraph::reconnect_volume_elements_across_deleted_shells(std::vector<
     m_sideIdPool.generate_additional_ids_collective(m_graph.get_num_edges() + shellConnectivityList.size());
     SideNodeToReceivedElementDataMap elementSidesReceived = communicate_shared_sides(shellNeighborsToReconnect);
     fill_parallel_graph(shellNeighborsToReconnect, elementSidesReceived);
-
-    update_number_of_parallel_edges();
 }
 
 stk::mesh::impl::DeletedElementInfoVector ElemElemGraph::filter_delete_elements_argument(const stk::mesh::impl::DeletedElementInfoVector& elements_to_delete_argument) const
@@ -1251,6 +1249,8 @@ void ElemElemGraph::delete_elements(const stk::mesh::impl::DeletedElementInfoVec
     if (globalMaxShells > 0) {
         reconnect_volume_elements_across_deleted_shells(shellConnectivityList);
     }
+
+    update_number_of_parallel_edges();
 }
 
 template <typename GraphType>
