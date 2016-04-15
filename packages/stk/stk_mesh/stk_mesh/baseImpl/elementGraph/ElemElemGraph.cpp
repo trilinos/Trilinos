@@ -17,6 +17,7 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
@@ -1244,7 +1245,12 @@ void ElemElemGraph::delete_elements(const stk::mesh::impl::DeletedElementInfoVec
 
     delete_remote_connections(remote_edges);
 
-    reconnect_volume_elements_across_deleted_shells(shellConnectivityList);
+    unsigned localNumShells = shellConnectivityList.size();
+    unsigned globalMaxShells = 0;
+    stk::all_reduce_max(m_bulk_data.parallel(), &localNumShells, &globalMaxShells, 1);
+    if (globalMaxShells > 0) {
+        reconnect_volume_elements_across_deleted_shells(shellConnectivityList);
+    }
 }
 
 template <typename GraphType>
