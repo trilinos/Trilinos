@@ -43,7 +43,7 @@
 /** \file   Intrepid_FunctionSpaceToolsDef.hpp
     \brief  Definition file for the Intrepid2::FunctionSpaceTools class.
     \author Created by P. Bochev and D. Ridzal.
-            Kokkorized by Kyungjoo Kim
+    Kokkorized by Kyungjoo Kim
 */
 
 
@@ -51,111 +51,101 @@ namespace Intrepid2 {
 
   
   template<typename ExecSpaceType>
-  template<typename outValValueType, class ...outValProperties,
-           typename inValValueType,  class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+  template<typename outputValValueType, class ...outputValProperties,
+           typename inputValValueType,  class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,outValProperties> outVals,
-                       const Kokkos::DynRankView<inValValueType, inValProperties>  inVals ) {
-    ArrayTools<ExecSpaceType>::cloneFields(outVals, inVals);
+  HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties> outputVals,
+                       const Kokkos::DynRankView<inputValValueType, inputValProperties>  inputVals ) {
+    ArrayTools<ExecSpaceType>::cloneFields(outputVals, inputVals);
   }
 
 
-
   template<typename ExecSpaceType>
-  template<typename outValValueType,          class ...outValProperties,
+  template<typename outputValValueType,       class ...outputValProperties,
            typename jacobianInverseValueType, class ...jacobianInverseProperties,
-           typename inValValueType,           class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,        class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HGRADtransformGRAD( /**/  Kokkos::DynRankView<outValValueType,         outValProperties...>          outVals,
+  HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                       const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                      const Kokkos::DynRankView<inValValueType,          inValProperties...>           inVals,
+                      const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
                       const char transpose = 'T' ) {
-    ArrayTools<ExecSpaceType>::matvecProductDataField(outVals, jacobianInverse, inVals, transpose);
+    ArrayTools<ExecSpaceType>::matvecProductDataField(outputVals, jacobianInverse, inputVals, transpose);
   }
 
+
   template<typename ExecSpaceType>
-  template<typename outValValueType,          class ...outValProperties,
+  template<typename outputValValueType,       class ...outputValProperties,
            typename jacobianInverseValueType, class ...jacobianInverseProperties,
-           typename inValValueType,           class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,        class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HCURLtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,         outValProperties...>          outVals,
+  HCURLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                        const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                       const Kokkos::DynRankView<inValValueType,          inValProperties...>           inVals,
+                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
                        const char transpose = 'T' ) {
-    ArrayTools<ExecSpaceType>::matvecProductDataField(outVals, jacobianInverse, inVals, transpose);
+    ArrayTools<ExecSpaceType>::matvecProductDataField(outputVals, jacobianInverse, inputVals, transpose);
   }
 
 
-
   template<typename ExecSpaceType>
-  template<typename outValValueType,      class ...outValProperties,
+  template<typename outputValValueType,   class ...outputValProperties,
            typename jacobianValueType,    class ...jacobianProperties,
            typename jacobianDetValueType, class ...jacobianDetProperties,
-           typename inValValueType,       class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,    class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HCURLtransformCURL( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+  HCURLtransformCURL( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
                       const char transpose = 'T' ) {
-    ArrayTools<ExecSpaceType>::matvecProductDataField(outVals, jacobian, inVals, transpose);
-    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outVals, jacobianDet, outVals, true);
+    ArrayTools<ExecSpaceType>::matvecProductDataField(outputVals, jacobian, inputVals, transpose);
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
   }
 
 
   template<typename ExecSpaceType>
-  template<typename outValValueType,      class ...outValProperties,
+  template<typename outputValValueType,   class ...outputValProperties,
            typename jacobianValueType,    class ...jacobianProperties,
            typename jacobianDetValueType, class ...jacobianDetProperties,
-           typename inValValueType,       class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,    class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HDIVtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+  HDIVtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals,
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
                       const char transpose = 'T' ) {
-    ArrayTools<ExecSpaceType>::matvecProductDataField(outVals, jacobian, inVals, transpose);
-    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outVals, jacobianDet, outVals, true);
+    ArrayTools<ExecSpaceType>::matvecProductDataField(outputVals, jacobian, inputVals, transpose);
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
   }
 
 
-
   template<typename ExecSpaceType>
-  template<typename outValValueType,      class ...outValProperties,
+  template<typename outputValValueType,   class ...outputValProperties,
            typename jacobianDetValueType, class ...jacobianDetProperties,
-           typename inValValueType,       class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,    class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HDIVtransformDIV( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+  HDIVtransformDIV( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                     const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                    const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals ) {
-    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outVals, jacobianDet, inVals, true);
+                    const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outputVals, jacobianDet, inputVals, true);
   }
 
 
-
   template<typename ExecSpaceType>
-  template<typename outValValueType,      class ...outValProperties,
+  template<typename outputValValueType,   class ...outputValProperties,
            typename jacobianDetValueType, class ...jacobianDetProperties,
-           typename inValValueType,       class ...inValProperties>
-  KOKKOS_INLINE_FUNCTION
+           typename inputValValueType,    class ...inputValProperties>
   void
   FunctionSpaceTools<ExecSpaceType>::
-  HVOLtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+  HVOLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals ) {
-    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outVals, jacobianDet, inVals, true);
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataField(outputVals, jacobianDet, inputVals, true);
   }
   
 
@@ -163,30 +153,21 @@ namespace Intrepid2 {
   template<typename outputValueValueType, class ...outputValueProperties,
            typename leftValueValueType,   class ...leftValueProperties,
            typename rightValueValueType,  class ...rightValueProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::
   integrate( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties> outputValues,
              const Kokkos::DynRankView<leftValueValueType,  leftValueProperties>   leftValues,
              const Kokkos::DynRankView<rightValueValueType, rightValueProperties>  rightValues,
-             const ECompEngine  compEngine,
              const bool         sumInto ) {
     
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      bool dbgInfo = false;
-      INTREPID2_TEST_FOR_DEBUG_ABORT( leftValues.rank() < 2 ||
-                                      leftValues.rank() > 4, dbgInfo,
-                                      ">>> ERROR (FunctionSpaceTools::integrate): Left data must have rank 2, 3 or 4.");
-      INTREPID2_TEST_FOR_DEBUG_ABORT( outputValues.rank() < 1 ||
-                                      outputValues.rank() > 3, dbgInfo,
-                                      ">>> ERROR (FunctionSpaceTools::integrate): Output values must have rank 1, 2 or 3.");
-      INTREPID2_TEST_FOR_DEBUG_ABORT( !isValidCompEngine(compEngine),
-                                      ">>> ERROR (FunctionSpaceTools::integrate): CompEngine is not valid.");
-
-#ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
-      if (dbgInfo) return;
-#endif
+      INTREPID2_TEST_FOR_EXCEPTION( leftValues.rank() < 2 ||
+                                    leftValues.rank() > 4, std::invalid_argument,
+                                    ">>> ERROR (FunctionSpaceTools::integrate): Left data must have rank 2, 3 or 4.");
+      INTREPID2_TEST_FOR_EXCEPTION( outputValues.rank() < 1 ||
+                                    outputValues.rank() > 3, std::invalid_argument,
+                                    ">>> ERROR (FunctionSpaceTools::integrate): Output values must have rank 1, 2 or 3.");
     }    
 #endif
     
@@ -255,123 +236,160 @@ namespace Intrepid2 {
                                                            sumInto );
       break;
     default: {
-      INTREPID2_TEST_FOR_ABORT( outRank < 1 || outRank > 3,
-                                ">>> ERROR (FunctionSpaceTools::integrate): outRank must be 1,2, or 3.");
-      INTREPID2_TEST_FOR_ABORT( leftRank < 2 || leftRank > 4,
-                                ">>> ERROR (FunctionSpaceTools::integrate): leftRank must be 1,2, 3 or 4.");
+      INTREPID2_TEST_FOR_EXCEPTION( outRank < 1 || outRank > 3, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::integrate): outRank must be 1,2, or 3.");
+      INTREPID2_TEST_FOR_EXCEPTION( leftRank < 2 || leftRank > 4, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::integrate): leftRank must be 1,2, 3 or 4.");
     }
     }
   }
+  
 
-  //   template <class Scalar,class ArrayOut,class ArrayDet>
-  //   struct computeCellMeasure_Abs {
-  //     ArrayOut outVals;
-  //     ArrayDet inDet;
-  //     typedef typename conditional_eSpace<ArrayOut>::execution_space execution_space;
-  //     computeCellMeasure_Abs (ArrayOut outVals_, ArrayDet inDet_) :
-  //       outVals (outVals_),inDet (inDet_)
-  //     {}
+  template<typename ExecSpaceType>  
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename inputDetValueType,    class ...inputDetPropertes,
+           typename inputWeightValueType, class ...inputWeightPropertes>
+  void
+  FunctionSpaceTools<ExecSpaceType>::
+  computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+                      const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
+                      const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( (inDet.rank() != 1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Input determinants container must have rank 1.");
+    
+#endif
+    struct Functor {
+      typedef bool value_type;
 
+      Kokkos::DynRankView<outputValValueType,  outputValProperties...>  _outputVals;
+      Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    _inputDet;
+      Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> _inputWeights;
+      
+      KOKKOS_INLINE_FUNCTION
+      Functor(Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals_,
+              Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet_,
+              Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights_)
+        : _outputVals(outputVals_), _inputDet(inputDet_), _inputWeights(inputWeights_) {}
 
-  //     KOKKOS_INLINE_FUNCTION
-  //     void operator () (const index_type cell) const {
-  //       if (inDet(cell,0) < 0.0) {
-  //         for (index_type point=0; point<static_cast<index_type>(outVals.dimension(1)); point++) {
-  //           outVals(cell, point) *= -1.0;
-  //         }
-  //       }
- 
-  //     }
-  //   };
+      KOKKOS_INLINE_FUNCTION
+      void init(value_type &dst ) const {
+        dst = false;
+      }
 
-  //   template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
-  //   inline void FunctionSpaceTools::computeCellMeasure(ArrayOut             & outVals,
-  //                                                      const ArrayDet       & inDet,
-  //                                                      const ArrayWeights   & inWeights) {
-  // #ifdef HAVE_INTREPID2_DEBUG
+      KOKKOS_INLINE_FUNCTION
+      void join( volatile value_type &dst,
+                 const volatile value_type &src ) const {
+        dst |= src;
+      }
 
-  //     TEUCHOS_TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
-  //                                 ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Input determinants container must have rank 2.");
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const size_type cell, value_type &dst) const {
+        dst |= (_inDet(cell) < 0.0);
+      }
+    };
+    const size_type loopSize = inDet.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-  // #endif
-
-  //     ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
-  //     // must use absolute value of inDet, so flip sign where needed
-
-  //     Kokkos::parallel_for (outVals.dimension(0), computeCellMeasure_Abs<Scalar, ArrayWrapper<Scalar,ArrayOut, Rank<ArrayOut >::value, false>,ArrayDet> (outValsWrap,inDet));
- 
-
-  //   } 
-
-
-  //   template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
-  //   void FunctionSpaceTools::computeFaceMeasure(ArrayOut                   & outVals,
-  //                                               const ArrayJac             & inJac,
-  //                                               const ArrayWeights         & inWeights,
-  //                                               const int                    whichFace,
-  //                                               const shards::CellTopology & parentCell) {
-
-  // #ifdef HAVE_INTREPID2_DEBUG
-
-  //     TEUCHOS_TEST_FOR_EXCEPTION( (inJac.rank() != 4), std::invalid_argument,
-  //                                 ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
-
-  // #endif
-
-  //     // temporary storage for face normals
-  //     FieldContainer<Scalar> faceNormals(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
-
-  //     // compute normals
-  //     CellTools<Scalar>::getPhysicalFaceNormals(faceNormals, inJac, whichFace, parentCell);
-
-  //     // compute lenghts of normals
-  //     RealSpaceTools<Scalar>::vectorNorm(outVals, faceNormals, NORM_TWO);
-
-  //     // multiply with weights
-  //     ArrayTools::scalarMultiplyDataData<Scalar>(outVals, outVals, inWeights);
-  //   }
+    // instead flip the sign of negative input, it reports an error
+    bool hasNegativeDet = false;
+    Kokkos::parallel_reduce( policy, Functor(outputVals, inputDet, inputWeights), hasNegativeDet );
+    
+    INTREPID2_TEST_FOR_EXCEPTION( hasNegativeDet, std::runtime_error,
+                                  ">>> ERROR (FunctionSpaceTools::computeCellMeasure): inputDet has negative values");
+    
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataData(outputVals, inDet, inWeights);
+  } 
 
 
-  //   template<class Scalar, class ArrayOut, class ArrayJac, class ArrayWeights>
-  //   void FunctionSpaceTools::computeEdgeMeasure(ArrayOut                   & outVals,
-  //                                               const ArrayJac             & inJac,
-  //                                               const ArrayWeights         & inWeights,
-  //                                               const int                    whichEdge,
-  //                                               const shards::CellTopology & parentCell) {
+  template<typename ExecSpaceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename inputJacValueType,    class ...inputJacProperties,
+           typename inputWeightValueType, class ...inputWeightPropertes,
+           typename scratchValueType,     class ...scratchProperties>
+  void 
+  FunctionSpaceTools<ExecSpaceType>::
+  computeFaceMeasure(/**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+                     const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
+                     const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
+                     const int                   whichFace,
+                     const shards::CellTopology &parentCell,
+                     const Kokkos::DynRankView<scratchValueType,    scratchProperties...>   scratch) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( inJac.rank() != 4, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Input Jacobian container must have rank 4.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space always has a unit rank.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeFaceMeasure): Scratch space must be greater than inJac.");
+#endif
 
-  // #ifdef HAVE_INTREPID2_DEBUG
+    // face normals (reshape scratch)
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals(scratch.data(), 
+                                                                           inJac.dimension(0), 
+                                                                           inJac.dimension(1), 
+                                                                           inJac.dimension(2));
+    
+    // compute normals
+    CellTools<ExecSpaceType>::getPhysicalFaceNormals(faceNormals, inJac, whichFace, parentCell);
 
-  //     TEUCHOS_TEST_FOR_EXCEPTION( (inJac.rank() != 4), std::invalid_argument,
-  //                                 ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
+    // compute lenghts of normals
+    RealSpaceTools<ExecSpaceType>::vectorNorm(outputVals, faceNormals, NORM_TWO);
 
-  // #endif
+    // multiply with weights
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataData(outputVals, outputVals, inWeights);
+  }
 
-  //     // temporary storage for edge tangents
-  //     FieldContainer<Scalar> edgeTangents(inJac.dimension(0), inJac.dimension(1), inJac.dimension(2));
 
-  //     // compute normals
-  //     CellTools<Scalar>::getPhysicalEdgeTangents(edgeTangents, inJac, whichEdge, parentCell);
+  template<typename ExecSpaceType>
+  template<typename outputValValueType,   class ...outputValProperties,
+           typename inputJacValueType,    class ...inputJacProperties,
+           typename inputWeightValueType, class ...inputWeightPropertes,
+           typename scratchValueType,     class ...scratchPropertes>
+  void 
+  FunctionSpaceTools<ExecSpaceType>::
+  computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+                      const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
+                      const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
+                      const int                   whichEdge,
+                      const shards::CellTopology &parentCell,
+                      const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( (inJac.rank() != 4), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Input Jacobian container must have rank 4.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space always has a unit rank.");
+    INTREPID2_TEST_FOR_EXCEPTION( scratch.span() >= inJac.span(), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeEdgeMeasure): Scratch space must be greater than inJac.");
+#endif
 
-  //     // compute lenghts of tangents
-  //     RealSpaceTools<Scalar>::vectorNorm(outVals, edgeTangents, NORM_TWO);
+    // edge tangents (reshape scratch)
+    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents(scratch.data(), 
+                                                                            inJac.dimension(0), 
+                                                                            inJac.dimension(1), 
+                                                                            inJac.dimension(2));
+    
+    // compute normals
+    CellTools<ExecSpaceType>::getPhysicalEdgeTangents(edgeTangents, inJac, whichEdge, parentCell);
 
-  //     // multiply with weights
-  //     ArrayTools::scalarMultiplyDataData<Scalar>(outVals, outVals, inWeights);
+    // compute lenghts of tangents
+    RealSpaceTools<ExecSpaceType>::vectorNorm(outputVals, edgeTangents, NORM_TWO);
 
-  //   }
+    // multiply with weights
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataData<Scalar>(outputVals, outputVals, inWeights);
+  }
 
   
   template<typename ExecSpaceType>
-  template<typename outValValueType,       class ...outValProperties,
+  template<typename outputValValueType,    class ...outputValProperties,
            typename inputMeasureValueType, class ...inputMeasureProperties,
            typename inputValValueType,     class ...inputValProperteis>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::
-  multiplyMeasure( /**/  Kokkos::DynRankView<outValValueType,      outValProperties...>       outVals,
+  multiplyMeasure( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                    const Kokkos::DynRankView<inputMeasureValueType,inputMeasureProperties...> inputMeasure,
                    const Kokkos::DynRankView<inputValValueType,    inputValProperteis...>     inputVals ) {
-    ArrayTools<ExecSpaceType>::scalarMultiplyDataField( outVals, 
+    ArrayTools<ExecSpaceType>::scalarMultiplyDataField( outputVals, 
                                                         inputMeasure, 
                                                         inputVals );
   }
@@ -381,7 +399,6 @@ namespace Intrepid2 {
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataPropertes,
            typename inputFieldValueType,  class ...inputFieldProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::
   scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
@@ -399,7 +416,6 @@ namespace Intrepid2 {
   template<typename outputDataValuetype,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::
   scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValuetype,    outputDataProperties>     outputData,
@@ -417,7 +433,6 @@ namespace Intrepid2 {
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::
   dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
@@ -433,7 +448,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
@@ -449,13 +463,11 @@ namespace Intrepid2 {
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   vectorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties>  inputFields ) {
-
     const auto outRank = outputFields.rank();
     switch (outRank) {
     case 3:
@@ -469,11 +481,11 @@ namespace Intrepid2 {
                                                         inputData, 
                                                         inputFields );
       break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ((outRank != 3) && (outRank != 4) && (outRank != 5)), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataField): Output container must have rank 3, 4 or 5.");
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( outRank < 3 && outRank > 5, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataField): Output container must have rank 3, 4 or 5.");
     }
-    
+    }
   } 
 
 
@@ -481,13 +493,11 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   vectorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties> inputDataRight ) {
-
     const auto outRank = outputData.rank();
     switch (outRank) {
     case 2:
@@ -501,18 +511,18 @@ namespace Intrepid2 {
                                                        inputDataLeft, 
                                                        inputDataRight );
       break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ((outRank != 2) && (outRank != 3) && (outRank != 4)), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataData): Output container must have rank 2, 3 or 4.");
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( outRank < 2 && outRank > 4, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataData): Output container must have rank 2, 3 or 4.");
+    }
     }    
   } 
-
+  
 
   template<typename ExecSpaceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   tensorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
@@ -534,9 +544,10 @@ namespace Intrepid2 {
                                                          inputFields, 
                                                          transpose );
       break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ((outRank != 4) && (outRank != 5)), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataField): Output container must have rank 4 or 5.");
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( outRank < 4 && outRank > 5, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataField): Output container must have rank 4 or 5.");
+    }
     }
   } 
   
@@ -546,7 +557,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   tensorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
@@ -567,9 +577,10 @@ namespace Intrepid2 {
                                                         inputDataRight, 
                                                         transpose );
       break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ((outRank != 4) && (outRank != 5)), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataField): Output container must have rank 4 or 5.");
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( outRank < 4 && outRank > 5, std::runtime_error,
+                                    ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataField): Output container must have rank 4 or 5.");
+    }
     }
   }
 
@@ -577,21 +588,20 @@ namespace Intrepid2 {
   template<typename ExecSpaceType>  
   template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
            typename fieldSignValueType,     class ...fieldSignProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   applyLeftFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                        const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns ) {
     
 #ifdef HAVE_INTREPID2_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutOperator.rank() != 3), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input operator container must have rank 3.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input field signs container must have rank 2.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutOperator.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): First dimensions (number of left fields) of the operator and field signs containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutOperator.rank() != 3, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input operator container must have rank 3.");
+    INTREPID2_TEST_FOR_EXCEPTION( fieldSigns.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input field signs container must have rank 2.");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutOperator.dimension(0) != fieldSigns.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutOperator.dimension(1) != fieldSigns.dimension(1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): First dimensions (number of left fields) of the operator and field signs containers must agree!");
 #endif
 
     struct Functor {
@@ -613,8 +623,8 @@ namespace Intrepid2 {
             _inoutOperator(cell, lbf, rbf) *= _fieldSigns(cell, lbf);
       }
     };
-    const size_type iend = inoutOperator.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, iend);
+    const size_type loopSize = inoutOperator.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(inoutOperator, fieldSigns) );
   } 
   
@@ -628,15 +638,15 @@ namespace Intrepid2 {
   applyRightFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                         const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns ) {
 
-  #ifdef HAVE_INTREPID2_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(inoutOperator) != 3), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input operator container must have rank 3.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (getrank(fieldSigns) != 2), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input field signs container must have rank 2.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutOperator.dimension(2) != fieldSigns.dimension(1) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Second dimension of the operator container and first dimension of the field signs container (number of right fields) must agree!");
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( getrank(inoutOperator) != 3, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input operator container must have rank 3.");
+    INTREPID2_TEST_FOR_EXCEPTION( getrank(fieldSigns) != 2, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input field signs container must have rank 2.");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutOperator.dimension(0) != fieldSigns.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Zeroth dimensions (number of cells) of the operator and field signs containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutOperator.dimension(2) != fieldSigns.dimension(1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Second dimension of the operator container and first dimension of the field signs container (number of right fields) must agree!");
 #endif
 
     struct Functor {
@@ -658,33 +668,29 @@ namespace Intrepid2 {
             _inoutOperator(cell, lbf, rbf) *= _fieldSigns(cell, rbf);
       }
     };
-    const size_type iend = inoutOperator.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, iend);
+    const size_type loopSize = inoutOperator.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(inoutOperator, fieldSigns) );
   } 
   
 
-
-
   template<typename ExecSpaceType>  
   template<typename inoutFunctionValueType, class ...inoutFunctionProperties,
            typename fieldSignValueType,     class ...fieldSignProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   applyFieldSigns( /**/  Kokkos::DynRankView<inoutFunctionValueType,inoutFunctionProperties...> inoutFunction,
                    const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns ) {
     
 #ifdef HAVE_INTREPID2_DEBUG
-    
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inoutFunction.rank() < 2) || (inoutFunction.rank() > 5)), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input function container must have rank 2, 3, 4, or 5.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input field signs container must have rank 2.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutFunction.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the function and field signs containers must agree!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inoutFunction.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the function and field signs containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutFunction.rank() < 2 || inoutFunction.rank() > 5, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input function container must have rank 2, 3, 4, or 5.");
+    INTREPID2_TEST_FOR_EXCEPTION( fieldSigns.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input field signs container must have rank 2.");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutFunction.dimension(0) != fieldSigns.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the function and field signs containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inoutFunction.dimension(1) != fieldSigns.dimension(1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the function and field signs containers must agree!");
     
 #endif
     
@@ -711,19 +717,16 @@ namespace Intrepid2 {
                 inoutFunction(cell, bf, pt, i, j) *= fieldSigns(cell, bf);
       }
     };
-    const size_type iend = inoutFunction.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, iend);
+    const size_type loopSize = inoutFunction.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(inoutFunction, fieldSigns) );
   }
-
-
 
 
   template<typename ExecSpaceType>    
   template<typename outputPointValueType, class ...outputPointProperties,
            typename inputCoeffValueType,  class ...inputCoeffProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<ExecSpaceType>::  
   evaluate( /**/  Kokkos::DynRankView<outputPointValueType,outputPointProperties...> outputPointVals,
@@ -731,28 +734,22 @@ namespace Intrepid2 {
             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields ) {
     
 #ifdef HAVE_INTREPID2_DEBUG
-    
-    TEUCHOS_TEST_FOR_EXCEPTION( ((inFields.rank() < 3) || (inFields.rank() > 5)), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): Input fields container must have rank 3, 4, or 5.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inCoeffs.rank() != 2), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): Input coefficient container must have rank 2.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outPointVals.rank() != inFields.rank()-1), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): Output values container must have rank one less than the rank of the input fields container.");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inCoeffs.dimension(0) != inFields.dimension(0) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the coefficient and fields input containers must agree!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (inCoeffs.dimension(1) != inFields.dimension(1) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
-    TEUCHOS_TEST_FOR_EXCEPTION( (outPointVals.dimension(0) != inFields.dimension(0) ), std::invalid_argument,
-                                ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
-    for (int i=1; i<outPointVals.rank(); i++) {
-      std::string errmsg  = ">>> ERROR (FunctionSpaceTools::evaluate): Dimensions ";
-      errmsg += (char)(48+i);
-      errmsg += " and ";
-      errmsg += (char)(48+i+1);
-      errmsg += " of the output values and input fields containers must agree!";
-      TEUCHOS_TEST_FOR_EXCEPTION( (outPointVals.dimension(i) != inFields.dimension(i+1)), std::invalid_argument, errmsg );
-    }
-    
+    INTREPID2_TEST_FOR_EXCEPTION( inFields.rank() < 3 || inFields.rank() > 5, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): Input fields container must have rank 3, 4, or 5.");
+    INTREPID2_TEST_FOR_EXCEPTION( inCoeffs.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): Input coefficient container must have rank 2.");
+    INTREPID2_TEST_FOR_EXCEPTION( outPointVals.rank() != (inFields.rank()-1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): Output values container must have rank one less than the rank of the input fields container.");
+    INTREPID2_TEST_FOR_EXCEPTION( inCoeffs.dimension(0) != inFields.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the coefficient and fields input containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( inCoeffs.dimension(1) != inFields.dimension(1), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
+    INTREPID2_TEST_FOR_EXCEPTION( outPointVals.dimension(0) != inFields.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
+    for (auto i=1;i<outPointVals.rank();++i) 
+      INTREPID2_TEST_FOR_EXCEPTION( outPointVals.dimension(i) != inFields.dimension(i+1), std::invalid_argument, 
+                                    ">>> ERROR (FunctionSpaceTools::evaluate): outPointVals dimension(i) does not match to inFields dimension(i+1).");
+                                    errmsg );
 #endif
     
     struct Functor {
@@ -780,8 +777,8 @@ namespace Intrepid2 {
                 outPointVals(cell, pt, i, j) += inCoeffs(cell, bf) * inFields(cell, bf, pt, i, j);
       }
     };
-    const size_type iend = inputFields.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, iend);
+    const size_type loopSize = inputFields.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, Functor(outputPointVals, inputCoeffs, inputFields) );
   }
 

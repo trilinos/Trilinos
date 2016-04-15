@@ -68,7 +68,7 @@ namespace Intrepid2 {
       \brief  The maximum degree of the polynomial that can be integrated exactly by
       a direct edge rule.
   */
-#define INTREPID2_MAX_CUBATURE_DEGREE_EDGE 61
+#define INTREPID2_MAX_CUBATURE_DEGREE_EDGE 20
 
   /** \def    INTREPID2_MAX_CUBATURE_DEGREE_TRI
       \brief  The maximum degree of the polynomial that can be integrated exactly by
@@ -147,7 +147,7 @@ namespace Intrepid2 {
   public:
     static constexpr unsigned int MaxOrder             = 10;
     static constexpr unsigned int MaxIntegrationPoints = 1001;
-    static constexpr unsigned int MaxCubatureDegreeEdge= 61;
+    static constexpr unsigned int MaxCubatureDegreeEdge= 20;
     static constexpr unsigned int MaxCubatureDegreeTri = 20;
     static constexpr unsigned int MaxCubatureDegreeTet = 20;
     static constexpr unsigned int MaxCubatureDegreePyr = 11;

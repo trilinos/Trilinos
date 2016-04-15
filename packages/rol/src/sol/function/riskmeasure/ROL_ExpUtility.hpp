@@ -58,18 +58,24 @@ private:
 
   Real coeff_;
 
-public:
-  ExpUtility(const Real coeff = 1) : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), one(1);
-    coeff_ = ((coeff > zero) ? coeff : one);
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::ExpUtility): Rate must be positive!");
   }
 
-  ExpUtility(Teuchos::ParameterList &parlist) : RiskMeasure<Real>(), firstReset_(true) {
-    Real zero(0), one(1);
+public:
+  ExpUtility(const Real coeff = 1)
+    : RiskMeasure<Real>(), firstReset_(true), coeff_(coeff) {
+    checkInputs();
+  }
+
+  ExpUtility(Teuchos::ParameterList &parlist)
+    : RiskMeasure<Real>(), firstReset_(true) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Exponential Utility");
-    Real coeff = list.get("Rate",one);
-    coeff_ = ((coeff > zero) ? coeff : one);
+    coeff_ = list.get<Real>("Rate");
+    checkInputs();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
@@ -86,8 +92,8 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(
+           Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
   }
 
   void update(const Real val, const Real weight) {

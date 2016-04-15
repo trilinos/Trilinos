@@ -297,6 +297,15 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
+    /************************* MEAN PLUS HMCR *****************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
     /************************* SMOOTHED CVAR QUADRANGLE *******************************************/
     /**********************************************************************************************/
     *outStream << "\nQUANTILE-BASED QUADRANGLE RISK MEASURE\n";
@@ -341,21 +350,30 @@ int main(int argc, char* argv[]) {
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
-//    /**********************************************************************************************/
-//    /************************* COHERENT EXPONENTIAL UTILITY FUNCTION ******************************/
-//    /**********************************************************************************************/
-//    *outStream << "\nCOHERENT EXPONENTIAL UTILITY FUNCTION\n";
-//    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
-//    list.sublist("SOL").sublist("Risk Measure").set("Name","Coherent Exponential Utility");
-//    setRandomVector(*x_rcp);
-//    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
-//    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* COHERENT EXPONENTIAL UTILITY FUNCTION ******************************/
+    /**********************************************************************************************/
+    *outStream << "\nCOHERENT EXPONENTIAL UTILITY FUNCTION\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Coherent Exponential Utility");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/
     *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
     list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
+    /************************* CONVEX COMBINATION OF RISK MEASURES ********************************/
+    /**********************************************************************************************/
+    *outStream << "\nCONVEX COMBINATION OF RISK MEASURES\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Convex Combination Risk Measure");
     setRandomVector(*x_rcp);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

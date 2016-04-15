@@ -196,8 +196,8 @@ namespace ROL {
 
   template<class Real>
   inline Teuchos::RCP<RiskMeasure<Real> > RiskMeasureFactory(Teuchos::ParameterList &parlist) {
-    std::string dist = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-    ERiskMeasure ed = StringToERiskMeasure(dist);
+    std::string risk = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+    ERiskMeasure ed = StringToERiskMeasure(risk);
     switch(ed) {
       case RISKMEASURE_CVAR:
              return Teuchos::rcp(new CVaR<Real>(parlist));
@@ -236,8 +236,8 @@ namespace ROL {
       case RISKMEASURE_KLDIVERGENCE:
              return Teuchos::rcp(new KLDivergence<Real>(parlist));
       default:
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                                   "Invalid risk measure type" << dist);
+        TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                                   "Invalid risk measure type " << risk << "!");
     }
   }
 }

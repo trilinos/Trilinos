@@ -45,6 +45,7 @@
 
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_ConnManager.hpp"
 
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -67,6 +68,22 @@ TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                        const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { 
+   hasColProvider_ = colGidProvider_!=Teuchos::null;
+
+   // build and register the gather/scatter evaluators with 
+   // the base class.
+   this->buildGatherScatterEvaluators(*this);
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider,
+                       const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & colGidProvider)
+   : comm_(comm), gidProvider_(gidProvider), colGidProvider_(colGidProvider)
+{ 
+   hasColProvider_ = colGidProvider_!=Teuchos::null;
+
    // build and register the gather/scatter evaluators with 
    // the base class.
    this->buildGatherScatterEvaluators(*this);
@@ -85,7 +102,7 @@ Teuchos::RCP<LinearObjContainer>
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildLinearObjContainer() const
 {
-   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType(getMap(),getMap()));
+   Teuchos::RCP<ContainerType> container = Teuchos::rcp(new ContainerType(getColMap(),getMap()));
 
    return container;
 }
@@ -115,13 +132,13 @@ globalToGhostContainer(const LinearObjContainer & in,
    // Operations occur if the GLOBAL container has the correct targets!
    // Users set the GLOBAL continer arguments
    if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x());
+     globalToGhostTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
   
    if ( !is_null(t_in.get_dxdt()) && !is_null(t_out.get_dxdt()) && ((mem & LOC::DxDt)==LOC::DxDt))
-     globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt());
+     globalToGhostTpetraVector(*t_in.get_dxdt(),*t_out.get_dxdt(),true);
 
    if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-      globalToGhostTpetraVector(*t_in.get_f(),*t_out.get_f());
+      globalToGhostTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
@@ -140,10 +157,10 @@ ghostToGlobalContainer(const LinearObjContainer & in,
   // Operations occur if the GLOBAL container has the correct targets!
   // Users set the GLOBAL continer arguments
    if ( !is_null(t_in.get_x()) && !is_null(t_out.get_x()) && ((mem & LOC::X)==LOC::X))
-     ghostToGlobalTpetraVector(*t_in.get_x(),*t_out.get_x());
+     ghostToGlobalTpetraVector(*t_in.get_x(),*t_out.get_x(),true);
 
    if ( !is_null(t_in.get_f()) && !is_null(t_out.get_f()) && ((mem & LOC::F)==LOC::F))
-     ghostToGlobalTpetraVector(*t_in.get_f(),*t_out.get_f());
+     ghostToGlobalTpetraVector(*t_in.get_f(),*t_out.get_f(),false);
 
    if ( !is_null(t_in.get_A()) && !is_null(t_out.get_A()) && ((mem & LOC::Mat)==LOC::Mat))
      ghostToGlobalTpetraMatrix(*t_in.get_A(),*t_out.get_A());
@@ -153,12 +170,12 @@ template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename Globa
 void 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const
+                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<ExportType> exporter = getGhostedExport();
+   RCP<ExportType> exporter = col ? getGhostedColExport() : getGhostedExport();
    out.putScalar(0.0);
    out.doExport(in,*exporter,Tpetra::ADD);
 }
@@ -177,19 +194,19 @@ ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOr
    out.resumeFill();
    out.setAllToScalar(0.0);
    out.doExport(in,*exporter,Tpetra::ADD);
-   out.fillComplete();
+   out.fillComplete(out.getDomainMap(),out.getRangeMap());
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const
+                          Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const
 {
    using Teuchos::RCP;
 
    // do the global distribution
-   RCP<ImportType> importer = getGhostedImport();
+   RCP<ImportType> importer = col ? getGhostedColImport() : getGhostedImport();
    out.putScalar(0.0);
    out.doImport(in,*importer,Tpetra::INSERT);
 }
@@ -290,7 +307,7 @@ buildDomainContainer() const
   //return Teuchos::null;
   Teuchos::RCP<TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > vec_ged
     = Teuchos::rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>);
-  vec_ged->initialize(getGhostedImport(),getGhostedMap(),getMap());
+  vec_ged->initialize(getGhostedImport(),getGhostedColMap(),getColMap());
 
   return vec_ged;
 }
@@ -309,8 +326,12 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> >
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getThyraDomainSpace() const
 {
-   if(domainSpace_==Teuchos::null)
-      domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
+   if(domainSpace_==Teuchos::null) {
+     if(!hasColProvider_)
+       domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getMap());
+     else
+       domainSpace_ = Thyra::tpetraVectorSpace<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>(getColMap());
+   }
 
    return domainSpace_;
 }
@@ -358,10 +379,10 @@ initializeContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinalT,Globa
    loc.clear();
 
    if((mem & LOC::X) == LOC::X)
-      loc.set_x(getTpetraVector());
+      loc.set_x(getTpetraColVector());
 
    if((mem & LOC::DxDt) == LOC::DxDt)
-      loc.set_dxdt(getTpetraVector());
+      loc.set_dxdt(getTpetraColVector());
     
    if((mem & LOC::F) == LOC::F)
       loc.set_f(getTpetraVector());
@@ -389,10 +410,10 @@ initializeGhostedContainer(int mem,TpetraLinearObjContainer<ScalarT,LocalOrdinal
    loc.clear();
 
    if((mem & LOC::X) == LOC::X)
-      loc.set_x(getGhostedTpetraVector());
+      loc.set_x(getGhostedTpetraColVector());
 
    if((mem & LOC::DxDt) == LOC::DxDt)
-      loc.set_dxdt(getGhostedTpetraVector());
+      loc.set_dxdt(getGhostedTpetraColVector());
     
    if((mem & LOC::F) == LOC::F) {
       loc.set_f(getGhostedTpetraVector());
@@ -419,6 +440,17 @@ getMap() const
    return map_;
 }
 
+// get the map from the matrix
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getColMap() const
+{
+   if(cMap_==Teuchos::null) cMap_ = buildColMap();
+
+   return cMap_;
+}
+
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -427,6 +459,16 @@ getGhostedMap() const
    if(ghostedMap_==Teuchos::null) ghostedMap_ = buildGhostedMap();
 
    return ghostedMap_;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedColMap() const
+{
+   if(cGhostedMap_==Teuchos::null) cGhostedMap_ = buildGhostedColMap();
+
+   return cGhostedMap_;
 }
 
 // get the graph of the crs matrix
@@ -462,6 +504,20 @@ getGhostedImport() const
 }
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedColImport() const
+{
+   if(!hasColProvider_)
+      ghostedColImporter_ = getGhostedImport(); // they are the same in this case
+
+   if(ghostedColImporter_==Teuchos::null) 
+      ghostedColImporter_ = Teuchos::rcp(new ImportType(getColMap(),getGhostedColMap()));
+
+   return ghostedColImporter_;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getGhostedExport() const
@@ -470,6 +526,20 @@ getGhostedExport() const
       ghostedExporter_ = Teuchos::rcp(new ExportType(getGhostedMap(),getMap()));
 
    return ghostedExporter_;
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedColExport() const
+{
+   if(!hasColProvider_)
+      ghostedColExporter_ = getGhostedExport(); // they are the same in this case
+
+   if(ghostedColExporter_==Teuchos::null) 
+      ghostedColExporter_ = Teuchos::rcp(new ExportType(getGhostedColMap(),getColMap()));
+
+   return ghostedColExporter_;
 }
 
 // "Build" functions
@@ -488,6 +558,22 @@ buildMap() const
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }
 
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildColMap() const
+{
+   if(!hasColProvider_)  
+     return buildMap();
+
+   std::vector<GlobalOrdinalT> indices;
+
+   // get the global indices
+   colGidProvider_->getOwnedIndices(indices);
+
+   return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
+}
+
 // build the ghosted map
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
@@ -498,6 +584,23 @@ buildGhostedMap() const
 
    // get the global indices
    gidProvider_->getOwnedAndSharedIndices(indices);
+
+   return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
+}
+
+// build the ghosted map
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+buildGhostedColMap() const
+{
+   if(!hasColProvider_)  
+     return buildGhostedMap();
+
+   std::vector<GlobalOrdinalT> indices;
+
+   // get the global indices
+   colGidProvider_->getOwnedAndSharedIndices(indices);
 
    return Teuchos::rcp(new MapType(Teuchos::OrdinalTraits<GlobalOrdinalT>::invalid(),indices,0,comm_));
 }
@@ -513,14 +616,15 @@ buildGraph() const
 
    // build the map and allocate the space for the graph and
    // grab the ghosted graph
-   RCP<MapType> map = getMap();
-   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(map,0));
+   RCP<MapType> rMap = getMap();
+   RCP<MapType> cMap = getColMap();
+   RCP<CrsGraphType> graph  = rcp(new CrsGraphType(rMap,0));
    RCP<CrsGraphType> oGraph = getGhostedGraph();
 
    // perform the communication to finish building graph
    RCP<ExportType> exporter = getGhostedExport();
    graph->doExport( *oGraph, *exporter, Tpetra::INSERT );
-   graph->fillComplete();
+   graph->fillComplete(cMap,rMap);
 
    return graph;
 }
@@ -531,12 +635,17 @@ TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 buildGhostedGraph() const
 {
    // build the map and allocate the space for the graph
-   Teuchos::RCP<MapType> map = getGhostedMap();
-   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(map,map,0));
+   Teuchos::RCP<MapType> rMap = getGhostedMap();
+   Teuchos::RCP<MapType> cMap = getGhostedColMap();
+   Teuchos::RCP<CrsGraphType> graph = Teuchos::rcp(new CrsGraphType(rMap,cMap,0));
 
-   std::vector<std::string> elementBlockIds;
-   
+   std::vector<std::string> elementBlockIds;   
    gidProvider_->getElementBlockIds(elementBlockIds);
+
+   const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> >
+     colGidProvider = hasColProvider_ ? colGidProvider_ : gidProvider_;
+   const Teuchos::RCP<const ConnManagerBase<LocalOrdinalT> > conn_mgr = colGidProvider->getConnManagerBase();
+   const bool han = conn_mgr.is_null() ? false : conn_mgr->hasAssociatedNeighbors();
 
    // graph information about the mesh
    std::vector<std::string>::const_iterator blockItr;
@@ -548,18 +657,30 @@ buildGhostedGraph() const
 
       // get information about number of indicies
       std::vector<GlobalOrdinalT> gids;
+      std::vector<GlobalOrdinalT> col_gids;
 
       // loop over the elemnts
       for(std::size_t i=0;i<elements.size();i++) {
-
          gidProvider_->getElementGIDs(elements[i],gids);
+
+         colGidProvider->getElementGIDs(elements[i],col_gids);
+         if (han) {
+           const std::vector<LocalOrdinalT>& aes = conn_mgr->getAssociatedNeighbors(elements[i]);
+           for (typename std::vector<LocalOrdinalT>::const_iterator eit = aes.begin();
+                eit != aes.end(); ++eit) {
+             std::vector<GlobalOrdinalT> other_col_gids;
+             colGidProvider->getElementGIDs(*eit, other_col_gids);
+             col_gids.insert(col_gids.end(), other_col_gids.begin(), other_col_gids.end());
+           }
+         }
+
          for(std::size_t j=0;j<gids.size();j++)
-            graph->insertGlobalIndices(gids[j],gids);
+            graph->insertGlobalIndices(gids[j],col_gids);
       }
    }
 
    // finish filling the graph
-   graph->fillComplete(map,map);
+   graph->fillComplete(cMap,rMap);
 
    return graph;
 }
@@ -576,9 +697,27 @@ getGhostedTpetraVector() const
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getGhostedTpetraColVector() const
+{
+   Teuchos::RCP<const MapType> tMap = getGhostedColMap(); 
+   return Teuchos::rcp(new VectorType(tMap));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
 getTpetraVector() const
 {
    Teuchos::RCP<const MapType> tMap = getMap(); 
+   return Teuchos::rcp(new VectorType(tMap));
+}
+
+template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > 
+TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
+getTpetraColVector() const
+{
+   Teuchos::RCP<const MapType> tMap = getColMap(); 
    return Teuchos::rcp(new VectorType(tMap));
 }
 
@@ -589,7 +728,7 @@ getTpetraMatrix() const
 {
    Teuchos::RCP<CrsGraphType> tGraph = getGraph();
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
-   tMat->fillComplete();
+   tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
 
    return tMat;
 }
@@ -601,7 +740,7 @@ getGhostedTpetraMatrix() const
 {
    Teuchos::RCP<CrsGraphType> tGraph = getGhostedGraph(); 
    Teuchos::RCP<CrsMatrixType> tMat =  Teuchos::rcp(new CrsMatrixType(tGraph));
-   tMat->fillComplete();
+   tMat->fillComplete(tMat->getDomainMap(),tMat->getRangeMap());
 
    return tMat;
 }
@@ -631,7 +770,7 @@ endFill(LinearObjContainer & loc) const
   ContainerType & tloc = Teuchos::dyn_cast<ContainerType>(loc);
   Teuchos::RCP<CrsMatrixType> A = tloc.get_A();
   if(A!=Teuchos::null) 
-    A->fillComplete();
+    A->fillComplete(A->getDomainMap(),A->getRangeMap());
 }
 
 }

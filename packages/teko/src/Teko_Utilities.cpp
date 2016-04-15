@@ -105,6 +105,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_RowMatrixTransposer.hpp"
 
 #include <cmath>
 
@@ -1619,24 +1620,50 @@ const ModifiableLinearOp explicitSum(const LinearOp & op,
 
 const LinearOp explicitTranspose(const LinearOp & op)
 {
-   RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
-   TEUCHOS_TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
-                             "Teko::explicitTranspose Not an Epetra_Operator");
-   RCP<const Epetra_RowMatrix> eRowMatrixOp 
-         = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
-   TEUCHOS_TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
-                             "Teko::explicitTranspose Not an Epetra_RowMatrix");
+   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
 
-   // we now have a delete transpose operator
-   EpetraExt::RowMatrix_Transpose tranposeOp;
-   Epetra_RowMatrix & eMat = tranposeOp(const_cast<Epetra_RowMatrix &>(*eRowMatrixOp));
+     RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op,true);
+     RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
 
-   // this copy is because of a poor implementation of the EpetraExt::Transform 
-   // implementation
-   Teuchos::RCP<Epetra_CrsMatrix> crsMat 
-         = Teuchos::rcp(new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix &>(eMat)));
+     Tpetra::RowMatrixTransposer<ST,LO,GO,NT> transposer(tCrsOp);
+     RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > transOp = transposer.createTranspose();
 
-   return Thyra::epetraLinearOp(crsMat);
+     return Thyra::constTpetraLinearOp<ST,LO,GO,NT>(Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getRangeMap()),Thyra::tpetraVectorSpace<ST,LO,GO,NT>(transOp->getDomainMap()),transOp);
+
+   } else {
+
+     RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+     TEUCHOS_TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::logic_error,
+                               "Teko::explicitTranspose Not an Epetra_Operator");
+     RCP<const Epetra_RowMatrix> eRowMatrixOp 
+           = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(eOp);
+     TEUCHOS_TEST_FOR_EXCEPTION(eRowMatrixOp==Teuchos::null,std::logic_error,
+                               "Teko::explicitTranspose Not an Epetra_RowMatrix");
+
+     // we now have a delete transpose operator
+     EpetraExt::RowMatrix_Transpose tranposeOp;
+     Epetra_RowMatrix & eMat = tranposeOp(const_cast<Epetra_RowMatrix &>(*eRowMatrixOp));
+
+     // this copy is because of a poor implementation of the EpetraExt::Transform 
+     // implementation
+     Teuchos::RCP<Epetra_CrsMatrix> crsMat 
+           = Teuchos::rcp(new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix &>(eMat)));
+
+     return Thyra::epetraLinearOp(crsMat);
+   }
+}
+
+const double frobeniusNorm(const LinearOp & op)
+{
+  if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
+    const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
+    const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
+    return crsOp->getFrobeniusNorm();
+  } else {
+    const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
+    const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
+    return crsOp->NormFrobenius();
+  }
 }
 
 const LinearOp buildDiagonal(const MultiVector & src,const std::string & lbl)

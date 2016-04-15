@@ -75,9 +75,58 @@ namespace Intrepid2 {
         These functions has non-void return types and expected to be used for small problems.
         However, high level (working on cell-level) functions are parallelized.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class RealSpaceTools {
   public:
+
+    struct Serial {
+      /** \brief Computes norm (1, 2, infinity) of a single vector stored in
+          an array of rank 1.
+          
+          \param inVec     [in]  - array representing a single vector
+          \param normType  [in]  - norm type
+          
+          \note  Requirements (checked at runtime, in debug mode): \n
+          \li rank(<b><var>inVec</var></b>) == 1
+      */
+      template<typename inVecValueType, class ...inVecProperties>
+      KOKKOS_INLINE_FUNCTION
+      static inVecValueType
+      vectorNorm( const Kokkos::DynRankView<inVecValueType,inVecProperties...> inVec, 
+                  const ENorm normType );
+      
+      /** \brief Computes determinant of a single square matrix stored in
+          an array of rank 2.
+          
+          \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
+          
+          \note  Requirements (checked at runtime, in debug mode): \n
+          \li rank(<b><var>inMats</var></b>) == 2
+          \li matrix dimension is limited to 1, 2, and 3
+      */
+      template<typename inMatValueType, class ...inMatProperties>
+      KOKKOS_INLINE_FUNCTION
+      static inMatValueType
+      det( const Kokkos::DynRankView<inMatValueType,inMatProperties...> inMat );
+
+      /** \brief Computes dot product of two vectors stored in
+          arrays of rank 1.
+          
+          \param inVec1    [in]  - first vector
+          \param inVec2    [in]  - second vector
+          
+          \note  Requirements (checked at runtime, in debug mode): \n
+          \li rank(<b><var>inVec1</var></b>) == rank(<b><var>inVec2</var></b>) == 1
+          \li <b><var>inVec1</var></b> and <b><var>inVec2</var></b> have same dimension
+      */
+      template<typename inVec1ValueType, class ...inVec1Properties,
+               typename inVec2ValueType, class ...inVec2Properties>
+      KOKKOS_INLINE_FUNCTION
+      static inVec1ValueType
+      dot( const Kokkos::DynRankView<inVec1ValueType,inVec1Properties...> inVec1, 
+           const Kokkos::DynRankView<inVec2ValueType,inVec2Properties...> inVec2 );
+      
+    };
 
     /** \brief Computes absolute value of an array.
 
@@ -90,7 +139,6 @@ namespace Intrepid2 {
     */
     template<typename absArrayValueType, class ...absArrayProperties, 
              typename inArrayValueType,  class ...inArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     absval( /**/  Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray, 
             const Kokkos::DynRankView<inArrayValueType, inArrayProperties...>   inArray );
@@ -101,24 +149,9 @@ namespace Intrepid2 {
         \param inoutAbsArray  [in/out]  - input/output array
     */
     template<typename inoutArrayValueType, class ...inoutArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     absval( Kokkos::DynRankView<inoutArrayValueType,inoutArrayProperties...> inoutArray );
 
-    /** \brief Computes norm (1, 2, infinity) of a single vector stored in
-        an array of rank 1.
-
-        \param inVec     [in]  - array representing a single vector
-        \param normType  [in]  - norm type
-
-        \note  Requirements (checked at runtime, in debug mode): \n
-        \li rank(<b><var>inVec</var></b>) == 1
-    */
-    template<typename inVecValueType, class ...inVecProperties>
-    KOKKOS_INLINE_FUNCTION
-    static inVecValueType
-    vectorNorm( const Kokkos::DynRankView<inVecValueType,inVecProperties...> inVec, 
-                const ENorm normType );
 
     /** \brief Computes norms (1, 2, infinity) of vectors stored in a
         array of total rank 2 (array of vectors), indexed by (i0, D),
@@ -135,7 +168,6 @@ namespace Intrepid2 {
     */
     template<typename normArrayValueType, class ...normArrayProperties,
              typename inVecValueType,     class ...inVecProperties> 
-    KOKKOS_INLINE_FUNCTION
     static void 
     vectorNorm( /**/  Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray, 
                 const Kokkos::DynRankView<inVecValueType,    inVecProperties...>     inVecs, 
@@ -157,7 +189,6 @@ namespace Intrepid2 {
     */
     template<typename transposeMatValueType, class ...transposeMatProperties,
              typename inMatValueType,        class ...inMatProperties> 
-    KOKKOS_INLINE_FUNCTION
     static void 
     transpose( /**/  Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats, 
                const Kokkos::DynRankView<inMatValueType,       inMatProperties...>        inMats );
@@ -179,24 +210,10 @@ namespace Intrepid2 {
     */
     template<typename inverseMatValueType, class ...inverseMatProperties, 
              typename inMatValueType,      class ...inMatProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     inverse( /**/  Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats, 
              const Kokkos::DynRankView<inMatValueType,     inMatProperties...>      inMats );
     
-    /** \brief Computes determinant of a single square matrix stored in
-        an array of rank 2.
-
-        \param inMat  [in]  - array representing a single matrix, indexed by (D, D)
-
-        \note  Requirements (checked at runtime, in debug mode): \n
-        \li rank(<b><var>inMats</var></b>) == 2
-        \li matrix dimension is limited to 1, 2, and 3
-    */
-    template<typename inMatValueType, class ...inMatProperties>
-    KOKKOS_INLINE_FUNCTION
-    static inMatValueType
-    det( const Kokkos::DynRankView<inMatValueType,inMatProperties...> inMat );
 
     /** \brief Computes determinants of matrices stored in
         an array of total rank 3 (array of matrices),
@@ -214,7 +231,6 @@ namespace Intrepid2 {
     */
     template<typename detArrayValueType, class ...detArrayProperties,
              typename inMatValueType,    class ...inMatProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     det( /**/  Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray, 
          const Kokkos::DynRankView<inMatValueType,   inMatProperties...>    inMats );
@@ -233,7 +249,6 @@ namespace Intrepid2 {
     template<typename sumArrayValueType, class ...sumArrayProperties,
              typename inArray1ValueType, class ...inArray1Properties,
              typename inArray2ValueType, class ...inArray2Properties>
-    KOKKOS_INLINE_FUNCTION
     static void
     add( /**/  Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray, 
          const Kokkos::DynRankView<inArray1ValueType,inArray1Properties...> inArray1, 
@@ -251,7 +266,6 @@ namespace Intrepid2 {
     */
     template<typename inoutSumArrayValueType, class ...inoutSumArrayProperties,
              typename inArrayValueType,       class ...inArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     add( /**/  Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray, 
          const Kokkos::DynRankView<inArrayValueType,      inArrayProperties...>       inArray );
@@ -270,7 +284,6 @@ namespace Intrepid2 {
     template<typename diffArrayValueType, class ...diffArrayProperties,
              typename inArray1ValueType,  class ...inArray1Properties,
              typename inArray2ValueType,  class ...inArray2Properties>
-    KOKKOS_INLINE_FUNCTION
     static void
     subtract( /**/  Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray, 
               const Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>  inArray1, 
@@ -288,7 +301,6 @@ namespace Intrepid2 {
     */
     template<typename inoutDiffArrayValueType, class ...inoutDiffArrayProperties,
              typename inArrayValueType,        class ...inArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     subtract( /**/  Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> diffArray,
               const Kokkos::DynRankView<inArrayValueType,       inArrayProperties...>        inArray );
@@ -307,7 +319,6 @@ namespace Intrepid2 {
     template<typename ValueType,
              typename scaledArrayValueType, class ...scaledArrayProperties,
              typename inArrayValueType,     class ...inArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     scale( /**/  Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
            const Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>     inArray,
@@ -321,27 +332,10 @@ namespace Intrepid2 {
     */
     template<typename ValueType,
              typename inoutScaledArrayValueType, class ...inoutScaledArrayProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     scale( /**/  Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
            const ValueType alpha );
     
-    /** \brief Computes dot product of two vectors stored in
-        arrays of rank 1.
-
-        \param inVec1    [in]  - first vector
-        \param inVec2    [in]  - second vector
-
-        \note  Requirements (checked at runtime, in debug mode): \n
-        \li rank(<b><var>inVec1</var></b>) == rank(<b><var>inVec2</var></b>) == 1
-        \li <b><var>inVec1</var></b> and <b><var>inVec2</var></b> have same dimension
-    */
-    template<typename inVec1ValueType, class ...inVec1Properties,
-             typename inVec2ValueType, class ...inVec2Properties>
-    KOKKOS_INLINE_FUNCTION
-    static inVec1ValueType
-    dot( const Kokkos::DynRankView<inVec1ValueType,inVec1Properties...> inVec1, 
-         const Kokkos::DynRankView<inVec2ValueType,inVec2Properties...> inVec2 );
 
     /** \brief Computes dot product of vectors stored in an
         array of total rank 2 (array of vectors), indexed by (i0, D),
@@ -359,7 +353,6 @@ namespace Intrepid2 {
     template<typename dotArrayValueType, class ...dotArrayProperties,
              typename inVec1ValueType,   class ...inVec1Properties,
              typename inVec2ValueType,   class ...inVec2Properties>
-    KOKKOS_INLINE_FUNCTION
     static void
     dot( /**/  Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray, 
          const Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>   inVecs1, 
@@ -386,7 +379,6 @@ namespace Intrepid2 {
     template<typename matVecValueType, class ...matVecProperties,
              typename inMatValueType,  class ...inMatProperties,
              typename inVecValueType,  class ...inVecProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     matvec( /**/  Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
             const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
@@ -408,7 +400,6 @@ namespace Intrepid2 {
     template<typename vecProdValueType, class ...vecProdProperties,
              typename inLeftValueType,  class ...inLeftProperties,
              typename inRightValueType, class ...inRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     vecprod( /**/  Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
              const Kokkos::DynRankView<inLeftValueType, inLeftProperties...>  inLeft,

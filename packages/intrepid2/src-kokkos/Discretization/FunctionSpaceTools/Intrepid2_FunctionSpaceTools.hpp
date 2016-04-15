@@ -107,11 +107,10 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    template<typename outValValueType, class ...outValProperties,
+    template<typename outputValValueType, class ...outputValProperties,
              typename inValValueType,  class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
-    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,outValProperties> outVals,
+    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties> outputVals,
                          const Kokkos::DynRankView<inValValueType, inValProperties>  inVals );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
@@ -151,14 +150,13 @@ namespace Intrepid2 {
         \endcode
     */
     
-    template<typename outValValueType,          class ...outValProperties,
+    template<typename outputValValueType,       class ...outputValProperties,
              typename jacobianInverseValueType, class ...jacobianInverseProperties,
-             typename inValValueType,           class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,        class ...inputValProperties>
     static void 
-    HGRADtransformGRAD( /**/  Kokkos::DynRankView<outValValueType,         outValProperties...>          outVals,
+    HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                         const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                        const Kokkos::DynRankView<inValValueType,          inValProperties...>           inVals,
+                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
                         const char transpose = 'T' );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
@@ -197,14 +195,13 @@ namespace Intrepid2 {
         \endcode
     */
     
-    template<typename outValValueType,          class ...outValProperties,
+    template<typename outputValValueType,       class ...outputValProperties,
              typename jacobianInverseValueType, class ...jacobianInverseProperties,
-             typename inValValueType,           class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,        class ...inputValProperties>
     static void 
-    HCURLtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,         outValProperties...>          outVals,
+    HCURLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                          const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                         const Kokkos::DynRankView<inValValueType,          inValProperties...>           inVals,
+                         const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
                          const char transpose = 'T' );
     
     /** \brief Transformation of a curl field in the H-curl space, defined at points on a
@@ -244,16 +241,15 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,      class ...outputValProperties,
              typename jacobianValueType,    class ...jacobianProperties,
              typename jacobianDetValueType, class ...jacobianDetProperties,
-             typename inValValueType,       class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,       class ...inputValProperties>
     static void 
-    HCURLtransformCURL( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+    HCURLtransformCURL( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                        const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals,
+                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
                         const char transpose = 'T' );
 
     /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
@@ -293,16 +289,15 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,      class ...outputValProperties,
              typename jacobianValueType,    class ...jacobianProperties,
              typename jacobianDetValueType, class ...jacobianDetProperties,
-             typename inValValueType,       class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,       class ...inputValProperties>
     static void 
-    HDIVtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+    HDIVtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                        const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals,
+                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
                         const char transpose = 'T' );
 
     /** \brief Transformation of a divergence field in the H-div space, defined at points on a
@@ -341,14 +336,13 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,      class ...outputValProperties,
              typename jacobianDetValueType, class ...jacobianDetProperties,
-             typename inValValueType,       class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,       class ...inputValProperties>
     static void 
-    HDIVtransformDIV( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+    HDIVtransformDIV( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals );
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inVals</b></var>
@@ -386,14 +380,13 @@ namespace Intrepid2 {
         |------|----------------------|--------------------------------------------------|
         \endcode
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,      class ...outputValProperties,
              typename jacobianDetValueType, class ...jacobianDetProperties,
-             typename inValValueType,       class ...inValProperties>
-    KOKKOS_INLINE_FUNCTION
+             typename inputValValueType,       class ...inputValProperties>
     static void 
-    HVOLtransformVALUE( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>      outVals,
+    HVOLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                        const Kokkos::DynRankView<inValValueType,      inValProperties...>       inVals );
+                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     
     /** \brief   Contracts \a <b>leftValues</b> and \a <b>rightValues</b> arrays on the
@@ -406,20 +399,17 @@ namespace Intrepid2 {
         \param  outputValues   [out] - Output array.
         \param  leftValues      [in] - Left input array.
         \param  rightValues     [in] - Right input array.
-        \param  compEngine      [in] - Computational engine.
         \param  sumInto         [in] - If TRUE, sum into given output array,
         otherwise overwrite it. Default: FALSE.
     */
     template<typename outputValueValueType, class ...outputValueProperties,
              typename leftValueValueType,   class ...leftValueProperties,
              typename rightValueValueType,  class ...rightValueProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     integrate( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties> outputValues,
                const Kokkos::DynRankView<leftValueValueType,  leftValueProperties>   leftValues,
                const Kokkos::DynRankView<rightValueValueType, rightValueProperties>  rightValues,
-               const ECompEngine  compEngine,
-               const bool         sumInto = false);
+               const bool sumInto = false);
     
 
     /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
@@ -452,12 +442,11 @@ namespace Intrepid2 {
         \param  inDet        [in] - Input array containing determinants of cell Jacobians.
         \param  inWeights    [in] - Input integration weights.
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,   class ...outputValProperties,
              typename inputDetValueType,    class ...inputDetPropertes,
              typename inputWeightValueType, class ...inputWeightPropertes>
-    KOKKOS_INLINE_FUNCTION
     static void 
-    computeCellMeasure( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>     outVals,
+    computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights );
     
@@ -505,18 +494,17 @@ namespace Intrepid2 {
         \param  whichFace    [in] - Index of the face subcell relative to the parent cell; defines the domain of integration.
         \param  parentCell   [in] - Parent cell topology.
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,   class ...outputValProperties,
              typename inputJacValueType,    class ...inputJacProperties,
              typename inputWeightValueType, class ...inputWeightPropertes,
-             typename inputDetValueType,    class ...inputDetPropertes>
-    KOKKOS_INLINE_FUNCTION
+             typename scratchValueType,     class ...scratchProperties>
     static void 
-    computeFaceMeasure( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>     outVals,
+    computeFaceMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
                         const int                   whichFace,
-                        const shards::CellTopology &parentCell );
-
+                        const shards::CellTopology &parentCell,
+                        const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch );      
 
     /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
         (C,P) used for the computation of edge integrals, based on the provided
@@ -560,17 +548,17 @@ namespace Intrepid2 {
         \param  whichEdge    [in] - Index of the edge subcell relative to the parent cell; defines the domain of integration.
         \param  parentCell   [in] - Parent cell topology.
     */
-    template<typename outValValueType,      class ...outValProperties,
+    template<typename outputValValueType,   class ...outputValProperties,
              typename inputJacValueType,    class ...inputJacProperties,
              typename inputWeightValueType, class ...inputWeightPropertes,
-             typename inputDetValueType,    class ...inputDetPropertes>
-    KOKKOS_INLINE_FUNCTION
+             typename scratchValueType,     class ...scratchPropertes>
     static void 
-    computeEdgeMeasure( /**/  Kokkos::DynRankView<outValValueType,     outValProperties...>     outVals,
+    computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
                         const int                   whichEdge,
-                        const shards::CellTopology &parentCell );
+                        const shards::CellTopology &parentCell,
+                        const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch );
 
     /** \brief   Multiplies fields \a <b>inVals</b> by weighted measures \a <b>inMeasure</b> and
         returns the field array \a <b>outVals</b>; this is a simple redirection to the call
@@ -580,12 +568,11 @@ namespace Intrepid2 {
         \param  inMeasure    [in] - Input array containing weighted measures.
         \param  inVals       [in] - Input fields.
     */
-    template<typename outValValueType,       class ...outValProperties,
+    template<typename outputValValueType,       class ...outputValProperties,
              typename inputMeasureValueType, class ...inputMeasureProperties,
              typename inputValValueType,     class ...inputValProperteis>
-    KOKKOS_INLINE_FUNCTION
     static void 
-    multiplyMeasure( /**/  Kokkos::DynRankView<outValValueType,   outValProperties...>          outVals,
+    multiplyMeasure( /**/  Kokkos::DynRankView<outputValValueType,   outputValProperties...>    outputVals,
                      const Kokkos::DynRankView<inputMeasureValueType,inputMeasureProperties...> inputMeasure,
                      const Kokkos::DynRankView<inputValValueType,    inputValProperteis...>     inputVals );
 
@@ -625,7 +612,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataPropertes,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataPropertes...>    inputData,
@@ -667,7 +653,6 @@ namespace Intrepid2 {
     template<typename outputDataValuetype,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValuetype,    outputDataProperties>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
@@ -708,7 +693,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
                           const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
@@ -747,7 +731,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
                          const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
@@ -790,7 +773,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     vectorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
@@ -833,7 +815,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     vectorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
@@ -892,7 +873,6 @@ namespace Intrepid2 {
     template<typename outputFieldValueType, class ...outputFieldProperties,
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     tensorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
                              const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
@@ -951,7 +931,6 @@ namespace Intrepid2 {
     template<typename outputDataValueType,     class ...outputDataProperties,
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     tensorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
                             const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
@@ -986,7 +965,6 @@ namespace Intrepid2 {
     */
     template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     applyLeftFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                          const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
@@ -1019,7 +997,6 @@ namespace Intrepid2 {
     */
     template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     applyRightFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
                           const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
@@ -1049,7 +1026,6 @@ namespace Intrepid2 {
     */
     template<typename inoutFunctionValueType, class ...inoutFunctionProperties,
              typename fieldSignValueType,     class ...fieldSignProperties>
-    KOKKOS_INLINE_FUNCTION
     static void 
     applyFieldSigns( /**/  Kokkos::DynRankView<inoutFunctionValueType,inoutFunctionProperties...> inoutFunction,
                      const Kokkos::DynRankView<fieldSignValueType,    fieldSignProperties...>     fieldSigns );
@@ -1093,7 +1069,6 @@ namespace Intrepid2 {
     template<typename outputPointValueType, class ...outputPointProperties,
              typename inputCoeffValueType,  class ...inputCoeffProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
-    KOKKOS_INLINE_FUNCTION
     static void
     evaluate( /**/  Kokkos::DynRankView<outputPointValueType,outputPointProperties...> outputPointVals,
               const Kokkos::DynRankView<inputCoeffValueType, inputCoeffProperties...>  inputCoeffs,
