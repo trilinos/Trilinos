@@ -28,6 +28,7 @@ public:
 
 bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
                               stk::mesh::Entity localElem,
+                              const stk::mesh::EntityVector& localElemSideNodes,
                               unsigned sideIndex,
                               stk::topology otherElemTopology,
                               const stk::mesh::EntityVector &otherElemSideNodes);

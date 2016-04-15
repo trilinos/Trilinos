@@ -47,6 +47,8 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 {
     ElemSideToProcAndFaceId elem_side_comm;
     stk::mesh::EntityVector side_nodes;
+    std::vector<stk::mesh::EntityKey> keys;
+    std::vector<int> sharing_procs;
     for(size_t i=0;i<elements_to_communicate.size();++i)
     {
         stk::mesh::Entity elem = elements_to_communicate[i];
@@ -55,12 +57,11 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
         for(unsigned side=0;side<num_sides;++side)
         {
             fill_element_side_nodes_from_topology(bulkData, elem, side, side_nodes);
-            std::vector<stk::mesh::EntityKey> keys(side_nodes.size());
+            keys.resize(side_nodes.size());
             for(size_t j=0;j<keys.size();++j)
             {
                 keys[j] = bulkData.entity_key(side_nodes[j]);
             }
-            std::vector<int> sharing_procs;
             bulkData.shared_procs_intersection(keys, sharing_procs);
             for (int proc: sharing_procs) {
                 elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));

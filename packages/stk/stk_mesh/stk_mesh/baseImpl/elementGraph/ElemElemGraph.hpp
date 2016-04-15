@@ -195,7 +195,8 @@ protected:
                                                                        stk::mesh::EntityVector& scratchNodeVector) const;
     impl::ParallelElementDataVector get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                                           stk::mesh::EntityId elementId,
-                                                                          stk::topology elementTopology) const;
+                                                                          stk::topology elementTopology,
+                                                                          stk::mesh::EntityVector& scratchEntityVector) const;
 
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
@@ -324,6 +325,7 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
                                            const stk::mesh::EntityVector & sideNodes,
                                            std::vector<SideData> & connectedElements)
 {
+    SideData connectedElemData;
     for (const stk::mesh::Entity otherElement : elementsAttachedToSideNodes)
     {
         stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(bulkData, otherElement, bulkData.mesh_meta_data().side_rank(), sideNodes);
@@ -347,7 +349,6 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
                     if(is_solid_shell_connection(elementTopology, connectedBucket.topology()))
                         sideOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>((sideOrdinal == 0u) ? 1u : 0u);
 
-                    SideData connectedElemData;
                     connectedElemData.set_element_local_id(localId);
                     connectedElemData.set_element_identifier(bulkData.identifier(otherElement));
                     connectedElemData.set_element_topology(connectedBucket.topology());
@@ -363,13 +364,14 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
 }
 
 template<typename SideData>
-std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper, const stk::mesh::EntityVector &sideNodesOfReceivedElement)
+std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
+                                                           const stk::mesh::EntityVector &sideNodesOfReceivedElement,
+                                                           stk::mesh::EntityVector& scratchEntityVector)
 {
-    stk::mesh::EntityVector localElementsConnectedToReceivedSideNodes;
-    impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), localElementsConnectedToReceivedSideNodes);
+    impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), scratchEntityVector);
 
     std::vector<SideData> connectedElementDataVector;
-    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, localElementsConnectedToReceivedSideNodes, sideNodesOfReceivedElement, connectedElementDataVector);
+    impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, scratchEntityVector, sideNodesOfReceivedElement, connectedElementDataVector);
 
     return connectedElementDataVector;
 }

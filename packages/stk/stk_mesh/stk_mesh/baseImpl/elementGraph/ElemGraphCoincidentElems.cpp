@@ -51,18 +51,17 @@ struct TopologyChecker
     stk::topology remoteTopology;
 };
 
-bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
+bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, const stk::mesh::EntityVector& localElemSideNodes, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
 {
-    stk::mesh::EntityVector thisElemSideNodes;
-    impl::fill_element_side_nodes_from_topology(bulkData, localElem, sideIndex, thisElemSideNodes);
     stk::topology localTopology = bulkData.bucket(localElem).topology();
     stk::topology localSideTopology = localTopology.side_topology(sideIndex);
-    std::pair<bool, unsigned> result = localSideTopology.equivalent(otherElemSideNodes, thisElemSideNodes);
+    std::pair<bool, unsigned> result = localSideTopology.equivalent(otherElemSideNodes, localElemSideNodes);
     return result.first && localSideTopology.is_positive_polarity(result.second);
 }
 
 bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
                                             stk::mesh::Entity localElem,
+                                            const stk::mesh::EntityVector& localElemSideNodes,
                                             unsigned sideIndex,
                                             stk::topology otherElemTopology,
                                             const stk::mesh::EntityVector &otherElemSideNodes)
@@ -72,19 +71,20 @@ bool is_nondegenerate_coincident_connection(const stk::mesh::BulkData &bulkData,
     if(topologyChecker.are_both_shells())
         return true;
     if(topologyChecker.are_both_not_shells())
-        return is_side_node_permutation_positive(bulkData, localElem, sideIndex, otherElemSideNodes);
+        return is_side_node_permutation_positive(bulkData, localElem, localElemSideNodes, sideIndex, otherElemSideNodes);
     return false;
 }
 
 bool is_coincident_connection(const stk::mesh::BulkData &bulkData,
                               stk::mesh::Entity localElem,
+                              const stk::mesh::EntityVector& localElemSideNodes,
                               unsigned sideIndex,
                               stk::topology otherElemTopology,
                               const stk::mesh::EntityVector &otherElemSideNodes)
 {
     if(are_side_nodes_degenerate(otherElemSideNodes))
         return false;
-    return is_nondegenerate_coincident_connection(bulkData, localElem, sideIndex, otherElemTopology, otherElemSideNodes);
+    return is_nondegenerate_coincident_connection(bulkData, localElem, localElemSideNodes, sideIndex, otherElemTopology, otherElemSideNodes);
 }
 
 typedef std::map<stk::mesh::impl::ElementSidePair, std::vector<stk::mesh::GraphEdge>> ElemSideAndEdges;
