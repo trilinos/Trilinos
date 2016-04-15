@@ -66,7 +66,7 @@ void resolve_parallel_side_connections(BulkDataElemGraphFaceSharingTester& bulkD
     stk::CommSparse comm(bulkData.parallel());
     stk::unit_test_util::allocate_and_send(comm, sideSharingDataToSend, idAndSides);
     stk::unit_test_util::unpack_data(comm, bulkData.parallel_rank(), bulkData.parallel_size(), sideSharingDataReceived);
-
+    stk::mesh::EntityVector sideNodes;
     for(stk::unit_test_util::SideSharingData &sideSharingData : sideSharingDataReceived)
     {
         stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
@@ -82,7 +82,7 @@ void resolve_parallel_side_connections(BulkDataElemGraphFaceSharingTester& bulkD
         stk::mesh::EntityRank sideRank = bulkData.mesh_meta_data().side_rank();
         if(!bulkData.is_valid(side))
         {
-            stk::mesh::EntityVector sideNodes = stk::mesh::impl::get_element_side_nodes_from_topology(bulkData, element, sideOrdinal);
+            stk::mesh::impl::fill_element_side_nodes_from_topology(bulkData, element, sideOrdinal, sideNodes);
 
             // MANOJ: communicate keys instead of ids, and this will be better.
 

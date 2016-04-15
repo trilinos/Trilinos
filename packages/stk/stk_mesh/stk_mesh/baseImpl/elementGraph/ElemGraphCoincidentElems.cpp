@@ -53,7 +53,8 @@ struct TopologyChecker
 
 bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
 {
-    stk::mesh::EntityVector thisElemSideNodes = impl::get_element_side_nodes_from_topology(bulkData, localElem, sideIndex);
+    stk::mesh::EntityVector thisElemSideNodes;
+    impl::fill_element_side_nodes_from_topology(bulkData, localElem, sideIndex, thisElemSideNodes);
     stk::topology localTopology = bulkData.bucket(localElem).topology();
     stk::topology localSideTopology = localTopology.side_topology(sideIndex);
     std::pair<bool, unsigned> result = localSideTopology.equivalent(otherElemSideNodes, thisElemSideNodes);

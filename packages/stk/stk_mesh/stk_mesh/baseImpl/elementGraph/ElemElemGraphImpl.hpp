@@ -398,7 +398,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
-stk::mesh::EntityVector get_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index);
+void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& side_nodes);
 
 }}} // end namespaces stk mesh
 

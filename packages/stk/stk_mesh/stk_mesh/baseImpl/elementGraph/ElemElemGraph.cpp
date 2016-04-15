@@ -35,7 +35,7 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
 {
     impl::ElemSideToProcAndFaceId::const_iterator iter = m_elementSidesToSend.begin();
     impl::ElemSideToProcAndFaceId::const_iterator end = m_elementSidesToSend.end();
-
+    stk::mesh::EntityVector side_nodes;
     for(; iter!= end; ++iter)
     {
         stk::mesh::Entity elem = iter->first.entity;
@@ -50,7 +50,7 @@ void SharedSidesCommunication::pack_shared_side_nodes_of_elements(stk::CommSpars
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
 
-        stk::mesh::EntityVector side_nodes =impl:: get_element_side_nodes_from_topology(m_bulkData, elem, side_index);
+        impl:: fill_element_side_nodes_from_topology(m_bulkData, elem, side_index, side_nodes);
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(side_nodes.size());
         for(size_t i=0; i<side_nodes.size(); ++i)
         {
@@ -281,9 +281,10 @@ void ElemElemGraph::clear_data_members()
     m_num_parallel_edges = 0;
 }
 
-impl::SerialElementDataVector ElemElemGraph::get_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement, stk::mesh::EntityId elementId, stk::topology elementTopology) const
+impl::SerialElementDataVector ElemElemGraph::get_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
+                                                                                  stk::mesh::EntityId elementId, stk::topology elementTopology, stk::mesh::EntityVector& scratchNodeVector) const
 {
-    return impl::get_elements_with_larger_ids_connected_via_sidenodes<impl::SerialElementData>(m_bulk_data, elementId, elementTopology, m_idMapper, sideNodesOfReceivedElement);
+    return impl::get_elements_with_larger_ids_connected_via_sidenodes<impl::SerialElementData>(m_bulk_data, elementId, elementTopology, m_idMapper, sideNodesOfReceivedElement, scratchNodeVector);
 }
 
 impl::ParallelElementDataVector ElemElemGraph::get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement, stk::mesh::EntityId elementId, stk::topology elementTopology) const
@@ -312,11 +313,12 @@ void ElemElemGraph::add_local_graph_edges_for_elem(const stk::mesh::MeshIndex &m
     coincidentGraphEdges.clear();
     stk::mesh::EntityId elemGlobalId = m_bulk_data.identifier(element);
     if(!only_consider_upper_symmetry) elemGlobalId = 0;
-
+    stk::mesh::EntityVector scratchNodeVector;
+    stk::mesh::EntityVector side_nodes;
     for(int side_index=0; side_index<num_sides; ++side_index)
     {
-        stk::mesh::EntityVector side_nodes = impl::get_element_side_nodes_from_topology(m_bulk_data, element, side_index);
-        impl::SerialElementDataVector connectedElementDataVector = get_elements_attached_to_local_nodes(side_nodes, elemGlobalId, meshIndex.bucket->topology());
+        impl::fill_element_side_nodes_from_topology(m_bulk_data, element, side_index, side_nodes);
+        impl::SerialElementDataVector connectedElementDataVector = get_elements_attached_to_local_nodes(side_nodes, elemGlobalId, meshIndex.bucket->topology(), scratchNodeVector);
         for (const impl::SerialElementData & otherElem: connectedElementDataVector)
         {
             if(local_elem_id != otherElem.get_element_local_id())
@@ -548,7 +550,8 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
 
     unsigned side_index = receivedSharedEdge.get_local_element_side_index();
     stk::mesh::Entity localElem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, receivedSharedEdge.get_local_element_global_id());
-    stk::mesh::EntityVector localElemSideNodes = impl::get_element_side_nodes_from_topology(m_bulk_data, localElem, side_index);
+    stk::mesh::EntityVector localElemSideNodes;
+    impl::fill_element_side_nodes_from_topology(m_bulk_data, localElem, side_index, localElemSideNodes);
 
     stk::topology side_topology = m_bulk_data.bucket(localElem).topology().side_topology(side_index);
     std::pair<bool,unsigned> permutationIfConnected = side_topology.equivalent(localElemSideNodes, sideNodes);

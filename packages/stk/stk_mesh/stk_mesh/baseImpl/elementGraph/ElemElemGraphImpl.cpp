@@ -46,7 +46,7 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
                                                            const stk::mesh::EntityVector &elements_to_communicate)
 {
     ElemSideToProcAndFaceId elem_side_comm;
-
+    stk::mesh::EntityVector side_nodes;
     for(size_t i=0;i<elements_to_communicate.size();++i)
     {
         stk::mesh::Entity elem = elements_to_communicate[i];
@@ -54,7 +54,7 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
         unsigned num_sides = elem_top.num_sides();
         for(unsigned side=0;side<num_sides;++side)
         {
-            stk::mesh::EntityVector side_nodes = get_element_side_nodes_from_topology(bulkData, elem, side);
+            fill_element_side_nodes_from_topology(bulkData, elem, side, side_nodes);
             std::vector<stk::mesh::EntityKey> keys(side_nodes.size());
             for(size_t j=0;j<keys.size();++j)
             {
@@ -70,14 +70,13 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
     return elem_side_comm;
 }
 
-stk::mesh::EntityVector get_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index)
+void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& localElemSideNodes)
 {
     stk::topology localElemTopology = bulkData.bucket(element).topology();
     const stk::mesh::Entity* localElemNodes = bulkData.begin_nodes(element);
     unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
-    stk::mesh::EntityVector localElemSideNodes(num_nodes_this_side);
+    localElemSideNodes.resize(num_nodes_this_side);
     localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
-    return localElemSideNodes;
 }
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -338,7 +337,8 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 
     // connect side to nodes
     stk::topology side_top = bulkData.bucket(element).topology().side_topology(side_ordinal);
-    stk::mesh::EntityVector side_nodes = get_element_side_nodes_from_topology(bulkData, element, side_ordinal);
+    stk::mesh::EntityVector side_nodes;
+    fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
     side_top.permutation_nodes(side_nodes, side_permutation, permuted_side_nodes.begin());
     for(size_t i=0;i<permuted_side_nodes.size();++i)

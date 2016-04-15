@@ -191,7 +191,8 @@ protected:
 
     impl::SerialElementDataVector get_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                                        stk::mesh::EntityId elementId,
-                                                                       stk::topology elementTopology) const;
+                                                                       stk::topology elementTopology,
+                                                                       stk::mesh::EntityVector& scratchNodeVector) const;
     impl::ParallelElementDataVector get_elements_attached_to_remote_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
                                                                           stk::mesh::EntityId elementId,
                                                                           stk::topology elementTopology) const;
@@ -374,9 +375,9 @@ std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::Bulk
 }
 
 template<typename SideData>
-std::vector<SideData> get_elements_with_larger_ids_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper, const stk::mesh::EntityVector &sideNodesOfReceivedElement)
+std::vector<SideData> get_elements_with_larger_ids_connected_via_sidenodes(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId elementId, stk::topology elementTopology, const impl::ElementLocalIdMapper & localMapper,
+                                                                           const stk::mesh::EntityVector &sideNodesOfReceivedElement, stk::mesh::EntityVector& localElementsConnectedToReceivedSideNodes)
 {
-    stk::mesh::EntityVector localElementsConnectedToReceivedSideNodes;
     impl::find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(elementId, bulkData, stk::topology::ELEMENT_RANK, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), localElementsConnectedToReceivedSideNodes);
 
     std::vector<SideData> connectedElementDataVector;
