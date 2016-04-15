@@ -53,42 +53,67 @@
 #include "Intrepid2_Types.hpp"
 
 namespace Intrepid2 {
+
+  //
+  // replicate for each test header
+  // #define INTREPID2_TEST_ERROR_EXPECTED( S )                         \
+  //   {                                                                \
+  //     try {                                                          \
+  //       S ;                                                          \
+  //     }                                                              \
+  //     catch (std::logic_error err) {                                 \
+  //       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+  //       *outStream << err.what() << '\n';                            \
+  //       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+  //     };                                                             \
+  //   }
+  //
   
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
   if (test) {                                                           \
-    fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
-    fprintf(stderr, "            %s \n", msg);                          \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 
-#define INTREPID2_TEST_FOR_EXCEPTION(test, exception, msg)              \
+#define INTREPID2_TEST_FOR_EXCEPTION(test, x, msg)                      \
   if (test) {                                                           \
-    fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
-    fprintf(stderr, "            %s \n", msg);                          \
-    throw exception;                                                    \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
+    throw x(msg);                                                       \
   }
-
+  
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
   if (!(info) && (test)) {                                              \
-    fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
-    fprintf(stderr, "            %s \n", msg);                          \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
     info = true;                                                        \
   }
 #else  
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \
   if (!(info) && (test)) {                                              \
-    fprintf(stderr, "[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    fprintf(stderr, "            Test that evaluated to true: %s\n", #test); \
-    fprintf(stderr, "            %s \n", msg);                          \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
     info = true ;                                                       \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 #endif
+
+  template<typename ViewSpaceType, typename UserSpaceType>
+  struct ExecSpace {
+    typedef UserSpaceType ExecSpaceType;
+  };
+
+  template<typename ViewSpaceType>
+  struct ExecSpace<ViewSpaceType,void> {
+    typedef ViewSpaceType ExecSpaceType;
+  };
 
   class Util {
   public:

@@ -60,6 +60,18 @@
 namespace Intrepid2 {
 
   namespace Test {
+
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    {                                                                   \
+      try {                                                             \
+        S ;                                                             \
+      }                                                                 \
+      catch (std::logic_error err) {                                    \
+        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+        *outStream << err.what() << '\n';                               \
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+      };                                                                \
+    }
     
     template<typename ValueType, typename DeviceSpaceType>
     int RealSpaceTools_Test01(const bool verbose) {
@@ -125,38 +137,37 @@ namespace Intrepid2 {
 
         *outStream << "-> vector norm with multidimensional arrays:\n";
 
-        //INTREPID2_TEST_ERROR_EXPECTED(rst::vectorNorm(a_2_2, NORM_TWO));
-        rst::vectorNorm(a_2_2, NORM_TWO);
-        rst::vectorNorm(a_10_2_2, a_10_2_2, NORM_TWO);
-        rst::vectorNorm(a_10_2_2, a_10_2_2_3, NORM_TWO);
-        rst::vectorNorm(a_10_3, a_10_2_2, NORM_TWO);
+        rst::Serial::vectorNorm(a_2_2, NORM_TWO);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_2_2, a_10_2_2, NORM_TWO) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_2_2, a_10_2_2_3, NORM_TWO) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::vectorNorm(a_10_3, a_10_2_2, NORM_TWO) );
 
         *outStream << "-> add with multidimensional arrays:\n";
 
-        rst::add(a_10_2_2, a_10_2, a_2_2);
-        rst::add(a_10_2_3, a_10_2_2, a_10_2_2);
-        rst::add(a_10_2_2, a_10_2_2_3);
-        rst::add(a_10_2_3, a_10_2_2);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::add(a_10_2_2, a_10_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::add(a_10_2_3, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::add(a_10_2_2, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::add(a_10_2_3, a_10_2_2) );
 
         *outStream << "-> subtract with multidimensional arrays:\n";
 
-        rst::subtract(a_10_2_2, a_10_2, a_2_2);
-        rst::subtract(a_10_2_3, a_10_2_2, a_10_2_2);
-        rst::subtract(a_10_2_2, a_10_2_2_3);
-        rst::subtract(a_10_2_3, a_10_2_2);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::subtract(a_10_2_2, a_10_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::subtract(a_10_2_3, a_10_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::subtract(a_10_2_2, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::subtract(a_10_2_3, a_10_2_2) );
         
         *outStream << "-> dot product norm with multidimensional arrays:\n";
         
-        rst::dot(a_10_2, a_10_2_2_3, a_10_2_2_3);
-        rst::dot(a_10_2, a_10_2_2, a_10_2_2_3);
-        rst::dot(a_10_2_2, a_10_2_2_3, a_10_2_2_3);
-        rst::dot(a_10_2, a_10_2_2, a_10_2_3);
-        rst::dot(a_10_3, a_10_2_3, a_10_2_3);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::dot(a_10_2, a_10_2_2_3, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::dot(a_10_2, a_10_2_2, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::dot(a_10_2_2, a_10_2_2_3, a_10_2_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::dot(a_10_2, a_10_2_2, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::dot(a_10_3, a_10_2_3, a_10_2_3) );
 
         *outStream << "-> absolute value with multidimensional arrays:\n";
 
-        rst::absval(a_10_3, a_10_2_3);
-        rst::absval(a_10_2_2, a_10_2_3);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::absval(a_10_3, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::absval(a_10_2_2, a_10_2_3) );
 #endif
       } catch (std::logic_error err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -207,50 +218,52 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
 #define INTREPID2_TEST_FOR_ABORT_OVERRIDE_TO_CONTINUE
         *outStream << "-> Errors are expected due to rank mismatches:\n";
-
+        
         *outStream << "-> inverse with multidimensional arrays:\n";
         
-        rst::inverse(a_2_2, a_10_2_2);
-        rst::inverse(b_10_1_2_3_4, a_10_1_2_3_4);
-        rst::inverse(b_10, a_10);
-        rst::inverse(a_10_2_2, a_10_2_3);
-        rst::inverse(b_10_2_3, a_10_2_3);
-        rst::inverse(b_10_15_4_4, a_10_15_4_4);
-        rst::inverse(b_1_1, a_1_1);
-        rst::inverse(b_2_2, a_2_2);
-        rst::inverse(b_3_3, a_3_3);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_10_1_2_3_4, a_10_1_2_3_4) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_10, a_10) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(a_10_2_2, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_10_2_3, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_10_15_4_4, a_10_15_4_4) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_1_1, a_1_1) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_3_3, a_3_3) );
         
         a_2_2(0, 0) = 1.0;
         a_3_3(0, 0) = 1.0;
-        rst::inverse(b_2_2, a_2_2);
-        rst::inverse(b_3_3, a_3_3);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::inverse(b_3_3, a_3_3) );
         
         *outStream << "-> transpose with multidimensional arrays:\n";
-        rst::transpose(a_2_2, a_10_2_2);
-        rst::transpose(b_10_1_2_3_4, a_10_1_2_3_4);
-        rst::transpose(b_10, a_10);
-        rst::transpose(a_10_2_2, a_10_2_3);
-        rst::transpose(b_10_2_3, a_10_2_3);
+
+        INTREPID2_TEST_ERROR_EXPECTED( rst::transpose(a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::transpose(b_10_1_2_3_4, a_10_1_2_3_4) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::transpose(b_10, a_10) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::transpose(a_10_2_2, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::transpose(b_10_2_3, a_10_2_3) );
         
         *outStream << "-> determinant with multidimensional arrays:\n";
-        rst::det(a_2_2, a_10_2_2);
-        rst::det(a_10_2_2, a_10_1_2_3_4);
-        rst::det(b_10_14, a_10_15_3_3);
-        rst::det(a_9, a_10_2_2);
-        rst::det(b_10, a_10_2_3);
-        rst::det(b_10_15, a_10_15_4_4);
-        rst::det(a_10_15_4_4);
-        rst::det(a_2_3);
-        rst::det(a_4_4);
+
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(a_10_2_2, a_10_1_2_3_4) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(b_10_14, a_10_15_3_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(a_9, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(b_10, a_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::det(b_10_15, a_10_15_4_4) );
+        rst::Serial::det(a_10_15_4_4);
+        rst::Serial::det(a_2_3);
+        rst::Serial::det(a_4_4);
         
         *outStream << "-> matrix-vector product with multidimensional arrays:\n";
         
-        rst::matvec(a_10_2_2, a_10_2_3, b_10_2_3);
-        rst::matvec(a_2_2, a_2_2, a_10);
-        rst::matvec(a_9, a_10_2_2, a_2_2);
-        rst::matvec(b_10_15_3, a_10_15_3_3, b_10_14_3);
-        rst::matvec(b_10_14_3, a_10_15_3_3, b_10_15_3);
-        rst::matvec(b_10_15_3, a_10_15_3_2, b_10_15_3);
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(a_10_2_2, a_10_2_3, b_10_2_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(a_2_2, a_2_2, a_10) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(a_9, a_10_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(b_10_15_3, a_10_15_3_3, b_10_14_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(b_10_14_3, a_10_15_3_3, b_10_15_3) );
+        INTREPID2_TEST_ERROR_EXPECTED( rst::matvec(b_10_15_3, a_10_15_3_2, b_10_15_3) );
 #undef INTREPID2_TEST_FOR_ABORT_OVERRIDE_TO_CONTINUE 
 #endif
       } catch (std::logic_error err) {
@@ -316,22 +329,22 @@ namespace Intrepid2 {
           *outStream << "\n-- Checking vectorNorm \n";
 
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_TWO);
-          if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_TWO) - 
-                        rst::vectorNorm(va_x_x_d, NORM_TWO)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_TWO) - 
+                        rst::Serial::vectorNorm(va_x_x_d, NORM_TWO)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_ONE);
-          if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_ONE) - 
-                        rst::vectorNorm(va_x_x_d, NORM_ONE)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_ONE) - 
+                        rst::Serial::vectorNorm(va_x_x_d, NORM_ONE)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x_x, va_x_x_d, NORM_INF);
-          if ( std::abs(rst::vectorNorm(vnorms_x_x, NORM_INF) - 
-                        rst::vectorNorm(va_x_x_d, NORM_INF)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x_x, NORM_INF) - 
+                        rst::Serial::vectorNorm(va_x_x_d, NORM_INF)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
             errorFlag = -1000;
           }
@@ -343,7 +356,7 @@ namespace Intrepid2 {
           
           rst::subtract(mc_x_x_d_d, ma_x_x_d_d); // C = C - A ~= 0 
           
-          if (rst::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
+          if (rst::Serial::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -359,8 +372,8 @@ namespace Intrepid2 {
           { 
             value_type val = 0;
             for (auto i=0;i<detA_x_x.dimension(0);++i) 
-              val += rst::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
-                               Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
+              val += rst::Serial::dot( Kokkos::subdynrankview(detA_x_x, i, Kokkos::ALL()),
+                                       Kokkos::subdynrankview(detB_x_x, i, Kokkos::ALL()) );
 
             const value_type diff = std::abs(val - value_type(i0*i1));
             if (diff  > tol) {
@@ -376,7 +389,7 @@ namespace Intrepid2 {
           
           rst::subtract(mc_x_x_d_d, ma_x_x_d_d); // C = C - A = 0 
           
-          if (rst::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
+          if (rst::Serial::vectorNorm(mc_x_x_d_d, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT transpose OR subtract OR vectorNorm\n\n" ;
             errorFlag = -1000;
           }
@@ -391,7 +404,7 @@ namespace Intrepid2 {
           
           rst::vectorNorm(vnorms_x_x, vc_x_x_d, NORM_ONE);
           rst::vectorNorm(vnorms_x, vnorms_x_x, NORM_INF);
-          if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
             *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -413,10 +426,10 @@ namespace Intrepid2 {
           
           rst::vectorNorm(vnorms_x_x, vc_x_x_d, NORM_ONE);
           rst::vectorNorm(vnorms_x, vnorms_x_x, NORM_INF);
-          if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
             *outStream << "\n\nSign flips combined with std::abs might not be invertible on this platform!\n"
                        << "Potential IEEE compliance issues!\n\n";
-            if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+            if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
               *outStream << "\n\nINCORRECT add OR subtract OR scale OR absval OR vectorNorm\n\n";
               errorFlag = -1000;
             }
@@ -439,7 +452,7 @@ namespace Intrepid2 {
           rst::dot(vdot_x_x, va_x_x_d, va_x_x_d); // dot = a'*a
 
           rst::vectorNorm(vnorms_x, vdot_x_x, NORM_ONE);
-          if (rst::vectorNorm(vnorms_x, NORM_ONE) - (value_type)(4.0*dim*i0*i1) > tol) {
+          if (rst::Serial::vectorNorm(vnorms_x, NORM_ONE) - (value_type)(4.0*dim*i0*i1) > tol) {
             *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -487,22 +500,22 @@ namespace Intrepid2 {
           *outStream << "\n-- Checking vectorNorm \n";
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_TWO);
-          if ( std::abs(rst::vectorNorm(vnorms_x, NORM_TWO) - 
-                        rst::vectorNorm(va_x_d, NORM_TWO)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_TWO) - 
+                        rst::Serial::vectorNorm(va_x_d, NORM_TWO)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_TWO\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_ONE);
-          if ( std::abs(rst::vectorNorm(vnorms_x, NORM_ONE) - 
-                        rst::vectorNorm(va_x_d, NORM_ONE)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_ONE) - 
+                        rst::Serial::vectorNorm(va_x_d, NORM_ONE)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_ONE\n\n";
             errorFlag = -1000;
           }
           
           rst::vectorNorm(vnorms_x, va_x_d, NORM_INF);
-          if ( std::abs(rst::vectorNorm(vnorms_x, NORM_INF) - 
-                        rst::vectorNorm(va_x_d, NORM_INF)) > tol) {
+          if ( std::abs(rst::Serial::vectorNorm(vnorms_x, NORM_INF) - 
+                        rst::Serial::vectorNorm(va_x_d, NORM_INF)) > tol) {
             *outStream << "\n\nINCORRECT vectorNorm NORM_INF\n\n";
             errorFlag = -1000;
           }
@@ -513,7 +526,7 @@ namespace Intrepid2 {
           rst::inverse(mc_x_d_d, mb_x_d_d); // C = inv(B) ~= A
           rst::subtract(mc_x_d_d, ma_x_d_d); // C = C - A ~= 0 
           
-          if (rst::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
+          if (rst::Serial::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -526,7 +539,7 @@ namespace Intrepid2 {
           rst::det(detA_x, ma_x_d_d);
           rst::det(detB_x, mb_x_d_d);
           
-          if ( (rst::dot(detA_x, detB_x) - (value_type)i0) > tol) {
+          if ( (rst::Serial::dot(detA_x, detB_x) - (value_type)i0) > tol) {
             *outStream << "\n\nINCORRECT det\n\n" ;
             errorFlag = -1000;
           }
@@ -537,7 +550,7 @@ namespace Intrepid2 {
           rst::transpose(mc_x_d_d, mb_x_d_d); // C = B^T = A
           rst::subtract(mc_x_d_d, ma_x_d_d); // C = C - A = 0 
           
-          if (rst::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
+          if (rst::Serial::vectorNorm(mc_x_d_d, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT transpose OR subtract OR vectorNorm\n\n" ;
             errorFlag = -1000;
           }
@@ -551,7 +564,7 @@ namespace Intrepid2 {
           rst::subtract(vc_x_d, va_x_d); // c = c - a ~= 0
           
           rst::vectorNorm(vnorms_x, vc_x_d, NORM_ONE);
-          if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
             *outStream << "\n\nINCORRECT matvec OR inverse OR subtract OR vectorNorm\n\n";
             errorFlag = -1000;
           }
@@ -570,10 +583,10 @@ namespace Intrepid2 {
           rst::add(vc_x_d, vb_x_d); // c = c + b === 0
           
           rst::vectorNorm(vnorms_x, vc_x_d, NORM_ONE);
-          if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+          if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
             *outStream << "\n\nSign flips combined with std::abs might not be invertible on this platform!\n"
                        << "Potential IEEE compliance issues!\n\n";
-            if (rst::vectorNorm(vnorms_x, NORM_TWO) > tol) {
+            if (rst::Serial::vectorNorm(vnorms_x, NORM_TWO) > tol) {
               *outStream << "\n\nINCORRECT add OR subtract OR scale OR absval OR vectorNorm\n\n";
               errorFlag = -1000;
             }
@@ -591,7 +604,7 @@ namespace Intrepid2 {
           }
           rst::dot(vdot_x, va_x_d, va_x_d); // dot = a'*a
           
-          if (rst::vectorNorm(vdot_x, NORM_ONE) - (double)(4.0*dim*i0) > tol) {
+          if (rst::Serial::vectorNorm(vdot_x, NORM_ONE) - (double)(4.0*dim*i0) > tol) {
             *outStream << "\n\nINCORRECT dot OR vectorNorm\n\n";
             errorFlag = -1000;
           }
