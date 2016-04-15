@@ -369,6 +369,7 @@ std::vector<SideData> get_elements_connected_via_sidenodes(const stk::mesh::Bulk
                                                            stk::mesh::EntityVector& scratchEntityVector)
 {
     impl::find_locally_owned_elements_these_nodes_have_in_common(bulkData, sideNodesOfReceivedElement.size(), sideNodesOfReceivedElement.data(), scratchEntityVector);
+    stk::util::sort_and_unique(scratchEntityVector);
 
     std::vector<SideData> connectedElementDataVector;
     impl::add_local_elements_to_connected_list(bulkData, elementTopology, localMapper, scratchEntityVector, sideNodesOfReceivedElement, connectedElementDataVector);

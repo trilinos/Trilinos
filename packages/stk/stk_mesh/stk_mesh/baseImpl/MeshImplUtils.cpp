@@ -53,67 +53,6 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
-{
-  entity_vector.clear();
-
-  if(numNodes==0)
-      return;
-
-  unsigned maxNumEntities = 0;
-  for(unsigned i=0; i<numNodes; ++i)
-      maxNumEntities += mesh.num_connectivity(nodes[i],rank);
-
-  if(maxNumEntities < numNodes)
-      return;
-
-  entity_vector.reserve(maxNumEntities);
-
-  for(unsigned i=0; i<numNodes; ++i) {
-    const Entity* entities = mesh.begin(nodes[i],rank);
-    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
-    entity_vector.insert(entity_vector.end(), entities, entities+numEntities);
-  }
-
-  std::sort(entity_vector.begin(), entity_vector.end());
-
-  unsigned counter = 1;
-  unsigned numUniqueEntities = 0;
-
-  for(unsigned i=0; i<maxNumEntities-numNodes+1; i += counter)
-  {
-      counter = 1;
-
-      while((i+counter) < entity_vector.size() && (entity_vector[i] == entity_vector[i+counter]))
-      {
-          ++counter;
-      }
-
-      if(counter >= numNodes)
-      {
-          entity_vector[numUniqueEntities++] = entity_vector[i];
-      }
-  }
-
-  entity_vector.resize(numUniqueEntities);
-}
-
-void fill_owned_entities_with_larger_ids_connected_to_node(const BulkData& mesh,
-                                   Entity node,
-                                   stk::mesh::EntityRank rank,
-                                   stk::mesh::EntityId id,
-                                   std::vector<Entity>& elemsWithLargerIds)
-{
-    unsigned numElems = mesh.num_connectivity(node, rank);
-    elemsWithLargerIds.clear();
-    elemsWithLargerIds.reserve(numElems);
-
-    const Entity* elems = mesh.begin(node, rank);
-    for(unsigned j = 0; j < numElems; ++j)
-        if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
-            elemsWithLargerIds.push_back(elems[j]);
-}
-
 bool is_in_list(Entity entity, const Entity* begin, const Entity* end)
 {
     return std::find(begin, end, entity) != end;
@@ -132,13 +71,45 @@ void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::ve
             remove_index_from_list(j-1, elementsInCommon);
 }
 
+void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
+{
+    for(unsigned i = 1; i < numNodes; ++i)
+        remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
+}
+
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
+{
+    elementsInCommon.clear();
+    if(numNodes > 0)
+    {
+        elementsInCommon.assign(mesh.begin(nodes[0], rank), mesh.end(nodes[0], rank));
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+    }
+}
+
+
+void fill_owned_entities_with_larger_ids_connected_to_node(const BulkData& mesh,
+                                   Entity node,
+                                   stk::mesh::EntityRank rank,
+                                   stk::mesh::EntityId id,
+                                   std::vector<Entity>& elemsWithLargerIds)
+{
+    unsigned numElems = mesh.num_connectivity(node, rank);
+    elemsWithLargerIds.reserve(numElems);
+
+    const Entity* elems = mesh.begin(node, rank);
+    for(unsigned j = 0; j < numElems; ++j)
+        if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
+            elemsWithLargerIds.push_back(elems[j]);
+}
+
 void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
 {
+    elementsInCommon.clear();
     if(numNodes > 0)
     {
         fill_owned_entities_with_larger_ids_connected_to_node(mesh, nodes[0], rank, id, elementsInCommon);
-        for(unsigned i = 1; i < numNodes; ++i)
-            remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
     }
 }
 
