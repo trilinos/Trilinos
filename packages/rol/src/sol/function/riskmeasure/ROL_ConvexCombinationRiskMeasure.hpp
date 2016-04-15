@@ -51,20 +51,22 @@ namespace ROL {
 template<class Real>
 class ConvexCombinationRiskMeasure : public RiskMeasure<Real> {
 private:
+  typedef typename std::vector<Real>::size_type uint;
+
   std::vector<Real> lambda_;
   std::vector<Teuchos::ParameterList> parlist_;
   std::vector<Teuchos::RCP<RiskMeasure<Real> > > risk_;
-  int size_;
+  uint size_;
 
   Teuchos::RCP<Vector<Real> > dualVector0_;
   bool firstReset_;
 
   void checkInputs(void) const {
-    int lSize = lambda_.size(), rSize = risk_.size();
+    uint lSize = lambda_.size(), rSize = risk_.size();
     TEUCHOS_TEST_FOR_EXCEPTION((lSize!=rSize),std::invalid_argument,
       ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Convex combination parameter and risk measure arrays have different sizes!");
     Real sum(0), zero(0), one(1);
-    for (int i = 0; i < lSize; ++i) {
+    for (uint i = 0; i < lSize; ++i) {
       TEUCHOS_TEST_FOR_EXCEPTION((lambda_[i]>one || lambda_[i]<zero), std::invalid_argument,
         ">>> ERROR (ROL::ConvexCombinationRiskMeasure): Element of convex combination parameter array out of range!");
       TEUCHOS_TEST_FOR_EXCEPTION(risk_[i] == Teuchos::null, std::invalid_argument,
@@ -88,7 +90,7 @@ public:
     // Build risk measures
     risk_.clear(); risk_.resize(size_,Teuchos::null);
     parlist_.clear(); parlist_.resize(size_);
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
@@ -110,7 +112,7 @@ public:
     Teuchos::RCP<const Vector<Real> > xptr = xr.getVector();
     xr.getStatistic(stat);
     x0 = Teuchos::rcp_const_cast<Vector<Real> >(xptr);
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0);
       // Set statistic from original risk vector
@@ -145,7 +147,7 @@ public:
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(vptr);
     xr.getStatistic(xstat);
     vr.getStatistic(vstat);
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0), vri(parlist_[i],v0);
       // Set statistic from original risk vector
@@ -170,21 +172,21 @@ public:
   }
 
   void update(const Real val, const Real weight) {
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       risk_[i]->update(val,weight);
     }
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
     Real val(0);
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       val += lambda_[i]*risk_[i]->getValue(sampler);
     }
     return val;
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       risk_[i]->update(val,g,weight);
     }
   }
@@ -194,12 +196,12 @@ public:
     // g does not have the correct dimension if it is a risk vector
     RiskVector<Real> &gr = Teuchos::dyn_cast<RiskVector<Real> >(g);
     std::vector<Real> stat, stati;
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       RiskVector<Real> gri(parlist_[i],dualVector0_);
       risk_[i]->getGradient(gri,sampler);
       (gr.getVector())->axpy(lambda_[i],*dualVector0_);
       gri.getStatistic(stati);
-      for (int j = 0; j < stati.size(); ++j) {
+      for (uint j = 0; j < stati.size(); ++j) {
         stat.push_back(lambda_[i]*stati[j]);
       }
     }
@@ -208,7 +210,7 @@ public:
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       risk_[i]->update(val,g,gv,hv,weight);
     }
   }
@@ -218,12 +220,12 @@ public:
     // hv does not have the correct dimension if it is a risk vector
     RiskVector<Real> &hvr = Teuchos::dyn_cast<RiskVector<Real> >(hv);
     std::vector<Real> stat, stati;
-    for (int i = 0; i < size_; ++i) {
+    for (uint i = 0; i < size_; ++i) {
       RiskVector<Real> hvri(parlist_[i],dualVector0_);
       risk_[i]->getHessVec(hvri,sampler);
       (hvr.getVector())->axpy(lambda_[i],*dualVector0_);
       hvri.getStatistic(stati);
-      for (int j = 0; j < stati.size(); ++j) {
+      for (uint j = 0; j < stati.size(); ++j) {
         stat.push_back(lambda_[i]*stati[j]);
       }
     }
