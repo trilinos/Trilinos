@@ -256,6 +256,7 @@ void run(const UserInputForTests &uinput,
   } else if (problem_kind == "coloring") {
     reinterpret_cast<coloring_problem_t *>(problem)->solve();
   }
+
   comparison_source->timers["solve time"]->stop();
   if (rank == 0)
     cout << problem_kind + "Problem solved." << endl;
@@ -305,40 +306,20 @@ void run(const UserInputForTests &uinput,
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
  // get metric object
-  RCP<EvaluatePartition<basic_id_t> >metricObject =
+  cout << "START ANALYSYS" << std::endl;
+  RCP<EvaluatePartition<basic_id_t> > metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
     newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
              (problem), adapter_name, ia,
              &zoltan2_parameters));
   
-  std::string metric_types[] = {"Metrics", "Graph Metrics"};
-  for (auto metric_type : metric_types) {
-    if( problem_parameters.isParameter(metric_type)) {
-      // calculate pass fail based on imbalance
-      if(rank == 0) cout << "Analyzing " << metric_type << endl;
-      if(rank == 0) {
-        std::cout << metric_type << " for " << problem_kind << ":" << std::endl; 
-        if (metric_type == "Metrics")
-          metricObject->printMetrics(cout);
-        else if (metric_type == "Graph Metrics")
-          metricObject->printGraphMetrics(cout);
-      }
+   std::ostringstream msg;
 
-      std::ostringstream msg;
-      auto metricsPlist = problem_parameters.sublist(metric_type); // get the metrics plist
-      bool all_tests_pass = false;
-      all_tests_pass
-      = MetricAnalyzer::analyzeMetrics( metricsPlist,
-                                        metricObject,
-                                        comm,
-                                        msg); 
+   cout << "ANALYSIS" << std::endl;
+   MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters, comm, msg );
+   if(rank == 0)
+	   cout << msg.str();
 
-      std::cout << msg.str() << std::endl;
-      if(rank == 0 && all_tests_pass) cout << "All " << metric_type  << " tests PASSED." << endl;
-      else if (rank == 0) cout << "One or more " << metric_type << " tests FAILED." << endl;
-    } else if (rank == 0) cout << metric_type  << " analysis unrequested. PASSED." << endl;
-  }
-  
 #define BDD
 #ifdef BDD 
   if (problem_kind == "ordering") {
@@ -400,8 +381,26 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
 }
 
+class testClass
+{
+public:
+	int x = 3;
+
+};
+
 int main(int argc, char *argv[])
 {
+	/*
+	ArrayRCP< float > testArray;
+	ArrayRCP< float >::size_type newSize = 10;
+	testArray.resize( newSize, 0 );
+	std::cout << testArray.size() << std::endl;
+	newSize = 20;
+	testArray.resize( newSize, 0 );
+	std::cout << testArray.size() << std::endl;
+	return 0;
+*/
+
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
@@ -409,7 +408,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   
   int rank = comm->getRank(); // get rank
-  
+
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
   // the input file defines tests to be run

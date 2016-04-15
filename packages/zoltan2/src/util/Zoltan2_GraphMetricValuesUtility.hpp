@@ -90,9 +90,11 @@ template <typename Adapter>
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const ArrayView<const typename Adapter::part_t> &part,
     typename Adapter::part_t &numParts,
-    ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
+    ArrayRCP<RCP<MetricBase<typename Adapter::scalar_t> > > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
+
+
   env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
   //////////////////////////////////////////////////////////
   // Initialize return values
@@ -120,11 +122,16 @@ template <typename Adapter>
 
   using Teuchos::as;
 
-  mv_t *newMetrics = new mv_t [numMetrics];
-  env->localMemoryAssertion(__FILE__,__LINE__,numMetrics,newMetrics);
-  ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
-
-  metrics = metricArray;
+  // add some more metrics to the array
+  typedef typename ArrayRCP<RCP<MetricBase<typename Adapter::scalar_t> > >::size_type array_size_type;
+  metrics.resize( metrics.size() + numMetrics );
+  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n )
+  {
+	  mv_t * newMetric = new mv_t;									// allocate the new memory
+	  env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
+	  metrics[n] = rcp( newMetric); 				// create the new members
+  }
+  array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
@@ -277,14 +284,13 @@ template <typename Adapter>
 
   cut = sumBuf;                     // # of cuts
   scalar_t max=0, sum=0;
-  int next = 0;
 
   ArrayView<scalar_t> cutVec(cut, nparts);
   getStridedStats<scalar_t>(cutVec, 1, 0, max, sum);
 
-  metrics[next].setName("cut count");
-  metrics[next].setGlobalMax(max);
-  metrics[next].setGlobalSum(sum);
+  metrics[next]->setName("cut count");
+  metrics[next]->setMetricValue("global maximum", max);
+  metrics[next]->setMetricValue("global sum", sum);
 
   if (ewgtDim){
     scalar_t *wgt = sumBuf;        // weight 0
@@ -296,9 +302,9 @@ template <typename Adapter>
       std::ostringstream oss;
       oss << "weight " << edim;
 
-      metrics[next].setName(oss.str());
-      metrics[next].setGlobalMax(max);
-      metrics[next].setGlobalSum(sum);
+      metrics[next]->setName(oss.str());
+      metrics[next]->setMetricValue("global maximum", max);
+      metrics[next]->setMetricValue("global sum", sum);
       next++;
       wgt += nparts;       // individual weights
     }
@@ -314,7 +320,7 @@ template <typename Adapter>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts,
-    const ArrayView<GraphMetricValues<scalar_t> > &infoList)
+    const ArrayRCP<RCP<MetricBase<scalar_t>>> &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   os << std::endl;
@@ -326,8 +332,8 @@ template <typename scalar_t, typename part_t>
   GraphMetricValues<scalar_t>::printHeader(os);
 
   for (int i=0; i < infoList.size(); i++)
-    if (infoList[i].getName() != unset)
-      infoList[i].printLine(os);
+    if (infoList[i]->getName() != unset)
+      infoList[i]->printLine(os);
 
   os << std::endl;
 }
@@ -337,9 +343,10 @@ template <typename scalar_t, typename part_t>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts,
-    const GraphMetricValues<scalar_t> &info)
+    RCP<MetricBase<scalar_t>> metricValue)
 {
-  ArrayView<GraphMetricValues<scalar_t> > infoList(&info, 1);
+  ArrayRCP<RCP<MetricBase<scalar_t> > > infoList = arcp<RCP<MetricBase<scalar_t>>>( 1 );	// new
+  infoList[0] = metricValue;
   printMetrics( os, targetNumParts, numParts, infoList);
 }
 

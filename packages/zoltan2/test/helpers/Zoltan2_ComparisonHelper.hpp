@@ -196,8 +196,8 @@ private:
    */
   static bool
   metricComparisonTest(const RCP<const Comm<int> > &comm,
-                       const metric_t & metric,
-                       const metric_t &ref_metric,
+                       const base_metric_t & metric,
+                       const base_metric_t &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
                        ostringstream &msg);
   
@@ -222,8 +222,8 @@ private:
    *
    * \return a map with metrics assigned to keys assigned by name
    */
-  static std::map<const string, const metric_t>
-  metricArrayToMap(const ArrayRCP<const metric_t> &metrics);
+  static std::map<const string, const base_metric_t>
+  metricArrayToMap(const ArrayRCP<RCP<base_metric_t> > &metrics);
   
   /* \brief Method for inserting data from all timers to a map of clocked times
    * param[in] timers a map of timers
@@ -636,7 +636,6 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
 void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
                                       const RCP<const Comm<int> > &comm)
 {
-  
   int rank = comm->getRank();
   
   //get sources for problema nd reference
@@ -657,10 +656,10 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   auto metricObjectRef = sourceRef.get()->metricObject.get();
   
   // get metrics
-  std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap
-    (metricObjectPrb->getMetrics());
-  std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap
-    (metricObjectRef->getMetrics());
+  std::map<const string, const base_metric_t> prb_metrics = this->metricArrayToMap
+    (metricObjectPrb->getAllMetrics());
+  std::map<const string, const base_metric_t> ref_metrics = this->metricArrayToMap
+    (metricObjectRef->getAllMetrics());
   
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
@@ -718,15 +717,16 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   }
 }
 
-std::map<const string, const metric_t>
-ComparisonHelper::metricArrayToMap(const ArrayRCP<const metric_t> &metrics)
+std::map<const string, const base_metric_t>
+ComparisonHelper::metricArrayToMap(const ArrayRCP<RCP<base_metric_t>> &metrics)
 {
-  typedef std::pair<const string,const metric_t> pair_t;
-  std::map<const string, const metric_t> metric_map;
-  ArrayRCP<const metric_t>::size_type idx;
+  typedef std::pair<const string,const base_metric_t> pair_t;
+  std::map<const string, const base_metric_t> metric_map;
+  ArrayRCP<const base_metric_t>::size_type idx;
   for(idx = 0; idx < metrics.size(); idx++)
   {
-    metric_map.insert(pair_t(metrics[idx].getName(),metrics[idx]));
+	  // MDM - I need to fix this ptr reference
+    metric_map.insert(pair_t(metrics[idx]->getName(),*metrics[idx]));
   }
   
   return metric_map;
@@ -748,8 +748,8 @@ ComparisonHelper::timerDataToMap(const map<const std::string, RCP<Time> > &timer
 
 bool
 ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
-                                       const Zoltan2::MetricValues<zscalar_t> & metric,
-                                       const Zoltan2::MetricValues<zscalar_t> & ref_metric,
+                                       const base_metric_t & metric,
+                                       const base_metric_t & ref_metric,
                                        const Teuchos::ParameterList & metricPlist,
                                        ostringstream &msg)
 {
@@ -757,8 +757,8 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
-  double ref_value = ref_metric.getMaxImbalance();
-  double value = metric.getMaxImbalance();
+  double ref_value = ref_metric.getMetricValue("maximum imbalance");
+  double value = metric.getMetricValue("maximum imbalance");
   
   // want to reduce value to max value for all procs
   

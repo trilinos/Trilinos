@@ -87,6 +87,9 @@ MetricValues(std::string mname) : MetricBase<scalar_t>(static_metricNames_.size(
 /*! \brief Constructor */
 MetricValues() : MetricBase<scalar_t>(static_metricNames_.size()), mcnorm_(multiCriteriaNorm(0)) {}
 
+/*! \brief Get the class name of the metric. */
+virtual std::string getMetricType() const { return "Metrics"; }
+
 /*! \brief Print a standard header */
 static void printHeader(std::ostream &os);
 

@@ -72,6 +72,9 @@ GraphMetricValues(std::string mname) : MetricBase<scalar_t>(static_metricNames_.
 /*! \brief Constructor */
 GraphMetricValues() : MetricBase<scalar_t>(static_metricNames_.size()) {}
 
+/*! \brief Get the class name of the metric. */
+virtual std::string getMetricType() const { return "Graph Metrics"; }
+
 /*! \brief Print a standard header */
 static void printHeader(std::ostream &os);
 

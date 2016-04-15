@@ -75,12 +75,17 @@ ArrayRCP<scalar_t> values_;
 protected:
 
 /*! \access to getting values_ */
-scalar_t getValue( int enumIndex ) const { return values_[enumIndex]; }
+scalar_t getValue(int enumIndex) const { return values_[enumIndex]; }
 
 /*! \access to setting _values */
-void setValue( int enumIndex, scalar_t value ) { values_[enumIndex] = value; }
+void setValue(int enumIndex, scalar_t value) { values_[enumIndex] = value; }
 
 public:
+
+/*! \brief Constructor which exists only compiling - MDM - need to look into this as I would like to remove it */
+MetricBase() :
+	values_(), metricName_("unset") {
+	}
 
 /*! \brief Constructor */
 MetricBase(int memCount, std::string mname) :
@@ -94,11 +99,14 @@ MetricBase(int memCount) :
 	resetValues(memCount);
 	}
 
-/*! \abstract printLine. */
-virtual void printLine(std::ostream &os) const = 0;
+/*! \abstract printLine. Not abstract so that we can generically support stl containers like maps. */
+virtual void printLine(std::ostream &os) const {};
 
 /*! \abstract getMetrics. Forces declaration of a static string list which should be synchronized to the enum list definition */
-virtual const std::vector<std::string> & getMetrics() const = 0;
+virtual const std::vector<std::string> & getMetrics() const { return static_metricNames_; }
+
+/*! \brief Get the class name of the metric. */
+virtual std::string getMetricType() const { return ""; }
 
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
@@ -120,6 +128,14 @@ scalar_t getMetricValue(const std::string & metric_name) const
 	return values_[metricIndex];
 }
 
+/*! \ set a metric value specified by name */
+void setMetricValue(const std::string & metric_name, scalar_t value) const
+{
+	int metricIndex = convertMetricNameToIndex( metric_name);
+	if( metricIndex != getMetrics().size() )
+		values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utlity functions - but we probably want to error handle here for bad names
+}
+
 /*! \utility function converts the name to an enum index. */
 int convertMetricNameToIndex(const std::string & metric_name) const
 {
@@ -127,7 +143,21 @@ int convertMetricNameToIndex(const std::string & metric_name) const
 	int metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
 	return metricIndex; // this can return metricNames.size() if not found
 }
+
+/*! \setup a static vector of strings. Non virtual so that we can generically support stl containers like maps. */
+static std::vector<std::string> static_metricNames_;
+
+/*! \This is a list of all possible types - it is used to generate a 'was not used' message, if that's you want. */
+static std::vector<std::string> static_allMetricNames_;
 };
+
+/*! \synchronize this with the enum list. Empty list allows us to be not abstract - so that we can generically support stl containers like maps. */
+template <typename scalar_t>
+std::vector<std::string> MetricBase<scalar_t>::static_metricNames_ = {};
+
+/*! \This is a list of all possible types - it is used to generate a 'was not used message', if that's you want. */
+template <typename scalar_t>
+std::vector<std::string> MetricBase<scalar_t>::static_allMetricNames_ = { "Metrics", "Graph Metrics" };
 
 } // namespace Zoltan2
 #endif

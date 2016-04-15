@@ -42,6 +42,50 @@
 // ***********************************************************************
 //
 // @HEADER
+// @HEADER
+//
+// ***********************************************************************
+//
+//   Zoltan2: A package of combinatorial algorithms for scientific computing
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Erik Boman        (egboman@sandia.gov)
+//                    Siva Rajamanickam (srajama@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
 
 /*! \file Zoltan2_EvaluatePartition.hpp
  *  \brief Defines the EvaluatePartition class.
@@ -71,16 +115,17 @@ private:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
+
   typedef StridedData<lno_t, scalar_t> input_t;
 
   part_t numGlobalParts_;           // desired
   part_t targetGlobalParts_;        // actual
   part_t numNonEmpty_;              // of actual
 
-  ArrayRCP<MetricValues<scalar_t> > metrics_;
-  ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
-  ArrayRCP<GraphMetricValues<scalar_t> > graphMetrics_;
-  ArrayRCP<const GraphMetricValues<scalar_t> > graphMetricsConst_;
+  typedef MetricBase<scalar_t> base_metric_type;
+  typedef ArrayRCP<RCP<base_metric_type>> base_metric_array_type;
+
+  base_metric_array_type metricsBase_;
 
   void sharedConstructor(const Adapter *ia,
 			 ParameterList *p,
@@ -123,7 +168,7 @@ public:
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
-    EvaluatePartition(const Adapter *ia, 
+  EvaluatePartition(const Adapter *ia,
     ParameterList *p,
     const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
@@ -163,20 +208,50 @@ public:
     }
 #endif
 
-  /*! \brief Return the metric values.
-   *  \param values on return is the array of values.
+  /*! \brief Return the full metric list which will be mixed types.
    */
-  ArrayRCP<const MetricValues<scalar_t> > getMetrics() const{
-    //BDD return metricsConst_;
-      if(metricsConst_.is_null()) return metrics_;
-      return metricsConst_;
+  base_metric_array_type getAllMetrics() const {
+      return metricsBase_;
+  }
+
+  /*! \get the unique class names.
+   */
+  std::set<std::string> getMetricTypes() const {
+	  std::set<std::string> metricTypes;
+	  for( int n = 0; n < metricsBase_.size(); ++n )
+		  metricTypes.insert( metricsBase_[n]->getMetricType() );
+	  return metricTypes;
+  }
+
+  /*! \brief Return the  metric list for types matching the given metric type.
+   */
+  base_metric_array_type getAllMetricsOfType(std::string metricType) const
+  {
+	int counter = 0;
+	for( int n = 0; n < metricsBase_.size(); ++n ) {
+      if( metricsBase_[n]->getMetricType() == metricType )
+      ++counter;
+	}
+
+	base_metric_array_type newArray = arcp<RCP<base_metric_type> >( counter );	// new array allocated
+
+	int insertIndex = 0;
+	for( int n = 0; n < metricsBase_.size(); ++n ) {
+	  if( metricsBase_[n]->getMetricType() == metricType ) {
+	    newArray[insertIndex] = metricsBase_[n];
+		++insertIndex;
+	  }
+	}
+
+	return newArray;
   }
 
   /*! \brief Return the object count imbalance.
    *  \param imbalance on return is the object count imbalance.
    */
-  void getObjectCountImbalance(scalar_t &imbalance) const{
-    imbalance = metrics_[0].getMaxImbalance();
+  void getObjectCountImbalance(scalar_t &imbalance) const {
+	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+	imbalance = metrics[0]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the object normed weight imbalance.
@@ -185,10 +260,11 @@ public:
    *  If there was one weight, it is the imbalance with respect to that weight.
    */
   void getNormedImbalance(scalar_t &imbalance) const{
-    if (metrics_.size() > 1)
-      imbalance = metrics_[1].getMaxImbalance();
-    else 
-      imbalance = metrics_[0].getMaxImbalance();
+	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+    if (metrics.size() > 1)
+      imbalance = metrics[1]->getMetricValue("maximum imbalance");
+    else
+      imbalance = metrics[0]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the imbalance for the requested weight.
@@ -198,29 +274,34 @@ public:
    *  If there were no weights, this is the object count imbalance.
    */
   void getWeightImbalance(scalar_t &imbalance, int idx=0) const{
-    imbalance = 0;
-    if (metrics_.size() > 2)  // idx of multiple weights
-      imbalance = metrics_[idx+2].getMaxImbalance();
-    else if (metrics_.size() == 2)   //  only one weight
-      imbalance = metrics_[1].getMaxImbalance();
+	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+    if (metrics.size() > 2)  // idx of multiple weights
+      imbalance = metrics[idx+2]->getMetricValue("maximum imbalance");
+    else if (metrics.size() == 2)   //  only one weight
+      imbalance = metrics[1]->getMetricValue("maximum imbalance");
     else                       // no weights, return object count imbalance
-      imbalance = metrics_[0].getMaxImbalance();
-  }  
-
-  /*! \brief Print all the metrics
-   */
-  void printMetrics(std::ostream &os) const {
-    Zoltan2::printMetrics<scalar_t, part_t>(os, 
-      targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
-      metrics_.view(0, metrics_.size()));
+      imbalance = metrics[0]->getMetricValue("maximum imbalance");
   }
 
-  /*! \brief Return the graph metric values.
-   *  \param values on return is the array of values.
+  /*! \brief Print all the metrics based on the  metric object type
    */
-  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const{
-      if(graphMetricsConst_.is_null()) return graphMetrics_;
-      return graphMetricsConst_;
+  void printMetrics(std::ostream &os) const {
+	  std::set<std::string> metric_types = getMetricTypes();
+	  for( auto metricType : metric_types )
+		  printMetrics( os, metricType );
+  }
+
+  /*! \brief Print all the metrics of type metricType based on the metric object type
+   */
+  void printMetrics(std::ostream &os, std::string metricType) const {
+	  /*! \Might need changing.
+	   *  \The issue here is that they each have unique parameters to pass.
+	   */
+	  base_metric_array_type metrics = getAllMetricsOfType( metricType );
+	  if( metricType == "Graph Metrics" )
+	    Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
+	  else if( metricType == "Metrics" )
+		Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
   }
 
   /*! \brief Return the max cut for the requested weight.
@@ -229,21 +310,15 @@ public:
    *     to one less than the number of weights provided in the input.
    *  If there were no weights, this is the cut count.
    */
-  void getMaxWeightedEdgeCut(scalar_t &cut, int idx=0) const{
-    if (idx >= graphMetrics_.size())  // idx too high
-      cut = graphMetrics_[graphMetrics_.size() - 1].getGlobalMax();
-    else if (idx < 0)   //  idx too low
-      cut = graphMetrics_[0].getGlobalMax();
-    else                       // 
-      cut = graphMetrics_[idx].getGlobalMax();
-  }
 
-  /*! \brief Print all the metrics
-   */
-  void printGraphMetrics(std::ostream &os) const {
-    Zoltan2::printMetrics<scalar_t, part_t>(os, 
-      targetGlobalParts_, numGlobalParts_, 
-      graphMetrics_.view(0, graphMetrics_.size()));
+  void getWeightCut(scalar_t &cut, int idx=0) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType( "Graph Metrics" );
+    if (graphMetrics.size() < idx)  // idx too high
+      cut = graphMetrics[graphMetrics.size()-1].getMetricValue("global maximum");
+    else if (idx < 0)   //  idx too low
+      cut = graphMetrics[0]->getMetricValue("global maximum");
+    else                       // idx weight
+      cut = graphMetrics[idx]->getMetricValue("global maximum");
   }
 };
 
@@ -278,15 +353,17 @@ public:
       mcnorm = normMinimizeTotalWeight;
     else if (strChoice == std::string("multicriteria_minimize_maximum_weight"))
       mcnorm = normMinimizeMaximumWeight;
-  } 
+  }
 
   const RCP<const base_adapter_t> bia =
     rcp(dynamic_cast<const base_adapter_t *>(ia), false);
 
   try{
     objectMetrics<Adapter>(env, problemComm, mcnorm, ia, soln, graphModel,
-			   numGlobalParts_, numNonEmpty_,metrics_);
+			   numGlobalParts_, numNonEmpty_,metricsBase_);
   }
+
+
   Z2_FORWARD_EXCEPTIONS;
 
   if (soln)
@@ -312,7 +389,7 @@ public:
 
     RCP<GraphModel<base_adapter_t> > graph;
     if (graphModel == Teuchos::null)
-      graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm, 
+      graph = rcp(new GraphModel<base_adapter_t>(bia, env, problemComm,
 						 modelFlags));
 
     // Local number of objects.
@@ -348,7 +425,7 @@ public:
       try{
 	globalWeightedCutsByPart<Adapter>(env,
 					  problemComm, graph, partArray,
-					  numGlobalParts_, graphMetrics_,
+					  numGlobalParts_, metricsBase_,
 					  globalSums);
       }
       Z2_FORWARD_EXCEPTIONS;
@@ -356,7 +433,7 @@ public:
       try{
 	globalWeightedCutsByPart<Adapter>(env,
 					  problemComm, graphModel, partArray,
-					  numGlobalParts_, graphMetrics_,
+					  numGlobalParts_, metricsBase_,
 					  globalSums);
       }
       Z2_FORWARD_EXCEPTIONS;
