@@ -110,7 +110,6 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outFieldViewType;
     typedef Kokkos::DynRankView<leftFieldValueType,leftFieldProperties...> leftFieldViewType;
     typedef Kokkos::DynRankView<rightFieldValueType,rightFieldProperties...> rightFieldViewType;
-    typedef leftFieldValueType value_type;
     typedef FunctorArrayTools::F_contractFieldField<outFieldViewType, leftFieldViewType, rightFieldViewType> FunctorType;
     typedef typename ExecSpace< typename outFieldViewType::execution_space, SpT >::ExecSpaceType ExecSpaceType;
 
@@ -185,7 +184,6 @@ namespace Intrepid2 {
                      const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>    inputData,
                      const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>   inputFields,
                      const bool sumInto ) {
-    typedef inputFieldValueType value_type;
 
     typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>                 outputFieldsViewType;
     typedef Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>                   inputDataViewType;
@@ -250,7 +248,6 @@ namespace Intrepid2 {
                     const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                     const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                     const bool sumInto ) {
-    typedef inputDataLeftValueType value_type;
     typedef Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>       outputDataViewType;
     typedef Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>    inputDataLeftViewType;
     typedef Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...>   inputDataRightViewType;

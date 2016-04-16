@@ -71,6 +71,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, field, point;
+        size_type rightRank = _rightInput.rank();
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
@@ -87,7 +88,10 @@ namespace Intrepid2 {
 
         auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
 
-        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+        auto right  = (rightRank == 2 + size_type(_hasField)) ?
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
 
         // branch prediction is possible
@@ -119,7 +123,8 @@ namespace Intrepid2 {
     typedef FunctorArrayTools::F_crossProduct<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
     typedef typename ExecSpace< typename rightInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
-    const size_type loopSize = output.dimension(0)*output.dimension(1)*output.dimension(2);
+    const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
+                                            output.dimension(0)*output.dimension(1) );
     const bool isCrossProd3D = (leftInput.dimension(2) == 3);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField, isCrossProd3D) );
@@ -155,7 +160,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( inputFields.rank() < 3 || inputFields.rank() > 4, std::invalid_argument,
                                 ">>> ERROR (ArrayTools::crossProductDataField): inputFields must have rank 3 or 4" );
       INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(inputFields.rank()-1) < 2 ||
-                                inputFields.dimension(inputFields.rank()-1) < 3, std::invalid_argument,
+                                inputFields.dimension(inputFields.rank()-1) > 3, std::invalid_argument,
                                 ">>> ERROR (ArrayTools::crossProductDataField): inputFields dimension (rank-1) must have rank 2 or 3" );
 
       // (3) outputFields is (C,F,P,D) in 3D and (C,F,P) in 2D => rank = inputData.dimension(2) + 1
@@ -171,15 +176,15 @@ namespace Intrepid2 {
        */
       if (inputFields.rank() == 4) {
         // inputData(C,P,D) vs. inputFields(C,F,P,D): dimensions C, P, D must match
-        const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
         }
       } else {
         // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 1, 2 }, f2[] = { 1, 2 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataField): inputData dimension does not match with inputFields");
         }
@@ -190,15 +195,15 @@ namespace Intrepid2 {
       if (inputData.dimension(2) == 2) {
         //  in 2D: outputFields(C,F,P) vs. inputData(C,P,D): dimensions C,P must match
         // inputData(C,P,D) vs. inputFields(F,P,D): dimensions P, D must match
-        const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 0, 2 }, f2[] = { 0, 1 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
         }
       } else {
         // in 3D: outputFields(C,F,P,D) vs. inputData(C,P,D): dimensions C,P,D must match
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 1, 2 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 1, 2 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputData");
         }
@@ -210,15 +215,15 @@ namespace Intrepid2 {
         // In 2D:
         if (inputFields.rank() == 4) {
           //  and rank-4 inputFields: outputFields(C,F,P) vs. inputFields(C,F,P,D): dimensions C,F,P must match
-          const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 1, 2 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 1, 2 }, f2[] = { 0, 1, 2 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
           }
         } else {
           //  and rank-3 inputFields: outputFields(C,F,P) vs. inputFields(F,P,D): dimensions F,P must match
-          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
           }
@@ -227,14 +232,14 @@ namespace Intrepid2 {
         // In 3D:
         if (inputFields.rank() == 4) {
           //  and rank-4 inputFields: outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C,F,P,D must match
-          for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+          for (size_t i=0; i<outputFields.rank(); ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(i) != inputFields.dimension(i), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
           }
         } else {
           // and rank-3 inputFields: outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F,P,D must match
-          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataField): outputFields dimension does not match with inputFields");
           }
@@ -278,7 +283,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.rank() < 2 || inputDataRight.rank() > 3, std::invalid_argument,
                                 ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight must have rank 2 or 3" );
       INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.dimension(inputDataRight.rank()-1) < 2 ||
-                                inputDataRight.dimension(inputDataRight.rank()-1) < 3, std::invalid_argument,
+                                inputDataRight.dimension(inputDataRight.rank()-1) > 3, std::invalid_argument,
                                 ">>> ERROR (ArrayTools::crossProductDataData): inputDataRight dimension (rank-1) must have rank 2 or 3" );
 
       // (3) outputData is (C,P,D) in 3D and (C,P) in 2D => rank = inputDataLeft.dimension(2)
@@ -294,15 +299,15 @@ namespace Intrepid2 {
        */
       if (inputDataRight.rank() == 3) {
         // inputDataLeft(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+        for (size_t i=0; i<inputDataLeft.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(i) != inputDataRight.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
         }
       }
       // inputDataLeft(C, P,D) vs. inputDataRight(P,D): dimensions P, D must match
       else {
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to inputDataRight");
         }
@@ -312,14 +317,14 @@ namespace Intrepid2 {
        */
       if (inputDataLeft.dimension(2) == 2) {
         // in 2D: outputData(C,P) vs. inputDataLeft(C,P,D): dimensions C, P must match
-        const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != outputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
         }
       } else {
         // in 3D: outputData(C,P,D) vs. inputDataLeft(C,P,D): all dimensions C, P, D must match
-        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+        for (size_t i=0; i<inputDataLeft.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(i) != outputData.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::crossProductDataData): inputDataLeft dimension does not match to outputData");
         }
@@ -331,8 +336,8 @@ namespace Intrepid2 {
         // In 2D:
         if (inputDataRight.rank() == 3) {
           //  and rank-3 inputDataRight: outputData(C,P) vs. inputDataRight(C,P,D): dimensions C,P must match
-          const ordinal_type f1[] = { 0, 1 }, f2[] = { 0, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 0, 1 }, f2[] = { 0, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
           }
@@ -345,14 +350,14 @@ namespace Intrepid2 {
         // In 3D:
         if (inputDataRight.rank() == 3) {
           //  and rank-3 inputDataRight: outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C,P,D must match
-          for (ordinal_type i=0; i<outputData.rank(); ++i) {
+          for (size_t i=0; i<outputData.rank(); ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(i) != inputDataRight.dimension(i), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
           }
         } else {
           //  and rank-2 inputDataRight: outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
-          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::crossProductDataData): outputData dimension does not match to inputDataRight");
           }
@@ -387,6 +392,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, field, point;
+        size_type rightRank = _rightInput.rank();
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
@@ -403,7 +409,10 @@ namespace Intrepid2 {
 
         auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL());
 
-        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+        auto right  = (rightRank == 2 + size_type(_hasField)) ?
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
 
         const size_type iend = result.dimension(0);
@@ -489,8 +498,8 @@ namespace Intrepid2 {
        *   Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P,D): dimensions C, P, D must match
        */
       {
-        const ordinal_type f1[] = { 0, 2, 3, 4 }, f2[] = { 0, 1, 2, 2 };
-        for (ordinal_type i=0; i<4; ++i) {
+        const size_t f1[] = { 0, 2, 3, 4 }, f2[] = { 0, 1, 2, 2 };
+        for (size_t i=0; i<4; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputData");
         }
@@ -502,8 +511,8 @@ namespace Intrepid2 {
       if (inputFields.rank() == 4) {
         // Cross-check (1): inputData(C,P,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
         {
-          const ordinal_type f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 1, 2 }, f2[] = { 0, 2, 3 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
           }
@@ -511,8 +520,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D): dimensions C, F, P, D must match
         {
-          const ordinal_type f1[] = { 0, 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3, 3 };
-          for (ordinal_type i=0; i<5; ++i) {
+          const size_t f1[] = { 0, 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3, 3 };
+          for (size_t i=0; i<5; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
           }
@@ -520,8 +529,8 @@ namespace Intrepid2 {
       } else {
         // Cross-check (1): inputData(C,P,D) vs. inputFields(F,P,D): dimensions  P, D must match
         {
-          const ordinal_type f1[] = { 1, 2 }, f2[] = { 1, 2 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 1, 2 }, f2[] = { 1, 2 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): inputData dimension does not match with inputFields");
           }
@@ -529,8 +538,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D): dimensions F, P, D must match
         {
-          const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
-          for (ordinal_type i=0; i<4; ++i) {
+          const size_t f1[] = { 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 2 };
+          for (size_t i=0; i<4; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): outputFields dimension does not match with inputFields");
           }
@@ -596,8 +605,8 @@ namespace Intrepid2 {
        *   Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P,D): dimensions C, P, D must match
        */
       {
-        const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
-        for (ordinal_type i=0; i<4; ++i) {
+        const size_t f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
+        for (size_t i=0; i<4; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataLeft");
         }
@@ -608,15 +617,15 @@ namespace Intrepid2 {
        */
       if (inputDataRight.rank() == 3) {
         // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(C,P,D):  all dimensions  C, P, D must match
-        for (ordinal_type i=0; i<inputDataLeft.rank(); ++i) {
+        for (size_t i=0; i<inputDataLeft.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(i) != inputDataRight.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
         }
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D): dimensions C, P, D must match
         {
-          const ordinal_type f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
-          for (ordinal_type i=0; i<4; ++i) {
+          const size_t f1[] = { 0, 1, 2, 3 }, f2[] = { 0, 1, 2, 2 };
+          for (size_t i=0; i<4; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
           }
@@ -624,8 +633,8 @@ namespace Intrepid2 {
       } else {
         // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(P,D): dimensions  P, D must match
         {
-          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): inputDataLeft dimension does not match with inputDataRight");
           }
@@ -633,8 +642,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D): dimensions P, D must match
         {
-          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 1 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 1 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::outerProductDataField): outputData dimension does not match with inputDataRight");
           }
@@ -671,6 +680,8 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, field, point;
+        size_type rightRank = _rightInput.rank();
+        size_type leftRank = _leftInput.rank();
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
@@ -685,22 +696,42 @@ namespace Intrepid2 {
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
 
-        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL(), Kokkos::ALL());
+        auto lpoint = (_leftInput.dimension(1) == 1) ? size_type(0) : point;
+        auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
+                      ((leftRank == 3) ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                       Kokkos::subdynrankview(_leftInput, cell, lpoint)));
 
-        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
+        auto right  = (rightRank == 2 + size_type(_hasField)) ?
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
+                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
+                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
 
-        result(0) = value_type(0);
         const size_type iend = result.dimension(0);
         const size_type jend = right.dimension(0);
-        if (_isTranspose) {
-          for (size_type i=0; i<iend; ++i)
-            for (size_type j=0; j<jend; ++j)
-              result(i) += left(i, j) * right(j);
-        } else {
-          for (size_type i=0; i<iend; ++i)
-            for (size_type j=0; j<jend; ++j)
-              result(i) += left(j, i) * right(j);
+        switch (leftRank) {
+          case 4:
+            if (!_isTranspose)
+              for (size_type i=0; i<iend; ++i) {
+                result(i) = value_type(0);
+                for (size_type j=0; j<jend; ++j)
+                  result(i) += left(i, j) * right(j);
+            } else
+              for (size_type i=0; i<iend; ++i) {
+                result(i) = value_type(0);
+                for (size_type j=0; j<jend; ++j)
+                  result(i) += left(j, i) * right(j);
+            }
+            break;
+          case 3:  //matrix is diagonal
+            for (size_type i=0; i<iend; ++i)
+                result(i) = left(i) * right(i);
+            break;
+          case 2:  //matrix is a scaled identity
+            for (size_type i=0; i<iend; ++i) {
+                result(i) = left() * right(i);
+            }
+            break;
         }
       }
     };
@@ -798,15 +829,15 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension(0) must match to inputData dimension(0)" );
       }
       if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-        const ordinal_type f1[] = { 0, 3 }, f2[] = { 0, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 0, 3 }, f2[] = { 0, 2 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
         }
       }
       if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
-        const ordinal_type f1[] = { 0, 3, 3 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 3, 3 }, f2[] = { 0, 2, 3 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputData dimension" );
         }
@@ -818,7 +849,7 @@ namespace Intrepid2 {
       if (inputFields.rank() == 4) {
         // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
         if (inputData.dimension(1) > 1) { // check P dimension if P>1 in inputData
-          INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(2) != inputData(1), std::invalid_argument,
+          INTREPID2_TEST_FOR_EXCEPTION( inputFields.dimension(2) != inputData.dimension(1), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataField): inputFields dimension (2) does not match to inputData dimension (1)" );
         }
         if (inputData.rank() == 2) { // inputData(C,P) -> C match
@@ -826,22 +857,22 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension (0) does not match to inputFields dimension (0)" );
         }
         if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-          const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 3 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 0, 2 }, f2[] = { 0, 3 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
           }
         }
         if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
-          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 3 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 3 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
           }
         }
 
         // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C, F, P, D must match
-        for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+        for (size_t i=0; i<outputFields.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(i) != inputFields.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputFields dimension" );
         }
@@ -856,8 +887,8 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension(2) does not match to inputFields dimension (2)" );
         }
         if (inputData.rank() == 4) {
-          const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 2 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 3 }, f2[] = { 2, 2 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataField): inputData dimension does not match to inputFields dimension" );
           }
@@ -865,8 +896,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F, P, D must match
         {
-          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataField): outputFields dimension does not match to inputFields dimension" );
           }
@@ -954,15 +985,15 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension(0) muat match inputDataLeft dimension(0)" );
       }
       if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-        const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 2 };
-        for (ordinal_type i=0; i<2; ++i) {
+        const size_t f1[] = { 0, 2 }, f2[] = { 0, 2 };
+        for (size_t i=0; i<2; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-        const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match inputDataLeft dimension" );
         }
@@ -982,22 +1013,22 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (0) muat match to inputDataRight dimension (0)" );
         }
         if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-          const ordinal_type f1[] = { 0, 2 }, f2[] = { 0, 2 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 0, 2 }, f2[] = { 0, 2 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
           }
         }
         if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
           }
         }
 
         // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-        for (ordinal_type i=0; i<outputData.rank(); ++i) {
+        for (size_t i=0; i<outputData.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(i) != inputDataRight.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
         }
@@ -1012,8 +1043,8 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension (2) does mot match to inputDataright dimension (1)" );
         }
         if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
-          const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 3 }, f2[] = { 1, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataData): inputDataLeft dimension muat match to inputDataRight dimension" );
           }
@@ -1021,8 +1052,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
         {
-          const ordinal_type f1[] = { 1, 2 }, f2[] = { 0, 1 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 1, 2 }, f2[] = { 0, 1 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matvecProductDataData): outputData dimension muat match to inputDataRight dimension" );
           }
@@ -1060,6 +1091,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type iter) const {
         size_type cell, field, point;
+        size_type leftRank = _leftInput.rank();
 
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
@@ -1074,31 +1106,51 @@ namespace Intrepid2 {
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
 
-        auto left   = Kokkos::subdynrankview(_leftInput, cell, point, Kokkos::ALL(), Kokkos::ALL());
+        auto lpoint = (_leftInput.dimension(1) == 1) ? size_type(0) : point;
+        auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
+                      ((leftRank == 3) ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                      Kokkos::subdynrankview(_leftInput, cell, lpoint)));
 
         auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()) );
+                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
 
         const size_type iend = result.dimension(0);
         const size_type jend = result.dimension(1);
 
-        if (_isTranspose) {
-          const size_type kend = left.dimension(0);
-          for (size_type i=0; i<iend; ++i)
-            for (size_type j=0; j<jend; ++j) {
-              result(i, j) = value_type(0);
-              for (size_type k=0; k<kend; ++k)
-                result(i, j) += left(k, i) * right(k, j);
+        switch (leftRank) {
+          case 4:
+            if (_isTranspose) {
+              const size_type kend = right.dimension(0);
+              for (size_type i=0; i<iend; ++i)
+                for (size_type j=0; j<jend; ++j) {
+                  result(i, j) = value_type(0);
+                  for (size_type k=0; k<kend; ++k)
+                    result(i, j) += left(k, i) * right(k, j);
+                }
+            } else {
+              const size_type kend = right.dimension(0);
+              for (size_type i=0; i<iend; ++i)
+                for (size_type j=0; j<jend; ++j) {
+                  result(i, j) = value_type(0);
+                  for (size_type k=0; k<kend; ++k)
+                    result(i, j) += left(i, k) * right(k, j);
+                }
             }
-        } else {
-          const size_type kend = left.dimension(1);
-          for (size_type i=0; i<iend; ++i)
-            for (size_type j=0; j<jend; ++j) {
-              result(i, j) = value_type(0);
-              for (size_type k=0; k<kend; ++k)
-                result(i, j) += left(i, k) * right(k, j);
+            break;
+          case 3:  //matrix is diagonal
+            for (size_type i=0; i<iend; ++i)
+              for (size_type j=0; j<jend; ++j)
+                result(i, j) = left(i) * right(i, j);
+            break;
+          case 2:  //matrix is a scaled identity
+            for (size_type i=0; i<iend; ++i) {
+              for (size_type j=0; j<jend; ++j)
+                result(i, j) = left() * right(i, j);
             }
+            break;
         }
+
+
       }
     };
     } //namespace
@@ -1204,15 +1256,15 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension (0) does not match to inputData dimension (0)" );
       }
       if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
-        const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 2 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 2 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
         }
       }
       if (inputData.rank() == 4) { // inputData(C,P,D,D) -> C, D, D match
-        const ordinal_type f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 3, 4 }, f2[] = { 0, 2, 3 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputData.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputData dimension" );
         }
@@ -1233,22 +1285,22 @@ namespace Intrepid2 {
         }
         if (inputData.rank() == 3) { // inputData(C,P,D) -> C, D match
 
-          const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 3, 4 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 2 }, f2[] = { 0, 3, 4 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
           }
         }
         if (inputData.rank() == 4) {  // inputData(C,P,D,D) -> C, D, D match
-          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 4 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 3, 4 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
           }
         }
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D,D): all dimensions C, F, P, D must match
-        for (ordinal_type i=0; i<outputFields.rank(); ++i) {
+        for (size_t i=0; i<outputFields.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(i) != inputFields.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputFields dimension" );
         }
@@ -1259,15 +1311,15 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension (1) does not match to inputFields dimension (1)" );
         }
         if (inputData.rank() == 3) {
-          const ordinal_type f1[] = { 2, 2 }, f2[] = { 2, 3 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 2 }, f2[] = { 2, 3 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
           }
         }
         if (inputData.rank() == 4) {
-          const ordinal_type f1[] = { 2, 3 }, f2[] = { 2, 3 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 3 }, f2[] = { 2, 3 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataField): inputData dimension does not match to inputFields dimension" );
           }
@@ -1275,8 +1327,8 @@ namespace Intrepid2 {
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D,D): dimensions F, P, D must match
         {
-          const ordinal_type f1[] = { 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3 };
-          for (ordinal_type i=0; i<4; ++i) {
+          const size_t f1[] = { 1, 2, 3, 4 }, f2[] = { 0, 1, 2, 3 };
+          for (size_t i=0; i<4; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(f1[i]) != inputFields.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataField): outputFields dimension does not match to inputFields dimension" );
           }
@@ -1368,15 +1420,15 @@ namespace Intrepid2 {
                                   ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension (0) does not match to inputDataLeft dimension (0)" );
       }
       if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 2 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
         }
       }
       if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-        const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
-        for (ordinal_type i=0; i<3; ++i) {
+        const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
+        for (size_t i=0; i<3; ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataLeft.dimension(f2[i]), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataLeft dimension" );
         }
@@ -1396,22 +1448,22 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (0) does not match to inputDataRight dimension (0)" );
         }
         if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check C and D
-          const ordinal_type f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 2 }, f2[] = { 0, 2, 3 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
           }
         }
         if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check C and D
-          const ordinal_type f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 0, 2, 3 }, f2[] = { 0, 2, 3 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
           }
         }
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
-        for (ordinal_type i=0; i< outputData.rank(); ++i) {
+        for (size_t i=0; i< outputData.rank(); ++i) {
           INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(i) !=  inputDataRight.dimension(i), std::invalid_argument,
                                     ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
         }
@@ -1422,23 +1474,23 @@ namespace Intrepid2 {
                                     ">>> ERROR (ArrayTools::matmatProductDataData): inputDataLeft dimension (1) does not match to inputDataRight dimension (0)" );
         }
         if (inputDataLeft.rank() == 3) {  // inputDataLeft(C,P,D): check D
-          const ordinal_type f1[] = { 2, 2 }, f2[] = { 1, 2 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 2 }, f2[] = { 1, 2 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
           }
         }
         if (inputDataLeft.rank() == 4) {  // inputDataLeft(C,P,D,D): check D
-          const ordinal_type f1[] = { 2, 3 }, f2[] = { 1, 2 };
-          for (ordinal_type i=0; i<2; ++i) {
+          const size_t f1[] = { 2, 3 }, f2[] = { 1, 2 };
+          for (size_t i=0; i<2; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataData): intputDataLeft dimension does not match to inputDataRight dimension" );
           }
         }
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
         {
-          const ordinal_type f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
-          for (ordinal_type i=0; i<3; ++i) {
+          const size_t f1[] = { 1, 2, 3 }, f2[] = { 0, 1, 2 };
+          for (size_t i=0; i<3; ++i) {
             INTREPID2_TEST_FOR_EXCEPTION( outputData.dimension(f1[i]) != inputDataRight.dimension(f2[i]), std::invalid_argument,
                                       ">>> ERROR (ArrayTools::matmatProductDataData): outputData dimension does not match to inputDataRight dimension" );
           }
