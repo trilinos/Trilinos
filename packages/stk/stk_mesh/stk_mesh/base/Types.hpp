@@ -335,6 +335,16 @@ enum ConnectivityOrdinal : uint32_t
 };
 #endif
 
+inline std::ostream & operator<<(std::ostream &out, ConnectivityOrdinal ordinal)
+{
+#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
+  out << static_cast<uint16_t>(ordinal); 
+#else
+  out << static_cast<uint32_t>(ordinal);
+#endif
+  return out;
+}
+
 inline
 ConnectivityOrdinal& operator++(ConnectivityOrdinal& ord)
 {

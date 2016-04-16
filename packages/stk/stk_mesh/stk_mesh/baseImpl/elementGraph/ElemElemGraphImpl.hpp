@@ -285,7 +285,7 @@ struct GraphEdge
 
     int get_side(const impl::LocalId& vertex) const
     {
-        return abs(vertex)%max_num_sides_per_elem;
+        return std::abs(vertex)%max_num_sides_per_elem;
     }
 
     // elem1, side1, elem2, side2
