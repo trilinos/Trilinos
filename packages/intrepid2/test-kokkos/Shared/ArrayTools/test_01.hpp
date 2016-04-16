@@ -118,7 +118,7 @@ namespace Intrepid2 {
       #ifdef HAVE_INTREPID2_DEBUG
   			art atools;
 			#endif
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       int errorFlag = 0;
 
@@ -835,7 +835,6 @@ namespace Intrepid2 {
 
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-     Kokkos::finalize();
       return errorFlag;
     }
   }

@@ -62,6 +62,18 @@
 namespace Intrepid2 {
 
   namespace Test {
+
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    {                                                                   \
+      try {                                                             \
+        S ;                                                             \
+      }                                                                 \
+      catch (std::logic_error err) {                                    \
+        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+        *outStream << err.what() << '\n';                               \
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+      };                                                                \
+    }
     
     template<typename ValueType, typename DeviceSpaceType>
     int ArrayTools_Test03(const bool verbose) {
@@ -108,18 +120,6 @@ namespace Intrepid2 {
 			#endif
       #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      #define INTREPID_TEST_COMMAND( S )                                                                                  \
-      {                                                                                                                   \
-        try {                                                                                                             \
-          S ;                                                                                                             \
-        }                                                                                                                 \
-        catch (std::logic_error err) {                                                                                    \
-            *outStream << "Expected Error ----------------------------------------------------------------\n";            \
-            *outStream << err.what() << '\n';                                                                             \
-            *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
-        };                                                                                                                \
-      }
-
       int errorFlag = 0;
 
       *outStream                                \
@@ -150,62 +150,62 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(a_10_1_2_2, 10, 1, 2, 2);
 
           *outStream << "-> dotMultiplyDataField:\n";
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_2_2, a_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
           //
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_2_2, a_2, a_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
 
           *outStream << "-> dotMultiplyDataData:\n";
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_2_2, a_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
           //
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2, a_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1, a_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
-          INTREPID_TEST_COMMAND( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
       #endif
 
         }
@@ -544,7 +544,6 @@ namespace Intrepid2 {
 
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-     Kokkos::finalize();
       return errorFlag;
     }
   }
