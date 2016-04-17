@@ -49,7 +49,6 @@
 // the includes for this file come in as a result of the includes in the main 
 // Epetra scatter dirichlet residual file
 
-
 namespace panzer {
 
 // **************************************************************
@@ -68,14 +67,14 @@ public:
   
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                                  const Teuchos::ParameterList& p) {}
+                                  const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm) {}
+			     PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename TRAITS::PreEvalData d) {}
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename TRAITS::EvalData workset) {}
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }

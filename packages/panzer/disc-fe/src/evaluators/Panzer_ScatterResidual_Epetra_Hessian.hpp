@@ -63,19 +63,19 @@ class ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>
 public:
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null,
-                         bool useDiscreteAdjoint=false) 
-     : globalIndexer_(indexer),useDiscreteAdjoint_(useDiscreteAdjoint)  {}
+                         bool useDiscreteAdjoint=false)
+     : globalIndexer_(indexer), colGlobalIndexer_(cIndexer), useDiscreteAdjoint_(useDiscreteAdjoint)  {}
   
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                          const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
-                         const Teuchos::ParameterList& p,bool=false) {}
+                         const Teuchos::ParameterList& p,bool=false);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
-			     PHX::FieldManager<TRAITS>& vm) {}
+			     PHX::FieldManager<TRAITS>& vm) ;
 
-  void preEvaluate(typename TRAITS::PreEvalData d) {}
+  void preEvaluate(typename TRAITS::PreEvalData d);
   
-  void evaluateFields(typename TRAITS::EvalData workset) {}
+  void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
@@ -91,7 +91,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_, colGlobalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field
@@ -103,6 +103,8 @@ private:
   std::string globalDataKey_; // what global data does this fill?
 
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
+
+  ScatterResidual_Epetra();
 
   bool useDiscreteAdjoint_;
 };

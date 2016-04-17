@@ -40,17 +40,61 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDiscFE_config.hpp"
+#ifndef __Panzer_ScatterDirichletResidual_Tpetra_Hessian_impl_hpp__
+#define __Panzer_ScatterDirichletResidual_Tpetra_Hessian_impl_hpp__
 
-#include "Panzer_ExplicitTemplateInstantiation.hpp"
-#include "Panzer_Traits.hpp"
-
-#include "Panzer_ScatterResidual_Tpetra_decl.hpp"
-#include "Panzer_ScatterResidual_Tpetra_impl.hpp"
-
+// only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-#include "Panzer_ScatterResidual_Tpetra_Hessian_impl.hpp"
-#endif
 
-// PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,panzer::Ordinal64)
+// the includes for this file come in as a result of the includes in the main 
+// Tpetra scatter dirichlet residual file
+
+namespace panzer {
+
+// **************************************************************
+// Hessian Specialization
+// **************************************************************
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
+ScatterDirichletResidual_Tpetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
+                                const Teuchos::ParameterList& p) 
+{
+  std::string scatterName = p.get<std::string>("Scatter Name");
+  scatterHolder_ = 
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+  this->addEvaluatedField(*scatterHolder_);
+
+  this->setName(scatterName+" Scatter Dirichlet Residual Tpetra (Hessian)");
+}
+  
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void
+ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& vm) 
+{
+}
+
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void
+ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d) 
+{
+}
+  
+template<typename TRAITS,typename LO,typename GO,typename NodeT>
+void
+ScatterDirichletResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset) 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "ScatterDirichletResidual_Tpetra<Hessian> is not yet implemented"); // just in case
+}
+
+}
+
+// **************************************************************
+#endif // end hessian support
+
+#endif

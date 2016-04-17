@@ -48,4 +48,8 @@
 #include "Panzer_ScatterResidual_BlockedTpetra.hpp"
 #include "Panzer_ScatterResidual_BlockedTpetra_impl.hpp"
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_ScatterResidual_BlockedTpetra_Hessian_impl.hpp"
+#endif
+
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_BlockedTpetra,int,panzer::Ordinal64)

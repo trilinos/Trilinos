@@ -40,17 +40,62 @@
 // ***********************************************************************
 // @HEADER
 
-#include "PanzerDiscFE_config.hpp"
+#ifndef __Panzer_ScatterDirichletResidual_BlockedEpetra_Hessian_impl_hpp__
+#define __Panzer_ScatterDirichletResidual_BlockedEpetra_Hessian_impl_hpp__
 
-#include "Panzer_ExplicitTemplateInstantiation.hpp"
-#include "Panzer_Traits.hpp"
-
-#include "Panzer_ScatterResidual_Tpetra_decl.hpp"
-#include "Panzer_ScatterResidual_Tpetra_impl.hpp"
-
+// only do this if required by the user
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-#include "Panzer_ScatterResidual_Tpetra_Hessian_impl.hpp"
+
+// the includes for this file come in as a result of the includes in the main 
+// blocked Epetra scatter dirichlet residual file
+
+
+namespace panzer {
+
+// **************************************************************
+// Hessian Specialization
+// **************************************************************
+template<typename TRAITS,typename LO,typename GO>
+ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
+ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+                                  const Teuchos::ParameterList& p) 
+{
+  std::string scatterName = p.get<std::string>("Scatter Name");
+  scatterHolder_ = 
+    Teuchos::rcp(new PHX::Tag<ScalarT>(scatterName,Teuchos::rcp(new PHX::MDALayout<Dummy>(0))));
+
+  this->addEvaluatedField(*scatterHolder_);
+
+  this->setName(scatterName+" Scatter Dirichlet Residual Blocked Epetra (Hessian)");
+}
+  
+template<typename TRAITS,typename LO,typename GO>
+void
+ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d,
+                      PHX::FieldManager<TRAITS>& vm) 
+{
+}
+
+template<typename TRAITS,typename LO,typename GO>
+void
+ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
+preEvaluate(typename TRAITS::PreEvalData d) 
+{
+}
+  
+template<typename TRAITS,typename LO,typename GO>
+void
+ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset) 
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                             "ScatterDirichletResidual_BlockedEpetra<Hessian> is not yet implemented"); // just in case
+}
+
+}
+
+// **************************************************************
 #endif
 
-// PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ScatterResidual_Tpetra,int,panzer::Ordinal64)
+#endif
