@@ -319,6 +319,17 @@ inline bool is_shell_solid_connection(stk::topology t1, stk::topology t2)
     return (t1.is_shell() && !t2.is_shell());
 }
 
+inline
+stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::mesh::OrdinalAndPermutation &connectedOrdAndPerm,
+                                                                        stk::topology topology)
+{
+    unsigned sideOrdinal = connectedOrdAndPerm.first == 0u ? 1u : 0u;
+    unsigned perm = connectedOrdAndPerm.second + topology.num_positive_permutations();
+    return stk::mesh::OrdinalAndPermutation(static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal),
+                                            static_cast<stk::mesh::Permutation>(perm));
+}
+
+
 template<typename SideData>
 void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
                                            stk::topology elementTopology,
@@ -341,20 +352,21 @@ void add_local_elements_to_connected_list(const stk::mesh::BulkData& bulkData,
                            sideNodes.size() << " != " << connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_nodes());
 
             impl::LocalId localId = localMapper.entity_to_local(otherElement);
-            stk::mesh::ConnectivityOrdinal sideOrdinal = connectedOrdAndPerm.first;
             if (localId != impl::INVALID_LOCAL_ID)
             {
-                bool isConnectingSolidToWrongSideOfShell = is_shell_solid_connection(elementTopology, connectedBucket.topology()) &&
-                        connectedOrdAndPerm.second < connectedBucket.topology().side_topology(connectedOrdAndPerm.first).num_positive_permutations();
+                stk::topology connectedTopology = connectedBucket.topology();
+                stk::topology connectedSideTopology = connectedTopology.side_topology(connectedOrdAndPerm.first);
+                bool isConnectingSolidToWrongSideOfShell = is_shell_solid_connection(elementTopology, connectedTopology) &&
+                        connectedOrdAndPerm.second < connectedSideTopology.num_positive_permutations();
                 if(!isConnectingSolidToWrongSideOfShell)
                 {
-                    if(is_solid_shell_connection(elementTopology, connectedBucket.topology()))
-                        sideOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>((sideOrdinal == 0u) ? 1u : 0u);
+                    if(is_solid_shell_connection(elementTopology, connectedTopology))
+                        connectedOrdAndPerm = flip_shell_to_get_opposing_normal(connectedOrdAndPerm, connectedSideTopology);
 
                     connectedElemData.set_element_local_id(localId);
                     connectedElemData.set_element_identifier(bulkData.identifier(otherElement));
-                    connectedElemData.set_element_topology(connectedBucket.topology());
-                    connectedElemData.set_element_side_index(sideOrdinal);
+                    connectedElemData.set_element_topology(connectedTopology);
+                    connectedElemData.set_element_side_index(connectedOrdAndPerm.first);
                     connectedElemData.set_permutation(connectedOrdAndPerm.second);
                     connectedElemData.resize_side_nodes(sideNodes.size());
                     connectedElemData.get_element_topology().side_nodes(connectedElemNodes, connectedElemData.get_element_side_index(), connectedElemData.side_nodes_begin());
