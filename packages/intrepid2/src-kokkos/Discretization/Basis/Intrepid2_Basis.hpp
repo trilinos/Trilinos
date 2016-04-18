@@ -88,43 +88,6 @@ namespace Intrepid2 {
   */
   template<typename ExecSpaceType>
   class Basis {
-  protected:
-    
-    template<typename outputValueViewType, 
-             typename inputPointViewType>
-    struct FunctorBaseWithoutScratch {
-      outputValueViewType _outputValues;
-      inputPointViewType  _inputPoints;
-      const ordinal_type _basisCardinality, _DkCardinality;
-
-      KOKKOS_INLINE_FUNCTION
-      FunctorBaseWithoutScratch( /**/  outputValueViewType outputValues_,
-                                 /**/  inputPointViewType  inputPoints_,
-                                 const ordinal_type        basisCardinality_ = 0,
-                                 const ordinal_type        DkCardinality_ = 0 )
-        : _outputValues(outputValues_), _inputPoints(inputPoints_),
-          _basisCardinality(basisCardinality_), _DkCardinality(DkCardinality_) {}
-    };
-
-    template<typename outputValueViewType, 
-             typename inputPointViewType>
-    struct FunctorSetOperatorDkNull : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-      KOKKOS_INLINE_FUNCTION
-      FunctorSetOperatorDkNull( /**/  outputValueViewType outputValues_,
-                                /**/  inputPointViewType  inputPoints_,
-                                const ordinal_type        basisCardinality_ = 0,
-                                const ordinal_type        DkCardinality_ = 0 )
-        : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType>
-          (outputValues_, inputPoints_, basisCardinality_, DkCardinality_) {}
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const size_type i0) const {
-        for(auto dofOrd=0;dofOrd<_basisCardinality;++dofOrd)
-          for(auto dkOrd=0;dkOrd<_DkCardinality;++dkOrd)
-            _outputValues(dofOrd, i0, dkOrd) = 0.0;
-      }
-    };
-    
   public:
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
@@ -187,19 +150,27 @@ namespace Intrepid2 {
     */
     ordinal_type_array_3d tagToOrdinal_;
 
+    /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 
-    /** \brief  DoF tag construction machinery.
-     */
-    void setOrdinalTagData( /**/  ordinal_type_array_3d tagToOrdinal,
-                            /**/  ordinal_type_array_2d ordinalToTag,
-                            const ordinal_type_array_1d tags,
-                            const ordinal_type          basisCard,
-                            const ordinal_type          tagSize,
-                            const ordinal_type          posScDim,
-                            const ordinal_type          posScOrd,
-                            const ordinal_type          posDfOrd ) {
+      \param  tagToOrdinal     [out]  - Lookup table for the DoF's ordinal by its tag
+      \param  ordinalToTag     [out]  - Lookup table for the DoF's tag by its ordinal
+      \param  tags             [in]   - a set of basis-dependent tags in flat (rank-1) array format.
+      \param  basisCard        [in]   - cardinality of the basis
+      \param  tagSize          [in]   - number of fields in a DoF tag
+      \param  posScDim         [in]   - position in the tag, counting from 0, of the subcell dim
+      \param  posScOrd         [in]   - position in the tag, counting from 0, of the subcell ordinal
+      \param  posDfOrd         [in]   - position in the tag, counting from 0, of DoF ordinal relative to the subcell
+    */
+    void setOrdinalTagData( /**/  ordinal_type_array_3d &tagToOrdinal,
+                            /**/  ordinal_type_array_2d &ordinalToTag,
+                            const ordinal_type_array_1d  tags,
+                            const ordinal_type           basisCard,
+                            const ordinal_type           tagSize,
+                            const ordinal_type           posScDim,
+                            const ordinal_type           posScOrd,
+                            const ordinal_type           posDfOrd ) {
       // Create ordinalToTag
-      ordinalToTag = ordinal_type_array_2d("ordinalToTag", basisCard);
+      ordinalToTag = ordinal_type_array_2d("ordinalToTag", basisCard, 4);
 
       // Initialize with -1
       Kokkos::deep_copy( ordinalToTag, -1 );
@@ -239,6 +210,8 @@ namespace Intrepid2 {
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
     }
 
+
+
   public:
 
     Basis() = default;
@@ -266,12 +239,10 @@ namespace Intrepid2 {
         degree of the basis, the output array is filled with the appropriate number of zeros.
     */
     template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties,
-             typename scratchValueType,     class ...scratchProperties>
+             typename inputPointValueType,  class ...inputPointProperties>
     void
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-               const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
                const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
@@ -299,13 +270,11 @@ namespace Intrepid2 {
     */
     template<typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties,
-             typename cellVertexValueType,  class ...cellVertexProperties,
-             typename scratchValueType,     class ...scratchProperties>
+             typename cellVertexValueType,  class ...cellVertexProperties>
     void
     getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                 const Kokkos::DynRankView<cellVertexValueType, cellVertexProperties...>  cellVertices,
-                const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
                 const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FVD) is not supported or should be over-riden accordingly by derived classes.");
@@ -317,7 +286,7 @@ namespace Intrepid2 {
     */
     ordinal_type
     getCardinality() const {
-      return ordinalToTag_;
+      return basisCardinality_;
     }
 
 
@@ -374,14 +343,23 @@ namespace Intrepid2 {
     getDofOrdinal( const ordinal_type subcDim,
                    const ordinal_type subcOrd,
                    const ordinal_type subcDofOrd ) const {
+      // this should be abort and able to be called as a device function
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= tagToOrdinal_.dimension(0), std::out_of_range,
+                                    ">>> ERROR (Basis::getDofOrdinal): subcDim is out of range");
+      INTREPID2_TEST_FOR_EXCEPTION( subcOrd < 0 || subcOrd >= tagToOrdinal_.dimension(1), std::out_of_range,
+                                    ">>> ERROR (Basis::getDofOrdinal): subcOrd is out of range");
+      INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= tagToOrdinal_.dimension(2), std::out_of_range,
+                                    ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
+#endif
       const auto r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_ABORT( r_val == -1,
-                                ">>> ERROR (Basis::getDofOrdinal): Invalid DoF tag is found.");
+      INTREPID2_TEST_FOR_EXCEPTION( r_val == -1, std::runtime_error,
+                                    ">>> ERROR (Basis::getDofOrdinal): Invalid DoF tag is found.");
 #endif
       return r_val;
     }
-
+    
     /** \brief DoF tag to ordinal data structure */
     const ordinal_type_array_3d
     getAllDofOrdinal() const {
@@ -400,7 +378,11 @@ namespace Intrepid2 {
         \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
     */
     const ordinal_type_array_1d
-    getDofTag( const int dofOrd ) const {
+    getDofTag( const ordinal_type dofOrd ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= ordinalToTag_.dimension(0), std::out_of_range,
+                                    ">>> ERROR (Basis::getDofTag): dofOrd is out of range");
+#endif
       return Kokkos::subview(ordinalToTag_, dofOrd, Kokkos::ALL());
     }
 
@@ -427,6 +409,146 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
+  ///
+  /// functions for orders, cardinality, etc.
+  ///
+
+
+  /** \brief  Returns the rank of fields in a function space of the specified type.
+
+      Field rank is defined as the number of indices needed to specify function value and
+      equals 0, 1,or 2 for scalars, vectors and tensors, respectively. The scalar field
+      spaces in Intrepid are FUNCTION_SPACE_HGRAD and FUNCTION_SPACE_HVOL. The vector field
+      spaces are FUNCTION_SPACE_HCURL, FUNCTION_SPACE_HDIV and FUNCTION_SPACE_VECTOR_HGRAD.
+      FUNCTION_SPACE_TENSOR_HGRAD contains rank-2 tensors.
+
+      \param  spaceType         [in]     -  function space type
+      \return rank of the fields in the specified function space
+  */
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getFieldRank(const EFunctionSpace spaceType);
+
+  /** \brief  Returns rank of an operator.
+
+      When an operator acts on a field of a certain rank, the result can be a field with the
+      same or a different rank. Operator rank is defined the difference between the ranks of
+      the output field and the input field:
+      \verbatim
+      Rank(OPERATOR) = Rank(OPERATOR(FIELD)) - Rank(FIELD)
+      \endverbatim
+      Therefore, operator rank allows us to figure out the rank of the result:
+      \verbatim
+      Rank(OPERATOR(FIELD)) = Rank(FIELD) + Rank(OPERATOR)
+      \endverbatim
+      and provides means to size properly arrays for output results. The following table
+      summarizes operator ranks (~ denotes undefined, below slash means 3D).
+      By default, in 1D any operator other than VALUE has rank 1, i.e., GRAD, CURL and DIV
+      reduce to d/dx and Dk are the higher-order derivatives d^k/dx^k. Only scalar functions
+      are allowed in 1D.
+
+      \verbatim
+      |========|======|============================|=========|==========|==========|==========|
+      | field  | rank |  FUNCTION_SPACE_[type]     |  VALUE  | GRAD, Dk |   CURL   |    DIV   |
+      |--------|------|----------------------------|---------|----------|----------|----------|
+      | scalar |   0  |  HGRAD, HVOL               |    0    |     1    | 3-dim/~  |     ~    |
+      | vector |   1  |  HCURL, HDIV, VECTOR_HGRAD |    0    |     1    | dim - 3  |    -1    |
+      | tensor |   2  |  TENSOR_HGRAD              |    0    |     1    | dim - 3  |    -1    |
+      |--------|------|----------------------------|---------|----------|----------|----------|
+      |   1D   |   0  |  HGRAD, HVOL only          |    0    |     1    |     1    |     1    |
+      |=======================================================================================|
+      \endverbatim
+
+      \param  spaceType        [in]    - function space type
+      \param  operatorType     [in]    - the operator acting on the specified function space
+      \param  spaceDim         [in]    - spatial dimension
+      \return rank of the operator as defined in the table
+  */
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getOperatorRank(const EFunctionSpace spaceType,
+                               const EOperator      operatorType,
+                               const ordinal_type   spaceDim);
+
+  /** \brief  Returns order of an operator.
+
+      \param  operatorType       [in]    - type of the operator whose order we want to know
+      \return result ranges from 0 (for OPERATOR_VALUE) to 10 (OPERATOR_D10)
+  */
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getOperatorOrder(const EOperator operatorType);
+
+  /** \brief  Returns the ordinal of a partial derivative of order k based on the multiplicities of
+      the partials dx, dy, and dz.
+
+      By default, any implementation of Intrepid2::Basis method returns partials of order k
+      (specified by OPERATOR_Dk) as a multiset ordered by the lexicographical order of the
+      partial derivatives multiplicities. For example, the 10 derivatives of order 3 in 3D
+      are enumerated as:
+      \verbatim
+      D3={(3,0,0),(2,1,0),(2,0,1),(1,2,0),(1,1,1),(1,0,2),(0,3,0),(0,2,1),(0,1,2),(0,0,3)}
+      \endverbatim
+      The enumeration formula for this lexicographical order is
+      <table>
+      <tr> <td>\f$i(xMult)            = 0\f$                            </td> <td>in 1D (only 1 derivative)</td> </tr>
+      <tr> <td>\f$i(xMult,yMult)      =yMult\f$                         </td> <td>in 2D</td> </tr>
+      <tr> <td>\f$i(xMult,yMult,zMult)=zMult+\sum_{r = 0}^{k-xMult} r\f$</td> <td>in 3D</td> </tr>
+      </table>
+      where the order k of Dk is implicitly defined by xMult + yMult + zMult. Space dimension is
+      implicitly defined by the default values of the multiplicities of y and z derivatives.
+
+      \param  xMult            [in]    - multiplicity of dx
+      \param  yMult            [in]    - multiplicity of dy (default = -1)
+      \param  zMult            [in]    - multiplicity of dz (default = -1)
+      \return the ordinal of partial derivative of order k as function of dx, dy, dz multiplicities
+  */
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getDkEnumeration(const ordinal_type xMult,
+                                const ordinal_type yMult = -1,
+                                const ordinal_type zMult = -1);
+
+  // /** \brief  Returns multiplicities of dx, dy, and dz based on the enumeration of the partial
+  //     derivative, its order and the space dimension. Inverse of the getDkEnumeration() method.
+
+  //     \param  partialMult      [out]    - array with the multiplicities f dx, dy and dz
+  //     \param  derivativeEnum   [in]     - enumeration of the partial derivative
+  //     \param  operatorType     [in]     - k-th partial derivative Dk
+  //     \param  spaceDim         [in]     - space dimension
+  // */
+  // template<typename OrdinalArrayType>
+  // KOKKOS_INLINE_FUNCTION
+  // void getDkMultiplicities(OrdinalArrayType   partialMult,
+  //                          const ordinal_type derivativeEnum,
+  //                          const EOperator    operatorType,
+  //                          const ordinal_type spaceDim);
+
+  /** \brief  Returns cardinality of Dk, i.e., the number of all derivatives of order k.
+
+      The set of all partial derivatives of order k is isomorphic to the set of all multisets
+      of cardinality k with elements taken from the sets {x}, {x,y}, and {x,y,z} in 1D, 2D,
+      and 3D respectively. For example, the partial derivative
+      \f$\displaystyle D\{1,2,1\}f = \frac{d^4 f}{dx dy^2 dz}\f$  maps to the multiset
+      \f$\{x, y, z\}\f$ with multiplicities \f$\{1,2,1\}\f$. The number of all such multisets
+      is given by the binomial coefficient
+      \f[       \begin{pmatrix} spaceDim + k - 1 \\ spaceDim - 1 \end{pmatrix}              \f]
+      Therefore:
+      \li     in 1D: cardinality = 1\n
+      \li     in 2D: cardinality = k + 1\n
+      \li     in 3D: cardinality = (k + 1)*(k + 2)/2
+
+      \param  operatorType     [in]     - k-th derivative operator Dk
+      \param  spaceDim         [in]     - space dimension
+      \return the number of all partial derivatives of order k
+  */
+  KOKKOS_INLINE_FUNCTION
+  ordinal_type getDkCardinality(const EOperator    operatorType,
+                                const ordinal_type spaceDim);
+
+
+
+  ///
+  /// Argument check
+  ///
+
+
   /** \brief  Runtime check of the arguments for the getValues method in an HGRAD-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
       arrays are consistent with the specified <var>operatorType</var>.
@@ -437,13 +559,13 @@ namespace Intrepid2 {
       \param  cellTopo         [in]  - base cell topology on which the basis is defined
       \param  basisCard        [in]  - cardinality of the basis
   */
-  template<typename ouputValueViewType,
+  template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_HGRAD_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+  void getValues_HGRAD_Args( const outputValueViewType   outputValues,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
-                             const ordinal_tyoe          basisCard );
+                             const ordinal_type          basisCard );
 
   /** \brief  Runtime check of the arguments for the getValues method in an HCURL-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
@@ -457,8 +579,8 @@ namespace Intrepid2 {
   */
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_HCURL_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+  void getValues_HCURL_Args( const outputValueViewType   outputValues,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard );
@@ -475,11 +597,11 @@ namespace Intrepid2 {
   */
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_HDIV_Args(  /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
-                             const EOperator             operatorType,
-                             const shards::CellTopology &cellTopo,
-                             const ordinal_type          basisCard );
+  void getValues_HDIV_Args( const  outputValueViewType  outputValues,
+                            const inputPointViewType    inputPoints,
+                            const EOperator             operatorType,
+                            const shards::CellTopology &cellTopo,
+                            const ordinal_type          basisCard );
 
 }// namespace Intrepid2
 

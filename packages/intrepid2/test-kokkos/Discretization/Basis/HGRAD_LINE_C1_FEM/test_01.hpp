@@ -59,19 +59,19 @@
 namespace Intrepid2 {
 
   namespace Test {
-
-#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch ) {    \
-    try {                                                       \
-      ++nthrow;                                                 \
-      S ;                                                       \
-    }
+    
+#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    }                                                                   \
     catch (std::logic_error err) {                                      \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-    };                                                                  \
-
+    }
+    
     template<typename ValueType, typename DeviceSpaceType>
     int HGRAD_LINE_C1_FEM_Test01(const bool verbose) {
 
@@ -111,7 +111,6 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef RealSpaceTools<DeviceSpaceType> rst;
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -126,7 +125,7 @@ namespace Intrepid2 {
       ordinal_type nthrow = 0, ncatch = 0;
       try{
 #ifdef HAVE_INTREPID2_DEBUG
-        Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankView ConstructWithLabel(lineNodes, 4, 1);
@@ -139,73 +138,74 @@ namespace Intrepid2 {
         const auto numFields = lineBasis.getCardinality();
         const auto numPoints = lineNodes.dimension(0);
         const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+
         const auto workSize  = numFields*numPoints*spaceDim;
-        DynRankView ConstructWithLabel(work, valSize);
+        DynRankView ConstructWithLabel(work, workSize);
 
         // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
-        DynRankView vals = Kokkos::DynRankView(work.data(), numFields, numPoints);
+        DynRankView vals = DynRankView(work.data(), numFields, numPoints);
 
         // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
 
-        INTREPID_TEST_COMMAND( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
-        INTREPID_TEST_COMMAND( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
-        INTREPID_TEST_COMMAND( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
-        INTREPID_TEST_COMMAND( lineBasis.getDofTag(5),         nthrow, ncatch );  // #4
-        INTREPID_TEST_COMMAND( lineBasis.getDofTag(-1),        nthrow, ncatch );  // #5
+        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
+        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
+        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
+        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5),         nthrow, ncatch );  // #4
+        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1),        nthrow, ncatch );  // #5
 
         // Exceptions 6-17 test exception handling with incorrectly dimensioned input/output arrays
         {
           // exception #6: input points array must be of rank-2
           DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
         }
         {
           // exception #7 dimension 1 in the input point array must equal space dimension of the cell
           DynRankView ConstructWithLabel(badPoints, 4, 2);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
         }
         {
           // exception #8 output values must be of rank-2 for OPERATOR_VALUE
           DynRankView ConstructWithLabel(badVals, 4, 3, 1);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
         }
         {
           // exception #9 output values must be of rank-3 for OPERATOR_GRAD
           DynRankView ConstructWithLabel(badVals, 4, 3);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
 
           // exception #10 output values must be of rank-3 for OPERATOR_DIV
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_DIV), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_DIV), nthrow, ncatch );
 
           // exception #11 output values must be of rank-3 for OPERATOR_CURL
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_CURL), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_CURL), nthrow, ncatch );
 
           // exception #12 output values must be of rank-3 for OPERATOR_D2
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
         }
         {
           // exception #13 incorrect 1st dimension of output array (must equal number of basis functions)
           DynRankView ConstructWithLabel(badVals, numFields + 1, numPoints);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
         }
         {
           // exception #14 incorrect 0th dimension of output array (must equal number of points)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints + 1);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
         }
         {
           // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 2);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
         }
         {
           // exception #16: incorrect 2nd dimension of output array (must equal D2 cardinality in 1D)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 40);
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
 
           // exception #17: incorrect 2nd dimension of output array (must equal D3 cardinality in 1D)
-          INTREPID_TEST_COMMAND( lineBasis.getValues(badVals, lineNodes, OPERATOR_D3), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D3), nthrow, ncatch );
         }
 #endif
       } catch (std::logic_error err) {
@@ -228,7 +228,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = lineBasis.getCardinality();
@@ -291,6 +291,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       outStream->precision(20);
+      const value_type tol = Parameters::Tolerence;
 
       try{
         // VALUE: Each row gives the 2 correct basis set values at an evaluation point
@@ -309,7 +310,7 @@ namespace Intrepid2 {
           { {-0.5}, {0.5} }
         };
 
-        Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankView ConstructWithLabel(lineNodes, 4, 1);
@@ -322,16 +323,17 @@ namespace Intrepid2 {
         const auto numFields = lineBasis.getCardinality();
         const auto numPoints = lineNodes.dimension(0);
         const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+
         const auto workSize  = numFields*numPoints*spaceDim;
-        DynRankView ConstructWithLabel(work, valSize);
+        DynRankView ConstructWithLabel(work, workSize);
 
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
-          DynRankView vals = Kokkos::DynRankView(work.data(), numFields, numPoints);
+          DynRankView vals = DynRankView(work.data(), numFields, numPoints);
           lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
           for (auto i=0;i<numFields;++i)
             for (auto j=0;j<numPoints;++j)
-              if (std::abs(vals(i,j) - basisValues[j][i]) > INTREPID_TOL) {
+              if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -339,20 +341,25 @@ namespace Intrepid2 {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
                 *outStream << "}  computed value: " << vals(i,j)
-                           << " but reference value: " << basisValues[l] << "\n";
+                           << " but reference value: " << basisValues[j][i] << "\n";
               }
         }
 
         // Check derivatives of basis function: resize vals to rank-3 container
         {
-          DynRankView vals = Kokkos::DynRankView(work.data(), numFields, numPoints, spaceDim);
-          const auto ops[] = { OPERATOR_GRAD, OPERATOR_DIV, OPERATOR_CURL, OPERATOR_D1 };
-          for (auto op=0;op<4;++op) {
-            lineBasis.getValues(vals, lineNodes, ops[op]);
+          DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
+          const EOperator ops[] = { OPERATOR_GRAD, 
+                                    OPERATOR_DIV, 
+                                    OPERATOR_CURL, 
+                                    OPERATOR_D1, 
+                                    OPERATOR_MAX };
+          for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
+            const auto op = ops[h];
+            lineBasis.getValues(vals, lineNodes, op);
             for (auto i=0;i<numFields;++i)
               for (auto j=0;j<numPoints;++j)
                 for (auto k=0;k<spaceDim;++k)
-                  if (std::abs(vals(i,j,k) - basisDerivs[j][i][k]) > INTREPID_TOL) {
+                  if (std::abs(vals(i,j,k) - basisDerivs[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -360,29 +367,38 @@ namespace Intrepid2 {
                     *outStream << " At multi-index { ";
                     *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                     *outStream << "}  computed grad component: " << vals(i,j,k)
-                               << " but reference grad component: " << basisDerivs[l] << "\n";
+                               << " but reference grad component: " << basisDerivs[j][i][k] << "\n";
                   }
           }
         }
 
         // Check all higher derivatives - must be zero.
         {
-          for (auto op=OPERATOR_D2;op<OPERATOR_MAX;++op) {
-
-            // The last dimension is the number of kth derivatives and needs to be resized for every Dk
-            const auto DkCardin  = Intrepid2::getDkCardinality(op, spaceDim);
-            DynRankView vals = Kokkos::DynRankView(work.data(), numFields, numPoints, DkCardin);
+          const EOperator ops[] = { OPERATOR_D2,
+                                    OPERATOR_D3,
+                                    OPERATOR_D4,
+                                    OPERATOR_D5,
+                                    OPERATOR_D6,
+                                    OPERATOR_D7,
+                                    OPERATOR_D8,
+                                    OPERATOR_D9,
+                                    OPERATOR_D10,
+                                    OPERATOR_MAX };
+          for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
+            const auto op = ops[h];
+            const auto DkCardin  = getDkCardinality(op, spaceDim);
+            DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
 
             lineBasis.getValues(vals, lineNodes, op);
             for (auto i1=0;i1<numFields;++i1)
               for (auto i2=0;i2<numPoints;++i2)
                 for (auto i3=0;i3<DkCardin;++i3)
-                  if (std::abs(vals(i1,i2,i3)) > INTREPID_TOL) {
+                  if (std::abs(vals(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Get the multi-index of the value where the error is and the operator order
-                    int ord = Intrepid2::getOperatorOrder(op);
+                    const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
                     *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
                                << " but reference D" << ord << " component:  0 \n";
