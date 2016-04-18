@@ -285,12 +285,13 @@ void AlgParMETIS<Adapter>::partition(
     if (pe){
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
-      if ((approach == "repartition") || (approach == "maximize_overlap"))
+      if ((approach == "repartition") || (approach == "maximize_overlap")) {
         if (np > 1) 
           // ParMETIS_V3_AdaptiveRepart requires two or more processors
           parmetis_method = "ADAPTIVE_REPART";
         else
           parmetis_method = "REFINE_KWAY";
+      }
     }
 
     // Other ParMETIS parameters?
