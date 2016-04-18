@@ -30,57 +30,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_Utils.h>
-#include <Ionit_Initializer.h>
-#include <cstring>
-#include <iomanip>
-#include <stddef.h>
-#include <stdlib.h>
-#include <iostream>
-#include <string>
-#include <utility>
-#include <vector>
-#if !defined(NO_EXODUS_SUPPORT)
-#include <exodusII.h>
-#endif
-
-#include "Ioss_CommSet.h"
-#include "Ioss_CoordinateFrame.h"
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"
-#include "Ioss_EdgeBlock.h"
-#include "Ioss_EdgeSet.h"
-#include "Ioss_ElementBlock.h"
-#include "Ioss_ElementSet.h"
-#include "Ioss_ElementTopology.h"
-#include "Ioss_FaceBlock.h"
-#include "Ioss_FaceSet.h"
-#include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"
-#include "Ioss_IOFactory.h"
-#include "Ioss_NodeBlock.h"
-#include "Ioss_NodeSet.h"
-#include "Ioss_Property.h"
-#include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
-#include "Ioss_SideSet.h"
-#include "Ioss_VariableType.h"
-
-#include <cassert>
-
-#include "info_interface.h"
-
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
-#ifndef NO_XDMF_SUPPORT
-#include <xdmf/Ioxf_Initializer.h>
-#endif
-
-#define OUTPUT std::cout
+#include "io_info.h"
 
 // ========================================================================
 
@@ -129,52 +79,6 @@ namespace {
 
 }  // namespace
 void hex_volume(Ioss::ElementBlock *block, const std::vector<double> &coordinates);
-
-// ========================================================================
-
-namespace {
-  std::string codename;
-  std::string version = "1.0";
-} // namespace
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-  
-  Info::Interface interface;
-  interface.parse_options(argc, argv);
-  
-  std::string in_type = "exodusII";
-
-  codename = argv[0];
-  size_t ind = codename.find_last_of('/', codename.size());
-  if (ind != std::string::npos) {
-    codename = codename.substr(ind+1, codename.size());
-}
-
-  Ioss::Init::Initializer io;
-#ifndef NO_XDMF_SUPPORT
-  Ioxf::Initializer ioxf;
-#endif
-
-  OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
-  OUTPUT << '\n';
-
-  if (interface.list_groups()) {
-    group_info(interface);
-  }
-  else {
-    file_info(interface);
-  }
-
-  OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return EXIT_SUCCESS;
-}
 
 namespace {
   void element_volume(Ioss::Region &region)
@@ -239,78 +143,12 @@ namespace {
     //========================================================================
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::READ_RESTART,
                                                     (MPI_Comm)MPI_COMM_WORLD);
-    if (dbi == nullptr || !dbi->ok(true)) {
-      std::exit(EXIT_FAILURE);
-    }
 
-    if (interface.use_generic_names()) {
-      dbi->set_use_generic_canonical_name(true);
-    }
-  
-    dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
-    dbi->set_field_separator(interface.field_suffix_separator());
-    if (interface.ints_64_bit()) {
-      dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
-    }
-    
-    if (!interface.groupname().empty()) {
-      bool success = dbi->open_group(interface.groupname());
-      if (!success) {
-        OUTPUT << "ERROR: Unable to open group '" << interface.groupname()
-               << "' in file '" << inpfile << "\n";
-        return;
-      }
-    }
+    Ioss::io_info_set_db_properties(interface, dbi);
 
     // NOTE: 'region' owns 'db' pointer at this time...
     Ioss::Region region(dbi, "region_1");
-
-    // Get all properties of input database...
-    bool summary = true;
-    info_properties(&region);
-    info_nodeblock(region,    interface, summary);
-    info_edgeblock(region,    summary);
-    info_faceblock(region,    summary);
-    info_elementblock(region, interface, summary);
-
-    info_nodesets(region,     summary);
-    info_edgesets(region,     summary);
-    info_facesets(region,     summary);
-    info_elementsets(region,  summary);
-
-    info_sidesets(region,     interface, summary);
-    info_commsets(region,     summary);
-    info_coordinate_frames(region, summary);
-    if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
-      std::pair<int, double> state_time_max = region.get_max_time();
-      std::pair<int, double> state_time_min = region.get_min_time();
-      OUTPUT << " Number of time steps on database     =" << std::setw(12)
-             << region.get_property("state_count").get_int() << "\n"
-             << "    Minimum time = " << state_time_min.second << " at step " << state_time_min.first << "\n"
-             << "    Maximum time = " << state_time_max.second << " at step " << state_time_max.first << "\n\n";
-    }
-
-    if (interface.summary() == 0) {
-      summary = false;
-      info_properties(&region);
-      info_nodeblock(region,    interface, summary);
-      info_edgeblock(region,    summary);
-      info_faceblock(region,    summary);
-      info_elementblock(region, interface, summary);
-      
-      info_nodesets(region,     summary);
-      info_edgesets(region,     summary);
-      info_facesets(region,     summary);
-      info_elementsets(region,  summary);
-      
-      info_sidesets(region,     interface, summary);
-      info_commsets(region,     summary);
-      info_coordinate_frames(region, summary);
-    }
-    
-    if (interface.compute_volume()) {
-      element_volume(region);
-    }
+    Ioss::io_info_file_info(interface, region);
   }
 
 
@@ -731,3 +569,100 @@ namespace {
   }
 
 }  // namespace
+
+namespace Ioss {
+  void io_info_file_info(const Info::Interface& interface)
+  {
+    file_info(interface);
+  }
+  void io_info_group_info(Info::Interface& interface)
+  {
+    group_info(interface);
+  }
+  
+  void io_info_set_db_properties(const Info::Interface& interface, Ioss::DatabaseIO *dbi)
+  {
+    std::string inpfile = interface.filename();
+
+    if (dbi == nullptr || !dbi->ok(true)) {
+      std::exit(EXIT_FAILURE);
+    }
+
+    if (interface.use_generic_names()) {
+      dbi->set_use_generic_canonical_name(true);
+    }
+  
+    dbi->set_surface_split_type(Ioss::int_to_surface_split(interface.surface_split_scheme()));
+    dbi->set_field_separator(interface.field_suffix_separator());
+    if (interface.ints_64_bit()) {
+      dbi->set_int_byte_size_api(Ioss::USE_INT64_API);
+    }
+    
+    if (!interface.groupname().empty()) {
+      bool success = dbi->open_group(interface.groupname());
+      if (!success) {
+        OUTPUT << "ERROR: Unable to open group '" << interface.groupname()
+               << "' in file '" << inpfile << "\n";
+        return;
+      }
+    }
+  }
+
+  void io_info_file_info(const Info::Interface& interface, Ioss::Region& region)
+  {
+    Ioss::DatabaseIO *dbi = region.get_database();
+
+    if (dbi == nullptr || !dbi->ok(true)) {
+      std::exit(EXIT_FAILURE);
+    }
+
+    // Get all properties of input database...
+    bool summary = true;
+    info_properties(&region);
+    info_nodeblock(region,    interface, summary);
+    info_edgeblock(region,    summary);
+    info_faceblock(region,    summary);
+    info_elementblock(region, interface, summary);
+
+    info_nodesets(region,     summary);
+    info_edgesets(region,     summary);
+    info_facesets(region,     summary);
+    info_elementsets(region,  summary);
+
+    info_sidesets(region,     interface, summary);
+    info_commsets(region,     summary);
+    info_coordinate_frames(region, summary);
+    if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
+      std::pair<int, double> state_time_max = region.get_max_time();
+      std::pair<int, double> state_time_min = region.get_min_time();
+      OUTPUT << " Number of time steps on database     =" << std::setw(12)
+             << region.get_property("state_count").get_int() << "\n"
+             << "    Minimum time = " << state_time_min.second << " at step " << state_time_min.first << "\n"
+             << "    Maximum time = " << state_time_max.second << " at step " << state_time_max.first << "\n\n";
+    }
+
+    if (interface.summary() == 0) {
+      summary = false;
+      info_properties(&region);
+      info_nodeblock(region,    interface, summary);
+      info_edgeblock(region,    summary);
+      info_faceblock(region,    summary);
+      info_elementblock(region, interface, summary);
+
+      info_nodesets(region,     summary);
+      info_edgesets(region,     summary);
+      info_facesets(region,     summary);
+      info_elementsets(region,  summary);
+
+      info_sidesets(region,     interface, summary);
+      info_commsets(region,     summary);
+      info_coordinate_frames(region, summary);
+    }
+
+    if (interface.compute_volume()) {
+      element_volume(region);
+    }
+  }
+
+
+}

@@ -263,6 +263,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    io_info_lib
     iocgns
     iopg
     iohb
@@ -291,6 +292,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    io_info_lib
     iocgns
     iopg
     iohb
@@ -490,6 +492,32 @@ lib iofx
     # builds only and will not be present for developer builds.
         <file>$(seacas-root)/lib/libiofx.a
     ]
+  ;
+
+lib io_info_lib
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        $(seacas-root)/libraries/ioss/src/main/io_info.C
+        $(seacas-root)/libraries/ioss/src/main/volume.C
+        $(seacas-root)/libraries/ioss/src/main/info_interface.C
+        $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
+    ]
+    ioinit
+    ioss
+    iotr
+    ioxf
+    iocgns
+    /mpi//mpi
+  : <define>USE_CGNS
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libio_info_lib.a
+    ]
+  :
+  : <define>USE_CGNS
   ;
 
 lib iopg
@@ -1755,9 +1783,10 @@ fexe txtexo
 
 exe io_shell
   :
+
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
-    $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
+    io_info_lib
     ioinit
     ioss
     iotr
@@ -1769,10 +1798,8 @@ exe io_shell
 
 exe io_info
   :
-    $(seacas-root)/libraries/ioss/src/main/io_info.C
-    $(seacas-root)/libraries/ioss/src/main/volume.C
-    $(seacas-root)/libraries/ioss/src/main/info_interface.C
-    $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
+    $(seacas-root)/libraries/ioss/src/main/io_info_main.C
+    io_info_lib
     ioinit
     ioss
     iotr
