@@ -111,7 +111,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       = Teuchos::getArrayFromStringParameter<Real>(list,"Convex Combination Parameters");
     // Build risk measures
     std::vector<std::string> riskString;
-    for (int i = 0; i < lambda.size(); ++i) {
+    for (typename Teuchos::Array<Real>::size_type i = 0; i < lambda.size(); ++i) {
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
@@ -119,7 +119,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       std::string name = ilist.get<std::string>("Name");
       riskString.push_back(name);
     }
-    for (int i = 0; i < riskString.size(); ++i) {
+    for (typename std::vector<Real>::size_type i = 0; i < riskString.size(); ++i) {
       if ( riskString[i] == "CVaR"                           ||
            riskString[i] == "HMCR"                           ||
            riskString[i] == "Moreau-Yosida CVaR"             ||
@@ -155,7 +155,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
         Teuchos::Array<Real> prob
           = Teuchos::getArrayFromStringParameter<Real>(MQlist,"Probability Array");
         nStatistic += prob.size();
-        for (int j = 0; j < prob.size(); ++j) {
+        for (typename Teuchos::Array<Real>::size_type j = 0; j < prob.size(); ++j) {
           lower.push_back(ROL_NINF<Real>());
           upper.push_back(ROL_INF<Real>());
         }
