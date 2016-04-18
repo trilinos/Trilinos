@@ -100,9 +100,10 @@ Piro::LOCASolver<Scalar>::LOCASolver(
   }
 
   const NOX::Thyra::Vector initialGuess(*model->getNominalValues().get_x());
-  // FIXME: set scaling_vector_ = absolute value of row sum (from NOX_PrePostOperator_RowSumScaling.C)
-  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_ = Thyra::createMember(*model->get_x_space());
-  Thyra::assign(scaling_vector_.ptr(),1.0);
+
+  // Don't set a scaling vector here; it'll make calling LOCA impossible with a
+  // Jacobian that is not a Tpetra::RowMatrix (but only a Tpetra::Operator).
+  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_ = Teuchos::null;
 
   group_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model, paramVector_, l, false, scaling_vector_));
   group_->setSaveDataStrategy(saveDataStrategy_);
