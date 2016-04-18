@@ -114,6 +114,7 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
+      const value_type tol = Parameters::Tolerence;
       int errorFlag = 0;
 
       *outStream
@@ -143,12 +144,13 @@ namespace Intrepid2 {
 
         // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
-
-        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
-        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
-        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
-        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5),         nthrow, ncatch );  // #4
-        INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1),        nthrow, ncatch );  // #5
+        {
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5),         nthrow, ncatch );  // #4
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1),        nthrow, ncatch );  // #5
+        }
 
         // Exceptions 6-17 test exception handling with incorrectly dimensioned input/output arrays
         {
@@ -286,7 +288,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       outStream->precision(20);
-      const value_type tol = Parameters::Tolerence;
 
       try{
         // VALUE: Each row gives the 2 correct basis set values at an evaluation point

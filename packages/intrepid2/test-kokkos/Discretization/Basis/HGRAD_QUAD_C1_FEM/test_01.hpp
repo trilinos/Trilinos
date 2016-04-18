@@ -113,6 +113,7 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
+      const value_type tol = Parameters::Tolerence;
       int errorFlag = 0;
 
       *outStream
@@ -141,17 +142,20 @@ namespace Intrepid2 {
         // resize vals to rank-2 container with dimensions
         DynRankView vals = DynRankView(work.data(), numFields, numPoints);
 
-        // exception #1: DIV cannot be applied to scalar functions
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV), nthrow, ncatch );
+        {
+          // exception #1: DIV cannot be applied to scalar functions
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV), nthrow, ncatch );
+        }
 
         // Exceptions 2-6: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
-
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0), nthrow, ncatch ); // #2
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), nthrow, ncatch ); // #3 
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0), nthrow, ncatch ); // #4
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(5),         nthrow, ncatch ); // #5
-        INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1),        nthrow, ncatch ); // #6
+        {
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0), nthrow, ncatch ); // #2
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), nthrow, ncatch ); // #3 
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0), nthrow, ncatch ); // #4
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(5),         nthrow, ncatch ); // #5
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1),        nthrow, ncatch ); // #6
+        }
 
         // Exceptions 7-17 test exception handling with incorrectly dimensioned input/output arrays
         {
@@ -232,7 +236,7 @@ namespace Intrepid2 {
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         const auto dofTagSize = allTags.dimension(0);
         for (auto i=0;i<dofTagSize;++i) {
-          const auto bfOrd  = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
+          const auto bfOrd = quadBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
           const auto myTag = quadBasis.getDofTag(bfOrd);
           if( !( (myTag(0) == allTags(i,0)) &&
@@ -286,7 +290,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       outStream -> precision(20);
-      const value_type tol = Parameters::Tolerence;
 
       try {
         // VALUE: Each row gives the 4 correct basis set values at an evaluation point
@@ -476,7 +479,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-
         Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType> quadBasis;
         const auto numFields = quadBasis.getCardinality();
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
@@ -497,12 +499,9 @@ namespace Intrepid2 {
         }
 #endif
         if (nthrow != ncatch) {
-          errorFlag++;
-          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+          ++errorFlag;
         }
-        
-
-
 
         DynRankView ConstructWithLabel(bvals, numFields, numFields);
         DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
