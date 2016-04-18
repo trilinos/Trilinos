@@ -42,7 +42,7 @@
 
 /** \file test_01.cpp
     \brief  Unit tests for the Intrepid2::Basis_HGRAD_LINE_C1_FEM class.
-    \author Created by P. Bochev, D. Ridzal, K. Peterson.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim.
 */
 
 #include "Intrepid2_config.h"
@@ -129,10 +129,6 @@ namespace Intrepid2 {
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankView ConstructWithLabel(lineNodes, 4, 1);
-        lineNodes(0,0) =  -1.0;
-        lineNodes(1,0) =   1.0;
-        lineNodes(2,0) =   0.0;
-        lineNodes(3,0) =   0.5;
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = lineBasis.getCardinality();
@@ -142,7 +138,7 @@ namespace Intrepid2 {
         const auto workSize  = numFields*numPoints*spaceDim;
         DynRankView ConstructWithLabel(work, workSize);
 
-        // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
+        // resize vals to rank-2 container with dimensions
         DynRankView vals = DynRankView(work.data(), numFields, numPoints);
 
         // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
@@ -230,7 +226,6 @@ namespace Intrepid2 {
       try{
         Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
-        // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = lineBasis.getCardinality();
         const auto allTags = lineBasis.getAllDofTags();
 
@@ -260,7 +255,7 @@ namespace Intrepid2 {
         }
 
         // Now do the same but loop over basis functions
-        for(auto bfOrd = 0;bfOrd<numFields;++bfOrd) {
+        for(auto bfOrd=0;bfOrd<numFields;++bfOrd) {
           const auto myTag = lineBasis.getDofTag(bfOrd);
           const auto myBfOrd = lineBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
           if( bfOrd != myBfOrd) {
