@@ -41,7 +41,7 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
-#if defined(USE_CGNS)
+#if !defined(NO_CGNS_SUPPORT)
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
@@ -86,7 +86,7 @@ namespace Ioss {
 #if !defined(NO_PARAVIEWIMESH_SUPPORT)
       Iovs::IOFactory::factory(); // Visualization
 #endif      
-#if defined(USE_CGNS)
+#if !defined(NO_CGNS_SUPPORT)
       Iocgns::IOFactory::factory();
 #endif
       Ioss::StorageInitializer();

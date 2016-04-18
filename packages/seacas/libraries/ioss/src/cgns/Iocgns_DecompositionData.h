@@ -89,12 +89,17 @@ namespace Iocgns {
     virtual int    int_size() const           = 0;
 
     virtual int    spatial_dimension() const  = 0;
+    virtual size_t global_node_count() const = 0;
+    virtual size_t global_elem_count() const = 0;
+
     virtual size_t decomp_node_offset() const = 0;
     virtual size_t decomp_node_count() const  = 0;
     virtual size_t decomp_elem_offset() const = 0;
     virtual size_t decomp_elem_count() const  = 0;
 
     virtual std::vector<double> &centroids() = 0;
+
+    virtual size_t get_commset_node_size() const = 0;
 
     virtual void get_node_coordinates(int filePtr, double *ioss_data,
                                       const Ioss::Field &field) const = 0;
@@ -137,10 +142,14 @@ namespace Iocgns {
 
     void decompose_model(int filePtr);
 
+    int    spatial_dimension() const { return m_decomposition.m_spatialDimension; }
+
+    size_t global_node_count() const { return m_decomposition.global_node_count(); }
+    size_t global_elem_count() const { return m_decomposition.global_elem_count(); }
+
     size_t ioss_node_count() const { return m_decomposition.ioss_node_count(); }
     size_t ioss_elem_count() const { return m_decomposition.ioss_elem_count(); }
 
-    int    spatial_dimension() const { return m_decomposition.m_spatialDimension; }
     size_t decomp_node_offset() const { return m_decomposition.file_node_offset(); }
     size_t decomp_node_count() const { return m_decomposition.file_node_count(); }
     size_t decomp_elem_offset() const { return m_decomposition.file_elem_offset(); }
@@ -174,6 +183,8 @@ namespace Iocgns {
     }
 
     void get_block_connectivity(int filePtr, INT *data, int blk_seq) const;
+
+    size_t get_commset_node_size() const { return m_decomposition.nodeCommMap.size() / 2; }
 
     void get_sideset_element_side(int filePtr, const Ioss::SetDecompositionData &sset,
                                   INT *data) const;

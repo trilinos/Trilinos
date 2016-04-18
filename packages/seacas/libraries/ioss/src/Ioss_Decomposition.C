@@ -41,7 +41,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#if defined(USE_CGNS)
+#if !defined(NO_CGNS_SUPPORT)
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
@@ -1400,15 +1400,6 @@ namespace Ioss {
     }
   }
 
-#if defined(USE_CGNS)
-  template void Decomposition<int64_t>::communicate_block_data(cgsize_t *file_data,
-                                                               int64_t * ioss_data,
-                                                               const BlockDecompositionData &block,
-                                                               size_t comp_count) const;
-  template void Decomposition<int>::communicate_block_data(cgsize_t *file_data, int *ioss_data,
-                                                           const BlockDecompositionData &block,
-                                                           size_t comp_count) const;
-#endif
   template void Decomposition<int64_t>::communicate_block_data(int *file_data, int64_t *ioss_data,
                                                                const BlockDecompositionData &block,
                                                                size_t comp_count) const;

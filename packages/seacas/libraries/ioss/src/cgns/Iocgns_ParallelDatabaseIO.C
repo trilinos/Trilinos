@@ -171,6 +171,11 @@ namespace Iocgns {
     assert(decomp != nullptr);
     decomp->decompose_model(cgnsFilePtr);
 
+    get_region()->property_add(
+        Ioss::Property("global_node_count", (int64_t)decomp->global_node_count()));
+    get_region()->property_add(
+        Ioss::Property("global_element_count", (int64_t)decomp->global_elem_count()));
+
     nodeCount    = decomp->ioss_node_count();
     elementCount = decomp->ioss_elem_count();
 
@@ -252,6 +257,12 @@ namespace Iocgns {
         new Ioss::NodeBlock(this, "nodeblock_1", decomp->ioss_node_count(), 3);
     nblock->property_add(Ioss::Property("base", base));
     get_region()->add(nblock);
+
+    // Create a single node commset
+    Ioss::CommSet *commset =
+      new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
+    commset->property_add(Ioss::Property("id", 1));
+    get_region()->add(commset);
   }
 
   bool ParallelDatabaseIO::begin(Ioss::State /* state */) { return true; }

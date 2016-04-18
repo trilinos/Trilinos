@@ -569,6 +569,7 @@ lib ioinit
         [ glob $(seacas-root)/libraries/ioss/src/init/*.C ]
     ]
     ioex_fac
+    iocgns
     ioex
     iopx
     iofx
@@ -1761,7 +1762,6 @@ exe io_shell
     ioss
     iotr
     ioxf
-    iocgns
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1777,7 +1777,6 @@ exe io_info
     ioss
     iotr
     ioxf
-    iocgns
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag

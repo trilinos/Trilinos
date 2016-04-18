@@ -80,10 +80,6 @@
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#ifdef USE_CGNS
-#include <cgns/Iocgns_Initializer.h>
-#endif
-
 #define OUTPUT std::cout
 
 // ========================================================================
@@ -161,10 +157,6 @@ int main(int argc, char *argv[])
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
   Ioxf::Initializer ioxf;
-#endif
-
-#ifdef USE_CGNS
-  Iocgns::Initializer iocgns;
 #endif
 
   OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
