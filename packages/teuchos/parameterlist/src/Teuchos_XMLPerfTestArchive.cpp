@@ -48,7 +48,7 @@
 #include <Teuchos_FileInputSource.hpp>
 #include <Teuchos_XMLPerfTestArchive.hpp>
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-#include <Winsock2.h>
+#include <winsock2.h>
 #pragma comment(lib, "ws2_32.lib")
 #else
 #include <unistd.h>
