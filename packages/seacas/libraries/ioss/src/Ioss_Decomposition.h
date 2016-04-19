@@ -58,8 +58,8 @@ namespace Ioss {
   public:
     BlockDecompositionData()
         : zone_(0), section_(0), fileSectionOffset(0), id_(0), fileCount(0), iossCount(0),
-          zoneNodeOffset(0), topologyType("unknown"), nodesPerEntity(0), attributeCount(0),
-          localIossOffset(0)
+          globalCount(0), zoneNodeOffset(0), topologyType("unknown"), nodesPerEntity(0),
+          attributeCount(0), localIossOffset(0)
     {
     }
 
@@ -69,7 +69,8 @@ namespace Ioss {
     int64_t            id() const { return id_; }
     size_t             file_count() const { return fileCount; }
     size_t             ioss_count() const { return iossCount; }
-
+    size_t             global_count() const { return globalCount; }
+    
     std::string name_;
     int         zone_;
     int         section_;
@@ -78,6 +79,7 @@ namespace Ioss {
     int64_t id_;
     size_t  fileCount;
     size_t  iossCount;
+    size_t  globalCount;
 
     size_t      zoneNodeOffset;
     std::string topologyType;
