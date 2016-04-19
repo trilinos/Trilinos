@@ -344,7 +344,7 @@ namespace Intrepid2 {
         const auto numPoints = quadNodes.dimension(0);
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
-        const auto D10Cardin  = getDkCardinality(OPERATOR_D10, spaceDim);
+        const auto D10Cardin = getDkCardinality(OPERATOR_D10, spaceDim);
 
         const auto workSize  = numFields*numPoints*D10Cardin;
         DynRankView ConstructWithLabel(work, workSize);
