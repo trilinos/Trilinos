@@ -526,7 +526,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     }
   }
 
-  ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  //ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
@@ -998,8 +998,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
 
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
+
+    // only add auxiliary global data if Jacobian is being formed
+    ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
     // Set the targets
     thGlobalContainer->set_f_th(f_out);
@@ -1015,6 +1017,9 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
 
+    // don't add auxiliary global data if Jacobian is not computed.
+    // this leads to zeroing of aux ops in special cases.
+
     thGlobalContainer->set_f_th(f_out);
 
     // Zero values in ghosted container objects
@@ -1025,6 +1030,9 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(J)");
+
+    // only add auxiliary global data if Jacobian is being formed
+    ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
     // this dummy nonsense is needed only for scattering dirichlet conditions
     RCP<Thyra::VectorBase<Scalar> > dummy_f = Thyra::createMember(f_space_);
