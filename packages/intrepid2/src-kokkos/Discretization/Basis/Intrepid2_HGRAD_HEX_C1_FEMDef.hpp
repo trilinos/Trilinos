@@ -207,8 +207,8 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
   
-  template<typename ExecSpaceType>
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  template<typename SpT>
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   Basis_HGRAD_HEX_C1_FEM() {
     this->basisCardinality_  = 8;
     this->basisDegree_       = 1;    
@@ -235,7 +235,7 @@ namespace Intrepid2 {
                                  0, 7, 0, 1 };
 
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type[32],ExecSpaceType> tagView(tags);
+      Kokkos::View<ordinal_type[32],SpT> tagView(tags);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -250,11 +250,11 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const EOperator operatorType ) const {
@@ -266,8 +266,9 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
@@ -324,10 +325,10 @@ namespace Intrepid2 {
 
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.

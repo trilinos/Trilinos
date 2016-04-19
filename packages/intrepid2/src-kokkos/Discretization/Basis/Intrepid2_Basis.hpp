@@ -86,7 +86,7 @@ namespace Intrepid2 {
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis {
   public:
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;

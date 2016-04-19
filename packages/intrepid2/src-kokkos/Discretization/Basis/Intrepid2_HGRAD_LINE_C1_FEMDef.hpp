@@ -72,7 +72,7 @@ namespace Intrepid2 {
     }
     case OPERATOR_GRAD : {
       output(0, 0) = -0.5;
-      output(1, 0) = 0.5;
+      output(1, 0) =  0.5;
       break;
     }
     case OPERATOR_MAX : {
@@ -114,8 +114,8 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      ordinal_type tags[]  = { 0, 0, 0, 1,
-                               0, 1, 0, 1 };
+      ordinal_type tags[8]  = { 0, 0, 0, 1,
+                                0, 1, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm. 
       Kokkos::View<ordinal_type[8],SpT> tagView(tags);
@@ -149,12 +149,13 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);  
-    Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
     switch (operatorType) {
     
