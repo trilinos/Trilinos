@@ -1,7 +1,7 @@
 #ifndef TEMPUS_STEPTYPE_HPP
 #define TEMPUS_STEPTYPE_HPP
 
-namespace tempus {
+namespace Tempus {
 
 
 /** \brief Step type. */
@@ -50,5 +50,5 @@ const char* toString(const SolutionStatus status)
 }
 
 
-} // namespace tempus
-#ifndef TEMPUS_STEPTYPE_HPP
+} // namespace Tempus
+#endif // TEMPUS_STEPTYPE_HPP

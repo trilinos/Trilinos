@@ -1,7 +1,7 @@
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionState_impl.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 template class SolutionState<double>;
 
@@ -12,7 +12,7 @@ SolutionState(const RCP<SolutionStateMetaData<double> > ssmd,
               const RCP<Thyra::VectorBase<double> >& x,
               const RCP<Thyra::VectorBase<double> >& xdot,
               const RCP<Thyra::VectorBase<double> >& xdotdot,
-              const RCP<tempus::StepperState<double> >& stepperState);
+              const RCP<Tempus::StepperState<double> >& stepperState);
 
 template RCP<SolutionState<double> >
 SolutionState(const double time,
@@ -32,6 +32,6 @@ SolutionState(const double time,
               const RCP<Thyra::VectorBase<double> >& x,
               const RCP<Thyra::VectorBase<double> >& xdot,
               const RCP<Thyra::VectorBase<double> >& xdotdot,
-              const RCP<tempus::StepperState<double> >& stepperState);
+              const RCP<Tempus::StepperState<double> >& stepperState);
 
-} // namespace tempus
+} // namespace Tempus

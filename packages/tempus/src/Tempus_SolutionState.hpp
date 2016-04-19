@@ -1,12 +1,16 @@
 #ifndef TEMPUS_SOLUTIONSTATE_HPP
 #define TEMPUS_SOLUTIONSTATE_HPP
 
+// Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-
+// Thrya
+#include "Thyra_VectorBase.hpp"
+// Tempus
+#include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_StepperState.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 /** \brief Solution state for integrators and steppers.
  *  SolutionState contains the metadata for solutions and the solutions
@@ -31,11 +35,9 @@ namespace tempus {
 template<class Scalar>
 class SolutionState :
   public Teuchos::Describable,
-  public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
+  public Teuchos::VerboseObject<Tempus::SolutionState<Scalar> >
 {
 public:
-
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /// Destructor
   virtual ~SolutionState() {};
@@ -45,11 +47,11 @@ public:
 
   /** \brief. */
   SolutionState(
-    const RCP<SolutionStateMetaData<Scalar> > ssmd,
-    const RCP<Thyra::VectorBase<Scalar> >& x,
-    const RCP<Thyra::VectorBase<Scalar> >& xdot,
-    const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-    const RCP<tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
 
   SolutionState(
     const Scalar time,
@@ -66,16 +68,16 @@ public:
     const bool   isRestartable,
     const bool   isInterpolated,
     const Scalar accuracy,
-    const RCP<Thyra::VectorBase<Scalar> >& x,
-    const RCP<Thyra::VectorBase<Scalar> >& xdot,
-    const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-    const RCP<tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
 
   /// This is a shallow copy constructor, use clone for a deep copy
   SolutionState(const SolutionState<Scalar>& ss_);
 
   /// This is a deep copy and copies the underlying vectors
-  virtual RCP<SolutionState<Scalar> > clone() const;
+  virtual Teuchos::RCP<SolutionState<Scalar> > clone() const;
 
   /// Get time
   virtual Scalar getTime() const{return metaData->time;}
@@ -89,13 +91,13 @@ public:
   /// \name Accessor methods
   //@{
     /// Get the current solution, x.
-    virtual RCP<const Thyra::VectorBase<Scalar> > getX() {return x;}
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() {return x;}
 
     /// Get the current time derivative of the solution, xdot.
-    virtual RCP<const Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
 
     /// Get the current time second derivative of the solution, xdotdot.
-    virtual RCP<const Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
   //@}
 
 
@@ -140,23 +142,22 @@ public:
   //@}
 
   // Member Data
-protected:
 
   /// Meta Data for the solution state
-  RCP<SolutionStateMetaData<Scalar> > metaData;
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData;
 
   /// Solution
-  RCP<const Thyra::VectorBase<Scalar> > x;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
 
   /// Time derivative of the solution
-  RCP<const Thyra::VectorBase<Scalar> > xdot;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot;
 
   /// Second time derivative of the solution
-  RCP<const Thyra::VectorBase<Scalar> > xdotdot;
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot;
 
   /// StepperState for this SolutionState
-  RCP<tempus::StepperState<Scalar> > stepperState;
+  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_SOLUTIONSTATE_HPP

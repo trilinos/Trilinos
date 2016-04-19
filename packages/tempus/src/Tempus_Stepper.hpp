@@ -5,13 +5,16 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 // Thyra
 #include "Thyra_ModelEvaluator.hpp"
+// Tempus
+#include "Tempus_SolutionHistory.hpp"
 
 
-namespace tempus {
+namespace Tempus {
 
-template<class Scalar>
+
 /** \brief Thyra Base interface for time steppers.
  *
  * <b>Design Considerations</b>
@@ -40,9 +43,10 @@ template<class Scalar>
  *   - Steppers may maintain their own time history of the solution, e.g.,
  *     BDF steppers.
  */
+template<class Scalar>
 class Stepper
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >,
+    virtual public Teuchos::VerboseObject<Stepper<Scalar> >,
     virtual public Teuchos::ParameterListAcceptor
 {
 public:
@@ -53,20 +57,20 @@ public:
   /// \name Basic stepper methods
   //@{
     /// Take the specified timestep, dt, and return true if successful.
-    virtual bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory) = 0;
+    virtual bool takeStep(const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
     virtual void setStepperState(
-      const RCP<tempus::StepperState<Scalar> >& stepperState) = 0;
+      const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState) = 0;
 
-    virtual RCP<tempus::StepperState<Scalar> > getStepperState() = 0;
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState() = 0;
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(RCP<ParameterList> const& pl);
-    virtual RCP<ParameterList> getNonconstParameterList();
-    virtual RCP<ParameterList> unsetParameterList();
-    virtual RCP<const ParameterList> getValidParameters() const;
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -99,5 +103,5 @@ public:
   //@}
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_STEPPER_HPP

@@ -3,7 +3,7 @@
 
 #include "Tempus_SolutionState.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 // SolutionState definitions:
 template<class Scalar>
@@ -17,7 +17,7 @@ SolutionState(const RCP<SolutionStateMetaData<Scalar> > metaData_,
               const RCP<Thyra::VectorBase<Scalar> >& x_,
               const RCP<Thyra::VectorBase<Scalar> >& xdot_,
               const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
-              const RCP<tempus::StepperState<Scalar> >& stepperState_)
+              const RCP<Tempus::StepperState<Scalar> >& stepperState_)
   : metaData     (metaData_),
     x            (x_),
     xdot         (xdot_),
@@ -44,7 +44,7 @@ SolutionState<Scalar>::SolutionState(
   const RCP<Thyra::VectorBase<Scalar> >& x_,
   const RCP<Thyra::VectorBase<Scalar> >& xdot_,
   const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
-  const RCP<tempus::StepperState<Scalar> >& stepperState_)
+  const RCP<Tempus::StepperState<Scalar> >& stepperState_)
   : x            (x_),
     xdot         (xdot_),
     xdotdot      (xdotdot_),
@@ -179,5 +179,5 @@ void SolutionState<Scalar>::describe(
   }
 }
 
-} // namespace tempus
+} // namespace Tempus
 #endif TEMPUS_SOLUTIONSTATE_IMPL_HPP

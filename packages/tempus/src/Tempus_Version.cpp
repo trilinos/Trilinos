@@ -1,6 +1,6 @@
 #include "Tempus_Version.hpp"
 
-namespace tempus {
+namespace Tempus {
   
   std::string version() { 
     return("Tempus Version: development"); 

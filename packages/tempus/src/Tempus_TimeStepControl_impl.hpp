@@ -44,13 +44,13 @@ namespace {
       Constant_name,
       Variable_name);
 
-  const RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType> >
+  const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
     StepTypeValidator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<tempus::StepType>(
+        new Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType>(
           StepType_names,
-          Teuchos::tuple<tempus::StepType>(
-            tempus::CONSTANT_STEP_SIZE,
-            tempus::VARIABLE_STEP_SIZE),
+          Teuchos::tuple<Tempus::StepType>(
+            Tempus::CONSTANT_STEP_SIZE,
+            Tempus::VARIABLE_STEP_SIZE),
           StepType_name));
 
   static std::string dtConstant_name             = "Constant Time Step Size";
@@ -74,7 +74,7 @@ namespace {
 } // namespace
 
 
-namespace tempus {
+namespace Tempus {
 
 // TimeStepControl definitions:
 template<class Scalar>
@@ -536,5 +536,5 @@ RCP<ParameterList> TimeStepControl<Scalar>::unsetParameterList()
 }
 
 
-} // namespace tempus
+} // namespace Tempus
 #endif TEMPUS_TIMESTEPCONTROL_IMPL_HPP

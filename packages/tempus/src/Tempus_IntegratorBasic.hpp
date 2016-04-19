@@ -6,25 +6,33 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
 // Tempus
+#include "Thyra_ModelEvaluator.hpp"
+// Tempus
 #include "Tempus_Integrator.hpp"
+#include "Tempus_Stepper.hpp"
+#include "Tempus_TimeStepControl.hpp"
+#include "Tempus_IntegratorObserver.hpp"
 
 #include <string>
 
-namespace tempus {
+namespace Tempus {
+
 
 /** \brief Basic time integrator
  */
 template<class Scalar>
-class IntegratorBasic : public tempus::Integrator {
+class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
+{
 public:
 
   /** \brief Constructor with ParameterList, models, initial conditions
    *  and optional solvers. */
   IntegratorBasic(
-    RCP<ParameterList>                     parameterList,
-    const RCP<Thyra::VectorBase<Scalar> >& x,
-    const RCP<Thyra::VectorBase<Scalar> >& xdot=Teuchos::null,
-    const RCP<Thyra::VectorBase<Scalar> >& xdotdot=Teuchos::null );
+    Teuchos::RCP<Teuchos::ParameterList>                pList_,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     xdot=Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     xdotdot=Teuchos::null );
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -40,10 +48,10 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(RCP<ParameterList> const& pl);
-    virtual RCP<ParameterList> getNonconstParameterList();
-    virtual RCP<ParameterList> unsetParameterList();
-    virtual RCP<const ParameterList> getValidParameters() const;
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -52,13 +60,31 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
+  /// \name Accessor methods
+  //@{
+    /// Get time
+    virtual Scalar getTime() const{return workingState->getTime();}
+    /// Get index
+    virtual Scalar getIndex() const{return workingState->getIndex();}
+  //@}
 
   /// \name Undo type capabilities
   //@{
     /// Only accept step after meeting time step criteria.
-    virtual bool acceptStep() {return false;}
+    virtual bool acceptTimeStep();
   //@}
 
+protected:
+
+  Teuchos::RCP<Teuchos::ParameterList>      pList;
+  Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory;
+  Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl;
+  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver;
+  Teuchos::RCP<Stepper<Scalar> >            stepper;
+
+  Teuchos::RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
+  Teuchos::RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
+
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_INTEGRATORBASIC_HPP

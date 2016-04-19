@@ -4,18 +4,21 @@
 #include "Tempus_Stepper.hpp"
 
 
-namespace tempus {
-template<class Scalar>
+namespace Tempus {
+
+
 /** \brief Forward Euler time stepper.
  *  Forward Euler is an explicit time stepper (i.e., no solver used).
  */
-class StepperForwardEuler : virtual public Stepper
+template<class Scalar>
+class StepperForwardEuler : virtual public Tempus::Stepper<Scalar>
 {
 public:
 
   /// Constructor
   StepperForwardEuler(
-    const RCP<Thyra::ModelEvaluator<Scalar> >& model);
+    Teuchos::RCP<Teuchos::ParameterList>                pList_,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model  );
 
   /// Destructor
   virtual ~StepperForwardEuler();
@@ -23,20 +26,20 @@ public:
   /// \name Basic stepper methods
   //@{
     /// Take the specified timestep, dt, and return true if successful.
-    virtual bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory);
+    virtual bool takeStep(const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
     virtual void setStepperState(
-      const RCP<tempus::StepperState<Scalar> >& stepperState);
+      const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
 
-    virtual RCP<tempus::StepperState<Scalar> > getStepperState();
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState();
   //@}
 
   /// \name ParameterList methods
   //@{
-    virtual void setParameterList(RCP<ParameterList> const& pl);
-    virtual RCP<ParameterList> getNonconstParameterList();
-    virtual RCP<ParameterList> unsetParameterList();
-    virtual RCP<const ParameterList> getValidParameters() const;
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -48,13 +51,13 @@ public:
 
 protected:
 
-  RCP<ParameterList>                        pList;
-  RCP<const Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Teuchos::ParameterList>                        pList;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs;
 
-  RCP<tempus::StepperState<Scalar> > stepperState;
+  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_STEPPERFORWARDEULER_HPP

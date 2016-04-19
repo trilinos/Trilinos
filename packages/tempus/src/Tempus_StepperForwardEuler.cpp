@@ -1,7 +1,7 @@
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperForwardEuler_impl.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 template class StepperForwardEuler<double>;
 
@@ -17,4 +17,4 @@ StepperForwardEuler(
   Array<RCP<Thyra::ModelEvaluator<double> > > models,
   Array<RCP<Thyra::NonlinearSolverBase<double> > >  solvers =Teuchos::null);
 
-} // namespace tempus
+} // namespace Tempus

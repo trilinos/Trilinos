@@ -4,7 +4,7 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 /** \brief IntegratorObserver class for time integrators.
  *
@@ -33,9 +33,9 @@ class IntegratorObserver
 public:
 
   /// Constructor
-  virtual IntegratorObserver(
-    const RCP<SolutionHistory<Scalar> >& solutionHistory_,
-    const RCP<TimeStepControl<Scalar> >& timeStepControl_)
+  IntegratorObserver(
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory_,
+    const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl_)
     : solutionHistory(solutionHistory), timeStepControl(timeStepControl_)
   {}
 
@@ -68,9 +68,9 @@ public:
 
 protected:
 
-  RCP<SolutionHistory<Scalar> > solutionHistory;
-  RCP<TimeStepControl<Scalar> > timeStepControl;
+  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory;
+  Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl;
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_INTEGRATOROBSERVER_HPP

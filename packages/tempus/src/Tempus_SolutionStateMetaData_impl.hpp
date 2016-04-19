@@ -3,7 +3,7 @@
 
 #include "Tempus_SolutionStateMetaDataMetaData.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 // SolutionStateMetaData definitions:
 template<class Scalar>
@@ -107,5 +107,5 @@ void SolutionStateMetaData<Scalar>::describe(
   }
 }
 
-} // namespace tempus
+} // namespace Tempus
 #endif TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP

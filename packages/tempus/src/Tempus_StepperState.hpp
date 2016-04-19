@@ -6,7 +6,7 @@
 #include <string>
 
 
-namespace tempus {
+namespace Tempus {
 
 template<class Scalar>
 /** \brief StepperState is a simple class to hold state information about the stepper.
@@ -28,20 +28,20 @@ template<class Scalar>
  */
 class StepperState :
   public Teuchos::Describable,
-  public Teuchos::VerboseObject<tempus::SolutionState<Scalar> >
+  public Teuchos::VerboseObject<Tempus::StepperState<Scalar> >
 
 {
 public:
   /// Constructor
-  virtual StepperState(std::string name_):(stepperName=name_){}
+  StepperState(std::string name_):stepperName(name_){}
 
   /// Destructor
   virtual ~StepperState();
 
   /// This is a deep copy
-  virtual RCP<StepperState<Scalar> > clone() const
+  virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
-     RCP<StepperState<Scalar> > ss_out =
+     Teuchos::RCP<StepperState<Scalar> > ss_out =
        Teuchos::rcp(new StepperState<Scalar> (this->stepperName));
      return ss_out;
   }
@@ -50,7 +50,7 @@ public:
   //@{
     virtual std::string description() const
     {
-      std::string name = "tempus::StepperState";
+      std::string name = "Tempus::StepperState";
       return(name);
     }
     virtual void describe(Teuchos::FancyOStream        & out,
@@ -64,5 +64,5 @@ public:
   std::string stepperName;  ///< Name of the creating Stepper.
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_STEPPERSTATE_HPP

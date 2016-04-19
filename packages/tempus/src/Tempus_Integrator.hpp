@@ -4,14 +4,11 @@
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterList.hpp"
-// Tempus
-#include "Tempus_TimeStepControl.hpp"
-#include "Tempus_IntegratorObserver.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <string>
 
-namespace tempus {
+namespace Tempus {
 
 /** \brief Thyra Base interface for time integrators.
  *  Time integrators are designed to advance the solution from an initial
@@ -39,7 +36,7 @@ namespace tempus {
 template<class Scalar>
 class Integrator
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<tempus::Integrator<Scalar> >,
+    virtual public Teuchos::VerboseObject<Tempus::Integrator<Scalar> >,
     virtual public Teuchos::ParameterListAcceptor
 {
 public:
@@ -58,11 +55,11 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(RCP<ParameterList> const& pl);
-    virtual RCP<const ParameterList> getValidParameters() const;
-    virtual RCP<const ParameterList> getParameterList() const;
-    virtual RCP<ParameterList> getNonconstParameterList();
-    virtual RCP<ParameterList> unsetParameterList();
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -75,27 +72,17 @@ public:
   /// \name Accessor methods
   //@{
     /// Get time
-    virtual Scalar getTime() const{return workingState->getTime();}
+    virtual Scalar getTime() const;
     /// Get index
-    virtual Scalar getIndex() const{return workingState->getIndex();}
+    virtual Scalar getIndex() const;
   //@}
 
   /// \name Undo type capabilities
   //@{
     /// Only accept step after meeting time step criteria.
-    virtual bool acceptStep() = 0;
+    virtual bool acceptTimeStep() = 0;
   //@}
 
-protected:
-
-  RCP<ParameterList>               pList;
-  RCP<SolutionHistory<Scalar> >    solutionHistory;
-  RCP<TimeStepControl<Scalar> >    timeStepControl;
-  RCP<IntegratorObserver<Scalar> > integratorObserver;
-  RCP<Stepper<Scalar> >            stepper;
-
-  RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
-  RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_INTEGRATOR_HPP

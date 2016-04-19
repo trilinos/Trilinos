@@ -1,7 +1,7 @@
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionStateMetaData_impl.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 template class SolutionStateMetaData<double>;
 
@@ -23,4 +23,4 @@ SolutionStateMetaData(const double time,
                       const bool   isInterpolated,
                       const double accuracy);
 
-} // namespace tempus
+} // namespace Tempus

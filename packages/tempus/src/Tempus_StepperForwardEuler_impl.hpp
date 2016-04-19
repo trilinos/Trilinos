@@ -4,12 +4,13 @@
 #include "Tempus_StepperForwardEuler.hpp"
 
 
-namespace tempus {
+namespace Tempus {
 
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  const RCP<const Thyra::ModelEvaluator<Scalar> >& model_)
+  RCP<ParameterList>                               pList_,
+  const RCP<const Thyra::ModelEvaluator<Scalar> >& model_ )
  : model(model_)
 {
   inArgs  = model->createInArgs();
@@ -54,7 +55,7 @@ bool takeStep(const Ptr<SolutionHistory<Scalar> >& solutionHistory);
 
 template<class Scalar>
 void StepperForwardEuler::setStepperState(
-  const RCP<tempus::StepperState<Scalar> >& stepperState_)
+  const RCP<Tempus::StepperState<Scalar> >& stepperState_)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(stepperState_->stepperName != description(),
     std::logic_error,
@@ -68,7 +69,7 @@ void StepperForwardEuler::setStepperState(
 
 
 template<class Scalar>
-RCP<tempus::StepperState<Scalar> > getStepperState()
+RCP<Tempus::StepperState<Scalar> > getStepperState()
 {
   return stepperState;
 }
@@ -129,5 +130,5 @@ RCP<ParameterList> StepperForwardEuler<Scalar>::unsetParameterList()
 }
 
 
-} // namespace tempus
+} // namespace Tempus
 #endif TEMPUS_STEPPERFORWARDEULER_IMPL_HPP

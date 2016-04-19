@@ -4,7 +4,7 @@
 #include <string>
 #include "Tempus_config.hpp"
 
-namespace tempus {
+namespace Tempus {
   
   std::string version();
 

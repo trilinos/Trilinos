@@ -1,21 +1,23 @@
 #ifndef TEMPUS_SOLUTIONSTATEMETADATA_HPP
 #define TEMPUS_SOLUTIONSTATEMETADATA_HPP
 
+// Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
+// Tempus
+#include "Tempus_StepType.hpp"
 
-namespace tempus {
+
+namespace Tempus {
 
 /** \brief Solution state meta data.
  */
 template<class Scalar>
 class SolutionStateMetaData :
   public Teuchos::Describable,
-  public Teuchos::VerboseObject<tempus::SolutionStateMetaData<Scalar> >
+  public Teuchos::VerboseObject<Tempus::SolutionStateMetaData<Scalar> >
 {
 public:
-
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /// Default constructor.
   SolutionStateMetaData();
@@ -66,5 +68,5 @@ public:
   //@}
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_SOLUTIONSTATEMETADATA_HPP

@@ -4,11 +4,12 @@
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 // Tempus
 #include "Tempus_StepType.hpp"
+#include "Tempus_SolutionStateMetaData.hpp"
 
-namespace tempus {
+namespace Tempus {
 
 /** \brief TimeStepControl manages the time step size.
  *  There several mechanicisms that effect the time step size and
@@ -28,11 +29,9 @@ template<class Scalar>
 class TimeStepControl
   : virtual public Teuchos::Describable,
     virtual public Teuchos::ParameterListAcceptor,
-    virtual public Teuchos::VerboseObject<tempus::TimeStepControl<Scalar> >
+    virtual public Teuchos::VerboseObject<Tempus::TimeStepControl<Scalar> >
 {
 public:
-
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /// Destructor
   virtual ~TimeStepControl() {};
@@ -41,14 +40,14 @@ public:
   TimeStepControl();
 
   /** \brief. */
-  TimeStepControl(RCP<ParameterList> pList_ = Teuchos::null);
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null);
 
   /** \brief. */
   // This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc_);
 
   /** \brief. .*/
-  virtual void getNextTimeStep(RCP<SolutionStateMetaData<Scalar> > metaData,
+  virtual void getNextTimeStep(Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData,
     bool stepperStatus, bool integratorStatus) const;
 
   /** \brief. .*/
@@ -78,15 +77,15 @@ public:
   unsigned int nFailuresMax;            ///< Maximum number of stepper failures
   unsigned int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
 
-  RCP<ParameterList> pList;
+  Teuchos::RCP<Teuchos::ParameterList> pList;
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(RCP<ParameterList> const& pl);
-    virtual RCP<const ParameterList> getValidParameters() const;
-    virtual RCP<const ParameterList> getParameterList() const;
-    virtual RCP<ParameterList> getNonconstParameterList();
-    virtual RCP<ParameterList> unsetParameterList();
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -97,5 +96,5 @@ public:
   //@}
 
 };
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_TIMESTEPCONTROL_HPP

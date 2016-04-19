@@ -30,22 +30,22 @@ namespace {
       Static_name,
       Unlimited_name);
 
-  const RCP<Teuchos::StringToIntegralParameterEntryValidator<tempus::HistoryPolicy> >
+  const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::HistoryPolicy> >
     PolicyValidator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<tempus::HistoryPolicy>(
+        new Teuchos::StringToIntegralParameterEntryValidator<Tempus::HistoryPolicy>(
           HistoryPolicies,
-          Teuchos::tuple<tempus::HistoryPolicy>(
-            tempus::HISTORY_POLICY_INVALID,
-            tempus::HISTORY_POLICY_KEEP_NEWEST,
-            tempus::HISTORY_POLICY_UNDO,
-            tempus::HISTORY_POLICY_STATIC,
-            tempus::HISTORY_POLICY_UNLIMITED),
+          Teuchos::tuple<Tempus::HistoryPolicy>(
+            Tempus::HISTORY_POLICY_INVALID,
+            Tempus::HISTORY_POLICY_KEEP_NEWEST,
+            Tempus::HISTORY_POLICY_UNDO,
+            Tempus::HISTORY_POLICY_STATIC,
+            Tempus::HISTORY_POLICY_UNLIMITED),
           Selection_name));
 
 } // namespace
 
 
-namespace tempus {
+namespace Tempus {
 
 template<class Scalar>
 SolutionHistory<Scalar>::SolutionHistory(
@@ -304,7 +304,7 @@ int SolutionHistory<Scalar>::getInterplatorOrder() const
 template<class Scalar>
 std::string SolutionHistory<Scalar>::description() const
 {
-  std::string name = "tempus::SolutionHistory";
+  std::string name = "Tempus::SolutionHistory";
   return(name);
 }
 
@@ -444,5 +444,5 @@ RCP<InterpolatorBase<Scalar> > SolutionHistory<Scalar>::unSetInterpolator()
 }
 
 
-} // namespace tempus
+} // namespace Tempus
 #endif // TEMPUS_SOLUTIONHISTORY_IMPL_HPP
