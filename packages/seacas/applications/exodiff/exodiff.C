@@ -406,7 +406,7 @@ namespace {
   {
     if (!interface.quiet_flag && !interface.summary_flag)
       std::cout << "Reading first file ... " << '\n';
-    string serr = file1.Open_File();
+    std::string serr = file1.Open_File();
     if (!serr.empty()) {
       std::cout << "exodiff: " << serr << '\n';
       exit(1);
