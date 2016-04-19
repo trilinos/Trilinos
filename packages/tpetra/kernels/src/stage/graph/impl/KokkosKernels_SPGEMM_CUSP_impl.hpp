@@ -49,9 +49,9 @@ void CUSP_apply(
     in_nonzero_index_view_type entriesB,
     in_nonzero_value_view_type valuesB,
     bool transposeB,
-    in_row_index_view_type &row_mapC,
-    in_nonzero_index_view_type &entriesC,
-    in_nonzero_value_view_type &valuesC){
+    typename in_row_index_view_type::non_const_type &row_mapC,
+    typename in_nonzero_index_view_type::non_const_type &entriesC,
+    typename in_nonzero_value_view_type::non_const_type &valuesC){
 #ifdef KERNELS_HAVE_CUSP
   typedef typename KernelHandle::row_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;

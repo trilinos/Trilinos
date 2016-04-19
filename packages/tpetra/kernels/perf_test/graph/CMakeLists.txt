@@ -15,10 +15,10 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES KokkosKernels_WriteBinaryFromMTX.cpp experiment_space.hpp KokkosKernels_GraphHelpers.hpp
   )
   
-#TRIBITS_ADD_EXECUTABLE(
-#  spemm
-#  SOURCES KokkosKernels_SPMM_KK.cpp 
-#  )
+TRIBITS_ADD_EXECUTABLE(
+  spemm
+  SOURCES KokkosKernels_SPMM_KK.cpp  KokkosKernels_GraphHelpers.hpp
+  )
   
   
 #TRIBITS_ADD_EXECUTABLE(

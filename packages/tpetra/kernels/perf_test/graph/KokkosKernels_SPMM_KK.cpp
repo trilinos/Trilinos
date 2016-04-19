@@ -15,7 +15,7 @@ typedef double wt;
 
 template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
-    crsMat_t crsmat);
+    crsMat_t crsmat, int algorithm);
 template <typename v1>
 struct compare{
   v1 f,s;
@@ -29,12 +29,14 @@ struct compare{
 
 };
 
+
 enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
      , CMD_USE_OPENMP
      , CMD_USE_CUDA_DEV
+     , CMD_SPGEMM_ALGO
      , CMD_BIN_MTX
      , CMD_ERROR
      , CMD_COUNT };
@@ -71,10 +73,32 @@ int main (int argc, char ** argv){
     else if ( 0 == strcasecmp( argv[i] , "mtx" ) ) {
       mtx_bin_file = argv[++i];
     }
+    else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
+      ++i;
+      if ( 0 == strcasecmp( argv[i] , "KK" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 0;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "MKL" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 1;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CUSPARSE" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 2;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 3;
+      }
+      else {
+        cmdline[ CMD_ERROR ] = 1 ;
+        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
+        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
+
+        return 0;
+      }
+    }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
 
       return 0;
     }
@@ -82,7 +106,7 @@ int main (int argc, char ** argv){
 
   if (mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]" << std::endl;
+    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
 
     return 0;
   }
@@ -103,20 +127,50 @@ int main (int argc, char ** argv){
       Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
     }
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    if (cmdline[ CMD_SPGEMM_ALGO ] == 2 || cmdline[ CMD_SPGEMM_ALGO ] == 3){
+      std::cerr << "CUSP and CUSPARSE cannot be run with PTHREADS" << std::endl ;
+      return 0;
+    }
 
-    n = m;
+    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    idx nv = n = m;
+    idx ne = nnzA;
     Kokkos::Threads::print_configuration(std::cout);
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Threads> crsMat_t;
+
+
+    typedef Kokkos::Threads myExecSpace;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+    typedef typename crsMat_t::StaticCrsGraphType graph_t;
+    typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+    typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+    typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+    row_map_view_t rowmap_view("rowmap_view", nv+1);
+    cols_view_t columns_view("colsmap_view", ne);
+    values_view_t values_view("values_view", ne);
+
+    KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+    KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+    KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+
+    graph_t static_graph (columns_view, rowmap_view);
+    crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+    delete [] xadj;
+    delete [] adj;
+    delete [] ew;
+    /*
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Threads, idx> crsMat_t;
     crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
     delete [] xadj;
     delete [] adj;
     delete [] ew;
+    */
 
 
-    run_experiment<Kokkos::Threads, crsMat_t>(crsmat);
+    run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
 
-    Kokkos::Threads::finalize();
+    myExecSpace::finalize();
   }
 
 #endif
@@ -133,20 +187,50 @@ int main (int argc, char ** argv){
     else {
       Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
     }
+    if (cmdline[ CMD_SPGEMM_ALGO ] == 2 || cmdline[ CMD_SPGEMM_ALGO ] == 3){
+      std::cerr << "CUSP and CUSPARSE cannot be run with OPENMP" << std::endl ;
+      return 0;
+    }
+
     Kokkos::OpenMP::print_configuration(std::cout);
 
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    idx nv = n = m;
+    idx ne = nnzA;
 
-    n = m;
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::OpenMP> crsMat_t;
+
+    typedef Kokkos::OpenMP myExecSpace;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+    typedef typename crsMat_t::StaticCrsGraphType graph_t;
+    typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+    typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+    typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+    row_map_view_t rowmap_view("rowmap_view", nv+1);
+    cols_view_t columns_view("colsmap_view", ne);
+    values_view_t values_view("values_view", ne);
+
+    KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+    KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+    KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+
+    graph_t static_graph (columns_view, rowmap_view);
+    crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+
+    delete [] xadj;
+    delete [] adj;
+    delete [] ew;
+/*
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::OpenMP, idx> crsMat_t;
     crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
     delete [] xadj;
     delete [] adj;
     delete [] ew;
+*/
+    run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
 
-    run_experiment<Kokkos::OpenMP, crsMat_t>(crsmat);
-
-    Kokkos::OpenMP::finalize();
+    myExecSpace::finalize();
   }
 
 #endif
@@ -155,21 +239,64 @@ int main (int argc, char ** argv){
   if ( cmdline[ CMD_USE_CUDA ] ) {
     // Use the last device:
 
+    if (cmdline[ CMD_SPGEMM_ALGO ] == 1){
+      std::cerr << "MKL cannot be run with CUDA" << std::endl ;
+      return 0;
+    }
     Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    idx nv = n = m;
+    idx ne = nnzA;
+
+    typedef Kokkos::Cuda myExecSpace;
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+    typedef typename crsMat_t::StaticCrsGraphType graph_t;
+    typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+    typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+    typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+    row_map_view_t rowmap_view("rowmap_view", nv+1);
+    cols_view_t columns_view("colsmap_view", ne);
+    values_view_t values_view("values_view", ne);
+
+
+    {
+      typename row_map_view_t::rowmap_view hr = Kokkos::create_mirror_view (rowmap_view);
+      typename cols_view_t::rowmap_view hc = Kokkos::create_mirror_view (columns_view);
+      typename values_view_t::rowmap_view hv = Kokkos::create_mirror_view (values_view);
+
+      for (idx i = 0; i <= nv; ++i){
+        hr(i) = xadj[i];
+      }
+
+      for (idx i = 0; i < ne; ++i){
+        hc(i) = adj[i];
+        hv(i) = ew[i];
+      }
+      Kokkos::deep_copy (rowmap_view , hr);
+      Kokkos::deep_copy (columns_view , hc);
+      Kokkos::deep_copy (values_view , hv);
+
+
+    }
+    graph_t static_graph (columns_view, rowmap_view);
+    crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+
 
     n = m;
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda> crsMat_t;
+    /*
+    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda, idx> crsMat_t;
     crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
     delete [] xadj;
     delete [] adj;
     delete [] ew;
+     */
 
-
-    run_experiment<Kokkos::Cuda, crsMat_t>(crsmat);
+    run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
 
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
@@ -185,15 +312,16 @@ int main (int argc, char ** argv){
 
 template <typename ExecSpace, typename crsMat_t>
 void run_experiment(
-    crsMat_t crsMat){
+    crsMat_t crsMat,
+    int algorithm){
 
-  typedef typename crsMat_t::values_type scalar_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::row_map_type lno_view_t;
-  typedef typename crsMat_t::StaticCrsGraphType::entries_type lno_nnz_view_t;
+  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
+  typedef typename crsMat_t::StaticCrsGraphType::entries_type::non_const_type lno_nnz_view_t;
 
-  lno_view_t row_mapC, row_mapC2;
-  lno_nnz_view_t entriesC, entriesC2;
-  scalar_view_t valuesC, valuesC2;
+  lno_view_t row_mapC;
+  lno_nnz_view_t entriesC;
+  scalar_view_t valuesC;
 
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
       <lno_view_t,lno_nnz_view_t, scalar_view_t,
@@ -206,8 +334,23 @@ void run_experiment(
 
   size_t n = m, k = m;
 
-
-  kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
+  switch (algorithm){
+  case 0:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
+    break;
+  case 1:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_MKL);
+    break;
+  case 2:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSPARSE);
+    break;
+  case 3:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
+    break;
+  default:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
+    break;
+  }
   Kokkos::Impl::Timer timer1;
   KokkosKernels::Experimental::Graph::spgemm_symbolic (
       &kh,
@@ -270,7 +413,8 @@ void run_experiment(
   Kokkos::fence();
   double apply_time = timer3.seconds();
 
-  std::cout << "mm_time:" << numeric_time + symbolic_time + apply_time
+  std::cout
+      << "mm_time:" << numeric_time + symbolic_time + apply_time
       << " symbolic_time:" << symbolic_time
       << " numeric:" << numeric_time
       << " apply:" << apply_time << std::endl;
