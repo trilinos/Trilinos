@@ -214,6 +214,11 @@
         <Parameter name="Threshold" type="double" value="1.e-2" />
       </ParameterList>
 
+      <!-- ===========  TRUNCATED MEAN QUADRANGLE SUBLIST  =========== -->
+      <ParameterList name="Mean-Variance Quadrangle">
+        <Parameter name="Coefficient" type="double" value="0.5" />
+      </ParameterList>
+
       <!-- ===========  CONVEX COMBINATION RISK MEASURE SUBLIST  =========== -->
       <ParameterList name="Convex Combination Risk Measure">
         <Parameter name="Convex Combination Parameters" type="string" value="{ 0.2, 0.3, 0.5 }" />
