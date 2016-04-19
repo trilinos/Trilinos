@@ -87,10 +87,6 @@
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#ifdef USE_CGNS
-#include <cgns/Iocgns_Initializer.h>
-#endif
-
 #define OUTPUT std::cout
 
 namespace Ioss {

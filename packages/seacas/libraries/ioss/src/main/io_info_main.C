@@ -65,10 +65,6 @@ int main(int argc, char *argv[])
   Ioxf::Initializer ioxf;
 #endif
 
-#ifdef USE_CGNS
-  Iocgns::Initializer iocgns;
-#endif
-
   OUTPUT << "Input:    '" << interface.filename()  << "', Type: " << interface.type()  << '\n';
   OUTPUT << '\n';
 
