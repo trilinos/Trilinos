@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: Standard exception: " << e.what() << std::endl;
+    std::cerr << "ERROR: Standard exception: " << e.what() << '\n';
   }
 }
 

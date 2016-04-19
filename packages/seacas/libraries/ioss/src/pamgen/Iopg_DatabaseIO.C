@@ -76,7 +76,7 @@ namespace {
   // Output a message that the operation is unsupported and die...
   void unsupported(const char *operation)
   {
-    std::cerr << "ERROR: Unsupported functionality called: " << operation << std::endl;
+    std::cerr << "ERROR: Unsupported functionality called: " << operation << '\n';
     std::abort();
   }
   

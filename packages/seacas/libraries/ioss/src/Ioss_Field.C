@@ -122,7 +122,7 @@ size_t Ioss::Field::verify(size_t data_size) const
     if (required > data_size) {
       std::ostringstream errmsg;
       errmsg << "Field " << name_ << " requires " << required << " bytes to store its data. Only "
-             << data_size << " bytes were provided." << std::endl;
+             << data_size << " bytes were provided." << '\n';
       IOSS_ERROR(errmsg);
     }
   }

@@ -75,7 +75,7 @@ namespace {
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string               field_name = *IF;
       const Ioss::VariableType *var_type   = entity->get_field(field_name).raw_storage();
-      OUTPUT << "\t" << field_name << "\t" << var_type->name() << std::endl;
+      OUTPUT << "\t" << field_name << "\t" << var_type->name() << '\n';
     }
   }
 }
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     OUTPUT << "\n" << codename << " execution " << success << ".\n";
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: (EXOMATLAB) Standard exception: " << e.what() << std::endl;
+    std::cerr << "ERROR: (EXOMATLAB) Standard exception: " << e.what() << '\n';
   }
   time_t end_time = time(nullptr);
   add_to_log(codename.c_str(), (int)(end_time - begin_time));
@@ -219,11 +219,11 @@ namespace {
 
     out_stream << "names= [\n";
     out_stream << "'" << std::left << std::setw(namelen) << "TIME"
-               << "';" << std::endl;
+               << "';" << '\n';
 
     for (IF = fields.begin(); IF != fields.end(); ++IF) {
       std::string field_name = *IF;
-      out_stream << "'" << std::left << std::setw(namelen) << field_name << "';" << std::endl;
+      out_stream << "'" << std::left << std::setw(namelen) << field_name << "';" << '\n';
     }
     out_stream << "];\n";
 

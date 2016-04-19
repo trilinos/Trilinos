@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
       // Aprepro::parsing_results()
       std::fstream infile(argv[ai]);
       if (!infile.good()) {
-	std::cerr << "APREPRO: Could not open file: " << argv[ai] << std::endl;
+	std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
 	return 0;
       }
 
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
           
           std::cout << curr_history.original << " was substituted with " <<
                        curr_history.substitution << " at index " <<
-                       curr_history.index << std::endl;
+                       curr_history.index << '\n';
         }
 
         aprepro.clear_history();

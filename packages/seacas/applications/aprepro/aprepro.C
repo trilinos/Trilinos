@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   else {
     std::fstream infile(input_files[0].c_str());
     if (!infile.good()) {
-      std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << std::endl;
+      std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n';
       return 0;
     }
 

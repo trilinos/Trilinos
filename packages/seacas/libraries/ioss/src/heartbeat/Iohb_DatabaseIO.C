@@ -312,15 +312,15 @@ namespace Iohb {
       if (fileFormat == SPYHIS) {
 	time_t calendar_time = time(nullptr);
 	*logStream << "% Sierra SPYHIS Output " << ctime(&calendar_time);
-	*logStream << *legend_ << std::endl; // Legend output twice for SPYHIS 
+	*logStream << *legend_ << '\n'; // Legend output twice for SPYHIS 
       }
 
-      *logStream << *legend_ << std::endl;
+      *logStream << *legend_ << '\n';
       delete legend_;
       legend_ = nullptr;
     }
 
-    *logStream << *layout_ << std::endl;
+    *logStream << *layout_ << '\n';
     delete layout_;
     layout_ = nullptr;
     return true;
@@ -423,7 +423,7 @@ namespace Iohb {
 	  layout.add_literal(" ");
 	  layout.add_literal(*reinterpret_cast<std::string*>(data));
 	  if (logStream != nullptr) {
-	    *logStream << layout << std::endl;
+	    *logStream << layout << '\n';
 }
 	} else {
 	  layout_->add(field.get_name(), *reinterpret_cast<std::string*>(data));

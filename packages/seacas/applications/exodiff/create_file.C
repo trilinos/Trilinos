@@ -145,7 +145,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &di
       if (interface.coord_tol.type != IGNORE) {
         sprintf(buf, "Coordinates:  tol: %8g %s, floor: %8g", interface.coord_tol.value,
                 interface.coord_tol.typestr(), interface.coord_tol.floor);
-        std::cout << buf << std::endl;
+        std::cout << buf << '\n';
       }
       else
         std::cout << "Locations of nodes will not be considered.\n";
@@ -153,7 +153,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &di
       if (interface.time_tol.type != IGNORE) {
         sprintf(buf, "Time step values:  tol: %8g %s, floor: %8g", interface.time_tol.value,
                 interface.time_tol.typestr(), interface.time_tol.floor);
-        std::cout << buf << std::endl;
+        std::cout << buf << '\n';
       }
       else
         std::cout << "Time step time values will not be differenced.\n";
@@ -173,19 +173,19 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &di
         sprintf(buf, "\nNodal coordinates will be compared .. tol: %8g (%s), floor: %8g",
                 interface.coord_tol.value, interface.coord_tol.typestr(),
                 interface.coord_tol.floor);
-        std::cout << buf << std::endl;
+        std::cout << buf << '\n';
       }
       else {
-        std::cout << "\nNodal coordinates will not be compared." << std::endl;
+        std::cout << "\nNodal coordinates will not be compared." << '\n';
       }
 
       if (interface.time_tol.type != IGNORE) {
         sprintf(buf, "Time step values will be compared .. tol: %8g (%s), floor: %8g",
                 interface.time_tol.value, interface.time_tol.typestr(), interface.time_tol.floor);
-        std::cout << buf << std::endl;
+        std::cout << buf << '\n';
       }
       else {
-        std::cout << "Time step time values will not be compared." << std::endl;
+        std::cout << "Time step time values will not be compared." << '\n';
       }
 
       output_compare_names("Global", interface.glob_var_names, interface.glob_var,
@@ -210,7 +210,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &di
         sprintf(buf, "Sideset Distribution Factors will be compared .. tol: %8g (%s), floor: %8g",
                 interface.ss_df_tol.value, interface.ss_df_tol.typestr(),
                 interface.ss_df_tol.floor);
-        std::cout << buf << std::endl;
+        std::cout << buf << '\n';
       }
       else {
         if (interface.ignore_sideset_df || interface.ss_df_tol.type == IGNORE) {
@@ -272,7 +272,7 @@ namespace {
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be compared:" << std::endl;
+      std::cout << type << " variables to be compared:" << '\n';
       for (unsigned v = 0; v < names.size(); ++v) {
         if (v == 0)
           sprintf(buf, "%-32s tol: %8g (%s), floor: %8g", names[v].c_str(), tol[v].value,
@@ -280,7 +280,7 @@ namespace {
         else
           sprintf(buf, "%-32s      %8g (%s),        %8g", names[v].c_str(), tol[v].value,
                   tol[v].typestr(), tol[v].floor);
-        std::cout << "\t" << buf << std::endl;
+        std::cout << "\t" << buf << '\n';
       }
     }
     else if (num_vars1 == 0 && num_vars2 == 0) {
@@ -294,12 +294,12 @@ namespace {
   void output_diff_names(const char *type, const vector<string> &names)
   {
     if (!names.empty()) {
-      std::cout << type << " variables to be differenced:" << std::endl;
+      std::cout << type << " variables to be differenced:" << '\n';
       for (auto &name : names)
-        std::cout << "\t" << name << std::endl;
+        std::cout << "\t" << name << '\n';
     }
     else
-      std::cout << "No " << type << " variables will be differenced." << std::endl;
+      std::cout << "No " << type << " variables will be differenced." << '\n';
   }
 
   void build_variable_names(const char *type, vector<string> &names, std::vector<Tolerance> &tols,
@@ -330,7 +330,7 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag)
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the first file but not the second." << std::endl;
+                          << "\" is in the first file but not the second." << '\n';
               continue;
             }
           }
@@ -353,7 +353,7 @@ namespace {
               *diff_found = true;
               if (!interface.quiet_flag)
                 std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                          << "\" is in the second file but not the first." << std::endl;
+                          << "\" is in the second file but not the first." << '\n';
               continue;
             }
           }
@@ -381,14 +381,14 @@ namespace {
           *diff_found = true;
           if (!interface.quiet_flag)
             std::cout << "exodiff: WARNING .. The " << type << " variable \"" << name
-                      << "\" is not in the second file." << std::endl;
+                      << "\" is not in the second file." << '\n';
         }
       }
       else {
         *diff_found = true;
         if (!interface.quiet_flag)
           std::cout << "exodiff: WARNING .. Specified " << type << " variable \"" << name
-                    << "\" is not in the first file." << std::endl;
+                    << "\" is not in the first file." << '\n';
       }
     }
     names = tmp_list;

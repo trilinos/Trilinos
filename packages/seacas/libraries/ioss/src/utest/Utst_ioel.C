@@ -71,10 +71,10 @@ int main(int argc, char *argv[])
 #endif
   OUTPUT << "\n" << argv[0];;
   if (err_count == 0) {
-    OUTPUT << "\nSIERRA execution successful." << std::endl;
+    OUTPUT << "\nSIERRA execution successful." << '\n';
     return EXIT_SUCCESS;
   } 
-    OUTPUT << "\nSIERRA execution failed." << std::endl;
+    OUTPUT << "\nSIERRA execution failed." << '\n';
     return EXIT_FAILURE;
   
 }
@@ -381,7 +381,7 @@ void test_aliases(const Ioss::NameList &elements)
 	  OUTPUT << elements[j] << ", ";
 	}
       }
-      OUTPUT << std::endl;
+      OUTPUT << '\n';
     }
   }
 }

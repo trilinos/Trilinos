@@ -115,7 +115,7 @@ template <typename INT> int internal_main(int argc, char *argv[], INT /* dummy *
 
 int main(int argc, char *argv[])
 {
-  std::cerr << "Beginning nem_slice execution." << std::endl;
+  std::cerr << "Beginning nem_slice execution." << '\n';
 
   double start_time = get_time();
 
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     int   cpu_ws = 0;
     int   io_ws  = 0;
     float vers   = 00.0;
-    std::cerr << "Input Mesh File = '" << mesh_file_name << "'" << std::endl;
+    std::cerr << "Input Mesh File = '" << mesh_file_name << "'" << '\n';
     int exoid = ex_open(mesh_file_name, EX_READ, &cpu_ws, &io_ws, &vers);
     if (exoid < 0) {
       std::string error("fatal: unable to open input ExodusII file ");

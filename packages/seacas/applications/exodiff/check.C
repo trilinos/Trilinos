@@ -82,24 +82,24 @@ template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT
 {
   bool is_same = true;
   if (file1.Dimension() != file2.Dimension()) {
-    std::cout << "exodiff: ERROR .. Dimension doesn't agree." << std::endl;
+    std::cout << "exodiff: ERROR .. Dimension doesn't agree." << '\n';
     is_same = false;
   }
   if (file1.Num_Nodes() != file2.Num_Nodes()) {
     if (interface.map_flag != PARTIAL) {
-      std::cout << "exodiff: ERROR .. Number of nodes doesn't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of nodes doesn't agree." << '\n';
       is_same = false;
     }
   }
   if (file1.Num_Elmts() != file2.Num_Elmts()) {
     if (interface.map_flag != PARTIAL) {
-      std::cout << "exodiff: ERROR .. Number of elements doesn't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of elements doesn't agree." << '\n';
       is_same = false;
     }
   }
   if (file1.Num_Elmt_Blocks() != file2.Num_Elmt_Blocks()) {
     if (interface.map_flag != PARTIAL) {
-      std::cout << "exodiff: ERROR .. Number of element blocks doesn't agree." << std::endl;
+      std::cout << "exodiff: ERROR .. Number of element blocks doesn't agree." << '\n';
       is_same = false;
     }
   }
@@ -171,7 +171,7 @@ namespace {
         if (dx > interface.coord_tol.value) {
           sprintf(buf, "   x coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
                   interface.coord_tol.abrstr(), x1[n], x2[n2], dx, (size_t)id_map[n]);
-          std::cout << buf << std::endl;
+          std::cout << buf << '\n';
           is_same = false;
         }
         norm = (x1[n] - x2[n2]) * (x1[n] - x2[n2]);
@@ -181,7 +181,7 @@ namespace {
           if (dy > interface.coord_tol.value) {
             sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
                     interface.coord_tol.abrstr(), y1[n], y2[n2], dy, (size_t)id_map[n]);
-            std::cout << buf << std::endl;
+            std::cout << buf << '\n';
             is_same = false;
           }
           norm += (y1[n] - y2[n2]) * (y1[n] - y2[n2]);
@@ -192,7 +192,7 @@ namespace {
           if (dz > interface.coord_tol.value) {
             sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node " ST_ZU ")",
                     interface.coord_tol.abrstr(), z1[n], z2[n2], dz, (size_t)id_map[n]);
-            std::cout << buf << std::endl;
+            std::cout << buf << '\n';
             is_same = false;
           }
           norm += (z1[n] - z2[n2]) * (z1[n] - z2[n2]);
@@ -203,7 +203,7 @@ namespace {
 
     if (!interface.quiet_flag && is_same && max > 0.0) {
       max = sqrt(max);
-      std::cout << "Maximum difference between nodal coordinates = " << max << std::endl;
+      std::cout << "Maximum difference between nodal coordinates = " << max << '\n';
     }
 
     file1.Free_Nodal_Coordinates();
@@ -229,7 +229,7 @@ namespace {
 
             if (block2 == nullptr) {
               std::cout << "exodiff: ERROR .. Block id " << block1->Id() << " exists in first "
-                        << "file but not the second." << std::endl;
+                        << "file but not the second." << '\n';
               is_same = false;
             }
           }
@@ -276,7 +276,7 @@ namespace {
         std::cout << "exodiff: ERROR .. Connectivities in block id " << block1->Id()
                   << " are not the same.\n"
                   << "                  First difference is node " << node + 1
-                  << " of local element " << elem + 1 << std::endl;
+                  << " of local element " << elem + 1 << '\n';
         is_same = false;
         break;
       }
@@ -294,32 +294,32 @@ namespace {
 
     if (!interface.by_name && block1->Id() != block2->Id()) {
       std::cout << "exodiff: ERROR .. Block ids don't agree (" << block1->Id()
-                << " != " << block2->Id() << ")." << std::endl;
+                << " != " << block2->Id() << ")." << '\n';
       is_same = false;
     }
     if (interface.by_name && block1->Name() != block2->Name()) {
       std::cout << "exodiff: ERROR .. Block names don't agree (" << block1->Name()
-                << " != " << block2->Name() << ")." << std::endl;
+                << " != " << block2->Name() << ")." << '\n';
       is_same = false;
     }
     if (!(no_case_equals(block1->Elmt_Type(), block2->Elmt_Type()))) {
       if (!interface.short_block_check ||
           !close_compare(block1->Elmt_Type(), block2->Elmt_Type())) {
         std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": element types don't agree ("
-                  << block1->Elmt_Type() << " != " << block2->Elmt_Type() << ")." << std::endl;
+                  << block1->Elmt_Type() << " != " << block2->Elmt_Type() << ")." << '\n';
         is_same = false;
       }
     }
     if (block1->Size() != block2->Size()) {
       std::cout << "exodiff: ERROR .. Block " << block1->Id()
                 << ": number of elements doesn't agree (" << block1->Size()
-                << " != " << block2->Size() << ")." << std::endl;
+                << " != " << block2->Size() << ")." << '\n';
       is_same = false;
     }
     if (block1->Num_Nodes_per_Elmt() != block2->Num_Nodes_per_Elmt()) {
       std::cout << "exodiff: ERROR .. Block " << block1->Id()
                 << ": number of nodes per element doesn't agree (" << block1->Num_Nodes_per_Elmt()
-                << " != " << block2->Num_Nodes_per_Elmt() << ")." << std::endl;
+                << " != " << block2->Num_Nodes_per_Elmt() << ")." << '\n';
       is_same = false;
     }
 #if 0
@@ -327,7 +327,7 @@ namespace {
       std::cout << "exodiff: ERROR .. Block " << block1->Id() << ": number of attributes doesn't agree ("
 		<< block1->Num_Attributes()
 		<< " != " << block2->Num_Attributes() << ")."
-		<< std::endl;
+		<< '\n';
       is_same = false;
     }
 #endif

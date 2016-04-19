@@ -91,7 +91,7 @@ template <typename INT> void Side_Set<INT>::entity_load_params()
 
   if (err < 0) {
     std::cout << "ERROR: Failed to get sideset parameters for sideset " << id_ << ". !  Aborting..."
-              << std::endl;
+              << '\n';
     exit(1);
   }
 
@@ -128,7 +128,7 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
 
     if (err < 0) {
       std::cout << "Side_Set<INT>::Load_Set(): ERROR: Failed to read side set " << id_
-                << "!  Aborting..." << std::endl;
+                << "!  Aborting..." << '\n';
       exit(1);
     }
 
@@ -182,7 +182,7 @@ template <typename INT> void Side_Set<INT>::load_df() const
     int err = ex_get_side_set_node_count(fileId, id_, count.data());
     if (err < 0) {
       std::cout << "Side_Set::load_df(): ERROR: Failed to read side set node count for sideset "
-                << id_ << "!  Aborting..." << std::endl;
+                << id_ << "!  Aborting..." << '\n';
       exit(1);
     }
   }
@@ -202,7 +202,7 @@ template <typename INT> void Side_Set<INT>::load_df() const
   if (err < 0) {
     std::cout
         << "Side_Set::load_df(): ERROR: Failed to read side set distribution factors for sideset "
-        << id_ << "!  Aborting..." << std::endl;
+        << id_ << "!  Aborting..." << '\n';
     exit(1);
   }
 }
@@ -248,7 +248,7 @@ std::pair<INT, INT> Side_Set<INT>::Distribution_Factor_Range(size_t side) const
   }
   if (dfIndex == nullptr) {
     std::cout << "ERROR: Failed to get distribution factors for sideset " << id_
-              << ". !  Aborting..." << std::endl;
+              << ". !  Aborting..." << '\n';
     exit(1);
   }
   size_t side_index = sideIndex[side];
@@ -259,10 +259,10 @@ template <typename INT> void Side_Set<INT>::Display(std::ostream &s) const
 {
   SMART_ASSERT(Check_State());
 
-  s << "Side_Set<INT>::Display()  Exodus side set ID = " << id_ << std::endl
-    << "                        number of sides = " << numEntity << std::endl
-    << "         number of distribution factors = " << num_dist_factors << std::endl
-    << "                    number of variables = " << var_count() << std::endl;
+  s << "Side_Set<INT>::Display()  Exodus side set ID = " << id_ << '\n'
+    << "                        number of sides = " << numEntity << '\n'
+    << "         number of distribution factors = " << num_dist_factors << '\n'
+    << "                    number of variables = " << var_count() << '\n';
 }
 
 template <typename INT> int Side_Set<INT>::Check_State() const

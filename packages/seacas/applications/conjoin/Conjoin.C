@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: Standard exception: " << e.what() << std::endl;
+    std::cerr << "ERROR: Standard exception: " << e.what() << '\n';
   }
 }
 
@@ -1011,7 +1011,7 @@ namespace {
 
     error += ex_get_coord_names(in, coordinate_names);
     error += ex_put_coord_names(out, coordinate_names);
-    std::cerr << "Wrote coordinate names..." << std::endl;
+    std::cerr << "Wrote coordinate names..." << '\n';
 
     free_name_array(coordinate_names, dimensionality);
     return error;
@@ -1050,7 +1050,7 @@ namespace {
                         << z[node] << "\n"
                         << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
                         << local_y[i] << std::setw(14) << local_z[i] << " from part " << part
-                        << std::endl;
+                        << '\n';
 
               std::cerr.flags(f);
             }
@@ -1082,7 +1082,7 @@ namespace {
                         << "         cur value = " << std::scientific << std::setprecision(6)
                         << std::setw(14) << x[node] << std::setw(14) << y[node] << "\n"
                         << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
-                        << local_y[i] << " from part " << part << std::endl;
+                        << local_y[i] << " from part " << part << '\n';
               std::cerr.flags(f);
             }
           }
@@ -1124,7 +1124,7 @@ namespace {
       }
 
       if (debug_level & 4)
-        std::cerr << "\nGetting element block info for part " << p << "..." << std::endl;
+        std::cerr << "\nGetting element block info for part " << p << "..." << '\n';
 
       for (size_t b = 0; b < global.count(EBLK); b++) {
         if (debug_level & 4)
@@ -1190,8 +1190,8 @@ namespace {
           std::cerr << ", Name = '" << blocks[p][b].name_;
           std::cerr << "', Elements = " << std::setw(8) << blocks[p][b].entity_count();
           std::cerr << ", Nodes/element = " << blocks[p][b].nodesPerElement;
-          std::cerr << ", Attributes = " << blocks[p][b].attributeCount << std::endl;
-          std::cerr << ", Position = " << blocks[p][b].position_ << std::endl;
+          std::cerr << ", Attributes = " << blocks[p][b].attributeCount << '\n';
+          std::cerr << ", Position = " << blocks[p][b].position_ << '\n';
         }
       }
     } // end for p=0..part_count
@@ -1227,7 +1227,7 @@ namespace {
         std::cerr << ", Name = '" << glob_blocks[b].name_;
         std::cerr << "', Elements = " << std::setw(8) << glob_blocks[b].entity_count();
         std::cerr << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
-        std::cerr << ", Attributes = " << glob_blocks[b].attributeCount << std::endl;
+        std::cerr << ", Attributes = " << glob_blocks[b].attributeCount << '\n';
       }
 
       if (debug_level & 4)
@@ -1329,9 +1329,9 @@ namespace {
         error += ex_put_attr(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, &attributes[0]);
       } // end for b=0..global_num_blocks-1
       if (debug_level & 4)
-        std::cerr << std::endl;
+        std::cerr << '\n';
     }
-    std::cerr << std::endl;
+    std::cerr << '\n';
   }
 
   template <typename INT>
@@ -1813,7 +1813,7 @@ namespace {
           }
         }
         if (!found) {
-          std::cerr << "ERROR: Variable '" << elem.first << "' is not valid." << std::endl;
+          std::cerr << "ERROR: Variable '" << elem.first << "' is not valid." << '\n';
           exit(EXIT_FAILURE);
         }
       }

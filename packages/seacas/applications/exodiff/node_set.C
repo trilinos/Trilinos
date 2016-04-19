@@ -159,10 +159,10 @@ template <typename INT> const double *Node_Set<INT>::Distribution_Factors() cons
 template <typename INT> void Node_Set<INT>::Display(std::ostream &s)
 {
   Check_State();
-  s << "Node_Set<INT>::Display_Stats()  Exodus node set ID = " << id_ << std::endl
-    << "                              number of nodes = " << numEntity << std::endl
-    << "               number of distribution factors = " << num_dist_factors << std::endl
-    << "                          number of variables = " << var_count() << std::endl;
+  s << "Node_Set<INT>::Display_Stats()  Exodus node set ID = " << id_ << '\n'
+    << "                              number of nodes = " << numEntity << '\n'
+    << "               number of distribution factors = " << num_dist_factors << '\n'
+    << "                          number of variables = " << var_count() << '\n';
 }
 
 template <typename INT> int Node_Set<INT>::Check_State() const
@@ -189,7 +189,7 @@ template <typename INT> void Node_Set<INT>::entity_load_params()
 
   if (err < 0) {
     std::cout << "ERROR: Failed to get nodeset parameters for nodeset " << id_ << ". !  Aborting..."
-              << std::endl;
+              << '\n';
     exit(1);
   }
 

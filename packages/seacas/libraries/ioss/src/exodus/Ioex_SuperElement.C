@@ -46,9 +46,6 @@
 #include <Ioss_GroupingEntity.h>  // for GroupingEntity
 #include <Ioss_PropertyManager.h> // for PropertyManager
 
-using std::cout;
-using std::endl;
-
 namespace {
   int nc_get_array(int ncid, const char *name, double *data)
   {

@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
     return (error);
   }
   catch (std::exception &e) {
-    std::cerr << "ERROR: (EPU) Standard exception: " << e.what() << std::endl;
+    std::cerr << "ERROR: (EPU) Standard exception: " << e.what() << '\n';
   }
 }
 
@@ -456,7 +456,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   if (debug_level & 1)
     std::cout << time_stamp(tsFormat);
-  std::cout << "\n**** READ LOCAL (GLOBAL) INFO ****" << std::endl;
+  std::cout << "\n**** READ LOCAL (GLOBAL) INFO ****" << '\n';
 
   std::string title0;
 
@@ -717,7 +717,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 
   if (debug_level & 1)
     std::cout << time_stamp(tsFormat);
-  std::cout << "\n**** GET VARIABLE INFORMATION AND NAMES ****" << std::endl;
+  std::cout << "\n**** GET VARIABLE INFORMATION AND NAMES ****" << '\n';
 
   //  I. read number of variables for each type.
   //  NOTE: it is assumed that every processor has the same global, nodal,
@@ -897,7 +897,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1)
       std::cout << time_stamp(tsFormat);
     std::cout << "\tTransferring step " << ts_min << " to step " << ts_max << " by " << ts_step
-              << std::endl;
+              << '\n';
   }
 
   // Determine how many steps will be written...
@@ -944,7 +944,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                     << " which does not\n       match the time on processor " << p + start_part
                     << " which is " << std::setw(15) << std::scientific << std::setprecision(8)
                     << proc_time_val << "\n       This usually indicates a corrupt database."
-                    << std::endl;
+                    << '\n';
           std::cerr.flags(f);
         }
       }
@@ -990,7 +990,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                           << std::setprecision(8) << global_values[ig] << ", P" << std::setfill('0')
                           << std::setw(get_width(interface.processor_count())) << p + start_part
                           << " = " << std::setfill(' ') << std::setw(15) << std::scientific
-                          << std::setprecision(8) << proc_global_values[ig] << std::endl;
+                          << std::setprecision(8) << proc_global_values[ig] << '\n';
                 std::cerr.flags(f);
               }
             }
@@ -1030,7 +1030,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
                     master_nodal_values[i_out][nodal_value] != values[j]) {
                   std::cerr << "Variable " << i + 1 << ", Node " << nodal_value
                             << ", old = " << master_nodal_values[i_out][nodal_value]
-                            << ", new = " << values[j] << std::endl;
+                            << ", new = " << values[j] << '\n';
                 }
               }
             }
@@ -1325,7 +1325,7 @@ namespace {
     error = ex_put_coord_names(out, coordinate_names);
     if (error < 0)
       exodus_error(__LINE__);
-    std::cout << "Wrote coordinate names..." << std::endl;
+    std::cout << "Wrote coordinate names..." << '\n';
 
     free_name_array(coordinate_names, dimensionality);
   }
@@ -1361,7 +1361,7 @@ namespace {
                         << z[node] << "\n"
                         << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
                         << local_y[i] << std::setw(14) << local_z[i] << " from processor " << proc
-                        << std::endl;
+                        << '\n';
 
               std::cerr.flags(f);
             }
@@ -1391,7 +1391,7 @@ namespace {
                         << "         cur value = " << std::scientific << std::setprecision(6)
                         << std::setw(14) << x[node] << std::setw(14) << y[node] << "\n"
                         << "         new value = " << std::setw(14) << local_x[i] << std::setw(14)
-                        << local_y[i] << " from processor " << proc << std::endl;
+                        << local_y[i] << " from processor " << proc << '\n';
               std::cerr.flags(f);
             }
           }
@@ -1418,7 +1418,7 @@ namespace {
                         << " has different coordinates in at least two files.\n"
                         << "         cur value = " << std::scientific << std::setprecision(6)
                         << std::setw(14) << x[node] << "\tnew value = " << std::setw(14)
-                        << local_x[i] << " from processor " << proc << std::endl;
+                        << local_x[i] << " from processor " << proc << '\n';
               std::cerr.flags(f);
             }
           }
@@ -1443,7 +1443,7 @@ namespace {
     for (int ip = 0; ip < part_count; ip++)
       blocks[ip].resize(local_mesh[ip].count(EBLK));
 
-    std::cout << "Global block count = " << global.count(EBLK) << std::endl;
+    std::cout << "Global block count = " << global.count(EBLK) << '\n';
 
     ExodusIdVector block_id(global.count(EBLK));
 
@@ -1460,14 +1460,14 @@ namespace {
         for (size_t b = 0; b < global.count(EBLK); b++) {
           if (blocks[0][b].id != block_id[b]) {
             std::cerr << "ERROR: (EPU) The internal element block id ordering for part " << p
-                      << "\n       is not consistent with the ordering for part 0." << std::endl;
+                      << "\n       is not consistent with the ordering for part 0." << '\n';
             exit(EXIT_FAILURE);
           }
         }
       }
 
       if (debug_level & 4)
-        std::cout << "\nGetting element block info for processor " << p << "..." << std::endl;
+        std::cout << "\nGetting element block info for processor " << p << "..." << '\n';
       else {
         if (p == 0)
           std::cout << "\nGetting element block info.\n";
@@ -1530,7 +1530,7 @@ namespace {
           std::cout << ", Name = '" << blocks[p][b].name_;
           std::cout << "', Elements = " << std::setw(12) << blocks[p][b].entity_count();
           std::cout << ", Nodes/element = " << blocks[p][b].nodesPerElement;
-          std::cout << ", Attributes = " << blocks[p][b].attributeCount << std::endl;
+          std::cout << ", Attributes = " << blocks[p][b].attributeCount << '\n';
         }
       }
     } // end for p=0..part_count
@@ -1571,7 +1571,7 @@ namespace {
         std::cout << ", Name = '" << glob_blocks[b].name_;
         std::cout << "', Elements = " << std::setw(12) << glob_blocks[b].entity_count();
         std::cout << ", Nodes/element = " << glob_blocks[b].nodesPerElement;
-        std::cout << ", Attributes = " << glob_blocks[b].attributeCount << std::endl;
+        std::cout << ", Attributes = " << glob_blocks[b].attributeCount << '\n';
       }
 
       if (debug_level & 4)
@@ -1679,9 +1679,9 @@ namespace {
         delete[] attributes[b];
       } // end for b=0..global_num_blocks-1
       if (debug_level & 4)
-        std::cout << std::endl;
+        std::cout << '\n';
     }
-    std::cout << std::endl;
+    std::cout << '\n';
     delete[] linkage;
     delete[] attributes;
   }
@@ -1838,12 +1838,12 @@ namespace {
             map_ids = false;
             std::cerr << "WARNING: The element ids are globally contiguous,\n"
                       << "\tbut they are not consistent for element block " << glob_blocks[b].id
-                      << ".\n\tRetrying with element id mapping turned off." << std::endl;
+                      << ".\n\tRetrying with element id mapping turned off." << '\n';
             goto REMAP;
           }
           else {
             std::cerr << "ERROR: (EPU) The element ids for element block " << glob_blocks[b].id
-                      << " are not consistent." << std::endl;
+                      << " are not consistent." << '\n';
             std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id
                       << " min/max id = " << min_id + 1 << "/" << max_id + 1
                       << " size = " << glob_blocks[b].entity_count() << "\n";
@@ -2100,7 +2100,7 @@ namespace {
           }
         }
         if (!found) {
-          std::cerr << "ERROR: (EPU) Variable '" << elem.first << "' is not valid." << std::endl;
+          std::cerr << "ERROR: (EPU) Variable '" << elem.first << "' is not valid." << '\n';
           exit(EXIT_FAILURE);
         }
       }

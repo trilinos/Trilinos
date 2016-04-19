@@ -78,7 +78,7 @@ Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
     fileids_[processor] =
         ex_open(filenames_[processor].c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
     if (fileids_[processor] < 0) {
-      std::cerr << "Cannot open file '" << filenames_[processor] << "' - exiting" << std::endl;
+      std::cerr << "Cannot open file '" << filenames_[processor] << "' - exiting" << '\n';
       exit(1);
     }
     ex_set_max_name_length(fileids_[processor], maximumNameLength_);
@@ -185,7 +185,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       mode |= mode64bit_;
       int exoid = ex_open(filenames_[p].c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
       if (exoid < 0) {
-        std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
+        std::cerr << "Cannot open file '" << filenames_[p] << "'" << '\n';
         return false;
       }
 
@@ -218,7 +218,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
       fileids_[p] =
           ex_open(filenames_[p].c_str(), mode, &cpuWordSize_, &io_word_size_var, &version);
       if (fileids_[p] < 0) {
-        std::cerr << "Cannot open file '" << filenames_[p] << "'" << std::endl;
+        std::cerr << "Cannot open file '" << filenames_[p] << "'" << '\n';
         return false;
       }
       ex_set_max_name_length(fileids_[p], maximumNameLength_);
@@ -226,9 +226,9 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     }
 
     if (si.debug() & 64 || p == 0 || p == partCount_ - 1) {
-      std::cout << "Input(" << p << "): '" << name.c_str() << "'" << std::endl;
+      std::cout << "Input(" << p << "): '" << name.c_str() << "'" << '\n';
       if (!(si.debug() & 64) && p == 0)
-        std::cout << "..." << std::endl;
+        std::cout << "..." << '\n';
     }
   }
 
@@ -279,7 +279,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   }
 
   if (si.append()) {
-    std::cout << "Output:   '" << outputFilename_ << "' (appending)" << std::endl;
+    std::cout << "Output:   '" << outputFilename_ << "' (appending)" << '\n';
     float version = 0.0;
     mode |= EX_WRITE;
     outputId_ = ex_open(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_, &version);
@@ -290,11 +290,11 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
       // Force netcdf-4 if compression is specified...
       mode |= EX_NETCDF4;
     }
-    std::cout << "Output:   '" << outputFilename_ << "'" << std::endl;
+    std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
     outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   }
   if (outputId_ < 0) {
-    std::cerr << "Cannot open file '" << outputFilename_ << "'" << std::endl;
+    std::cerr << "Cannot open file '" << outputFilename_ << "'" << '\n';
     return false;
   }
 

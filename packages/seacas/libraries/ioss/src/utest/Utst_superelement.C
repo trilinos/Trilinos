@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   assert(kr_size == numDOF * numDOF);
   assert(mr_size == numDOF * numDOF);
 
-  OUTPUT << "\nSIERRA execution successful." << std::endl;
+  OUTPUT << "\nSIERRA execution successful." << '\n';
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

@@ -608,60 +608,60 @@ namespace SEAMS {
     int width = 10; // controls spacing/padding for the variable names
   
     if (type == Parser::token::VAR || type == Parser::token::SVAR || type == Parser::token::AVAR) {
-      (*infoStream) << "\n" << comment << "   Variable    = Value" << std::endl;
+      (*infoStream) << "\n" << comment << "   Variable    = Value" << '\n';
 
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if ((doInternal && ptr->isInternal) || (!doInternal && !ptr->isInternal)) {
 	    if (ptr->type == Parser::token::VAR)
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
-		"\t= " << std::setprecision(10) <<  ptr->value.var << "}" << std::endl;
+		"\t= " << std::setprecision(10) <<  ptr->value.var << "}" << '\n';
 	    else if (ptr->type == Parser::token::IMMVAR)
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
-		"\t= " << std::setprecision(10) << ptr->value.var << "}\t(immutable)" << std::endl;
+		"\t= " << std::setprecision(10) << ptr->value.var << "}\t(immutable)" << '\n';
 	    else if (ptr->type == Parser::token::SVAR)
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
-		"\t= \"" << ptr->value.svar << "\"}" << std::endl;
+		"\t= \"" << ptr->value.svar << "\"}" << '\n';
 	    else if (ptr->type == Parser::token::IMMSVAR)
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
-		"\t= \"" << ptr->value.svar << "\"}\t(immutable)" << std::endl;
+		"\t= \"" << ptr->value.svar << "\"}\t(immutable)" << '\n';
 	    else if (ptr->type == Parser::token::AVAR) {
 	      array *arr = ptr->value.avar;
 	      (*infoStream) << comment << "  {" << std::left << std::setw(width) << ptr->name <<
 		"\t (array) rows = " << arr->rows << ", cols = " << arr->cols <<
-		"} " << std::endl;
+		"} " << '\n';
 	    }
 	  }
 	}
       }
     }
     else if (type == Parser::token::FNCT || type == Parser::token::SFNCT || type == Parser::token::AFNCT) {
-      (*infoStream) << "\nFunctions returning double:" << std::endl;
+      (*infoStream) << "\nFunctions returning double:" << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::FNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
-	      ":  " << ptr->info << std::endl;
+	      ":  " << ptr->info << '\n';
 	  }
 	}
       }
 
-      (*infoStream) << "\nFunctions returning string:" << std::endl;
+      (*infoStream) << "\nFunctions returning string:" << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::SFNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
-	      ":  " << ptr->info << std::endl;
+	      ":  " << ptr->info << '\n';
 	  }
 	}
       }
       
-      (*infoStream) << "\nFunctions returning array:" << std::endl;
+      (*infoStream) << "\nFunctions returning array:" << '\n';
       for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
 	for (symrec *ptr = sym_table[hashval]; ptr != nullptr; ptr = ptr->next) {
 	  if (ptr->type == Parser::token::AFNCT) {
 	    (*infoStream) << std::left << std::setw(2*width) << ptr->syntax <<
-	      ":  " << ptr->info << std::endl;
+	      ":  " << ptr->info << '\n';
 	  }
 	}
       }
