@@ -55,8 +55,6 @@
 #define ST_ZU "%lu"
 #endif
 
-using namespace std;
-
 namespace {
   char buf[256];
 
@@ -75,7 +73,7 @@ namespace {
   template <typename INT>
   bool Check_Elmt_Block_Params(const Exo_Block<INT> *, const Exo_Block<INT> *);
   template <typename INT> bool Check_Elmt_Block_Connectivity(Exo_Block<INT> *, Exo_Block<INT> *);
-  bool close_compare(const string &st1, const string &st2);
+  bool close_compare(const std::string &st1, const std::string &st2);
 }
 
 template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
@@ -535,7 +533,7 @@ namespace {
     return is_same;
   }
 
-  bool close_compare(const string &st1, const string &st2)
+  bool close_compare(const std::string &st1, const std::string &st2)
   {
     unsigned len1 = st1.size();
     unsigned len2 = st2.size();

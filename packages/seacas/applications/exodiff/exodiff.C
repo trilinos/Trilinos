@@ -73,8 +73,6 @@
 
 #include "add_to_log.h"
 
-using namespace std;
-
 SystemInterface interface;
 
 struct TimeInterp
@@ -92,13 +90,13 @@ struct TimeInterp
   double proportion;
 };
 
-string Date()
+std::string Date()
 {
   char       tbuf[32];
   time_t     calendar_time = time(nullptr);
   struct tm *local_time    = localtime(&calendar_time);
   strftime(tbuf, 32, "%Y/%m/%d   %H:%M:%S %Z", local_time);
-  string time_string(tbuf);
+  std::string time_string(tbuf);
   return time_string;
 }
 
@@ -143,10 +141,10 @@ extern void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &fil
                                     const INT *node_id_map);
 
 template <typename INT>
-int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &diffile_name,
+int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::string &diffile_name,
                 bool *diff_found);
 
-double To_Double(const string &str_val);
+double To_Double(const std::string &str_val);
 
 double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type);
 
@@ -160,10 +158,10 @@ int timeStepIsExcluded(int ts);
 
 template <typename INT>
 const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx, size_t fno,
-                               const string &name, bool *diff_flag);
+                               const std::string &name, bool *diff_flag);
 template <typename INT>
 const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size_t idx, size_t fno,
-                               const string &name, bool *diff_flag);
+                               const std::string &name, bool *diff_flag);
 
 template <typename INT>
 void do_diffs(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int time_step1, TimeInterp t2,
@@ -335,9 +333,9 @@ int main(int argc, char *argv[])
   feenableexcept(FE_DIVBYZERO | FE_OVERFLOW | FE_INVALID);
 #endif
 
-  string file1_name   = interface.file1;
-  string file2_name   = interface.file2;
-  string diffile_name = interface.diff_file;
+  std::string file1_name   = interface.file1;
+  std::string file2_name   = interface.file2;
+  std::string diffile_name = interface.diff_file;
 
   if (interface.summary_flag && file1_name == "") {
     std::cout << "exodiff: ERROR: Summary option engaged but an exodus "
@@ -484,7 +482,7 @@ namespace {
         output_init(file2, 2, "");
         if (!interface.command_file.empty()) {
           FileInfo fi(interface.command_file);
-          cout << "  COMMAND FILE: " << fi.realpath() << "\n\n";
+          std::cout << "  COMMAND FILE: " << fi.realpath() << "\n\n";
         }
       }
     }
@@ -567,7 +565,7 @@ namespace {
 
     int out_file_id = -1;
     if (!interface.summary_flag) {
-      string diffile_name = interface.diff_file;
+      std::string diffile_name = interface.diff_file;
       Check_Compatible_Meshes(file1, file2, (diffile_name == ""), node_map, elmt_map, node_id_map);
       // Doesn't return if meshes are not compatible...
 
@@ -1081,7 +1079,7 @@ bool Equal_Values(const double *values, size_t count, double *value)
 
 template <typename INT>
 const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx, int fno,
-                               const string &name, bool *diff_flag)
+                               const std::string &name, bool *diff_flag)
 {
   const double *vals = nullptr;
   if (fno == 1 || !interface.summary_flag) {
@@ -1100,7 +1098,7 @@ const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx
 
 template <typename INT>
 const double *get_nodal_values(ExoII_Read<INT> &filen, const TimeInterp &t, size_t idx, int fno,
-                               const string &name, bool *diff_flag)
+                               const std::string &name, bool *diff_flag)
 {
   const double *vals = nullptr;
   if (fno == 1 || !interface.summary_flag) {
@@ -1185,9 +1183,9 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
   if (out_file_id >= 0) {
     SMART_ASSERT(gvals != nullptr);
     for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-      const string &name = (interface.glob_var_names)[out_idx];
-      int           idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-      int           idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
+      const std::string &name = (interface.glob_var_names)[out_idx];
+      int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
+      int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
       if (idx1 < 0 || idx2 < 0 || vals1 == nullptr || vals2 == nullptr) {
         std::cerr << "ERROR: Unable to find global variable named '" << name << "' on database.\n";
         exit(1);
@@ -1202,8 +1200,8 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
   // Summary output
   if (interface.summary_flag) {
     for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-      const string &name = (interface.glob_var_names)[out_idx];
-      int           idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
+      const std::string &name = (interface.glob_var_names)[out_idx];
+      int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
       if (idx1 < 0) {
         std::cerr << "ERROR: Unable to find global variable named '" << name << "' on database.\n";
         exit(1);
@@ -1221,9 +1219,9 @@ bool diff_globals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     std::cout << "Global variables:" << '\n';
 
   for (unsigned out_idx = 0; out_idx < interface.glob_var_names.size(); ++out_idx) {
-    const string &name = (interface.glob_var_names)[out_idx];
-    int           idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
-    int           idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
+    const std::string &name = (interface.glob_var_names)[out_idx];
+    int idx1 = find_string(file1.Global_Var_Names(), name, interface.nocase_var_names);
+    int idx2 = find_string(file2.Global_Var_Names(), name, interface.nocase_var_names);
     if (idx1 < 0 || idx2 < 0) {
       std::cerr << "ERROR: Unable to find global variable named '" << name << "' on database.\n";
       exit(1);
@@ -1268,9 +1266,9 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
     SMART_ASSERT(nvals != nullptr);
     int step2 = t2.step1;
     for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-      const string &name = (interface.node_var_names)[n_idx];
-      int           idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
-      int           idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
+      const std::string &name = (interface.node_var_names)[n_idx];
+      int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
+      int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
       if (idx1 < 0 || idx2 < 0) {
         std::cerr << "ERROR: Unable to find nodal variable named '" << name << "' on database.\n";
         exit(1);
@@ -1312,8 +1310,8 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
   // Summary output
   if (interface.summary_flag) {
     for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-      const string &name = (interface.node_var_names)[n_idx];
-      int           idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
+      const std::string &name = (interface.node_var_names)[n_idx];
+      int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
       if (idx1 < 0) {
         std::cerr << "ERROR: Unable to find nodal variable named '" << name << "' on database.\n";
         exit(1);
@@ -1342,9 +1340,9 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
   int name_length = max_string_length(file1.Nodal_Var_Names()) + 1;
 
   for (unsigned n_idx = 0; n_idx < interface.node_var_names.size(); ++n_idx) {
-    const string &name = (interface.node_var_names)[n_idx];
-    int           idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
-    int           idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
+    const std::string &name = (interface.node_var_names)[n_idx];
+    int idx1 = find_string(file1.Nodal_Var_Names(), name, interface.nocase_var_names);
+    int idx2 = find_string(file2.Nodal_Var_Names(), name, interface.nocase_var_names);
     if (idx1 < 0 || idx2 < 0) {
       std::cerr << "ERROR: Unable to find nodal variable named '" << name << "' on database.\n";
       exit(1);
@@ -1438,9 +1436,9 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
   int name_length = max_string_length(interface.elmt_var_names) + 1;
 
   for (unsigned e_idx = 0; e_idx < interface.elmt_var_names.size(); ++e_idx) {
-    const string &name  = (interface.elmt_var_names)[e_idx];
-    int           vidx1 = find_string(file1.Elmt_Var_Names(), name, interface.nocase_var_names);
-    int           vidx2 = 0;
+    const std::string &name = (interface.elmt_var_names)[e_idx];
+    int vidx1               = find_string(file1.Elmt_Var_Names(), name, interface.nocase_var_names);
+    int vidx2               = 0;
     if (!interface.summary_flag)
       vidx2 = find_string(file2.Elmt_Var_Names(), name, interface.nocase_var_names);
     if (vidx1 < 0 || vidx2 < 0) {
@@ -1624,8 +1622,8 @@ template <typename INT>
 bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ns, double *vals)
 {
-  string serr;
-  bool   diff_flag = false;
+  std::string serr;
+  bool        diff_flag = false;
 
   if (out_file_id >= 0) {
     SMART_ASSERT(vals != nullptr);
@@ -1638,9 +1636,9 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     std::cout << "Nodeset variables:" << '\n';
 
   for (unsigned e_idx = 0; e_idx < interface.ns_var_names.size(); ++e_idx) {
-    const string &name  = (interface.ns_var_names)[e_idx];
-    int           vidx1 = find_string(file1.NS_Var_Names(), name, interface.nocase_var_names);
-    int           vidx2 = 0;
+    const std::string &name  = (interface.ns_var_names)[e_idx];
+    int                vidx1 = find_string(file1.NS_Var_Names(), name, interface.nocase_var_names);
+    int                vidx2 = 0;
     if (!interface.summary_flag)
       vidx2 = find_string(file2.NS_Var_Names(), name, interface.nocase_var_names);
     if (vidx1 < 0 || vidx2 < 0) {
@@ -1797,8 +1795,8 @@ template <typename INT>
 bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, TimeInterp t2,
                   int out_file_id, const INT *id_map, std::vector<MinMaxData> &mm_ss, double *vals)
 {
-  string serr;
-  bool   diff_flag = false;
+  std::string serr;
+  bool        diff_flag = false;
 
   if (out_file_id >= 0) {
     SMART_ASSERT(vals != nullptr);
@@ -1813,9 +1811,9 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
   Norm norm;
 
   for (unsigned e_idx = 0; e_idx < interface.ss_var_names.size(); ++e_idx) {
-    const string &name  = (interface.ss_var_names)[e_idx];
-    int           vidx1 = find_string(file1.SS_Var_Names(), name, interface.nocase_var_names);
-    int           vidx2 = 0;
+    const std::string &name  = (interface.ss_var_names)[e_idx];
+    int                vidx1 = find_string(file1.SS_Var_Names(), name, interface.nocase_var_names);
+    int                vidx2 = 0;
     if (!interface.summary_flag)
       vidx2 = find_string(file2.SS_Var_Names(), name, interface.nocase_var_names);
     if (vidx1 < 0 || vidx2 < 0) {
@@ -1967,8 +1965,8 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
 template <typename INT>
 bool diff_sideset_df(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *id_map)
 {
-  string serr;
-  bool   diff_flag = false;
+  std::string serr;
+  bool        diff_flag = false;
 
   std::string name        = "Distribution Factors";
   int         name_length = name.length();

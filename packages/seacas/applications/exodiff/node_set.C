@@ -40,8 +40,6 @@
 #include <iostream>       // for operator<<, endl, ostream, etc
 #include <vector>         // for vector
 
-using namespace std;
-
 template <typename INT>
 Node_Set<INT>::Node_Set()
     : Exo_Entity(), num_dist_factors(0), nodes(nullptr), nodeIndex(nullptr), dist_factors(nullptr)

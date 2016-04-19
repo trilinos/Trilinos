@@ -42,8 +42,6 @@
 #include "iqsort.h"
 #include "smart_assert.h"
 
-using namespace std;
-
 namespace {
   double find_range(const double *x, size_t num_nodes);
 

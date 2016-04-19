@@ -45,23 +45,22 @@
 #include <vector>         // for vector
 template <typename INT> class ExoII_Read;
 
-using namespace std;
-
 namespace {
-  void build_variable_names(const char *type, vector<string> &names, std::vector<Tolerance> &tols,
-                            const Tolerance &default_tol, bool do_all_flag,
-                            const vector<string> &var_names1, const vector<string> &var_names2,
-                            bool *diff_found);
+  void build_variable_names(const char *type, std::vector<std::string> &names,
+                            std::vector<Tolerance> &tols, const Tolerance &default_tol,
+                            bool do_all_flag, const std::vector<std::string> &var_names1,
+                            const std::vector<std::string> &var_names2, bool *diff_found);
 
   template <typename INT>
-  void build_truth_table(EXOTYPE type, const char *label, vector<string> &names, size_t num_entity,
-                         ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                         const vector<string> &var_names1, const vector<string> &var_names2,
-                         std::vector<int> &truth_tab, bool quiet_flag, bool *diff_found);
+  void build_truth_table(EXOTYPE type, const char *label, std::vector<std::string> &names,
+                         size_t num_entity, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                         const std::vector<std::string> &var_names1,
+                         const std::vector<std::string> &var_names2, std::vector<int> &truth_tab,
+                         bool quiet_flag, bool *diff_found);
 
-  void output_exodus_names(int file_id, EXOTYPE type, const vector<string> &names);
-  void output_diff_names(const char *type, const vector<string> &names);
-  void output_compare_names(const char *type, const vector<string> &names,
+  void output_exodus_names(int file_id, EXOTYPE type, const std::vector<std::string> &names);
+  void output_diff_names(const char *type, const std::vector<std::string> &names);
+  void output_compare_names(const char *type, const std::vector<std::string> &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2);
 }
 
@@ -106,7 +105,7 @@ void Build_Variable_Names(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool *
 }
 
 template <typename INT>
-int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &diffile_name,
+int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const std::string &diffile_name,
                 bool *diff_found)
 {
   // Multiple modes:
@@ -256,7 +255,7 @@ int Create_File(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const string &di
 }
 
 namespace {
-  void output_exodus_names(int file_id, EXOTYPE type, const vector<string> &names)
+  void output_exodus_names(int file_id, EXOTYPE type, const std::vector<std::string> &names)
   {
     if (!names.empty()) {
       std::vector<char *> vars(names.size());
@@ -268,7 +267,7 @@ namespace {
     }
   }
 
-  void output_compare_names(const char *type, const vector<string> &names,
+  void output_compare_names(const char *type, const std::vector<std::string> &names,
                             const std::vector<Tolerance> &tol, int num_vars1, int num_vars2)
   {
     if (!names.empty()) {
@@ -291,7 +290,7 @@ namespace {
     }
   }
 
-  void output_diff_names(const char *type, const vector<string> &names)
+  void output_diff_names(const char *type, const std::vector<std::string> &names)
   {
     if (!names.empty()) {
       std::cout << type << " variables to be differenced:" << '\n';
@@ -302,12 +301,12 @@ namespace {
       std::cout << "No " << type << " variables will be differenced." << '\n';
   }
 
-  void build_variable_names(const char *type, vector<string> &names, std::vector<Tolerance> &tols,
-                            const Tolerance &default_tol, bool do_all_flag,
-                            const vector<string> &var_names1, const vector<string> &var_names2,
-                            bool *diff_found)
+  void build_variable_names(const char *type, std::vector<std::string> &names,
+                            std::vector<Tolerance> &tols, const Tolerance &default_tol,
+                            bool do_all_flag, const std::vector<std::string> &var_names1,
+                            const std::vector<std::string> &var_names2, bool *diff_found)
   {
-    vector<string> x_list; // exclusion list
+    std::vector<std::string> x_list; // exclusion list
     for (auto name : names) {
       chop_whitespace(name);
       SMART_ASSERT(!name.empty());
@@ -319,7 +318,7 @@ namespace {
       int n;
       int name_length = var_names1.size();
       for (n = 0; n < name_length; ++n) {
-        const string &name = var_names1[n];
+        const std::string &name = var_names1[n];
         if (!interface.summary_flag &&
             find_string(var_names2, name, interface.nocase_var_names) < 0) {
           if (find_string(x_list, name, interface.nocase_var_names) < 0) {
@@ -346,7 +345,7 @@ namespace {
       if (!interface.noSymmetricNameCheck) {
         name_length = var_names2.size();
         for (n = 0; n < name_length; ++n) {
-          const string &name = var_names2[n];
+          const std::string &name = var_names2[n];
           if (!interface.summary_flag &&
               find_string(var_names1, name, interface.nocase_var_names) < 0) {
             if (find_string(x_list, name, interface.nocase_var_names) < 0) {
@@ -363,9 +362,9 @@ namespace {
       }
     }
 
-    vector<string> tmp_list;
+    std::vector<std::string> tmp_list;
     for (unsigned n = 0; n < names.size(); ++n) {
-      string name = names[n];
+      std::string name = names[n];
       chop_whitespace(name);
       if (name[0] == '!')
         continue;
@@ -395,10 +394,11 @@ namespace {
   }
 
   template <typename INT>
-  void build_truth_table(EXOTYPE type, const char *label, vector<string> &names, size_t num_entity,
-                         ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
-                         const vector<string> &var_names1, const vector<string> &var_names2,
-                         std::vector<int> &truth_tab, bool quiet_flag, bool *diff_found)
+  void build_truth_table(EXOTYPE type, const char *label, std::vector<std::string> &names,
+                         size_t num_entity, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2,
+                         const std::vector<std::string> &var_names1,
+                         const std::vector<std::string> &var_names2, std::vector<int> &truth_tab,
+                         bool quiet_flag, bool *diff_found)
   {
     if (!names.empty()) {
       int num_vars = names.size();
@@ -423,9 +423,9 @@ namespace {
         }
 
         for (int out_idx = 0; out_idx < num_vars; ++out_idx) {
-          const string &name = names[out_idx];
-          int           idx1 = find_string(var_names1, name, interface.nocase_var_names);
-          int           idx2 = find_string(var_names2, name, interface.nocase_var_names);
+          const std::string &name = names[out_idx];
+          int                idx1 = find_string(var_names1, name, interface.nocase_var_names);
+          int                idx2 = find_string(var_names2, name, interface.nocase_var_names);
           if (idx1 < 0 || idx2 < 0) {
             std::cerr << "ERROR: Unable to find variable named '" << name << "' on database.\n";
             exit(1);
@@ -455,12 +455,12 @@ namespace {
   }
 } // End of namespace
 
-template int Create_File(ExoII_Read<int> &file1, ExoII_Read<int> &file2, const string &diffile_name,
-                         bool *diff_found);
+template int Create_File(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
+                         const std::string &diffile_name, bool *diff_found);
 template void Build_Variable_Names(ExoII_Read<int> &file1, ExoII_Read<int> &file2,
                                    bool *diff_found);
 
 template int Create_File(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
-                         const string &diffile_name, bool *diff_found);
+                         const std::string &diffile_name, bool *diff_found);
 template void Build_Variable_Names(ExoII_Read<int64_t> &file1, ExoII_Read<int64_t> &file2,
                                    bool *diff_found);

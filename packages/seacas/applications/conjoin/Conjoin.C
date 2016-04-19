@@ -336,8 +336,6 @@ namespace {
 unsigned int debug_level = 0;
 const float  FILL_VALUE  = FLT_MAX;
 
-using namespace Excn;
-
 int main(int argc, char *argv[])
 {
 #if defined(__LIBCATAMOUNT__)
@@ -345,10 +343,10 @@ int main(int argc, char *argv[])
 #endif
   try {
     time_t begin_time = time(nullptr);
-    SystemInterface::show_version();
+    Excn::SystemInterface::show_version();
 
-    SystemInterface interface;
-    bool            ok = interface.parse_options(argc, argv);
+    Excn::SystemInterface interface;
+    bool                  ok = interface.parse_options(argc, argv);
 
     if (!ok) {
       std::cerr << "\nERROR: Problems parsing command line arguments.\n\n";
@@ -364,7 +362,7 @@ int main(int argc, char *argv[])
 
     int error = 0;
 
-    if (!ExodusFile::initialize(interface)) {
+    if (!Excn::ExodusFile::initialize(interface)) {
       std::cerr << "ERROR: Problem initializing input and/or output files.\n";
       exit(EXIT_FAILURE);
     }
@@ -374,7 +372,7 @@ int main(int argc, char *argv[])
       int_byte_size = 8;
     }
 
-    if (ExodusFile::io_word_size() == 4) {
+    if (Excn::ExodusFile::io_word_size() == 4) {
       if (int_byte_size == 4)
         error = conjoin(interface, (float)0.0, (int)0);
       else
@@ -387,7 +385,7 @@ int main(int argc, char *argv[])
         error = conjoin(interface, (double)0.0, (int64_t)0);
     }
 
-    ExodusFile::close_all();
+    Excn::ExodusFile::close_all();
 
     time_t end_time = time(nullptr);
     add_to_log(argv[0], end_time - begin_time);
@@ -399,9 +397,9 @@ int main(int argc, char *argv[])
 }
 
 template <typename T, typename INT>
-int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
+int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 {
-  SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
+  SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
 
   const T alive      = interface.alive_value();
   size_t  part_count = interface.inputFiles_.size();
@@ -409,9 +407,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
   auto mytitle = new char[MAX_LINE_LENGTH + 1];
   memset(mytitle, '\0', MAX_LINE_LENGTH + 1);
 
-  Mesh<INT> global;
+  Excn::Mesh<INT> global;
 
-  std::vector<Mesh<INT>> local_mesh(part_count);
+  std::vector<Excn::Mesh<INT>> local_mesh(part_count);
 
   // ******************************************************************
   // 1. Read global info
@@ -425,7 +423,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
   for (size_t p = 0; p < part_count; p++) {
     ex_init_params info;
-    error += ex_get_init_ext(ExodusFile(p), &info);
+    error += ex_get_init_ext(Excn::ExodusFile(p), &info);
 
     local_mesh[p].title          = info.title;
     local_mesh[p].dimensionality = info.num_dim;
@@ -437,18 +435,18 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
     if (p == 0) {
       global.title          = mytitle;
-      global.dimensionality = local_mesh[p].count(DIM);
-      global.blockCount     = local_mesh[p].count(EBLK);
+      global.dimensionality = local_mesh[p].count(Excn::DIM);
+      global.blockCount     = local_mesh[p].count(Excn::EBLK);
     }
     else {
-      SMART_ASSERT(global.count(DIM) == local_mesh[p].count(DIM))
-      (global.count(DIM))(local_mesh[p].count(DIM))(p);
-      SMART_ASSERT(global.count(EBLK) == local_mesh[p].count(EBLK))
-      (global.count(EBLK))(local_mesh[p].count(EBLK))(p);
+      SMART_ASSERT(global.count(Excn::DIM) == local_mesh[p].count(Excn::DIM))
+      (global.count(Excn::DIM))(local_mesh[p].count(Excn::DIM))(p);
+      SMART_ASSERT(global.count(Excn::EBLK) == local_mesh[p].count(Excn::EBLK))
+      (global.count(Excn::EBLK))(local_mesh[p].count(Excn::EBLK))(p);
     }
 
-    local_mesh[p].localNodeToGlobal.resize(local_mesh[p].count(NODE));
-    local_mesh[p].localElementToGlobal.resize(local_mesh[p].count(ELEM));
+    local_mesh[p].localNodeToGlobal.resize(local_mesh[p].count(Excn::NODE));
+    local_mesh[p].localElementToGlobal.resize(local_mesh[p].count(Excn::ELEM));
 
   } // end for (p=0..part_count)
 
@@ -468,9 +466,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
   T t_min = FLT_MAX;
   for (size_t p = part_count; p > 0; p--) {
     bool           used = false;
-    int            nts  = ex_inquire_int(ExodusFile(p - 1), EX_INQ_TIME);
+    int            nts  = ex_inquire_int(Excn::ExodusFile(p - 1), EX_INQ_TIME);
     std::vector<T> times(nts);
-    ex_get_all_times(ExodusFile(p - 1), &times[0]);
+    ex_get_all_times(Excn::ExodusFile(p - 1), &times[0]);
 
     // A database will include all times from step 0 up to the
     // last time that is less than t_min on the following database.
@@ -511,14 +509,14 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
   // Need these throughout run, so declare outside of this block...
   // TODO: Add these to the "Mesh" class.
-  std::vector<Block>              glob_blocks(global.count(EBLK));
-  std::vector<std::vector<Block>> blocks(part_count);
+  std::vector<Excn::Block>              glob_blocks(global.count(Excn::EBLK));
+  std::vector<std::vector<Excn::Block>> blocks(part_count);
 
-  std::vector<SideSet<INT>>              glob_ssets;
-  std::vector<std::vector<SideSet<INT>>> sidesets(part_count);
+  std::vector<Excn::SideSet<INT>>              glob_ssets;
+  std::vector<std::vector<Excn::SideSet<INT>>> sidesets(part_count);
 
-  std::vector<NodeSet<INT>>              glob_nsets;
-  std::vector<std::vector<NodeSet<INT>>> nodesets(part_count);
+  std::vector<Excn::NodeSet<INT>>              glob_nsets;
+  std::vector<std::vector<Excn::NodeSet<INT>>> nodesets(part_count);
   {
     // Now, build the reverse global node map which permits access of the
     // local id given the global id.
@@ -533,7 +531,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     // must check for zero length blocks
     get_element_blocks(local_mesh, global, blocks, glob_blocks);
 
-    GlobalElemMap global_element_map(global.count(ELEM));
+    GlobalElemMap global_element_map(global.count(Excn::ELEM));
     build_reverse_element_map(local_mesh, blocks, glob_blocks, &global, part_count,
                               global_element_map);
 
@@ -545,7 +543,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       if (debug_level & 1)
         std::cerr << time_stamp(tsFormat);
       get_sideset_metadata(local_mesh, sidesets, glob_ssets);
-      if (global.count(SSET) != glob_ssets.size()) {
+      if (global.count(Excn::SSET) != glob_ssets.size()) {
         global.sidesetCount = glob_ssets.size();
       }
     }
@@ -555,8 +553,8 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (!interface.omit_nodesets()) {
       if (debug_level & 1)
         std::cerr << time_stamp(tsFormat);
-      get_nodesets(global.count(NODE), local_mesh, nodesets, glob_nsets);
-      if (global.count(NSET) != glob_nsets.size()) {
+      get_nodesets(global.count(Excn::NODE), local_mesh, nodesets, glob_nsets);
+      if (global.count(Excn::NSET) != glob_nsets.size()) {
         global.nodesetCount = glob_nsets.size();
       }
     }
@@ -566,16 +564,16 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
-    CommunicationMetaData comm_data;
+    Excn::CommunicationMetaData comm_data;
 
     // Create the output file...
-    ExodusFile::create_output(interface);
+    Excn::ExodusFile::create_output(interface);
 
     put_mesh_summary(global);
 
-    get_put_qa(ExodusFile(0), ExodusFile::output(), global_times, interface);
+    get_put_qa(Excn::ExodusFile(0), Excn::ExodusFile::output(), global_times, interface);
 
-    Internals exodus(ExodusFile::output(), ExodusFile::max_name_length());
+    Excn::Internals exodus(Excn::ExodusFile::output(), Excn::ExodusFile::max_name_length());
 
     exodus.write_meta_data(global, glob_blocks, glob_nsets, glob_ssets, comm_data);
 
@@ -586,21 +584,21 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
     {
-      std::vector<INT> global_map(global.count(NODE));
-      for (size_t i = 0; i < global.count(NODE); i++) {
+      std::vector<INT> global_map(global.count(Excn::NODE));
+      for (size_t i = 0; i < global.count(Excn::NODE); i++) {
         global_map[i] = global_node_map[i].id;
       }
-      error = ex_put_node_num_map(ExodusFile::output(), &global_map[0]);
+      error = ex_put_node_num_map(Excn::ExodusFile::output(), &global_map[0]);
     }
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
     if (!global_element_map.empty()) {
-      std::vector<INT> global_map(global.count(ELEM));
-      for (size_t i = 0; i < global.count(ELEM); i++) {
+      std::vector<INT> global_map(global.count(Excn::ELEM));
+      for (size_t i = 0; i < global.count(Excn::ELEM); i++) {
         global_map[i] = global_element_map[i].first;
       }
-      ex_put_elem_num_map(ExodusFile::output(), &global_map[0]);
+      ex_put_elem_num_map(Excn::ExodusFile::output(), &global_map[0]);
     }
 
     T dummy = 0;
@@ -631,16 +629,16 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
   //  NOTE: it is assumed that every part has the same global, nodal,
   //        and element lists
 
-  bool      add_n_status = interface.nodal_status_variable() != "NONE";
-  bool      add_e_status = interface.element_status_variable() != "NONE";
-  Variables global_vars(GLOBAL);
-  Variables nodal_vars(NODE, add_n_status);
-  Variables element_vars(EBLK, add_e_status);
-  Variables nodeset_vars(NSET);
-  Variables sideset_vars(SSET);
+  bool            add_n_status = interface.nodal_status_variable() != "NONE";
+  bool            add_e_status = interface.element_status_variable() != "NONE";
+  Excn::Variables global_vars(Excn::GLOBAL);
+  Excn::Variables nodal_vars(Excn::NODE, add_n_status);
+  Excn::Variables element_vars(Excn::EBLK, add_e_status);
+  Excn::Variables nodeset_vars(Excn::NSET);
+  Excn::Variables sideset_vars(Excn::SSET);
 
   {
-    ExodusFile id(0);
+    Excn::ExodusFile id(0);
 
     get_variable_params(id, global_vars, interface.global_var_names());
     get_variable_params(id, nodal_vars, interface.node_var_names());
@@ -668,8 +666,8 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
   // and we need to reorder the truth table to match the output block
   // order. After this call, we can use the original ordering, so just
   // need a temporary vector here...
-  if (global_vars.count(OUT) + nodal_vars.count(OUT) + element_vars.count(OUT) +
-          nodeset_vars.count(OUT) + sideset_vars.count(OUT) >
+  if (global_vars.count(Excn::OUT) + nodal_vars.count(Excn::OUT) + element_vars.count(Excn::OUT) +
+          nodeset_vars.count(Excn::OUT) + sideset_vars.count(Excn::OUT) >
       0) {
 
     std::vector<int> elem_truth_table;
@@ -679,35 +677,36 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     create_output_truth_table(glob_nsets, nodeset_vars, nset_truth_table);
     create_output_truth_table(glob_ssets, sideset_vars, sset_truth_table);
 
-    ex_put_all_var_param(ExodusFile::output(), global_vars.count(OUT), nodal_vars.count(OUT),
-                         element_vars.count(OUT), TOPTR(elem_truth_table), nodeset_vars.count(OUT),
-                         TOPTR(nset_truth_table), sideset_vars.count(OUT), TOPTR(sset_truth_table));
+    ex_put_all_var_param(
+        Excn::ExodusFile::output(), global_vars.count(Excn::OUT), nodal_vars.count(Excn::OUT),
+        element_vars.count(Excn::OUT), TOPTR(elem_truth_table), nodeset_vars.count(Excn::OUT),
+        TOPTR(nset_truth_table), sideset_vars.count(Excn::OUT), TOPTR(sset_truth_table));
   }
 
   // II. read/write the variable names
   int combined_status_variable_index = 0;
   {
-    ExodusFile id(0);
-    get_put_variable_names(id, ExodusFile::output(), global_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), nodal_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), element_vars, interface,
+    Excn::ExodusFile id(0);
+    get_put_variable_names(id, Excn::ExodusFile::output(), global_vars, interface);
+    get_put_variable_names(id, Excn::ExodusFile::output(), nodal_vars, interface);
+    get_put_variable_names(id, Excn::ExodusFile::output(), element_vars, interface,
                            &combined_status_variable_index);
-    get_put_variable_names(id, ExodusFile::output(), nodeset_vars, interface);
-    get_put_variable_names(id, ExodusFile::output(), sideset_vars, interface);
+    get_put_variable_names(id, Excn::ExodusFile::output(), nodeset_vars, interface);
+    get_put_variable_names(id, Excn::ExodusFile::output(), sideset_vars, interface);
   }
-  ex_update(ExodusFile::output());
+  ex_update(Excn::ExodusFile::output());
 
   /**********************************************************************/
   // 10. Get Transient Data
   //     This routine reads in a time dump from an EXODUSII file
 
-  size_t num_time_steps = global.count(TIME);
+  size_t num_time_steps = global.count(Excn::TIME);
 
   if (debug_level & 1)
     std::cerr << time_stamp(tsFormat);
 
-  std::vector<T> global_values(global_vars.count(IN));
-  std::vector<T> output_global_values(global_vars.count(OUT));
+  std::vector<T> global_values(global_vars.count(Excn::IN));
+  std::vector<T> output_global_values(global_vars.count(Excn::OUT));
 
   // Determine maximum number of entities on any part
   int max_ent = find_max_entity_count(part_count, local_mesh, global, blocks, nodesets, sidesets);
@@ -728,7 +727,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     field_width   = 5;
   }
 
-  int element_width  = get_width(global.count(ELEM));
+  int element_width  = get_width(global.count(Excn::ELEM));
   int step_width     = get_width(num_time_steps);
   int part_width     = get_width(part_count + 1);
   int loc_step_width = 0;
@@ -742,30 +741,30 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
   for (size_t time_step = 0; time_step < num_time_steps; time_step++) {
     time_step_out++;
 
-    T          time_val = 0;
-    size_t     p        = global_times[time_step].partNumber;
-    ExodusFile id(p);
+    T                time_val = 0;
+    size_t           p        = global_times[time_step].partNumber;
+    Excn::ExodusFile id(p);
 
     // read in and write out the time step information
     error += ex_get_time(id, global_times[time_step].localStepNumber + 1, &time_val);
     SMART_ASSERT(time_val == global_times[time_step].timeValue)
     (time_step)(time_val)(global_times[time_step].timeValue);
-    error += ex_put_time(ExodusFile::output(), time_step_out, &time_val);
+    error += ex_put_time(Excn::ExodusFile::output(), time_step_out, &time_val);
 
-    if (global_vars.count(OUT) > 0) {
+    if (global_vars.count(Excn::OUT) > 0) {
       if (debug_level & 1)
         std::cerr << time_stamp(tsFormat) << "Global Variables...\n";
       error += ex_get_var(id, global_times[time_step].localStepNumber + 1, EX_GLOBAL, 0, 0,
                           global_vars.count(), (void *)&global_values[0]);
       // Map ...
-      for (int ig = 0; ig < global_vars.count(IN); ig++) {
+      for (int ig = 0; ig < global_vars.count(Excn::IN); ig++) {
         if (global_vars.index_[ig] > 0) {
           SMART_ASSERT(ig < (int)global_values.size());
           output_global_values[global_vars.index_[ig] - 1] = global_values[ig];
         }
       }
-      error += ex_put_var(ExodusFile::output(), time_step_out, EX_GLOBAL, 1, 0,
-                          global_vars.count(OUT), &output_global_values[0]);
+      error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_GLOBAL, 1, 0,
+                          global_vars.count(Excn::OUT), &output_global_values[0]);
     }
 
     // ========================================================================
@@ -774,14 +773,14 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
       std::cerr << time_stamp(tsFormat) << "Nodal Variables...\n";
     }
 
-    if (nodal_vars.count(OUT) > 0) {
-      size_t         node_count = local_mesh[p].count(NODE);
-      std::vector<T> master_nodal_values(global.count(NODE));
+    if (nodal_vars.count(Excn::OUT) > 0) {
+      size_t         node_count = local_mesh[p].count(Excn::NODE);
+      std::vector<T> master_nodal_values(global.count(Excn::NODE));
 
       int offset = nodal_vars.addStatus ? 1 : 0;
-      for (int i = 0; i < nodal_vars.count(OUT) - offset;
+      for (int i = 0; i < nodal_vars.count(Excn::OUT) - offset;
            i++) { // Last output variable may be status
-        for (int j = 0; j < nodal_vars.count(IN); j++) {
+        for (int j = 0; j < nodal_vars.count(Excn::IN); j++) {
           if (nodal_vars.index_[j] - 1 == i) {
             std::fill(master_nodal_values.begin(), master_nodal_values.end(), 0.0);
 
@@ -794,8 +793,8 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
               size_t nodal_value               = local_mesh[p].localNodeToGlobal[jj];
               master_nodal_values[nodal_value] = values[jj];
             }
-            error += ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, i + 1, 0,
-                                global.count(NODE), &master_nodal_values[0]);
+            error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL, i + 1, 0,
+                                global.count(Excn::NODE), &master_nodal_values[0]);
             break;
           }
         }
@@ -811,8 +810,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
             master_nodal_values[nodal_value] = alive;
           }
 
-          error += ex_put_var(ExodusFile::output(), time_step_out, EX_NODAL, nodal_vars.count(OUT),
-                              0, global.count(NODE), &master_nodal_values[0]);
+          error += ex_put_var(Excn::ExodusFile::output(), time_step_out, EX_NODAL,
+                              nodal_vars.count(Excn::OUT), 0, global.count(Excn::NODE),
+                              &master_nodal_values[0]);
         }
       }
     }
@@ -822,7 +822,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat) << "Element Variables...\n";
 
-    if (element_vars.count(IN) > 0) {
+    if (element_vars.count(Excn::IN) > 0) {
       read_write_master_values(element_vars, global, glob_blocks, local_mesh, blocks, values, p,
                                global_times[time_step].localStepNumber, time_step_out);
     }
@@ -830,9 +830,9 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     // Add element status variable...
     // Use the output time step for writing data
     if (interface.element_status_variable() != "NONE") {
-      add_status_variable(ExodusFile::output(), global, blocks[p], glob_blocks,
+      add_status_variable(Excn::ExodusFile::output(), global, blocks[p], glob_blocks,
                           local_mesh[p].localElementToGlobal, time_step_out,
-                          element_vars.index_[element_vars.count(IN)], alive,
+                          element_vars.index_[element_vars.count(Excn::IN)], alive,
                           combined_status_variable_index);
     }
 
@@ -841,7 +841,7 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat) << "Sideset Variables...\n";
 
-    if (sideset_vars.count(IN) > 0) {
+    if (sideset_vars.count(Excn::IN) > 0) {
       read_write_master_values(sideset_vars, global, glob_ssets, local_mesh, sidesets, values, p,
                                global_times[time_step].localStepNumber, time_step_out);
     }
@@ -851,13 +851,13 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat) << "Nodeset Variables...\n";
 
-    if (nodeset_vars.count(IN) > 0) {
+    if (nodeset_vars.count(Excn::IN) > 0) {
       read_write_master_values(nodeset_vars, global, glob_nsets, local_mesh, nodesets, values, p,
                                global_times[time_step].localStepNumber, time_step_out);
     }
 
     // ========================================================================
-    ex_update(ExodusFile::output());
+    ex_update(Excn::ExodusFile::output());
 
     if (debug_level & 1)
       std::cerr << time_stamp(tsFormat);
@@ -867,13 +867,13 @@ int conjoin(SystemInterface &interface, T /* dummy */, INT /* dummy int */)
               << ", time " << std::scientific << std::setprecision(4) << time_val << " (Part "
               << std::setw(part_width) << p + 1 << "/" << part_count << ", step "
               << std::setw(loc_step_width) << global_times[time_step].localStepNumber + 1 << ")"
-              << "  Active Elem: " << std::setw(element_width) << local_mesh[p].count(ELEM);
+              << "  Active Elem: " << std::setw(element_width) << local_mesh[p].count(Excn::ELEM);
 
     double cur_time            = seacas_timer();
     double elapsed             = cur_time - start_time;
     double time_per_step       = elapsed / time_step_out;
-    double percentage_done     = (time_step_out * 100.0) / global.count(TIME);
-    double estimated_remaining = time_per_step * (global.count(TIME) - time_step_out);
+    double percentage_done     = (time_step_out * 100.0) / global.count(Excn::TIME);
+    double estimated_remaining = time_per_step * (global.count(Excn::TIME) - time_step_out);
 
     std::cerr << "  [" << std::fixed << std::setw(field_width) << std::setprecision(percent_width)
               << percentage_done << "%, Elapsed=" << format_time(elapsed)
@@ -974,13 +974,13 @@ namespace {
   }
 
   template <typename T, typename INT>
-  int get_put_coordinates(Mesh<INT> &global, size_t part_count, std::vector<Mesh<INT>> &local_mesh,
-                          T /* dummy */)
+  int get_put_coordinates(Excn::Mesh<INT> &global, size_t part_count,
+                          std::vector<Excn::Mesh<INT>> &local_mesh, T /* dummy */)
   {
-    SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
-    std::vector<T> x(global.count(NODE));
-    std::vector<T> y(global.count(NODE));
-    std::vector<T> z(global.count(NODE));
+    SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
+    std::vector<T> x(global.count(Excn::NODE));
+    std::vector<T> y(global.count(Excn::NODE));
+    std::vector<T> z(global.count(Excn::NODE));
 
     if (debug_level & 8) {
       std::fill(x.begin(), x.end(), FILL_VALUE);
@@ -990,24 +990,26 @@ namespace {
 
     int error = 0;
     for (size_t p = 0; p < part_count; p++) {
-      error += get_coordinates(ExodusFile(p), global.count(DIM), local_mesh[p].count(NODE),
-                               local_mesh[p].localNodeToGlobal, p, x, y, z);
+      error += get_coordinates(Excn::ExodusFile(p), global.count(Excn::DIM),
+                               local_mesh[p].count(Excn::NODE), local_mesh[p].localNodeToGlobal, p,
+                               x, y, z);
     } // end for p=0..part_count
 
     // Get Coordinate Names
     // NOTE: Assuming coordinate names should be
     // the same for all files/parts therefore, only one
     // file/part needs to be loaded
-    error += get_put_coordinate_names(ExodusFile(0), ExodusFile::output(), global.count(DIM));
+    error += get_put_coordinate_names(Excn::ExodusFile(0), Excn::ExodusFile::output(),
+                                      global.count(Excn::DIM));
     // Write out coordinate information
-    error += ex_put_coord(ExodusFile::output(), (void *)&x[0], (void *)&y[0], (void *)&z[0]);
+    error += ex_put_coord(Excn::ExodusFile::output(), (void *)&x[0], (void *)&y[0], (void *)&z[0]);
     return error;
   }
 
   int get_put_coordinate_names(int in, int out, int dimensionality)
   {
     int    error            = 0;
-    char **coordinate_names = get_name_array(dimensionality, ExodusFile::max_name_length());
+    char **coordinate_names = get_name_array(dimensionality, Excn::ExodusFile::max_name_length());
 
     error += ex_get_coord_names(in, coordinate_names);
     error += ex_put_coord_names(out, coordinate_names);
@@ -1022,7 +1024,7 @@ namespace {
                       std::vector<INT> local_node_to_global, size_t part, std::vector<T> &x,
                       std::vector<T> &y, std::vector<T> &z)
   {
-    SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
+    SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
     SMART_ASSERT(local_node_to_global.size() == num_nodes);
     int            error = 0;
     std::vector<T> local_x(num_nodes);
@@ -1102,23 +1104,25 @@ namespace {
   }
 
   template <typename INT>
-  void get_element_blocks(const std::vector<Mesh<INT>> &local_mesh, const Mesh<INT> &global,
-                          std::vector<std::vector<Block>> &blocks, std::vector<Block> &glob_blocks)
+  void get_element_blocks(const std::vector<Excn::Mesh<INT>> &   local_mesh,
+                          const Excn::Mesh<INT> &                global,
+                          std::vector<std::vector<Excn::Block>> &blocks,
+                          std::vector<Excn::Block> &             glob_blocks)
   {
     size_t part_count = local_mesh.size();
     for (size_t ip = 0; ip < part_count; ip++)
-      blocks[ip].resize(local_mesh[ip].count(EBLK));
+      blocks[ip].resize(local_mesh[ip].count(Excn::EBLK));
 
-    std::vector<INT> block_id(global.count(EBLK));
+    std::vector<INT> block_id(global.count(Excn::EBLK));
 
     int error = 0;
     for (size_t p = 0; p < part_count; p++) {
-      ExodusFile id(p);
+      Excn::ExodusFile id(p);
 
       error += ex_get_ids(id, EX_ELEM_BLOCK, &block_id[0]);
 
       if (p == 0) {
-        for (size_t b = 0; b < global.count(EBLK); b++) {
+        for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
           glob_blocks[b].id = block_id[b];
         }
       }
@@ -1126,7 +1130,7 @@ namespace {
       if (debug_level & 4)
         std::cerr << "\nGetting element block info for part " << p << "..." << '\n';
 
-      for (size_t b = 0; b < global.count(EBLK); b++) {
+      for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
         if (debug_level & 4)
           std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id;
 
@@ -1136,7 +1140,7 @@ namespace {
 
         error += ex_get_block_param(id, &block_param);
 
-        std::vector<char> name(ExodusFile::max_name_length() + 1);
+        std::vector<char> name(Excn::ExodusFile::max_name_length() + 1);
         ex_get_name(id, EX_ELEM_BLOCK, glob_blocks[b].id, &name[0]);
 
         blocks[p][b].id = glob_blocks[b].id;
@@ -1148,7 +1152,7 @@ namespace {
         }
 
         // Find position of this block id in the local mesh
-        for (size_t lb = 0; lb < global.count(EBLK); lb++) {
+        for (size_t lb = 0; lb < global.count(Excn::EBLK); lb++) {
           if (block_id[lb] == glob_blocks[b].id) {
             blocks[p][b].position_ = lb;
             break;
@@ -1178,7 +1182,8 @@ namespace {
         if (block_param.num_attribute > 0 && glob_blocks[b].attributeNames.empty()) {
           // Get attribute names.  Assume the same on all parts
           // on which the block exists.
-          char **names = get_name_array(block_param.num_attribute, ExodusFile::max_name_length());
+          char **names =
+              get_name_array(block_param.num_attribute, Excn::ExodusFile::max_name_length());
 
           ex_get_attr_names(id, EX_ELEM_BLOCK, block_id[b], names);
           for (int i = 0; i < block_param.num_attribute; i++) {
@@ -1199,7 +1204,7 @@ namespace {
     // Convert block_offset from elements/block/part to true offset
     for (size_t p = 0; p < part_count; p++) {
       size_t sum = 0;
-      for (size_t b = 0; b < global.count(EBLK); b++) {
+      for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
         size_t save          = blocks[p][b].offset_;
         blocks[p][b].offset_ = sum;
         sum += save;
@@ -1208,11 +1213,11 @@ namespace {
   }
 
   template <typename T, typename INT>
-  void put_element_blocks(std::vector<Mesh<INT>> &         local_mesh,
-                          std::vector<std::vector<Block>> &blocks, std::vector<Block> &glob_blocks,
-                          T /* dummy */)
+  void put_element_blocks(std::vector<Excn::Mesh<INT>> &         local_mesh,
+                          std::vector<std::vector<Excn::Block>> &blocks,
+                          std::vector<Excn::Block> &             glob_blocks, T /* dummy */)
   {
-    SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
+    SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
     int global_num_blocks = glob_blocks.size();
 
     if (debug_level & 1)
@@ -1244,7 +1249,7 @@ namespace {
       int    error      = 0;
       size_t part_count = local_mesh.size();
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
 
         size_t global_pos;
         size_t global_block_pos;
@@ -1317,7 +1322,7 @@ namespace {
         SMART_ASSERT(block_linkage[i] > 0)(block_linkage[i])(i)(b)(glob_blocks[b].id);
 
       // Write out block info
-      int id_out = ExodusFile::output(); // output file identifier
+      int id_out = Excn::ExodusFile::output(); // output file identifier
 
       if (!block_linkage.empty()) {
         error += ex_put_conn(id_out, EX_ELEM_BLOCK, glob_blocks[b].id, &block_linkage[0], nullptr,
@@ -1335,9 +1340,9 @@ namespace {
   }
 
   template <typename INT>
-  void build_reverse_element_map(std::vector<Mesh<INT>> &         local_mesh,
-                                 std::vector<std::vector<Block>> &blocks,
-                                 std::vector<Block> &glob_blocks, Mesh<INT> *global,
+  void build_reverse_element_map(std::vector<Excn::Mesh<INT>> &         local_mesh,
+                                 std::vector<std::vector<Excn::Block>> &blocks,
+                                 std::vector<Excn::Block> &glob_blocks, Excn::Mesh<INT> *global,
                                  size_t part_count, GlobalElemMap &global_element_map)
   {
     int error = 0;
@@ -1367,14 +1372,14 @@ namespace {
     size_t                     tot_size = 0;
     std::vector<GlobalElemMap> global_element_numbers(part_count);
     for (size_t p = 0; p < part_count; p++) {
-      ExodusFile id(p);
-      global_element_numbers[p].resize(local_mesh[p].count(ELEM));
-      std::vector<INT> ids(local_mesh[p].count(ELEM));
+      Excn::ExodusFile id(p);
+      global_element_numbers[p].resize(local_mesh[p].count(Excn::ELEM));
+      std::vector<INT> ids(local_mesh[p].count(Excn::ELEM));
       error += ex_get_elem_num_map(id, &ids[0]);
-      for (size_t i = 0; i < local_mesh[p].count(ELEM); i++) {
+      for (size_t i = 0; i < local_mesh[p].count(Excn::ELEM); i++) {
         global_element_numbers[p][i] = std::make_pair(ids[i], size_t(0));
       }
-      tot_size += local_mesh[p].count(ELEM);
+      tot_size += local_mesh[p].count(Excn::ELEM);
     }
     global_element_map.resize(tot_size);
 
@@ -1395,7 +1400,7 @@ namespace {
 
       size_t poffset = 0;
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
 
         size_t lb = 0;
         for (; lb < blocks[0].size(); lb++) {
@@ -1534,7 +1539,7 @@ namespace {
   }
 
   template <typename INT>
-  void build_reverse_node_map(std::vector<Mesh<INT>> &local_mesh, Mesh<INT> *global,
+  void build_reverse_node_map(std::vector<Excn::Mesh<INT>> &local_mesh, Excn::Mesh<INT> *global,
                               size_t part_count, GlobalMap &global_node_map)
   {
     // Instead of using <set> and <map>, consider using a sorted vector...
@@ -1549,27 +1554,27 @@ namespace {
 
     size_t tot_size = 0;
     for (size_t p = 0; p < part_count; p++) {
-      tot_size += local_mesh[p].count(NODE);
-      global_nodes[p].resize(local_mesh[p].count(NODE));
+      tot_size += local_mesh[p].count(Excn::NODE);
+      global_nodes[p].resize(local_mesh[p].count(Excn::NODE));
     }
     global_node_map.resize(tot_size);
 
     size_t offset = 0;
     int    error  = 0;
     for (size_t p = 0; p < part_count; p++) {
-      std::vector<double> x(local_mesh[p].count(NODE));
-      std::vector<double> y(local_mesh[p].count(NODE));
-      std::vector<double> z(local_mesh[p].count(NODE));
-      std::vector<INT>    nid(local_mesh[p].count(NODE));
+      std::vector<double> x(local_mesh[p].count(Excn::NODE));
+      std::vector<double> y(local_mesh[p].count(Excn::NODE));
+      std::vector<double> z(local_mesh[p].count(Excn::NODE));
+      std::vector<INT>    nid(local_mesh[p].count(Excn::NODE));
 
-      ExodusFile id(p);
+      Excn::ExodusFile id(p);
       error += ex_get_node_num_map(id, &nid[0]);
       error += ex_get_coord(id, &x[0], &y[0], &z[0]);
-      for (size_t i = 0; i < local_mesh[p].count(NODE); i++) {
+      for (size_t i = 0; i < local_mesh[p].count(Excn::NODE); i++) {
         global_nodes[p][i] = NodeInfo(nid[i], x[i], y[i], z[i]);
       }
       std::copy(global_nodes[p].begin(), global_nodes[p].end(), &global_node_map[offset]);
-      offset += local_mesh[p].count(NODE);
+      offset += local_mesh[p].count(Excn::NODE);
     }
 
     // Now, sort the global_node_map array and remove duplicates...
@@ -1592,7 +1597,7 @@ namespace {
     // a reverse map.
     auto cur_pos = global_node_map.begin();
     for (size_t p = 0; p < part_count; p++) {
-      size_t node_count = local_mesh[p].count(NODE);
+      size_t node_count = local_mesh[p].count(Excn::NODE);
       for (size_t i = 0; i < node_count; i++) {
         NodeInfo global_node = global_nodes[p][i];
 
@@ -1634,16 +1639,17 @@ namespace {
     }
   }
 
-  void get_put_variable_names(int id, int out, Variables &vars, SystemInterface &si,
+  void get_put_variable_names(int id, int out, Excn::Variables &vars, Excn::SystemInterface &si,
                               int *combined_status_variable_index)
   {
-    if (vars.count(OUT) > 0) {
+    if (vars.count(Excn::OUT) > 0) {
 
-      char **output_name_list = get_name_array(vars.count(OUT), ExodusFile::max_name_length());
+      char **output_name_list =
+          get_name_array(vars.count(Excn::OUT), Excn::ExodusFile::max_name_length());
 
       int num_input_vars = vars.index_.size();
 
-      char **input_name_list = get_name_array(num_input_vars, ExodusFile::max_name_length());
+      char **input_name_list = get_name_array(num_input_vars, Excn::ExodusFile::max_name_length());
       ex_get_variable_names(id, vars.type(), num_input_vars, input_name_list);
 
       std::string status;
@@ -1675,7 +1681,7 @@ namespace {
 
       // See if any of the variable names conflict with the status variable name...
       if (status != "NONE") {
-        for (size_t i = 0; i < (size_t)vars.count(OUT) - 1; i++) {
+        for (size_t i = 0; i < (size_t)vars.count(Excn::OUT) - 1; i++) {
           if (case_compare(output_name_list[i], status) == 0) {
             // Error -- duplicate element variable names on output database.
             std::cerr << "\nERROR: A " << vars.label()
@@ -1694,15 +1700,15 @@ namespace {
       if (nfield < 1)
         nfield = 1;
 
-      std::cerr << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
+      std::cerr << "Found " << vars.count(Excn::OUT) << " " << vars.label() << " variables.\n";
       {
         int i    = 0;
         int ifld = 1;
         std::cerr << "\t";
         std::ios::fmtflags f(std::cerr.flags());
-        while (i < vars.count(OUT)) {
+        while (i < vars.count(Excn::OUT)) {
           std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
-          if (++ifld > nfield && i < vars.count(OUT)) {
+          if (++ifld > nfield && i < vars.count(Excn::OUT)) {
             std::cerr << "\n\t";
             ifld = 1;
           }
@@ -1711,7 +1717,7 @@ namespace {
         std::cerr.flags(f); // Reset back to what it was.
       }
 
-      ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);
+      ex_put_variable_names(out, vars.type(), vars.count(Excn::OUT), output_name_list);
 
       // KLUGE: Handle finding combined status index variable here since it is
       // the only place we have the list of output variable names...
@@ -1719,7 +1725,7 @@ namespace {
         *combined_status_variable_index = 0;
         std::string comb_stat           = si.combined_mesh_status_variable();
         if (!comb_stat.empty()) {
-          for (int i = 0; i < vars.count(OUT); i++) {
+          for (int i = 0; i < vars.count(Excn::OUT); i++) {
             if (case_compare(comb_stat, output_name_list[i]) == 0) {
               *combined_status_variable_index = i + 1;
               break;
@@ -1727,12 +1733,12 @@ namespace {
           }
         }
       }
-      free_name_array(output_name_list, vars.count(OUT));
+      free_name_array(output_name_list, vars.count(Excn::OUT));
       free_name_array(input_name_list, num_input_vars);
     }
   }
 
-  void get_variable_params(int id, Variables &vars, const StringIdVector &variable_list)
+  void get_variable_params(int id, Excn::Variables &vars, const StringIdVector &variable_list)
   {
     // Determines the number of variables of type 'type()' that will
     // be written to the output database. The 'variable_list' vector
@@ -1833,29 +1839,29 @@ namespace {
     }
   }
 
-  template <typename INT> void put_mesh_summary(const Mesh<INT> &mesh)
+  template <typename INT> void put_mesh_summary(const Excn::Mesh<INT> &mesh)
   {
     // Write out Mesh info
 
     std::cout << " Title: " << mesh.title.c_str() << "\n\n";
-    std::cout << " Number of coordinates per node       =" << std::setw(9) << mesh.count(DIM)
+    std::cout << " Number of coordinates per node       =" << std::setw(9) << mesh.count(Excn::DIM)
               << "\n";
-    std::cout << " Number of nodes                      =" << std::setw(9) << mesh.count(NODE)
+    std::cout << " Number of nodes                      =" << std::setw(9) << mesh.count(Excn::NODE)
               << "\n";
-    std::cout << " Number of elements                   =" << std::setw(9) << mesh.count(ELEM)
+    std::cout << " Number of elements                   =" << std::setw(9) << mesh.count(Excn::ELEM)
               << "\n";
-    std::cout << " Number of element blocks             =" << std::setw(9) << mesh.count(EBLK)
+    std::cout << " Number of element blocks             =" << std::setw(9) << mesh.count(Excn::EBLK)
               << "\n\n";
-    std::cout << " Number of nodal point sets           =" << std::setw(9) << mesh.count(NSET)
+    std::cout << " Number of nodal point sets           =" << std::setw(9) << mesh.count(Excn::NSET)
               << "\n";
-    std::cout << " Number of element side sets          =" << std::setw(9) << mesh.count(SSET)
+    std::cout << " Number of element side sets          =" << std::setw(9) << mesh.count(Excn::SSET)
               << "\n\n";
   }
 
   template <typename INT>
   void get_nodesets(size_t total_node_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                    std::vector<std::vector<NodeSet<INT>>> &nodesets,
-                    std::vector<NodeSet<INT>> &             glob_sets)
+                    std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
+                    std::vector<Excn::NodeSet<INT>> &             glob_sets)
   {
     // Find number of nodesets in the global model...
     std::set<INT>    set_ids;
@@ -1866,7 +1872,7 @@ namespace {
     {
       int ns_count;
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
         ns_count = ex_inquire_int(id, EX_INQ_NODE_SETS);
 
         // Get the ids for these
@@ -1909,7 +1915,7 @@ namespace {
 
     {
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
 
         nodesets[p].resize(set_ids.size());
 
@@ -1946,7 +1952,7 @@ namespace {
             nodesets[p][i].dfCount   = df_count;
           }
 
-          std::vector<char> name(ExodusFile::max_name_length() + 1);
+          std::vector<char> name(Excn::ExodusFile::max_name_length() + 1);
           ex_get_name(id, EX_NODE_SET, nodesets[p][i].id, &name[0]);
           if (name[0] != '\0') {
             nodesets[p][i].name_ = &name[0];
@@ -1980,7 +1986,7 @@ namespace {
 
         size_t lns = glob_sets[ns].position_;
         for (size_t p = 0; p < part_count; p++) {
-          ExodusFile id(p);
+          Excn::ExodusFile id(p);
 
           glob_sets[ns].name_ = nodesets[p][lns].name_;
 
@@ -2017,16 +2023,16 @@ namespace {
         // Assume all files have same number of variables...
         int num_vars;
         {
-          ExodusFile id(0);
+          Excn::ExodusFile id(0);
           ex_get_variable_param(id, EX_NODE_SET, &num_vars);
         }
         if (num_vars > 0) {
           for (size_t p = 0; p < part_count; p++) {
-            ExodusFile id(p);
+            Excn::ExodusFile id(p);
             // Get the nodelist, but store it in nodeOrderMap.
             // global_pos = nodeOrderMap[i]
-            NodeSet<INT> &nset   = nodesets[p][ns];
-            size_t        nnodes = nset.entity_count();
+            Excn::NodeSet<INT> &nset   = nodesets[p][ns];
+            size_t              nnodes = nset.entity_count();
             nset.nodeOrderMap.resize(nnodes);
             ex_get_set(id, EX_NODE_SET, nset.id, &nset.nodeOrderMap[0], nullptr);
 
@@ -2046,9 +2052,9 @@ namespace {
     }
   }
 
-  template <typename INT> void put_nodesets(std::vector<NodeSet<INT>> &glob_sets)
+  template <typename INT> void put_nodesets(std::vector<Excn::NodeSet<INT>> &glob_sets)
   {
-    int exoid = ExodusFile::output();
+    int exoid = Excn::ExodusFile::output();
 
     if (debug_level & 32)
       std::cerr << "\nOutput NodeSets:\n";
@@ -2058,7 +2064,7 @@ namespace {
       //    ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, &glob_sets[ns].distFactors[0]);
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
       std::vector<INT>().swap(glob_set.nodeSetNodes);
-      DistVector().swap(glob_set.distFactors);
+      Excn::DistVector().swap(glob_set.distFactors);
 
       SMART_ASSERT(glob_set.nodeSetNodes.empty());
       SMART_ASSERT(glob_set.distFactors.empty());
@@ -2070,9 +2076,9 @@ namespace {
   }
 
   template <typename INT>
-  void get_sideset_metadata(std::vector<Excn::Mesh<INT>> &          local_mesh,
-                            std::vector<std::vector<SideSet<INT>>> &sets,
-                            std::vector<SideSet<INT>> &             glob_ssets)
+  void get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
+                            std::vector<std::vector<Excn::SideSet<INT>>> &sets,
+                            std::vector<Excn::SideSet<INT>> &             glob_ssets)
   {
     // Find number of sidesets in the global model...
     std::set<int>    set_ids;
@@ -2082,8 +2088,8 @@ namespace {
     int    bad_ss     = 0;
     {
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
-        int        ss_count = ex_inquire_int(id, EX_INQ_SIDE_SETS);
+        Excn::ExodusFile id(p);
+        int              ss_count = ex_inquire_int(id, EX_INQ_SIDE_SETS);
 
         // Get the ids for these
         ids.resize(ss_count);
@@ -2124,9 +2130,9 @@ namespace {
     }
 
     {
-      std::vector<char> name(ExodusFile::max_name_length() + 1);
+      std::vector<char> name(Excn::ExodusFile::max_name_length() + 1);
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
 
         sets[p].resize(set_ids.size());
 
@@ -2182,8 +2188,8 @@ namespace {
       // Assume all files have same number of variables...
       bool need_sideset_map = false;
       {
-        int        num_vars;
-        ExodusFile id(0);
+        int              num_vars;
+        Excn::ExodusFile id(0);
         ex_get_variable_param(id, EX_SIDE_SET, &num_vars);
         need_sideset_map = num_vars > 0;
       }
@@ -2199,7 +2205,7 @@ namespace {
         size_t lss = glob_ssets[ss].position_;
         for (size_t p = 0; p < part_count; p++) {
 
-          ExodusFile id(p);
+          Excn::ExodusFile id(p);
           sets[p][lss].elems.resize(sets[p][lss].sideCount);
           sets[p][lss].sides.resize(sets[p][lss].sideCount);
           ex_get_set(id, EX_SIDE_SET, ss_id, &sets[p][lss].elems[0], &sets[p][lss].sides[0]);
@@ -2268,7 +2274,7 @@ namespace {
         for (auto &elem : sets[p]) {
           std::vector<INT>().swap(elem.elems);
           std::vector<INT>().swap(elem.sides);
-          DistVector().swap(elem.distFactors);
+          Excn::DistVector().swap(elem.distFactors);
           SMART_ASSERT(elem.elems.empty());
           SMART_ASSERT(elem.sides.empty());
           SMART_ASSERT(elem.distFactors.empty());
@@ -2278,11 +2284,11 @@ namespace {
   }
 
   template <typename INT>
-  void get_put_sidesets(std::vector<Excn::Mesh<INT>> &          local_mesh,
-                        std::vector<std::vector<SideSet<INT>>> &sets,
-                        std::vector<SideSet<INT>> &             glob_ssets)
+  void get_put_sidesets(std::vector<Excn::Mesh<INT>> &                local_mesh,
+                        std::vector<std::vector<Excn::SideSet<INT>>> &sets,
+                        std::vector<Excn::SideSet<INT>> &             glob_ssets)
   {
-    int exoid = ExodusFile::output(); // output file identifier
+    int exoid = Excn::ExodusFile::output(); // output file identifier
     for (auto &glob_sset : glob_ssets) {
       ex_put_set(exoid, EX_SIDE_SET, glob_sset.id, const_cast<INT *>(&glob_sset.elems[0]),
                  const_cast<INT *>(&glob_sset.sides[0]));
@@ -2295,7 +2301,7 @@ namespace {
     for (auto &glob_sset : glob_ssets) {
       std::vector<INT>().swap(glob_sset.elems);
       std::vector<INT>().swap(glob_sset.sides);
-      DistVector().swap(glob_sset.distFactors);
+      Excn::DistVector().swap(glob_sset.distFactors);
       SMART_ASSERT(glob_sset.elems.empty());
       SMART_ASSERT(glob_sset.sides.empty());
       SMART_ASSERT(glob_sset.distFactors.empty());
@@ -2303,16 +2309,17 @@ namespace {
   }
 
   template <typename T, typename INT>
-  void add_status_variable(int id_out, const Mesh<INT> &global, const std::vector<Block> &blocks,
-                           const std::vector<Block> &glob_blocks,
+  void add_status_variable(int id_out, const Excn::Mesh<INT> &global,
+                           const std::vector<Excn::Block> &blocks,
+                           const std::vector<Excn::Block> &glob_blocks,
                            const std::vector<INT> &local_element_to_global, int step, int variable,
                            T alive, int combined_variable_index)
   {
-    SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
+    SMART_ASSERT(sizeof(T) == Excn::ExodusFile::io_word_size());
     std::vector<T> status;
     SMART_ASSERT(alive == 0.0 || alive == 1.0)(alive);
 
-    for (size_t b = 0; b < global.count(EBLK); b++) {
+    for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
       status.resize(glob_blocks[b].entity_count());
       std::fill(status.begin(), status.end(), (1.0 - alive));
       size_t boffset       = blocks[b].offset_;
@@ -2350,7 +2357,7 @@ namespace {
   StringVector get_exodus_variable_names(int id, ex_entity_type elType, size_t var_count)
   {
     // Allocate space for variable names...
-    char **name_list = get_name_array(var_count, ExodusFile::max_name_length());
+    char **name_list = get_name_array(var_count, Excn::ExodusFile::max_name_length());
     ex_get_variable_names(id, elType, var_count, name_list);
 
     StringVector names(var_count);
@@ -2364,8 +2371,8 @@ namespace {
   }
 
   template <typename T, typename INT>
-  void filter_truth_table(int id, Mesh<INT> &global, std::vector<T> &glob_blocks, Variables &vars,
-                          const StringIdVector &variable_names)
+  void filter_truth_table(int id, Excn::Mesh<INT> &global, std::vector<T> &glob_blocks,
+                          Excn::Variables &vars, const StringIdVector &variable_names)
   {
     // This routine checks the 'variable_names' list to see if the user
     // has restricted the output of certain variables to certain element
@@ -2443,23 +2450,23 @@ namespace {
   }
 
   template <typename T, typename INT>
-  void get_truth_table(Mesh<INT> &global, std::vector<std::vector<T>> &blocks,
-                       std::vector<T> &glob_blocks, Variables &vars, int debug)
+  void get_truth_table(Excn::Mesh<INT> &global, std::vector<std::vector<T>> &blocks,
+                       std::vector<T> &glob_blocks, Excn::Variables &vars, int debug)
   {
     // read truth table - sum across all parts since many will
     // have values set to zero for zero length blocks the element
     // variable truth table organized as a 2D array:
-    // [global.count(EBLK)][num_elem_vars]
+    // [global.count(Excn::EBLK)][num_elem_vars]
 
-    ObjectType object_type = vars.objectType;
+    Excn::ObjectType object_type = vars.objectType;
 
-    if (vars.count(OUT) > 0) {
+    if (vars.count(Excn::OUT) > 0) {
       // For each input exodus file, get it's truth table and fill
       // in the location in the output truth table...
 
       size_t part_count = blocks.size();
       for (size_t p = 0; p < part_count; p++) {
-        ExodusFile id(p);
+        Excn::ExodusFile id(p);
 
         for (size_t b = 0; b < global.count(object_type); b++) {
           size_t gb = 0;
@@ -2470,39 +2477,39 @@ namespace {
           SMART_ASSERT(glob_blocks[gb].id == blocks[p][b].id);
 
           if (p == 0)
-            glob_blocks[gb].truthTable.resize(vars.count(OUT));
+            glob_blocks[gb].truthTable.resize(vars.count(Excn::OUT));
 
-          if (vars.count(IN) > 0) {
-            blocks[p][b].truthTable.resize(vars.count(IN));
-            ex_get_object_truth_vector(id, vars.type(), blocks[p][b].id, vars.count(IN),
+          if (vars.count(Excn::IN) > 0) {
+            blocks[p][b].truthTable.resize(vars.count(Excn::IN));
+            ex_get_object_truth_vector(id, vars.type(), blocks[p][b].id, vars.count(Excn::IN),
                                        &blocks[p][b].truthTable[0]);
 
             // Find global block corresponding to this block. (Ids match)
-            for (int j = 0; j < vars.count(IN); j++) {
+            for (int j = 0; j < vars.count(Excn::IN); j++) {
               if (vars.index_[j] > 0) {
                 glob_blocks[gb].truthTable[vars.index_[j] - 1] += blocks[p][b].truthTable[j];
               }
             }
           }
           if (vars.addStatus) {
-            glob_blocks[gb].truthTable[vars.count(OUT) - 1] = 1;
+            glob_blocks[gb].truthTable[vars.count(Excn::OUT) - 1] = 1;
           }
         }
       }
 
       // reset truth table values that may be greater than 1
       for (size_t b = 0; b < global.count(object_type); b++) {
-        for (int j = 0; j < vars.count(OUT); j++) {
+        for (int j = 0; j < vars.count(Excn::OUT); j++) {
           if (glob_blocks[b].truthTable[j] > 0)
             glob_blocks[b].truthTable[j] = 1;
         }
       }
 
       if (debug_level & debug) {
-        std::cerr << "Truth table for " << vars.label() << "\t" << vars.count(OUT) << " variables\t"
-                  << global.count(object_type) << " sets\n";
+        std::cerr << "Truth table for " << vars.label() << "\t" << vars.count(Excn::OUT)
+                  << " variables\t" << global.count(object_type) << " sets\n";
         for (size_t b = 0; b < global.count(object_type); b++) {
-          for (int j = 0; j < vars.count(OUT); j++) {
+          for (int j = 0; j < vars.count(Excn::OUT); j++) {
             std::cerr << glob_blocks[b].truthTable[j];
           }
           std::cerr << '\n';
@@ -2742,8 +2749,8 @@ namespace {
   {
     int error = 0;
 
-    ExodusFile id(p);
-    int        id_out = ExodusFile::output(); // output file identifier
+    Excn::ExodusFile id(p);
+    int              id_out = Excn::ExodusFile::output(); // output file identifier
 
     size_t max_size = 0;
     for (size_t b = 0; b < global.count(vars.objectType); b++) {
@@ -2755,7 +2762,7 @@ namespace {
     // Only needed for element, but haven't cleaned this up yet...
     INT *part_loc_elem_to_global = &local_mesh[p].localElementToGlobal[0];
 
-    for (int i = 0; i < vars.count(IN); i++) {
+    for (int i = 0; i < vars.count(Excn::IN); i++) {
       if (vars.index_[i] > 0) {
         int ivar = vars.index_[i] - 1;
 
@@ -2776,17 +2783,17 @@ namespace {
                                   local_sets[p][lb].id, entity_count, &values[0]);
 
               switch (vars.objectType) {
-              case EBLK:
+              case Excn::EBLK:
                 map_element_vars(local_sets[p][lb].offset_, global_sets[b].offset_, entity_count,
                                  values, master_values, part_loc_elem_to_global);
                 break;
 
-              case SSET:
+              case Excn::SSET:
                 map_sideset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
                                  values, master_values);
                 break;
 
-              case NSET:
+              case Excn::NSET:
                 map_nodeset_vars(local_sets[p][lb], entity_count, global_sets[b].entity_count(),
                                  values, master_values);
                 break;
@@ -2806,12 +2813,12 @@ namespace {
   void create_output_truth_table(std::vector<U> &global_sets, Excn::Variables &vars,
                                  std::vector<int> &truth_table)
   {
-    truth_table.resize(global_sets.size() * vars.count(OUT));
+    truth_table.resize(global_sets.size() * vars.count(Excn::OUT));
     for (auto &global_set : global_sets) {
       int bout = global_set.position_;
       SMART_ASSERT(bout >= 0);
-      for (int j = 0; j < vars.count(OUT); j++) {
-        int out_ttable_loc          = (bout * vars.count(OUT)) + j;
+      for (int j = 0; j < vars.count(Excn::OUT); j++) {
+        int out_ttable_loc          = (bout * vars.count(Excn::OUT)) + j;
         truth_table[out_ttable_loc] = global_set.truthTable[j];
       }
     }
@@ -2819,19 +2826,19 @@ namespace {
 
   template <typename INT>
   size_t find_max_entity_count(size_t part_count, std::vector<Excn::Mesh<INT>> &local_mesh,
-                               const Excn::Mesh<INT> &                 global,
-                               std::vector<std::vector<Block>> &       blocks,
-                               std::vector<std::vector<NodeSet<INT>>> &nodesets,
-                               std::vector<std::vector<SideSet<INT>>> &sidesets)
+                               const Excn::Mesh<INT> &                       global,
+                               std::vector<std::vector<Excn::Block>> &       blocks,
+                               std::vector<std::vector<Excn::NodeSet<INT>>> &nodesets,
+                               std::vector<std::vector<Excn::SideSet<INT>>> &sidesets)
   {
-    size_t max_ent = local_mesh[0].count(NODE);
+    size_t max_ent = local_mesh[0].count(Excn::NODE);
     for (size_t p = 1; p < part_count; p++) {
-      if ((size_t)local_mesh[p].count(NODE) > max_ent)
-        max_ent = local_mesh[p].count(NODE);
+      if ((size_t)local_mesh[p].count(Excn::NODE) > max_ent)
+        max_ent = local_mesh[p].count(Excn::NODE);
     }
 
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(EBLK); b++) {
+      for (size_t b = 0; b < global.count(Excn::EBLK); b++) {
         if (blocks[p][b].entity_count() > max_ent)
           max_ent = blocks[p][b].entity_count();
       }
@@ -2839,7 +2846,7 @@ namespace {
 
     // Nodesets...
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(NSET); b++) {
+      for (size_t b = 0; b < global.count(Excn::NSET); b++) {
         if (nodesets[p][b].entity_count() > max_ent)
           max_ent = nodesets[p][b].entity_count();
       }
@@ -2847,7 +2854,7 @@ namespace {
 
     // Sidesets...
     for (size_t p = 0; p < part_count; p++) {
-      for (size_t b = 0; b < global.count(SSET); b++) {
+      for (size_t b = 0; b < global.count(Excn::SSET); b++) {
         if (sidesets[p][b].entity_count() > max_ent)
           max_ent = sidesets[p][b].entity_count();
       }

@@ -40,8 +40,6 @@
 #include <iostream>       // for operator<<, endl, ostream, etc
 #include <vector>         // for vector
 
-using namespace std;
-
 template <typename INT>
 Side_Set<INT>::Side_Set()
     : Exo_Entity(), num_dist_factors(0), elmts(nullptr), sides(nullptr), sideIndex(nullptr),

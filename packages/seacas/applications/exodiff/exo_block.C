@@ -38,8 +38,6 @@
 #include <iostream>       // for operator<<, endl, ostream, etc
 #include <string>         // for string, char_traits
 
-using namespace std;
-
 template <typename INT>
 Exo_Block<INT>::Exo_Block() : Exo_Entity(), num_nodes_per_elmt(-1), conn(nullptr)
 {
@@ -102,7 +100,7 @@ template <typename INT> void Exo_Block<INT>::entity_load_params()
   }
 }
 
-template <typename INT> string Exo_Block<INT>::Load_Connectivity()
+template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
 {
   SMART_ASSERT(Check_State());
 
@@ -127,7 +125,7 @@ template <typename INT> string Exo_Block<INT>::Load_Connectivity()
       exit(1);
     }
     else if (err > 0) {
-      ostringstream oss;
+      std::ostringstream oss;
       oss << "WARNING:  Number " << err << " returned from call to ex_get_conn()";
       return oss.str();
     }
@@ -136,7 +134,7 @@ template <typename INT> string Exo_Block<INT>::Load_Connectivity()
   return "";
 }
 
-template <typename INT> string Exo_Block<INT>::Free_Connectivity()
+template <typename INT> std::string Exo_Block<INT>::Free_Connectivity()
 {
   SMART_ASSERT(Check_State());
   if (conn)
@@ -156,7 +154,7 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
 }
 
 template <typename INT>
-string Exo_Block<INT>::Give_Connectivity(size_t &num_e, size_t &npe, INT *&recv_conn)
+std::string Exo_Block<INT>::Give_Connectivity(size_t &num_e, size_t &npe, INT *&recv_conn)
 {
   if (num_nodes_per_elmt < 0)
     return "ERROR:  Connectivity parameters have not been determined!";

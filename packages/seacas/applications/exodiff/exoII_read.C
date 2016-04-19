@@ -52,11 +52,9 @@
 #include "stringx.h"
 #include "util.h"
 
-using namespace std;
-
 namespace {
   void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars,
-                 vector<string> &varlist);
+                 std::vector<std::string> &varlist);
 }
 
 template <typename INT>
@@ -87,7 +85,7 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
     SMART_ASSERT(Check_State());
 
     if (file_id >= 0) {
-      string err = Close_File();
+      std::string err = Close_File();
       if (!err.empty())
         std::cout << "ExoII_Read destructor()  ERROR closing file:"
                   << " \"" << err << "\"" << '\n';
@@ -113,7 +111,7 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
   }
 }
 
-template <typename INT> string ExoII_Read<INT>::Close_File()
+template <typename INT> std::string ExoII_Read<INT>::Close_File()
 {
   SMART_ASSERT(Check_State());
 
@@ -128,7 +126,7 @@ template <typename INT> string ExoII_Read<INT>::Close_File()
     exit(1);
   }
   if (err > 0) {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "WARNING: " << err << " issued upon close";
     return oss.str();
   }
@@ -145,42 +143,42 @@ template <typename INT> double ExoII_Read<INT>::Time(int time_num) const
   return times[time_num - 1];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::Global_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Global_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < global_vars.size());
   return global_vars[index];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::Nodal_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Nodal_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < nodal_vars.size());
   return nodal_vars[index];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::Elmt_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Elmt_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_vars.size());
   return elmt_vars[index];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::Elmt_Att_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::Elmt_Att_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < elmt_atts.size());
   return elmt_atts[index];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::NS_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::NS_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < ns_vars.size());
   return ns_vars[index];
 }
 
-template <typename INT> const string &ExoII_Read<INT>::SS_Var_Name(int index) const
+template <typename INT> const std::string &ExoII_Read<INT>::SS_Var_Name(int index) const
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(index >= 0 && (unsigned)index < ss_vars.size());
@@ -339,7 +337,7 @@ Side_Set<INT> *ExoII_Read<INT>::Get_Side_Set_by_Name(const std::string &name) co
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
+std::string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
   if (!Open())
@@ -354,7 +352,7 @@ string ExoII_Read<INT>::Load_Elmt_Block_Description(size_t block_index) const
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
+template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() const
 {
   SMART_ASSERT(Check_State());
   if (!Open())
@@ -368,7 +366,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Elmt_Block_Descriptions() c
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Free_Elmt_Block(size_t block_index) const
+template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Block(size_t block_index) const
 {
   SMART_ASSERT(Check_State());
 
@@ -382,7 +380,7 @@ template <typename INT> string ExoII_Read<INT>::Free_Elmt_Block(size_t block_ind
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Free_Elmt_Blocks() const
+template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Blocks() const
 {
   SMART_ASSERT(Check_State());
 
@@ -395,8 +393,8 @@ template <typename INT> string ExoII_Read<INT>::Free_Elmt_Blocks() const
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe,
-                                          INT *&new_conn)
+std::string ExoII_Read<INT>::Give_Connectivity(size_t block_index, size_t &num_e, size_t &npe,
+                                               INT *&new_conn)
 {
   SMART_ASSERT(block_index >= 0 && block_index < num_elmt_blocks);
 
@@ -410,7 +408,7 @@ template <typename INT> size_t ExoII_Read<INT>::Block_Id(size_t block_index) con
   return eblocks[block_index].Id();
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Node_Map()
+template <typename INT> std::string ExoII_Read<INT>::Load_Node_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -441,7 +439,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Node_Map()
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Free_Node_Map()
+template <typename INT> std::string ExoII_Read<INT>::Free_Node_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -451,7 +449,7 @@ template <typename INT> string ExoII_Read<INT>::Free_Node_Map()
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Elmt_Map()
+template <typename INT> std::string ExoII_Read<INT>::Load_Elmt_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -482,7 +480,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Elmt_Map()
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Free_Elmt_Map()
+template <typename INT> std::string ExoII_Read<INT>::Free_Elmt_Map()
 {
   SMART_ASSERT(Check_State());
 
@@ -492,7 +490,7 @@ template <typename INT> string ExoII_Read<INT>::Free_Elmt_Map()
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Nodal_Coordinates()
+template <typename INT> std::string ExoII_Read<INT>::Load_Nodal_Coordinates()
 {
   SMART_ASSERT(Check_State());
 
@@ -518,7 +516,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Nodal_Coordinates()
     else if (err > 0) {
       delete[] nodes;
       nodes = nullptr;
-      ostringstream oss;
+      std::ostringstream oss;
       oss << "EXODIFF WARNING:  "
           << "Exodus issued warning \"" << err << "\" on call to ex_get_coord()!"
           << "  I'm not going to keep what it gave me for coordinates.";
@@ -538,7 +536,8 @@ template <typename INT> void ExoII_Read<INT>::Free_Nodal_Coordinates()
   nodes = nullptr;
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
+template <typename INT>
+std::string ExoII_Read<INT>::Load_Nodal_Results(int time_step_num, int var_index)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
@@ -568,7 +567,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Nodal_Results(int time_step
     else if (err > 0) {
       delete[] results[var_index];
       results[var_index] = nullptr;
-      ostringstream oss;
+      std::ostringstream oss;
       oss << "ExoII_Read::Load_Nodal_Results(): WARNING:  "
           << "Exodus issued warning \"" << err << "\" on call to ex_get_var()!"
           << "  I'm not going to keep what it gave me for values.";
@@ -647,7 +646,7 @@ template <typename INT> const double *ExoII_Read<INT>::Get_Nodal_Results(int var
   return results[var_index];
 }
 
-template <typename INT> string ExoII_Read<INT>::Load_Global_Results(int time_step_num)
+template <typename INT> std::string ExoII_Read<INT>::Load_Global_Results(int time_step_num)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(time_step_num > 0 && time_step_num <= num_times);
@@ -674,7 +673,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Global_Results(int time_ste
     exit(1);
   }
   else if (err > 0) {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "ExoII_Read::Load_Global_Results(): WARNING:  "
         << "Exodus issued warning \"" << err << "\" on call to ex_get_glob_vars()!";
     return oss.str();
@@ -684,7 +683,7 @@ template <typename INT> string ExoII_Read<INT>::Load_Global_Results(int time_ste
 }
 
 template <typename INT>
-string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
+std::string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 {
   SMART_ASSERT(Check_State());
   SMART_ASSERT(t1 > 0 && t1 <= num_times);
@@ -761,15 +760,15 @@ Node_Set<INT> *ExoII_Read<INT>::Get_Node_Set_by_Index(size_t set_index) const
 // This function converts an Exodus global element number (1-offset) into
 // its block index (0-offset) and block element index (0-offset).
 template <typename INT>
-string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &block_index,
-                                              size_t &local_elmt_index) const
+std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &block_index,
+                                                   size_t &local_elmt_index) const
 {
   SMART_ASSERT(Check_State());
 
   if (!Open())
     return "ERROR:  File not open!";
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "ERROR:  global_elmt_num = " << global_elmt_num << " is out of bounds [1, " << num_elmts
         << "]!";
     return oss.str();
@@ -984,7 +983,7 @@ template <typename INT> int ExoII_Read<INT>::Check_State() const
   return 1;
 }
 
-template <typename INT> string ExoII_Read<INT>::File_Name(const char *fname)
+template <typename INT> std::string ExoII_Read<INT>::File_Name(const char *fname)
 {
   SMART_ASSERT(Check_State());
 
@@ -998,7 +997,7 @@ template <typename INT> string ExoII_Read<INT>::File_Name(const char *fname)
   return "";
 }
 
-template <typename INT> string ExoII_Read<INT>::Open_File(const char *fname)
+template <typename INT> std::string ExoII_Read<INT>::Open_File(const char *fname)
 {
   SMART_ASSERT(Check_State());
 
@@ -1018,7 +1017,7 @@ template <typename INT> string ExoII_Read<INT>::Open_File(const char *fname)
   }
   int err = ex_open(file_name.c_str(), mode, &comp_ws, &ws, &dum);
   if (err < 0) {
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "ERROR: Couldn't open file \"" << file_name << "\".";
 
     // ExodusII library could not open file.  See if a file (exodusII
@@ -1308,7 +1307,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 } // End of EXODIFF
 
 namespace {
-  void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars, vector<string> &varlist)
+  void read_vars(int file_id, EXOTYPE flag, const char *type, int num_vars,
+                 std::vector<std::string> &varlist)
   {
     if (num_vars) {
       int    name_size = ex_inquire_int(file_id, EX_INQ_MAX_READ_NAME_LENGTH);
@@ -1337,7 +1337,7 @@ namespace {
           exit(1);
         }
 
-        string n(varnames[vg]);
+        std::string n(varnames[vg]);
         chop_whitespace(n);
         varlist.push_back(n);
       }

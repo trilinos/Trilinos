@@ -156,10 +156,6 @@ void Skinner::Interface::enroll_options()
 
 bool Skinner::Interface::parse_options(int argc, char **argv)
 {
-#if (__SUNPRO_CC == 0x500)
-  using namespace std;
-#endif
-
   // Get options from environment variable also...
   char *options = getenv("IO_SKINNER_OPTIONS");
   if (options != nullptr) {

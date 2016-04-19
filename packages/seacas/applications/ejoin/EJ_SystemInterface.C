@@ -162,10 +162,6 @@ void SystemInterface::enroll_options()
 
 bool SystemInterface::parse_options(int argc, char **argv)
 {
-#if (__SUNPRO_CC == 0x500)
-  using namespace std;
-#endif
-
   int option_index = options_.parse(argc, argv);
   if (option_index < 1)
     return false;

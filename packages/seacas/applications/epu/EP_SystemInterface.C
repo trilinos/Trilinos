@@ -226,10 +226,6 @@ void Excn::SystemInterface::enroll_options()
 
 bool Excn::SystemInterface::parse_options(int argc, char **argv)
 {
-#if (__SUNPRO_CC == 0x500)
-  using namespace std;
-#endif
-
   // Get options from environment variable also...
   char *options = getenv("EPU_OPTIONS");
   if (options != nullptr) {

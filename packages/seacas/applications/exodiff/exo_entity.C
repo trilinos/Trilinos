@@ -43,8 +43,6 @@
 #include <sys/types.h>    // for int64_t
 #include <vector>         // for vector
 
-using namespace std;
-
 namespace {
   template <class T> static std::string to_string(const T &t)
   {
@@ -125,7 +123,7 @@ bool Exo_Entity::is_valid_var(size_t var_index) const
   return (truth_[var_index] != 0);
 }
 
-string Exo_Entity::Load_Results(int time_step, int var_index)
+std::string Exo_Entity::Load_Results(int time_step, int var_index)
 {
   SMART_ASSERT(Check_State());
 
@@ -166,21 +164,21 @@ string Exo_Entity::Load_Results(int time_step, int var_index)
         exit(1);
       }
       else if (err > 0) {
-        ostringstream oss;
+        std::ostringstream oss;
         oss << "WARNING:  Number " << err << " returned from call to exodus get variable routine.";
         return oss.str();
       }
     }
     else
-      return string("WARNING:  No items in this ") + label();
+      return std::string("WARNING:  No items in this ") + label();
   }
   else {
-    return string("WARNING: Variable not stored in this ") + label();
+    return std::string("WARNING: Variable not stored in this ") + label();
   }
   return "";
 }
 
-string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index)
+std::string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index)
 {
   static std::vector<double> results2;
 
@@ -219,7 +217,7 @@ string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index
         exit(1);
       }
       else if (err > 0) {
-        ostringstream oss;
+        std::ostringstream oss;
         oss << "WARNING:  Number " << err << " returned from call to exodus get variable routine.";
         return oss.str();
       }
@@ -242,10 +240,10 @@ string Exo_Entity::Load_Results(int t1, int t2, double proportion, int var_index
       }
     }
     else
-      return string("WARNING:  No items in this ") + label();
+      return std::string("WARNING:  No items in this ") + label();
   }
   else {
-    return string("WARNING: Variable not stored in this ") + label();
+    return std::string("WARNING: Variable not stored in this ") + label();
   }
   return "";
 }
@@ -292,7 +290,7 @@ void Exo_Entity::get_truth_table() const
   }
 }
 
-string Exo_Entity::Load_Attributes(int attr_index)
+std::string Exo_Entity::Load_Attributes(int attr_index)
 {
   SMART_ASSERT(Check_State());
 
@@ -318,13 +316,13 @@ string Exo_Entity::Load_Attributes(int attr_index)
       exit(1);
     }
     else if (err > 0) {
-      ostringstream oss;
+      std::ostringstream oss;
       oss << "WARNING:  Number " << err << " returned from call to exodus get attribute routine.";
       return oss.str();
     }
   }
   else
-    return string("WARNING:  No items in this ") + label();
+    return std::string("WARNING:  No items in this ") + label();
 
   return "";
 }
@@ -420,7 +418,7 @@ void Exo_Entity::internal_load_params()
         exit(1);
       }
       else {
-        string n(names[vg]);
+        std::string n(names[vg]);
         to_lower(n);
         attributeNames.push_back(n);
       }

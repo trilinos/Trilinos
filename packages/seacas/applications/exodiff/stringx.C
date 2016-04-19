@@ -33,13 +33,13 @@
 
 #include <cstring>
 #include <ctype.h>
+#include <string>
+#include <vector>
 
 #include "smart_assert.h"
 #include "stringx.h"
 
-using namespace std;
-
-bool abbreviation(const string &s, const string &master, unsigned min_length)
+bool abbreviation(const std::string &s, const std::string &master, unsigned min_length)
 {
   SMART_ASSERT(min_length > 0);
 
@@ -56,7 +56,7 @@ bool abbreviation(const string &s, const string &master, unsigned min_length)
   return true;
 }
 
-bool no_case_equals(const string &s1, const string &s2)
+bool no_case_equals(const std::string &s1, const std::string &s2)
 {
   if (s1.size() != s2.size())
     return false;
@@ -68,7 +68,7 @@ bool no_case_equals(const string &s1, const string &s2)
   return true;
 }
 
-string &chop_whitespace(string &s)
+std::string &chop_whitespace(std::string &s)
 {
   if (!s.empty()) {
     int i = s.size() - 1;
@@ -82,10 +82,10 @@ string &chop_whitespace(string &s)
   return s;
 }
 
-string extract_token(string &s, const char *delimeters)
+std::string extract_token(std::string &s, const char *delimeters)
 {
   if (!s.empty()) {
-    SMART_ASSERT(delimeters != nullptr && !string(delimeters).empty());
+    SMART_ASSERT(delimeters != nullptr && !std::string(delimeters).empty());
 
     // Move through initial delimeters.
     unsigned p = s.find_first_not_of(delimeters);
@@ -101,13 +101,13 @@ string extract_token(string &s, const char *delimeters)
 
     if (q >= s.size()) {
       // no more delimeters
-      string tok = s.substr(p);
-      s          = "";
+      std::string tok = s.substr(p);
+      s               = "";
       return tok;
     }
 
     SMART_ASSERT(q > p);
-    string tok = s.substr(p, q - p);
+    std::string tok = s.substr(p, q - p);
 
     // move to start of the second token
     unsigned r = s.find_first_not_of(delimeters, q);
@@ -125,7 +125,7 @@ string extract_token(string &s, const char *delimeters)
   return "";
 }
 
-int count_tokens(const string &s, const char *delimeters)
+int count_tokens(const std::string &s, const char *delimeters)
 {
   if (!s.empty()) {
     const char *str_ptr = s.c_str();
@@ -146,7 +146,7 @@ int count_tokens(const string &s, const char *delimeters)
   return 0;
 }
 
-int max_string_length(const vector<string> &names)
+int max_string_length(const std::vector<std::string> &names)
 {
   if (names.empty())
     return 0;
@@ -159,13 +159,13 @@ int max_string_length(const vector<string> &names)
   return len;
 }
 
-void to_lower(string &s)
+void to_lower(std::string &s)
 {
   for (auto &elem : s)
     elem = tolower(elem);
 }
 
-char first_character(const string &s)
+char first_character(const std::string &s)
 {
   for (auto &elem : s)
     if (!isspace((int)(elem)))
@@ -174,7 +174,7 @@ char first_character(const string &s)
   return 0;
 }
 
-int find_string(const vector<string> &lst, const string &s, bool nocase)
+int find_string(const std::vector<std::string> &lst, const std::string &s, bool nocase)
 {
   if (nocase) {
     for (unsigned i = 0; i < lst.size(); ++i)

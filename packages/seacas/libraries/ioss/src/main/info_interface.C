@@ -114,10 +114,6 @@ void Info::Interface::enroll_options()
 
 bool Info::Interface::parse_options(int argc, char **argv)
 {
-#if (__SUNPRO_CC == 0x500)
-  using namespace std;
-#endif
-
   // Get options from environment variable also...
   char *options = getenv("IO_INFO_OPTIONS");
   if (options != nullptr) {
