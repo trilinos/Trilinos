@@ -108,8 +108,11 @@ int main(int argc, char *argv[])
       readfile = true;
     }
   }
-
-  if (readfile) return 0;
+  if (readfile) {
+    std::cout << "Aprepro: There were " << aprepro.get_error_count()
+	      << " errors detected during parsing.\n";
+    return 0;
+  }
     
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
@@ -155,4 +158,7 @@ int main(int argc, char *argv[])
 
     line.clear();
   }
+  std::cout << "Aprepro: There were " << aprepro.get_error_count()
+	    << " errors detected during parsing.\n";
+  
 }

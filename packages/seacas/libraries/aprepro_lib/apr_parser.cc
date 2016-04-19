@@ -1237,7 +1237,7 @@ namespace SEAMS {
   case 89:
 #line 347 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yylhs.value.val) = (yystack_[0].value.tptr)->value.var;
-				  undefined_warning(aprepro, (yystack_[0].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[0].value.tptr)->name);          }
 #line 1242 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1245,7 +1245,7 @@ namespace SEAMS {
 #line 349 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yylhs.value.val) = ++((yystack_[0].value.tptr)->value.var);		
 		                  set_type(aprepro, (yystack_[0].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[0].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[0].value.tptr)->name);          }
 #line 1250 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1253,7 +1253,7 @@ namespace SEAMS {
 #line 352 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yylhs.value.val) = --((yystack_[0].value.tptr)->value.var);		
 		                  set_type(aprepro, (yystack_[0].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[0].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[0].value.tptr)->name);          }
 #line 1258 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1261,7 +1261,7 @@ namespace SEAMS {
 #line 355 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yylhs.value.val) = ((yystack_[1].value.tptr)->value.var)++;		
 		                  set_type(aprepro, (yystack_[1].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[1].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[1].value.tptr)->name);          }
 #line 1266 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1269,7 +1269,7 @@ namespace SEAMS {
 #line 358 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yylhs.value.val) = ((yystack_[1].value.tptr)->value.var)--;		
 		                  set_type(aprepro, (yystack_[1].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[1].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[1].value.tptr)->name);          }
 #line 1274 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1284,7 +1284,7 @@ namespace SEAMS {
 #line 363 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yystack_[2].value.tptr)->value.var += (yystack_[0].value.val); (yylhs.value.val) = (yystack_[2].value.tptr)->value.var; 
 		                  set_type(aprepro, (yystack_[2].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[2].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[2].value.tptr)->name);          }
 #line 1289 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1292,7 +1292,7 @@ namespace SEAMS {
 #line 366 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yystack_[2].value.tptr)->value.var -= (yystack_[0].value.val); (yylhs.value.val) = (yystack_[2].value.tptr)->value.var; 
 		                  set_type(aprepro, (yystack_[2].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[2].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[2].value.tptr)->name);          }
 #line 1297 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1300,7 +1300,7 @@ namespace SEAMS {
 #line 369 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yystack_[2].value.tptr)->value.var *= (yystack_[0].value.val); (yylhs.value.val) = (yystack_[2].value.tptr)->value.var; 
 		                  set_type(aprepro, (yystack_[2].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[2].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[2].value.tptr)->name);          }
 #line 1305 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1308,7 +1308,7 @@ namespace SEAMS {
 #line 372 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:859
     { (yystack_[2].value.tptr)->value.var /= (yystack_[0].value.val); (yylhs.value.val) = (yystack_[2].value.tptr)->value.var; 
 		                  set_type(aprepro, (yystack_[2].value.tptr), token::VAR);
-				  undefined_warning(aprepro, (yystack_[2].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[2].value.tptr)->name);          }
 #line 1313 "apr_parser.cc" // lalr1.cc:859
     break;
 
@@ -1319,7 +1319,7 @@ namespace SEAMS {
 				  (yylhs.value.val) = (yystack_[2].value.tptr)->value.var; 
 		                  set_type(aprepro, (yystack_[2].value.tptr), token::VAR);
 				  SEAMS::math_error(aprepro, "Power");
-				  undefined_warning(aprepro, (yystack_[2].value.tptr)->name);          }
+				  undefined_error(aprepro, (yystack_[2].value.tptr)->name);          }
 #line 1324 "apr_parser.cc" // lalr1.cc:859
     break;
 

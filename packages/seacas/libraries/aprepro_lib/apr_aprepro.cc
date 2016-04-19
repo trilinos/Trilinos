@@ -68,7 +68,7 @@ namespace SEAMS {
   Aprepro::Aprepro()
     : lexer(nullptr), infoStream(&std::cout), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(nullptr),
-      errorStream(&std::cerr), warningStream(&std::cerr), 
+      errorStream(&std::cerr), warningStream(&std::cerr), parseErrorCount(0),
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
       isCollectingLoop(false), inIfdefGetvar(false)
   {
@@ -192,6 +192,7 @@ namespace SEAMS {
 
     // Send it to the user defined stream
     (*errorStream) << ss.str();
+    parseErrorCount++;
   }
 
   void Aprepro::warning(const std::string &msg, bool line_info, bool prefix) const

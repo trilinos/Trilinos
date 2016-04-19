@@ -281,6 +281,7 @@ namespace SEAMS {
     class Scanner *lexer;
 
     /** Error handling. */
+    int get_error_count() const {return parseErrorCount;} /** Return number of errors reported during parse */
     void error(const std::string &msg, bool line_info = true, bool prefix = true) const;
     void warning(const std::string &msg, bool line_info = true, bool prefix = true) const;
     void info(const std::string &msg, bool line_info = false, bool prefix = true) const;
@@ -311,6 +312,8 @@ namespace SEAMS {
     // For substitution history.
     std::vector<history_data> history;
 
+    mutable int parseErrorCount;
+    
   public:
     bool stateImmutable;
 

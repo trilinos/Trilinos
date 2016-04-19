@@ -47,7 +47,7 @@ namespace SEAMS {
   void math_error(const SEAMS::Aprepro &aprepro, const char *function);
   void math_error(const char *function);
   void yyerror(const SEAMS::Aprepro &aprepro, const std::string &s);
-  void undefined_warning(const SEAMS::Aprepro &aprepro, const std::string &var);
+  void undefined_error(const SEAMS::Aprepro &aprepro, const std::string &var);
   void redefined_warning(const SEAMS::Aprepro &aprepro, const SEAMS::symrec *var);
   void warning(const SEAMS::Aprepro &aprepro, const std::string &var);
   void immutable_modify(const SEAMS::Aprepro &aprepro, const SEAMS::symrec *var);
