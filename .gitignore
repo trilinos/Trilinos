@@ -29,6 +29,7 @@ doxygen_objdb_*.tmp
 /packages/mesquite/
 /packages/moocho/
 /packages/optika/
+/packages/xSDKTrilinos/
 
 
 # Allow github Kokkos to be cloned under Trilinos

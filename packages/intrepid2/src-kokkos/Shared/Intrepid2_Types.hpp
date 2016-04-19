@@ -54,58 +54,8 @@
 
 namespace Intrepid2 {
 
-  /** \def    INTREPID2_MAX_ORDER
-      \brief  The maximum reconstruction order.
-  */
-#define INTREPID2_MAX_ORDER 10
-
-  /** \def    INTREPID2_MAX_INTEGRATION_POINTS
-      \brief  The maximum number of integration points for direct cubature rules.
-  */
-#define INTREPID2_MAX_INTEGRATION_POINTS 1001
-
-  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_EDGE
-      \brief  The maximum degree of the polynomial that can be integrated exactly by
-      a direct edge rule.
-  */
-#define INTREPID2_MAX_CUBATURE_DEGREE_EDGE 20
-
-  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_TRI
-      \brief  The maximum degree of the polynomial that can be integrated exactly by
-      a direct triangle rule.
-  */
-#define INTREPID2_MAX_CUBATURE_DEGREE_TRI 20
-
-  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_TET
-      \brief  The maximum degree of the polynomial that can be integrated exactly by
-      a direct tetrahedron rule.
-  */
-#define INTREPID2_MAX_CUBATURE_DEGREE_TET 20
-
-  /** \def    INTREPID2_MAX_CUBATURE_DEGREE_PYR
-      \brief  The maximum degree of the polynomial that can be integrated exactly by
-      a direct pyramid rule.
-  */
-#define INTREPID2_MAX_CUBATURE_DEGREE_PYR 11
-
-  /** \def    INTREPID2_MAX_DIMENSION
-      \brief  The maximum ambient space dimension.
-  */
-#define INTREPID2_MAX_DIMENSION 3
-
-  /** \def    INTREPID2_MAX_NEWTON
-      \brief  Maximum number of Newton iterations used internally in methods such as computing the
-      action of the inverse reference to physical cell map.
-  */
-#define INTREPID2_MAX_NEWTON 15
-
-  /** \def    INTREPID2_MAX_DERIVATIVE
-      \brief  Maximum order of derivatives allowed in intrepid
-  */
-#define INTREPID2_MAX_DERIVATIVE 10
-
   // use ordinal_type and size_type everywhere (no index type)
-  typedef int ordinal_type;
+  typedef int    ordinal_type;
   typedef size_t size_type;
 
   template<typename ValueType>
@@ -145,35 +95,23 @@ namespace Intrepid2 {
   /// define constants
   class Parameters {
   public:
-    static constexpr unsigned int MaxOrder             = 10;
-    static constexpr unsigned int MaxIntegrationPoints = 1001;
-    static constexpr unsigned int MaxCubatureDegreeEdge= 20;
-    static constexpr unsigned int MaxCubatureDegreeTri = 20;
-    static constexpr unsigned int MaxCubatureDegreeTet = 20;
-    static constexpr unsigned int MaxCubatureDegreePyr = 11;
-    static constexpr unsigned int MaxDimension         = 3;
-    static constexpr unsigned int MaxNewton            = 15;
-    static constexpr unsigned int MaxDerivative        = 10;
+    static constexpr unsigned int MaxOrder             = 10;      /// The maximum reconstruction order.
+    static constexpr unsigned int MaxIntegrationPoints = 1001;    /// The maximum number of integration points for direct cubature rules.
+    static constexpr unsigned int MaxCubatureDegreeEdge= 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
+    static constexpr unsigned int MaxCubatureDegreeTri = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct triangle rule.
+    static constexpr unsigned int MaxCubatureDegreeTet = 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct tetrahedron rule.
+    static constexpr unsigned int MaxCubatureDegreePyr = 11;      /// The maximum degree of the polynomial that can be integrated exactly by a direct pyramid rule.
+    static constexpr unsigned int MaxDimension         = 3;       /// The maximum ambient space dimension.
+    static constexpr unsigned int MaxNewton            = 15;      /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
+    static constexpr unsigned int MaxDerivative        = 10;      /// Maximum order of derivatives allowed in intrepid.
 
     static const double Epsilon;
     static const double Threshold;
     static const double Tolerence;
   };
-  const double Parameters::Epsilon   =       epsilon<double>();
-  const double Parameters::Threshold =  10.0*epsilon<double>();
-  const double Parameters::Tolerence = 100.0*epsilon<double>();
-
-  /** \brief  Platform-dependent machine epsilon.
-   */
-  static const double INTREPID2_EPSILON = epsilon<double>();
-
-  /** \brief  Tolerance for various cell inclusion tests
-   */
-  static const double INTREPID2_THRESHOLD = 10.0 * INTREPID2_EPSILON;
-
-  /** \brief  General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
-   */
-  static const double INTREPID_TOL = 10.0 * INTREPID2_THRESHOLD;
+  const double Parameters::Epsilon   =       epsilon<double>();   /// Platform-dependent machine epsilon.
+  const double Parameters::Threshold =  10.0*epsilon<double>();   /// Tolerance for various cell inclusion tests
+  const double Parameters::Tolerence = 100.0*epsilon<double>();   /// General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
 
   // ===================================================================
   // Enum classes
@@ -483,38 +421,38 @@ namespace Intrepid2 {
              basisType == BASIS_FVD_MIMETIC );
   }
 
-  /** \enum  Intrepid2::ECompEngine
-      \brief Specifies how operators and functionals are computed internally
-      (COMP_MANUAL = native C++ implementation, COMP_BLAS = BLAS implementation, etc.).
-  */
-  enum ECompEngine {
-    COMP_CPP = 0,
-    COMP_BLAS,
-    COMP_ENGINE_MAX
-  };
+  // /** \enum  Intrepid2::ECompEngine
+  //     \brief Specifies how operators and functionals are computed internally
+  //     (COMP_MANUAL = native C++ implementation, COMP_BLAS = BLAS implementation, etc.).
+  // */
+  // enum ECompEngine {
+  //   COMP_CPP = 0,
+  //   COMP_BLAS,
+  //   COMP_ENGINE_MAX
+  // };
 
-  KOKKOS_INLINE_FUNCTION
-  const char* ECompEngineToString(const ECompEngine cEngine) {
-    switch(cEngine) {
-    case COMP_CPP:             return "Native C++";
-    case COMP_BLAS:            return "BLAS";
-    case COMP_ENGINE_MAX:      return "Max. Comp. Engine";
-    default:                   return "INVALID ECompEngine";
-    }
-    return "Error";
-  }
+  // KOKKOS_INLINE_FUNCTION
+  // const char* ECompEngineToString(const ECompEngine cEngine) {
+  //   switch(cEngine) {
+  //   case COMP_CPP:             return "Native C++";
+  //   case COMP_BLAS:            return "BLAS";
+  //   case COMP_ENGINE_MAX:      return "Max. Comp. Engine";
+  //   default:                   return "INVALID ECompEngine";
+  //   }
+  //   return "Error";
+  // }
 
 
-  /** \brief  Verifies validity of a computational engine enum
+  // /** \brief  Verifies validity of a computational engine enum
 
-      \param  compEngType    [in]  - enum of the computational engine
-      \return 1 if the argument is valid computational engine; 0 otherwise
-  */
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool isValidCompEngine(const ECompEngine compEngType){
-    //at the moment COMP_BLAS is not a valid CompEngine.
-    return (compEngType == COMP_CPP);
-  }
+  //     \param  compEngType    [in]  - enum of the computational engine
+  //     \return 1 if the argument is valid computational engine; 0 otherwise
+  // */
+  // KOKKOS_FORCEINLINE_FUNCTION
+  // bool isValidCompEngine(const ECompEngine compEngType){
+  //   //at the moment COMP_BLAS is not a valid CompEngine.
+  //   return (compEngType == COMP_CPP);
+  // }
 
 
 } //namespace Intrepid2

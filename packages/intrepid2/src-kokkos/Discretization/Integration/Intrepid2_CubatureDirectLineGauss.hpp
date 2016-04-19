@@ -57,14 +57,27 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureDirectLineGauss
       \brief Defines Gauss integration rules on a line.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class CubatureDirectLineGauss : public CubatureDirect<ExecSpaceType> {
+  public:
+    typedef typename CubatureDirect<ExecSpaceType>::value_type         value_type;
+    typedef typename CubatureDirect<ExecSpaceType>::CubatureDataStatic CubatureDataStatic;
+    typedef typename CubatureDirect<ExecSpaceType>::CubatureData       CubatureData;
+
   private:
+    // static data initialize upto 62 but we only support upto Parameters::MaxCubatureDegreeEdge
+    static constexpr int cubatureDataStaticSize=62;
 
     /** \brief Complete set of data defining line Gauss(-Legendre) rules.
      */
-    static const CubatureDataStatic cubatureDataStatic_[Parameters::MaxCubatureDegreeEdge+1]; // initialized once
-    /**/         CubatureData       cubatureData_      [Parameters::MaxCubatureDegreeEdge+1]; // copied to memory space
+    static const CubatureDataStatic cubatureDataStatic_[cubatureDataStaticSize]; // initialized once
+    /**/         CubatureData       cubatureData_; // copied to memory space
+
+    /** \brief Exposes cubature data.
+     */
+    CubatureData getCubatureData() const {
+      return cubatureData_;
+    }
     
   public:
     
@@ -75,23 +88,11 @@ namespace Intrepid2 {
     CubatureDirectLineGauss(const ordinal_type degree = 0);
     ~CubatureDirectLineGauss() = default;
     
-    
-    /** \brief Returns maximum cubature accuracy.
-     */
-    // never used
-    //ordinal_type getMaxAccuracy() const;
-    
     /** \brief Returns cubature name.
      */
-    const char* getName() const;
-
-    ///
-    /// CubatureDirectLineGauss specific
-    ///
-
-    /** \brief Exposes cubature data.
-     */
-    CubatureData getCubatureData() const;
+    const char* getName() const {
+      return "CubatureDirectLineGauss";
+    }
   };
   
 } // end namespace Intrepid2

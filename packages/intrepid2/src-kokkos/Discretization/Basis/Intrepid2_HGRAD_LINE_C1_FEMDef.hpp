@@ -51,8 +51,53 @@
 
 namespace Intrepid2 {
 
-  template<typename ExecSpaceType>
-  Basis_HGRAD_LINE_C1_FEM<ExecSpaceType>::
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HGRAD_LINE_C1_FEM<SpT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+    switch (opType) {
+    case OPERATOR_VALUE : {
+      const auto x = input();
+      
+      output(0) = (1.0 - x)/2.0;
+      output(1) = (1.0 + x)/2.0;
+      break;
+    }
+    case OPERATOR_GRAD : {
+      output(0, 0) = -0.5;
+      output(1, 0) =  0.5;
+      break;
+    }
+    case OPERATOR_MAX : {
+      const auto jend = output.dimension(1);
+      const auto iend = output.dimension(0);
+
+      for (auto j=0;j<jend;++j)
+        for (auto i=0;i<iend;++i)
+          output(i, j) = 0.0;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_GRAD &&
+                                opType != OPERATOR_MAX,
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::Serial::getValues) operator is not supported");
+      
+    }
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT>
+  Basis_HGRAD_LINE_C1_FEM<SpT>::
   Basis_HGRAD_LINE_C1_FEM() {
     this->basisCardinality_  = 2;
     this->basisDegree_       = 1;    
@@ -69,11 +114,11 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[]  = { 0, 0, 0, 1,
-                                     0, 1, 0, 1 };
+      ordinal_type tags[8]  = { 0, 0, 0, 1,
+                                0, 1, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm. 
-      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 8);
+      Kokkos::View<ordinal_type[8],SpT> tagView(tags);
       
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -88,16 +133,14 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties,
-           typename scratchValueType,     class ...scratchProperties>
+           typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HGRAD_LINE_C1_FEM<ExecSpaceType>::  
+  Basis_HGRAD_LINE_C1_FEM<SpT>::  
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HGRAD_Args(outputValues,
                                     inputPoints,
@@ -106,8 +149,9 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);  
@@ -116,46 +160,19 @@ namespace Intrepid2 {
     switch (operatorType) {
     
     case OPERATOR_VALUE: {
-      struct FunctorValue : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = _inputPoints(i0, 0);
-          
-          // outputValues is a rank-2 array with dimensions (basisCardinality_, npts)
-          _outputValues(0, i0) = (1.0 - x)/2.0;
-          _outputValues(1, i0) = (1.0 + x)/2.0;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorValue(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     case OPERATOR_GRAD:
     case OPERATOR_DIV:
     case OPERATOR_CURL:
     case OPERATOR_D1: {
-      struct FunctorGrad : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, npts, spaceDim)
-          _outputValues(0, i0, 0) = -0.5;
-          _outputValues(1, i0, 0) = 0.5;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorGrad(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
-    case OPERATOR_D2: {
-      struct FunctorGradD2 : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, npts, spaceDim)
-          _outputValues(0, i0, 0) = 0.0;
-          _outputValues(1, i0, 0) = 0.0;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorGradD2(outputValues, inputPoints) );
-      break;
-    }
+    case OPERATOR_D2: 
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:
@@ -164,13 +181,8 @@ namespace Intrepid2 {
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10: {
-      // to run this function on device, all utility functions should be available on devices
-      // we do not change this after all of these are working with panzer
-      const auto basisCardinality = this->basisCardinality_; 
-      const auto DkCardinality    = getDkCardinality(operatorType, this->basisCellTopology_.getDimension());
-      
-      Kokkos::parallel_for( policy, FunctorSetOperatorDkNull(outputValues, inputPoints,
-                                                             basisCardinality, DkCardinality) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     default: {
@@ -181,10 +193,10 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HGRAD_LINE_C1_FEM<ExecSpaceType>::  
+  Basis_HGRAD_LINE_C1_FEM<SpT>::  
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 
 #ifdef HAVE_INTREPID2_DEBUG

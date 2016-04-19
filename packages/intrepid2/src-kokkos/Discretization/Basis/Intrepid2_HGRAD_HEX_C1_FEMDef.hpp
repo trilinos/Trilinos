@@ -51,9 +51,164 @@
 
 namespace Intrepid2 {
 
+
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HGRAD_HEX_C1_FEM<SpT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+    switch (opType) {
+    case OPERATOR_VALUE : {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // output is a rank-2 array with dimensions (basisCardinality_, dim0)
+      output(0) = (1.0 - x)*(1.0 - y)*(1.0 - z)/8.0;
+      output(1) = (1.0 + x)*(1.0 - y)*(1.0 - z)/8.0;
+      output(2) = (1.0 + x)*(1.0 + y)*(1.0 - z)/8.0;
+      output(3) = (1.0 - x)*(1.0 + y)*(1.0 - z)/8.0;
+          
+      output(4) = (1.0 - x)*(1.0 - y)*(1.0 + z)/8.0;
+      output(5) = (1.0 + x)*(1.0 - y)*(1.0 + z)/8.0;
+      output(6) = (1.0 + x)*(1.0 + y)*(1.0 + z)/8.0;
+      output(7) = (1.0 - x)*(1.0 + y)*(1.0 + z)/8.0;        
+      break;
+    }
+    case OPERATOR_GRAD : {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = -(1.0 - y)*(1.0 - z)/8.0;
+      output(0, 1) = -(1.0 - x)*(1.0 - z)/8.0;
+      output(0, 2) = -(1.0 - x)*(1.0 - y)/8.0;
+          
+      output(1, 0) =  (1.0 - y)*(1.0 - z)/8.0;
+      output(1, 1) = -(1.0 + x)*(1.0 - z)/8.0;
+      output(1, 2) = -(1.0 + x)*(1.0 - y)/8.0;
+          
+      output(2, 0) =  (1.0 + y)*(1.0 - z)/8.0;
+      output(2, 1) =  (1.0 + x)*(1.0 - z)/8.0;
+      output(2, 2) = -(1.0 + x)*(1.0 + y)/8.0;
+          
+      output(3, 0) = -(1.0 + y)*(1.0 - z)/8.0;
+      output(3, 1) =  (1.0 - x)*(1.0 - z)/8.0;
+      output(3, 2) = -(1.0 - x)*(1.0 + y)/8.0;
+          
+      output(4, 0) = -(1.0 - y)*(1.0 + z)/8.0;
+      output(4, 1) = -(1.0 - x)*(1.0 + z)/8.0;
+      output(4, 2) =  (1.0 - x)*(1.0 - y)/8.0;
+          
+      output(5, 0) =  (1.0 - y)*(1.0 + z)/8.0;
+      output(5, 1) = -(1.0 + x)*(1.0 + z)/8.0;
+      output(5, 2) =  (1.0 + x)*(1.0 - y)/8.0;
+          
+      output(6, 0) =  (1.0 + y)*(1.0 + z)/8.0;
+      output(6, 1) =  (1.0 + x)*(1.0 + z)/8.0;
+      output(6, 2) =  (1.0 + x)*(1.0 + y)/8.0;
+          
+      output(7, 0) = -(1.0 + y)*(1.0 + z)/8.0;
+      output(7, 1) =  (1.0 - x)*(1.0 + z)/8.0;
+      output(7, 2) =  (1.0 - x)*(1.0 + y)/8.0;
+      break;
+    }
+    case OPERATOR_D2 : {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // output is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6) 
+      output(0, 0) =  0.0;                    // {2, 0, 0}
+      output(0, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
+      output(0, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
+      output(0, 3) =  0.0;                    // {0, 2, 0}
+      output(0, 4) =  (1.0 - x)/8.0;          // {0, 1, 1}
+      output(0, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(1, 0) =  0.0;                    // {2, 0, 0}
+      output(1, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
+      output(1, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
+      output(1, 3) =  0.0;                    // {0, 2, 0}
+      output(1, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
+      output(1, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(2, 0) =  0.0;                    // {2, 0, 0}
+      output(2, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
+      output(2, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
+      output(2, 3) =  0.0;                    // {0, 2, 0}
+      output(2, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
+      output(2, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(3, 0) =  0.0;                    // {2, 0, 0}
+      output(3, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
+      output(3, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
+      output(3, 3) =  0.0;                    // {0, 2, 0}
+      output(3, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
+      output(3, 5) =  0.0;                    // {0, 0, 2}
+          
+          
+      output(4, 0) =  0.0;                    // {2, 0, 0}
+      output(4, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
+      output(4, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
+      output(4, 3) =  0.0;                    // {0, 2, 0}
+      output(4, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
+      output(4, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(5, 0) =  0.0;                    // {2, 0, 0}
+      output(5, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
+      output(5, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
+      output(5, 3) =  0.0;                    // {0, 2, 0}
+      output(5, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
+      output(5, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(6, 0) =  0.0;                    // {2, 0, 0}
+      output(6, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
+      output(6, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
+      output(6, 3) =  0.0;                    // {0, 2, 0}
+      output(6, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
+      output(6, 5) =  0.0;                    // {0, 0, 2}
+          
+      output(7, 0) =  0.0;                    // {2, 0, 0}
+      output(7, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
+      output(7, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
+      output(7, 3) =  0.0;                    // {0, 2, 0}
+      output(7, 4) =  (1.0 - x)/8.0;          // {0, 1, 1}
+      output(7, 5) =  0.0;                    // {0, 0, 2}
+      break;
+    }
+    case OPERATOR_MAX : {
+      const auto jend = output.dimension(1);
+      const auto iend = output.dimension(0);
+
+      for (auto j=0;j<jend;++j)
+        for (auto i=0;i<iend;++i)
+          output(i, j) = 0.0;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_GRAD &&
+                                opType != OPERATOR_CURL &&
+                                opType != OPERATOR_D2 &&
+                                opType != OPERATOR_MAX,
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::Serial::getValues) operator is not supported");
+
+    }
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
   
-  template<typename ExecSpaceType>
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  template<typename SpT>
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   Basis_HGRAD_HEX_C1_FEM() {
     this->basisCardinality_  = 8;
     this->basisDegree_       = 1;    
@@ -70,17 +225,17 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[]  = { 0, 0, 0, 1,
-                                     0, 1, 0, 1,
-                                     0, 2, 0, 1,
-                                     0, 3, 0, 1,
-                                     0, 4, 0, 1,
-                                     0, 5, 0, 1,
-                                     0, 6, 0, 1,
-                                     0, 7, 0, 1 };
+      ordinal_type tags[32]  = { 0, 0, 0, 1,
+                                 0, 1, 0, 1,
+                                 0, 2, 0, 1,
+                                 0, 3, 0, 1,
+                                 0, 4, 0, 1,
+                                 0, 5, 0, 1,
+                                 0, 6, 0, 1,
+                                 0, 7, 0, 1 };
 
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 32);
+      Kokkos::View<ordinal_type[32],SpT> tagView(tags);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -95,16 +250,14 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties,
-           typename scratchValueType,     class ...scratchProperties>
+           typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HGRAD_Args(outputValues,
                                     inputPoints,
@@ -113,8 +266,9 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
@@ -123,73 +277,14 @@ namespace Intrepid2 {
     switch (operatorType) {
     
     case OPERATOR_VALUE: {
-      struct FunctorValue : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0, 0);
-          const auto y = inputPoints(i0, 1);
-          const auto z = inputPoints(i0, 2);
-
-          // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-          outputValues(0, i0) = (1.0 - x)*(1.0 - y)*(1.0 - z)/8.0;
-          outputValues(1, i0) = (1.0 + x)*(1.0 - y)*(1.0 - z)/8.0;
-          outputValues(2, i0) = (1.0 + x)*(1.0 + y)*(1.0 - z)/8.0;
-          outputValues(3, i0) = (1.0 - x)*(1.0 + y)*(1.0 - z)/8.0;
-          
-          outputValues(4, i0) = (1.0 - x)*(1.0 - y)*(1.0 + z)/8.0;
-          outputValues(5, i0) = (1.0 + x)*(1.0 - y)*(1.0 + z)/8.0;
-          outputValues(6, i0) = (1.0 + x)*(1.0 + y)*(1.0 + z)/8.0;
-          outputValues(7, i0) = (1.0 - x)*(1.0 + y)*(1.0 + z)/8.0;        
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorValue(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }      
     case OPERATOR_GRAD:
     case OPERATOR_D1: {
-
-      struct FunctorGrad : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0,0);
-          const auto y = inputPoints(i0,1);
-          const auto z = inputPoints(i0,2);
-
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-          outputValues(0, i0, 0) = -(1.0 - y)*(1.0 - z)/8.0;
-          outputValues(0, i0, 1) = -(1.0 - x)*(1.0 - z)/8.0;
-          outputValues(0, i0, 2) = -(1.0 - x)*(1.0 - y)/8.0;
-          
-          outputValues(1, i0, 0) =  (1.0 - y)*(1.0 - z)/8.0;
-          outputValues(1, i0, 1) = -(1.0 + x)*(1.0 - z)/8.0;
-          outputValues(1, i0, 2) = -(1.0 + x)*(1.0 - y)/8.0;
-          
-          outputValues(2, i0, 0) =  (1.0 + y)*(1.0 - z)/8.0;
-          outputValues(2, i0, 1) =  (1.0 + x)*(1.0 - z)/8.0;
-          outputValues(2, i0, 2) = -(1.0 + x)*(1.0 + y)/8.0;
-          
-          outputValues(3, i0, 0) = -(1.0 + y)*(1.0 - z)/8.0;
-          outputValues(3, i0, 1) =  (1.0 - x)*(1.0 - z)/8.0;
-          outputValues(3, i0, 2) = -(1.0 - x)*(1.0 + y)/8.0;
-          
-          outputValues(4, i0, 0) = -(1.0 - y)*(1.0 + z)/8.0;
-          outputValues(4, i0, 1) = -(1.0 - x)*(1.0 + z)/8.0;
-          outputValues(4, i0, 2) =  (1.0 - x)*(1.0 - y)/8.0;
-          
-          outputValues(5, i0, 0) =  (1.0 - y)*(1.0 + z)/8.0;
-          outputValues(5, i0, 1) = -(1.0 + x)*(1.0 + z)/8.0;
-          outputValues(5, i0, 2) =  (1.0 + x)*(1.0 - y)/8.0;
-          
-          outputValues(6, i0, 0) =  (1.0 + y)*(1.0 + z)/8.0;
-          outputValues(6, i0, 1) =  (1.0 + x)*(1.0 + z)/8.0;
-          outputValues(6, i0, 2) =  (1.0 + x)*(1.0 + y)/8.0;
-          
-          outputValues(7, i0, 0) = -(1.0 + y)*(1.0 + z)/8.0;
-          outputValues(7, i0, 1) =  (1.0 - x)*(1.0 + z)/8.0;
-          outputValues(7, i0, 2) =  (1.0 - x)*(1.0 + y)/8.0;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorGrad(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     case OPERATOR_CURL: {
@@ -205,74 +300,8 @@ namespace Intrepid2 {
     }
 
     case OPERATOR_D2:
-      struct FunctorGradD2 : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = inputPoints(i0,0);
-          const auto y = inputPoints(i0,1);
-          const auto Z = inputPoints(i0,2);
-
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6) 
-          outputValues(0, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(0, i0, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
-          outputValues(0, i0, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
-          outputValues(0, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(0, i0, 4) =  (1.0 - x)/8.0;          // {0, 1, 1}
-          outputValues(0, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(1, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(1, i0, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
-          outputValues(1, i0, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
-          outputValues(1, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(1, i0, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
-          outputValues(1, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(2, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(2, i0, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
-          outputValues(2, i0, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
-          outputValues(2, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(2, i0, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
-          outputValues(2, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(3, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(3, i0, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
-          outputValues(3, i0, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
-          outputValues(3, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(3, i0, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
-          outputValues(3, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          
-          outputValues(4, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(4, i0, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
-          outputValues(4, i0, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
-          outputValues(4, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(4, i0, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
-          outputValues(4, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(5, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(5, i0, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
-          outputValues(5, i0, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
-          outputValues(5, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(5, i0, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
-          outputValues(5, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(6, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(6, i0, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
-          outputValues(6, i0, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
-          outputValues(6, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(6, i0, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
-          outputValues(6, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-          outputValues(7, i0, 0) =  0.0;                    // {2, 0, 0}
-          outputValues(7, i0, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
-          outputValues(7, i0, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
-          outputValues(7, i0, 3) =  0.0;                    // {0, 2, 0}
-          outputValues(7, i0, 4) =  (1.0 - x)/8.0;          // {0, 1, 1}
-          outputValues(7, i0, 5) =  0.0;                    // {0, 0, 2}
-          
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorGradD2(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
       
     case OPERATOR_D3:
@@ -283,28 +312,23 @@ namespace Intrepid2 {
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10: {
-      // to run this function on device, all utility functions should be available on devices
-      // we do not change this after all of these are working with panzer
-      const auto basisCardinality = this->basisCardinality_;
-      const auto DkCardinality    = getDkCardinality(operatorType, this->basisCellTopology_.getDimension());
-
-      Kokkos::parallel_for( policy, FunctorSetOperatorDkNull(outputValues, inputPoints,
-                                                             basisCardinality, DkCardinality) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                                  ">>> ERROR (Basis_HGRAD_HEX_C1_FEM): Invalid operator type");
+                                    ">>> ERROR (Basis_HGRAD_HEX_C1_FEM): Invalid operator type");
     }
     }
   }
 
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>::
+  Basis_HGRAD_HEX_C1_FEM<SpT>::
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.

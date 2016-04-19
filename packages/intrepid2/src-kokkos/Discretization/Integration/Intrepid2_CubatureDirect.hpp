@@ -53,86 +53,142 @@
 #include "Intrepid2_Cubature.hpp"
 
 namespace Intrepid2 {
-  
+
   /** \class Intrepid2::CubatureDirect
       \brief Defines direct cubature (integration) rules in Intrepid.
-      
+
       Cubature template (rule) consists of cubature points and cubature weights.
       Intrepid provides a small collection of frequently used cubature rule templates
       for FEM reconstructions on simplices (edge, tri, tet) and pyramid cells.
-      
+
       For quad, hex, and triprism rules, see tensor-product rules
       defined in the class CubatureTensor, and its derived classes.
-      
+
       Cubature rules for simplices and the pyramid are stored in the
       <var>cubature_data_</var> array.
-      
+
       All templates are defined on a reference cell and can be mapped to physical space
       cells by the methods available in the MultiCell class.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class CubatureDirect : public Cubature<ExecSpaceType> {
   protected:
-    
+    typedef double value_type;
+
+    // data is defined on the host space and this is static
+    struct CubatureDataStatic {
+
+      /** \brief  Number of cubature points stored in the template.
+       */
+      ordinal_type numPoints_;
+
+      /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
+       */
+      double points_[Parameters::MaxIntegrationPoints][Parameters::MaxDimension];
+      
+      /** \brief  Array with the associated cubature weights.
+       */
+      double weights_[Parameters::MaxIntegrationPoints];
+    };
+
+    // data is defined on exec space and deep-copied when an object is created
+    struct CubatureData {
+
+      /** \brief  Number of cubature points stored in the template.
+       */
+      ordinal_type numPoints_;
+
+      /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
+       */
+      Kokkos::View<value_type[Parameters::MaxIntegrationPoints][Parameters::MaxDimension],ExecSpaceType> points_;
+
+      /** \brief  Array with the associated cubature weights.
+       */
+      Kokkos::View<value_type[Parameters::MaxIntegrationPoints],ExecSpaceType> weights_;
+    };
+
     /** \brief The degree of polynomials that are integrated
         exactly by this cubature rule.
     */
     ordinal_type degree_;
-    
+
     /** \brief Dimension of integration domain.
      */
     ordinal_type dimension_;
 
-
-    /** \brief Returns cubature points and weights
-        
-        \param cubPoints       [out]     - Array containing the cubature points.
-        \param cubWeights      [out]     - Array of corresponding cubature weights.
-        \param cubData          [in]     - Cubuture data object
-    */
+    /** \brief Returns cubature data
+     */
     CubatureData
-    getCubatureData(const ordinal_type degree) const {
+    getCubatureData() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (CubatureDirect::getCubatureData): this method should be over-riden by derived classes.");
     }
 
     /** \brief Returns cubature points and weights
-        
+
         \param cubPoints       [out]     - Array containing the cubature points.
         \param cubWeights      [out]     - Array of corresponding cubature weights.
         \param cubData          [in]     - Cubuture data object
     */
     template<typename cubPointValueType,  class ...cubPointProperties,
              typename cubWeightValueType, class ...cubWeightProperties>
-    void 
+    void
     getCubatureFromData( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                          Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-                         const CubatureData  cubData) const;
-    
+                         const CubatureData cubData) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      // check size of cubPoints and cubWeights
+      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 2, std::invalid_argument,
+                                    ">>> ERROR (CubatureDirect): cubPoints must be rank 2." );
+
+      INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 1, std::invalid_argument,
+                                    ">>> ERROR (CubatureDirect): cubPoints must be rank 1." );
+
+      INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
+                                    cubPoints.dimension(1)  < this->getDimension(), std::out_of_range,
+                                    ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature points.");
+
+      INTREPID2_TEST_FOR_EXCEPTION( cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
+                                    ">>> ERROR (CubatureDirect): Insufficient space allocated for cubature weights.");
+#endif
+      // need subview here
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+
+      const range_type pointRange(0, this->getNumPoints());
+      const range_type dimRange  (0, this->getDimension());
+
+      Kokkos::deep_copy(Kokkos::subdynrankview(cubPoints,        pointRange, dimRange),
+                        Kokkos::subdynrankview(cubData.points_,  pointRange, dimRange));
+      Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights,       pointRange),
+                        Kokkos::subdynrankview(cubData.weights_, pointRange));
+    }
+
   public:
 
-    CubatureDirect() = default;    
-    ~CubatureDirect() = default; 
+    CubatureDirect() = default;
+    ~CubatureDirect() = default;
 
     //
     // Cubature public functions
     //
 
     /** \brief Returns cubature points and weights
-        
+
         \param cubPoints       [out]     - Array containing the cubature points.
         \param cubWeights      [out]     - Array of corresponding cubature weights.
     */
     template<typename cubPointValueType,  class ...cubPointProperties,
              typename cubWeightValueType, class ...cubWeightProperties>
-    void 
+    void
     getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
-    
-    
+                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+      getCubatureFromData(cubPoints, cubWeights, getCubatureData());
+    }
+
+
     /** \brief Returns cubature points and weights.
-               Method for physical space cubature, throws an exception.
-        
+        Method for physical space cubature, throws an exception.
+
         \param cubPoints             [out]        - Array containing the cubature points.
         \param cubWeights            [out]        - Array of corresponding cubature weights.
         \param cellCoords             [in]        - Array of cell coordinates
@@ -143,39 +199,39 @@ namespace Intrepid2 {
     void
     getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                  Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-                 Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const;
-    
+                 Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (CubatureDirect::getCubature): Cubature defined in reference space calling method for physical space cubature.");
+    }
+
     /** \brief Returns the number of cubature points.
      */
-    ordinal_type getNumPoints() const;
-    
+    ordinal_type getNumPoints() const {
+      return getCubatureData().numPoints_;
+    }
+
     /** \brief Returns dimension of integration domain.
      */
-    ordinal_type getDimension() const;
+    ordinal_type getDimension() const {
+      return dimension_;
+    }
 
     /** \brief Returns cubature name.
      */
-    const char* getName() const;
-
-    //
-    // CubatureDirect specific functions
-    //
+    const char* getName() const {
+      return "CubatureDirect";
+    }
 
     /** \brief Returns max. degree of polynomials that are integrated exactly.
         The return vector has size 1.
     */
-    ordinal_type getAccuracy() const;
-    
-    /** \brief Returns maximum cubature accuracy.
-     */
-    // never used 
-    // ordinal_type getMaxAccuracy() const;
-  };  
-  
+    ordinal_type getAccuracy() const {
+      return degree_;
+    }
+
+  };
+
 } // end namespace Intrepid2
 
-
-// include templated definitions
-#include <Intrepid2_CubatureDirectDef.hpp>
 
 #endif
