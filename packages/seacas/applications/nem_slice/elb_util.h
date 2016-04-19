@@ -38,6 +38,7 @@
 
 #include <cstdio>
 #include <vector>
+#include <sys/types.h>
 
 /* Function prototypes */
 extern int token_compare(char *      token, /* The input character string */
