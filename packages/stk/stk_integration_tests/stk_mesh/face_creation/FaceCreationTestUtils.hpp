@@ -81,7 +81,7 @@ inline void expect_all_sides_exist_for_elem_side(const stk::mesh::BulkData& bulk
 inline void read_and_decompose_mesh(const std::string &filename, stk::mesh::BulkData &bulkData)
 {
     if(bulkData.parallel_rank() == 0)
-        std::cerr << "\t***** reading " << filename << " *****" << std::endl;
+        std::cout << "\t***** reading " << filename << " *****" << std::endl;
     stk::unit_test_util::read_from_serial_file_and_decompose(filename, bulkData, "cyclic");
 }
 
@@ -152,9 +152,7 @@ public:
     {
         for(const SideTestUtil::TestCase& testCase : testCases)
             if(stk::parallel_machine_size(communicator) <= testCase.maxNumProcs)
-            {
                 test_one_case(testCase, auraOption);
-            }
     }
 protected:
     virtual void test_one_case(const SideTestUtil::TestCase &testCase,

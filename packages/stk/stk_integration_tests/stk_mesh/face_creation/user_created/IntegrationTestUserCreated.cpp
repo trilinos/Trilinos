@@ -149,7 +149,7 @@ protected:
         catch(...)
         {
             allOk = false;
-            std::cerr << "Reading " << testCase.filename << " failed.\n";
+            std::cout << "Reading " << testCase.filename << " failed.\n";
         }
 
         int numericAllOk = allOk;
