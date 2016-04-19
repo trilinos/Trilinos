@@ -95,10 +95,10 @@ int main(int argc, char *argv[]) {
 
 
   int errorFlag = 0;
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 49;
-#ifndef HAVE_INTREPID_DEBUG_INF_CHECK
+#ifndef HAVE_INTREPID2_DEBUG_INF_CHECK
   endThrowNumber = beginThrowNumber + 44;
 #endif
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> a_10_2_3(10, 2, 3);
     FieldContainer<double> a_10_2_2_3(10, 2, 2, 3);
 
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
 
     *outStream << "-> vector norm with multidimensional arrays:\n";
 
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> b_10_15_3(10, 15, 3);
     
    
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
 
     *outStream << "-> inverse with multidimensional arrays:\n";
 
@@ -613,7 +613,7 @@ int main(int argc, char *argv[]) {
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-#ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID2_DEBUG
   if (Teuchos::TestForException_getThrowNumber() != endThrowNumber)
     errorFlag++;
 #endif

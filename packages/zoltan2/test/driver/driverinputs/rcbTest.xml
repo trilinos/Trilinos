@@ -58,10 +58,12 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
+     <ParameterList name="Metrics">
       <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+        <ParameterList name="maximum imbalance">
+          <Parameter name="lower" type="double" value="0.99"/>
+          <Parameter name="upper" type="double" value="1.4"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
     
@@ -81,10 +83,12 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
+     <ParameterList name="Metrics">
       <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+        <ParameterList name="maximum imbalance">
+          <Parameter name="lower" type="double" value="0.99"/>
+          <Parameter name="upper" type="double" value="1.4"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -106,8 +110,10 @@
     
     <ParameterList name="Metrics">
       <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+        <ParameterList name="maximum imbalance">
+          <Parameter name="lower" type="double" value="0.99"/>
+          <Parameter name="upper" type="double" value="1.4"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
     
@@ -116,7 +122,7 @@
   <ParameterList name="test4">
     <Parameter name="kind" type="string" value="partitioning"/>
     <ParameterList name="InputAdapterParameters">
-      <Parameter name="data type" type="string" value="epetra_multivector"/>
+      <Parameter name="data type" type="string" value="tpetra_multivector"/>
       <Parameter name="vector_dimension" type="int" value="2"/>
       <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
     </ParameterList>
@@ -127,11 +133,13 @@
       <Parameter name="imbalance_tolerance" type="double" value="1.1"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
-    
+  
     <ParameterList name="Metrics">
       <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
+        <ParameterList name="maximum imbalance">
+          <Parameter name="lower" type="double" value="0.99"/>
+          <Parameter name="upper" type="double" value="1.4"/>
+        </ParameterList>
       </ParameterList>
     </ParameterList>
     

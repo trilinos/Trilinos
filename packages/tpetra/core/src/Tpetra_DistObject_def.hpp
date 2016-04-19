@@ -414,6 +414,8 @@ namespace Tpetra {
               Distributor &distor,
               ReverseOption revOp)
   {
+    const bool debug = false;
+
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
@@ -492,8 +494,16 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
-        numExportPacketsPerLID_old_.resize (exportLIDs.size ());
-        numImportPacketsPerLID_old_.resize (remoteLIDs.size ());
+        numExportPacketsPerLID_ =
+          decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
+                                              exportLIDs.size ());
+        host_numExportPacketsPerLID_ =
+          Kokkos::create_mirror_view (numExportPacketsPerLID_);
+        numImportPacketsPerLID_ =
+          decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
+                                              remoteLIDs.size ());
+        host_numImportPacketsPerLID_ =
+          Kokkos::create_mirror_view (numImportPacketsPerLID_);
       }
 
       {
@@ -505,7 +515,8 @@ namespace Tpetra {
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
-        packAndPrepare (src, exportLIDs, exports_old_, numExportPacketsPerLID_old_ (),
+        Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
+        packAndPrepare (src, exportLIDs, exports_old_, numExportPacketsPerLID,
                         constantNumPackets, distor);
       }
     }
@@ -526,8 +537,36 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (static_cast<size_t> (imports_old_.size()) != rbufLen) {
-          imports_old_.resize (rbufLen);
+
+        if (debug) {
+          std::ostringstream os;
+          os << "*** doTransferOld: Const # packets: imports_.size() = "
+             << imports_.size () << ", rbufLen = " << rbufLen << std::endl;
+          std::cerr << os.str ();
+        }
+
+        if (static_cast<size_t> (imports_.size ()) != rbufLen ||
+            host_imports_.size () != imports_.size ()) {
+
+          if (debug) {
+            std::ostringstream os;
+            os << "*** doTransferOld: realloc imports_ from " <<
+              imports_.size () << " to " << rbufLen << std::endl;
+            std::cerr << os.str ();
+          }
+          execution_space::fence ();
+          Kokkos::realloc (imports_, rbufLen);
+          execution_space::fence ();
+
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (static_cast<size_t> (imports_.size ()) != rbufLen, std::logic_error,
+             "Kokkos::realloc failed: imports_.size() = " << imports_.size () <<
+             " != " << rbufLen << ".");
+
+          // This is doTransferOld, so we need the host version of
+          // imports_.  We'll wrap its data in a Teuchos::ArrayView
+          // and use the backwards compatibility interface.
+          host_imports_ = Kokkos::create_mirror_view (imports_);
         }
       }
 
@@ -554,23 +593,58 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doReversePostsAndWaits (numExportPacketsPerLID_old_().getConst(),
+            Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+            distor.doReversePostsAndWaits (numExportPacketsPerLID.getConst (),
                                            1,
-                                           numImportPacketsPerLID_old_());
+                                           numImportPacketsPerLID);
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID_old_.size(); ++i) {
-              totalImportPackets += numImportPacketsPerLID_old_[i];
+            for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
+              totalImportPackets += numImportPacketsPerLID[i];
             }
-            imports_old_.resize(totalImportPackets);
+
+            if (debug) {
+              std::ostringstream os;
+              os << "*** doTransferOld: imports_.size() = "
+                 << imports_.size () << ", totalImportPackets = "
+                 << totalImportPackets << std::endl;
+              std::cerr << os.str ();
+            }
+
+            if (static_cast<size_t> (imports_.size ()) != totalImportPackets ||
+                host_imports_.size () != imports_.size ()) {
+              if (debug) {
+                std::ostringstream os;
+                os << "*** doTransferOld: realloc imports_ from " <<
+                  imports_.size () << " to " << totalImportPackets << std::endl;
+                std::cerr << os.str ();
+              }
+              execution_space::fence ();
+              Kokkos::realloc (imports_, totalImportPackets);
+              execution_space::fence ();
+              TEUCHOS_TEST_FOR_EXCEPTION
+                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
+                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
+                 << imports_.size () << " != " << totalImportPackets << ".");
+
+              // This is doTransferOld, so we need the host version of
+              // imports_.  We'll wrap its data in a Teuchos::ArrayView
+              // and use the backwards compatibility interface.
+              host_imports_ = Kokkos::create_mirror_view (imports_);
+            }
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doReversePostsAndWaits (exports_old_().getConst(),
-                                           numExportPacketsPerLID_old_(),
-                                           imports_old_(),
-                                           numImportPacketsPerLID_old_());
+                                           numExportPacketsPerLID,
+                                           hostImports,
+                                           numImportPacketsPerLID);
           }
           else {
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doReversePostsAndWaits (exports_old_ ().getConst (),
                                            constantNumPackets,
-                                           imports_old_ ());
+                                           hostImports);
           }
         }
         else { // revOp == DoForward
@@ -578,29 +652,67 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doPostsAndWaits (numExportPacketsPerLID_old_().getConst(), 1,
-                                    numImportPacketsPerLID_old_());
+            Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+            distor.doPostsAndWaits (numExportPacketsPerLID.getConst (), 1,
+                                    numImportPacketsPerLID);
             size_t totalImportPackets = 0;
-            for (Array_size_type i = 0; i < numImportPacketsPerLID_old_.size(); ++i) {
-              totalImportPackets += numImportPacketsPerLID_old_[i];
+            for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
+              totalImportPackets += numImportPacketsPerLID[i];
             }
-            imports_old_.resize(totalImportPackets);
+
+            if (debug) {
+              std::ostringstream os;
+              os << "*** doTransferOld: imports_.size() = "
+                 << imports_.size () << ", totalImportPackets = "
+                 << totalImportPackets << std::endl;
+              std::cerr << os.str ();
+            }
+
+            if (static_cast<size_t> (imports_.size ()) != totalImportPackets ||
+                host_imports_.size () != imports_.size ()) {
+              if (debug) {
+                std::ostringstream os;
+                os << "*** doTransferOld: realloc imports_ from " <<
+                  imports_.size () << " to " << totalImportPackets << std::endl;
+                std::cerr << os.str ();
+              }
+              execution_space::fence ();
+              Kokkos::realloc (imports_, totalImportPackets);
+              execution_space::fence ();
+              TEUCHOS_TEST_FOR_EXCEPTION
+                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
+                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
+                 << imports_.size () << " != " << totalImportPackets << ".");
+
+              // This is doTransferOld, so we need the host version of
+              // imports_.  We'll wrap its data in a Teuchos::ArrayView
+              // and use the backwards compatibility interface.
+              host_imports_ = Kokkos::create_mirror_view (imports_);
+            }
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doPostsAndWaits (exports_old_().getConst(),
-                                    numExportPacketsPerLID_old_(),
-                                    imports_old_(),
-                                    numImportPacketsPerLID_old_());
+                                    numExportPacketsPerLID,
+                                    hostImports,
+                                    numImportPacketsPerLID);
           }
           else {
+            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                         host_imports_.dimension_0 ());
             distor.doPostsAndWaits (exports_old_ ().getConst (),
                                     constantNumPackets,
-                                    imports_old_ ());
+                                    hostImports);
           }
         }
         {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-          unpackAndCombine (remoteLIDs, imports_old_(), numImportPacketsPerLID_old_(),
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+          Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
+                                                       host_imports_.dimension_0 ());
+          unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
                             constantNumPackets, distor, CM);
         }
       }
@@ -626,6 +738,14 @@ namespace Tpetra {
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
+    const bool debug = false;
+
+    if (debug) {
+      std::ostringstream os;
+      os << ">>> DistObject::doTransferNew: remoteLIDs_.size() = "
+         << remoteLIDs_.size () << std::endl;
+      std::cerr << os.str ();
+    }
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
@@ -653,8 +773,21 @@ namespace Tpetra {
       getKokkosViewDeepCopy<execution_space> (permuteFromLIDs_);
     lo_const_view_type remoteLIDs =
       getKokkosViewDeepCopy<execution_space> (remoteLIDs_);
+
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (permuteFromLIDs.size ()) !=
+         static_cast<size_t> (permuteFromLIDs_.size ()), std::logic_error,
+         "permuteFromLIDs.size() = " << permuteFromLIDs.size () <<
+         " != permuteFromLIDs_.size() = " << permuteFromLIDs_.size () << ".");
+    }
+
     lo_const_view_type exportLIDs =
       getKokkosViewDeepCopy<execution_space> (exportLIDs_);
+
+    if (debug) {
+      std::cerr << ">>> 1. checkSizes" << std::endl;
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! checkSizes (src), std::invalid_argument,
@@ -678,6 +811,10 @@ namespace Tpetra {
         // want to get rid of the old ones.
         rwo = KokkosClassic::WriteOnly;
       }
+    }
+
+    if (debug) {
+      std::cerr << ">>> 2. createViews" << std::endl;
     }
 
     // FIXME (mfh 17 Feb 2014) We're assuming that MPI can read device
@@ -715,6 +852,10 @@ namespace Tpetra {
     // transfers the necessary data.
     this->createViewsNonConst (rwo);
 
+    if (debug) {
+      std::cerr << ">>> 3. copyAndPermuteNew" << std::endl;
+    }
+
     if (numSameIDs + permuteToLIDs.size()) {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
@@ -744,25 +885,58 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
+        if (debug) {
+          std::cerr << ">>> 4. Allocate num{Ex,Im}portPacketsPerLID" << std::endl;
+        }
+
         // FIXME (mfh 17 Feb 2014) Don't "realloc" unless you really
         // need to.  That will avoid a bit of time for reinitializing
         // the Views' data.
-        Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
-        Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+        execution_space::fence ();
+        Kokkos::realloc (numExportPacketsPerLID_, exportLIDs.size ());
+        execution_space::fence ();
+        host_numExportPacketsPerLID_ = Kokkos::create_mirror_view (numExportPacketsPerLID_);
+        execution_space::fence ();
+        Kokkos::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+        execution_space::fence ();
+        host_numImportPacketsPerLID_ = Kokkos::create_mirror_view (numImportPacketsPerLID_);
+      }
+
+      if (debug) {
+        std::cerr << ">>> 5. packAndPrepareNew" << std::endl;
       }
 
       {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+        if (debug) {
+          std::ostringstream os;
+          const int myRank = this->getMap ()->getComm ()->getRank ();
+          os << ">>> (Proc " << myRank << ") 5.0. Before packAndPrepareNew, "
+            "exports_.size()=" << exports_.size () << std::endl;
+          std::cerr << os.str ();
+        }
         // Ask the source to pack data.  Also ask it whether there are a
         // constant number of packets per element (constantNumPackets is
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
         packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
-                        constantNumPackets, distor);
+                           constantNumPackets, distor);
+        if (debug) {
+          std::ostringstream os;
+          const int myRank = this->getMap ()->getComm ()->getRank ();
+          os << ">>> (Proc " << myRank << ") 5.0. After packAndPrepareNew, "
+            "exports_.size()=" << exports_.size () << std::endl;
+          std::cerr << os.str ();
+        }
       }
+    }
+
+    if (debug) {
+      std::cerr << ">>> 6. releaseViews" << std::endl;
     }
 
     // FIXME (mfh 17 Feb 2014) See comments above; there is no need to
@@ -779,29 +953,68 @@ namespace Tpetra {
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
       if (constantNumPackets != 0) {
+        if (debug) {
+          std::cerr << ">>> 7. Realloc imports_" << std::endl;
+        }
+
         // There are a constant number of packets per element.  We
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-        if (static_cast<size_t> (imports_.size()) != rbufLen) {
-          Kokkos::Compat::realloc (imports_, rbufLen);
+
+        if (debug) {
+          std::ostringstream os;
+          os << "*** doTransferNew: imports_.size() = " << imports_.size ()
+             << ", rbufLen = " << rbufLen << " = " << remoteLIDs.size ()
+             << " * " << constantNumPackets << std::endl;
+          std::cerr << os.str ();
+        }
+
+        if (static_cast<size_t> (imports_.dimension_0 ()) != rbufLen) {
+          if (debug) {
+            std::ostringstream os;
+            os << "*** doTransferNew: realloc imports_ from " <<
+              imports_.size () << " to " << rbufLen << std::endl;
+            std::cerr << os.str ();
+          }
+          // FIXME (mfh 28 Mar 2016) This helps fix #227.
+          execution_space::fence ();
+          Kokkos::realloc (imports_, rbufLen);
+          execution_space::fence ();
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (static_cast<size_t> (imports_.size ()) != rbufLen,
+             std::logic_error, "Kokkos::realloc failed: imports_.size() = "
+             << imports_.size () << " != " << rbufLen << ".");
+
+          // This is doTransferNew, so we don't need to allocate the
+          // host version of imports_.
         }
       }
 
-      // FIXME (mfh 17 Feb 2014) Why do we need to create mirror
-      // views?  Furthermore, if we do need to do this, we should only
-      // do it _once_, since the arrays are constant (they come from
-      // the Import / Export object, which is constant).
+      // FIXME (mfh 17 Feb 2014) Why do we need mirror views?
+      // Furthermore, if we do need to do this, we should only do it
+      // _once_, since the arrays are constant (they come from the
+      // Import / Export object, which is constant).
 
-      // Create mirror views of [import|export]PacketsPerLID
-      typename Kokkos::View<size_t*,execution_space>::HostMirror host_numExportPacketsPerLID =
-        Kokkos::create_mirror_view (numExportPacketsPerLID_);
-      typename Kokkos::View<size_t*,execution_space>::HostMirror host_numImportPacketsPerLID =
-        Kokkos::create_mirror_view (numImportPacketsPerLID_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (host_numExportPacketsPerLID_.dimension_0 () !=
+         numExportPacketsPerLID_.dimension_0 (), std::logic_error, "Tpetra::"
+         "DistObject::doTransferNew: host_numExportPacketsPerLID_.dimension_0()"
+         " = " << host_numExportPacketsPerLID_.dimension_0 () << " != "
+         "numExportPacketsPerLID_.dimension_0() = " <<
+         numExportPacketsPerLID_.dimension_0() << ".  Please report this bug "
+         "to the Tpetra developers.");
+
+      // FIXME (mfh 28 Mar 2016) This helps fix #227.
+      execution_space::fence ();
+
+      if (debug) {
+        std::cerr << ">>> 8. Copy numExportPacketsPerLID to host" << std::endl;
+      }
 
       // Copy numExportPacketsPerLID to host
-      Kokkos::deep_copy (host_numExportPacketsPerLID, numExportPacketsPerLID_);
+      Kokkos::deep_copy (host_numExportPacketsPerLID_, numExportPacketsPerLID_);
 
       // Do we need to do communication (via doPostsAndWaits)?
       bool needCommunication = true;
@@ -829,62 +1042,170 @@ namespace Tpetra {
       // device memory (which doesn't even require UVM).
 
       if (needCommunication) {
+        if (debug) {
+          std::cerr << ">>> 9. Communicate" << std::endl;
+        }
+
         if (revOp == DoReverse) {
+          if (debug) {
+            std::cerr << ">>> 9.0. Reverse mode" << std::endl;
+          }
+
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doReversePostsAndWaits (create_const_view (host_numExportPacketsPerLID),
+            if (debug) {
+              std::cerr << ">>> 9.1. Variable # packets / LID: first comm" << std::endl;
+            }
+            distor.doReversePostsAndWaits (create_const_view (host_numExportPacketsPerLID_),
                                            1,
-                                           host_numImportPacketsPerLID);
+                                           host_numImportPacketsPerLID_);
             size_t totalImportPackets = 0;
             // FIXME (mfh 17 Feb 2014) This would be a good place for
             // a Kokkos reduction.  numImportPacketsPerLID_ has as
             // many entries as the number of LIDs on the calling
             // process.
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID[i];
+              totalImportPackets += host_numImportPacketsPerLID_[i];
             }
-            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
-            Kokkos::Compat::realloc (imports_, totalImportPackets);
+
+            if (debug) {
+              std::cerr << ">>> 9.2. Realloc" << std::endl;
+            }
+
+            if (debug) {
+              std::ostringstream os;
+              os << "*** doTransferNew: imports_.size() = "
+                 << imports_.size () << ", totalImportPackets = "
+                 << totalImportPackets << std::endl;
+              std::cerr << os.str ();
+            }
+
+            if (static_cast<size_t> (imports_.size ()) != totalImportPackets) {
+              if (debug) {
+                std::ostringstream os;
+                os << "*** doTransferNew: realloc imports_ from " <<
+                  imports_.size () << " to " << totalImportPackets << std::endl;
+                std::cerr << os.str ();
+              }
+
+              execution_space::fence ();
+              Kokkos::realloc (imports_, totalImportPackets);
+              execution_space::fence ();
+              TEUCHOS_TEST_FOR_EXCEPTION
+                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
+                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
+                 << imports_.size () << " != " << totalImportPackets << ".");
+
+              // This is doTransferNew, so we don't need to allocate the
+              // host version of imports_.
+            }
+
+            if (debug) {
+              std::cerr << ">>> 9.3. Second comm" << std::endl;
+            }
+
             distor.doReversePostsAndWaits (create_const_view (exports_),
-                                           getArrayView (host_numExportPacketsPerLID),
+                                           getArrayView (host_numExportPacketsPerLID_),
                                            imports_,
-                                           getArrayView (host_numImportPacketsPerLID));
+                                           getArrayView (host_numImportPacketsPerLID_));
           }
           else {
+            if (debug) {
+              const int myRank = this->getMap ()->getComm ()->getRank ();
+
+              std::ostringstream os;
+              os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
+                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                 << imports_.size () << std::endl;
+              std::cerr << os.str ();
+            }
             distor.doReversePostsAndWaits (create_const_view (exports_),
                                            constantNumPackets,
                                            imports_);
           }
         }
         else { // revOp == DoForward
+          if (debug) {
+            std::cerr << ">>> 9.0. Forward mode" << std::endl;
+          }
+
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID), 1,
-                                    host_numImportPacketsPerLID);
+            if (debug) {
+              std::cerr << ">>> 9.1. Variable # packets / LID: first comm" << std::endl;
+            }
+
+            distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID_), 1,
+                                    host_numImportPacketsPerLID_);
             size_t totalImportPackets = 0;
             // FIXME (mfh 17 Feb 2014) This would be a good place for
             // a Kokkos reduction.  numImportPacketsPerLID_ has as
             // many entries as the number of LIDs on the calling
             // process.
             for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID[i];
+              totalImportPackets += host_numImportPacketsPerLID_[i];
             }
-            // FIXME (mfh 17 Feb 2014) Only realloc if necessary.
-            Kokkos::Compat::realloc (imports_, totalImportPackets);
+
+            if (debug) {
+              std::cerr << ">>> 9.2. Realloc" << std::endl;
+            }
+
+            if (debug) {
+              std::ostringstream os;
+              os << "*** doTransferNew: imports_.size() = "
+                 << imports_.size () << ", totalImportPackets = "
+                 << totalImportPackets << std::endl;
+              std::cerr << os.str ();
+            }
+
+            if (static_cast<size_t> (imports_.size ()) != totalImportPackets) {
+              if (debug) {
+                std::ostringstream os;
+                os << "*** doTransferNew: realloc imports_ from " <<
+                  imports_.size () << " to " << totalImportPackets << std::endl;
+                std::cerr << os.str ();
+              }
+              execution_space::fence ();
+              Kokkos::realloc (imports_, totalImportPackets);
+              execution_space::fence ();
+              TEUCHOS_TEST_FOR_EXCEPTION
+                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
+                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
+                 << imports_.size () << " != " << totalImportPackets << ".");
+
+              // This is doTransferNew, so we don't need to allocate
+              // the host version of imports_.
+            }
+
+            if (debug) {
+              std::cerr << ">>> 9.3. Second comm" << std::endl;
+            }
             distor.doPostsAndWaits (create_const_view (exports_),
-                                    getArrayView (host_numExportPacketsPerLID),
+                                    getArrayView (host_numExportPacketsPerLID_),
                                     imports_,
-                                    getArrayView (host_numImportPacketsPerLID));
+                                    getArrayView (host_numImportPacketsPerLID_));
           }
           else {
+            if (debug) {
+              const int myRank = this->getMap ()->getComm ()->getRank ();
+              std::ostringstream os;
+              os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
+                " exports_.size()=" << exports_.size () << ", imports_.size()="
+                 << imports_.size () << std::endl;
+              std::cerr << os.str ();
+            }
             distor.doPostsAndWaits (create_const_view (exports_),
                                     constantNumPackets,
                                     imports_);
           }
+        }
+
+        if (debug) {
+          std::cerr << ">>> 10. Copy numImportPacketsPerLID to device" << std::endl;
         }
 
         // FIXME (mfh 17 Feb 2014) This array should just live on the
@@ -893,23 +1214,35 @@ namespace Tpetra {
         // device view.
         //
         // Copy numImportPacketsPerLID to device
-        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID);
+        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID_);
+
+        if (debug) {
+          std::cerr << ">>> 11. unpackAndCombineNew" << std::endl;
+        }
 
         {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
-                            constantNumPackets, distor, CM);
+                               constantNumPackets, distor, CM);
         }
       }
     } // if (CM != ZERO)
+
+    if (debug) {
+      std::cerr << ">>> 12. releaseViews" << std::endl;
+    }
 
     // FIXME (mfh 17 Dec(??? probably Feb) 2014) We don't have to call
     // releaseViews() on the destination object any more, since MPI
     // knows how to read device memory.
 
     this->releaseViews ();
+
+    if (debug) {
+      std::cerr << ">>> 13. Done with doTransferNew" << std::endl;
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

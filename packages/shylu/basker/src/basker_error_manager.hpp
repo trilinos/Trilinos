@@ -48,18 +48,24 @@ namespace BaskerNS
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_SINGULAR)
 	  {
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREAD: %d DOMBLK SINGULAR: %d\n",
 		   ti,
 		   thread_array(ti).error_blk);
+	      }
 	    return BASKER_ERROR;
 	  }//end if SINGULAR
 	
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_NOMALLOC)
 	  {
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREADS: %d DOMBLK NOMALLOC: %d\n",
 		   ti,
 		   thread_array(ti).error_blk);
+	      }
 	    return BASKER_ERROR;
 	  }//end if NOMALLOC
 	
@@ -69,12 +75,13 @@ namespace BaskerNS
 	    
 	    BASKER_ASSERT(thread_array(ti).error_blk >= 0,
 			  "nfactor_dom_error error_blk");
-
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREADS: %d DOMBLK MALLOC: %d %d \n",
 		   ti,
 		   thread_array(ti).error_blk, 
 		   thread_array(ti).error_subblk);
-	    
+	      }
 
 	    //If on diagonal, want to compare L and U
 	    Int resize_L = BASKER_MAX_IDX;   
@@ -85,7 +92,11 @@ namespace BaskerNS
 		BASKER_ASSERT(thread_array(ti).error_info >0,
 			      "L) newsize not big enough");
 		resize_L = thread_array(ti).error_info;
-		printf("L(%d)  resize: %d \n", ti,  resize_L);
+		if(Options.verbose == BASKER_TRUE)
+		  {
+		printf("L(%d)  resize: %d \n", 
+		       ti,  resize_L);
+		  }
 
 
 		//if L is already bigger and U, 
@@ -97,21 +108,24 @@ namespace BaskerNS
 		    if(LL(blkcol)(0).nnz >=
 		       LU(blkcol)(blkUrow).nnz)
 		      {
-			printf("resize U too \n");
+			//printf("resize U too \n");
 			resize_U = thread_array(ti).error_info;
 		      }
 		  }//if - a domain
 	      }
 	    //We don't care about the other way since,
 	    //L is already checked before U.
-	    printf("now to check U\n");
+	    //printf("now to check U\n");
 	    if(thread_array(ti).error_subblk == -1)
 	      {  
 		resize_U = thread_array(ti).error_info;
+		if(Options.verbose == BASKER_TRUE)
+		  {
 		printf("resize U: %d \n", resize_U);
+		  }
 	      }
 
-	    printf("before resize \n");
+	    //printf("before resize \n");
 	    //Resize L
 	    if(resize_L > BASKER_MAX_IDX)
 	      {
@@ -173,7 +187,7 @@ namespace BaskerNS
 		      }
 		    if(sb == 0)
 		      {
-			printf("CLEARING PERM\n");
+			//printf("CLEARING PERM\n");
 			//Clear perm
 			for(Int i = SL.srow; 
 			    i < SL.srow+SL.nrow; ++i)
@@ -247,21 +261,44 @@ namespace BaskerNS
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_SINGULAR)
 	  {
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREAD: %d DOMBLK SINGULAR: %d\n",
 		   ti,
 		   thread_array(ti).error_blk);
+	      }
 	    return BASKER_ERROR;
 	  }//end if SINGULAR
 	
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_NOMALLOC)
 	  {
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREADS: %d DOMBLK NOMALLOC: %d\n",
 		   ti,
 		   thread_array(ti).error_blk);
+	      }
 	    return BASKER_ERROR;
 	  }//end if NOMALLOC
 	
+	
+	//Find lvl in sep error happend
+	Int error_sep_lvl = BASKER_MAX_IDX;
+	//printf("error blk: %d \n", 
+	//     thread_array(ti).error_blk);
+	for(Int l = 1; l < tree.nlvls+1; l++)
+	  {
+	    if(thread_array(ti).error_blk == 
+	       S(l)(ti))
+	      {
+		//printf("Set lvl \n");
+		error_sep_lvl = l;
+		break;
+	      }
+	  }
+
+
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_REMALLOC)
 	  {
@@ -269,26 +306,37 @@ namespace BaskerNS
 	    BASKER_ASSERT(thread_array(ti).error_blk > 0,
 			  "nfactor_SEP_error error_blk");
 
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREADS: %d SEPBLK MALLOC: %d %d \n",
 		   ti,
 		   thread_array(ti).error_blk, 
 		   thread_array(ti).error_subblk);
-	    
-
+	
+	    printf("ERROR SEPLVL: %d \n",
+		   error_sep_lvl);
+	      }
+    
 	    //If on diagonal, want to compare L and U
 	    Int resize_L = BASKER_MAX_IDX;   
 	    Int resize_U = BASKER_MAX_IDX;
 	    if(thread_array(ti).error_subblk <= -1)
 	      {
 		resize_L = thread_array(ti).error_info;    
+		if(Options.verbose == BASKER_TRUE)
+		  {
 		printf("L size: %d \n", resize_L);
+		  }
 	      }
 	    //We don't care about the other way since,
 	    //L is already checked before U.
 	    if(thread_array(ti).error_subblk > -1)
 	      {
 		resize_U = thread_array(ti).error_info;
-		//printf("U size: %d \n", resize_U);
+		if(Options.verbose == BASKER_TRUE)
+		  {
+		printf("U size: %d \n", resize_U);
+		  }
 	      }
 
 	    //Resize L
@@ -363,7 +411,28 @@ namespace BaskerNS
 		  }//if ws is filled
 	      }//for-other all threads
 	     
+
+	    //Clear perm
+	      for(Int p = 0; p < num_threads; p++)
+	      {
+		//printf("slvl: %d thread: %d \n",
+		//     error_sep_lvl, p);
+		Int blk = S(error_sep_lvl)(p);
+		//printf("perm clear blk: %d \n", blk);
+		//if(LL(blk)(0).w_fill == BASKER_TRUE)
+		{
+		  BASKER_MATRIX &TM = LL(blk)(0);
+		  for(Int i = TM.scol; i < TM.scol+TM.ncol; i++)
+		    {
+		      gperm(i) = BASKER_MAX_IDX;
+		    }
+		  
+		}//if ws is filled
+	      }//for-other all threads
+	  
+
 	    //printf("done resize workspace\n");
+	    //Note, will have to clear the perm in all sep blk in that level
 	    //Clear permuation
 	    BASKER_MATRIX &SL = 
 	      LL(thread_array(ti).error_blk)(0);
@@ -390,6 +459,17 @@ namespace BaskerNS
 	    nthread_remalloc++;
     
 	  }//if REMALLOC
+
+	//Reset Inc vector 
+	if(Options.inc_lvl == BASKER_TRUE)
+	  {
+	    for(Int i = 0; i < INC_LVL_TEMP.dimension_0(); i++)
+	      {
+		INC_LVL_TEMP(i) = BASKER_MAX_IDX;
+	      }
+
+	  }
+
 
       }//for all threads
     
@@ -432,9 +512,12 @@ namespace BaskerNS
 	if(thread_array(ti).error_type ==
 	   BASKER_ERROR_SINGULAR)
 	  {
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREAD: %d DIAGBLK SINGULAR: %d\n",
 		   ti,
 		   thread_array(ti).error_blk);
+	      }
 	    return BASKER_ERROR;
 	  }//end if SINGULAR
 	
@@ -454,6 +537,8 @@ namespace BaskerNS
 	    BASKER_ASSERT(thread_array(ti).error_blk > 0,
 			  "nfactor_diag_error error_blk");
 
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("ERROR THREADS: %d DIAGBLK MALLOC: %d \n",
 		   ti,
 		   thread_array(ti).error_blk);
@@ -462,6 +547,7 @@ namespace BaskerNS
 	    printf("test: %d %d \n",
 		   thread_array(ti).iws_size*thread_array(ti).iws_mult,
 		   thread_array(ti).ews_size*thread_array(ti).ews_mult);
+	      }
 
 	    for(Int i = 0; 
 		i < thread_array(ti).iws_size*thread_array(ti).iws_mult;
@@ -512,8 +598,11 @@ namespace BaskerNS
 	      }
 
 	    
+	    if(Options.verbose == BASKER_TRUE)
+	      {
 	    printf("Setting thread start(%d) %d \n",
 		   ti, thread_array(ti).error_blk);
+	      }
 
 	    threads_start(ti) = thread_array(ti).error_blk;
 	

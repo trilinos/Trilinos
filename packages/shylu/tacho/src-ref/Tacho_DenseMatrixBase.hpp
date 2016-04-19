@@ -84,10 +84,7 @@ namespace Tacho {
 
       // grow buffer dimension
       if (static_cast<size_type>(_a.dimension_0()) < size) {
-        char label[Util::LabelSize*2];
-        strcat(label, _label); 
-        strcat(label, "::ValueArray");
-        _a = value_type_array(label, size);
+        _a = value_type_array("DenseMatrixBase::ValueArray", size);
       } else {
         // otherwise initialize it
         Kokkos::Experimental::Impl::ViewFill<value_type_array>(_a, value_type());
@@ -110,6 +107,20 @@ namespace Tacho {
     /// Properties: 
     /// - Compile with Device (o), 
     /// - Callable in KokkosFunctors (o)
+
+    KOKKOS_INLINE_FUNCTION
+    void setExternalMatrix(const ordinal_type m, 
+                           const ordinal_type n,
+                           const ordinal_type cs,
+                           const ordinal_type rs,
+                           const value_type_array &a) {
+      _m = m;
+      _n = n; 
+      _rs = (rs == -1 ? 1 : rs);
+      _cs = (cs == -1 ? m : cs);
+      _a = a;
+    }
+
     KOKKOS_INLINE_FUNCTION    
     bool isValueArrayNull() const {
       return !_a.dimension_0();

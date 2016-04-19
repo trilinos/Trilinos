@@ -24,7 +24,7 @@
 #define BASKER_ERROR_RETRY    -2
 #define BASKER_SUCCESS        0
 
-#define BASKER_RESTART       2
+#define BASKER_RESTART       gn
 
 #define BASKER_EPSILON       1e-6
 

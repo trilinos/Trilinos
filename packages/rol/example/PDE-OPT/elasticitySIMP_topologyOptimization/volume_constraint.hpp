@@ -48,55 +48,85 @@
 #include "ROL_EqualityConstraint.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
+#include "ROL_RiskVector.hpp"
 
 template<class Real>
 class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume : public ROL::EqualityConstraint<Real> {
 private:
   Real volFrac_;
 
+  ROL::Vector<Real> & castRiskVector(ROL::Vector<Real> &x) const {
+    try {
+      ROL::RiskVector<Real> & rx = Teuchos::dyn_cast<ROL::RiskVector<Real> >(x);
+      return *(rx.getVector());
+    }
+    catch (std::exception &e) {
+      return x;
+    }
+  }
+
+  const ROL::Vector<Real> & castConstRiskVector(const ROL::Vector<Real> &x) const {
+    try {
+      const ROL::RiskVector<Real> & rx = Teuchos::dyn_cast<const ROL::RiskVector<Real> >(x);
+      return *(rx.getVector());
+    }
+    catch (std::exception &e) {
+      return x;
+    }
+  }
+
 public:
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                                   const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
-    volFrac_ = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
+    volFrac_ = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
   }
 
   using ROL::EqualityConstraint<Real>::value;
-  void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &z, Real &tol) 
+  void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &z, Real &tol)
   {
     Teuchos::RCP<std::vector<Real> > cp = (Teuchos::dyn_cast<ROL::StdVector<Real> >(c)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > unit = Teuchos::rcp(new Tpetra::MultiVector<>(zp->getMap(), 1, true));
+    const ROL::Vector<Real> & zr = castConstRiskVector(z);
+    Teuchos::RCP<const Tpetra::MultiVector<> > zp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(zr)).getVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > unit
+      = Teuchos::rcp(new Tpetra::MultiVector<>(zp->getMap(), 1, true));
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumZ(1, 0);
     zp->dot(*unit, sumZ);
-    (*cp)[0] = sumZ[0] - static_cast<Real>(zp->getGlobalLength())*volFrac_;  
+    (*cp)[0] = sumZ[0] - static_cast<Real>(zp->getGlobalLength())*volFrac_;
   }
 
   void applyJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
-                     const ROL::Vector<Real> &z, Real &tol) 
+                     const ROL::Vector<Real> &z, Real &tol)
   {
     Teuchos::RCP<std::vector<Real> > jvp = (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<Tpetra::MultiVector<> > unit = Teuchos::rcp(new Tpetra::MultiVector<>(vp->getMap(), 1, true));
+    const ROL::Vector<Real> & vr = castConstRiskVector(v);
+    Teuchos::RCP<const Tpetra::MultiVector<> > vp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(vr)).getVector();
+    Teuchos::RCP<Tpetra::MultiVector<> > unit
+      = Teuchos::rcp(new Tpetra::MultiVector<>(vp->getMap(), 1, true));
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumV(1, 0);
     vp->dot(*unit, sumV);
-    (*jvp)[0] = sumV[0];  
+    (*jvp)[0] = sumV[0];
   }
 
   void applyAdjointJacobian(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
                             const ROL::Vector<Real> &z, Real &tol)
   {
-    Teuchos::RCP<Tpetra::MultiVector<> > ajvp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajv)).getVector();
-    Teuchos::RCP<const std::vector<Real> > vp = (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+    ROL::Vector<Real> & ajvr = castRiskVector(ajv);
+    Teuchos::RCP<Tpetra::MultiVector<> > ajvp
+      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajvr)).getVector();
+    Teuchos::RCP<const std::vector<Real> > vp
+      = (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
     ajvp->putScalar(1.0);
     ajvp->scale((*vp)[0]);
   }
 
   void applyAdjointHessian(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
-                           const ROL::Vector<Real> &z, Real &tol) 
+                           const ROL::Vector<Real> &z, Real &tol)
   {
-    ahwv.zero();	
+    ahwv.zero();
   }
 
 };

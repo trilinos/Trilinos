@@ -98,7 +98,7 @@ namespace { // (anonymous)
   public:
     typedef typename OutputViewType::execution_space execution_space;
     typedef typename OutputViewType::size_type size_type;
-    typedef bool value_type;
+    typedef int value_type;
 
     typedef typename InputViewType::non_const_value_type input_value_type;
     typedef typename OutputViewType::non_const_value_type output_value_type;
@@ -130,19 +130,19 @@ namespace { // (anonymous)
     operator () (const size_type& i, value_type& noOverflow) const {
       const input_value_type src_i = src_(i);
       if (src_i < minDstVal_ || src_i > maxDstVal_) {
-        noOverflow = false;
+        noOverflow = 0;
       }
       dst_(i) = static_cast<output_value_type> (src_i);
     }
 
     KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
-      noOverflow = true; // success (no overflow)
+      noOverflow = 1; // success (no overflow)
     }
 
     KOKKOS_INLINE_FUNCTION void
     join (volatile value_type& result,
           const volatile value_type& current) const {
-      result = result && current; // was there any overflow?
+      result = (result>0 && current>0)?1:0; // was there any overflow?
     }
 
   private:
@@ -158,7 +158,7 @@ namespace { // (anonymous)
   public:
     typedef typename OutputViewType::execution_space execution_space;
     typedef typename OutputViewType::size_type size_type;
-    typedef bool value_type;
+    typedef int value_type;
 
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst),
@@ -182,13 +182,13 @@ namespace { // (anonymous)
     }
 
     KOKKOS_INLINE_FUNCTION void init (value_type& noOverflow) const {
-      noOverflow = true; // success (no overflow)
+      noOverflow = 1; // success (no overflow)
     }
 
     KOKKOS_INLINE_FUNCTION void
     join (volatile value_type& result,
           const volatile value_type& current) const {
-      result = result && current; // was there any overflow?
+      result = (result>0 && current>0)?1:0; // was there any overflow?
     }
 
   private:
@@ -283,12 +283,12 @@ namespace { // (anonymous)
                      "call this specialization, the output View's space must "
                      "be able to access the input View's memory space.");
       typedef CopyOffsetsFunctor<OutputViewType, InputViewType> functor_type;
-      bool noOverflow = false; // output argument of the reduction
+      int noOverflow = 0; // output argument of the reduction
       Kokkos::parallel_reduce (dst.dimension_0 (),
                                functor_type (dst, src),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! noOverflow, std::runtime_error, "copyOffsets: One or more values in "
+        (noOverflow==0, std::runtime_error, "copyOffsets: One or more values in "
          "src were too big (in the sense of integer overflow) to fit in dst.");
     }
   };
@@ -328,12 +328,12 @@ namespace { // (anonymous)
       // outputSpaceCopy's data, so we can run the functor now.
       typedef CopyOffsetsFunctor<OutputViewType,
                                  output_space_copy_type> functor_type;
-      bool noOverflow = false;
+      int noOverflow = 0;
       Kokkos::parallel_reduce (dst.dimension_0 (),
                                functor_type (dst, outputSpaceCopy),
                                noOverflow);
       TEUCHOS_TEST_FOR_EXCEPTION
-        (! noOverflow, std::runtime_error, "copyOffsets: One or more values "
+        (noOverflow==0, std::runtime_error, "copyOffsets: One or more values "
          "in src were too big (in the sense of integer overflow) to fit in "
          "dst.");
     }
@@ -489,7 +489,35 @@ public:
 
   /// \brief Constructor for arbitrary keys and contiguous values
   ///   starting with \c startingValue, that takes an initial
+  ///   contiguous sequence of keys, stored as a Kokkos::View.
+  ///
+  /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
+  /// 0, 1, ..., <tt>keys.size()</tt>.
+  ///
+  /// \param keys [in] The keys in the hash table.  We reserve the
+  ///   right to keep the input View without a deep copy.  If you
+  ///   intend to modify this View after calling this constructor,
+  ///   please make a deep copy yourself and give the copy to this
+  ///   constructor.
+  /// \param firstContigKey [in] First key in the initial contiguous
+  ///   sequence of keys.
+  /// \param lastContigKey [in] Last key (inclusive!) in the initial
   ///   contiguous sequence of keys.
+  /// \param startingValue [in] First value in the contiguous sequence
+  ///   of values.
+  /// \param keepKeys [in] Whether to keep the input keys (NOT deep
+  ///   copied, in this case).  Keeping a copy lets you convert from a
+  ///   value back to a key (the reverse of what get() does).
+  FixedHashTable (const keys_type& keys,
+                  const KeyType firstContigKey,
+                  const KeyType lastContigKey,
+                  const ValueType startingValue,
+                  const bool keepKeys = false);
+
+  /// \brief Constructor for arbitrary keys and contiguous values
+  ///   starting with \c startingValue, that takes an initial
+  ///   contiguous sequence of keys, stored as a Teuchos::ArrayView
+  ///   (host pointer).
   ///
   /// Add <tt>(keys[i], startingValue + i)</tt> to the table, for i =
   /// 0, 1, ..., <tt>keys.size()</tt>.

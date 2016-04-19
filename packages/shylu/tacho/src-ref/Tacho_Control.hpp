@@ -26,6 +26,16 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::InternalBlas, Variant::One };
   };
 
+  template<> struct Control<AlgoHerk::DenseByBlocks,Variant::One> {
+    static constexpr int Herk[2] = { AlgoHerk::ExternalBlas, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas, Variant::One };
+  };
+
+  template<> struct Control<AlgoHerk::DenseByBlocks,Variant::Two> {
+    static constexpr int Herk[2] = { AlgoHerk::InternalBlas, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::InternalBlas, Variant::One };
+  };
+
   template<> struct Control<AlgoTrsm::DenseByBlocks,Variant::One> {
     static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas, Variant::One };
     static constexpr int Trsm[2] = { AlgoTrsm::ExternalBlas, Variant::One };
@@ -50,68 +60,47 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::InternalBlas,   Variant::One };
   };
 
-  // // - CholByblocks Variant 1
-  // // * partitioned block matrix (blocks are sparse)
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
-  //   // chol var 1 : nested data parallel for is applied in the second inner loop
-  //   // chol var 2 : nested data parallel for is applied in the most inner loop
-  //   static constexpr int Chol[2] = { AlgoChol::UnblockedOpt,     Variant::Two };
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
-  // };
+  // - SparseByBlocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
+    static constexpr int Chol[2] = { AlgoChol::Unblocked,             Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseUnblocked, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseUnblocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseUnblocked, Variant::One };
+  };
 
-  // // - CholByBlocks Variant 2
-  // // * diagonal blocks have nested dense blocks
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
-  //   static constexpr int Chol[2] = { AlgoChol::NestedDenseBlock, Variant::One }; 
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
-  // };
+  // - SuperNodalByblocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
+    static constexpr int Chol[2] = { AlgoChol::SuperNodes,    Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodes, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodes, Variant::One };
+  };
 
-  // // - CholByBlocks Variant 3
-  // // * all blocks have nested dense blocks (full supernodal algorithm)
-  // // template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
-  // //   static constexpr int Chol[2] = { AlgoChol::NestedDenseBlock, Variant::One }; 
-  // //   static constexpr int Trsm[2] = { AlgoTrsm::NestedDenseBlock, Variant::One };
-  // //   static constexpr int Herk[2] = { AlgoHerk::NestedDenseBlock, Variant::One };
-  // //   static constexpr int Gemm[2] = { AlgoGemm::NestedDenseBlock, Variant::One };
-  // // };
+  // - Fine grained SuperNodalByblocks
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
+    static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,             Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodesByBlocks, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodesByBlocks, Variant::One };
+  };
 
-  // // - CholByBlocks Variant 4
-  // // * diagonal blocks have nested hier dense blocks (hierarchical task scheduling)
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::Four> {
-  //   static constexpr int Chol[2] = { AlgoChol::NestedDenseByBlocks, Variant::One }; 
-  //   static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked,    Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked,    Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked,    Variant::One };
-  // };
+  // - SparseByBlocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::One> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseUnblocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseUnblocked, Variant::One };
+  };
 
-  // // - CholByBlocks Variant 5
-  // // * diagonal blocks have nested hier dense blocks (hierarchical task scheduling)
-  // // template<> struct Control<AlgoChol::ByBlocks,Variant::Four> {
-  // //   static constexpr int Chol[2] = { AlgoChol::NestedDenseByBlocks, Variant::One }; 
-  // //   static constexpr int Trsm[2] = { AlgoTrsm::NestedDenseByBlocks, Variant::One };
-  // //   static constexpr int Herk[2] = { AlgoHerk::NestedDenseByBlocks, Variant::One };
-  // //   static constexpr int Gemm[2] = { AlgoGemm::NestedDenseByBlocks, Variant::One };
-  // // };
+  // - SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Two> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodes, Variant::One };
+  };
 
-  // // ----------------------------------------------------------------------------------
-
-  // // - CholNestedDenseBlock
-  // // * branch control between sparse and dense operations
-  // template<> struct Control<AlgoChol::NestedDenseBlock,Variant::One> {
-  //   static constexpr int CholSparse[2] = { AlgoChol::UnblockedOpt,   Variant::One };
-  //   static constexpr int CholDense[2]  = { AlgoChol::ExternalLapack, Variant::One }; 
-  // };
-
-  // // - CholNestedDenseBlock
-  // // * branch control between sparse and dense operations
-  // template<> struct Control<AlgoChol::NestedDenseByBlocks,Variant::One> {
-  //   static constexpr int CholSparse[2]        = { AlgoChol::UnblockedOpt,  Variant::One };
-  //   static constexpr int CholDenseByBlocks[2] = { AlgoChol::DenseByBlocks, Variant::One }; 
-  // };
+  // - Fine grained SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Three> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodesByBlocks, Variant::One };
+  };
 
   // // ----------------------------------------------------------------------------------
 

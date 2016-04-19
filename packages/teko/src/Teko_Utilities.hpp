@@ -695,6 +695,10 @@ const ModifiableLinearOp explicitSum(const LinearOp & opl,
   */
 const LinearOp explicitTranspose(const LinearOp & op);
 
+/** Rturn the frobenius norm of a linear operator
+  */
+const double frobeniusNorm(const LinearOp & op);
+
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator
   */

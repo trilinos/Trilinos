@@ -71,30 +71,25 @@
 
 #include "MueLu_Exceptions.hpp"
 
-
-typedef double  Scalar;
-typedef int     LocalOrdinal;
-typedef int     GlobalOrdinal;
-typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
-
 #include <unistd.h>
 /**********************************************************************************/
 
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  Teuchos::RCP<const Epetra_CrsMatrix> GetEpetraMatrix(std::string name, const Teuchos::RCP<Level> level, const Teuchos::RCP<Factory>& fct) {
-    Teuchos::RCP<Matrix> result = level->Get<Teuchos::RCP<Matrix> >(name, fct.get());
-    Teuchos::RCP<CrsMatrixWrap> crsres = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(result);
-    Teuchos::RCP<CrsMatrix> crsmat = crsres->getCrsMatrix();
-    Teuchos::RCP<EpetraCrsMatrix> epcrsmat = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(crsmat);
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const Epetra_CrsMatrix> GetEpetraMatrix(std::string name, const Teuchos::RCP<MueLu::Level> level, const Teuchos::RCP<MueLu::Factory>& fct) {
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > result = level->Get<Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >(name, fct.get());
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsres = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(result);
+    Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmat = crsres->getCrsMatrix();
+    Teuchos::RCP<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> > epcrsmat = Teuchos::rcp_dynamic_cast<Xpetra::EpetraCrsMatrixT<GlobalOrdinal,Node> >(crsmat);
     Teuchos::RCP<const Epetra_CrsMatrix> epres = epcrsmat->getEpetra_CrsMatrix();
     return epres;
   }
 
   // run tests with "Algebraic" permutation strategy and nDofsPerNode = 1
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool runPermutationTest(const std::string input_filename, const std::string expected_filename, const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+#include <MueLu_UseShortNames.hpp>
 
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -165,7 +160,7 @@ namespace MueLuTests {
     //std::cout << "Q^T" << *GetEpetraMatrix("permQT", Finest, PermFact) << std::endl;
     //std::cout << "permA" <<  *GetEpetraMatrix("A", Finest, PermFact) << std::endl;
 
-    Teuchos::RCP<const Epetra_CrsMatrix> epResult = GetEpetraMatrix("A", Finest, PermFact);
+    Teuchos::RCP<const Epetra_CrsMatrix> epResult = GetEpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>("A", Finest, PermFact);
     //std::cout << *epResult << std::endl;
 
     if(epExpected != Teuchos::null) {
@@ -192,7 +187,9 @@ namespace MueLuTests {
   }
 
   // run tests with "Local" permutation strategy and nDofsPerNode = 3
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool runPermutationTest2(const std::string input_filename, const std::string expected_filename, const Teuchos::RCP<const Teuchos::Comm<int> >& comm) {
+#include <MueLu_UseShortNames.hpp>
 
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -262,7 +259,7 @@ namespace MueLuTests {
     //std::cout << "Q^T" << *GetEpetraMatrix("permQT", Finest, PermFact) << std::endl;
     //std::cout << "permA" <<  *GetEpetraMatrix("A", Finest, PermFact) << std::endl;
 
-    Teuchos::RCP<const Epetra_CrsMatrix> epResult = GetEpetraMatrix("A", Finest, PermFact);
+    Teuchos::RCP<const Epetra_CrsMatrix> epResult = GetEpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>("A", Finest, PermFact);
     //std::cout << *epResult << std::endl;
 
     if(epExpected != Teuchos::null) {
@@ -292,14 +289,14 @@ namespace MueLuTests {
 }
 
 
-int main(int argc, char *argv[]) {
-#include "MueLu_UseShortNames.hpp"
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+#include <MueLu_UseShortNames.hpp>
 
   using Teuchos::RCP;
   using namespace MueLuTests;
 
   Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int numProcs = comm->getSize();
@@ -307,13 +304,13 @@ int main(int argc, char *argv[]) {
   bool bSuccess = true;
 #ifndef HAVE_MUELU_INST_COMPLEX_INT_INT
   //runPermutationTest(MatrixFileName, ExpectedFileName, comm)
-  if(runPermutationTest("test1.txt", "exp1.txt", comm) == false) bSuccess = false;
-  if(runPermutationTest("test2.txt", "exp2.txt", comm) == false) bSuccess = false;
-  if(runPermutationTest("test3.txt", "exp3.txt", comm) == false) bSuccess = false;
+  if(runPermutationTest<Scalar,LocalOrdinal,GlobalOrdinal,Node>("test1.txt", "exp1.txt", comm) == false) bSuccess = false;
+  if(runPermutationTest<Scalar,LocalOrdinal,GlobalOrdinal,Node>("test2.txt", "exp2.txt", comm) == false) bSuccess = false;
+  if(runPermutationTest<Scalar,LocalOrdinal,GlobalOrdinal,Node>("test3.txt", "exp3.txt", comm) == false) bSuccess = false;
 
   // the following tests work only on 1 or 2 processors
   if(numProcs == 1 || numProcs == 2) {
-    if(runPermutationTest2("test4.txt", "exp4.txt", comm) == false) bSuccess = false;
+    if(runPermutationTest2<Scalar,LocalOrdinal,GlobalOrdinal,Node>("test4.txt", "exp4.txt", comm) == false) bSuccess = false;
     // test seems to be ok, but matrix addition is not working
     // has wrong entries on the diagonal on proc1... -> wrong handling of index base?
     //if(runPermutationTest2("test5.txt", "exp5.txt" /*"exp5.txt"*/, comm) == false) bSuccess = false;
@@ -322,5 +319,43 @@ int main(int argc, char *argv[]) {
   if(bSuccess == false)
     return EXIT_FAILURE;
   return EXIT_SUCCESS;
+}
+
+
+int main(int argc, char* argv[]) {
+  bool success = false;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  const bool throwExceptions     = false;
+  const bool recogniseAllOptions = false;
+
+  Teuchos::CommandLineProcessor clp(throwExceptions, recogniseAllOptions);
+  Xpetra::Parameters xpetraParameters(clp);
+
+  std::string node = "";  clp.setOption("node", &node, "node type (serial | openmp | cuda)");
+
+  switch (clp.parse(argc, argv, NULL)) {
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:               return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION:
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+  }
+
+  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+  if (lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+    return main_<double,int,int,Xpetra::EpetraNode>(clp, lib, argc, argv);
+#else
+    throw MueLu::Exceptions::RuntimeError("Epetra is not available");
+#endif
+  }
+
+  if (lib == Xpetra::UseTpetra) {
+    std::cout << "Skip permutation tests for Tpetra." << std::endl;
+  }
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 

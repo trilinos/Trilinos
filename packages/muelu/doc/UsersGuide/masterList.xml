@@ -708,7 +708,7 @@
       <name>emin: iterative method</name>
       <type>string</type>
       <default>"cg"</default>
-      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "sd" (steepest descent).</description>
+      <description>Iterative method to use for energy minimization of initial prolongator in energy-minimization. Possible values: "cg" (conjugate gradient), "gmres" (generalized minimum residual), "sd" (steepest descent).</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 

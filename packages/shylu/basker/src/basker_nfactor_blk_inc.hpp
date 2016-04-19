@@ -366,12 +366,15 @@ namespace BaskerNS
     
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
+	      if(Options.verbose == BASKER_TRUE)
+		{
 	      cout << endl << endl;
 	      cout << "---------------------------"<<endl;
               cout << "Error: Matrix is singular, blk" << endl;
               cout << "MaxIndex: " << maxindex << " pivot " 
                    << pivot << endl;
               cout << "lcnt: " << lcnt << endl;
+		}
 	      thread_array(kid).error_type =
 		BASKER_ERROR_SINGULAR;
 	      thread_array(kid).error_blk  = b;
@@ -385,12 +388,16 @@ namespace BaskerNS
           //Note: Come back to this!!!!
           if(lnnz + lcnt > llnnz)
             {
+       
+              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
+
+	      if(Options.verbose == BASKER_TRUE)
+		{
 	      printf("\n\n");
 	      printf("----------------------\n");
-
-              newsize = lnnz * 1.1 + 2 *M.nrow + 1;
               printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      b, llnnz, lnnz, lcnt, newsize);
+		}
 
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -412,12 +419,16 @@ namespace BaskerNS
           if(unnz+ucnt > uunnz)
             {
 
+              newsize = uunnz*1.1 + 2*M.nrow+1;
+	      
+	      if(Options.verbose == BASKER_TRUE)
+		{
 	      printf("\n\n");
 	      printf("-------------------\n");
 
-              newsize = uunnz*1.1 + 2*M.nrow+1;
               printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
                      b, uunnz, newsize);
+		}
 
 	       if(Options.realloc == BASKER_FALSE)
 		{
@@ -1020,8 +1031,11 @@ namespace BaskerNS
 	pop_top++;
       }
     #ifdef BASKER_DEBUG_NFACTOR_BLK_INC
+    if(kid == 0)
+      {
     printf("end sample top: %d p:%d %d \n",
 	   pop_top, pattern[pop_top], pattern[pop_top+1]);
+      }
     #endif
 
     //printf("short test: %d %d kid: %d \n",
@@ -2071,8 +2085,12 @@ namespace BaskerNS
       {
 	Int newsize = llnnz*1.2 + L.ncol;
 
+	if(Options.verbose == BASKER_TRUE)
+	  {
 	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d newsize: %d  \n",
-	       blkcol, blkrow, kid, llnnz,lnnz,p_size, newsize  );
+	       blkcol, blkrow, kid,
+	       llnnz,lnnz,p_size, newsize  );
+	  }
 	BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 
 	if(Options.realloc == BASKER_FALSE)
@@ -2329,13 +2347,19 @@ namespace BaskerNS
           //if((maxindex == L.max_idx) || (pivot == 0))
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
-	      cout << endl << endl;
 
-	      cout << "---------------------------"<<endl;
+	      if(Options.verbose == BASKER_TRUE)
+		{
+	      cout << endl << endl;
+	      cout << "---------------------------"
+		   <<endl;
 	     
-              cout << "Error: Matrix is singular, blk" << endl;
-              cout << "MaxIndex: " << maxindex << " pivot " 
+              cout << "Error: Matrix is singular, blk" 
+		   << endl;
+              cout << "MaxIndex: " 
+		   << maxindex << " pivot " 
                    << pivot << endl;
+		}
               return 2;
             }          
 

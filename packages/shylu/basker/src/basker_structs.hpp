@@ -739,7 +739,7 @@ namespace BaskerNS
     BASKER_BOOL same_pattern;
 
     //Operation Options
-    BASKER_BOOL verbose; //Not Used
+    BASKER_BOOL verbose; 
     BASKER_BOOL verbose_matrix_out;
 
     //Memory Options

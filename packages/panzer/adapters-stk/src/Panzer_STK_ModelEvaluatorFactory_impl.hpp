@@ -188,6 +188,7 @@ namespace panzer_stk_classic {
       pl->sublist("Options").disableRecursiveValidation();
       pl->sublist("Active Parameters").disableRecursiveValidation();
       pl->sublist("Controls").disableRecursiveValidation();
+      pl->sublist("ALE").disableRecursiveValidation(); // this sucks
       pl->sublist("User Data").disableRecursiveValidation();
       pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
 

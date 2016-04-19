@@ -72,9 +72,10 @@ public:
   void run(Real &fx, Real &x, int &nfval, int &ngrad,
            ScalarFunction<Real> &f, const Real A, const Real B,
            ScalarMinimizationStatusTest<Real> &test) const {
+    Real zero(0), half(0.5), one(1), two(2), three(3), five(5);
     nfval = 0; ngrad = 0;
     // ---> Set algorithmic constants
-    const Real c   = 0.5*(3.0 - std::sqrt(5.0));
+    const Real c   = half*(three - std::sqrt(five));
     const Real eps = std::sqrt(ROL_EPSILON<Real>());
     // ---> Set end points and initial guess
     Real a = A, b = B;
@@ -83,29 +84,29 @@ public:
     fx = f.value(x);
     nfval++;
     // ---> Initialize algorithm storage
-    Real v = x, w = v, u = 0.0, fu = 0.0;
-    Real p = 0.0, q = 0.0, r = 0.0, d = 0.0, e = 0.0;
-    Real fv = fx, fw = fx, tol = 0.0, t2 = 0.0, m = 0.0, gx = ROL_INF<Real>();
+    Real v = x, w = v, u = zero, fu = zero;
+    Real p = zero, q = zero, r = zero, d = zero, e = zero;
+    Real fv = fx, fw = fx, tol = zero, t2 = zero, m = zero, gx = ROL_INF<Real>();
     bool deriv = false;
     for (int i = 0; i < niter_; i++) {
-      m = 0.5*(a+b);
-      tol = eps*std::abs(x) + tol_; t2 = 2.0*tol;
+      m = half*(a+b);
+      tol = eps*std::abs(x) + tol_; t2 = two*tol;
       // Check stopping criterion
-      if (std::abs(x-m) <= t2 - 0.5*(b-a) || test.check(x,fx,gx,nfval,ngrad,deriv)) {
+      if (std::abs(x-m) <= t2 - half*(b-a) || test.check(x,fx,gx,nfval,ngrad,deriv)) {
         break;
       }
-      p = 0.0; q = 0.0; r = 0.0;
+      p = zero; q = zero; r = zero;
       if ( std::abs(e) > tol ) {
         // Fit parabola
         r = (x-w)*(fx-fv);     q = (x-v)*(fx-fw);
-        p = (x-v)*q - (x-w)*r; q = 2.0*(q-r);
-        if ( q > 0.0 ) {
-          p *= -1.0;
+        p = (x-v)*q - (x-w)*r; q = two*(q-r);
+        if ( q > zero ) {
+          p *= -one;
         }
         q = std::abs(q);
         r = e; e = d;
       }
-      if ( std::abs(p) < std::abs(0.5*q*r) && p > q*(a-x) && p < q*(b-x) ) {
+      if ( std::abs(p) < std::abs(half*q*r) && p > q*(a-x) && p < q*(b-x) ) {
         // A parabolic interpolation step
         d = p/q; u = x + d;
         // f must not be evaluated too close to a or b
@@ -118,7 +119,7 @@ public:
         e = ((x < m) ? b : a) - x; d = c*e;
       }
       // f must not be evaluated too close to x
-      u  = x + ((std::abs(d) >= tol) ? d : ((d > 0.0) ? tol : -tol));
+      u  = x + ((std::abs(d) >= tol) ? d : ((d > zero) ? tol : -tol));
       fu = f.value(u);
       nfval++;
       // Update a, b, v, w, and x

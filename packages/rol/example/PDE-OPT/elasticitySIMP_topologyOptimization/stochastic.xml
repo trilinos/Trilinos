@@ -1,0 +1,26 @@
+<ParameterList name="Inputs">
+  <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Problem">
+    <Parameter name="Number of Monte Carlo Samples" type="int"     value="10"   />
+  </ParameterList>
+
+  <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
+  <ParameterList name="SOL">
+    <Parameter name="Stochastic Optimization Type" type="string" value="Risk Averse" />
+    <ParameterList name="Risk Measure">
+      <Parameter name="Name" type="string" value="Mixed-Quantile Quadrangle" />
+      <ParameterList name="Mixed-Quantile Quadrangle">
+        <Parameter name="Probability Array"   type="string" value="{ 0.1, 0.5, 0.9 }" />
+        <Parameter name="Coefficient Array"   type="string" value="{ 0.2, 0.3, 0.5 }" />
+        <Parameter name="Smoothing Parameter" type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="0.0" />
+            <Parameter name="Upper Bound" type="double" value="1.0" />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

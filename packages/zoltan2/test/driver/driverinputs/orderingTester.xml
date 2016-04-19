@@ -51,11 +51,6 @@
       <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
       <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
     </ParameterList>
-   <!-- 
-    <ParameterList name="Zoltan2Parameters">
-      <Parameter name="algorithm" type="string" value="multijagged"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
-    </ParameterList> -->
    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="order_method" type="string" value="scotch"/>

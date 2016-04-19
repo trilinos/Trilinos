@@ -440,8 +440,12 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
-        Kokkos::Compat::realloc (numExportPacketsPerLID_, exportLIDs.size ());
-        Kokkos::Compat::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+        Kokkos::realloc (numExportPacketsPerLID_, exportLIDs.size ());
+        host_numExportPacketsPerLID_ =
+          Kokkos::create_mirror_view (numExportPacketsPerLID_);
+        Kokkos::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+        host_numImportPacketsPerLID_ =
+          Kokkos::create_mirror_view (numImportPacketsPerLID_);
       }
 
       {

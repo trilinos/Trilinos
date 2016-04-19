@@ -151,31 +151,39 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupSchwarz(Level& currentLevel) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
-    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
-
     bool reusePreconditioner = false;
     if (this->IsSetup() == true) {
       // Reuse the constructed preconditioner
       this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupSchwarz(): Setup() has already been called, assuming reuse" << std::endl;
 
+      bool isTRowMatrix = true;
+      RCP<const tRowMatrix> tA;
+      try {
+        tA = Utilities::Op2NonConstTpetraRow(A_);
+      } catch (Exceptions::BadCast) {
+        isTRowMatrix = false;
+      }
+
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
-      if (!prec.is_null()) {
+      if (!prec.is_null() && isTRowMatrix) {
 #ifdef IFPACK2_HAS_PROPER_REUSE
         prec->resetMatrix(tA);
+        reusePreconditioner = true;
 #else
         this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
 #endif
 
-        reusePreconditioner = true;
-
       } else {
-        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available (failed cast to CanChangeMatrix), "
-            "reverting to full construction" << std::endl;
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available "
+            "(either failed cast to CanChangeMatrix, or to Tpetra Row Matrix), reverting to full construction" << std::endl;
       }
     }
 
     if (!reusePreconditioner) {
       ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+      bool isBlockedMatrix = false;
+      RCP<Matrix> merged2Mat;
 
       std::string sublistName = "subdomain solver parameters";
       if (paramList.isSublist(sublistName)) {
@@ -188,9 +196,6 @@ namespace MueLu {
         // each pressure unknown). In addition, we put all Dirichlet points
         // as a little mini-domain.
         ParameterList& subList = paramList.sublist(sublistName);
-
-        bool isBlockedMatrix = false;
-        RCP<Matrix> merged2Mat;
 
         std::string partName = "partitioner: type";
         if (subList.isParameter(partName) && subList.get<std::string>(partName) == "user") {
@@ -234,10 +239,11 @@ namespace MueLu {
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
         }
-
-        if (isBlockedMatrix == true)
-          tA = Utilities::Op2NonConstTpetraRow(merged2Mat);
       }
+
+      RCP<const tRowMatrix> tA;
+      if (isBlockedMatrix == true) tA = Utilities::Op2NonConstTpetraRow(merged2Mat);
+      else                         tA = Utilities::Op2NonConstTpetraRow(A_);
 
       prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
       SetPrecParameters();
@@ -408,11 +414,10 @@ namespace MueLu {
       if (!prec.is_null()) {
 #ifdef IFPACK2_HAS_PROPER_REUSE
         prec->resetMatrix(tA);
+        reusePreconditioner = true;
 #else
         this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
 #endif
-
-        reusePreconditioner = true;
 
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available (failed cast to CanChangeMatrix), "

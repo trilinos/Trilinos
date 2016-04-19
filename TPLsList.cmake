@@ -203,6 +203,8 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   VTune           "cmake/TPLs/"    SS
   TASMANIAN       "cmake/TPLs/"    EX
   ArrayFireCPU    "cmake/TPLs/"    EX
+  SimMesh         "SCOREC/cmake/TPLs/"    EX
+  SimModel        "SCOREC/cmake/TPLs/"    EX
   )
 
 # NOTES:

@@ -19,7 +19,7 @@ namespace Tacho {
                       const TaskFunctorType &func, 
                       const int max_task_dependence) {
       FutureType f = policy.task_create_team(func, max_task_dependence);
-      TACHO_TEST_FOR_ABORT( f.is_null(), ">> Creating team task is failed, out of memory" );
+      TACHO_TEST_FOR_ABORT( f.is_null(), "Creating team task is failed, out of memory" );
 
       return f;
     }

@@ -148,20 +148,44 @@ protected:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dataUd_;
 
+protected:
 public:
 
-// constructor
-PDE_FEM() {}
-// destructor
-virtual ~PDE_FEM() {}
+  // constructor
+  PDE_FEM() {}
+  // destructor
+  virtual ~PDE_FEM() {}
+  
+  virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
+                          const Teuchos::RCP<std::ostream> &outStream) {
+    commPtr_   = comm;
+    parlist_   = parlist;
+    outStream_ = outStream;
+    myRank_    = comm->getRank();
+    numProcs_  = comm->getSize();
+    *outStream_ << "Total number of processors: " << numProcs_ << std::endl;
 
-virtual void Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-        	   	const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-        	   	const Teuchos::RCP<std::ostream> &outStream)  { }
+    basisOrder_ = parlist->sublist("PDE FEM").get("Order of FE Discretization", 1);
+  }
 
+  void SetDiscretization(const Teuchos::RCP<MeshManager<Real> > &meshMgr,
+                         const std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > &basisPtrs) {
+    meshMgr_ = meshMgr;
+    totalNumCells_ = meshMgr_->getNumCells();
 
-virtual void SetParallelStructure()
-{
+    basisPtrs_ = basisPtrs;
+
+    // Retrieve some basic cell information.
+    cellType_ = (basisPtrs_[0])->getBaseCellTopology(); // get the cell type from any basis
+    spaceDim_ = cellType_.getDimension();        // retrieve spatial dimension
+    numNodesPerCell_ = cellType_.getNodeCount(); // retrieve number of nodes per cell
+
+    coord_iface_ = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basisPtrs_[0]);
+    dofMgr_ = Teuchos::rcp(new DofManager<Real>(meshMgr_, basisPtrs_));
+  }
+
+  virtual void SetParallelStructure(void) {
     int cellSplit = parlist_->sublist("Geometry").get("Partition type", 1);
     /****************************************************/
     /*** Build parallel communication infrastructure. ***/
@@ -198,7 +222,7 @@ virtual void SetParallelStructure()
         }
         break;
     }
-    
+      
     cellDofs_ = *(dofMgr_->getCellDofs());
     numLocalDofs_ = cellDofs_.dimension(1);
     *outStream_ << "Cell offsets across processors: " << cellOffsets_ << std::endl;
@@ -216,25 +240,17 @@ virtual void SetParallelStructure()
                                                    myGlobIds_, 0, commPtr_));
     //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
     /** One can also use the non-member function:
-          myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
+        myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
         to build the overlap map.
     **/
     myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
-}
-
-
-
-virtual void SetUpLocalIntrepidArrays() 
-{
+  }
+  
+  virtual void SetUpLocalIntrepidArrays(void) {
     /****************************************************/
     /*** Set up local discretization data and arrays. ***/
     /****************************************************/
-    // Retrieve some basic cell information.
-    cellType_ = (basisPtrs_[0])->getBaseCellTopology();   // get the cell type from any basis
-    spaceDim_ = cellType_.getDimension();                 // retrieve spatial dimension
-    numNodesPerCell_ = cellType_.getNodeCount();          // retrieve number of nodes per cell
-
     // Cubature data.
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                                          // create cubature factory
     int cubDegree = 4;                                                                          // set cubature degree, e.g., 2
@@ -301,17 +317,16 @@ virtual void SetUpLocalIntrepidArrays()
                                                   *cellNodes_,
                                                   cellType_);
     
-} 
-
-virtual void ComputeLocalSystemMats() { } 
- 
-virtual void ComputeLocalForceVec() { }   
-
-virtual void SetUpTrueDataOnNodes() { }
-
-
-virtual void AssembleSystemMats()
-{ 
+  } 
+  
+  virtual void ComputeLocalSystemMats(void) { }
+   
+  virtual void ComputeLocalForceVec(void) { }
+  
+  virtual void SetUpTrueDataOnNodes(void) { }
+  
+  
+  virtual void AssembleSystemMats(void) { 
     /****************************************/
     /*** Assemble global data structures. ***/
     /****************************************/
@@ -348,11 +363,10 @@ virtual void AssembleSystemMats()
       }
     }
     matM_->fillComplete();
-}
-
-
-virtual void AssembleRHSVector()
-{
+  }
+  
+  
+  virtual void AssembleRHSVector(void) {
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
     vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
@@ -366,12 +380,46 @@ virtual void AssembleRHSVector()
     }
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
-}
+  }
+  
+  virtual void updateF(const std::vector<Real> &param) {
+    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
+    int numLocalDofs = cellDofs.dimension(1);
+    std::vector<Real> F(1), x(spaceDim_);
+    for (int i = 0; i < numCells_; ++i) {
+      for (int j = 0; j < numCubPoints_; ++j) {
+        for (int k = 0; k < spaceDim_; ++k) {
+          x[k] = (*cubPointsPhysical_)(i,j,k);
+        }
+        funcRHS(F,x,param);
+        (*dataF_)(i,j) = F[0];
+      }
+    }
+    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,
+                                                  *dataF_,
+                                                  *valPhysicalWeighted_,
+                                                  Intrepid::COMP_CPP);
+    // vecF_ requires assembly using vecF_overlap_ and redistribution
+    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    for (int i = 0; i < numCells_; ++i) {
+      for (int j = 0; j < numCubPoints_; ++j) {
+        vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),0,
+                                                   (*datavalVecF_)[i*numLocalDofs+j]);
+      }
+    }
+    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());
+    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);
 
-
-
-virtual void AssembleDataVector()
-{
+    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+    for (int i = 0; i < myDirichletDofs_.size(); ++i) {
+      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
+        vecF_dirichlet_->replaceGlobalValue(myDirichletDofs_[i], 0, 0);
+      }
+    }
+  }
+  
+  virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
     vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
     for (int i=0; i<numCells_; ++i) {
@@ -383,19 +431,18 @@ virtual void AssembleDataVector()
         }
       }
     }
-}
-
-// check to see if a globaldof is on boundary
-virtual bool check_myGlobalDof_on_boundary(int globalDof)
-{
-    	if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof))
-		return true;
-	return false;
-}
-
-//create myDirichletCellIds_ and myDirichletDofs_
-virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
-{
+  }
+  
+  // check to see if a globaldof is on boundary
+  virtual bool check_myGlobalDof_on_boundary(int globalDof) {
+    if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof)) {
+      return true;
+    }
+    return false;
+  }
+  
+  //create myDirichletCellIds_ and myDirichletDofs_
+  virtual void SetUpMyDBCInfo(std::vector<int> dbc_side) {
     Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
     Teuchos::Array<int> mySortedCellIds_(myCellIds_);
@@ -430,23 +477,19 @@ virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
     int nfields = basisPtrs_.size();
     numDofsPerNode = numDofsPerNode * nfields;
     numDofsPerEdge = numDofsPerEdge * nfields;
-
+  
     int n_dbc = dbc_side.size();
-    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) 
-    {
-     
-     bool isdbc = false;
-     for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++)
-     {
-	if(i == dbc_side[i_dbc])
-	{
-	  isdbc = true;
-	  break;
-	}
+    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) {
+      bool isdbc = false;
+      for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++) {
+        if(i == dbc_side[i_dbc]) {
+          isdbc = true;
+          break;
+        }
       }
       if(!isdbc)
-	continue;	
-	
+        continue;	
+      
       for (int j=0; j<myDirichletCellIds_[i].size(); ++j) {
         for (int k=0; k<numDofsPerNode; ++k) {
           const CellTopologyData * ctd = cellType_.getCellTopologyData();
@@ -462,11 +505,9 @@ virtual void SetUpMyDBCInfo(std::vector<int> dbc_side)
     }
     std::sort(myDirichletDofs_.begin(), myDirichletDofs_.end());
     myDirichletDofs_.erase( std::unique(myDirichletDofs_.begin(), myDirichletDofs_.end()), myDirichletDofs_.end() );
-}
+  }
 
-
-virtual void EnforceDBC( )
-{    
+  virtual void EnforceDBC(void) {    
     // Apply Dirichlet conditions.
     // zero out row and column, make matrix symmetric  
     Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
@@ -479,73 +520,66 @@ virtual void EnforceDBC( )
     matM_dirichlet_->resumeFill();
     
     int gDof; 
-    for(int i=0; i<numCells_; i++)
-    {
-	for(int j=0; j<numLocalDofs_; j++)
-	{
-	       gDof = cellDofs_(myCellIds_[i], j);
-               if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof))
-	       {
-       			size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
-        		Teuchos::Array<int> indices(numRowEntries, 0);    
-        		Teuchos::Array<Real> values(numRowEntries, 0);
-        		Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
-        		Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
-        		matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-        		matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
-        		for (int k=0; k<indices.size(); k++) {
-          			if (indices[k] == gDof) 
-				{
-            			   	canonicalValues[k] = 1.0;
-				}
-       	 		}
-        		matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
-        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-        		vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
-      		}
+    for(int i=0; i<numCells_; i++) {
+      for(int j=0; j<numLocalDofs_; j++) {
+        gDof = cellDofs_(myCellIds_[i], j);
+        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
+          size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
+          Teuchos::Array<int> indices(numRowEntries, 0);    
+          Teuchos::Array<Real> values(numRowEntries, 0);
+          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
+          Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
+          matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          for (int k=0; k<indices.size(); k++) {
+            if (indices[k] == gDof) {
+              canonicalValues[k] = 1.0;
+            }
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
+        }
                
-		if (!check_myGlobalDof_on_boundary(gDof))
-		{
-       			size_t numDBCDofs = myDirichletDofs_.size();
-        		Teuchos::Array<int> indices(numDBCDofs, 0);    
-        		Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
- 			for (int k=0; k<indices.size(); k++) {
-            			indices[k] = myDirichletDofs_[k];
-       	 		}
-        		matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-        		matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
-    		}
-	}
+        if (!check_myGlobalDof_on_boundary(gDof)) {
+          size_t numDBCDofs = myDirichletDofs_.size();
+          Teuchos::Array<int> indices(numDBCDofs, 0);    
+          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
+          for (int k=0; k<indices.size(); k++) {
+            indices[k] = myDirichletDofs_[k];
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        }
+      }
     }	
     matA_dirichlet_->fillComplete();
     matM_dirichlet_->fillComplete();
-}
+  }
 
 /*
-virtual void GenerateTransposedMats()
-{
+  virtual void GenerateTransposedMats() {
     // Create matrix transposes.
     Tpetra::RowMatrixTransposer<> transposerA(matA_dirichlet_);
     Tpetra::RowMatrixTransposer<> transposerM(matM_dirichlet_);
     matA_dirichlet_trans_ = transposerA.createTranspose();
     matM_dirichlet_trans_ = transposerM.createTranspose();
-}
+  }
 */
 
-virtual void ConstructSolvers()
-{
+  virtual void ConstructSolvers(void) {
     // Construct solver using Amesos2 factory.
-    try{
+    try {
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
-    } catch (std::invalid_argument e) {
+    }
+    catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
     }
     solverA_->numericFactorization();
-}
+  }
 
 /*
-virtual void ConstructAdjointSolvers()
-{
+  virtual void ConstructAdjointSolvers() {
     // Construct solver using Amesos2 factory.
     try{
       solverA_trans_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_trans_);
@@ -553,7 +587,7 @@ virtual void ConstructAdjointSolvers()
       std::cout << e.what() << std::endl;
     }
     solverA_trans_->numericFactorization();
-}
+  }
 */
 
   Teuchos::RCP<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
@@ -608,8 +642,12 @@ virtual void ConstructAdjointSolvers()
     }
   }
 
-
  virtual Real funcRHS(const Real &x1, const Real &x2) const { return 0.0; }
+ virtual void funcRHS(std::vector<Real> &F,
+                const std::vector<Real> &x,
+                const std::vector<Real> &param) const {
+   F.clear(); F.resize(1);
+ }
 
  virtual Real funcTarget(const Real &x1, const Real &x2) const { return 0.0; }
 
@@ -688,6 +726,45 @@ virtual void ConstructAdjointSolvers()
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
+  }
+
+  // ACCESSOR FUNCTIONS
+  Teuchos::RCP<MeshManager<Real> >& GetMeshManager(void) {
+    TEUCHOS_TEST_FOR_EXCEPTION(meshMgr_==Teuchos::null, std::logic_error,
+      ">>> (PDE_FEM::GetMeshManager): MeshManager not initialized!");
+    return meshMgr_;
+  }
+
+  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >& GetBasisPtr(const int ind) {
+    TEUCHOS_TEST_FOR_EXCEPTION(ind > spaceDim_-1 || ind < 0, std::logic_error,
+      ">>> (PDE_FEM::GetBasisPtr): ind out of bounds!");
+    TEUCHOS_TEST_FOR_EXCEPTION(basisPtrs_.size()==0, std::logic_error,
+      ">>> (PDE_FEM::GetBasisPtr): BasisPntrs not initialized!");
+    return basisPtrs_[ind];
+  }
+
+  int GetBasisOrder(void) const {
+    return basisOrder_;
+  }
+
+  int GetSpaceDim(void) const {
+    return spaceDim_;
+  }
+
+  int GetNumCells(void) const {
+    return numCells_;
+  }
+
+  int GetNumLocalDofs(void) const {
+    return numLocalDofs_;
+  }
+
+  int GetNumCubPoints(void) const {
+    return numCubPoints_;
+  }
+
+  int GetLocalFieldSize(void) const {
+    return lfs_;
   }
 
 }; // class PDE_FEM

@@ -186,7 +186,7 @@ std::vector<Real> EqualityConstraint<Real>::solveAugmentedSystem(Vector<Real> &v
   /*** Initialization. ***/
   Real zero = 0.0;
   Real one  = 1.0;
-  int m = 50;           // Krylov space size.
+  int m = 200;           // Krylov space size.
   Real zerotol = zero;
   int i = 0;
   int k = 0;

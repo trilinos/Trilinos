@@ -54,34 +54,40 @@ private:
 
   Real prob_;
   Real eps_;
+
   Real omp_;
   Real ub_;
 
-public:
+  void checkInputs(void) const {
+    Real zero(0), one(1);
+    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+      ">>> ERROR (ROL::MoreauYosidaCVaR): Confidence level must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::MoreauYosidaCVaR): Smoothing parameter must be positive!");
+  }
 
-  MoreauYosidaCVaR(Real prob, Real eps )
-    : ExpectationQuad<Real>() {
-    Real zero(0), half(0.5), one(1);
-    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
-    eps_  = ((eps > zero) ? eps : one);
+  void setParameters(void) {
+    Real one(1);
     omp_  = one-prob_;
     ub_   = eps_/omp_;
   }
 
+public:
+
+  MoreauYosidaCVaR(Real prob, Real eps )
+    : ExpectationQuad<Real>(), prob_(prob), eps_(eps) {
+    checkInputs();
+    setParameters();
+  }
+
   MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
-    Real zero(0), half(0.5), one(1);
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Moreau-Yosida CVaR");
-    // Check CVaR inputs
-    Real prob = list.get("Confidence Level",half);
-    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
-    // Smoothing parameter
-    Real eps = list.get("Smoothing Parameter",1.);
-    eps_ = ((eps > zero) ? eps : one);
-    // Commonly used scalars
-    omp_  = one-prob_;
-    ub_   = eps_/omp_;
+    prob_ = list.get<Real>("Confidence Level");
+    eps_  = list.get<Real>("Smoothing Parameter");
+    checkInputs();
+    setParameters();
   }
 
   Real error(Real x, int deriv = 0) {

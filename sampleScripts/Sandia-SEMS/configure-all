@@ -77,9 +77,12 @@ if [ "${CUDA}" == "ON" ]; then
   module load ${CUDA_SUFFIX}
   module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
   export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper
+  export CUDA_LAUNCH_BLOCKING=1
+  export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 else
   module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}
   module load ${CUDA_SUFFIX}
+  unset OMPI_CXX
 fi
 module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base
 module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}
@@ -92,9 +95,12 @@ if [ "${CUDA}" == "ON" ]; then
   echo "module load ${CUDA_SUFFIX}" >> modules
   echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules
   echo "export OMPI_CXX=${TRILINOS_PATH}/packages/kokkos/config/nvcc_wrapper" >> modules
+  echo "export CUDA_LAUNCH_BLOCKING=1" >> modules
+  echo "export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1" >> modules
 else
   echo "module load ${COMPILER_SUFFIX}/${MPI_SUFFIX}/${CUDA_SUFFIX}" >> modules
   echo "module load ${CUDA_SUFFIX}" >> modules
+  echo "unset OMPI_CXX" >> modules
 fi
 echo "module load ${BOOST_SUFFIX}/${COMPILER_SUFFIX}/base" >> modules
 echo "module load ${HDF5_SUFFIX}/${COMPILER_SUFFIX}/${MPI_SUFFIX}" >> modules
@@ -184,6 +190,9 @@ cmake \
 -D Trilinos_ENABLE_Intrepid=ON \
   -D Intrepid_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
   -D Intrepid_ENABLE_TESTS:BOOL=${TESTS} \
+-D Trilinos_ENABLE_Intrepid2=ON \
+  -D Intrepid2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Intrepid2_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Isorropia=ON \
   -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Kokkos=ON \
@@ -194,6 +203,8 @@ cmake \
   -D MueLu_INST_DOUBLE_INT_LONGINT:BOOL=ON \
   -D MueLu_ENABLE_TESTS:BOOL=${TESTS} \
   -D MueLu_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_NOX=ON \
+  -D NOX_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Panzer=ON \
   -D Panzer_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ROL=ON \

@@ -54,6 +54,7 @@ template<class Real>
 class ElasticitySIMP : public Elasticity <Real> {
 protected:
   Real initDensity_;
+  Real minDensity_;
   int powerP_;
   Real xmax_;
   Real ymax_;
@@ -61,9 +62,7 @@ protected:
   Real cy_;
 
   int loadCase_;
-  Real loadMag_;
-  Real loadAngle1_;
-  Real loadAngle2_;
+  std::vector<Real> param_;
   
   std::vector<Teuchos::RCP<Material_SIMP<Real> > >SIMPmaterial_;
   Teuchos::RCP<const Tpetra::Map<> >    myCellMap_;
@@ -84,12 +83,14 @@ public:
     // new material parameters
     powerP_      = this->parlist_->sublist("ElasticitySIMP").get("SIMP Power", 3);
     initDensity_ = this->parlist_->sublist("ElasticitySIMP").get("Initial Density", one);
+    minDensity_  = this->parlist_->sublist("ElasticitySIMP").get("Minimum Density", one);
 
     // Loading magnitude and angles
     loadCase_    = this->parlist_->sublist("ElasticitySIMP").get("Load Case", 0);
-    loadMag_     = this->parlist_->sublist("ElasticitySIMP").get("Load Magnitude", one);
-    loadAngle1_  = this->parlist_->sublist("ElasticitySIMP").get("Load Polar Angle", -pi);
-    loadAngle2_  = this->parlist_->sublist("ElasticitySIMP").get("Load Azimuth Angle", zero);
+    param_.clear(); param_.resize(3);
+    param_[0] = this->parlist_->sublist("ElasticitySIMP").get("Load Magnitude", one);
+    param_[1] = this->parlist_->sublist("ElasticitySIMP").get("Load Polar Angle", -pi);
+    param_[2] = this->parlist_->sublist("ElasticitySIMP").get("Load Azimuth Angle", zero);
 
     // Domain width and height
     xmax_        = this->parlist_->sublist("Geometry").get("Width", one);
@@ -151,7 +152,8 @@ public:
   virtual void CreateMaterial() {
     for(int i=0; i<this->numCells_; i++) {
       Teuchos::RCP<Material_SIMP<Real> > CellMaterial = Teuchos::rcp(new Material_SIMP<Real>());
-      CellMaterial->InitializeSIMP(this->spaceDim_, this->planeStrain_, this->E_, this->poissonR_, initDensity_, powerP_);
+      CellMaterial->InitializeSIMP(this->spaceDim_, this->planeStrain_, this->E_,
+                                   this->poissonR_, initDensity_, powerP_, minDensity_);
       this->materialTensorDim_ = CellMaterial->GetMaterialTensorDim();
       SIMPmaterial_.push_back(CellMaterial);
     }
@@ -277,42 +279,137 @@ public:
   }
 
 
-  virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
-    Real val(0), eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
-    Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
-    switch(loadCase_) {
-      case(0): { // Force applied to center of top boundary
-        if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
-             (x2 > ymax_-cy) ) {
-          val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
+  /*virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
+       if(loadCase_==1 && k==0 && x2 > ymax_-0.05 && x1 > xmax_/2-0.05 && x1 < xmax_/2+0.05)
+               return -10.0;
+       else if(loadCase_==2 && k==0 && x2 > ymax_-0.05 && x1 < 0.05)
+               return -10.0;
+       else if(loadCase_==3 && k==1 && x2 > ymax_-0.05 && x1 > xmax_/2-0.05 && x1 < xmax_/2+0.05)
+               return 10.0;
+       else if(loadCase_==4 && k==1 && x2 > ymax_-0.05 && x1 < 0.05)
+               return 10.0;
+       else if(loadCase_==5 && k==0 && x2 > ymax_-0.05)
+               return -2.0;
+       else if(loadCase_==6 && k==1 && x2 > ymax_-0.05)
+               return 2.0;
+       else if(loadCase_==7 && k==0 && x1 > xmax_-0.05)
+               return -2.0;
+       else if(loadCase_==8 && k==1 && x1 > xmax_-0.05)
+               return 2.0;
+       else 
+               return 0.0; 
+  }*/
+
+
+  virtual void funcRHS(std::vector<Real> &F,
+                 const std::vector<Real> &x) const {
+    Real zero(0);
+    Real loadMag = param_[0], loadAngle1 = param_[1], loadAngle2 = param_[2];
+    F.clear(); F.resize(this->spaceDim_,zero);
+    if (this->spaceDim_ == 2) {
+      //Real eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
+      //Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
+      Real cx(0.1), cy(0.05), half(0.5);
+      Real x1 = x[0], x2 = x[1];
+      switch(loadCase_) {
+        case 0: { // Force applied to center of top boundary
+          if ( x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx) &&
+               x2 > ymax_-cy ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
         }
-      }
-      case(1): { // Force applied to top right corner
-        if ( (x1 > xmax_-cx) &&
-             (x2 > ymax_-cy) ) {
-          val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
+        case 1: { // Force applied to top right corner
+          if ( (x1 > xmax_-cx) &&
+               (x2 > ymax_-cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
         }
-      }
-      case(2): { // Force applied to center of right boundary
-        if ( (x1 > xmax_-cx) &&
-             (x2 > half*(ymax_-cy) && x2 < half*(ymax_+cy)) ) {
-          val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
+        case 2: { // Force applied to center of right boundary
+          if ( (x1 > xmax_-cx) &&
+               (x2 > half*(ymax_-cy) && x2 < half*(ymax_+cy)) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
         }
-      }
-      case(3): { // Force applied to lower right corner
-        if ( (x1 > xmax_-cx) &&
-             (x2 < cy) ) {
-          val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
+        case 3: { // Force applied to lower right corner
+          if ( (x1 > xmax_-cx) &&
+               (x2 < cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
         }
-      }
-      case(4): { // Force applied to center of bottom boundary
-        if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
-             (x2 < cy) ) {
-          val = loadMag_*((k==0) ? std::cos(loadAngle1_) : std::sin(loadAngle1_));
+        case 4: { // Force applied to center of bottom boundary
+          if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
+               (x2 < cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
         }
       }
     }
-    return val;
+  }
+
+  virtual void funcRHS(std::vector<Real> &F,
+                 const std::vector<Real> &x,
+                 const std::vector<Real> &param) const {
+    Real zero(0), half(0.5), six(6), ten(10);
+    Real loadMag = std::pow(ten,param[0]), loadAngle1 = M_PI*(param[1]/six - half); // loadAngle2 = param[2];
+    F.clear(); F.resize(this->spaceDim_,zero);
+    if (this->spaceDim_ == 2) {
+      //Real eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
+      //Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
+      Real cx(0.1), cy(0.05), half(0.5);
+      Real x1 = x[0], x2 = x[1];
+      switch(loadCase_) {
+        case 0: { // Force applied to center of top boundary
+          if ( x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx) &&
+               x2 > ymax_-cy ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
+        }
+        case 1: { // Force applied to top right corner
+          if ( (x1 > xmax_-cx) &&
+               (x2 > ymax_-cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
+        }
+        case 2: { // Force applied to center of right boundary
+          if ( (x1 > xmax_-cx) &&
+               (x2 > half*(ymax_-cy) && x2 < half*(ymax_+cy)) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
+        }
+        case 3: { // Force applied to lower right corner
+          if ( (x1 > xmax_-cx) &&
+               (x2 < cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
+        }
+        case 4: { // Force applied to center of bottom boundary
+          if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
+               (x2 < cy) ) {
+            F[0] = loadMag*std::sin(loadAngle1);
+            F[1] = loadMag*std::cos(loadAngle1);
+          }
+          break;
+        }
+      }
+    }
   }
 
 }; // class ElasticitySIMPData

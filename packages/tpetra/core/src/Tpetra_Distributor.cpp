@@ -180,7 +180,6 @@ namespace Tpetra {
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , enable_cuda_rdma_ (enable_cuda_rdma_default)
-    , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -201,7 +200,6 @@ namespace Tpetra {
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , enable_cuda_rdma_ (enable_cuda_rdma_default)
-    , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -222,7 +220,6 @@ namespace Tpetra {
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , enable_cuda_rdma_ (enable_cuda_rdma_default)
-    , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -244,7 +241,6 @@ namespace Tpetra {
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
     , enable_cuda_rdma_ (enable_cuda_rdma_default)
-    , numExports_ (0)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -265,7 +261,6 @@ namespace Tpetra {
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
     , enable_cuda_rdma_ (distributor.enable_cuda_rdma_)
-    , numExports_ (distributor.numExports_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
     , imagesTo_ (distributor.imagesTo_)
@@ -329,7 +324,6 @@ namespace Tpetra {
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
     std::swap (enable_cuda_rdma_, rhs.enable_cuda_rdma_);
-    std::swap (numExports_, rhs.numExports_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
     std::swap (imagesTo_, rhs.imagesTo_);
@@ -514,7 +508,12 @@ namespace Tpetra {
   void
   Distributor::createReverseDistributor() const
   {
-    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_));
+    reverseDistributor_ = Teuchos::rcp (new Distributor (comm_, out_));
+    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+    reverseDistributor_->sendType_ = sendType_;
+    reverseDistributor_->barrierBetween_ = barrierBetween_;
+    reverseDistributor_->debug_ = debug_;
+    reverseDistributor_->enable_cuda_rdma_ = enable_cuda_rdma_;
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
@@ -539,25 +538,36 @@ namespace Tpetra {
     // Initialize all of reverseDistributor's data members.  This
     // mainly just involves flipping "send" and "receive," or the
     // equivalent "to" and "from."
-    reverseDistributor_->lengthsTo_ = lengthsFrom_;
+
+    reverseDistributor_->selfMessage_ = selfMessage_;
+    reverseDistributor_->numSends_ = numReceives_;
     reverseDistributor_->imagesTo_ = imagesFrom_;
-    reverseDistributor_->indicesTo_ = indicesFrom_;
     reverseDistributor_->startsTo_ = startsFrom_;
+    reverseDistributor_->lengthsTo_ = lengthsFrom_;
+    reverseDistributor_->maxSendLength_ = maxReceiveLength;
+    reverseDistributor_->indicesTo_ = indicesFrom_;
+    reverseDistributor_->numReceives_ = numSends_;
+    reverseDistributor_->totalReceiveLength_ = totalSendLength;
     reverseDistributor_->lengthsFrom_ = lengthsTo_;
     reverseDistributor_->imagesFrom_ = imagesTo_;
-    reverseDistributor_->indicesFrom_ = indicesTo_;
     reverseDistributor_->startsFrom_ = startsTo_;
-    reverseDistributor_->numSends_ = numReceives_;
-    reverseDistributor_->numReceives_ = numSends_;
-    reverseDistributor_->selfMessage_ = selfMessage_;
-    reverseDistributor_->maxSendLength_ = maxReceiveLength;
-    reverseDistributor_->totalReceiveLength_ = totalSendLength;
-    reverseDistributor_->howInitialized_ = Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE;
+    reverseDistributor_->indicesFrom_ = indicesTo_;
+
+    // requests_: Allocated on demand.
+    // reverseDistributor_: See note below
+
+    // mfh 31 Mar 2016: These are statistics, kept on calls to
+    // doPostsAndWaits or doReversePostsAndWaits.  They weren't here
+    // when I started, and I didn't add them, so I don't know if they
+    // are accurate.
+    reverseDistributor_->lastRoundBytesSend_ = 0;
+    reverseDistributor_->lastRoundBytesRecv_ = 0;
+
+    reverseDistributor_->useDistinctTags_ = useDistinctTags_;
 
     // Note: technically, I am my reverse distributor's reverse distributor, but
     //       we will not set this up, as it gives us an opportunity to test
     //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
-    // Note: numExports_ was not copied
   }
 
 
@@ -1046,9 +1056,7 @@ namespace Tpetra {
     using std::endl;
 
     Teuchos::OSTab tab (out_);
-
-    numExports_ = exportNodeIDs.size();
-
+    const size_t numExports = exportNodeIDs.size();
     const int myImageID = comm_->getRank();
     const int numImages = comm_->getSize();
     if (debug_) {
@@ -1114,7 +1122,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     int badID = -1; // only used in a debug build
 #endif // HAVE_TPETRA_DEBUG
-    for (size_t i = 0; i < numExports_; ++i) {
+    for (size_t i = 0; i < numExports; ++i) {
       const int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
 #ifdef HAVE_TPETRA_DEBUG
@@ -1288,7 +1296,7 @@ namespace Tpetra {
 
       indicesTo_.resize(numActive);
 
-      for (size_t i = 0; i < numExports_; ++i) {
+      for (size_t i = 0; i < numExports; ++i) {
         if (exportNodeIDs[i] >= 0) {
           // record the offset to the sendBuffer for this export
           indicesTo_[starts[exportNodeIDs[i]]] = i;

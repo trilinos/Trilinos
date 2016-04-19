@@ -48,8 +48,8 @@
 #include "ROL_Vector.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
-#include "ROL_RiskMeasure.hpp"
 #include "ROL_RiskMeasureFactory.hpp"
+#include "ROL_ConvexCombinationRiskMeasure.hpp"
 
 namespace ROL {
 
@@ -167,7 +167,13 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       firstUpdate_(true) {
-    RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    std::string name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+    if (name != "Convex Combination Risk Measure") {
+      RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    }
+    else {
+      RiskMeasure_ = Teuchos::rcp(new ConvexCombinationRiskMeasure<Real>(parlist));
+    }
     storage_ = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
     value_storage_.clear();
     gradient_storage_.clear();
@@ -180,7 +186,13 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       firstUpdate_(true) {
-    RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    std::string name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+    if (name != "Convex Combination Risk Measure") {
+      RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    }
+    else {
+      RiskMeasure_ = ConvexCombinationRiskMeasure<Real>(parlist);
+    }
     storage_ = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
     value_storage_.clear();
     gradient_storage_.clear();
@@ -192,7 +204,13 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       firstUpdate_(true) {
-    RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    std::string name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+    if (name != "Convex Combination Risk Measure") {
+      RiskMeasure_ = RiskMeasureFactory<Real>(parlist);
+    }
+    else {
+      RiskMeasure_ = ConvexCombinationRiskMeasure<Real>(parlist);
+    }
     storage_ = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
     value_storage_.clear();
     gradient_storage_.clear();

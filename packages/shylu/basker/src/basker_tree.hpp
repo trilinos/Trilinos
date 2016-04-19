@@ -344,6 +344,8 @@ namespace BaskerNS
           }//end over threads
       }//end over nlvls
 
+    //printf("===TEST==\n");
+
     #ifdef BASKER_DEBUG_TREE
     cout << "Schedule: " << endl; 
     for(Int l=0; l < tree.nlvls+1; l++)

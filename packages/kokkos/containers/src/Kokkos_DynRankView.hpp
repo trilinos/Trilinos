@@ -107,9 +107,10 @@ struct DynRankDimTraits {
   }
 
   // Create the layout for the rank-7 view.
+  // Non-strided Layout
   template <typename Layout>
   KOKKOS_INLINE_FUNCTION
-  static Layout createLayout( const Layout& layout )
+  static typename std::enable_if< (std::is_same<Layout , Kokkos::LayoutRight>::value || std::is_same<Layout , Kokkos::LayoutLeft>::value) , Layout >::type createLayout( const Layout& layout )
   {
     return Layout( layout.dimension[0] != 0 ? layout.dimension[0] : 1
                  , layout.dimension[1] != 0 ? layout.dimension[1] : 1
@@ -119,6 +120,30 @@ struct DynRankDimTraits {
                  , layout.dimension[5] != 0 ? layout.dimension[5] : 1
                  , layout.dimension[6] != 0 ? layout.dimension[6] : 1
                  , layout.dimension[7] != 0 ? layout.dimension[7] : 1
+                 );
+  }
+
+  // LayoutStride
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<Layout , Kokkos::LayoutStride>::value) , Layout>::type createLayout( const Layout& layout )
+  {
+    return Layout( layout.dimension[0] != 0 ? layout.dimension[0] : 1
+                 , layout.stride[0] 
+                 , layout.dimension[1] != 0 ? layout.dimension[1] : 1
+                 , layout.stride[1] 
+                 , layout.dimension[2] != 0 ? layout.dimension[2] : 1
+                 , layout.stride[2] 
+                 , layout.dimension[3] != 0 ? layout.dimension[3] : 1
+                 , layout.stride[3] 
+                 , layout.dimension[4] != 0 ? layout.dimension[4] : 1
+                 , layout.stride[4] 
+                 , layout.dimension[5] != 0 ? layout.dimension[5] : 1
+                 , layout.stride[5] 
+                 , layout.dimension[6] != 0 ? layout.dimension[6] : 1
+                 , layout.stride[6] 
+                 , layout.dimension[7] != 0 ? layout.dimension[7] : 1
+                 , layout.stride[7] 
                  );
   }
 
@@ -185,41 +210,63 @@ public:
 
   typedef ViewTraits< DataType , Properties ... > traits ;
 
-  typedef typename traits::execution_space execution_space;
-  typedef typename traits::memory_space memory_space;
-  typedef typename traits::size_type size_type;
+  // Data type traits:
+  typedef typename traits::data_type            data_type;
+  typedef typename traits::const_data_type      const_data_type;
+  typedef typename traits::non_const_data_type  non_const_data_type;
 
-  typedef typename traits::data_type data_type;
-  typedef typename traits::const_data_type const_data_type;
-  typedef typename traits::non_const_data_type non_const_data_type;
+  // Compatible array of trivial type traits:
+  typedef typename traits::scalar_array_type            scalar_array_type ;
+  typedef typename traits::const_scalar_array_type      const_scalar_array_type ;
+  typedef typename traits::non_const_scalar_array_type  non_const_scalar_array_type ;
 
-  typedef typename traits::host_mirror_space host_mirror_space;
+  // Value type traits:
+  typedef typename traits::value_type            value_type ;
+  typedef typename traits::const_value_type      const_value_type ;
+  typedef typename traits::non_const_value_type  non_const_value_type ;
+
+  // Mapping traits:
+  typedef typename traits::array_layout   array_layout ;
+  typedef typename traits::specialize     specialize ;
+
+  // Execution space, memory space, memory access traits, and host mirror space:
+  typedef typename traits::execution_space    execution_space ;
+  typedef typename traits::memory_space       memory_space ;
+  typedef typename traits::device_type        device_type ;
+  typedef typename traits::memory_traits      memory_traits ;
+  typedef typename traits::host_mirror_space  host_mirror_space ;
+
+  typedef typename traits::size_type size_type ;
+
+  using view_type::is_hostspace ;
+  using view_type::is_managed ;
+  using view_type::is_random_access ;
 
   /** \brief  Compatible view of array of scalar types */
   typedef DynRankView< typename traits::scalar_array_type ,
                        typename traits::array_layout ,
-                typename traits::device_type ,
-                typename traits::memory_traits >
+                       typename traits::device_type ,
+                       typename traits::memory_traits >
     array_type ;
 
   /** \brief  Compatible view of const data type */
   typedef DynRankView< typename traits::const_data_type ,
-                typename traits::array_layout ,
-                typename traits::device_type ,
-                typename traits::memory_traits >
+                       typename traits::array_layout ,
+                       typename traits::device_type ,
+                       typename traits::memory_traits >
     const_type ;
 
   /** \brief  Compatible view of non-const data type */
   typedef DynRankView< typename traits::non_const_data_type ,
-                typename traits::array_layout ,
-                typename traits::device_type ,
-                typename traits::memory_traits >
+                       typename traits::array_layout ,
+                       typename traits::device_type ,
+                       typename traits::memory_traits >
     non_const_type ;
 
   /** \brief  Compatible HostMirror view */
   typedef DynRankView< typename traits::non_const_data_type ,
-                typename traits::array_layout ,
-                typename traits::host_mirror_space >
+                       typename traits::array_layout ,
+                       typename traits::host_mirror_space >
     HostMirror ;
 
   //----------------------------------------
@@ -652,7 +699,7 @@ public:
 
   template < typename T , class ... P >
   KOKKOS_INLINE_FUNCTION
-  static ret_type subview( Kokkos::Experimental::View< T******* , P...> const & src 
+  static ret_type subview( const unsigned src_rank , Kokkos::Experimental::View< T******* , P...> const & src 
                     , Args ... args )
     {
 
@@ -705,7 +752,14 @@ public:
                                                   , extents.domain_offset(5)
                                                   , extents.domain_offset(6)
                                                   ) );
-      dst.m_rank = rank ;
+
+      dst.m_rank = ( src_rank > 0 ? unsigned(R0) : 0 )
+                 + ( src_rank > 1 ? unsigned(R1) : 0 )
+                 + ( src_rank > 2 ? unsigned(R2) : 0 )
+                 + ( src_rank > 3 ? unsigned(R3) : 0 )
+                 + ( src_rank > 4 ? unsigned(R4) : 0 )
+                 + ( src_rank > 5 ? unsigned(R5) : 0 )
+                 + ( src_rank > 6 ? unsigned(R6) : 0 ) ;
 
       return dst ;
     }
@@ -722,12 +776,12 @@ KOKKOS_INLINE_FUNCTION
 Subdynrankview< ViewTraits<D******* , P...> , Args... > 
 subdynrankview( const Kokkos::Experimental::DynRankView< D , P... > &src , Args...args)
   {
-    if ( src.rank() != sizeof...(Args) )
-      { Kokkos::abort("subdynrankview: ranks are not compatible"); }
+    if ( src.rank() > sizeof...(Args) ) //allow sizeof...(Args) >= src.rank(), ignore the remaining args
+      { Kokkos::abort("subdynrankview: num of args must be >= rank of the source DynRankView"); }
   
     typedef Kokkos::Experimental::Impl::ViewMapping< Kokkos::Experimental::Impl::DynRankSubviewTag , Kokkos::Experimental::ViewTraits< D*******, P... > , Args... > metafcn ;
 
-    return metafcn::subview( src.ConstDownCast() , args... );
+    return metafcn::subview( src.rank() , src.ConstDownCast() , args... );
   }
 
 } // namespace Experimental

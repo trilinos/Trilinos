@@ -285,9 +285,13 @@ void AlgParMETIS<Adapter>::partition(
     if (pe){
       std::string approach;
       approach = pe->getValue<std::string>(&approach);
-      if ((approach == "repartition") || (approach == "maximize_overlap"))
-        parmetis_method = "REFINE_KWAY";
-      // TODO:  AdaptiveRepart
+      if ((approach == "repartition") || (approach == "maximize_overlap")) {
+        if (np > 1) 
+          // ParMETIS_V3_AdaptiveRepart requires two or more processors
+          parmetis_method = "ADAPTIVE_REPART";
+        else
+          parmetis_method = "REFINE_KWAY";
+      }
     }
 
     // Other ParMETIS parameters?
@@ -311,15 +315,18 @@ void AlgParMETIS<Adapter>::partition(
     }
     else if (parmetis_method == "ADAPTIVE_REPART") {
       // Get object sizes:  pm_vsize
-      std::cout << "NOT READY FOR ADAPTIVE_REPART YET; NEED VSIZE" << std::endl;
-      exit(-1);
-      //pm_real_t itr = 100.;  // Same default as in Zoltan
-      //ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-      //                           pm_vsize, pm_ewgts, &pm_wgtflag,
-      //                           &pm_numflag, &pm_nCon, &pm_nPart,
-      //                           pm_partsizes, pm_imbTols,
-      //                           &itr, pm_options,
-      //                           &pm_edgecut, pm_partList, &mpicomm);
+      // TODO:  get pm_vsize info from input adapter or graph model
+      // TODO:  This is just a placeholder
+      pm_idx_t *pm_vsize = new pm_idx_t[nVtx];
+      for (size_t i = 0; i < nVtx; i++) pm_vsize[i] = 1;
+
+      pm_real_t itr = 100.;  // Same default as in Zoltan
+      ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
+                                 pm_vsize, pm_ewgts, &pm_wgtflag,
+                                 &pm_numflag, &pm_nCon, &pm_nPart,
+                                 pm_partsizes, pm_imbTols,
+                                 &itr, pm_options,
+                                 &pm_edgecut, pm_partList, &mpicomm);
     }
     else if (parmetis_method == "REFINE_KWAY") {
       ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,

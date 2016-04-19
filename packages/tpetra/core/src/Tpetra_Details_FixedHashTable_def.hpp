@@ -590,7 +590,7 @@ public:
   typedef SizeType size_type;
 
   // The result of the check is whether the table has one or more duplicates.
-  typedef bool value_type;
+  typedef int value_type;
 
   /// \brief Constructor
   ///
@@ -608,7 +608,7 @@ public:
   //! Set the initial value of the reduction result.
   KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
   {
-    dst = false;
+    dst = 0;
   }
 
   //! Combine two intermediate reduction results.
@@ -616,7 +616,7 @@ public:
   join (volatile value_type& dst,
         const volatile value_type& src) const
   {
-    dst = dst || src;
+    dst = dst + src > 0?1:0;
   }
 
   //! Parallel loop body.
@@ -627,7 +627,7 @@ public:
     typedef typename pairs_view_type::non_const_value_type pair_type;
     typedef typename pair_type::first_type key_type;
 
-    if (dst) {
+    if (dst>0) {
       return; // we've already found duplicate keys elsewhere
     }
     else {
@@ -647,7 +647,7 @@ public:
           }
         }
       }
-      dst = dst || foundDuplicateKey;
+      dst = (dst>0) || foundDuplicateKey?1:0;
     }
   }
 
@@ -865,6 +865,63 @@ FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
 
 template<class KeyType, class ValueType, class DeviceType>
 FixedHashTable<KeyType, ValueType, DeviceType>::
+FixedHashTable (const keys_type& keys,
+                const KeyType firstContigKey,
+                const KeyType lastContigKey,
+                const ValueType startingValue,
+                const bool keepKeys) :
+  minKey_ (std::numeric_limits<KeyType>::max ()),
+  maxKey_ (std::numeric_limits<KeyType>::is_integer ?
+           std::numeric_limits<KeyType>::min () :
+           -std::numeric_limits<KeyType>::max ()),
+  minVal_ (startingValue),
+  maxVal_ (keys.size () == 0 ?
+           startingValue :
+           static_cast<ValueType> (startingValue + keys.size () - 1)),
+  firstContigKey_ (firstContigKey),
+  lastContigKey_ (lastContigKey),
+  contiguousValues_ (true),
+  checkedForDuplicateKeys_ (false),
+  hasDuplicateKeys_ (false) // to revise in hasDuplicateKeys()
+{
+  const KeyType initMinKey = std::numeric_limits<KeyType>::max ();
+  // min() for a floating-point type returns the minimum _positive_
+  // normalized value.  This is different than for integer types.
+  // lowest() is new in C++11 and returns the least value, always
+  // negative for signed finite types.
+  //
+  // mfh 23 May 2015: I have heard reports that
+  // std::numeric_limits<int>::lowest() does not exist with the Intel
+  // compiler.  I'm not sure if the users in question actually enabled
+  // C++11.  However, it's easy enough to work around this issue.  The
+  // standard floating-point types are signed and have a sign bit, so
+  // lowest() is just -max().  For integer types, we can use min()
+  // instead.
+  const KeyType initMaxKey = std::numeric_limits<KeyType>::is_integer ?
+    std::numeric_limits<KeyType>::min () :
+    -std::numeric_limits<KeyType>::max ();
+  this->init (keys, startingValue, initMinKey, initMaxKey,
+              firstContigKey, lastContigKey, true);
+  if (keepKeys) {
+    keys_ = keys;
+#ifdef HAVE_TPETRA_DEBUG
+    typedef typename keys_type::size_type size_type;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (keys_.dimension_0 () != static_cast<size_type> (keys.size ()),
+       std::logic_error, "Tpetra::Details::FixedHashTable constructor: "
+       "keepKeys is true, but on return, keys_.dimension_0() = " <<
+       keys_.dimension_0 () << " != keys.size() = " << keys.size () <<
+       ".  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+  }
+
+#ifdef HAVE_TPETRA_DEBUG
+  check ();
+#endif // HAVE_TPETRA_DEBUG
+}
+
+template<class KeyType, class ValueType, class DeviceType>
+FixedHashTable<KeyType, ValueType, DeviceType>::
 FixedHashTable (const Teuchos::ArrayView<const KeyType>& keys,
                 const KeyType firstContigKey,
                 const KeyType lastContigKey,
@@ -1039,6 +1096,7 @@ init (const keys_type& keys,
       const bool computeInitContigKeys)
 {
   using Kokkos::subview;
+  using Kokkos::ViewAllocateWithoutInitializing;
 
   const offset_type numKeys = static_cast<offset_type> (keys.dimension_0 ());
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -1078,7 +1136,11 @@ init (const keys_type& keys,
     // out of Map's constructor here, so there is no loss in doing it
     // sequentially for now.  Later, we can work on parallelization.
     //
-    // FIXME (mfh 01 Jun 2015) This assumes UVM.
+    // NOTE (mfh 01 Jun 2015, 28 Mar 2016) The code below assumes UVM.
+    // It is rational to assume UVM here, because this is "sparse"
+    // access -- we might not need to look at all the entries of keys,
+    // so it doesn't necessarily make sense to copy the whole thing
+    // back to host.
     if (numKeys > 0) {
       firstContigKey_ = keys[0];
       // Start with one plus, then decrement at the end.  That lets us do
@@ -1126,6 +1188,9 @@ init (const keys_type& keys,
   keys_type theKeys =
     subview (keys, std::pair<offset_type, offset_type> (startIndex, numKeys));
 
+  // FIXME (mfh 28 Mar 2016) For some reason, we don't seem to need a
+  // fence here, but we do before other allocations.
+
   // The array of counts must be separate from the array of offsets,
   // in order for parallel_scan to work correctly.
   typedef typename ptr_type::non_const_type counts_type;
@@ -1145,16 +1210,28 @@ init (const keys_type& keys,
     Kokkos::parallel_for (theNumKeys, functor);
   }
   else {
+    // Access to counts is not necessarily contiguous, but is
+    // irregular and likely touches all pages of the array.  Thus, it
+    // probably makes sense to use a host copy explicitly, rather than
+    // assume UVM.
+    auto countsHost = Kokkos::create_mirror_view (counts);
+    // FIXME (mfh 28 Mar 2016) Does create_mirror_view zero-fill?
+    Kokkos::deep_copy (countsHost, static_cast<offset_type> (0));
+
     for (offset_type k = 0; k < theNumKeys; ++k) {
       typedef typename hash_type::result_type hash_value_type;
-
       const hash_value_type hashVal = hash_type::hashFunc (theKeys[k], size);
-      ++counts[hashVal];
+      ++countsHost[hashVal];
     }
+    Kokkos::deep_copy (counts, countsHost);
   }
 
+  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
+  // CUDA when ptr is filled.
+  execution_space::fence ();
+
   // Kokkos::View fills with zeros by default.
-  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size + 1);
+  typename ptr_type::non_const_type ptr ("FixedHashTable::ptr", size+1);
 
   // Compute row offsets via prefix sum:
   //
@@ -1174,12 +1251,21 @@ init (const keys_type& keys,
     Kokkos::parallel_scan (size+1, functor);
   }
   else {
+    // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
+    // use a host mirror too, so I'll just do that.
+    typename decltype (ptr)::HostMirror ptrHost = Kokkos::create_mirror_view (ptr);
+
+    ptrHost[0] = 0;
     for (offset_type i = 0; i < size; ++i) {
-      //ptr[i+1] += ptr[i];
-      ptr[i+1] = ptr[i] + counts[i];
+      //ptrHost[i+1] += ptrHost[i];
+      ptrHost[i+1] = ptrHost[i] + counts[i];
     }
-    //ptr[0] = 0; // We've already done this when initializing ptr above.
+    Kokkos::deep_copy (ptr, ptrHost);
   }
+
+  // FIXME (mfh 28 Mar 2016) Need a fence here, otherwise SIGSEGV w/
+  // CUDA when val is filled.
+  execution_space::fence ();
 
   // Allocate the array of (key,value) pairs.  Don't fill it with
   // zeros, because we will fill it with actual data below.
@@ -1213,6 +1299,9 @@ init (const keys_type& keys,
       const hash_value_type hashVal = hash_type::hashFunc (key, size);
 
       // Return the old count; decrement afterwards.
+      //
+      // NOTE (mfh 28 Mar 2016) This assumes UVM.  It might make more
+      // sense to use a host mirror here, due to the access pattern.
       const offset_type count = counts[hashVal];
       --counts[hashVal];
       if (count == 0) {
@@ -1220,8 +1309,10 @@ init (const keys_type& keys,
         break;
       }
       else {
+        // NOTE (mfh 28 Mar 2016) This assumes UVM.
         const offset_type curPos = ptr[hashVal+1] - count;
 
+        // NOTE (mfh 28 Mar 2016) This assumes UVM.
         val[curPos].first = key;
         val[curPos].second = theVal;
       }
@@ -1393,9 +1484,9 @@ checkForDuplicateKeys () const
   else {
     typedef FHT::CheckForDuplicateKeys<ptr_type, val_type> functor_type;
     functor_type functor (val_, ptr_);
-    bool hasDupKeys = false;
+    int hasDupKeys = 0;
     Kokkos::parallel_reduce (size, functor, hasDupKeys);
-    return hasDupKeys;
+    return hasDupKeys>0;
   }
 }
 

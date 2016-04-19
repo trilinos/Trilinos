@@ -168,6 +168,49 @@ buildConnectivity(const panzer::FieldPattern & fp)
   }
 }
 
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+Teuchos::RCP<panzer::ConnManagerBase<LocalOrdinal> > 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+noConnectivityClone() const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  RCP<CartesianConnManager<LocalOrdinal,GlobalOrdinal> > clone
+    = rcp(new CartesianConnManager<LocalOrdinal,GlobalOrdinal>);
+
+  clone->numProc_ = numProc_;
+  clone->myRank_ = myRank_;
+
+  clone->dim_ = dim_;
+
+  clone->elements_.x = elements_.x;
+  clone->elements_.y = elements_.y;
+  clone->elements_.z = elements_.z;
+
+  clone->processors_.x = processors_.x;
+  clone->processors_.y = processors_.y;
+  clone->processors_.z = processors_.z;
+
+  clone->blocks_.x = blocks_.x;
+  clone->blocks_.y = blocks_.y;
+  clone->blocks_.z = blocks_.z;
+
+  clone->totalElements_.x = totalElements_.x;
+  clone->totalElements_.y = totalElements_.y;
+  clone->totalElements_.z = totalElements_.z;
+
+  clone->totalNodes_ = totalNodes_;
+  clone->totalEdges_ = totalEdges_;
+  clone->totalFaces_ = totalFaces_;
+  clone->totalCells_ = totalCells_;
+
+  clone->buildLocalElements();
+ 
+  return clone;
+}
+
 template <typename LocalOrdinal,typename GlobalOrdinal>
 std::size_t 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::

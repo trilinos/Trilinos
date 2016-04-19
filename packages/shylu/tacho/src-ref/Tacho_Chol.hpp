@@ -14,8 +14,8 @@ namespace Tacho {
   template<int ArgUplo,
            int ArgAlgo, int ArgVariant,
            template<int,int> class ControlType = Control>
-  struct Chol {
-
+  class Chol {
+  public:
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,
@@ -28,7 +28,7 @@ namespace Tacho {
       fprintf(stderr, ">> Template Args - Uplo %d, Algo %d, Variant %d\n", 
               ArgUplo, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
-      return 0;
+      return -1;
     }
 
     // task-data parallel interface

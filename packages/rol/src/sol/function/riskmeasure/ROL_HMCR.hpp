@@ -80,41 +80,48 @@ private:
 
   bool firstReset_;
 
+  void checkInputs(void) const {
+    Real zero(0), one(1);
+    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+      ">>> ERROR (ROL::HMCR): Confidence level must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
+      ">>> ERROR (ROL::HMCR): Convex combination parameter must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION((order_ < 2), std::invalid_argument,
+      ">>> ERROR (ROL::HMCR): Norm order!");
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::HMCR): PlusFunction pointer is null!");
+  }
+
 public:
 
-  HMCR( Real prob, Real coeff, unsigned order, Teuchos::RCP<PlusFunction<Real> > &pf )
-    : RiskMeasure<Real>(), plusFunction_(pf), xvar_(0.0), vvar_(0.0),
-      pnorm_(0.0), dpnorm_(0.0), dpnorm1_(0.0), pgv_(0.0), pgv1_(0.0),
+  HMCR( const Real prob, const Real coeff, const unsigned order,
+        const Teuchos::RCP<PlusFunction<Real> > &pf )
+    : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff), order_(order),
+      xvar_(0), vvar_(0), pnorm_(0), dpnorm_(0), dpnorm1_(0), pgv_(0), pgv1_(0),
       firstReset_(true) {
-    Real zero(0), half(0.5), one(1);
-    prob_  = ((prob  >= zero) ? ((prob  <= one) ? prob  : half) : half);
-    coeff_ = ((coeff >= zero) ? ((coeff <= one) ? coeff : one) : one);
-    order_ = ((order < 2) ? 2 : order);
+    checkInputs();
   }
 
   HMCR( Teuchos::ParameterList &parlist )
-    : RiskMeasure<Real>(), xvar_(0.0), vvar_(0.0),
-      pnorm_(0.0), dpnorm_(0.0), dpnorm1_(0.0), pgv_(0.0), pgv1_(0.0),
+    : RiskMeasure<Real>(), xvar_(0), vvar_(0),
+      pnorm_(0), dpnorm_(0), dpnorm1_(0), pgv_(0), pgv1_(0),
       firstReset_(true) {
-    Real zero(0), half(0.5), one(1);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR");
     // Check HMCR inputs
-    Real prob      = list.get("Confidence Level",half);
-    prob_          = ((prob  >= zero) ? ((prob  <= one) ? prob  : half) : half);
-    Real coeff     = list.get("Convex Combination Parameter",one);
-    coeff_         = ((coeff >= zero) ? ((coeff <= one) ? coeff : one) : one);
-    unsigned order = list.get("Order",2);
-    order_         = ((order < 2) ? 2 : order);
+    prob_  = list.get<Real>("Confidence Level");
+    coeff_ = list.get<Real>("Convex Combination Parameter");
+    order_ = (unsigned)list.get<int>("Order",2);
     // Build (approximate) plus function
     plusFunction_  = Teuchos::rcp(new PlusFunction<Real>(list));
+    // Check inputs
+    checkInputs();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
-    xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(
-              Teuchos::dyn_cast<const Vector<Real> >(x)).getStatistic();
+    xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
 
     if ( firstReset_ ) {
       dualVector_  = (x0->dual()).clone();
@@ -139,10 +146,9 @@ public:
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     Real zero(0);
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
-    vvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(
-              Teuchos::dyn_cast<const Vector<Real> >(v)).getStatistic();
+    const RiskVector<Real> &vr = Teuchos::dyn_cast<const RiskVector<Real> >(v);
+    v0    = Teuchos::rcp_const_cast<Vector<Real> >(vr.getVector());
+    vvar_ = vr.getStatistic();
 
     pHMdualVec1_->zero(); HMdualVec1_->zero();
     pHMdualVec2_->zero(); HMdualVec2_->zero();

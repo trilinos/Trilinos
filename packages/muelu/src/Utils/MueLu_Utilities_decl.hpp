@@ -706,7 +706,10 @@ namespace MueLu {
               A = transposer.createTranspose();
               RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AA   = rcp(new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(A));
               RCP<CrsMatrix>                                                           AAA  = rcp_implicit_cast<CrsMatrix>(AA);
-              RCP<CrsMatrixWrap>                                                       AAAA = rcp( new CrsMatrixWrap(AAA));
+              RCP<Matrix>                                                              AAAA = rcp( new CrsMatrixWrap(AAA));
+
+              if (Op.IsView("stridedMaps"))
+                AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true/*doTranspose*/);
 
               return AAAA;
             }
@@ -733,8 +736,11 @@ namespace MueLu {
             RCP<Epetra_CrsMatrix> rcpA(A);
             RCP<EpetraCrsMatrix> AA   = rcp(new EpetraCrsMatrix(rcpA));
             RCP<CrsMatrix>       AAA  = rcp_implicit_cast<CrsMatrix>(AA);
-            RCP<CrsMatrixWrap>   AAAA = rcp( new CrsMatrixWrap(AAA));
+            RCP<Matrix>          AAAA = rcp( new CrsMatrixWrap(AAA));
             AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
+
+            if (Op.IsView("stridedMaps"))
+              AAAA->CreateView("stridedMaps", Teuchos::rcpFromRef(Op), true/*doTranspose*/);
 
             return AAAA;
 #else

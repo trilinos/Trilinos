@@ -86,6 +86,10 @@ public:
    TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
                           const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & gidProvider);
 
+   TpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & rowProvider,
+                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > & colProvider);
+
    virtual ~TpetraLinearObjFactory();
 
 /*************** Linear object factory methods *******************/
@@ -182,7 +186,9 @@ public:
 /*************** Tpetra construction functions *******************/
 
    Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraVector() const;
+   Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraColVector() const;
    Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getTpetraVector() const;
+   Teuchos::RCP<Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getTpetraColVector() const;
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getTpetraMatrix() const;
    Teuchos::RCP<Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedTpetraMatrix() const;
 
@@ -220,9 +226,11 @@ public:
 
    //! get the map from the matrix
    virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > getMap() const;
+   virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > getColMap() const;
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedMap() const;
+   virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedColMap() const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGraph() const;
@@ -232,9 +240,11 @@ public:
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedImport() const;
+   virtual const Teuchos::RCP<Tpetra::Import<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedColImport() const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedExport() const;
+   virtual const Teuchos::RCP<Tpetra::Export<LocalOrdinalT,GlobalOrdinalT,NodeT> > getGhostedColExport() const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosComm() const;
@@ -253,15 +263,17 @@ public:
 protected:
 
    void ghostToGlobalTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
-                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const;
+                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
    void ghostToGlobalTpetraMatrix(const Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & in,
                                   Tpetra::CrsMatrix<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const;
    void globalToGhostTpetraVector(const Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>& in,
-                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out) const;
+                                  Tpetra::Vector<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> & out, bool col) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildMap() const;
+   virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildColMap() const;
    virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildGhostedMap() const;
+   virtual const Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildGhostedColMap() const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > buildGraph() const;
@@ -270,13 +282,20 @@ protected:
    // storage for Tpetra graphs and maps
    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
    mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > map_;
+   mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > cMap_;
    mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedMap_;
+   mutable Teuchos::RCP<Tpetra::Map<LocalOrdinalT,GlobalOrdinalT,NodeT> > cGhostedMap_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > graph_;
    mutable Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinalT,GlobalOrdinalT,NodeT> > ghostedGraph_;
    mutable Teuchos::RCP<ImportType> ghostedImporter_;
+   mutable Teuchos::RCP<ImportType> ghostedColImporter_;
    mutable Teuchos::RCP<ExportType> ghostedExporter_;
+   mutable Teuchos::RCP<ExportType> ghostedColExporter_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > gidProvider_;
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > colGidProvider_;
+
+   bool hasColProvider_;
 
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;

@@ -98,6 +98,9 @@ typedef MueLu::FilteredAFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> F
 #ifdef MUELU_GENERICRFACTORY_SHORT
 typedef MueLu::GenericRFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> GenericRFactory;
 #endif
+#ifdef MUELU_GMRESSOLVER_SHORT
+typedef MueLu::GMRESSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node> GMRESSolver;
+#endif
 #ifdef MUELU_HIERARCHY_SHORT
 typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
 #endif

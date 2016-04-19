@@ -54,6 +54,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Zoltan2_Metric.hpp>
 //#include <Tpetra_Map.hpp>
 //#include <Xpetra_Vector_decl.hpp>
 //#include <Xpetra_CrsMatrix_decl.hpp>
@@ -189,6 +190,7 @@ namespace Zoltan2_TestingFramework {
   typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
   
   typedef Zoltan2::MetricValues<zscalar_t>                          metric_t;
+  typedef Zoltan2::GraphMetricValues<zscalar_t>                     graph_metric_t;
 }
 
 #endif

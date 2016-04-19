@@ -65,93 +65,36 @@ public:
   RiskBoundConstraint(Teuchos::ParameterList &parlist,
                 const Teuchos::RCP<BoundConstraint<Real> > &bc = Teuchos::null)
    : BoundConstraint<Real>(), bc_(bc), augmented_(false), activated_(false), nStat_(0) {
+    lower_.clear(); upper_.clear();
+    Real zero(0);
     std::string optType = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Averse");
     if ( optType == "BPOE" ) {
       augmented_ = true;
       activated_ = true;
       nStat_     = 1;
-      lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
-      upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-      lower_[0] = (Real)0;
+      lower_.resize(nStat_,ROL_NINF<Real>());
+      upper_.resize(nStat_,ROL_INF<Real>());
+      lower_[0] = zero;
     }
     else if ( optType == "Risk Averse" ) {
-      std::string type = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-      if ( type == "CVaR"                           ||
-           type == "HMCR"                           ||
-           type == "Moreau-Yosida CVaR"             ||
-           type == "Log-Exponential Quadrangle"     ||
-           type == "Log-Quantile Quadrangle"        ||
-           type == "Quantile-Based Quadrangle"      ||
-           type == "Smoothed Worst-Case Quadrangle" ||
-           type == "Truncated Mean Quadrangle" ) {
-        augmented_ = true;
-        activated_ = false;
-        nStat_     = 1;
-        lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
-        upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-      }
-      else if ( type == "Quantile-Radius Quadrangle" ) {
-        augmented_ = true;
-        activated_ = false;
-        nStat_     = 2;
-        lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
-        upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-      }
-      else if ( type == "Coherent Exponential Utility" ||
-                type == "KL Divergence" ) {
-        augmented_ = true;
-        activated_ = true;
-        nStat_     = 1;
-        lower_.clear(); lower_.resize(nStat_,(Real)0);
-        upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-      }
-      else if ( type == "Chi-Squared Divergence" ) {
-        augmented_ = true;
-        activated_ = true;
-        nStat_     = 2;
-        lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
-        upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-        lower_[0] = (Real)0;
-      }
-      else if ( type == "Mixed-Quantile Quadrangle" ) {
-        Teuchos::ParameterList &list
-          = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mixed-Quantile Quadrangle");
-        Teuchos::Array<Real> prob
-          = Teuchos::getArrayFromStringParameter<Real>(list,"Probability Array");
-        augmented_ = true;
-        activated_ = false;
-        nStat_     = prob.size();
-        lower_.clear(); lower_.resize(nStat_,ROL_NINF<Real>());
-        upper_.clear(); upper_.resize(nStat_,ROL_INF<Real>());
-      }
-      else if ( type == "Exponential Utility"             ||
-                type == "Mean Plus Deviation From Target" ||
-                type == "Mean Plus Deviation"             ||
-                type == "Mean Plus Variance From Target"  ||
-                type == "Mean Plus Variance" ) {
-        augmented_ = false;
-        activated_ = false;
-        nStat_     = 0;
-      }
-      else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-          ">>> (ROL::RiskBoundConstraint): Invalid risk measure!" << type);
-      }
-
-      if ( type != "Chi-Squared Divergence" &&
-           type != "KL Divergence" ) {
-        if ( bc == Teuchos::null || (bc != Teuchos::null && !bc->isActivated()) ) {
-          BoundConstraint<Real>::deactivate();
-        }
-      }
+      std::string name;
+      RiskMeasureInfo<Real>(parlist,name,nStat_,lower_,upper_,activated_);
+      augmented_ = (nStat_ > 0) ? true : false;
     }
     else if ( optType == "Risk Neutral" || optType == "Mean Value" ) {
       augmented_ = false;
+      activated_ = false;
       nStat_     = 0;
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
         ">>> (ROL::RiskBoundConstraint): Invalid stochastic optimization type!" << optType);
+    }
+
+    if ( !activated_ ) {
+      if ( bc == Teuchos::null || (bc != Teuchos::null && !bc->isActivated()) ) {
+        BoundConstraint<Real>::deactivate();
+      }
     }
   }
 

@@ -47,8 +47,8 @@ namespace Tacho {
     static KOKKOS_INLINE_FUNCTION
     double Trsm(int is_lower, int mm, int nn) {
       return (is_lower ? 
-              TrsmLower<Util::isComplex<ValueType>()>(mm, nn) : 
-              TrsmUpper<Util::isComplex<ValueType>()>(mm, nn));
+              TrsmLower(mm, nn) : 
+              TrsmUpper(mm, nn));
     }
     
     static KOKKOS_INLINE_FUNCTION

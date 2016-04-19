@@ -52,7 +52,8 @@ namespace BaskerNS
       Int team_leader = 0; //Note: come back and fix
       #endif
       
-      // if(kid == 0 || kid == 1)
+      //if(kid < 8)
+      //if(kid > 11 && kid < 16)
 	{
       #ifdef BASKER_KOKKOS
        basker->t_nfactor_sep2_inc_lvl(kid, lvl, team_leader, thread);
@@ -215,6 +216,7 @@ namespace BaskerNS
       }
     */
 
+    //printf("Done with upper seps kid: %d \n", kid);
    
     //---------Lower Factor (old sublevel lvl-1)-------
     
@@ -225,8 +227,14 @@ namespace BaskerNS
     t_basker_barrier_inc_lvl(thread, kid, my_leader,
 		     b_size, 7, LU(U_col)(U_row).scol, 0);
 
-    //printf("\n\n======= LOWER, KID: %d ======= \n\n", kid);
-    
+    #ifdef BASKER_DEBUG_NFACTOR_COL_INC
+    if(kid == 0)
+      {
+    printf("\n\n======= LOWER, KID: %d [%d %d] ======= \n\n", 
+	   kid, LU(U_col)(U_row).scol,
+	   LU(U_col)(U_row).scol + LU(U_col)(U_row).ncol);
+      }
+    #endif
     //printf("\n\n lvl: %d kid: %d  \n\n", lvl, kid);
     //if(lvl < 2)
       {
@@ -257,6 +265,12 @@ namespace BaskerNS
 	    t_lower_col_factor_inc_lvl(kid, team_leader, 
 			       lvl, lvl-1, 
 			       k, pivot);
+	    
+	    #ifdef BASKER_DEBUG_NFACTOR_COL2
+	    printf("\n lower factor return, kid: %d k: %d \n",
+		   kid, k+LU(U_col)(U_row).scol);
+	    #endif
+
 	  }
 	
 	
@@ -879,7 +893,10 @@ namespace BaskerNS
      if(unnz+ucnt-1 > uunnz)
        {
 	 
+	 if(Options.verbose == BASKER_TRUE)
+	   {
 	 printf("kid: %d col: %d need to realloc, unnz: %d ucnt: %d uunnz: %d U_col: %d U_row: %d \n", kid, k, unnz, ucnt, uunnz, U_col, U_row);
+	   }
 	 BASKER_ASSERT(0==1, "USIZE\n");
 	 
 
@@ -893,6 +910,7 @@ namespace BaskerNS
 	   }
 	 else
 	   {
+	     //printf("HERE\n");
 	     thread_array(kid).error_type =
 	       BASKER_ERROR_REMALLOC;
 	     thread_array(kid).error_blk    = U_col;
@@ -1859,9 +1877,12 @@ namespace BaskerNS
     
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
+    if(kid == 0)
+      {
     printf("LOWER_COL_FACTOR kid: %d \n", kid);
     printf("kid %d using L: %d %d  U: %d %d  X %d \n",
 	   kid, L_col, L_row, U_col, U_row, X_col);
+      }
     #endif
     //end get needed variables
 
@@ -1882,8 +1903,12 @@ namespace BaskerNS
 	printf("After matrix print \n");
       }
     #endif
-    //  B.print();
-
+    /*
+    if(kid == 0)
+      {
+	B.print();
+      }
+    */
 
     INT_1DARRAY  ws       = LL(X_col)(l+1).iws;
     const Int     ws_size = LL(X_col)(l+1).iws_size;
@@ -1961,7 +1986,7 @@ namespace BaskerNS
              
        j = B.row_idx(i);
        #ifdef BASKER_DEBUG_NFACTOR_COL
-       if(kid>=0)
+       if(kid==0)
        printf("j: %d i: %d \n", j, i);
        #endif
               
@@ -1973,12 +1998,12 @@ namespace BaskerNS
        X(j) = B.val(i);
         
        #ifdef BASKER_DEBUG_NFACTOR_COL
-       if(kid>=0)
+       if(kid==0)
 	 {
 	   printf("i: %ld  j: %ld %ld  val: %g  top: %d \n", 
 		  i, j, gperm(j+brow), B.val(i), top);
 	 }
-       if(kid>=0)
+       if(kid==0)
        printf("Nxk in Ak %d %g color = %d  given inc: %d\n",
 	      j+brow, X[j],  
 	      ws[j ],
@@ -1988,7 +2013,6 @@ namespace BaskerNS
        if(Options.incomplete_type == 
 	  BASKER_INCOMPLETE_LVL)
 	 {
-	   //printf("lower reach 1 called \n");
 	   t_local_reach_inc_lvl(kid,lvl,l+1,j,&top);
 	 }
        else
@@ -2040,7 +2064,7 @@ namespace BaskerNS
    xnnz = ws_size - top;
    
    #ifdef BASKER_DEBUG_NFACTOR_COL
-   if(kid>=0)
+   if(kid==0)
      {
        printf("==DEBUG===\n");
        printf("xnnz: %d ws_size: %d top: %d \n",
@@ -2150,8 +2174,13 @@ namespace BaskerNS
      {
        //Note: comeback
        newsize = lnnz * 1.1 + 2 *L.nrow + 1;
-       cout << "Lower Col Reallocing L oldsize: " << llnnz 
+     
+       if(Options.verbose == BASKER_TRUE)
+	 {
+       cout << "Lower Col Reallocing L oldsize: " 
+	    << llnnz 
 	    << " newsize: " << newsize << endl;
+	 }
       
        if(Options.realloc == BASKER_FALSE)
 	 {
@@ -2173,8 +2202,14 @@ namespace BaskerNS
      {
        //Note: comeback
        newsize = uunnz*1.1 + 2*U.nrow+1;
-       cout << "Lower Col Reallocing U oldsize: " << uunnz 
+
+       if(Options.verbose == BASKER_TRUE)
+	 {
+       cout << "Lower Col Reallocing U oldsize: " 
+	    << uunnz 
 	    << " newsize " << newsize << endl;
+	 }
+
        if(Options.realloc == BASKER_FALSE)
 	 {
 	   thread_array(kid).error_type = 

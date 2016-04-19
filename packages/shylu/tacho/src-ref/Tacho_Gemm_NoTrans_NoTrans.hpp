@@ -11,4 +11,6 @@
 #include "Tacho_Gemm_NoTrans_NoTrans_ExternalBlas.hpp"
 #include "Tacho_Gemm_NoTrans_NoTrans_InternalBlas.hpp"
 
+#include "Tacho_Gemm_NoTrans_NoTrans_SparseDenseSuperNodes.hpp"
+
 #endif

@@ -845,9 +845,9 @@ namespace Tpetra {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     //typedef Array<size_t>::size_type size_type; // unused
 
-    // If we have no exports, there is nothing to do
-    if (exportLIDs.size () == 0) {
-      return;
+    const bool debug = false;
+    if (debug) {
+      std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
 
     // We've already called checkSizes(), so this cast must succeed.
@@ -856,6 +856,22 @@ namespace Tpetra {
     // We don't need numExportPacketsPerLID; forestall "unused
     // variable" compile warnings.
     (void) numExportPacketsPerLID;
+
+    const size_t numCols = sourceMV.getNumVectors ();
+
+    // This spares us from needing to fill numExportPacketsPerLID.
+    // Setting constantNumPackets to a nonzero value signals that
+    // all packets have the same number of entries.
+    constantNumPackets = numCols;
+
+    // If we have no exports, there is nothing to do.  Make sure this
+    // goes _after_ setting constantNumPackets correctly.
+    if (exportLIDs.size () == 0) {
+      if (debug) {
+        std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
+      }
+      return;
+    }
 
     /* The layout in the export for MultiVectors is as follows:
        exports = { all of the data from row exportLIDs.front() ;
@@ -872,17 +888,24 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    const size_t numCols = sourceMV.getNumVectors ();
-
-    // This spares us from needing to fill numExportPacketsPerLID.
-    // Setting constantNumPackets to a nonzero value signals that
-    // all packets have the same number of entries.
-    constantNumPackets = numCols;
+    if (debug) {
+      std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
+    }
 
     const size_t numExportLIDs = exportLIDs.size ();
     const size_t newExportsSize = numCols * numExportLIDs;
-    if (exports.size () != newExportsSize) {
-      Kokkos::Compat::realloc (exports, newExportsSize);
+    if (static_cast<size_t> (exports.size ()) != newExportsSize) {
+      if (debug) {
+        std::ostringstream os;
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
+          "exports from " << exports.size () << " to " << newExportsSize
+           << std::endl;
+        std::cerr << os.str ();
+      }
+      execution_space::fence ();
+      Kokkos::realloc (exports, newExportsSize);
+      execution_space::fence ();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -899,6 +922,9 @@ namespace Tpetra {
       // "nonconstant stride constructor" as a special case, and makes
       // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
+        if (debug) {
+          std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
+        }
         KokkosRefactor::Details::pack_array_single_column(
           exports,
           sourceMV.getKokkosView (),
@@ -906,6 +932,9 @@ namespace Tpetra {
           0);
       }
       else {
+        if (debug) {
+          std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
+        }
         KokkosRefactor::Details::pack_array_single_column(
           exports,
           sourceMV.getKokkosView (),
@@ -915,6 +944,9 @@ namespace Tpetra {
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
+        if (debug) {
+          std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
+        }
         KokkosRefactor::Details::pack_array_multi_column(
           exports,
           sourceMV.getKokkosView (),
@@ -922,6 +954,9 @@ namespace Tpetra {
           numCols);
       }
       else {
+        if (debug) {
+          std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
+        }
         KokkosRefactor::Details::pack_array_multi_column_variable_stride(
           exports,
           sourceMV.getKokkosView (),
@@ -929,6 +964,10 @@ namespace Tpetra {
           getKokkosViewDeepCopy<execution_space> (sourceMV.whichVectors_ ()),
           numCols);
       }
+    }
+
+    if (debug) {
+      std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
     }
   }
 

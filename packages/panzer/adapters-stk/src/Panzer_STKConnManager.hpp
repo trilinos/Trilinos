@@ -73,6 +73,12 @@ public:
      */
    virtual void buildConnectivity(const panzer::FieldPattern & fp);
 
+   /** Build a clone of this connection manager, without any assumptions
+     * about the required connectivity (e.g. <code>buildConnectivity</code>
+     * has never been called).
+     */
+   virtual Teuchos::RCP<panzer::ConnManagerBase<int> > noConnectivityClone() const;
+
    /** Get ID connectivity for a particular element
      *
      * \param[in] localElmtId Local element ID

@@ -56,34 +56,63 @@ private:
   Teuchos::RCP<PlusFunction<Real> > pf_;
 
   Real prob_;
+  Real lam_;
   Real eps_;
+
+  Real alpha_;
+  Real beta_;
+
+  void checkInputs(void) const {
+    Real zero(0), one(1);
+    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
+      ">>> ERROR (ROL::QuantileQuadrangle): Confidence level must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((lam_ < zero) || (lam_ > one), std::invalid_argument,
+      ">>> ERROR (ROL::QuantileQuadrangle): Convex combination parameter must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::QuantileQuadrangle): Smoothing parameter must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION(pf_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::QuantileQuadrangle): PlusFunction pointer is null!");
+  }
+
+  void setParameters(void) {
+    Real one(1);
+    alpha_ = lam_;
+    beta_  = (one-alpha_*prob_)/(one-prob_);
+  }
 
 public:
 
   QuantileQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
-    : ExpectationQuad<Real>(), pf_(pf) {
-    Real zero(0), half(0.5), one(1);
-    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
-    eps_  = ((eps > zero) ? eps : one);
+    : ExpectationQuad<Real>(), prob_(prob), lam_(0), eps_(eps), pf_(pf) {
+    checkInputs();
+    setParameters();
+  }
+
+  QuantileQuadrangle(Real prob, Real lam, Real eps,
+                     Teuchos::RCP<PlusFunction<Real> > &pf ) 
+    : ExpectationQuad<Real>(), prob_(prob), lam_(lam), eps_(eps), pf_(pf) {
+    checkInputs();
+    setParameters();
   }
 
   QuantileQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
-    Real zero(0), half(0.5), one(1);
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle");
-    // Check CVaR inputs
-    Real prob = list.get("Confidence Level",0.5);
-    prob_ = ((prob >= zero) ? ((prob <= one) ? prob : half) : half);
+    // Get CVaR parameters
+    prob_ = list.get<Real>("Confidence Level");
+    lam_  = list.get<Real>("Convex Combination Parameter");
+    eps_  = list.get<Real>("Smoothing Parameter");
     // Build plus function
-    pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
-    Real eps = list.get("Smoothing Parameter",one);
-    eps_ = ((eps > zero) ? eps : one);
+    pf_   = Teuchos::rcp( new PlusFunction<Real>(list) );
+    // Check inputs
+    checkInputs();
+    setParameters();
   }
 
   Real error(Real x, int deriv = 0) {
     Real one(1);
-    Real err = (prob_/(one-prob_))*pf_->evaluate(x,deriv) 
-              + ((deriv%2) ? -one : one)*pf_->evaluate(-x,deriv);
+    Real err = (beta_-one)*pf_->evaluate(x,deriv) 
+              + ((deriv%2) ? -one : one)*(one-alpha_)*pf_->evaluate(-x,deriv);
     return err;
   }
 
