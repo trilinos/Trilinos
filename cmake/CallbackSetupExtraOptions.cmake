@@ -3,6 +3,11 @@
 # TrilinosCreateClientTemplateHeaders.cmake
 SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
 
+# Install TriBITS so that other projects can use it.
+INSTALL(
+  DIRECTORY "${Trilinos_SOURCE_DIR}/cmake/tribits"
+  DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake"
+  )
 
 MACRO(TRILINOS_DISABLE_PACKAGE_REQUIRING_CXX11  CXX11_PACKAGE_NAME_IN)
   IF ("${${PROJECT_NAME}_ENABLE_${CXX11_PACKAGE_NAME_IN}}" STREQUAL "")
