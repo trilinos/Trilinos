@@ -46,7 +46,7 @@
 
 #define NOMINMAX
 #include <winsock2.h>
-#include <Windows.h>
+#include <windows.h>
 
 namespace Kokkos {
   namespace Impl {
