@@ -598,7 +598,7 @@ namespace Intrepid2 {
           for (auto i=0;i<numFields;++i)
             for (auto j=0;j<numPoints;++j)
               for (auto k=0;k<D2Cardin;++k)
-                if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > INTREPID_TOL) {
+                if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -697,7 +697,7 @@ namespace Intrepid2 {
               ss << "\n Value of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << bvals(i,j) << " but should be 0.0\n";
               *outStream << ss.str();
             }
-            else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > INTREPID_TOL)) {
+            else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > tol)) {
               errorFlag++;
               std::stringstream ss;
               ss << "\n Value of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << bvals(i,j) << " but should be 1.0\n";

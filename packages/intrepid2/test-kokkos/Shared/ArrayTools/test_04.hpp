@@ -98,31 +98,30 @@ namespace Intrepid2 {
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
-			  << "===============================================================================\n" \
-			  << "|                                                                             |\n" \
-			  << "|                       Unit Test (ArrayTools)                                |\n" \
-			  << "|                                                                             |\n" \
-			  << "|     1) Array operations: multiplication, contraction                        |\n" \
-			  << "|                                                                             |\n" \
-			  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-			  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-			  << "|                                                                             |\n" \
-				<< "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-			  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-			  << "|                                                                             |\n" \
-			  << "===============================================================================\n";      
-
+        << "===============================================================================\n" \
+        << "|                                                                             |\n" \
+        << "|                       Unit Test (ArrayTools)                                |\n" \
+        << "|                                                                             |\n" \
+        << "|     1) Array operations: multiplication, contraction                        |\n" \
+        << "|                                                                             |\n" \
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+        << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+        << "|                                                                             |\n" \
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+        << "|                                                                             |\n" \
+        << "===============================================================================\n";      
+      
       typedef RealSpaceTools<DeviceSpaceType> rst;
       typedef ArrayTools<DeviceSpaceType> art; 
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-      #ifdef HAVE_INTREPID2_DEBUG
-  			art atools;
-			#endif
-      #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      
+      const value_type tol = Parameters::Tolerence*10000.0;
       int errorFlag = 0;
-
-
+      
+      
       /************************************************************************************************
         *                                                                                             *
         *  Exception tests: should only run when compiled in DEBUG mode                               *
@@ -220,55 +219,55 @@ namespace Intrepid2 {
       try{
         // 39 exceptions
         // Test rank and D dimension of inputData
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P,       fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P_D2_D2, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P_D1,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P,       fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P_D2_D2, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P_D1,    fc_C_F_P_D3) );
 
         // Test rank and D dimension of inputFields
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_F_P) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_C_F_P_D1) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_F_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_F_P) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_C_F_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3,  fc_F_P_D1) );
 
         // Test rank of outputFields
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D2,  fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D3,  fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D2,  fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D3,  fc_C_F_P_D3) );
         
         // Dimension cross-check: (1) inputData    vs. inputFields
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C1_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C_F_P1_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_F_P1_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C1_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C_F_P1_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3,  fc_C_P_D3, fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_F_P1_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,     fc_C_P_D2, fc_F_P_D3) );
 
         // Dimension cross-check: (2) outputFields vs. inputData
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C1_F_P,  fc_C_P_D2, fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P1,  fc_C_P_D2, fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C1_F_P,  fc_C_P_D2, fc_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P1,  fc_C_P_D2, fc_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C1_F_P_D3, fc_C_P_D3, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P1_D3, fc_C_P_D3, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D2,  fc_C_P_D3, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C1_F_P_D3, fc_C_P_D3, fc_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P1_D3, fc_C_P_D3, fc_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D2,  fc_C_P_D3, fc_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C1_F_P,  fc_C_P_D2, fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P1,  fc_C_P_D2, fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C1_F_P,  fc_C_P_D2, fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P1,  fc_C_P_D2, fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C1_F_P_D3, fc_C_P_D3, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P1_D3, fc_C_P_D3, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D2,  fc_C_P_D3, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C1_F_P_D3, fc_C_P_D3, fc_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P1_D3, fc_C_P_D3, fc_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D2,  fc_C_P_D3, fc_F_P_D3) );
 
          // Dimension cross-check: (3) outputFields vs. inputFields
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,  fc_C1_P_D2, fc_C1_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,  fc_C_P1_D2, fc_C_F_P1_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,  fc_C_P_D2, fc_C_F1_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,  fc_C_P1_D2, fc_F_P1_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P,  fc_C_P_D2, fc_F1_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C1_P_D3,  fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P1_D3,  fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P_D3,   fc_C_F1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P1_D3,  fc_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataField(fc_C_F_P_D3, fc_C_P_D3,   fc_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,  fc_C1_P_D2, fc_C1_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,  fc_C_P1_D2, fc_C_F_P1_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,  fc_C_P_D2, fc_C_F1_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,  fc_C_P1_D2, fc_F_P1_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P,  fc_C_P_D2, fc_F1_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C1_P_D3,  fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P1_D3,  fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P_D3,   fc_C_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P1_D3,  fc_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataField(fc_C_F_P_D3, fc_C_P_D3,   fc_F1_P_D3) );
 
         *outStream \
         << "\n"
@@ -278,36 +277,36 @@ namespace Intrepid2 {
 
         // 18 exceptions
         // inputDataL is (C, P, D) and 2 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P,       fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D2_D2, fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D1,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P,       fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D2_D2, fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D1,    fc_C_P_D3) );
 
         // inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D1) );
 
         // outputData is (C,P,D) in 3D and (C,P) in 2D => rank = inputDataLeft.dimension(2)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D2,    fc_C_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P,    fc_C_P_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D2,    fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P,    fc_C_P_D3,    fc_C_P_D3) );
 
         // Dimension cross-check (1):
         // inputDataLeft(C,P,D) vs. inputDataRight(C,P,D): C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C1_P_D3,   fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P1_D3,   fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C1_P_D3,   fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P1_D3,   fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_C_P_D2) );
         // inputDataLeft(C, P,D) vs. inputDataRight(P,D):  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P1_D3,   fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P1_D3,   fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D3, fc_C_P_D3,    fc_P_D2) );
 
         // Dimension cross-check (2):
         // in 2D: outputData(C,P) vs. inputDataLeft(C,P,D): dimensions C, P must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C1_P,    fc_C_P_D2,   fc_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P1,    fc_C_P_D2,   fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C1_P,    fc_C_P_D2,   fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P1,    fc_C_P_D2,   fc_P_D2) );
         // in 3D: outputData(C,P,D) vs. inputDataLeft(C,P,D): all dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C1_P_D3, fc_C_P_D3,   fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P1_D3, fc_C_P_D3,   fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.crossProductDataData(fc_C_P_D2,  fc_C_P_D3,   fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C1_P_D3, fc_C_P_D3,   fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P1_D3, fc_C_P_D3,   fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::crossProductDataData(fc_C_P_D2,  fc_C_P_D3,   fc_P_D3) );
 
         *outStream \
         << "\n"
@@ -316,46 +315,46 @@ namespace Intrepid2 {
         << "===============================================================================\n";
         // 28 exceptions
         // Test rank and D dimension: inputData(C, P, D) and 2 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P,       fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2_D2, fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P,       fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2_D2, fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1,    fc_C_F_P_D3) );
 
         // Test rank and D dimension: inputFields(C,F,P,D)/(F,P,D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_F_P) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_F_P) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F_P_D1) );
 
         //  Test rank and D dimension: outputFields(C,F,P,D,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P,         fc_C_P_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3,      fc_C_P_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3_D3,fc_C_P_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D1_D3,   fc_C_P_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D1,   fc_C_P_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D1_D1,   fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P,         fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3,      fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3_D3,fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D1_D3,   fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D1,   fc_C_P_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D1_D1,   fc_C_P_D3,    fc_C_F_P_D3) );
 
         // Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,   fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,   fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_C_F_P_D2) );
 
         // Cross-check (1): inputData(C,P,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_C_F_P_D2) );
         // Cross-check (1): inputData(C,P,D) vs. inputFields(F,P,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,   fc_F_P_D2) );
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D): dimensions C, F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,   fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D2_D3, fc_C_P_D2,    fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,   fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_C_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D2_D3, fc_C_P_D2,    fc_C_F_P_D2) );
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D): dimensions F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_F1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,    fc_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,   fc_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2,    fc_F_P_D2) );
         *outStream \
         << "\n"
         << "===============================================================================\n"\
@@ -363,44 +362,44 @@ namespace Intrepid2 {
         << "===============================================================================\n";
         // 26 exceptions
         // (1) inputDataLeft is (C, P, D) and 2 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P,         fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,   fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D1,      fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P,         fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,   fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D1,      fc_C_P_D3) );
 
         // (2) inputDataRight is (C, P, D) or (P, D) and 2 <= (D=dimension(rank - 1)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C_P_D1) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_C_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,      fc_P_D1) );
 
         // (3) outputData is (C,P,D,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3,      fc_C_P_D3,      fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3_D3,fc_C_P_D3,      fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D1,   fc_C_P_D3,      fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D1_D2,   fc_C_P_D3,      fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3,      fc_C_P_D3,      fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3_D3,fc_C_P_D3,      fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D1,   fc_C_P_D3,      fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D1_D2,   fc_C_P_D3,      fc_C_P_D3) );
 
         // Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,       fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,       fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,        fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D2_D3, fc_C_P_D2,        fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D2, fc_C_P_D2,        fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,       fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,       fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,        fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D2_D3, fc_C_P_D2,        fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D2, fc_C_P_D2,        fc_P_D3) );
 
         // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(C,P,D):  all dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_C_P_D2) );
         // Cross-check (1): inputDataLeft(C,P,D) vs. inputDataRight(P,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D3,       fc_P_D2) );
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,       fc_C1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,       fc_C_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,        fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,       fc_C1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,       fc_C_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,        fc_C_P_D2) );
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D): dimensions P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,      fc_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,       fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,      fc_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::outerProductDataData(fc_C_P_D3_D3, fc_C_P_D2,       fc_P_D2) );
 
         *outStream \
          << "\n"
@@ -409,53 +408,53 @@ namespace Intrepid2 {
          << "===============================================================================\n";
         // 34 exceptions
         // (1) inputData is (C,P), (C,P,D) or (C, P, D, D) and 1 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C,              fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D4,         fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3_D3,   fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D1,      fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D1_D3,      fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C,              fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D4,         fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3_D3,   fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D1,      fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D1_D3,      fc_C_F_P_D3) );
 
         // (2) inputFields is (C, F, P, D) or (F, P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D1) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P_D1) );
         // (3) outputFields is (C,F,P,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P,       fc_C_P_D3_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D1,    fc_C_P_D3_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P,       fc_C_P_D3_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D1,    fc_C_P_D3_D3,    fc_C_F_P_D3) );
 
         // Cross-check (2): outputFields(C,F,P,D) vs. inputData(C,P,D) and (C,P,D,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C1_P_D3_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,    fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D2_D2,     fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C1_P,          fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P1,          fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C1_P_D3,       fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3,       fc_C_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D2,        fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C1_P_D3_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D2_D2,     fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C1_P,          fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P1,          fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C1_P_D3,       fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3,       fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D2,        fc_C_F_P_D3) );
 
         // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D):  dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3,       fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3,       fc_C_F_P_D2) );
 
         // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(F,P,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3,       fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3,       fc_F_P_D2) );
 
         // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(C,F,P,D): all dimensions C, F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C1_F_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,   fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D2, fc_C_P_D2_D2,    fc_C_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C1_F_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,   fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D2, fc_C_P_D2_D2,    fc_C_F_P_D3) );
 
         // Cross-check (3): outputFields(C,F,P,D) vs. inputFields(F,P,D): dimensions F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,   fc_C_F_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P1_D3_D3,   fc_C_F_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataField(fc_C_F_P_D3, fc_C_P_D3_D3,    fc_C_F_P_D2) );
 
         *outStream \
          << "\n"
@@ -464,57 +463,57 @@ namespace Intrepid2 {
          << "===============================================================================\n";
         // 37 exceptions
         // (1) inputDataLeft is (C,P), (C,P,D) or (C,P,D,D) and 1 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C,             fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3_D3,  fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D1,     fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D1_D3,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C,             fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3_D3,  fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D1,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D1_D3,     fc_C_P_D3) );
 
         // (2) inputDataRight is (C, P, D) or (P, D) and 1 <= (D=dimension(rank - 1)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D1) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D1) );
 
         // (3) outputData is (C,P,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P,       fc_C_P_D3_D3,    fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,    fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D1,    fc_C_P_D3_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P,       fc_C_P_D3_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D1,    fc_C_P_D3_D3,    fc_C_P_D3) );
 
         // Cross-check (2): outputData(C,P,D) vs. inputDataLeft(C,P), (C,P,D), (C,P,D,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C1_P_D3, fc_C_P_D3_D3,  fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P1_D3, fc_C_P_D3_D3,  fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D2,  fc_C_P_D3_D3,  fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C1_P_D3, fc_C_P,        fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P1_D3, fc_C_P,        fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C1_P_D3, fc_C_P_D3,     fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P1_D3, fc_C_P_D3,     fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D2,  fc_C_P_D3,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C1_P_D3, fc_C_P_D3_D3,  fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P1_D3, fc_C_P_D3_D3,  fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D2,  fc_C_P_D3_D3,  fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C1_P_D3, fc_C_P,        fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P1_D3, fc_C_P,        fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C1_P_D3, fc_C_P_D3,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P1_D3, fc_C_P_D3,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D2,  fc_C_P_D3,     fc_C_P_D3) );
 
         // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(C,P,D):  dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_C1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_C_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C1_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_C_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_C1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_C_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C1_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_C_P_D2) );
 
         // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_P1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P,          fc_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_P1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3,       fc_P_D2) );
 
         // Cross-check (3): outputData(C,P,D) vs. inputDataRight(C,P,D): all dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C1_P_D3, fc_C1_P_D3_D3,    fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P1_D3, fc_C_P1_D3_D3,    fc_C_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D2,  fc_C_P_D3_D3,     fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C1_P_D3, fc_C1_P_D3_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P1_D3, fc_C_P1_D3_D3,    fc_C_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D2,  fc_C_P_D3_D3,     fc_C_P_D3) );
 
         // Cross-check (3): outputData(C,P,D) vs. inputDataRight(P,D): dimensions P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P1_D3, fc_C_P1_D3_D3,    fc_P_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P1_D3, fc_C_P1_D3_D3,    fc_P_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matvecProductDataData(fc_C_P_D3, fc_C_P_D3_D3,    fc_P_D2) );
 
         *outStream \
          << "\n"
@@ -523,66 +522,66 @@ namespace Intrepid2 {
          << "===============================================================================\n";
         // 46 exceptions
         // (1) inputData is (C,P), (C,P,D), or (C,P,D,D) and 1 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C,             fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1_D3,     fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D1,     fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C,             fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1_D3,     fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D1,     fc_C_F_P_D3_D3) );
 
         // (2) inputFields is (C,F,P,D,D) or (F,P,D,D) and 1 <= (dimension(rank-1), (rank-2)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D1) );
 
         // (3) outputFields is (C,F,P,D,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3,       fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D1_D3,    fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D1,    fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3,       fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D1_D3,    fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D1,    fc_C_P_D3_D3,  fc_C_F_P_D3_D3) );
 
         // Cross-check (2): outputFields(C,F,P,D,D) vs. inputData(C,P), (C,P,D), or (C,P,D,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2_D2,   fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D2_D2,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D2_D2, fc_C_P_D3_D3,   fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,  fc_C_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1,   fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D2_D2,   fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D2_D2,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D2_D2, fc_C_P_D3_D3,   fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C1_P_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P1_D3,  fc_C_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D1,   fc_C_F_P_D3_D3) );
 
         // Cross-check (1): inputData(C,P), (C,P,D) or (C,P,D,D) vs. inputFields(C,F,P,D,D):  dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,  fc_C1_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,  fc_C_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C1_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,  fc_C1_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,  fc_C_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C1_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3,  fc_C_F_P_D2_D2) );
 
         // Cross-check (1): inputData(C,P), (C,P,D), or (C,P,D,D) vs. inputFields(F,P,D,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,    fc_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3, fc_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3, fc_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P,    fc_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3, fc_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3, fc_F_P_D2_D2) );
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(C,F,P,D,D): all dimensions C, F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C1_F_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_C_F_P_D2_D2) );
 
         // Cross-check (3): outputFields(C,F,P,D,D) vs. inputFields(F,P,D,D): dimensions F, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_F_P_D3_D3, fc_C_P_D3_D3,  fc_F_P_D2_D2) );
         *outStream \
          << "\n"
          << "===============================================================================\n"\
@@ -590,65 +589,65 @@ namespace Intrepid2 {
          << "===============================================================================\n";
         // 45 exceptions
         // (1) inputDataLeft is (C,P), (C,P,D), or (C,P,D,D) and 2 <= D <= 3 is required
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C,             fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3_D3,  fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D1_D3,     fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D1,     fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C,             fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3_D3,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D1_D3,     fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D1,     fc_C_P_D3_D3) );
 
         // (2) inputDataRight is (C,P,D,D) or (P,D,D) and 1 <= (dimension(rank-1), (rank-2)) <= 3 is required.
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P,        fc_C_P) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,     fc_C_P_D3_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D1_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D3_D1) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P,        fc_C_P) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,     fc_C_P_D3_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D1_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D3_D1) );
 
         // (3) outputData is (C,P,D,D)
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3,       fc_C_P,        fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3_D3, fc_C_P_D3,     fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D1_D3,    fc_C_P_D3_D3,  fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D1,    fc_C_P_D3_D3,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3,       fc_C_P,        fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3_D3, fc_C_P_D3,     fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D1_D3,    fc_C_P_D3_D3,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D1,    fc_C_P_D3_D3,  fc_C_P_D3_D3) );
 
         // Cross-check (2): outputData(C,P,D,D) vs. inputDataLeft(C,P), (C,P,D), or (C,P,D,D): dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C1_P_D3_D3,  fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D3_D3,  fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D2_D2,   fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D2_D2,  fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D2_D2, fc_C_P_D3_D3,   fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C1_P,        fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P1,        fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,     fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,     fc_C_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D1,      fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C1_P_D3_D3,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D3_D3,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D2_D2,   fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D2_D2,  fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D2_D2, fc_C_P_D3_D3,   fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C1_P,        fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P1,        fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C1_P_D3,     fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P1_D3,     fc_C_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D1,      fc_C_P_D3_D3) );
 
         // Cross-check (1): inputDataLeft(C,P), (C,P,D) or (C,P,D,D) vs. inputDataRight(C,P,D,D):  dimensions  C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P,  fc_C1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P,  fc_C_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P,  fc_C1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P,  fc_C_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3,  fc_C_P_D2_D2) );
 
         // Cross-check (1): inputDataLeft(C,P), (C,P,D), or (C,P,D,D) vs. inputDataRight(P,D,D): dimensions  P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_P_D3_D3, fc_C_P,    fc_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_P_D3_D3, fc_C_P_D3, fc_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataField(fc_C_P_D3_D3, fc_C_P_D3, fc_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_P_D3_D3, fc_C_P,    fc_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_P_D3_D3, fc_C_P_D3, fc_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataField(fc_C_P_D3_D3, fc_C_P_D3, fc_P_D2_D2) );
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(C,P,D,D): all dimensions C, P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D3_D3) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C1_P_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_C_P_D2_D2) );
 
         // Cross-check (3): outputData(C,P,D,D) vs. inputDataRight(P,D,D): dimensions P, D must match
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P_D2_D2) );
-        INTREPID2_TEST_ERROR_EXPECTED(atools.matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P_D2_D2) );
+        INTREPID2_TEST_ERROR_EXPECTED(art::matmatProductDataData(fc_C_P_D3_D3, fc_C_P_D3_D3,  fc_P1_D3_D3) );
         }
 
         catch (std::logic_error err) {
@@ -1548,7 +1547,7 @@ namespace Intrepid2 {
        */
       {// test 5.c scope
         int c=5, p=9, f=7, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
+
 
         DynRankView ConstructWithLabel(in_c_f_p_d, c, f, p, d1);
         DynRankView ConstructWithLabel(out_c_f_p_d, c, f, p, d1);
@@ -1592,7 +1591,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1601,7 +1600,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1632,7 +1631,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (5): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1640,7 +1639,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (6): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1669,14 +1668,14 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1684,14 +1683,14 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (9): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (10): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1727,7 +1726,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (11): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1735,7 +1734,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_c_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (12): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1752,7 +1751,6 @@ namespace Intrepid2 {
        */
       {// test 5.d scope
         int c=5, p=9, f=7, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
 
         DynRankView ConstructWithLabel(in_f_p_d, f, p, d1);
         DynRankView ConstructWithLabel(in_c_f_p_d, c, f, p, d1);
@@ -1797,7 +1795,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1806,7 +1804,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1836,7 +1834,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (15): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1845,7 +1843,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (16): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1876,7 +1874,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1884,7 +1882,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (18): check matrix inverse property, w/ double tvalue_typese\n\n";
           errorFlag = -1000;
         }
@@ -1893,7 +1891,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d);
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (19): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -1901,7 +1899,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d, 't');
         art::matvecProductDataField(outi_c_f_p_d, datainv_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (20): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -1938,7 +1936,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_p_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_p_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (21): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -1947,7 +1945,7 @@ namespace Intrepid2 {
         art::matvecProductDataField(out_c_f_p_d, data_c_1_d_d, in_f_p_d);
         art::matvecProductDataField(outi_c_f_p_d, datainvtrn_c_1_d_d, out_c_f_p_d, 't');
         rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataField (22): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2094,7 +2092,6 @@ namespace Intrepid2 {
        */
       {// test 6.c scope
         int c=5, p=9, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
 
         DynRankView ConstructWithLabel(in_c_p_d, c, p, d1);
         DynRankView ConstructWithLabel(out_c_p_d, c, p, d1);
@@ -2136,7 +2133,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2145,7 +2142,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2170,7 +2167,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (5): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2178,7 +2175,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (6): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2205,14 +2202,14 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2220,14 +2217,14 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (9): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (10): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2258,7 +2255,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (11): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2266,7 +2263,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_c_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (12): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2283,7 +2280,6 @@ namespace Intrepid2 {
        */
       {// test 6.d scope
         int c=5, p=9, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
 
         DynRankView ConstructWithLabel(in_p_d, p, d1);
         DynRankView ConstructWithLabel(in_c_p_d, c, p, d1);
@@ -2329,7 +2325,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2338,7 +2334,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2367,7 +2363,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (15): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2376,7 +2372,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (16): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2409,7 +2405,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2417,7 +2413,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2426,7 +2422,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (19): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2434,7 +2430,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d, 't');
         art::matvecProductDataData(outi_c_p_d, datainv_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (20): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2468,7 +2464,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_p_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_p_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (21): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2477,7 +2473,7 @@ namespace Intrepid2 {
         art::matvecProductDataData(out_c_p_d, data_c_1_d_d, in_p_d);
         art::matvecProductDataData(outi_c_p_d, datainvtrn_c_1_d_d, out_c_p_d, 't');
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matvecProductDataData (22): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2492,7 +2488,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
       {// Test 7.a scope
         int c=5, p=9, f=7, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
 
         DynRankView ConstructWithLabel(in_c_f_p_d_d, c, f, p, d1, d1);
         DynRankView ConstructWithLabel(data_c_p, c, p);
@@ -2536,7 +2531,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2544,7 +2539,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2573,7 +2568,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2581,7 +2576,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2612,14 +2607,14 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (5): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (6): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2627,14 +2622,14 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d,'t');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2668,7 +2663,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (9): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2676,7 +2671,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_c_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (10): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2689,9 +2684,9 @@ namespace Intrepid2 {
         << "===============================================================================\n"\
         << "| TEST 7.b: matmatProductDataField random tests: branch inputFields(F,P,D,D)  |\n"\
         << "===============================================================================\n";
+      // kj
       {// Test 7.b scope
         int c=5, p=9, f=7, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
 
         DynRankView ConstructWithLabel(in_f_p_d_d, f, p, d1, d1);
         DynRankView ConstructWithLabel(in_c_f_p_d_d, c, f, p, d1, d1);
@@ -2737,7 +2732,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (11): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2746,7 +2741,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (12): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2775,7 +2770,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2784,7 +2779,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2816,7 +2811,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (15): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2824,7 +2819,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (16): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2833,7 +2828,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d);
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2841,7 +2836,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d, 't');
         art::matmatProductDataField(outi_c_f_p_d_d, datainv_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -2877,7 +2872,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_p_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_p_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (19): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2886,7 +2881,7 @@ namespace Intrepid2 {
         art::matmatProductDataField(out_c_f_p_d_d, data_c_1_d_d, in_f_p_d_d);
         art::matmatProductDataField(outi_c_f_p_d_d, datainvtrn_c_1_d_d, out_c_f_p_d_d, 't');
         rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataField (20): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -2904,7 +2899,7 @@ namespace Intrepid2 {
        */
       {// test 8.a scope
         int c=5, p=9, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
+
 
         DynRankView ConstructWithLabel(in_c_p_d_d, c, p, d1, d1);
         DynRankView ConstructWithLabel(out_c_p_d_d, c, p, d1, d1);
@@ -2944,7 +2939,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2952,7 +2947,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2978,7 +2973,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -2986,7 +2981,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3015,14 +3010,14 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (5): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (6): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3030,14 +3025,14 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (7): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (8): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3067,7 +3062,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (9): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3075,7 +3070,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_c_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (10): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3090,7 +3085,7 @@ namespace Intrepid2 {
        */
       {// test 8.b scope
         int c=5, p=9, d1=3;
-        value_type zero = INTREPID_TOL*10000.0;
+
 
         DynRankView ConstructWithLabel(in_p_d_d, p, d1, d1);
         DynRankView ConstructWithLabel(in_c_p_d_d, c, p, d1, d1);
@@ -3131,13 +3126,12 @@ namespace Intrepid2 {
           data_c_1(i, 0) = Teuchos::ScalarTraits<value_type>::random();
           datainv_c_1(i, 0) = 1.0/data_c_1(i, 0);
         }
-
         // Tensor values vary by point
         art::matmatProductDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         art::matmatProductDataData(out_c_p_d_d, data_c_p, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (11): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3146,14 +3140,13 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (12): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
         /***********************************************************************************************
           *                       Non-constant diagonal tensor: inputData(C,P,D)                       *
           **********************************************************************************************/
-
 
         for (int i=0; i < p; i++)
           for (int m=0; m<d1; m++)
@@ -3177,19 +3170,21 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (13): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
+
         // Tensor values do not vary by point:
         art::matmatProductDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (14): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
+
         /***********************************************************************************************
           *                              Full tensor: inputData(C,P,D,D)                               *
           **********************************************************************************************/
@@ -3219,7 +3214,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (15): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3227,7 +3222,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (16): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3236,7 +3231,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (17): check matrix inverse property\n\n";
           errorFlag = -1000;
         }
@@ -3244,7 +3239,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d, 't');
         art::matmatProductDataData(outi_c_p_d_d, datainv_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (18): check matrix inverse property, w/ double transpose\n\n";
           errorFlag = -1000;
         }
@@ -3278,7 +3273,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_p_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_p_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (19): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
@@ -3287,7 +3282,7 @@ namespace Intrepid2 {
         art::matmatProductDataData(out_c_p_d_d, data_c_1_d_d, in_p_d_d);
         art::matmatProductDataData(outi_c_p_d_d, datainvtrn_c_1_d_d, out_c_p_d_d, 't');
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT matmatProductDataData (20): check matrix inverse transpose property\n\n";
           errorFlag = -1000;
         }
