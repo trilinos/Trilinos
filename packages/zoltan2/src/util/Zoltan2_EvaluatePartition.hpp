@@ -166,11 +166,11 @@ public:
    *     to one less than the number of weights provided in the input.
    *  If there were no weights, this is the cut count.
    */
-  void getWeightCut(scalar_t &cut, int idx=0) const{
+  void getMaxWeightedEdgeCut(scalar_t &cut, int idx=0) const{
     cut = 0;
     if (graphMetrics_.size() > 2)  // idx of multiple weights
       cut = graphMetrics_[idx+2].getGlobalMax();
-    else if (graphMetrics_.size() = 2)   //  only one weight
+    else if (graphMetrics_.size() == 2)   //  only one weight
       cut = graphMetrics_[1].getGlobalMax();
     else                       // no weights, return cut count
       cut = graphMetrics_[0].getGlobalMax();
