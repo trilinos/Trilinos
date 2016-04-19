@@ -84,15 +84,17 @@ namespace Intrepid2 {
 
       /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
        */
-      double points_[Parameters::MaxIntegrationPoints][Parameters::MaxDimension];
+      value_type points_[Parameters::MaxIntegrationPoints][Parameters::MaxDimension];
       
       /** \brief  Array with the associated cubature weights.
        */
-      double weights_[Parameters::MaxIntegrationPoints];
+      value_type weights_[Parameters::MaxIntegrationPoints];
     };
 
     // data is defined on exec space and deep-copied when an object is created
     struct CubatureData {
+
+      CubatureData() = default;
 
       /** \brief  Number of cubature points stored in the template.
        */
@@ -100,11 +102,11 @@ namespace Intrepid2 {
 
       /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
        */
-      Kokkos::View<value_type[Parameters::MaxIntegrationPoints][Parameters::MaxDimension],ExecSpaceType> points_;
+      Kokkos::View<value_type*[Parameters::MaxDimension],ExecSpaceType> points_;
 
       /** \brief  Array with the associated cubature weights.
        */
-      Kokkos::View<value_type[Parameters::MaxIntegrationPoints],ExecSpaceType> weights_;
+      Kokkos::View<value_type*,ExecSpaceType> weights_;
     };
 
     /** \brief The degree of polynomials that are integrated
@@ -116,13 +118,9 @@ namespace Intrepid2 {
      */
     ordinal_type dimension_;
 
-    /** \brief Returns cubature data
+    /** \brief Cubature data on device
      */
-    CubatureData
-    getCubatureData() const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (CubatureDirect::getCubatureData): this method should be over-riden by derived classes.");
-    }
+    CubatureData cubatureData_;
 
     /** \brief Returns cubature points and weights
 
@@ -154,14 +152,29 @@ namespace Intrepid2 {
       // need subview here
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
-      const range_type pointRange(0, this->getNumPoints());
-      const range_type dimRange  (0, this->getDimension());
+      range_type pointRange(0, this->getNumPoints());
+      range_type dimRange  (0, this->getDimension());
+      {
+        const auto cub = cubData.points_;
+        const auto src = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), pointRange.second, dimRange.second);
+        /**/  auto dst = Kokkos::subdynrankview(cubPoints, pointRange, dimRange);
 
-      Kokkos::deep_copy(Kokkos::subdynrankview(cubPoints,        pointRange, dimRange),
-                        Kokkos::subdynrankview(cubData.points_,  pointRange, dimRange));
-      Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights,       pointRange),
-                        Kokkos::subdynrankview(cubData.weights_, pointRange));
+        Kokkos::deep_copy( dst, src );
+      }
+      {
+        const auto cub = cubData.weights_;
+        const auto src = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), pointRange.second);
+        /**/  auto dst = Kokkos::subdynrankview(cubWeights, pointRange);
+
+        Kokkos::deep_copy(dst ,src);
+      }
     }
+
+    CubatureDirect(const ordinal_type degree, 
+                   const ordinal_type dimension) 
+      : degree_(degree), 
+        dimension_(dimension),
+        cubatureData_() {}
 
   public:
 
@@ -182,7 +195,7 @@ namespace Intrepid2 {
     void
     getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                  Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
-      getCubatureFromData(cubPoints, cubWeights, getCubatureData());
+      getCubatureFromData(cubPoints, cubWeights, cubatureData_);
     }
 
 
@@ -207,7 +220,7 @@ namespace Intrepid2 {
     /** \brief Returns the number of cubature points.
      */
     ordinal_type getNumPoints() const {
-      return getCubatureData().numPoints_;
+      return cubatureData_.numPoints_;
     }
 
     /** \brief Returns dimension of integration domain.
