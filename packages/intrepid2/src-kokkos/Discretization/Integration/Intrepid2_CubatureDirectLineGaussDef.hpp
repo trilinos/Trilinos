@@ -50,10 +50,9 @@ namespace Intrepid2 {
   
   template <typename ExecSpaceType>
   CubatureDirectLineGauss<ExecSpaceType>::
-  CubatureDirectLineGauss(const ordinal_type degree) {
-    this->degree_    = degree;
-    this->dimension_ = 1;
-    
+  CubatureDirectLineGauss(const ordinal_type degree) 
+    : CubatureDirect<ExecSpaceType>(degree, 1) {
+
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 || 
                                   degree > Parameters::MaxCubatureDegreeEdge, std::out_of_range,
                                   ">>> ERROR (CubatureDirectLineGauss): No cubature rule implemented for the desired polynomial degree.");
@@ -66,23 +65,29 @@ namespace Intrepid2 {
       Kokkos::View
       <const value_type[Parameters::MaxIntegrationPoints],Kokkos::HostSpace> weightViewType;
     
-    cubatureData_.numPoints_ = cubatureDataStatic_[this->degree_].numPoints_;
-    const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, cubatureData_.numPoints_);
+    this->cubatureData_.numPoints_ = cubatureDataStatic_[this->degree_].numPoints_;
+    const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, this->cubatureData_.numPoints_);
     {
       const pointViewType points(cubatureDataStatic_[this->degree_].points_[0]);
+      const auto src = Kokkos::subview(points, pointRange, Kokkos::ALL());
 
-      auto dst = Kokkos::subview(cubatureData_.points_, pointRange, Kokkos::ALL());
-      auto src = Kokkos::subview(points,                pointRange, Kokkos::ALL());
+      this->cubatureData_.points_ = 
+        Kokkos::View<value_type*[Parameters::MaxDimension],ExecSpaceType>
+        ("CubatureDirectLineGauss::cubatureData_::points_", pointRange.second);
 
-      Kokkos::deep_copy(dst, src);
+      Kokkos::deep_copy(this->cubatureData_.points_, src);
     }
     {
       const weightViewType weights(cubatureDataStatic_[this->degree_].weights_);
+      const auto src = Kokkos::subview(weights, pointRange);
 
-      auto dst = Kokkos::subview(cubatureData_.weights_, pointRange);
-      auto src = Kokkos::subview(weights,                pointRange);
+      this->cubatureData_.weights_ = 
+        Kokkos::View<value_type*,ExecSpaceType>
+        ("CubatureDirectLineGauss::cubatureData_::weights_", pointRange.second);
 
-      Kokkos::deep_copy(dst, src);
+      auto dst = Kokkos::subview(this->cubatureData_.weights_, pointRange);
+
+      Kokkos::deep_copy(this->cubatureData_.weights_, src);
     }
   } 
   

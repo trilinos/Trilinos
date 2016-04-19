@@ -71,14 +71,7 @@ namespace Intrepid2 {
     /** \brief Complete set of data defining line Gauss(-Legendre) rules.
      */
     static const CubatureDataStatic cubatureDataStatic_[cubatureDataStaticSize]; // initialized once
-    /**/         CubatureData       cubatureData_; // copied to memory space
 
-    /** \brief Exposes cubature data.
-     */
-    CubatureData getCubatureData() const {
-      return cubatureData_;
-    }
-    
   public:
     
     /** \brief Constructor.
