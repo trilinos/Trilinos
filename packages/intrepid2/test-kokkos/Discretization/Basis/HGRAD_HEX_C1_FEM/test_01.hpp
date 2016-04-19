@@ -122,8 +122,9 @@ namespace Intrepid2 {
         << "| TEST 1: Basis creation, exceptions tests                                    |\n"
         << "===============================================================================\n";
 
-      ordinal_type nthrow = 0, ncatch = 0;
+
       try {
+        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
         Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType> hexBasis;
 
@@ -217,18 +218,17 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D3), nthrow, ncatch );
         }
 #endif
+        if (nthrow != ncatch) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+        }
+
       } catch (std::logic_error err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
-      }
-
-      // Check if number of thrown exceptions matches the one we expect
-      // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
-      if (nthrow != ncatch) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
 
       *outStream
@@ -662,6 +662,7 @@ namespace Intrepid2 {
         const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
         // Check exceptions.
+        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
         {
           DynRankView ConstructWithLabel(badVals, 1,2,3);
@@ -677,8 +678,9 @@ namespace Intrepid2 {
         }
 #endif
         if (nthrow != ncatch) {
-          *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-          ++errorFlag;
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
 
         DynRankView ConstructWithLabel(bvals, numFields, numFields);

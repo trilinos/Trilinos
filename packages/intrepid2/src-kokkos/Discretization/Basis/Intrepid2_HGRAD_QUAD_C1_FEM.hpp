@@ -79,7 +79,7 @@ namespace Intrepid2 {
       \endverbatim
   */
 
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis_HGRAD_QUAD_C1_FEM : public Basis<ExecSpaceType> {
   public:
 

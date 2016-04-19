@@ -122,8 +122,9 @@ namespace Intrepid2 {
         << "| TEST 1: Basis creation, exceptions tests                                    |\n"
         << "===============================================================================\n";
 
-      ordinal_type nthrow = 0, ncatch = 0;
+
       try{
+        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
         Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType> quadBasis;
 
@@ -208,18 +209,18 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D3), nthrow, ncatch );
         }
 #endif
+        if (nthrow != ncatch) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+        }
+
       } catch (std::logic_error err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
-
-      // Check if number of thrown exceptions matches the one we expect
-      if (nthrow != ncatch) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-      }
 
       *outStream
         << "\n"
@@ -484,6 +485,7 @@ namespace Intrepid2 {
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
         // Check exceptions.
+        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
         {
           DynRankView ConstructWithLabel(badVals, 1,2,3);
@@ -499,8 +501,9 @@ namespace Intrepid2 {
         }
 #endif
         if (nthrow != ncatch) {
-          *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-          ++errorFlag;
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
 
         DynRankView ConstructWithLabel(bvals, numFields, numFields);

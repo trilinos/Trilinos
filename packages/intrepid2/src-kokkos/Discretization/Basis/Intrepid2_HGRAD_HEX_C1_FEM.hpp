@@ -88,7 +88,7 @@ namespace Intrepid2 {
   
   */
   
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis_HGRAD_HEX_C1_FEM : public Basis<ExecSpaceType> {
   public:
     

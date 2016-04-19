@@ -116,50 +116,12 @@ namespace Intrepid2 {
       For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
       templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Cubature {
   public:
-    typedef double value_type;
-    
-  protected:
 
-    // data is defined on the host space and this is static
-    struct CubatureDataStatic {
-      
-      /** \brief  Number of cubature points stored in the template.
-       */
-      ordinal_type numPoints_;
-      
-      /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
-       */
-      value_type[Parameters::MaxIntegrationPoints][Parameters::MaxDimension] points_;
-      
-      /** \brief  Array with the associated cubature weights.
-       */
-      value_type[Parameters::MaxIntegrationPoints] weights_;
-    };
-
-
-    // data is defined on exec space and deep-copied when an object is created
-    struct CubatureData {
-      
-      /** \brief  Number of cubature points stored in the template.
-       */
-      ordinal_type numPoints_;
-      
-      /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
-       */
-      Kokkos::View<value_type[Parameters::MaxIntegrationPoints][Parameters::MaxDimension],ExecSpaceType> points_;
-      
-      /** \brief  Array with the associated cubature weights.
-       */
-      Kokkos::View<value_type[Parameters::MaxIntegrationPoints],ExecSpaceType> weights_;
-    };
-    
-  public:
-    
     Cubature() = default;
-    virtual ~Cubature() = default;
+    ~Cubature() = default;
     
     
     /** \brief Returns cubature points and weights
