@@ -188,7 +188,16 @@ const SideTestUtil::TestCaseData createExposedBoundaryForOneBlockTestCases =
 
     {"AB_doubleKissing.e",  2,  4,  {{1, 0}, {1, 3}, {1, 4}, {1, 5}}},
     {"Tg.e",        2,      4,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}}},
-    {"ZY.e",        2,      5,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}}
+    {"ZY.e",        2,      5,      {{1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}},
+
+    {"2D_AB.e",     2,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_ALB.e",    2,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_ALRB.e",   2,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_ADB.e",    2,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_AeB.e",    3,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_AtB.e",    3,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_ArB.e",    3,       3,     {{1, 1}, {1, 2}, {1, 3}}},
+    {"2D_AmB.e",    3,       3,     {{1, 1}, {1, 2}, {1, 3}}}
 };
 
 const SideTestUtil::TestCaseData createExposedBoundaryForOneBlockCoincidentElementTestCases =

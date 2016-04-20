@@ -37,7 +37,13 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"Tg.e",      2,        0,    {}},
-    {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
+    {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}},
+
+    {"2D_AB.e",     2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_AeB.e",    3,       2,     {{1, 0}, {2, 2}, {3, 0}, {3, 1}}},
+    {"2D_AtB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}},
+    {"2D_ArB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}},
+    {"2D_AmB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}}
 };
 
 const SideTestUtil::TestCaseData failingInteriorBlockBoundaryTestCases =
