@@ -134,7 +134,10 @@ namespace {
 
     int common_nodes = INT_MAX;
 
-    for (auto block : el_blocks) {
+    for (const auto block : el_blocks) {
+      if (block.global_count() == 0) {
+	continue;
+      }
       std::string            type     = Ioss::Utils::lowercase(block.topologyType);
       Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(type, false);
       if (topology != nullptr) {
