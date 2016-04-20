@@ -100,9 +100,56 @@ namespace Intrepid2 {
   
   */
   
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis_HDIV_QUAD_I1_FEM : public Basis<ExecSpaceType> {
   public:
+
+    template<EOperator opType>
+    struct Serial {
+      template<typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints );
+
+    };
+
+    template<typename outputValueViewType,
+             typename inputPointViewType,
+             EOperator opType>
+    struct Functor {
+      /**/  outputValueViewType _outputValues;
+      const inputPointViewType  _inputPoints;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor( /**/  outputValueViewType outputValues_,
+               /**/  inputPointViewType  inputPoints_ )
+        : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type pt) const {
+        switch (opType) {
+        case OPERATOR_VALUE : {
+          auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+          Serial<opType>::getValues( output, input );
+          break;
+        }
+        case OPERATOR_DIV :{
+          auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt);
+          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+          Serial<opType>::getValues( output, input );
+          break;
+        }
+        default: {
+          INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                    opType != OPERATOR_DIV,
+                                    ">>> ERROR: (Intrepid2::Basis_HDIV_QUAD_C1_FEM::Serial::getValues) operator is not supported");
+        }
+        }
+      }
+    };
 
     /** \brief  Constructor.
      */
@@ -119,9 +166,22 @@ namespace Intrepid2 {
         \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
         \param  operatorType      [in]  - operator applied to basis functions    
     */
-    void getValues(ArrayScalar &          outputValues,
-                   const ArrayScalar &    inputPoints,
-                   const EOperator        operatorType) const;
+    template<typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    void
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const EOperator operatorType  = OPERATOR_VALUE ) const;
+
+    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+        <strong>reference Quadrilateral</strong>.
+
+        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+        dimensioned (F,D)
+    */
+    template<typename dofCoordValueType, class ...dofCoordProperties>
+    void
+    getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
   
   };
 

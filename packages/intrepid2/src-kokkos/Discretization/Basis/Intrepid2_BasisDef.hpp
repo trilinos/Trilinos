@@ -235,7 +235,7 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
       // We are in 1D: verify input - xMult is non-negative  and total order <= 10:
-      INTREPID2_TEST_FOR_ABORT( !( (0 <= xMult) && (xMult <= Parameters::MaxDerivative) ),
+      INTREPID2_TEST_FOR_ABORT( !( (0 <= xMult) && (xMult <= (ordinal_type)Parameters::MaxDerivative) ),
                                 ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
 
@@ -246,7 +246,7 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
         // We are in 2D: verify input - xMult and yMult are non-negative and total order <= 10:
-        INTREPID2_TEST_FOR_ABORT( !(0 <= xMult && 0 <= yMult && (xMult + yMult) <= Parameters::MaxDerivative),
+        INTREPID2_TEST_FOR_ABORT( !(0 <= xMult && 0 <= yMult && (xMult + yMult) <= (ordinal_type)Parameters::MaxDerivative),
                                   ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
 
@@ -260,12 +260,12 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
         // Verify input:  total order cannot exceed 10:
         INTREPID2_TEST_FOR_ABORT(  !( (0 <= xMult) && (0 <= yMult) && (0 <= zMult) &&
-                                      (order <= Parameters::MaxDerivative) ),
+                                      (order <= (ordinal_type)Parameters::MaxDerivative) ),
                                    ">>> ERROR (Intrepid2::getDkEnumeration): Derivative order out of range");
 #endif
         ordinal_type enumeration = zMult;
         const auto iend = order-xMult+1;
-        for(auto i=0;i<iend;++i) {
+        for(ordinal_type i=0;i<iend;++i) {
           enumeration += i;
         }
         return enumeration;
@@ -698,7 +698,7 @@ namespace Intrepid2 {
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 1 (number of points) of outputValues must equal dim 0 of inputPoints.");
     
-    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == basisCard ),
+    INTREPID2_TEST_FOR_EXCEPTION( !(outputValues.dimension(0) == static_cast<size_type>(basisCard) ),
                                   std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::getValues_HDIV_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
   }
