@@ -1,0 +1,24 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 12.6 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 12.6.2 Apr 20, 2016
+
+1. Framework - Optionally install TriBITS.
+
+2. Amesos - Update to support SuperLU_dist 5.0.
+
+3. Amesos2 - Update to support SuperLU_dist 5.0.
+
+4. Tpetra - Install Tpetra_ETIHelperMacros.h.
+
+5. Zoltan2 - Fix issue with usage of Zoltan ids with more than one entry.
+
+6. Zoltan2 - Added a sanity check of imbalance_tolerance to interface.
+
+7. Zoltan2 - Fix bug in AlgZoltan, allowing return on Zoltan answer to Zoltan2
+   when Zoltan's Num_GID > 1 or Num_LID > 1.
+
+8. Zoltan2 - Fix bug when RETURN_LISTS=PARTS and (Num_GID > 1 or Num_LID > 1).
