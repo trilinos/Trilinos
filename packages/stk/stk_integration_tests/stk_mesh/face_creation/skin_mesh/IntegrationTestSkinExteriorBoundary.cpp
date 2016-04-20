@@ -34,7 +34,7 @@ namespace
 // f = shell in block F
 // r = bar in block E
 // m = beam in block E
-// m = truss in block E
+// t = truss in block E
 // L = sideset associated with the side on the left
 // R = "        "           "   "  "     "   " right
 // D = sideset containing 2 sides, one associated to left and one to right
@@ -122,8 +122,9 @@ const SideTestUtil::TestCaseData exposedBoundaryTestCases =
     {"2D_ADA.e",    2,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
     {"2D_ADB.e",    2,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
 
-// currently fails: {"2D_AeA.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
-// currently fails: {"2D_AeB.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
+    {"2D_AeA.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
+    {"2D_AeB.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
+
     {"2D_AtA.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
     {"2D_AtB.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},
     {"2D_ArA.e",    3,       6,     {{1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}},

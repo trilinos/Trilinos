@@ -37,12 +37,12 @@ struct TopologyChecker
 {
     bool are_both_shells() const
     {
-        return localTopology.is_shell() && remoteTopology.is_shell();
+        return is_shell_or_beam2(localTopology) && is_shell_or_beam2(remoteTopology);
     }
 
     bool are_both_not_shells() const
     {
-        return !localTopology.is_shell() && !remoteTopology.is_shell();
+        return !is_shell_or_beam2(localTopology) && !is_shell_or_beam2(remoteTopology);
     }
 
     stk::topology localTopology;

@@ -360,7 +360,7 @@ public:
     : m_mesh(mesh), m_entity(parent_entity), m_toRank(to_rank), m_filterForShell(false)
     {
         stk::topology elemTopology = m_mesh.bucket(m_entity).topology();
-        m_filterForShell = (elemTopology.is_shell() && (m_toRank != stk::topology::EDGE_RANK));
+        m_filterForShell = elemTopology.is_shell() && to_rank == mesh.mesh_meta_data().side_rank();
     }
 
     ~ShellPermutationFilter() {}

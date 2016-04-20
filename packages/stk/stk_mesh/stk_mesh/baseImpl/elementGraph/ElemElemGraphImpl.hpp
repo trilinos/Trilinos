@@ -400,6 +400,12 @@ bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity 
 bool is_local_element(stk::mesh::impl::LocalId elemId);
 void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& side_nodes);
 
+inline bool is_shell_or_beam2(stk::topology top)
+{
+    return top.is_shell();
+    //return top.is_shell() || top == stk::topology::BEAM_2;
+}
+
 }}} // end namespaces stk mesh
 
 #endif

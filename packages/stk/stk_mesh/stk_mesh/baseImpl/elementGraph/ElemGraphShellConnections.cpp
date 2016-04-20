@@ -13,10 +13,12 @@ bool is_other_element_shell(const stk::mesh::GraphEdge& graphEdge,
                             const std::vector<stk::topology>& elementTopologies,
                             const stk::mesh::ParallelInfoForGraphEdges& parGraphInfo)
 {
+    stk::topology topo;
     if(stk::mesh::impl::is_local_element(graphEdge.elem2()))
-        return elementTopologies[graphEdge.elem2()].is_shell();
+        topo = elementTopologies[graphEdge.elem2()];
     else
-        return parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_toplogy.is_shell();
+        topo = parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_toplogy;
+    return stk::mesh::impl::is_shell_or_beam2(topo);
 }
 
 class SideConnections

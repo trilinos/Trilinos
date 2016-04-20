@@ -323,6 +323,7 @@ inline
 stk::mesh::OrdinalAndPermutation flip_shell_to_get_opposing_normal(const stk::mesh::OrdinalAndPermutation &connectedOrdAndPerm,
                                                                         stk::topology topology)
 {
+    ThrowRequireWithSierraHelpMsg(connectedOrdAndPerm.second < topology.num_positive_permutations());
     unsigned sideOrdinal = connectedOrdAndPerm.first == 0u ? 1u : 0u;
     unsigned perm = connectedOrdAndPerm.second + topology.num_positive_permutations();
     return stk::mesh::OrdinalAndPermutation(static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal),
