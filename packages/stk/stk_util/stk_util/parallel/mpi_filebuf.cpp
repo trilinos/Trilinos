@@ -73,6 +73,7 @@ mpi_filebuf::mpi_filebuf(bool useAprepro, const std::string &apreproDefines)
     aprepro_buffer(NULL),
     aprepro_buffer_len(0),
     aprepro_buffer_ptr(0),
+    aprepro_parsing_error_count(0),
     aprepro_defines(apreproDefines)
 {}
 
@@ -206,7 +207,11 @@ mpi_filebuf * mpi_filebuf::open(
 	aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
 	std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
       }
+      aprepro_parsing_error_count = aprepro.get_error_count();
     }
+    int err = MPI_Bcast(&aprepro_parsing_error_count, 1, MPI_INT, root_processor, communicator );
+    if (err != MPI_SUCCESS)
+      MPI_Abort(communicator,err);
   }
 
   //--------------------------------------------------------------------
@@ -270,6 +275,7 @@ mpi_filebuf * mpi_filebuf::open(
       aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
       std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
     }
+    aprepro_parsing_error_count = aprepro.get_error_count();
   }
 
   //--------------------------------------------------------------------
