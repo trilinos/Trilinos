@@ -166,10 +166,10 @@ struct is_view_fad< View<T,P...> > {
                   Experimental::Impl::ViewSpecializeSacadoFad >::value;
 };
 
-template <typename view_type>
+template <typename view_type> 
 KOKKOS_INLINE_FUNCTION
 constexpr unsigned
-dimension_scalar(const view_type& view) {
+dimension_scalar(const view_type& ) {
   return 0;
 }
 
