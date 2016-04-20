@@ -918,7 +918,7 @@ setFieldData(const PHX::any& a)
 
     // temporary size calculation to avoid bug in Kokkos 10/22/2014
     typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type sz = 1;
-    for ( size_type i = 0 ; i <  m_dimension_rank_size(7); ++i ) 
+    for ( PHX::index_size_type i = 0 ; i <  m_dimension_rank_size(7); ++i ) 
       sz *= m_dimension_rank_size(i);
 
     m_dimension_rank_size(8) = sz; 
@@ -980,52 +980,52 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 deep_copy(const MDFieldType& source)
 {
   if (m_tag.dataLayout().rank() == 1){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+   for (int ind1=0; ind1<m_field_data1.extent_int(0); ind1++)
       m_field_data1(ind1) = source(ind1);
   }
   else if (m_tag.dataLayout().rank() == 2){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)   
+   for (int ind1=0; ind1<m_field_data2.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data2.extent_int(1); ind2++)   
         m_field_data2(ind1,ind2) = source(ind1,ind2);
   }
   else if (m_tag.dataLayout().rank() == 3){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
+   for (int ind1=0; ind1<m_field_data3.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data3.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data3.extent_int(2); ind3++)
             m_field_data3(ind1,ind2,ind3) = source(ind1,ind2,ind3);
   }
   else if (m_tag.dataLayout().rank() == 4){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)  
+   for (int ind1=0; ind1<m_field_data4.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data4.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data4.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data4.extent_int(3); ind4++)  
                 m_field_data4(ind1,ind2,ind3,ind4) = source(ind1,ind2,ind3,ind4);   
   }
   else if (m_tag.dataLayout().rank() == 5){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
+   for (int ind1=0; ind1<m_field_data5.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data5.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data5.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data5.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data5.extent_int(4); ind5++)
                    m_field_data5(ind1,ind2,ind3,ind4,ind5) = source(ind1,ind2,ind3,ind4,ind5);
   }
   else if (m_tag.dataLayout().rank() == 6){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
+   for (int ind1=0; ind1<m_field_data6.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data6.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data6.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data6.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data6.extent_int(4); ind5++)
+                   for (int ind6=0; ind6<m_field_data6.extent_int(5); ind6++)
                       m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = source(ind1,ind2,ind3,ind4,ind5,ind6);
   }
   else if (m_tag.dataLayout().rank() == 7){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
-                      for (int ind7=0; ind7<m_tag.dataLayout().dimension(6); ind7++)
+   for (int ind1=0; ind1<m_field_data7.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data7.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data7.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data7.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data7.extent_int(4); ind5++)
+                   for (int ind6=0; ind6<m_field_data7.extent_int(5); ind6++)
+                      for (int ind7=0; ind7<m_field_data7.extent_int(6); ind7++)
                           m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = source(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
   }
 }
@@ -1042,42 +1042,42 @@ V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind
     base_.m_field_data1(ind1) = base_.m_field_data1(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (int ind2=0; ind2<base_.m_field_data2.dimension(1); ind2++)
+    for (int ind2=0; ind2<base_.m_field_data2.extent_int(1); ind2++)
       base_.m_field_data2(ind1,ind2) = base_.m_field_data2(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (int ind2=0; ind2<base_.m_field_data3.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data3.dimension(2); ind3++)
+     for (int ind2=0; ind2<base_.m_field_data3.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data3.extent_int(2); ind3++)
          base_.m_field_data3(ind1,ind2,ind3) = base_.m_field_data3(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (int ind2=0; ind2<base_.m_field_data4.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data4.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data4.dimension(3); ind4++)
+     for (int ind2=0; ind2<base_.m_field_data4.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data4.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data4.extent_int(3); ind4++)
            base_.m_field_data4(ind1,ind2,ind3,ind4) = base_.m_field_data4(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (int ind2=0; ind2<base_.m_field_data5.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data5.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data5.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data5.dimension(4); ind5++)
+     for (int ind2=0; ind2<base_.m_field_data5.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data5.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data5.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data5.extent_int(4); ind5++)
              base_.m_field_data5(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data5(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (int ind2=0; ind2<base_.m_field_data6.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data6.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data6.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data6.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data6.dimension(5); ind6++)
+     for (int ind2=0; ind2<base_.m_field_data6.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data6.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data6.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data6.extent_int(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data6.extent_int(5); ind6++)
                base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (int ind2=0; ind2<base_.m_field_data7.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data7.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data7.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data7.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data7.dimension(5); ind6++)
-               for (int ind7=0; ind7<base_.m_field_data7.dimension(6); ind7++)
+     for (int ind2=0; ind2<base_.m_field_data7.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data7.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data7.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data7.extent_int(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data7.extent_int(5); ind6++)
+               for (int ind7=0; ind7<base_.m_field_data7.extent_int(6); ind7++)
                  base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }

@@ -158,6 +158,18 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     size_type rank() const;
 
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+    extent( const iType & r ) const
+    {return m_field_data.extent(r);}
+    
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , int >::type
+    extent_int( const iType & r ) const
+    {return m_field_data.extent_int(r);}
+
     template<typename iType>
     KOKKOS_FORCEINLINE_FUNCTION
     size_type dimension(const iType& ord) const;

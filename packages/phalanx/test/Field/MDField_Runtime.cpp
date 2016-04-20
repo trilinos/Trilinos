@@ -225,6 +225,18 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     TEST_EQUALITY(d.rank(), 3);
     TEST_EQUALITY(e.rank(), 2);
     TEST_EQUALITY(f.rank(), 3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent()
+    TEST_EQUALITY(b.extent(0), num_cells);
+    TEST_EQUALITY(b.extent(1), 4);
+    TEST_EQUALITY(b.extent(2), 3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent_int()
+    TEST_EQUALITY(b.extent_int(0), static_cast<int>(num_cells));
+    TEST_EQUALITY(b.extent_int(1), static_cast<int>(4));
+    TEST_EQUALITY(b.extent_int(2), static_cast<int>(3));
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimension()

@@ -216,63 +216,48 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // rank()
-    cout << "Testing rank() method...";
-    TEUCHOS_TEST_FOR_EXCEPTION(a.rank() != 2, std::logic_error,
-			       "Rank in a is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.rank() != 3, std::logic_error,
-			       "Rank in b is wrong!");
-    cout << "passed!" << endl;
+    TEST_EQUALITY(a.rank(),2);
+    TEST_EQUALITY(b.rank(),3);
+    TEST_EQUALITY(c.rank(),2);
+    TEST_EQUALITY(d.rank(),3);
+    TEST_EQUALITY(e.rank(),2);
+    TEST_EQUALITY(f.rank(),3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent()
+    TEST_EQUALITY(b.extent(0), num_cells);
+    TEST_EQUALITY(b.extent(1), 4);
+    TEST_EQUALITY(b.extent(2), 3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent_int()
+    TEST_EQUALITY(b.extent_int(0), static_cast<int>(num_cells));
+    TEST_EQUALITY(b.extent_int(1), static_cast<int>(4));
+    TEST_EQUALITY(b.extent_int(2), static_cast<int>(3));
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimension()
-    cout << "Testing dimension() method...";
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
-			       "Cell dimesion is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(1) != 4, std::logic_error,
-			       "Quadrature dimesion is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(2) != 3, std::logic_error,
-			       "Dim dimesion is wrong!");
-    cout << "passed!" << endl;
+    TEST_EQUALITY(b.dimension(0), num_cells);
+    TEST_EQUALITY(b.dimension(1), 4);
+    TEST_EQUALITY(b.dimension(2), 3);
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimensions()
-    cout << "Testing dimensions() method...";
     std::vector<size_type> dims;
     b.dimensions(dims);
-    TEUCHOS_TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[0] != 100, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[1] != 4, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[2] != 3, std::logic_error,
-			       "Number of dimesions is wrong!");
-    cout << "passed!" << endl;
+    TEST_EQUALITY(dims.size(), 3);
+    TEST_EQUALITY(dims[0], 100);
+    TEST_EQUALITY(dims[1], 4);
+    TEST_EQUALITY(dims[2], 3);
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // size()
-    cout << "Testing size() method...";
-
-    TEUCHOS_TEST_FOR_EXCEPTION(a.size() != node_scalar->size(), 
-			       std::logic_error, 
-			       "Size of array a is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.size() != quad_vector->size(), 
-			       std::logic_error, 
-			       "Size of array b is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(c.size() != node_scalar->size(), 
-			       std::logic_error, 
-			       "Size of array c is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(d.size() != quad_vector->size() , 
-			       std::logic_error, 
-			       "Size of array d is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(e.size() != node_scalar->size(),
-			       std::logic_error,
-			       "Size of array e is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(f.size() != quad_vector->size() ,
-			       std::logic_error,
-			       "Size of array f is not equal to requested size.");
-    cout << "passed!" << endl;
-    
+    TEST_EQUALITY(a.size(), node_scalar->size());
+    TEST_EQUALITY(b.size(), quad_vector->size());
+    TEST_EQUALITY(c.size(), node_scalar->size());
+    TEST_EQUALITY(d.size(), quad_vector->size());
+    TEST_EQUALITY(e.size(), node_scalar->size());
+    TEST_EQUALITY(f.size(), quad_vector->size());    
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // operator()
@@ -367,9 +352,6 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
       c_f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(c_f7.fieldTag()));
     }
 
-
-
-
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // kokkos view accessors
     {
@@ -391,12 +373,9 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream
-    cout << "Testing operator<<()...";
     ostringstream output;
     output << a;
-    TEUCHOS_TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
-    cout << "passed!" << endl;
-    cout << output.str() << endl;
+    TEST_EQUALITY(output.str(), "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: <Cell,Node>(100,4)"); 
   }
 
   PHX::FinalizeKokkosDevice();  
