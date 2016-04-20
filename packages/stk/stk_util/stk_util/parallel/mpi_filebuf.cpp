@@ -209,7 +209,7 @@ mpi_filebuf * mpi_filebuf::open(
       }
       aprepro_parsing_error_count = aprepro.get_error_count();
     }
-    int err = MPI_Bcast(&aprepro_parsing_error_count, 1, MPI_INT, root_processor, communicator );
+    err = MPI_Bcast(&aprepro_parsing_error_count, 1, MPI_INT, root_processor, communicator );
     if (err != MPI_SUCCESS)
       MPI_Abort(communicator,err);
   }
