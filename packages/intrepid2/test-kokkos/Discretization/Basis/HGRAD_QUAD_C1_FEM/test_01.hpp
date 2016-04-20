@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::G_QUAD_C1_FEM class.
+    \brief  Unit tests for the Intrepid2::HGRAD_QUAD_C1_FEM class.
     \author Created by P. Bochev, D. Ridzal, and K. Peterson.
 */
 #include "Intrepid2_config.h"
