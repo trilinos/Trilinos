@@ -2293,6 +2293,10 @@ namespace BaskerNS
 
   }//end find_leader()
 
+  //Added print function
+  //I like printf because it is not a thread race dependend like 
+  //c++ streams, however be may get compiler warnings
+  //Come back and add own printf style calls
 
  
 }//end namespace basker

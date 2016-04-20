@@ -125,11 +125,14 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::init_tree_thread()
   {
-    #ifdef BASKER_DEBUG_TREE
+    //#ifdef BASKER_DEBUG_TREE
+    if (Options.verbose == BASKER_TRUE)
+      {
     printf("----init_tree_thread()----\n");
     printf("---Starting Tree----\n");
     part_tree.info();
-    #endif
+      }
+    ///#endif
 
     //Note: Convert this to use these values everywhere
     INT_1DARRAY ttemp;

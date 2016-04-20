@@ -144,12 +144,14 @@ namespace BaskerNS
   {
     Int          nblks = 0;
 
-
     strong_component(M,nblks,order_btf_array,btf_tabs);
-
     btf_nblks = nblks;
-
     btf_flag = BASKER_TRUE;
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("BTF nblks returned: %d \n", nblks);
+      }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF nblks returned: %d \n", nblks);
@@ -233,6 +235,12 @@ namespace BaskerNS
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
 
+
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("BTF Cut: %d \n",
+	       btf_tabs(btf_tabs_offset));
+      }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 
