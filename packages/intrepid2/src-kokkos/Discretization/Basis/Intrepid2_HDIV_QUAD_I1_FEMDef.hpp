@@ -82,9 +82,6 @@ namespace Intrepid2 {
       break;
     }
     case OPERATOR_DIV: {
-      const auto x = input(0);
-      const auto y = input(1);
-
       output(0) = 0.25;
       output(1) = 0.25;
       output(2) = 0.25;
