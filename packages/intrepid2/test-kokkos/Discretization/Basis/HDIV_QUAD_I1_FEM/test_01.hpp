@@ -372,6 +372,76 @@ namespace Intrepid2 {
         errorFlag = -1000;
       };
 
+      *outStream \
+        << "\n"
+        << "===============================================================================\n"\
+        << "| TEST 4: correctness of DoF locations                                        |\n"\
+        << "===============================================================================\n";
+
+      try{
+        Basis_HDIV_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
+        const auto numFields = quadBasis.getCardinality();
+        const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+
+        // Check exceptions.
+        ordinal_type nthrow = 0, ncatch = 0;
+#ifdef HAVE_INTREPID2_DEBUG
+        {
+          DynRankView ConstructWithLabel(badVals,1,2,3);
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals), nthrow, ncatch );
+        }
+        {
+          DynRankView ConstructWithLabel(badVals, 3,2);
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals), nthrow, ncatch );
+        }
+        {
+          DynRankView ConstructWithLabel(badVals, 4,4);
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofCoords(badVals), nthrow, ncatch );
+        }
+
+         // Check if number of thrown exceptions matches the one we expect
+         if (nthrow != ncatch) {
+           errorFlag++;
+           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+         }
+#endif
+        // Check mathematical correctness
+        DynRankView ConstructWithLabel(normals, quadBasis.getCardinality(),spaceDim); // normals at each point basis point
+        normals(0,0)  =  0.0; normals(0,1)  = -2.0;
+        normals(1,0)  =  2.0; normals(1,1)  =  0.0;
+        normals(2,0)  =  0.0; normals(2,1)  =  2.0;
+        normals(3,0)  = -2.0; normals(3,1)  =  0.0;
+
+        DynRankView ConstructWithLabel(cvals, numFields,spaceDim);
+        DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim); // last dimension is spatial dim
+
+
+        quadBasis.getDofCoords(cvals);
+        quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+
+        value_type expected_normal;
+        for (size_type i=0; i<bvals.dimension(0); i++) {
+          for (size_type j=0; j<bvals.dimension(1); j++) {
+
+            value_type normal = 0.0;
+            for(size_type d=0;d<spaceDim;d++)
+               normal += bvals(i,j,d)*normals(j,d);
+
+            expected_normal = (i == j);
+            if (std::abs(normal - expected_normal) > tol) {
+              errorFlag++;
+              std::stringstream ss;
+              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ") is " << normal << " but should be " << expected_normal << "\n";
+              *outStream << ss.str();
+            }
+          }
+        }
+      }
+      catch (std::logic_error err){
+        *outStream << err.what() << "\n\n";
+        errorFlag = -1000;
+      };
+
       if (errorFlag != 0)
         std::cout << "End Result: TEST FAILED\n";
       else
