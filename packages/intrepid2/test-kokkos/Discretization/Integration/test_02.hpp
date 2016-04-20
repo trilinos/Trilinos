@@ -42,167 +42,176 @@
 
 
 /** \file
-\brief  Unit test (CubatureDirect): correctness of
-        integration of monomials for 1D reference cells.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Unit test (CubatureDirect): correctness of
+    integration of monomials for 1D reference cells.
+    \author Created by P. Bochev, D. Ridzal and Kyungjoo Kim
 */
 
-#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_config.h"
+
+#ifdef HAVE_INTREPID2_DEBUG
+#define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+#endif
+
+#include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_Utils_ExtData.hpp"
+
+#include "Intrepid2_CubatureDirectLineGauss.hpp"
+#include "Intrepid2_CubatureTensor.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 
-using namespace Intrepid2;
+#include "test_util.hpp"
 
+namespace Intrepid2 {
 
-/*
-  Monomial evaluation.
-    in 1D, for point p(x)    : x^xDeg
-    in 2D, for point p(x,y)  : x^xDeg * y^yDeg
-    in 3D, for point p(x,y,z): x^xDeg * y^yDeg * z^zDeg
-*/
-double computeMonomial(FieldContainer<double> & p, int xDeg, int yDeg=0, int zDeg=0) {
-  double val = 1.0;
-  int polydeg[3];
-  polydeg[0] = xDeg; polydeg[1] = yDeg; polydeg[2] = zDeg;
-  for (int i=0; i<p.dimension(0); i++) {
-    val *= std::pow(p(i),polydeg[i]);
-  }
-  return val;
-}
+  namespace Test {
+#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    } catch (std::logic_error err) {                                    \
+      ++ncatch;                                                         \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };  
 
+    template<typename ValueType, typename DeviceSpaceType>
+    int Integration_Test02(const bool verbose) {
+      typedef ValueType value_type;
 
-/*
-  Computes integrals of monomials over a given reference cell.
-*/
-double computeIntegral(int cubDegree, int polyDegree) {
+      Teuchos::RCP<std::ostream> outStream;
+      Teuchos::oblackholestream bhs; // outputs nothing
 
-  DefaultCubatureFactory<double>  cubFactory;                                   // create factory
-  shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
-  Teuchos::RCP<Cubature<double> > lineCub = cubFactory.create(line, cubDegree); // create default cubature
-  double val = 0.0;
+      if (verbose)
+        outStream = Teuchos::rcp(&std::cout, false);
+      else
+        outStream = Teuchos::rcp(&bhs, false);
 
-  int cubDim =  lineCub->getDimension();
+      Teuchos::oblackholestream oldFormatState;
+      oldFormatState.copyfmt(std::cout);
 
-  int numCubPoints = lineCub->getNumPoints();
+      typedef typename
+        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-  FieldContainer<double> point(cubDim);
-  FieldContainer<double> cubPoints(numCubPoints, cubDim);
-  FieldContainer<double> cubWeights(numCubPoints);
-
-  lineCub->getCubature(cubPoints, cubWeights);
-
-  for (int i=0; i<numCubPoints; i++) {
-    for (int j=0; j<cubDim; j++) {
-      point(j) = cubPoints(i,j);
-    }
-    val += computeMonomial(point, polyDegree)*cubWeights(i);
-  }
-
-  return val;
-}
-
-
-int main(int argc, char *argv[]) {
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-Kokkos::initialize();
-  // This little trick lets us print to std::cout only if
-  // a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
-
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
+      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
  
-  *outStream \
-  << "===============================================================================\n" \
-  << "|                                                                             |\n" \
-  << "|                 Unit Test (CubatureDirectLineGauss)                         |\n" \
-  << "|                                                                             |\n" \
-  << "|     1) Computing integrals of monomials on reference cells in 1D            |\n" \
-  << "|                                                                             |\n" \
-  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-  << "|                                                                             |\n" \
-  << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-  << "|                                                                             |\n" \
-  << "===============================================================================\n"\
-  << "| TEST 1: integrals of monomials in 1D                                        |\n"\
-  << "===============================================================================\n";
+      *outStream
+        << "===============================================================================\n"
+        << "|                                                                             |\n"
+        << "|                 Unit Test (CubatureDirectLineGauss)                         |\n"
+        << "|                                                                             |\n"
+        << "|     1) Computing integrals of monomials on reference cells in 1D            |\n"
+        << "|                                                                             |\n"
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n"
+        << "|                      Denis Ridzal (dridzal@sandia.gov) or                   |\n"
+        << "|                      Kyungjoo Kim (kyukim@sandia.gov).                      |\n"
+        << "|                                                                             |\n"
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
+        << "|                                                                             |\n"
+        << "===============================================================================\n"
+        << "| TEST 1: integrals of monomials in 1D                                        |\n"
+        << "===============================================================================\n";
 
-  // internal variables:
-  int                                      errorFlag = 0;
-  Teuchos::Array< Teuchos::Array<double> > testInt;
-  Teuchos::Array< Teuchos::Array<double> > analyticInt;
-  Teuchos::Array<double>                   tmparray(1);
-  double                                   reltol = 1.0e+01 * INTREPID_TOL;
-  testInt.assign(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
-  analyticInt.assign(INTREPID2_CUBATURE_LINE_GAUSS_MAX+1, tmparray);
+      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-  // open file with analytic values
-  std::string basedir = "./data";
-  std::stringstream namestream;
-  std::string filename;
-  namestream <<  basedir << "/EDGE_integrals" << ".dat";
-  namestream >> filename;
-  std::ifstream filecompare(&filename[0]);
+      const auto tol = 10.0 * Parameters::Tolerence;
 
-  *outStream << "\nIntegrals of monomials on a reference line (edge):\n";
+      int errorFlag = 0;
 
-  // compute and compare integrals
-  try {
-    // compute integrals
-    for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
-      testInt[cubDeg].resize(cubDeg+1);
-      for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
-        testInt[cubDeg][polyDeg] = computeIntegral(cubDeg, polyDeg);
-      }
-    }
-    // get analytic values
-    if (filecompare.is_open()) {
-      getAnalytic(analyticInt, filecompare);
-      // close file
-      filecompare.close();
-    }
-    // perform comparison
-    for (int cubDeg=0; cubDeg <= INTREPID2_CUBATURE_LINE_GAUSS_MAX; cubDeg++) {
-      for (int polyDeg=0; polyDeg <= cubDeg; polyDeg++) {
-        double abstol = ( analyticInt[polyDeg][0] == 0.0 ? reltol : std::fabs(reltol*analyticInt[polyDeg][0]) );
-        double absdiff = std::fabs(analyticInt[polyDeg][0] - testInt[cubDeg][polyDeg]);
-        *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
-                   << "x^" << std::setw(2) << std::left << polyDeg <<  ":" << "   "
-                   << std::scientific << std::setprecision(16) << testInt[cubDeg][polyDeg] << "   " << analyticInt[polyDeg][0] << "   "
-                   << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
-        if (absdiff > abstol) {
-          errorFlag++;
-          *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+      // open file with analytic values
+      std::string basedir = "../data";
+      std::stringstream namestream;
+      std::string filename;
+      namestream <<  basedir << "/EDGE_integrals" << ".dat";
+      namestream >> filename;
+      *outStream << "filename = "  << filename << std::endl;
+      std::ifstream filecompare(filename);
+
+      *outStream << "\n-> Integrals of monomials on a reference line (edge):\n";
+
+      // compute and compare integrals
+      try {
+        const auto maxDeg   = Parameters::MaxCubatureDegreeEdge;
+        const auto polySize = maxDeg + 1;
+
+        // test inegral values
+        DynRankView ConstructWithLabel(testInt, maxDeg+1, polySize);
+        
+        // analytic integral values
+        DynRankView ConstructWithLabel(analyticInt, maxDeg+1, polySize);
+        
+        // storage for cubatrue points and weights
+        DynRankView ConstructWithLabel(cubPoints, 
+                                       Parameters::MaxIntegrationPoints, 
+                                       Parameters::MaxDimension);
+
+        DynRankView ConstructWithLabel(cubWeights, 
+                                       Parameters::MaxIntegrationPoints);
+        
+        // compute integrals
+        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+          CubatureDirectLineGauss<DeviceSpaceType> lineCub(cubDeg);
+          for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) 
+            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<value_type>(lineCub,
+                                                                             cubPoints,
+                                                                             cubWeights,
+                                                                             polyDeg);
         }
+        
+        // get analytic values
+        if (filecompare.is_open()) {
+          getAnalytic(analyticInt, filecompare);
+          filecompare.close();
+        } else {
+          INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                        ">>> ERROR (Integration::Test02): Cannot open analytic solution file" );
+        }
+
+        // perform comparison
+        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+          for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) {
+            const auto abstol  = ( analyticInt(polyDeg,0) == 0 ? tol : std::fabs(tol*analyticInt(polyDeg,0)) );
+            const auto absdiff = std::fabs(analyticInt(polyDeg,0) - testInt(cubDeg,polyDeg));
+            *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << " integrating "
+                       << "x^" << std::setw(2) << std::left << polyDeg <<  ":" << "   "
+                       << std::scientific << std::setprecision(16) << testInt(cubDeg,polyDeg) << "   " << analyticInt(polyDeg,0) << "   "
+                       << std::setprecision(4) << absdiff << "   " << "<?" << "   " << abstol << "\n";
+            if (absdiff > abstol) {
+              errorFlag++;
+              *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
+            }
+          }
+          *outStream << "\n";
+        } 
+      } catch (std::logic_error err) {
+        *outStream << err.what() << "\n";
+        errorFlag = -1;
       }
-      *outStream << "\n";
-    } // end for cubDeg
+
+
+      if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+      else
+        std::cout << "End Result: TEST PASSED\n";
+
+      // reset format state of std::cout
+      std::cout.copyfmt(oldFormatState);
+
+      return errorFlag;
+    }
   }
-  catch (std::logic_error err) {
-    *outStream << err.what() << "\n";
-    errorFlag = -1;
-  };
-
-
-  if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
-  else
-    std::cout << "End Result: TEST PASSED\n";
-
-  // reset format state of std::cout
-  std::cout.copyfmt(oldFormatState);
-Kokkos::finalize();
-  return errorFlag;
 }
+
+
+
+
+
+
+

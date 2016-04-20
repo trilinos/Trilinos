@@ -70,23 +70,21 @@ namespace Intrepid2 {
     {
       const pointViewType points(cubatureDataStatic_[this->degree_].points_[0]);
       const auto src = Kokkos::subview(points, pointRange, Kokkos::ALL());
-
+      
       this->cubatureData_.points_ = 
         Kokkos::View<value_type*[Parameters::MaxDimension],ExecSpaceType>
-        ("CubatureDirectLineGauss::cubatureData_::points_", pointRange.second);
-
+        ("CubatureDirectLineGauss::cubatureData_::points_", pointRange.second, Parameters::MaxDimension);
+      
       Kokkos::deep_copy(this->cubatureData_.points_, src);
     }
     {
       const weightViewType weights(cubatureDataStatic_[this->degree_].weights_);
       const auto src = Kokkos::subview(weights, pointRange);
-
+      
       this->cubatureData_.weights_ = 
         Kokkos::View<value_type*,ExecSpaceType>
         ("CubatureDirectLineGauss::cubatureData_::weights_", pointRange.second);
-
-      auto dst = Kokkos::subview(this->cubatureData_.weights_, pointRange);
-
+      
       Kokkos::deep_copy(this->cubatureData_.weights_, src);
     }
   } 

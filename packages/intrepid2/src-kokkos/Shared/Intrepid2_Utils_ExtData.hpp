@@ -92,7 +92,7 @@ namespace Intrepid2 {
   */
   template<typename ValueType,
            class ...testMatProperties>
-  ordinal_type compareToAnalytic( const std::ifstream inputFile,
+  ordinal_type compareToAnalytic( std::ifstream &inputFile,
                                   const Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
                                   const ValueType reltol,
                                   const ordinal_type iprint,
@@ -109,11 +109,12 @@ namespace Intrepid2 {
   */
   template<typename ValueType,
            class ...testMatProperties>
-  template<typename ValueType>
   void getAnalytic( Kokkos::DynRankView<ValueType,testMatProperties...> testMat,
-                    const std::ifstream inputFile,
+                    std::ifstream &inputFile,
                     const TypeOfExactData analyticDataType = INTREPID2_UTILS_FRACTION );
 
 } // end namespace Intrepid2
+
+#include "Intrepid2_Utils_ExtDataDef.hpp"
 
 #endif
