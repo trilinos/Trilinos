@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid_G_HEX_C1_FEM.hpp
-    \brief  Header file for the Intrepid2::G_HEX_C1_FEM class.
+    \brief  Header file for the Intrepid2::HGRAD_HEX_C1_FEM class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
  */
