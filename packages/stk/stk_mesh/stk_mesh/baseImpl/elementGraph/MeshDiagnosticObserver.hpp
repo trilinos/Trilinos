@@ -14,7 +14,8 @@ enum MeshDiagnosticFlag
     RULE_1    = 1L<<1 ,
     RULE_2    = 1L<<2 ,
     RULE_3    = 1L<<3 ,
-    ALL_RULES = RULE_1 | RULE_2 | RULE_3
+    ALL_RULES = RULE_1 | RULE_2 | RULE_3,
+    SOLO_SIDES = 1L<<4
 };
 
 class MeshDiagnosticObserver : public stk::mesh::ModificationObserver

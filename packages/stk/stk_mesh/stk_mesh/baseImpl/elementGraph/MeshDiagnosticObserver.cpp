@@ -55,6 +55,13 @@ void MeshDiagnosticObserver::finished_modification_end_notification()
             gather_new_errors(out, orphanedSideErrors);
         }
 
+        if(m_diagnosticFlag & SOLO_SIDES)
+        {
+            std::vector<stk::mesh::Entity> orphanedSides = stk::mesh::get_solo_sides_without_element_on_different_proc(m_bulkData);
+            std::vector<std::string> orphanedSideErrors = stk::mesh::get_messages_for_solo_sides(m_bulkData, orphanedSides);
+            gather_new_errors(out, orphanedSideErrors);
+        }
+
         out.close();
     }
 

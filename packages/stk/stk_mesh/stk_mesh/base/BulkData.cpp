@@ -528,7 +528,8 @@ BulkData::BulkData( MetaData & mesh_meta_data
 
   register_observer(&m_meshDiagnosticObserver);
 
-  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+//  m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+//  m_meshDiagnosticObserver.enable_rule(stk::mesh::SOLO_SIDES);
 
 #ifndef NDEBUG
   //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);

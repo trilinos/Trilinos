@@ -20,6 +20,10 @@ std::vector<stk::mesh::Entity> get_orphaned_owned_sides(const stk::mesh::BulkDat
 std::vector<stk::mesh::Entity> get_orphaned_sides_with_attached_element_on_different_proc(const stk::mesh::BulkData& bulkData);
 std::vector<std::string> get_messages_for_orphaned_owned_sides(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& keys);
 
+std::vector<stk::mesh::Entity> get_solo_sides_without_element_on_different_proc(const stk::mesh::BulkData& bulkData);
+std::vector<std::string> get_messages_for_solo_sides(const stk::mesh::BulkData& bulkData, std::vector<stk::mesh::Entity>& entities);
+
+
 void throw_if_any_proc_has_false(MPI_Comm comm, bool is_all_ok_locally);
 
 } }
