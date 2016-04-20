@@ -282,6 +282,11 @@ void ElemElemGraph::clear_data_members()
     m_idMapper.clear();
     m_element_topologies.clear();
     m_num_parallel_edges = 0;
+    m_parallelInfoForGraphEdges.clear();
+    m_deleted_element_local_id_pool.clear();
+    m_deleted_elem_pool.clear();
+    m_sideIdPool.clear();
+    m_coincidentGraph.clear();
 }
 
 void ElemElemGraph::fill_elements_attached_to_local_nodes(const stk::mesh::EntityVector& sideNodesOfReceivedElement,
