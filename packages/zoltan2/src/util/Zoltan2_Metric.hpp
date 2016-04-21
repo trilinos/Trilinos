@@ -47,7 +47,7 @@
  *  \Includes the files for working with MetricValues and GraphMetricValues classes.
  */
 
-#include <Zoltan2_GraphMetricValues.hpp>
-#include <Zoltan2_GraphMetricValuesUtility.hpp>
-#include <Zoltan2_MetricValues.hpp>
-#include <Zoltan2_MetricValuesUtility.hpp>
+#include <Zoltan2_GraphMetrics.hpp>
+#include <Zoltan2_GraphMetricsUtility.hpp>
+#include <Zoltan2_ImbalanceMetrics.hpp>
+#include <Zoltan2_ImbalanceMetricsUtility.hpp>

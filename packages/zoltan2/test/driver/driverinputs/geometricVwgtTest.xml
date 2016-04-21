@@ -57,11 +57,14 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.34"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList>    
+    
   </ParameterList>
 
   <ParameterList name="zoltanrcb">
@@ -80,11 +83,15 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.34"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
+
   </ParameterList>
 
   <!---->
@@ -102,11 +109,14 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.34"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
   <ParameterList name="zoltanrib">
@@ -125,11 +135,14 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.34"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
   <!---->
@@ -147,11 +160,14 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.2"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
   <ParameterList name="zoltanhsfc">
@@ -170,11 +186,14 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.2"/>
       </ParameterList>
-    </ParameterList>
+    </ParameterList> 
+    
   </ParameterList>
 
   <ParameterList name="Comparison">

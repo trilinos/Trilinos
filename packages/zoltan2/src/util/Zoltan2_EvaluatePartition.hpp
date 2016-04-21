@@ -122,7 +122,7 @@ private:
   part_t targetGlobalParts_;        // actual
   part_t numNonEmpty_;              // of actual
 
-  typedef MetricBase<scalar_t> base_metric_type;
+  typedef BaseClassMetrics<scalar_t> base_metric_type;
   typedef ArrayRCP<RCP<base_metric_type>> base_metric_array_type;
 
   base_metric_array_type metricsBase_;
@@ -250,7 +250,7 @@ public:
    *  \param imbalance on return is the object count imbalance.
    */
   void getObjectCountImbalance(scalar_t &imbalance) const {
-	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
 	imbalance = metrics[0]->getMetricValue("maximum imbalance");
   }
 
@@ -260,7 +260,7 @@ public:
    *  If there was one weight, it is the imbalance with respect to that weight.
    */
   void getNormedImbalance(scalar_t &imbalance) const{
-	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
     if (metrics.size() > 1)
       imbalance = metrics[1]->getMetricValue("maximum imbalance");
     else
@@ -274,7 +274,7 @@ public:
    *  If there were no weights, this is the object count imbalance.
    */
   void getWeightImbalance(scalar_t &imbalance, int idx=0) const{
-	base_metric_array_type metrics = getAllMetricsOfType( "Metrics" );
+	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
     if (metrics.size() > 2)  // idx of multiple weights
       imbalance = metrics[idx+2]->getMetricValue("maximum imbalance");
     else if (metrics.size() == 2)   //  only one weight
@@ -298,9 +298,9 @@ public:
 	   *  \The issue here is that they each have unique parameters to pass.
 	   */
 	  base_metric_array_type metrics = getAllMetricsOfType( metricType );
-	  if( metricType == "Graph Metrics" )
+	  if( metricType == GRAPH_METRICS_TYPE_NAME )
 	    Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
-	  else if( metricType == "Metrics" )
+	  else if( metricType == IMBALANCE_METRICS_TYPE_NAME )
 		Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
   }
 
@@ -311,14 +311,37 @@ public:
    *  If there were no weights, this is the cut count.
    */
 
-  void getWeightCut(scalar_t &cut, int idx=0) const{
-	base_metric_array_type graphMetrics = getAllMetricsOfType( "Graph Metrics" );
-    if (graphMetrics.size() < idx)  // idx too high
-      cut = graphMetrics[graphMetrics.size()-1].getMetricValue("global maximum");
-    else if (idx < 0)   //  idx too low
-      cut = graphMetrics[0]->getMetricValue("global maximum");
-    else                       // idx weight
-      cut = graphMetrics[idx]->getMetricValue("global maximum");
+  void getMaxEdgeCut(scalar_t &cut, int idx=0) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
+	cut = graphMetrics[0]->getMetricValue("global maximum");
+  }
+
+  /*! \brief getMaxWeightEdgeCuts */
+  void getMaxWeightEdgeCut(scalar_t &cut, int idx=0) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
+    if (graphMetrics.size() > 2)  // idx of multiple weights
+    	cut = graphMetrics[idx+2]->getMetricValue("global maximum");
+    else if (graphMetrics.size() == 2)   //  only one weight
+    	cut = graphMetrics[1]->getMetricValue("global maximum");
+    else                       // no weights, return cut count
+    	cut = graphMetrics[0]->getMetricValue("global maximum");
+  }
+
+  /*! \brief getTotalEdgeCut */
+  void getTotalEdgeCut(scalar_t &cut, int idx=0) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
+	cut = graphMetrics[0]->getMetricValue("global sum");
+  }
+
+  /*! \brief getTotalWeightEdgeCut */
+  void getTotalWeightEdgeCut(scalar_t &cut, int idx=0) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
+    if (graphMetrics.size() > 2)  // idx of multiple weights
+    	cut = graphMetrics[idx+2]->getMetricValue("global sum");
+    else if (graphMetrics.size() == 2)   //  only one weight
+    	cut = graphMetrics[1]->getMetricValue("global sum");
+    else                       // no weights, return cut count
+    	cut = graphMetrics[0]->getMetricValue("global sum");
   }
 };
 

@@ -43,20 +43,27 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_MetricBase.hpp
+/*! \file Zoltan2_BaseClassMetrics.hpp
  *  \this is a base class, currently for MetricValues and GraphMetricValues
  */
 
-#ifndef ZOLTAN2_METRICBASE_HPP
-#define ZOLTAN2_METRICBASE_HPP
+#ifndef ZOLTAN2_BASEMETRICVALUES_HPP
+#define ZOLTAN2_BASEMETRICVALUES_HPP
 
 #include <Zoltan2_Standards.hpp>
 
+// MDM - we will likely change the format of how and where these are defined but not sure if templated will come into play - this is just to remove the string duplication for now
+#define UNKNOWN_METRICS_TYPE_NAME "UnknownMetricClass" 		// this is an error - I kept the base class non virtual so we could work with stl maps for example
+#define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"		// For the ImbalanceMetrics class
+#define GRAPH_METRICS_TYPE_NAME "GraphMetrics"				// For the GraphMetrics class
+
+#define METRICS_UNSET_STRING "unset"
+
 namespace Zoltan2{
 
-/*! \base class for the metric classes. */
+/*! \base class BaseClassMetrics for the metric classes. */
 template <typename scalar_t>
-  class MetricBase {
+  class BaseClassMetrics {
 
 private:
 /*! \memory allocation is forced by all constructors of this class. */
@@ -83,19 +90,19 @@ void setValue(int enumIndex, scalar_t value) { values_[enumIndex] = value; }
 public:
 
 /*! \brief Constructor which exists only compiling - MDM - need to look into this as I would like to remove it */
-MetricBase() :
-	values_(), metricName_("unset") {
+BaseClassMetrics() :
+	values_(), metricName_(METRICS_UNSET_STRING) {
 	}
 
 /*! \brief Constructor */
-MetricBase(int memCount, std::string mname) :
+BaseClassMetrics(int memCount, std::string mname) :
   values_(), metricName_(mname) {
 	resetValues(memCount);
 	}
 
 /*! \brief Constructor */
-MetricBase(int memCount) :
-  values_(), metricName_("unset") {
+BaseClassMetrics(int memCount) :
+  values_(), metricName_(METRICS_UNSET_STRING) {
 	resetValues(memCount);
 	}
 
@@ -105,8 +112,8 @@ virtual void printLine(std::ostream &os) const {};
 /*! \abstract getMetrics. Forces declaration of a static string list which should be synchronized to the enum list definition */
 virtual const std::vector<std::string> & getMetrics() const { return static_metricNames_; }
 
-/*! \brief Get the class name of the metric. */
-virtual std::string getMetricType() const { return ""; }
+/*! \brief Get the class type of the metric. */
+virtual const std::string & getMetricType() const { return static_unknown_metricTypeName_; }
 
 /*! \brief Get the name of the item measured. */
 const std::string &getName() const { return metricName_; }
@@ -144,6 +151,9 @@ int convertMetricNameToIndex(const std::string & metric_name) const
 	return metricIndex; // this can return metricNames.size() if not found
 }
 
+/*! \setup a static string name indicating my class name. This stub name exists so that this base class is not virtual. It should never be used. */
+static std::string static_unknown_metricTypeName_;
+
 /*! \setup a static vector of strings. Non virtual so that we can generically support stl containers like maps. */
 static std::vector<std::string> static_metricNames_;
 
@@ -151,13 +161,19 @@ static std::vector<std::string> static_metricNames_;
 static std::vector<std::string> static_allMetricNames_;
 };
 
+/*! \static class name for string - used to identify by parameter lists. This name should never be used and allows us to be not abstract - so that we can generically support stl containers like maps. */
+template <typename scalar_t>
+std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ = UNKNOWN_METRICS_TYPE_NAME;
+
 /*! \synchronize this with the enum list. Empty list allows us to be not abstract - so that we can generically support stl containers like maps. */
 template <typename scalar_t>
-std::vector<std::string> MetricBase<scalar_t>::static_metricNames_ = {};
+std::vector<std::string> BaseClassMetrics<scalar_t>::static_metricNames_ = {};
 
-/*! \This is a list of all possible types - it is used to generate a 'was not used message', if that's you want. */
+/*! \This is a list of all possible types - it is used to generate a 'was not used message', if that's you want.
+ * However note that recent changes to the parameter list mean this may become not needed and this will need to be resolved.
+ * */
 template <typename scalar_t>
-std::vector<std::string> MetricBase<scalar_t>::static_allMetricNames_ = { "Metrics", "Graph Metrics" };
+std::vector<std::string> BaseClassMetrics<scalar_t>::static_allMetricNames_ = { IMBALANCE_METRICS_TYPE_NAME, GRAPH_METRICS_TYPE_NAME };
 
 } // namespace Zoltan2
 #endif

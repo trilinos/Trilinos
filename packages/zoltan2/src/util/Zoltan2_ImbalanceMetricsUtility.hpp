@@ -43,14 +43,14 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_MetricValuesUtility.hpp
+/*! \file Zoltan2_ImbalanceMetricsUtility.hpp
  */
 
-#ifndef ZOLTAN2_METRICVALUESUTILITY_HPP
-#define ZOLTAN2_METRICVALUESUTILITY_HPP
+#ifndef ZOLTAN2_IMBALANCEMETRICSUTILITY_HPP
+#define ZOLTAN2_IMBALANCEMETRICSUTILITY_HPP
 
-#include <Zoltan2_MetricFunctions.hpp>
-#include <Zoltan2_MetricValues.hpp>
+#include <Zoltan2_ImbalanceMetrics.hpp>
+#include <Zoltan2_MetricUtility.hpp>
 
 namespace Zoltan2{
 
@@ -106,7 +106,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
     multiCriteriaNorm mcNorm,
     part_t &numParts,
     part_t &numNonemptyParts,
-    ArrayRCP<RCP<MetricBase<scalar_t> > > &metrics,
+    ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > &metrics,
     ArrayRCP<scalar_t> &globalSums)
 {
   env->debug(DETAILED_STATUS, "Entering globalSumsByPart");
@@ -120,8 +120,8 @@ template <typename scalar_t, typename lno_t, typename part_t>
   if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
   // add some more metrics to the array
-  typedef MetricValues<scalar_t> mv_t;
-  typedef typename ArrayRCP<RCP<MetricBase<scalar_t> > >::size_type array_size_type;
+  typedef ImbalanceMetrics<scalar_t> mv_t;
+  typedef typename ArrayRCP<RCP<BaseClassMetrics<scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
   for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n )
   {
@@ -256,7 +256,8 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
   obj = sumBuf;                     // # of objects
   scalar_t min=0, max=0, sum=0;
-  next = 0;
+  next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
+
 
   ArrayView<scalar_t> objVec(obj, nparts);
   getStridedStats<scalar_t>(objVec, 1, 0, min, max, sum);
@@ -353,7 +354,7 @@ template <typename Adapter>
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
-    ArrayRCP<RCP<MetricBase<typename Adapter::scalar_t> > > &metrics)
+    ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &metrics)
 {
   env->debug(DETAILED_STATUS, "Entering objectMetrics");
 
@@ -501,7 +502,7 @@ template <typename Adapter>
       metrics[0]->getMetricValue("global sum"), objCount,
       min, max, avg);
 
-  metrics[0]->setMetricValue("minimum imbalance", 1.0 + min);
+  // MDM - note that this indexing works because we have Metrics first - but we should generalize this - perhaps we will not start at index 0 in the new scheme
   metrics[0]->setMetricValue("maximum imbalance", 1.0 + max);
   metrics[0]->setMetricValue("average imbalance", avg);
 
@@ -517,7 +518,6 @@ template <typename Adapter>
       metrics[1]->getMetricValue("global sum"), wgts,
       min, max, avg);
 
-    metrics[1]->setMetricValue("minimum imbalance", 1.0 + min);
     metrics[1]->setMetricValue("maximum imbalance", 1.0 + max);
     metrics[1]->setMetricValue("average imbalance", avg);
 
@@ -526,7 +526,7 @@ template <typename Adapter>
     ///////////////////////////////////////////////////////////////////////////
     // Compute imbalances for each individual weight.
 
-      int next = 2;
+      int next = 2;	// MDM - also generalize here for the new scheme where we build the list - currently still fine because ImbalanceMetrics happen to be loaded first
 
       for (int vdim=0; vdim < numCriteria; vdim++){
         wgts += numParts;
@@ -538,7 +538,6 @@ template <typename Adapter>
         computeImbalances<scalar_t, part_t>(numParts, targetNumParts, psizes,
           metrics[next]->getMetricValue("global sum"), wgts, min, max, avg);
 
-        metrics[next]->setMetricValue("minimum imbalance", 1.0 + min);
         metrics[next]->setMetricValue("maximum imbalance", 1.0 + max);
         metrics[next]->setMetricValue("average imbalance", avg);
         next++;
@@ -554,7 +553,7 @@ template <typename Adapter>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts, part_t numNonemptyParts,
-    const ArrayRCP<RCP<MetricBase<scalar_t>>> &infoList)
+    const ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   if (numNonemptyParts < numParts)
@@ -563,9 +562,9 @@ template <typename scalar_t, typename part_t>
   if (targetNumParts != numParts)
     os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
 
-  std::string unset("unset");
+  std::string unset(METRICS_UNSET_STRING);
 
-  MetricValues<scalar_t>::printHeader(os);
+  ImbalanceMetrics<scalar_t>::printHeader(os);
 
   for (int i=0; i < infoList.size(); i++)
     if (infoList[i]->getName() != unset)
@@ -579,9 +578,9 @@ template <typename scalar_t, typename part_t>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts, part_t numNonemptyParts,
-    RCP<MetricBase<scalar_t>> metricValue)
+    RCP<BaseClassMetrics<scalar_t>> metricValue)
 {
-   ArrayRCP<RCP<MetricBase<scalar_t> > > infoList = arcp<RCP<MetricBase<scalar_t>>>( 1 );	// new
+   ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > infoList = arcp<RCP<BaseClassMetrics<scalar_t>>>( 1 );	// new
    infoList[0] = metricValue;
    printMetrics( os, targetNumParts, numParts, numNonemptyParts, infoList);
 }

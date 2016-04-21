@@ -183,7 +183,7 @@ private:
    * \param comm is the process communicator
    */
   void CompareMetrics(const ParameterList &metricsPlist,
-                      const RCP<const Comm<int> > &comm);
+                      const RCP<const Comm<int> > &comm, std::string metricClassType);
   
   /* \brief Method that compares two metrics and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -302,9 +302,11 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       return;
     }
     
-    this->CompareMetrics(pList,
-                         comm);
-    
+	const std::vector<std::string> & allPossibleTypes = Zoltan2::BaseClassMetrics<zscalar_t>::static_allMetricNames_;
+	for(auto metricType : allPossibleTypes) {
+		this->CompareMetrics(pList, comm, metricType );
+	}
+
   }else if (pList.isParameter("A") || pList.isParameter("B"))
   {
     if(comm->getRank() == 0)
@@ -634,7 +636,7 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
 
 // compare metrics
 void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
-                                      const RCP<const Comm<int> > &comm)
+                                      const RCP<const Comm<int> > &comm, std::string metricClassType)
 {
   int rank = comm->getRank();
   
@@ -657,9 +659,9 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   
   // get metrics
   std::map<const string, const base_metric_t> prb_metrics = this->metricArrayToMap
-    (metricObjectPrb->getAllMetricsOfType( "Metrics" )); // MDM - we may want to generalize this to getAllMetrics()
+    (metricObjectPrb->getAllMetricsOfType( metricClassType )); // MDM - we may want to generalize this to getAllMetrics()
   std::map<const string, const base_metric_t> ref_metrics = this->metricArrayToMap
-    (metricObjectRef->getAllMetricsOfType( "Metrics" )); // MDM - we may want to generalize this to getAllMetrics()
+    (metricObjectRef->getAllMetricsOfType( metricClassType )); // MDM - we may want to generalize this to getAllMetrics()
   
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);

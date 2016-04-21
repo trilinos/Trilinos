@@ -49,8 +49,8 @@
 #ifndef ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 #define ZOLTAN2_GRAPHICMETRICVALUESUTILITY_HPP
 
-#include <Zoltan2_MetricFunctions.hpp>
-#include <Zoltan2_MetricValues.hpp>
+#include <Zoltan2_ImbalanceMetrics.hpp>
+#include <Zoltan2_MetricUtility.hpp>
 
 namespace Zoltan2{
 
@@ -90,7 +90,7 @@ template <typename Adapter>
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graph,
     const ArrayView<const typename Adapter::part_t> &part,
     typename Adapter::part_t &numParts,
-    ArrayRCP<RCP<MetricBase<typename Adapter::scalar_t> > > &metrics,
+    ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
 
@@ -113,7 +113,7 @@ template <typename Adapter>
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  typedef GraphMetricValues<scalar_t> mv_t;
+  typedef GraphMetrics<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<part_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Vector<part_t,lno_t,gno_t,node_t>     vector_t;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
@@ -123,7 +123,7 @@ template <typename Adapter>
   using Teuchos::as;
 
   // add some more metrics to the array
-  typedef typename ArrayRCP<RCP<MetricBase<typename Adapter::scalar_t> > >::size_type array_size_type;
+  typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
   for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n )
   {
@@ -320,16 +320,16 @@ template <typename Adapter>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts,
-    const ArrayRCP<RCP<MetricBase<scalar_t>>> &infoList)
+    const ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   os << std::endl;
   if (targetNumParts != numParts)
     os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
 
-  std::string unset("unset");
+  std::string unset(METRICS_UNSET_STRING);
 
-  GraphMetricValues<scalar_t>::printHeader(os);
+  GraphMetrics<scalar_t>::printHeader(os);
 
   for (int i=0; i < infoList.size(); i++)
     if (infoList[i]->getName() != unset)
@@ -343,9 +343,9 @@ template <typename scalar_t, typename part_t>
 template <typename scalar_t, typename part_t>
   void printMetrics( std::ostream &os,
     part_t targetNumParts, part_t numParts,
-    RCP<MetricBase<scalar_t>> metricValue)
+    RCP<BaseClassMetrics<scalar_t>> metricValue)
 {
-  ArrayRCP<RCP<MetricBase<scalar_t> > > infoList = arcp<RCP<MetricBase<scalar_t>>>( 1 );	// new
+  ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > infoList = arcp<RCP<BaseClassMetrics<scalar_t>>>( 1 );	// new
   infoList[0] = metricValue;
   printMetrics( os, targetNumParts, numParts, infoList);
 }

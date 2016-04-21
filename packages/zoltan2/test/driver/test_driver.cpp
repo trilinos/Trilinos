@@ -98,9 +98,6 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
-// temporary methods for debugging and leanring
-//typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
-
 void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
 {
   // This method composes a plist for the problem
@@ -121,7 +118,6 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
     ParameterList &sub = plist.sublist("Zoltan2Parameters");
     zoltan2Parameters.setParameters(sub);
   }
-  
 }
 
 void getParameterLists(const string &inputFileName,
@@ -133,25 +129,33 @@ void getParameterLists(const string &inputFileName,
   // return a parameter list of problem definitions
   // and a parameter list for solution comparisons
   Teuchos::FileInputSource inputSource(inputFileName);
-  if(rank == 0) cout << "input file source: " << inputFileName << endl;
+  if(rank == 0) {
+	  cout << "Input file source: " << inputFileName << endl;
+  }
   XMLObject xmlInput;
   
   // Try to get xmlObject from inputfile
-  try{
+  try
+  {
     xmlInput = inputSource.getObject();
   }
   catch(exception &e)
   {
     EXC_ERRMSG("Test Driver error: reading", e); // error reading input
   }
-  
+
   // get the parameter lists for each model
   for(int i = 0; i < xmlInput.numChildren(); i++)
   {
     ParameterList plist;
     xmlToModelPList(xmlInput.getChild(i), plist);
-    if(plist.name() == "Comparison") comparisons.emplace(plist);
-    else problems.emplace(plist);
+
+    if(plist.name() == "Comparison") {
+    	comparisons.emplace(plist);
+    }
+    else {
+    	problems.emplace(plist);
+    }
   }
 }
 
@@ -168,7 +172,6 @@ void run(const UserInputForTests &uinput,
   // 5. clean up
 
   int rank = comm->getRank();
-  
   if(!problem_parameters.isParameter("kind"))
   {
     if(rank == 0) std::cerr << "Problem kind not provided" << std::endl;
@@ -185,8 +188,7 @@ void run(const UserInputForTests &uinput,
     return;
   }
 
-  if(rank == 0)
-    cout << "\n\nRunning test: " << problem_parameters.name() << endl;
+  if(rank == 0) cout << "\n\nRunning test: " << problem_parameters.name() << endl;
   
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
@@ -196,10 +198,10 @@ void run(const UserInputForTests &uinput,
   comparison_source->addTimer("adapter construction time");
   comparison_source->addTimer("problem construction time");
   comparison_source->addTimer("solve time");
+
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
-  
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   comparison_source->timers["adapter construction time"]->start();
   base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
@@ -208,8 +210,9 @@ void run(const UserInputForTests &uinput,
 //  if(rank == 0) cout << "Got input adapter... " << endl;
   if(ia == nullptr)
   {
-    if(rank == 0)
+    if(rank == 0) {
       cout << "Get adapter for input failed" << endl;
+    }
     return;
   }
   
@@ -217,14 +220,13 @@ void run(const UserInputForTests &uinput,
   // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
   string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
-  // get Zoltan2 partion parameters
-  ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
+  ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters")); // get Zoltan2 partition parameters
   
-  //if(rank == 0){
-  //  cout << "\nZoltan 2 parameters:" << endl;
-  //  zoltan2_parameters.print(std::cout);
-  //  cout << endl;
-  //}
+  if(rank == 0) {
+    //cout << "\nZoltan 2 parameters:" << endl;
+    //zoltan2_parameters.print(std::cout);
+    cout << endl;
+  }
 
   comparison_source->timers["problem construction time"]->start();
   std::string problem_kind = problem_parameters.get<std::string>("kind"); 
@@ -237,18 +239,20 @@ void run(const UserInputForTests &uinput,
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
 #endif
 
-  if (problem == nullptr) {
-    if (rank == 0)
-      std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
-    return;
+  if (rank == 0) {
+	  if (problem == nullptr) {
+		  std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+		  return;
+	  }
+	  else {
+		  std::cout << "Using input adapter type: " + adapter_name << std::endl;
+	  }
   }
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
-  
   comparison_source->timers["solve time"]->start();
-  
   if (problem_kind == "partitioning") {
     reinterpret_cast<partitioning_problem_t *>(problem)->solve();
   } else if (problem_kind == "ordering") {
@@ -306,19 +310,19 @@ void run(const UserInputForTests &uinput,
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
  // get metric object
-  cout << "START ANALYSYS" << std::endl;
   RCP<EvaluatePartition<basic_id_t> > metricObject =
-      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::
-    newEvaluatePartition(reinterpret_cast<partitioning_problem_t*>
-             (problem), adapter_name, ia,
-             &zoltan2_parameters));
+		  rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
   
-   std::ostringstream msg;
-
-   cout << "ANALYSIS" << std::endl;
-   MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters, comm, msg );
-   if(rank == 0)
-	   cout << msg.str();
+  try {
+	   std::ostringstream msg;
+	   MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msg ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
+	   if(rank == 0) {
+		   cout << msg.str();
+	   }
+  }
+  catch(std::logic_error theLogicError) {
+	  cout << "test_driver.cpp passed bad input parameters to analyzeMetrics(): " << theLogicError.what() << endl;
+  }
 
 #define BDD
 #ifdef BDD 
@@ -406,7 +410,6 @@ int main(int argc, char *argv[])
       msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
       std::cout << msg.str() << std::endl;
     }
-    
     return 1;
   }
 
@@ -420,8 +423,7 @@ int main(int argc, char *argv[])
   // (3) Get Input Data Parameters
   ////////////////////////////////////////////////////////////
   
-  // assumes that first block will always be
-  // the input block
+  // assumes that first block will always be the input block
   const ParameterList inputParameters = problems.front();
   if(inputParameters.name() != "InputParameters")
   {

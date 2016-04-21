@@ -59,11 +59,10 @@
     </ParameterList>
     
      <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <ParameterList name="maximum imbalance">
-          <Parameter name="lower" type="double" value="0.99"/>
-          <Parameter name="upper" type="double" value="1.4"/>
-        </ParameterList>
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList>
     
@@ -84,11 +83,10 @@
     </ParameterList>
     
      <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <ParameterList name="maximum imbalance">
-          <Parameter name="lower" type="double" value="0.99"/>
-          <Parameter name="upper" type="double" value="1.4"/>
-        </ParameterList>
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -109,11 +107,10 @@
     </ParameterList>
     
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <ParameterList name="maximum imbalance">
-          <Parameter name="lower" type="double" value="0.99"/>
-          <Parameter name="upper" type="double" value="1.4"/>
-        </ParameterList>
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList>
     
@@ -134,15 +131,20 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
   
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <ParameterList name="maximum imbalance">
-          <Parameter name="lower" type="double" value="0.99"/>
-          <Parameter name="upper" type="double" value="1.4"/>
-        </ParameterList>
+ 	<ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList>
     
   </ParameterList>
   
+
+  
 </ParameterList>
+
+
+
+

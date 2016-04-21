@@ -302,7 +302,7 @@ Example 4. Metric Definition for ‘object count’
 Example 5. Metric Definition for ‘cut count’
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    <ParameterList name=“Graph Metrics">
+    <ParameterList name=“ ">
       <ParameterList name=“cut count”>
       	<ParameterList name="global sum">
         	    <Parameter name="lower" type="double" value="##.####"/>
