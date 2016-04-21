@@ -123,8 +123,9 @@ namespace Intrepid2 {
         << "| TEST 1: Basis creation, exceptions tests                                    |\n"
         << "===============================================================================\n";
 
-      ordinal_type nthrow = 0, ncatch = 0;
+
       try{
+        ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
         Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
@@ -206,17 +207,19 @@ namespace Intrepid2 {
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D3), nthrow, ncatch );
         }
 #endif
+        // Check if number of thrown exceptions matches the one we expect
+        if (nthrow != ncatch) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+        }
+
+
       } catch (std::logic_error err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
-      }
-
-      // Check if number of thrown exceptions matches the one we expect
-      if (nthrow != ncatch) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
       }
 
       *outStream

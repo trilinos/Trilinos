@@ -57,13 +57,13 @@
 
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
-#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
-#include "Intrepid2_CubatureDirectTetDefault.hpp"
-#include "Intrepid2_CubatureCompositeTet.hpp"
+//#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
+//#include "Intrepid2_CubatureDirectTriDefault.hpp"
+//#include "Intrepid2_CubatureDirectTetDefault.hpp"
+//#include "Intrepid2_CubatureCompositeTet.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
-#include "Intrepid2_CubatureTensorPyr.hpp"
-#include "Intrepid2_CubaturePolygon.hpp"
+//#include "Intrepid2_CubatureTensorPyr.hpp"
+//#include "Intrepid2_CubaturePolygon.hpp"
 
 namespace Intrepid2 {
   

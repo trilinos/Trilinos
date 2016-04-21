@@ -54,10 +54,6 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Intrepid2_CellTools.hpp"
-//#include "Intrepid2_HCURL_HEX_I1_FEM.hpp"
-//#include "Intrepid2_DefaultCubatureFactory.hpp"
-
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -67,16 +63,15 @@ namespace Intrepid2 {
   
   namespace Test {
 #define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    {                                                                   \
-      try {                                                             \
-        S ;                                                             \
-      }                                                                 \
-      catch (std::logic_error err) {                                    \
-        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-        *outStream << err.what() << '\n';                               \
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-      };                                                                \
-    }
+    try {                                                               \
+      S ;                                                               \
+    }                                                                   \
+    catch (std::logic_error err) {                                      \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };                                                                  
+
     
     template<typename ValueType, typename DeviceSpaceType>
     int FunctionSpaceTools_Test00(const bool verbose) {

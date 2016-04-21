@@ -398,13 +398,18 @@ namespace BaskerNS
           //if((maxindex == L.max_idx) || (pivot == 0))
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
-	      cout << endl << endl;
-	      cout << "---------------------------"<<endl;
-              cout << "Error: Matrix is singular, blk" << endl;
-              cout << "k: " << k << " MaxIndex: " << maxindex 
-		   << " pivot " 
-                   << pivot << endl;
-              cout << "lcnt: " << lcnt << endl;
+	      if (Options.verbose == BASKER_TRUE)
+		{
+		  cout << endl << endl;
+		  cout << "---------------------------"<<endl;
+		  cout << "Error: Matrix is singular, blk" 
+		       << endl;
+		  cout << "k: " << k << " MaxIndex: " 
+		       << maxindex 
+		       << " pivot " 
+		       << pivot << endl;
+		  cout << "lcnt: " << lcnt << endl;
+		}
 	      thread_array(kid).error_type =
 		BASKER_ERROR_SINGULAR;
 	      thread_array(kid).error_blk   = b;
@@ -427,12 +432,16 @@ namespace BaskerNS
           //Note: Come back to this!!!!
           if(lnnz + lcnt > llnnz)
             {
-	      printf("\n\n");
-	      printf("----------------------\n");
+	      //printf("\n\n");
+	      // printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *M.nrow + 1;
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
               printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      b, llnnz, lnnz, lcnt, newsize);
+		}
 
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -454,12 +463,16 @@ namespace BaskerNS
           if(unnz+ucnt > uunnz)
             {
 
-	      printf("\n\n");
-	      printf("-------------------\n");
+	      // printf("\n\n");
+	      //printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*M.nrow+1;
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
               printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
                      b, uunnz, newsize);
+		}
 
 	       if(Options.realloc == BASKER_FALSE)
 		{
@@ -1388,8 +1401,11 @@ namespace BaskerNS
 	     return BASKER_ERROR;
 	   }
 
+	 if (Options.verbose == BASKER_TRUE)
+	   {
 	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
 	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	   }
 	//BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 	
       }

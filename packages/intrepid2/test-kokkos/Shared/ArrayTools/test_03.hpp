@@ -98,28 +98,26 @@ namespace Intrepid2 {
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
-			  << "===============================================================================\n" \
-			  << "|                                                                             |\n" \
-			  << "|                       Unit Test (ArrayTools)                                |\n" \
-			  << "|                                                                             |\n" \
-			  << "|     1) Array operations: dot multiply                                       |\n" \
-			  << "|                                                                             |\n" \
-			  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-			  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-			  << "|                                                                             |\n" \
-				<< "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-			  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-			  << "|                                                                             |\n" \
-			  << "===============================================================================\n";      
-
+        << "===============================================================================\n" \
+        << "|                                                                             |\n" \
+        << "|                       Unit Test (ArrayTools)                                |\n" \
+        << "|                                                                             |\n" \
+        << "|     1) Array operations: dot multiply                                       |\n" \
+        << "|                                                                             |\n" \
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+        << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+        << "|                                                                             |\n" \
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+        << "|                                                                             |\n" \
+        << "===============================================================================\n";      
+      
       typedef RealSpaceTools<DeviceSpaceType> rst;
       typedef ArrayTools<DeviceSpaceType> art; 
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-      #ifdef HAVE_INTREPID2_DEBUG
-  			art atools;
-			#endif
-      #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      const value_type tol = Parameters::Tolerence*10000.0;
       int errorFlag = 0;
 
       *outStream                                \
@@ -150,62 +148,62 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(a_10_1_2_2, 10, 1, 2, 2);
 
           *outStream << "-> dotMultiplyDataField:\n";
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_3_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_3_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_10_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1_2_2, a_10_2_2_2_2) );
           //
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_2_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_3_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_3, a_10_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_9_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_3, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_3, a_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_2_2_2, a_2_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataField(a_10_2_2, a_10_1, a_2_2) );
 
           *outStream << "-> dotMultiplyDataData:\n";
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_3) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_9_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_3_2, a_10_3_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_10_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_10_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_10_2_2_2) );
           //
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1, a_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
-          INTREPID2_TEST_ERROR_EXPECTED( atools.dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_2_2, a_10_2_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_10_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_3, a_10_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_9_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_3, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_3, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_2_2_2, a_2_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1, a_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2, a_2_2) );
+          INTREPID2_TEST_ERROR_EXPECTED( art::dotMultiplyDataData(a_10_2, a_10_1_2_2, a_2_2_2) );
       #endif
 
         }
@@ -242,7 +240,7 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outSM_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outDM_c_f_p, c, f, p);
-          value_type zero = INTREPID_TOL*10000.0;
+
 
 
           // fill with random numbers
@@ -268,34 +266,34 @@ namespace Intrepid2 {
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_c_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_c_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (1): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d, in_c_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (2): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d_d, in_c_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (3): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_1, in_c_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_1, in_c_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (4): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d, in_c_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (5): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d_d, in_c_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -319,7 +317,6 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outSM_c_f_p, c, f, p);
           DynRankView ConstructWithLabel(outDM_c_f_p, c, f, p);
-          value_type zero = INTREPID_TOL*10000.0;
 
           // fill with random numbers
           for (auto i=0;i<f;++i)
@@ -345,34 +342,34 @@ namespace Intrepid2 {
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_p, in_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_p, in_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (7): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d, in_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (8): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_p_d_d, in_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (9): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataField(outSM_c_f_p, data_c_1, in_f_p);
           art::dotMultiplyDataField(outDM_c_f_p, data_c_1, in_f_p);
           rst::subtract(out_c_f_p, outSM_c_f_p, outDM_c_f_p);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (10): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d, in_f_p_d);
-          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_f_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (11): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataField(out_c_f_p, data_c_1_d_d, in_f_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_f_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataField (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -398,7 +395,6 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out_c_p, c, p);
           DynRankView ConstructWithLabel(outSM_c_p, c, p);
           DynRankView ConstructWithLabel(outDM_c_p, c, p);
-          value_type zero = INTREPID_TOL*10000.0;
 
           for (auto i=0;i<c;++i) {
             for (auto j=0;j<p;++j) {
@@ -418,34 +414,34 @@ namespace Intrepid2 {
           art::scalarMultiplyDataData(outSM_c_p, data_c_p, in_c_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_c_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (1): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d, in_c_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (2): check dot multiply of orthogonal vectors"<<rst::Serial::vectorNorm(out_c_p, NORM_ONE)<<" \n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d_d, in_c_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (3): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataData(outSM_c_p, data_c_1, in_c_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_1, in_c_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (4): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d, in_c_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (5): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d_d, in_c_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (6): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
@@ -469,7 +465,6 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(out_c_p, c, p);
           DynRankView ConstructWithLabel(outSM_c_p, c, p);
           DynRankView ConstructWithLabel(outDM_c_p, c, p);
-          value_type zero = INTREPID_TOL*10000.0;
 
           // fill with random numbers
           for (auto i=0;i<c;++i) {
@@ -493,34 +488,34 @@ namespace Intrepid2 {
           art::dotMultiplyDataData(outDM_c_p, data_c_p, in_p);
           
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (7): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d, in_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (8): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_p_d_d, in_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (9): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }
           art::scalarMultiplyDataData(outSM_c_p, data_c_1, in_p);
           art::dotMultiplyDataData(outDM_c_p, data_c_1, in_p);
           rst::subtract(out_c_p, outSM_c_p, outDM_c_p);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (10): check dot multiply for scalars vs. scalar multiply\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d, in_p_d);
-          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > zero) {
+          if (rst::Serial::vectorNorm(out_c_p, NORM_ONE) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (11): check dot multiply of orthogonal vectors\n\n";
             errorFlag = -1000;
           }
           art::dotMultiplyDataData(out_c_p, data_c_1_d_d, in_p_d_d);
-          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > zero) {
+          if ((rst::Serial::vectorNorm(out_c_p, NORM_INF) - d1*d2) > tol) {
             *outStream << "\n\nINCORRECT dotMultiplyDataData (12): check dot multiply for tensors of 1s\n\n";
             errorFlag = -1000;
           }

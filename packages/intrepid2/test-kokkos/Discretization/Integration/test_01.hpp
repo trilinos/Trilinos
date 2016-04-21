@@ -56,8 +56,6 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Shards_CellTopology.hpp"
-
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
 
@@ -69,94 +67,21 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+#include "test_util.hpp"
+
 namespace Intrepid2 {
 
   namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    {                                                                   \
-      try {                                                             \
-        S ;                                                             \
-      }                                                                 \
-      catch (std::logic_error err) {                                    \
-        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-        *outStream << err.what() << '\n';                               \
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-      };                                                                \
-    }
-
-    // /*
-    //   Computes volume of a given reference cell.
-    // */
-    // double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
-    //   Teuchos::RCP< Cubature<double> > myCub;
-    //   double vol = 0.0;
-
-    //   switch (cellTopology.getBaseCellTopologyData()->key) {
-
-    //   case shards::Line<>::key:
-    //     myCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    //     break;
-    //   case shards::Triangle<>::key:
-    //     myCub = Teuchos::rcp(new CubatureDirectTriDefault<double>(cubDegree));
-    //     break;
-    //   case shards::Tetrahedron<>::key:
-    //     myCub = Teuchos::rcp(new CubatureDirectTetDefault<double>(cubDegree));
-    //     break;
-    //   case shards::Quadrilateral<>::key: { 
-    //     std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
-    //     lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    //     lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
-    //     myCub = Teuchos::rcp(new CubatureTensor<double>(lineCubs));
-    //   }
-    //     break;
-    //   case shards::Hexahedron<>::key: { 
-    //     std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(2);
-    //     std::vector< Teuchos::RCP< Cubature<double> > > miscCubs(2);
-    //     lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    //     lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+7) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
-    //     miscCubs[0] = Teuchos::rcp(new CubatureTensor<double>(lineCubs));
-    //     miscCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<double>((cubDegree+25) % INTREPID2_CUBATURE_LINE_GAUSS_MAX));
-    //     myCub = Teuchos::rcp(new CubatureTensor<double>(miscCubs));
-    //   }
-    //     break;
-    //   case shards::Wedge<>::key: {
-    //     Teuchos::RCP<CubatureDirect<double> > triCub  = Teuchos::rcp(new CubatureDirectTriDefault<double>(cubDegree));
-    //     Teuchos::RCP<CubatureDirect<double> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    //     myCub = Teuchos::rcp(new CubatureTensor<double>(triCub,lineCub));
-    //   }
-    //     break;
-    //   case shards::Pyramid<>::key: {
-    // 	std::vector< Teuchos::RCP< Cubature<double> > > lineCubs(3);
-    //     lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    // 	lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(cubDegree));
-    // 	lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<double>(cubDegree));
-    // 	myCub = Teuchos::rcp(new CubatureTensorPyr<double>(lineCubs));
-    //   }
-    //     break;
-
-    //   default:
-    //     TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key),
-    //                                   (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key) ),
-    //                                 std::invalid_argument,
-    //                                 ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");
-    //   } // end switch
-
-    //   int numCubPoints = myCub->getNumPoints();
-
-    //   FieldContainer<double> cubPoints( numCubPoints, myCub->getDimension() );
-    //   FieldContainer<double> cubWeights( numCubPoints );
-    //   myCub->getCubature(cubPoints, cubWeights);
-
-    //   for (int i=0; i<numCubPoints; i++)
-    //     vol += cubWeights(i);
-
-    //   return vol;
-    // }
+#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    } catch (std::logic_error err) {                                    \
+      ++ncatch;                                                         \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };                                                                  \
 
     template<typename ValueType, typename DeviceSpaceType>
     int Integration_Test01(const bool verbose) {
@@ -195,138 +120,134 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
       
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const auto tol = 100.0 * Parameters::Tolerence;
       
       int errorFlag  = 0;
       
       *outStream                               
         << "\n"
         << "===============================================================================\n"
-        << "| TEST 1: construction and basic functionality                                |\n"
+        << "| TEST 1: exception                                                           |\n"
         << "===============================================================================\n";
 
       try {
-        /* Line cubature. */
-        INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType>(-1) );
-        INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType>(Parameters::MaxCubatureDegreeEdge+1) );
-
-        CubatureDirectLineGauss<DeviceSpaceType> lineCub;        
-        TEUCHOS_TEST_FOR_EXCEPTION( lineCub.getAccuracy() == 0, std::logic_error, 
-                                    "!" ) );
-        INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType> lineCub(55);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (lineCub.getNumPoints() != 28), std::logic_error, "Check member getNumPoints!" ) );
-        INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType> lineCub;
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (lineCub.getDimension() != 1),
-                                                                   std::logic_error,
-                                                                   "Check member dimension!" ) );
-        // /* Triangle cubature. */
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(-1) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(INTREPID2_CUBATURE_TRI_DEFAULT_MAX+1) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub;
-        //                                std::string testName    = "INTREPID2_CUBATURE_TRI_DEFAULT";
-        //                                std::string triCubName = triCub.getName();
-        //                                *outStream << "\nComparing strings: " << testName << " and " << triCubName << "\n\n";
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (testName != triCubName), std::logic_error, "Name mismatch!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub;
-        //                                std::vector<int> accuracy;
-        //                                triCub.getAccuracy(accuracy);
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(17);
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (triCub.getNumPoints() != 61), std::logic_error, "Check member getNumPoints!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub;
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (triCub.getDimension() != 2),
-        //                                                            std::logic_error,
-        //                                                            "Check member dimension!" ) );
-        // /* Tetrahedron cubature. */
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(-1) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(INTREPID2_CUBATURE_TET_DEFAULT_MAX+1) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub;
-        //                                std::string testName    = "INTREPID2_CUBATURE_TET_DEFAULT";
-        //                                std::string tetCubName = tetCub.getName();
-        //                                *outStream << "\nComparing strings: " << testName << " and " << tetCubName << "\n\n";
-        //                                std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > lineCubs(2);
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (testName != tetCubName), std::logic_error, "Name mismatch!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub;
-        //                                std::vector<int> accuracy;
-        //                                tetCub.getAccuracy(accuracy);
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (accuracy[0] != 0), std::logic_error, "Check member getAccuracy!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(17);
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (tetCub.getNumPoints() != 495), std::logic_error, "Check member getNumPoints!" ) );
-        // INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub;
-        //                                TEUCHOS_TEST_FOR_EXCEPTION( (tetCub.getDimension() != 3),
-        //                                                            std::logic_error,
-        //                                                            "Check member getCellTopology!" ) );
-                                           
-        /* Tensor cubature. */
-        INTREPID2_TEST_ERROR_EXPECTED( std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > lineCubs(0);
-                                       CubatureTensor<DeviceSpaceType> quadCub(lineCubs) );
-        INTREPID2_TEST_ERROR_EXPECTED( std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > miscCubs(3);
-                                       std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > lineCubs(2);
-                                       lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(3));
-                                       lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(16));
-                                       miscCubs[0] = Teuchos::rcp(new CubatureTensor<DeviceSpaceType>(lineCubs));
-                                       miscCubs[1] = Teuchos::rcp(new CubatureDirectTriDefault<DeviceSpaceType>);
-                                       miscCubs[2] = Teuchos::rcp(new CubatureDirectTetDefault<DeviceSpaceType>(19));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(miscCubs);
-                                       std::vector<int> a(4); a[0]=3; a[1]=16; a[2]=0; a[3]=19;
-                                       std::vector<int> atest(4);
-                                       tensorCub.getAccuracy(atest);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (a != atest), std::logic_error, "Check member getAccuracy!" ) );
-                          
-        INTREPID2_TEST_ERROR_EXPECTED( std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > lineCubs(2);
-                                       lineCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(15));
-                                       lineCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(11));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(lineCubs);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getNumPoints() != 48), std::logic_error, "Check member getNumPoints!" ) );
-        INTREPID2_TEST_ERROR_EXPECTED( std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > miscCubs(3);
-                                       miscCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>);
-                                       miscCubs[1] = Teuchos::rcp(new CubatureDirectTriDefault<DeviceSpaceType>);
-                                       miscCubs[2] = Teuchos::rcp(new CubatureDirectTetDefault<DeviceSpaceType>);
-                                       CubatureTensor<DeviceSpaceType> tensorCub(miscCubs);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 6), std::logic_error, "Check member dimension!" ) );
-        INTREPID2_TEST_ERROR_EXPECTED( std::vector< Teuchos::RCP< Cubature<DeviceSpaceType> > > miscCubs(3);
-                                       miscCubs[0] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(3));
-                                       miscCubs[1] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(7));
-                                       miscCubs[2] = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(5));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(miscCubs);
-                                       FieldContainer<DeviceSpaceType> points(tensorCub.getNumPoints(), tensorCub.getDimension());
-                                       FieldContainer<DeviceSpaceType> weights(tensorCub.getNumPoints());
-                                       tensorCub.getCubature(points, weights)
-                                       );
-        
-          
-        INTREPID2_TEST_ERROR_EXPECTED( Teuchos::RCP< CubatureDirect<DeviceSpaceType> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(15));
-                                       Teuchos::RCP< CubatureDirect<DeviceSpaceType> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<DeviceSpaceType>(12));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(lineCub, triCub);
-                                       std::vector<int> a(2); a[0] = 15; a[1] = 12;
-                                       std::vector<int> atest(2);
-                                       tensorCub.getAccuracy(atest);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 3) || (a != atest),
-                                                                   std::logic_error,
-                                                                   "Check constructormembers dimension and getAccuracy!" ) );
-        INTREPID2_TEST_ERROR_EXPECTED( Teuchos::RCP< CubatureDirect<DeviceSpaceType> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(15));
-                                       Teuchos::RCP< CubatureDirect<DeviceSpaceType> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<DeviceSpaceType>(12));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(triCub, lineCub, triCub);
-                                       std::vector<int> a(3); a[0] = 12; a[1] = 15; a[2] = 12;
-                                       std::vector<int> atest(3);
-                                       tensorCub.getAccuracy(atest);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 5) || (a != atest),
-                                                                   std::logic_error,
-                                                                   "Check constructor and members dimension and getAccuracy!" ) );
-        
-        INTREPID2_TEST_ERROR_EXPECTED( Teuchos::RCP< CubatureDirect<DeviceSpaceType> > triCub = Teuchos::rcp(new CubatureDirectTriDefault<DeviceSpaceType>(12));
-                                       CubatureTensor<DeviceSpaceType> tensorCub(triCub, 5);
-                                       std::vector<int> a(5); a[0] = 12; a[1] = 12; a[2] = 12; a[3] = 12; a[4] = 12;
-                                       std::vector<int> atest(5);
-                                       tensorCub.getAccuracy(atest);
-                                       TEUCHOS_TEST_FOR_EXCEPTION( (tensorCub.getDimension() != 10) || (a != atest),
-                                                                   std::logic_error,
-                                                                   "Check constructor and members dimension and getAccuracy!" ) );
-        if (Teuchos::TestForException_getThrowNumber() != endThrowNumber) {
-          errorFlag = -1000;
+        ordinal_type nthrow = 0, ncatch = 0;
+#ifdef HAVE_INTREPID2_DEBUG
+        *outStream << "-> Line testing\n\n";
+        {
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType>(-1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectLineGauss<DeviceSpaceType>(Parameters::MaxCubatureDegreeEdge+1), nthrow, ncatch );
         }
+        
+        *outStream << "-> Triangle testing\n\n";
+        // {
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(-1), nthrow, ncatch );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(Parameters::MaxCubatureDegreeTri+1), nthrow, ncatch );
+        // }
+
+        *outStream << "-> Tetrahedron testing\n\n";
+        // {
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(-1), nthrow, ncatch );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(Parameters::MaxCubatureDegreeTet+1), nthrow, ncatch );
+        // }
+#endif 
+        if (nthrow != ncatch) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+        }
+
+      } catch (std::logic_error err) {
+        *outStream << err.what() << "\n";
+        errorFlag = -1000;
+      };
+
+
+      *outStream                               
+        << "\n"
+        << "===============================================================================\n"
+        << "| TEST 2: basic functionalities                                               |\n"
+        << "===============================================================================\n";
+
+      try {
+
+        *outStream << "-> Line testing\n\n";
+        {
+          CubatureDirectLineGauss<DeviceSpaceType> lineCub(4);
+          INTREPID2_TEST_FOR_EXCEPTION( lineCub.getDimension() != 1, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): line cubature must have 1 dimension.");
+          INTREPID2_TEST_FOR_EXCEPTION( lineCub.getAccuracy() != 4, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): line cubature reports wrong accuracy.");
+        }
+        
+        *outStream << "-> Triangle testing\n\n";
+        // {
+        //   CubatureDirectTriDefault<DeviceSpaceType> triCub(17);
+        //   INTREPID2_TEST_FOR_EXCEPTION( triCub.getNumPoints() != 61, std::logic_error, 
+        //                                 ">>> ERROR (Integration::Test01): triangle cubature reports a wrong number of points.");
+        //   INTREPID2_TEST_FOR_EXCEPTION( triCub.getDimension() != 2, std::logic_error, 
+        //                                 ">>> ERROR (Integration::Test01): triangle cubature reports a wrong dimension.");
+        // }
+
+        *outStream << "-> Tetrahedron testing\n\n";
+        // {
+        //   CubatureDirectTetDefault<DeviceSpaceType> tetCub(17);
+        //   INTREPID2_TEST_FOR_EXCEPTION( tetCub.getNumPoints() != 495, std::logic_error, 
+        //                                 ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong number of points.");
+        //   INTREPID2_TEST_FOR_EXCEPTION( tetCub.getDimension() != 3, std::logic_error,
+        //                                 ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong dimension.");
+        // }
+
+
+        *outStream << "-> Quad testing\n\n";                
+        {
+          typedef CubatureDirectLineGauss<DeviceSpaceType> lineCubatureType;
+          CubatureTensor<DeviceSpaceType> quadCub( lineCubatureType(3), lineCubatureType(7) );
+          
+          INTREPID2_TEST_FOR_EXCEPTION( quadCub.getDimension() != 2, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): quad cubature must have 2 dimension.");
+
+          ordinal_type accuracy[Parameters::MaxDimension];
+          quadCub.getAccuracy( accuracy );
+          INTREPID2_TEST_FOR_EXCEPTION( accuracy[0] != 3 || accuracy[1] != 7, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): quad cubature reports wrong accuracy.");
+          
+        }
+
+        *outStream << "-> Hex testing\n\n";                
+        {
+          typedef CubatureDirectLineGauss<DeviceSpaceType> lineCubatureType;
+          CubatureTensor<DeviceSpaceType> hexCub( lineCubatureType(1), lineCubatureType(4), lineCubatureType(2) );
+
+          INTREPID2_TEST_FOR_EXCEPTION( hexCub.getDimension() != 3, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): hex cubature must have 3 dimension.");
+
+          ordinal_type accuracy[Parameters::MaxDimension];
+          hexCub.getAccuracy( accuracy );
+          INTREPID2_TEST_FOR_EXCEPTION( accuracy[0] != 1 || accuracy[1] != 4 || accuracy[2] != 2, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): hex cubature reports wrong accuracy.");
+        }
+
+        *outStream << "-> Prism testing\n\n";                
+        // {
+        //   typedef CubatureDirectLineGauss<DeviceSpaceType> lineCubatureType;
+        //   typedef CubatureDirectTriGauss<DeviceSpaceType>  triCubatureType;
+
+        //   CubatureTensor<triCubatureType,lineCubatureType> 
+        //     prismCub( triCubatureType(4), lineCubatureType(3) );
+
+        //   INTREPID2_TEST_FOR_EXCEPTION( prismCub.getDimension() != 3, std::logic_error,
+        //                                 ">>> ERROR (Integration::Test01): prism cubature must have 3 dimension.");
+
+        //   ordinal_type accuracy[Parameters::MaxDimension];
+        //   hexCub.getAccuracy( accuracy );
+        //   INTREPID2_TEST_FOR_EXCEPTION( accuracy[0] != 4 || accuracy[1] != 3, std::logic_error,
+        //                                 ">>> ERROR (Integration::Test01): prism cubature reports wrong accuracy.");
+        // }
+                          
       } catch (std::logic_error err) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
@@ -334,117 +255,164 @@ namespace Intrepid2 {
  
       *outStream
         << "===============================================================================\n"
-        << "| TEST 2: volume computations                                                 |\n"
+        << "| TEST 3: volume computations                                                 |\n"
         << "===============================================================================\n";
 
-      double testVol = 0.0;
-      double tol     = 100.0 * INTREPID_TOL;
-
-      // list of analytic volume values, listed in the enumerated reference cell order up to CELL_HEXAPRISM
-      double volumeList[] = {0.0, 2.0, 1.0/2.0, 4.0, 1.0/6.0, 8.0, 1.0, 4.0/3.0, 32.0};
-
-      *outStream << "\nReference cell volumes:\n\n";
-
       try {
-        shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());
-        for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
-          testVol = computeRefVolume(line, deg);
-          *outStream << std::setw(30) << "Line volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[1]) << "\n";
-          if (std::abs(testVol - volumeList[1]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        
+        DynRankView ConstructWithLabel(cubPoints,  Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
+        DynRankView ConstructWithLabel(cubWeights, Parameters::MaxIntegrationPoints);
+
+        *outStream << "-> Line testing\n\n";
+        {
+          for (auto deg=0;deg<=Parameters::MaxCubatureDegreeEdge;++deg) {
+            CubatureDirectLineGauss<DeviceSpaceType> cub(deg);
+            cub.getCubature(cubPoints, cubWeights);
+            const auto npts = cub.getNumPoints();
+
+            const auto testVol = computeRefVolume(npts, cubWeights);
+            const auto refVol  = 2.0;
+            if (std::abs(testVol - refVol) > tol) {
+              *outStream << std::setw(30) << "Line volume --> " << std::setw(10) << std::scientific << testVol <<
+                std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+              ++errorFlag;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            }
           }
         }
 
-        *outStream << "\n\n";
-        shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
-        for (int deg=0; deg<=INTREPID2_CUBATURE_TRI_DEFAULT_MAX; deg++) {
-          testVol = computeRefVolume(tri, deg);
-          *outStream << std::setw(30) << "Triangle volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[2]) << "\n";
-          if (std::abs(testVol - volumeList[2]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
+        *outStream << "-> Triangle testing\n\n";
+        // {
+        //   shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
+        //   for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTri;++deg) {
+        //     const auto testVol = computeRefVolume(tri, deg);
+        //     const auto refVol  = 0.5;
+        //     if (std::abs(testVol - refVol) > tol) {
+        //       *outStream << std::setw(30) << "Triangle volume --> " << std::setw(10) << std::scientific << testVol <<
+        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+        //       ++errorFlag;
+        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //     }
+        //   }
+        // }
+        
+        *outStream << "-> Quad testing\n\n";
+        {
+          for (auto y_deg=0;y_deg<=Parameters::MaxCubatureDegreeEdge;++y_deg) 
+            for (auto x_deg=0;x_deg<=Parameters::MaxCubatureDegreeEdge;++x_deg) {
+              typedef CubatureDirectLineGauss<DeviceSpaceType> lineCubatureType;
+              const auto x_line = lineCubatureType(x_deg);
+              const auto y_line = lineCubatureType(y_deg);
+              CubatureTensor<DeviceSpaceType> cub( x_line, y_line );
+              cub.getCubature(cubPoints, cubWeights);
+              const auto npts = cub.getNumPoints();
+              
+              const auto testVol = computeRefVolume(npts, cubWeights);
+              const auto refVol  = 4.0;
+              if (std::abs(testVol - refVol) > tol) {
+                *outStream << std::setw(30) << "Quadrilateral volume --> " << std::setw(10) << std::scientific << testVol <<
+                  std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+                
+                ++errorFlag;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              }
+            }
         }
 
-        *outStream << "\n\n";
-        shards::CellTopology quad(shards::getCellTopologyData< shards::Quadrilateral<> >());
-        for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
-          testVol = computeRefVolume(quad, deg);
-          *outStream << std::setw(30) << "Quadrilateral volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[3]) << "\n";
-          if (std::abs(testVol - volumeList[3]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
+        *outStream << "-> Tetrahedron testing\n\n";
+        //  {
+        //   shards::CellTopology tet(shards::getCellTopologyData< shards::Tetrahedron<> >());
+        //   for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTet;++deg) {
+        //     const auto testVol = computeRefVolume(tet, deg);
+        //     const auto refVol  = 1.0/6.0;
+        //     if (std::abs(testVol - refVol) > tol) {
+        //       *outStream << std::setw(30) << "Tetrahedron volume --> " << std::setw(10) << std::scientific << testVol <<
+        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+              
+        //       ++errorFlag;
+        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //     }
+        //   }
+        // }
+
+        *outStream << "-> Hexahedron testing\n\n";
+        {
+          // when hex is tested with max cubature degree edge, it exceeds max integration points 1001
+          for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg) 
+            for (auto y_deg=0;y_deg<Parameters::MaxCubatureDegreeEdge;++y_deg) 
+              for (auto x_deg=0;x_deg<Parameters::MaxCubatureDegreeEdge;++x_deg) {
+                typedef CubatureDirectLineGauss<DeviceSpaceType> lineCubatureType;
+                const auto x_line = lineCubatureType(x_deg);
+                const auto y_line = lineCubatureType(y_deg);
+                const auto z_line = lineCubatureType(z_deg);
+                CubatureTensor<DeviceSpaceType> cub( x_line, y_line, z_line );
+
+                cub.getCubature(cubPoints, cubWeights);
+                const auto npts = cub.getNumPoints();
+              
+                const auto testVol = computeRefVolume(npts, cubWeights);
+                const auto refVol  = 8.0;
+                if (std::abs(testVol - refVol) > tol) {
+                  *outStream << std::setw(30) << "Hexahedron volume --> " << std::setw(10) << std::scientific << testVol <<
+                    std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+                  
+                  ++errorFlag;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                }
+              }
         }
 
-        *outStream << "\n\n";
-        shards::CellTopology tet(shards::getCellTopologyData< shards::Tetrahedron<> >());
-        for (int deg=0; deg<=INTREPID2_CUBATURE_TET_DEFAULT_MAX; deg++) {
-          testVol = computeRefVolume(tet, deg);
-          *outStream << std::setw(30) << "Tetrahedron volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[4]) << "\n";
-          if (std::abs(testVol - volumeList[4]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
-        }
-        *outStream << "\n\n";
-        shards::CellTopology hex(shards::getCellTopologyData< shards::Hexahedron<> >());
-        for (int deg=0; deg<=INTREPID2_CUBATURE_LINE_GAUSS_MAX; deg++) {
-          testVol = computeRefVolume(hex, deg);
-          *outStream << std::setw(30) << "Hexahedron volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[5]) << "\n";
-          if (std::abs(testVol - volumeList[5]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
-        }
-        *outStream << "\n\n";
-        shards::CellTopology wedge(shards::getCellTopologyData< shards::Wedge<> >());
-        for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_TRI_DEFAULT_MAX); deg++) {
-          testVol = computeRefVolume(wedge, deg);
-          *outStream << std::setw(30) << "Wedge volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[6]) << "\n";
-          if (std::abs(testVol - volumeList[6]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
-        }
-        *outStream << "\n\n";
-        shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
-        for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
-          testVol = computeRefVolume(pyr, deg);
-          *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[7]) << "\n";
-          if (std::abs(testVol - volumeList[7]) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
-        }
-        *outStream << "\n\n";
-        for (int deg=0; deg<=20; deg++) {
-          Teuchos::RCP<CubatureDirectLineGauss<DeviceSpaceType> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(deg));
-          CubatureTensor<DeviceSpaceType> hypercubeCub(lineCub, 5);
-          int numCubPoints = hypercubeCub.getNumPoints();
-          FieldContainer<DeviceSpaceType> cubPoints( numCubPoints, hypercubeCub.getDimension() );
-          FieldContainer<DeviceSpaceType> cubWeights( numCubPoints );
-          hypercubeCub.getCubature(cubPoints, cubWeights);
-          testVol = 0;
-          for (int i=0; i<numCubPoints; i++)
-            testVol += cubWeights(i);
-          *outStream << std::setw(30) << "5-D Hypercube volume --> " << std::setw(10) << std::scientific << testVol <<
-            std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[8]) << "\n";
-          if (std::abs(testVol - volumeList[8])/std::abs(testVol) > tol) {
-            errorFlag = 1;
-            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          }
-        }
-      }
-      catch (std::logic_error err) {
+        *outStream << "-> Prism testing\n\n";
+        // {
+        //   shards::CellTopology wedge(shards::getCellTopologyData< shards::Wedge<> >());
+        //   for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg) 
+        //     for (auto xy_deg=0;xy_deg<Parameters::MaxCubatureDegreeTri;++xy_deg) {
+        //       const auto testVol = computeRefVolume(wedge, deg);
+        //       const auto refVol  = 1.0;
+        //       if (std::abs(testVol - refVol) > tol) {
+        //         *outStream << std::setw(30) << "Wedge volume --> " << std::setw(10) << std::scientific << testVol <<
+        //           std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+        //         ++errorFlag;
+        //         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //       }
+        //     }
+        // }
+
+        *outStream << "-> Pyramid testing\n\n";
+        // {
+        //   shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
+        //   for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
+        //     const auto testVol = computeRefVolume(pyr, deg);
+        //     const auto refVol  = 4.0/3.0;
+        //     if (std::abs(testVol - refVol) > tol) {
+        //       *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
+        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+        //       ++errorFlag;
+        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //     }
+        //   }
+        // }
+        
+        *outStream << "-> Hypercube testing\n\n";
+        // later.... refVol = 32
+        // for (int deg=0; deg<=20; deg++) {
+        //   Teuchos::RCP<CubatureDirectLineGauss<DeviceSpaceType> > lineCub = Teuchos::rcp(new CubatureDirectLineGauss<DeviceSpaceType>(deg));
+        //   CubatureTensor<DeviceSpaceType> hypercubeCub(lineCub, 5);
+        //   int numCubPoints = hypercubeCub.getNumPoints();
+        //   FieldContainer<DeviceSpaceType> cubPoints( numCubPoints, hypercubeCub.getDimension() );
+        //   FieldContainer<DeviceSpaceType> cubWeights( numCubPoints );
+        //   hypercubeCub.getCubature(cubPoints, cubWeights);
+        //   testVol = 0;
+        //   for (int i=0; i<numCubPoints; i++)
+        //     testVol += cubWeights(i);
+        //   *outStream << std::setw(30) << "5-D Hypercube volume --> " << std::setw(10) << std::scientific << testVol <<
+        //     std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - volumeList[8]) << "\n";
+        //   if (std::abs(testVol - volumeList[8])/std::abs(testVol) > tol) {
+        //     errorFlag = 1;
+        //     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        //   }
+        // }
+      }  catch (std::logic_error err) {
         *outStream << err.what() << "\n";
         errorFlag = -1;
       };
@@ -460,5 +428,8 @@ namespace Intrepid2 {
       Kokkos::finalize();
       return errorFlag;
     }
+
+
+
   } // end of namespace test 
 } // end of namespace intrepid2

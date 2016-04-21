@@ -52,24 +52,23 @@ namespace ROL {
 template<class Real> 
 class StdEpetraBatchManager : public EpetraBatchManager<Real> {
 public:
-  StdEpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : EpetraBatchManager<Real>(comm) {}
+  StdEpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm)
+    : EpetraBatchManager<Real>(comm) {}
 
   using EpetraBatchManager<Real>::sumAll;
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    Teuchos::RCP<std::vector<Real> > input_ptr = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<StdVector<Real> >(input)).getVector());
-    Teuchos::RCP<std::vector<Real> > output_ptr = Teuchos::rcp_const_cast<std::vector<Real> >(
-      (Teuchos::dyn_cast<StdVector<Real> >(output)).getVector());
-    int dim_i = input_ptr->size();
-    int dim_o = output_ptr->size();
-    if ( dim_i != dim_o ) {
-      std::cout << "StdEpetraBatchManager: DIMENSION MISMATCH ON RANK " 
-                << EpetraBatchManager<Real>::batchID() << "\n";
-    }
-    else {
-      EpetraBatchManager<Real>::sumAll(&(*input_ptr)[0],&(*output_ptr)[0],dim_i);
-    }
+    std::vector<Real> input_ptr
+      = *(Teuchos::dyn_cast<StdVector<Real> >(input).getVector());
+    std::vector<Real> output_ptr
+      = *(Teuchos::dyn_cast<StdVector<Real> >(output).getVector());
+    int dim_i = static_cast<int>(input_ptr.size());
+    int dim_o = static_cast<int>(output_ptr.size());
+    TEUCHOS_TEST_FOR_EXCEPTION(dim_i != dim_o, std::invalid_argument,
+      ">>> (ROL::StdEpetraBatchManager::SumAll): Dimension mismatch!");
+    EpetraBatchManager<Real>::sumAll(&input_ptr[0],
+                                     &output_ptr[0],
+                                     dim_i);
   }
 };
 

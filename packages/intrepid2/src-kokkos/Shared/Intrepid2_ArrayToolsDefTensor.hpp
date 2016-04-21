@@ -1092,65 +1092,70 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cell, field, point;
         size_type leftRank = _leftInput.rank();
-
+        size_type rightRank = _rightInput.rank();
+        
         if (_hasField) 
           Util::unrollIndex( cell, field, point, 
-                       _output.dimension(0),
-                       _output.dimension(1),
-                       iter );
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             iter );
         else           
           Util::unrollIndex( cell, point, 
-                       _output.dimension(0), 
-                       iter );
-
+                             _output.dimension(0), 
+                             iter );
+        
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
-
-        auto lpoint = (_leftInput.dimension(1) == 1) ? size_type(0) : point;
+        
+        const auto lpoint = (_leftInput.dimension(1) == 1 ? 0 : point);
         auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
-                      ((leftRank == 3) ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
-                      Kokkos::subdynrankview(_leftInput, cell, lpoint)));
-
-        auto right  = ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL(), Kokkos::ALL()));
-
+                        leftRank == 3 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                        /**/            Kokkos::subdynrankview(_leftInput, cell, lpoint) );
+        
+        //temporary 
+        const bool hasCell = (_hasField ? rightRank == 5 : rightRank == 4); 
+        auto right  = ( _hasField ? ( hasCell ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL(), Kokkos::ALL()) :
+                                      /**/      Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL(), Kokkos::ALL())):
+                        /**/        ( hasCell ? Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL(), Kokkos::ALL()) :
+                                      /**/      Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL(), Kokkos::ALL())));
+        
         const size_type iend = result.dimension(0);
         const size_type jend = result.dimension(1);
 
         switch (leftRank) {
-          case 4:
-            if (_isTranspose) {
-              const size_type kend = right.dimension(0);
-              for (size_type i=0; i<iend; ++i)
-                for (size_type j=0; j<jend; ++j) {
-                  result(i, j) = value_type(0);
-                  for (size_type k=0; k<kend; ++k)
-                    result(i, j) += left(k, i) * right(k, j);
-                }
-            } else {
-              const size_type kend = right.dimension(0);
-              for (size_type i=0; i<iend; ++i)
-                for (size_type j=0; j<jend; ++j) {
-                  result(i, j) = value_type(0);
-                  for (size_type k=0; k<kend; ++k)
-                    result(i, j) += left(i, k) * right(k, j);
-                }
-            }
-            break;
-          case 3:  //matrix is diagonal
+        case 4: {
+          if (_isTranspose) {
+            const size_type kend = right.dimension(0);
             for (size_type i=0; i<iend; ++i)
-              for (size_type j=0; j<jend; ++j)
-                result(i, j) = left(i) * right(i, j);
-            break;
-          case 2:  //matrix is a scaled identity
-            for (size_type i=0; i<iend; ++i) {
-              for (size_type j=0; j<jend; ++j)
-                result(i, j) = left() * right(i, j);
-            }
-            break;
+              for (size_type j=0; j<jend; ++j) {
+                result(i, j) = value_type(0);
+                for (size_type k=0; k<kend; ++k)
+                  result(i, j) += left(k, i) * right(k, j);
+              }
+          } else {
+            const size_type kend = right.dimension(0);
+            for (size_type i=0; i<iend; ++i)
+              for (size_type j=0; j<jend; ++j) {
+                result(i, j) = value_type(0);
+                for (size_type k=0; k<kend; ++k)
+                  result(i, j) += left(i, k) * right(k, j);
+              }
+          }
+          break;
         }
-
-
+        case 3: { //matrix is diagonal
+          for (size_type i=0; i<iend; ++i)
+            for (size_type j=0; j<jend; ++j)
+              result(i, j) = left(i) * right(i, j);
+          break;
+        }
+        case 2: { //matrix is a scaled identity
+          for (size_type i=0; i<iend; ++i) 
+            for (size_type j=0; j<jend; ++j) 
+              result(i, j) = left() * right(i, j);
+          break;
+        }
+        }
       }
     };
     } //namespace

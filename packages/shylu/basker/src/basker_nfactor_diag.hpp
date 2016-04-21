@@ -170,8 +170,12 @@ namespace BaskerNS
 	c < schunk+nchunk; ++c)
       {
 	Int c_size = btf_tabs(c+1)-btf_tabs(c);
-	//printf("kid: %d current_chunk: %d size: %d \n",
-	//   kid, c, c_size);
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("kid: %d factoring current_chunk: %d size: %d \n",
+		   kid, c, c_size);
+	  }
 
 	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
@@ -464,6 +468,9 @@ namespace BaskerNS
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
 	      cout << endl << endl;
 	      cout << "---------------------------"
 		   << endl;
@@ -475,6 +482,7 @@ namespace BaskerNS
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
                    << pivot << endl;
+		}
 	      thread_array(kid).error_type = 
 		BASKER_ERROR_SINGULAR;
 	      thread_array(kid).error_blk  = c;
@@ -506,16 +514,20 @@ namespace BaskerNS
           //Note: Come back to this!!!!
           if(lnnz + lcnt > llnnz)
             {
-	      printf("\n\n");
-	      printf("----------------------\n");
+	      //printf("\n\n");
+	      //printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *L.nrow + 1;
+	      
+	      if (Options.verbose == BASKER_TRUE)
+		{
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
 	      printf("Columns in blks: %d %d %d \n",
 		     btf_tabs(c), btf_tabs(c+1), 
 		     (btf_tabs(c+1)-btf_tabs(c)));
+		}
 	      
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -536,15 +548,18 @@ namespace BaskerNS
           if(unnz+ucnt > uunnz)
             {
 
-	      printf("\n\n");
-	      printf("-------------------\n");
+	      //printf("\n\n");
+	      //printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*L.nrow+1;
+
+	      if(Options.verbose == BASKER_TRUE)
+		{
               printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
                      c, uunnz, unnz+ucnt, newsize);
 	      printf("blk: %d column: %d \n",
 		     c, k);
-
+		}
 
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -650,7 +665,8 @@ namespace BaskerNS
 	  U.val(unnz)       = lastU;
 	  if(lastU == 0)
 	    {
-	      printf("diag btf zero, error \n");
+	      printf("diag btf zero, error, c: %d k: %d \n",
+		     c, k);
 	    }
           ++unnz;
 

@@ -51,8 +51,69 @@
 
 namespace Intrepid2 {
 
-  template<typename ExecSpaceType>
-  Basis_HDIV_HEX_I1_FEM<ExecSpaceType>::
+  template<typename SpT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HDIV_HEX_I1_FEM<SpT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+    switch (opType) {
+    case OPERATOR_VALUE : {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = 0.0;
+      output(0, 1) = (y - 1.0)/8.0;
+      output(0, 2) = 0.0;
+
+      output(1, 0) = (1.0 + x)/8.0;
+      output(1, 1) = 0.0;
+      output(1, 2) = 0.0;
+
+      output(2, 0) = 0.0;
+      output(2, 1) = (1.0 + y)/8.0;
+      output(2, 2) = 0.0;
+
+      output(3, 0) = (x - 1.0)/8.0;
+      output(3, 1) = 0.0;
+      output(3, 2) = 0.0;
+
+      output(4, 0) = 0.0;
+      output(4, 1) = 0.0;
+      output(4, 2) = (z - 1.0)/8.0;
+
+      output(5, 0) = 0.0;
+      output(5, 1) = 0.0;
+      output(5, 2) = (1.0 + z)/8.0;
+      break;
+    }
+    case OPERATOR_DIV : {
+
+      // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+      output(0) = 0.125;
+      output(1) = 0.125;
+      output(2) = 0.125;
+      output(3) = 0.125;
+      output(4) = 0.125;
+      output(5) = 0.125;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_DIV,
+                                ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_I1_FEM::Serial::getValues) operator is not supported");
+    }
+    }
+  }
+
+  template<typename SpT>
+  Basis_HDIV_HEX_I1_FEM<SpT>::
   Basis_HDIV_HEX_I1_FEM() {
     this->basisCardinality_  = 6;
     this->basisDegree_       = 1;
@@ -69,7 +130,7 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[]  = { 2, 0, 0, 1,
+      ordinal_type tags[24]  = { 2, 0, 0, 1,
                                      2, 1, 0, 1,
                                      2, 2, 0, 1,
                                      2, 3, 0, 1,
@@ -77,7 +138,7 @@ namespace Intrepid2 {
                                      2, 5, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 16);
+      Kokkos::View<ordinal_type[24],SpT> tagView(tags);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -91,96 +152,49 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties,
-           typename scratchValueType,     class ...scratchProperties>
+           typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HDIV_HEX_I1_FEM<ExecSpaceType>::
+  Basis_HDIV_HEX_I1_FEM<SpT>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HDIV_Args(outputValues,
-                                   inputPoints,
-                                   operatorType,
-                                   this->getBaseCellTopology(),
-                                   this->getCardinality() );
+                                    inputPoints,
+                                    operatorType,
+                                    this->getBaseCellTopology(),
+                                    this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
     switch (operatorType) {
+
     case OPERATOR_VALUE: {
-      struct FunctorValue : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = _inputPoints(i0, 0);
-          const auto y = _inputPoints(i0, 1);
-          const auto z = _inputPoints(i0, 2);
-
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-          _outputValues(0, i0, 0) = 0.0;
-          _outputValues(0, i0, 1) = (y - 1.0)/8.0;
-          _outputValues(0, i0, 2) = 0.0;
-
-          _outputValues(1, i0, 0) = (1.0 + x)/8.0;
-          _outputValues(1, i0, 1) = 0.0; 
-          _outputValues(1, i0, 2) = 0.0;
-
-          _outputValues(2, i0, 0) = 0.0;
-          _outputValues(2, i0, 1) = (1.0 + y)/8.0;
-          _outputValues(2, i0, 2) = 0.0;
-
-          _outputValues(3, i0, 0) = (x - 1.0)/8.0;
-          _outputValues(3, i0, 1) = 0.0;
-          _outputValues(3, i0, 2) = 0.0;
-
-          _outputValues(4, i0, 0) = 0.0;
-          _outputValues(4, i0, 1) = 0.0;
-          _outputValues(4, i0, 2) = (z - 1.0)/8.0;
-
-          _outputValues(5, i0, 0) = 0.0;
-          _outputValues(5, i0, 1) = 0.0;
-          _outputValues(5, i0, 2) = (1.0 + z)/8.0;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorValue(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     case OPERATOR_DIV: {
-      struct FunctorDiv : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = _inputPoints(i0,0);
-          const auto y = _inputPoints(i0,1);
-          const auto z = _inputPoints(i0,2);
-
-          // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-          _outputValues(0, i0) = 0.125;
-          _outputValues(1, i0) = 0.125;
-          _outputValues(2, i0) = 0.125;
-          _outputValues(3, i0) = 0.125;
-          _outputValues(4, i0) = 0.125;
-          _outputValues(5, i0) = 0.125;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorGrad(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_DIV> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     case OPERATOR_CURL: {
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                                   ">>> ERROR (Basis_HDIV_HEX_I1_FEM::getValues): CURL is invalid operator for HDIV Basis Functions");
       break;
     }
     case OPERATOR_GRAD: {
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
                                   ">>> ERROR (Basis_HDIV_HEX_I1_FEM::getValues): GRAD is invalid operator for HDIV Basis Functions");
       break;
     }
@@ -194,7 +208,7 @@ namespace Intrepid2 {
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10: {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
+      INTREPID2_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
                                     (operatorType == OPERATOR_D2)    ||
                                     (operatorType == OPERATOR_D3)    ||
                                     (operatorType == OPERATOR_D4)    ||
@@ -209,7 +223,7 @@ namespace Intrepid2 {
       break;
     }
     default: {
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
+      INTREPID2_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
                                     (operatorType != OPERATOR_GRAD)  &&
                                     (operatorType != OPERATOR_CURL)  &&
                                     (operatorType != OPERATOR_DIV)   &&
@@ -230,28 +244,27 @@ namespace Intrepid2 {
   }
 
 
-
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HDIV_HEX_I1_FEM<ExecSpaceType>::
+  Basis_HDIV_HEX_I1_FEM<SpT>::
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
     // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->basisCardinality_, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != static_cast<size_type>(this->basisCardinality_), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
     // Verify 1st dimension of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HDIV_HEX_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-    dofCoords(0,0)  =  0.0;   dofCoords(0,1)  = -1.0;   dofCoords(0,2)  = 0.0;
-    dofCoords(1,0)  =  1.0;   dofCoords(1,1)  =  0.0;   dofCoords(1,2)  = 0.0;
-    dofCoords(2,0)  =  0.0;   dofCoords(2,1)  =  1.0;   dofCoords(2,2)  = 0.0;
-    dofCoords(3,0)  = -1.0;   dofCoords(3,1)  =  0.0;   dofCoords(3,2)  = 0.0;
-    dofCoords(4,0)  =  0.0;   dofCoords(4,1)  =  0.0;   dofCoords(4,2)  =  -1.0;
+    dofCoords(0,0)  =  0.0;   dofCoords(0,1)  = -1.0;   dofCoords(0,2)  =  0.0;
+    dofCoords(1,0)  =  1.0;   dofCoords(1,1)  =  0.0;   dofCoords(1,2)  =  0.0;
+    dofCoords(2,0)  =  0.0;   dofCoords(2,1)  =  1.0;   dofCoords(2,2)  =  0.0;
+    dofCoords(3,0)  = -1.0;   dofCoords(3,1)  =  0.0;   dofCoords(3,2)  =  0.0;
+    dofCoords(4,0)  =  0.0;   dofCoords(4,1)  =  0.0;   dofCoords(4,2)  = -1.0;
     dofCoords(5,0)  =  0.0;   dofCoords(5,1)  =  0.0;   dofCoords(5,2)  =  1.0;
   }
 

@@ -62,6 +62,7 @@
 // Risk Quadrangle Risk Measure Implementations
 #include "ROL_LogExponentialQuadrangle.hpp"
 #include "ROL_LogQuantileQuadrangle.hpp"
+#include "ROL_MeanVarianceQuadrangle.hpp"
 #include "ROL_MixedQuantileQuadrangle.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_QuantileRadiusQuadrangle.hpp"
@@ -86,6 +87,7 @@ namespace ROL {
     RISKMEASURE_MOREAUYOSIDACVAR,
     RISKMEASURE_LOGEXPONENTIALQUADRANGLE,
     RISKMEASURE_LOGQUANTILEQUADRANGLE,
+    RISKMEASURE_MEANVARIANCEQUADRANGLE,
     RISKMEASURE_MIXEDQUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILEQUADRANGLE,
     RISKMEASURE_QUANTILERADIUSQUADRANGLE,
@@ -121,6 +123,8 @@ namespace ROL {
              retString = "Log-Exponential Quadrangle";              break;
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              retString = "Log-Quantile Quadrangle";                 break;
+      case RISKMEASURE_MEANVARIANCEQUADRANGLE:
+             retString = "Mean-Variance Quadrangle";                break;
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
              retString = "Mixed-Quantile Quadrangle";               break;
       case RISKMEASURE_QUANTILEQUADRANGLE:
@@ -155,6 +159,7 @@ namespace ROL {
             (ed == RISKMEASURE_MOREAUYOSIDACVAR) ||
             (ed == RISKMEASURE_LOGEXPONENTIALQUADRANGLE) ||
             (ed == RISKMEASURE_LOGQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_MEANVARIANCEQUADRANGLE) ||
             (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
@@ -221,6 +226,8 @@ namespace ROL {
              return Teuchos::rcp(new LogExponentialQuadrangle<Real>(parlist));
       case RISKMEASURE_LOGQUANTILEQUADRANGLE:
              return Teuchos::rcp(new LogQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_MEANVARIANCEQUADRANGLE:
+             return Teuchos::rcp(new MeanVarianceQuadrangle<Real>(parlist));
       case RISKMEASURE_MIXEDQUANTILEQUADRANGLE:
              return Teuchos::rcp(new MixedQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:

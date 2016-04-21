@@ -86,7 +86,7 @@ namespace Intrepid2 {
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis {
   public:
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;
@@ -345,11 +345,11 @@ namespace Intrepid2 {
                    const ordinal_type subcDofOrd ) const {
       // this should be abort and able to be called as a device function
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= tagToOrdinal_.dimension(0), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcDim < 0 || subcDim >= static_cast<ordinal_type>(tagToOrdinal_.dimension(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDim is out of range");
-      INTREPID2_TEST_FOR_EXCEPTION( subcOrd < 0 || subcOrd >= tagToOrdinal_.dimension(1), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcOrd < 0 || subcOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(1)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcOrd is out of range");
-      INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= tagToOrdinal_.dimension(2), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( subcDofOrd < 0 || subcDofOrd >= static_cast<ordinal_type>(tagToOrdinal_.dimension(2)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofOrdinal): subcDofOrd is out of range");
 #endif
       const auto r_val = tagToOrdinal_(subcDim, subcOrd, subcDofOrd);
@@ -380,7 +380,7 @@ namespace Intrepid2 {
     const ordinal_type_array_1d
     getDofTag( const ordinal_type dofOrd ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= ordinalToTag_.dimension(0), std::out_of_range,
+      INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.dimension(0)), std::out_of_range,
                                     ">>> ERROR (Basis::getDofTag): dofOrd is out of range");
 #endif
       return Kokkos::subview(ordinalToTag_, dofOrd, Kokkos::ALL());

@@ -138,13 +138,16 @@ namespace BaskerNS
 	 symmetric_sfactor();
        }
 
-     #ifdef BASKER_DEBUG_SFACTOR
+     //#ifdef BASKER_DEBUG_SFACTOR
+     if(Options.verbose == BASKER_TRUE)
+       {
      printf("\n\n\n");
      printf("----------------------------------\n");
      printf("Total NNZ: %d \n", global_nnz);
      printf("----------------------------------\n");
      printf("\n\n\n");
-     #endif
+       }
+     //#endif
           
 
      
@@ -212,7 +215,7 @@ namespace BaskerNS
      //init_value(INC_LVL_TEMP, A.nrow, A.max_idx);
      init_value(INC_LVL_TEMP, A.nrow, BASKER_MAX_IDX);
      //#endif
-     printf("MALLOC TEMP SIZE: %d \n", A.nrow);
+     //printf("MALLOC TEMP SIZE: %d \n", A.nrow);
 
        }
 

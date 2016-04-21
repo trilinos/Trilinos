@@ -208,13 +208,14 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
-      
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
-    Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    
     switch (operatorType) {
     
     case OPERATOR_VALUE: {

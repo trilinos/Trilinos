@@ -98,12 +98,19 @@ namespace BaskerNS
     if(btf_tabs_offset != 0)
       {
 
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Factoring Dom num_threads: %d \n",
+		   num_threads);
+	  }
+
+
 	Int domain_restart = 0;
-    kokkos_nfactor_domain <Int,Entry,Exe_Space>
-      domain_nfactor(this);
-    Kokkos::parallel_for(TeamPolicy(num_threads,1), 
-			 domain_nfactor);
-    Kokkos::fence();
+	kokkos_nfactor_domain <Int,Entry,Exe_Space>
+	  domain_nfactor(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1), 
+			     domain_nfactor);
+	Kokkos::fence();
     
 
     //=====Check for error======
@@ -123,7 +130,10 @@ namespace BaskerNS
 	else
 	  {
 	    domain_restart++;
-	    printf("restart \n");
+	    if(Options.verbose == BASKER_TRUE)
+	      {
+		printf("restart \n");
+	      }
 	    kokkos_nfactor_domain_remalloc <Int, Entry, Exe_Space>
 	      diag_nfactor_remalloc(this, thread_start);
 	    Kokkos::parallel_for(TeamPolicy(num_threads,1),
@@ -131,12 +141,6 @@ namespace BaskerNS
 	    Kokkos::fence();
 	  }
       }//end while
-    
-
-
-
-    
-
 
     //====TIMER===
     #ifdef BASKER_TIME
@@ -157,9 +161,7 @@ namespace BaskerNS
       }
     //-------------------End--Domian--------------------------//
     
-    printVec("domperm.csc", gpermi, A.nrow);
-    
-
+    //printVec("domperm.csc", gpermi, A.nrow);
    
     //---------------------------Sep--------------------------//
    
@@ -178,6 +180,13 @@ namespace BaskerNS
 	//#endif
 
 	Int sep_restart = 0;
+
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Factoring Sep num_threads: %d %d \n",
+		   lnteams, lthreads);
+	  }
 
 	#ifdef BASKER_KOKKOS
 	Kokkos::Impl::Timer  timer_inner_sep;
@@ -211,7 +220,10 @@ namespace BaskerNS
 	    else
 	      {
 		sep_restart++;
-		printf("restart \n");
+		if (Options.verbose == BASKER_TRUE)
+		  {
+		    printf("restart \n");
+		  }
 		Kokkos::parallel_for(TeamPolicy(lnteams,lthreads),  sep_nfactor);
 		Kokkos::fence();
 
@@ -247,6 +259,13 @@ namespace BaskerNS
       {
 
 	Int btf_restart = 0;
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Factoring BLKs num_threads: %d \n",
+		   num_threads);
+	  }
+
 	//=====Timer
 	#ifdef BASKER_TIME
 	Kokkos::Impl::Timer  timer_btf;
@@ -278,7 +297,10 @@ namespace BaskerNS
 	    else
 	      {
 		btf_restart++;
-		printf("restart \n");
+		if (Options.verbose == BASKER_TRUE)
+		  {
+		    printf("restart \n");
+		  }
 		kokkos_nfactor_diag_remalloc <Int, Entry, Exe_Space>
 		  diag_nfactor_remalloc(this, thread_start);
 		Kokkos::parallel_for(TeamPolicy(num_threads,1),
