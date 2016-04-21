@@ -184,6 +184,30 @@ namespace BaskerNS
     printf("\n");
     #endif
 
+    if (Options.verbose == BASKER_TRUE)
+      {
+	//Print first 3 and last 3 
+	printf("BTF tabs: \n");
+	if (nblks < 10)
+	  {
+	    for(Int i=0; i <nblks+1; i++)
+	      {
+		printf("%d, ", btf_tabs(i));
+	      }
+	  }
+	else
+	  {
+	    printf("%d, %d, %d, ...., ",
+		   btf_tabs(0), btf_tabs(1), btf_tabs(2));
+	    printf("%d, %d, %d",
+		   btf_tabs(nblks-3), btf_tabs(nblks-2),
+		   btf_tabs(nblks-1));
+	  }
+	printf("\n");
+      }//if verbose
+ 
+
+
     permute_col(M, order_btf_array);
     permute_row(M, order_btf_array);
 
