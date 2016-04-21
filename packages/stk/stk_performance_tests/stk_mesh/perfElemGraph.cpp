@@ -51,8 +51,14 @@ void get_mesh_dimensions(const std::string &parameters, int &numX, int &numY, in
 
 struct DeletedMeshInfo
 {
-    std::vector<stk::mesh::EntityId> boundaryIds;
+    std::vector<stk::mesh::EntityId> elemIds;
     std::vector< std::vector<stk::mesh::Entity> > elemNodes;
+};
+
+struct NodeConnectivityInfo
+{
+    std::map<stk::mesh::Entity, int> nodeConnMap;
+    std::vector<int> nodeConn;
 };
 
 void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::string &meshSpec, DeletedMeshInfo &meshInfo)
@@ -61,7 +67,7 @@ void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::stri
 
     get_mesh_dimensions(meshSpec, nx, ny, nz);
 
-    meshInfo.boundaryIds.resize(ny*nz);
+    meshInfo.elemIds.resize(ny*nz);
 
     int count = 0;
 
@@ -78,13 +84,154 @@ void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::stri
 
             if(bulkData.is_valid(elem) && bulkData.bucket(elem).owned())
             {
-                meshInfo.boundaryIds[count] = static_cast<stk::mesh::EntityId> (id);
+                meshInfo.elemIds[count] = static_cast<stk::mesh::EntityId> (id);
                 ++count;
             }
         }
     }
 
-    meshInfo.boundaryIds.resize(count);
+    meshInfo.elemIds.resize(count);
+}
+
+bool is_element_on_processor_boundary(const stk::mesh::ElemElemGraph& eeGraph, stk::mesh::Entity localElement)
+{
+    size_t numConn = eeGraph.get_num_connected_elems(localElement);
+
+    bool onProcBoundary = false;
+    for(size_t i=0; i<numConn; ++i)
+    {
+        if(!eeGraph.is_connected_elem_locally_owned(localElement, i))
+            onProcBoundary = true;
+    }
+    return onProcBoundary;
+}
+
+bool will_deleting_element_create_orphaned_nodes(const stk::mesh::BulkData &bulkData,
+                                                 stk::mesh::Entity localElement,
+                                                 const NodeConnectivityInfo &nodeConnInfo)
+{
+    unsigned numNodes = bulkData.num_nodes(localElement);
+    const stk::mesh::Entity * nodes = bulkData.begin(localElement, stk::topology::NODE_RANK);
+
+    for(unsigned i=0; i<numNodes; ++i)
+    {
+        stk::mesh::Entity node = nodes[i];
+        int index = -1;
+        std::map<stk::mesh::Entity, int>::const_iterator it = nodeConnInfo.nodeConnMap.find(node);
+
+        if(nodeConnInfo.nodeConnMap.end() != it)
+            index = it->second;
+
+        if((-1 != index) && (nodeConnInfo.nodeConn[index] <= 1))
+            return true;
+    }
+
+    return false;
+}
+
+void decrement_node_connectivity(const stk::mesh::BulkData &bulkData,
+                                 stk::mesh::Entity localElement,
+                                 NodeConnectivityInfo &nodeConnInfo)
+{
+    unsigned numNodes = bulkData.num_nodes(localElement);
+    const stk::mesh::Entity * nodes = bulkData.begin(localElement, stk::topology::NODE_RANK);
+
+    for(unsigned i=0; i<numNodes; ++i)
+    {
+        stk::mesh::Entity node = nodes[i];
+        int index = nodeConnInfo.nodeConnMap[node];
+        nodeConnInfo.nodeConn[index]--;
+    }
+}
+
+unsigned num_local_elements(const stk::mesh::BulkData &bulkData, stk::mesh::Entity node)
+{
+    unsigned numElems = bulkData.num_elements(node);
+    const stk::mesh::Entity * elements = bulkData.begin(node, stk::topology::ELEM_RANK);
+
+    for(unsigned i=0; i<numElems; ++i)
+    {
+        stk::mesh::Entity elem = elements[i];
+        if(!bulkData.bucket(elem).owned())
+            numElems--;
+    }
+
+    return numElems;
+}
+
+void initialize_node_connectivity_map(const stk::mesh::BulkData &bulkData,
+                                      NodeConnectivityInfo &nodeConnInfo)
+{
+    stk::mesh::EntityVector allNodes;
+    stk::mesh::get_selected_entities(bulkData.mesh_meta_data().universal_part(), bulkData.buckets(stk::topology::NODE_RANK), allNodes);
+
+    nodeConnInfo.nodeConn.resize(allNodes.size());
+
+    for(unsigned i=0; i<allNodes.size(); ++i)
+    {
+        stk::mesh::Entity node = allNodes[i];
+        nodeConnInfo.nodeConnMap[node] = i;
+        nodeConnInfo.nodeConn[i] = num_local_elements( bulkData, node );
+    }
+}
+
+void populate_interior_perforated_mesh_ids(const stk::mesh::BulkData &bulkData,
+                                          const stk::mesh::ElemElemGraph& eeGraph,
+                                          const stk::mesh::EntityVector &localElems,
+                                          NodeConnectivityInfo &nodeConnInfo,
+                                          DeletedMeshInfo &meshInfo)
+{
+    for(unsigned lastIndex = 0; lastIndex < localElems.size(); ++lastIndex)
+    {
+        stk::mesh::Entity localElement = localElems[lastIndex];
+        stk::mesh::EntityId elemId = bulkData.identifier( localElement );
+
+        if(!is_element_on_processor_boundary(eeGraph, localElement) &&
+           !will_deleting_element_create_orphaned_nodes(bulkData, localElement, nodeConnInfo))
+        {
+            meshInfo.elemIds.push_back(elemId);
+            decrement_node_connectivity(bulkData, localElement, nodeConnInfo);
+        }
+    }
+}
+
+void populate_processor_boundary_perforated_mesh_ids(const stk::mesh::BulkData &bulkData,
+                                                    const stk::mesh::ElemElemGraph& eeGraph,
+                                                    const stk::mesh::EntityVector &localElems,
+                                                    NodeConnectivityInfo &nodeConnInfo,
+                                                    DeletedMeshInfo &meshInfo)
+{
+    for(unsigned lastIndex = 0; lastIndex < localElems.size(); ++lastIndex)
+    {
+        stk::mesh::Entity localElement = localElems[lastIndex];
+        stk::mesh::EntityId elemId = bulkData.identifier( localElement );
+
+        if(is_element_on_processor_boundary(eeGraph, localElement) &&
+           !will_deleting_element_create_orphaned_nodes(bulkData, localElement, nodeConnInfo))
+        {
+            meshInfo.elemIds.push_back(elemId);
+            decrement_node_connectivity(bulkData, localElement, nodeConnInfo);
+        }
+    }
+}
+
+void get_perforated_mesh_ids(const stk::mesh::BulkData &bulkData, const stk::mesh::ElemElemGraph& eeGraph, DeletedMeshInfo &meshInfo)
+{
+
+    stk::mesh::EntityVector localElems;
+    stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK), localElems);
+
+    meshInfo.elemIds.reserve(localElems.size());
+
+    NodeConnectivityInfo nodeConnInfo;
+
+    initialize_node_connectivity_map(bulkData, nodeConnInfo);
+
+    populate_interior_perforated_mesh_ids(bulkData, eeGraph, localElems, nodeConnInfo, meshInfo);
+
+    populate_processor_boundary_perforated_mesh_ids(bulkData, eeGraph, localElems, nodeConnInfo, meshInfo);
+
+    //std::cout << "Deleting " << meshInfo.elemIds.size() << " perforated elements" << std::endl;
 }
 
 void print_memory(stk::ParallelMachine communicator, const std::string &preamble)
@@ -160,21 +307,21 @@ public:
         duration += stk::wall_time() - startTime;
     }
 
-    ~ElementGraphPerformance()
+    virtual ~ElementGraphPerformance()
     {
         delete elemGraph;
         delete elemGraphUpdater;
     }
 
 protected:
-    void delete_boundary_elements(DeletedMeshInfo &meshInfo)
+    void delete_elements(DeletedMeshInfo &meshInfo)
     {
-        meshInfo.elemNodes.resize(meshInfo.boundaryIds.size());
+        meshInfo.elemNodes.resize(meshInfo.elemIds.size());
 
         bulkData.modification_begin();
-        for(size_t i = 0; i < meshInfo.boundaryIds.size(); ++i)
+        for(size_t i = 0; i < meshInfo.elemIds.size(); ++i)
         {
-            stk::mesh::EntityId elemId = meshInfo.boundaryIds[i];
+            stk::mesh::EntityId elemId = meshInfo.elemIds[i];
             stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
 
             EXPECT_TRUE(bulkData.is_valid(elem));
@@ -186,15 +333,15 @@ protected:
         bulkData.modification_end();
     }
 
-    void add_boundary_elements(DeletedMeshInfo &meshInfo)
+    void add_elements(DeletedMeshInfo &meshInfo)
     {
         bulkData.modification_begin();
         stk::mesh::Part &hexPart = bulkData.mesh_meta_data().get_topology_root_part(stk::topology::HEX_8);
         stk::mesh::Part *block_1 = bulkData.mesh_meta_data().get_part("block_1");
         stk::mesh::PartVector parts{&hexPart, block_1};
-        for(size_t i = 0; i < meshInfo.boundaryIds.size(); ++i)
+        for(size_t i = 0; i < meshInfo.elemIds.size(); ++i)
         {
-            stk::mesh::EntityId elemId = meshInfo.boundaryIds[i];
+            stk::mesh::EntityId elemId = meshInfo.elemIds[i];
             stk::mesh::Entity elem = bulkData.declare_entity(stk::topology::ELEM_RANK, elemId, parts);
 
             for(size_t j = 0; j<meshInfo.elemNodes[i].size(); ++j)
@@ -213,12 +360,12 @@ protected:
         unsigned oldGraphEdgeCount = elemGraph->num_edges();
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
-        delete_boundary_elements(meshInfo);
-        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        delete_elements(meshInfo);
+        stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
-        add_boundary_elements(meshInfo);
+        add_elements(meshInfo);
 
         unsigned finalGraphEdgeCount = elemGraph->num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
@@ -237,6 +384,54 @@ protected:
     stk::diag::Timer addElemTimer;
     stk::diag::Timer deleteElemTimer;
     stk::diag::Timer createGraphTimer;
+};
+
+class PerforatedElementGraphPerformance : public ElementGraphPerformance
+{
+public:
+    PerforatedElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec) :
+        ElementGraphPerformance(bulk, fileSpec)
+    {
+
+    }
+
+    ~PerforatedElementGraphPerformance()
+    {
+
+    }
+
+protected:
+    virtual void run_algorithm_to_time()
+    {
+        DeletedMeshInfo meshInfo;
+
+        unsigned oldGraphEdgeCount = elemGraph->num_edges();
+        get_perforated_mesh_ids(bulkData, *elemGraph, meshInfo);
+
+        delete_elements(meshInfo);
+        stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        unsigned newGraphEdgeCount = elemGraph->num_edges();
+        ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
+
+        add_elements(meshInfo);
+        stk::unit_test_util::write_mesh_using_stk_io("afterAdd.g", bulkData, bulkData.parallel());
+        unsigned finalGraphEdgeCount = elemGraph->num_edges();
+        ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
+    }
+};
+
+class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
+{
+protected:
+    void run_element_graph_perf_test()
+    {
+        PerforatedElementGraphPerformance perfTester(get_bulk(), get_mesh_spec());
+        perfTester.run_performance_test();
+    }
+    std::string get_mesh_spec()
+    {
+        return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
+    }
 };
 
 class ElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
@@ -261,6 +456,14 @@ TEST_F(ElementGraphPerformanceTest, read_mesh_with_auto_decomp)
     run_element_graph_perf_test();
 }
 
+TEST_F(ElementGraphPerformanceTest, read_mesh_with_auto_decomp_no_aura)
+{
+    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+
+    run_element_graph_perf_test();
+}
+
 TEST_F(ElementGraphPerformanceTest, read_mesh)
 {
     print_memory(MPI_COMM_WORLD, "Before mesh creation");
@@ -273,6 +476,22 @@ TEST_F(ElementGraphPerformanceTest, read_mesh_no_aura)
 {
     print_memory(MPI_COMM_WORLD, "Before mesh creation");
     setup_mesh(get_mesh_spec(), stk::mesh::BulkData::NO_AUTO_AURA);
+
+    run_element_graph_perf_test();
+}
+
+TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp)
+{
+    allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
+
+    run_element_graph_perf_test();
+}
+
+TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp_no_aura)
+{
+    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
     run_element_graph_perf_test();
 }

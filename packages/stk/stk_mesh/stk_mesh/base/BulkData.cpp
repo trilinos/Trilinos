@@ -7407,6 +7407,12 @@ stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph()
     return *m_elemElemGraph;
 }
 
+const stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph() const
+{
+    ThrowRequireMsg(m_elemElemGraph != nullptr, "Error, Please call initialize_face_adjacent_element_graph before calling get_face_adjacent_element_graph!");
+    return *m_elemElemGraph;
+}
+
 #ifdef SIERRA_MIGRATION
 EntityLess::EntityLess(const BulkData& mesh)
   : m_mesh(&mesh),
