@@ -94,8 +94,6 @@ namespace Intrepid2 {
     // data is defined on exec space and deep-copied when an object is created
     struct CubatureData {
 
-      CubatureData() = default;
-
       /** \brief  Number of cubature points stored in the template.
        */
       ordinal_type numPoints_;
@@ -155,15 +153,24 @@ namespace Intrepid2 {
       range_type pointRange(0, this->getNumPoints());
       range_type dimRange  (0, this->getDimension());
       {
+        // cub is Kokkos view
         const auto cub = cubData.points_;
-        const auto src = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), pointRange.second, dimRange.second);
+
+        // for deep copy it needs to be translated to dynrankview
+        // i need exact view structure to get this conversion (padding, layout and space).
+        const auto org = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), cub.dimension(0), cub.dimension(1));
+
+        // then reduce the range accordingly
+        const auto src = Kokkos::subdynrankview(org,       pointRange, dimRange);
         /**/  auto dst = Kokkos::subdynrankview(cubPoints, pointRange, dimRange);
 
         Kokkos::deep_copy( dst, src );
       }
       {
         const auto cub = cubData.weights_;
-        const auto src = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), pointRange.second);
+        const auto org = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), cub.dimension(0));
+
+        const auto src = Kokkos::subdynrankview(org,        pointRange);
         /**/  auto dst = Kokkos::subdynrankview(cubWeights, pointRange);
 
         Kokkos::deep_copy(dst ,src);
@@ -179,6 +186,7 @@ namespace Intrepid2 {
   public:
 
     CubatureDirect() = default;
+    CubatureDirect(const CubatureDirect &b) = default;
     ~CubatureDirect() = default;
 
     //

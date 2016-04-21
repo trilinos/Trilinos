@@ -45,8 +45,8 @@
     \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 
-#ifndef __INTREPID2_INTREPID2_TYPES_HPP__
-#define __INTREPID2_INTREPID2_TYPES_HPP__
+#ifndef __INTREPID2_TYPES_HPP__
+#define __INTREPID2_TYPES_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DynRankView.hpp>
