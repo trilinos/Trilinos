@@ -45,6 +45,8 @@ public:
 
     void run_game_of_life(int numSteps);
 
+    void write_mesh();
+
     //test functions
     inline unsigned get_num_elems_on_proc() const;
 

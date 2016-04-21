@@ -12,6 +12,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include "../../../stk_unit_test_utils/getOption.h"
 
 
 
@@ -1208,7 +1209,6 @@ TEST(PNGGameofLife, 1ProcTiny)
         PartGameofLife PartGame(PartMesh, meshName1);
         FieldGameofLife FieldGame(FieldMesh, meshName2);
 
-
         stk::mesh::EntityIdVector elemIds;
         PNG.fill_id_vector_with_active_pixels(elemIds);
         PartGame.activate_these_ids(elemIds);
@@ -1239,6 +1239,29 @@ TEST(PNGGameofLife, 1ProcTiny)
         EXPECT_EQ(23u, FieldGame.get_num_active_elements());
     }
 }
+
+TEST(TOSDTWD, mesh_mesh_from_png)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (1 == numProcs)
+    {
+        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        PNGProcessor PNG(fileName);
+        PNG.commit_image_vector_to_pixel_vector();
+        unsigned width = PNG.get_image_width();
+        unsigned height = PNG.get_image_height();
+
+        HexGameofLifeMesh FieldMesh(comm, width, height, 1);
+        FieldGameofLife FieldGame(FieldMesh, "junk");
+
+        stk::mesh::EntityIdVector elemIds;
+        PNG.fill_id_vector_with_active_pixels(elemIds);
+        FieldGame.activate_these_ids(elemIds);
+        FieldGame.write_mesh();
+    }
+}
+
 TEST(PNGGameofLife, 4ProcTiny)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;

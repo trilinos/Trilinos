@@ -20,6 +20,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_unit_test_utils/ioUtils.hpp"
 /*
  * GameofLife
  */
@@ -49,6 +50,22 @@ void GameofLife::run_game_of_life(int numSteps)
         //std::cerr << time << std::endl;
         run_step_of_game_of_life();
     }
+}
+
+void GameofLife::write_mesh()
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
+
+    m_bulkData.modification_begin();
+    for(stk::mesh::Entity element : elements)
+    {
+        if ( *stk::mesh::field_data(m_lifeField, element) != 1)
+            m_bulkData.destroy_entity(element);
+    }
+    m_bulkData.modification_end();
+
+    stk::unit_test_util::write_mesh_using_stk_io("pic.g", m_bulkData, m_bulkData.parallel());
 }
 
 //protected
