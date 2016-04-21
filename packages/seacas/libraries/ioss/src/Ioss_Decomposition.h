@@ -70,7 +70,7 @@ namespace Ioss {
     size_t             file_count() const { return fileCount; }
     size_t             ioss_count() const { return iossCount; }
     size_t             global_count() const { return globalCount; }
-    
+
     std::string name_;
     int         zone_;
     int         section_;
@@ -207,9 +207,8 @@ namespace Ioss {
 
     void simple_node_decompose();
 
-    void calculate_element_centroids(const std::vector<double> &x,
-                                     const std::vector<double> &y,
-				     const std::vector<double> &z);
+    void calculate_element_centroids(const std::vector<double> &x, const std::vector<double> &y,
+                                     const std::vector<double> &z);
 
 #if !defined(NO_ZOLTAN_SUPPORT)
     void zoltan_decompose(Zoltan &zz);
@@ -219,7 +218,7 @@ namespace Ioss {
 
 #if !defined(NO_PARMETIS_SUPPORT)
     void metis_decompose(idx_t *pointer, idx_t *adjacency,
-			 std::vector<BlockDecompositionData> &el_blocks);
+                         std::vector<BlockDecompositionData> &el_blocks);
 
     void internal_metis_decompose(std::vector<BlockDecompositionData> &el_blocks,
                                   idx_t *element_dist, idx_t *pointer, idx_t *adjacency,

@@ -51,7 +51,8 @@ void Ioss::St_Unknown::factory() { static Ioss::St_Unknown registerThis; }
 
 // ========================================================================
 namespace {
-  struct Constants {
+  struct Constants
+  {
     static const int nnode     = 0;
     static const int nedge     = 0;
     static const int nedgenode = 0;

@@ -109,7 +109,8 @@ namespace Ioss {
  * </ul>
  */
 namespace Ioex {
-  struct NodeBlock {
+  struct NodeBlock
+  {
     NodeBlock()
         : name(""), id(0), entityCount(0), localOwnedCount(0), attributeCount(0), procOffset(0)
     {
@@ -141,7 +142,8 @@ namespace Ioex {
   private:
   };
 
-  struct EdgeBlock {
+  struct EdgeBlock
+  {
     EdgeBlock()
         : name(""), id(0), entityCount(0), nodesPerEntity(0), attributeCount(0), procOffset(0)
     {
@@ -176,7 +178,8 @@ namespace Ioex {
   private:
   };
 
-  struct FaceBlock {
+  struct FaceBlock
+  {
     FaceBlock()
         : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), attributeCount(0),
           procOffset(0)
@@ -213,7 +216,8 @@ namespace Ioex {
   private:
   };
 
-  struct ElemBlock {
+  struct ElemBlock
+  {
     ElemBlock()
         : name(""), id(0), entityCount(0), nodesPerEntity(0), edgesPerEntity(0), facesPerEntity(0),
           attributeCount(0), offset_(-1), procOffset(0)
@@ -251,7 +255,8 @@ namespace Ioex {
     int64_t     procOffset;
   };
 
-  struct NodeSet {
+  struct NodeSet
+  {
     NodeSet() : name(""), id(0), entityCount(0), localOwnedCount(0), dfCount(0), procOffset(0) {}
     NodeSet(const NodeSet &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -272,7 +277,8 @@ namespace Ioex {
     int64_t     procOffset;
   };
 
-  struct EdgeSet {
+  struct EdgeSet
+  {
     EdgeSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) {}
     EdgeSet(const EdgeSet &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -291,7 +297,8 @@ namespace Ioex {
     int64_t     procOffset;
   };
 
-  struct FaceSet {
+  struct FaceSet
+  {
     FaceSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) {}
     FaceSet(const FaceSet &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -310,7 +317,8 @@ namespace Ioex {
     int64_t     procOffset;
   };
 
-  struct ElemSet {
+  struct ElemSet
+  {
     ElemSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0) {}
     ElemSet(const ElemSet &other)
         : name(other.name), id(other.id), entityCount(other.entityCount),
@@ -329,7 +337,8 @@ namespace Ioex {
     int64_t     procOffset;
   };
 
-  struct SideSet {
+  struct SideSet
+  {
     SideSet() : name(""), id(0), entityCount(0), dfCount(0), procOffset(0), dfProcOffset(0) {}
     SideSet(const Ioss::SideBlock &other);
     SideSet(const Ioss::SideSet &other);
@@ -344,7 +353,8 @@ namespace Ioex {
     int64_t     dfProcOffset;
   };
 
-  struct CommunicationMap {
+  struct CommunicationMap
+  {
     CommunicationMap() : id(0), entityCount(0), type('U') {}
     CommunicationMap(entity_id the_id, int64_t count, char the_type)
         : id(the_id), entityCount(count), type(the_type)
@@ -357,7 +367,8 @@ namespace Ioex {
     char                                    type; // 'n' for node, 'e' for element
   };
 
-  struct CommunicationMetaData {
+  struct CommunicationMetaData
+  {
     CommunicationMetaData()
         : processorId(0), processorCount(0), globalNodes(0), globalElements(0),
           globalElementBlocks(0), globalNodeSets(0), globalSideSets(0), nodesInternal(0),

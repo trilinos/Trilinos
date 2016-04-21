@@ -589,7 +589,8 @@ namespace Iofx {
     // Get QA records from database and add to qaRecords...
     int num_qa = ex_inquire_int(get_file_pointer(), EX_INQ_QA);
     if (num_qa > 0) {
-      struct qa_element {
+      struct qa_element
+      {
         char *qa_record[1][4];
       };
 
@@ -1346,7 +1347,7 @@ namespace Iofx {
 
       std::vector<int> procs(util().parallel_size());
       size_t           offset = 0;
-      for (auto pn : proc_node) {
+      for (const auto &pn : proc_node) {
         int64_t glob_id = pn.second;
         int     proc    = pn.first;
         procs[proc]++;
@@ -1619,7 +1620,7 @@ namespace Iofx {
           Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
         }
 
-        for (auto id : side_set_ids) {
+        for (const auto &id : side_set_ids) {
           std::vector<char> ss_name(maximumNameLength + 1);
           error = ex_get_name(get_file_pointer(), EX_SIDE_SET, id, TOPTR(ss_name));
           if (error < 0) {
@@ -1636,7 +1637,7 @@ namespace Iofx {
       // sidesets which were probably written by a previous run of the
       // IO system and are already split into homogenous pieces...
       {
-        for (auto &fs_name : fs_set) {
+        for (const auto &fs_name : fs_set) {
           auto side_set = new Ioss::SideSet(this, fs_name);
           get_region()->add(side_set);
           int64_t id = Ioex::extract_id(fs_name);
@@ -1793,7 +1794,7 @@ namespace Iofx {
             // topology and the side number, determine the side
             // type.
 
-            for (auto &elem : sideTopology) {
+            for (const auto &elem : sideTopology) {
               topo_map[std::make_pair(elem.first->name(), elem.second)] = 0;
               side_map[std::make_pair(elem.first->name(), elem.second)] = 0;
             }
@@ -1848,7 +1849,7 @@ namespace Iofx {
         Ioss::Int64Vector global_side_counts(topo_map.size());
         {
           int64_t i = 0;
-          for (auto &topo : topo_map) {
+          for (const auto &topo : topo_map) {
             global_side_counts[i++] = topo.second;
           }
 
@@ -1859,7 +1860,7 @@ namespace Iofx {
           // in the element block split case.
           if (side_map.size() == topo_map.size()) {
             global_side_counts.resize(topo_map.size() + side_map.size());
-            for (auto &side : side_map) {
+            for (const auto &side : side_map) {
               global_side_counts[i++] = side.second;
             }
           }
@@ -1872,7 +1873,7 @@ namespace Iofx {
         // Create Side Blocks
 
         int64_t i = 0;
-        for (auto &topo : topo_map) {
+        for (const auto &topo : topo_map) {
           if (global_side_counts[i++] > 0) {
             const std::string            topo_or_block_name = topo.first.first;
             const Ioss::ElementTopology *side_topo          = topo.first.second;
@@ -5461,7 +5462,7 @@ void DatabaseIO::write_meta_data()
     new_entity->property_add(Ioss::Property("distribution_factor_count", df_count));
   }
 
-  for (auto &sset : ssets) {
+  for (const auto &sset : ssets) {
     // Add a SideSet corresponding to this SideSet/SideBlock
     Ioex::SideSet T(*(sset));
     mesh.sidesets.push_back(T);

@@ -928,7 +928,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   size_t elem_count = 0;
-  for (auto &elem : mesh.elemblocks) {
+  for (const auto &elem : mesh.elemblocks) {
     elem_count += elem.entityCount;
   }
 
@@ -964,7 +964,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   size_t face_count = 0;
-  for (auto &elem : mesh.faceblocks) {
+  for (const auto &elem : mesh.faceblocks) {
     face_count += elem.entityCount;
   }
 
@@ -998,7 +998,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
   }
 
   size_t edge_count = 0;
-  for (auto &elem : mesh.edgeblocks) {
+  for (const auto &elem : mesh.edgeblocks) {
     edge_count += elem.entityCount;
   }
 
@@ -1281,7 +1281,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
     // Add the nodal communication map count
 
     size_t ncnt_cmap = 0;
-    for (auto &elem : comm.nodeMap) {
+    for (const auto &elem : comm.nodeMap) {
       ncnt_cmap += elem.entityCount;
     }
 
@@ -1308,7 +1308,7 @@ int Internals::put_metadata(const Mesh &mesh, const CommunicationMetaData &comm)
 
     // Add the nodal communication map count
     size_t ecnt_cmap = 0;
-    for (auto &elem : comm.elementMap) {
+    for (const auto &elem : comm.elementMap) {
       ecnt_cmap += elem.entityCount;
     }
 
@@ -1952,7 +1952,7 @@ int Internals::put_non_define_data(const CommunicationMetaData &comm)
     }
 
     size_t ncnt_cmap = 0;
-    for (auto &elem : comm.nodeMap) {
+    for (const auto &elem : comm.nodeMap) {
       ncnt_cmap += elem.entityCount;
     }
 
@@ -2014,7 +2014,7 @@ int Internals::put_non_define_data(const CommunicationMetaData &comm)
     }
     // Set the status of the elemental communication maps
     long long ecnt_cmap = 0;
-    for (auto &elem : comm.elementMap) {
+    for (const auto &elem : comm.elementMap) {
       ecnt_cmap += elem.entityCount;
     }
 

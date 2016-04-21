@@ -2489,7 +2489,7 @@ void NemSpread<T, INT>::read_side_sets(int exoid, INT *num_elem_in_ssets, INT *n
        */
       std::vector<INT> ss_elem_list(num_elem_per_message); /* side-set element list */
       std::vector<INT> ss_side_list(num_elem_per_message); /* side-set node list */
-      std::vector<INT> ss_df_ptr(num_elem_per_message); /* pointer into the dist. factor list */
+      std::vector<INT> ss_df_ptr(num_elem_per_message);    /* pointer into the dist. factor list */
 
       /*---------------------------------------------------------------------*/
       /*                  LOOP OVER THE MESSAGES                             */

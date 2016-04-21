@@ -45,7 +45,8 @@ namespace Iogn {
 
   enum { INVALID = -1, NUMBER_OF_SURFACES = 2, SPATIAL_DIMENSION = 3, NUM_NODES_PER_QUAD_FACE = 4 };
 
-  struct SharedNode {
+  struct SharedNode
+  {
     SharedNode() : nodeId(-1), procId(-1) {}
     int nodeId;
     int procId;
@@ -62,7 +63,8 @@ namespace Iogn {
     throw std::exception();
   }
 
-  struct ExodusData {
+  struct ExodusData
+  {
     std::vector<double>                 coordinates;
     const std::vector<std::vector<int>> elementBlockConnectivity;
     const std::vector<int>              globalNumberOfElementsInBlock;
@@ -105,7 +107,8 @@ namespace Iogn {
     }
   };
 
-  struct DashSurfaceData {
+  struct DashSurfaceData
+  {
     const std::vector<double> &coordinates;
     const std::vector<int> &   surfaceAConnectivity;
     const std::vector<int> &   surfaceBConnectivity;

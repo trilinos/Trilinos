@@ -50,7 +50,8 @@ namespace Ioss {
 } // namespace Ioss
 // ========================================================================
 namespace {
-  struct Constants {
+  struct Constants
+  {
     static const int nnode     = 8;
     static const int nedge     = 4;
     static const int nedgenode = 3;

@@ -260,7 +260,7 @@ namespace Iocgns {
 
     // Create a single node commset
     Ioss::CommSet *commset =
-      new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
+        new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
     commset->property_add(Ioss::Property("id", 1));
     get_region()->add(commset);
   }

@@ -2926,28 +2926,28 @@ namespace {
 
   std::string format_time(double seconds)
   {
-    char suffix = 'u';
+    std::string suffix("u");
     if (seconds > 0.0 && seconds < 1.0) {
-      return " <1s";
+      seconds *= 1000.;
+      suffix = "ms";
     }
-
-    if (seconds > 86400) {
-      suffix = 'd';
+    else if (seconds > 86400) {
+      suffix = "d";
       seconds /= 86400.;
     }
     else if (seconds > 3600) {
-      suffix = 'h';
+      suffix = "h";
       seconds /= 3600.;
     }
     else if (seconds > 60) {
-      suffix = 'm';
+      suffix = "m";
       seconds /= 60.;
     }
     else {
-      suffix = 's';
+      suffix = "s";
     }
     std::ostringstream os;
-    os << std::showpoint << std::setprecision(2) << seconds << suffix;
+    os << std::showpoint << std::setprecision(3) << seconds << suffix;
     return os.str();
   }
 

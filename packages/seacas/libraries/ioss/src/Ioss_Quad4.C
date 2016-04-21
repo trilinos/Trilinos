@@ -53,7 +53,8 @@ namespace Ioss {
 Ioss::Quad4 Ioss::Quad4::instance_;
 
 namespace {
-  struct Constants {
+  struct Constants
+  {
     static const int nnode     = 4;
     static const int nedge     = 4;
     static const int nedgenode = 2;

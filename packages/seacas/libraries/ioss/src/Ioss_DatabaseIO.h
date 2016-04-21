@@ -367,7 +367,7 @@ namespace Ioss {
 
     bool         isParallel;       //!< true if running in parallel
     mutable bool isSerialParallel; //!< true if a serial code that needs to read/write the parallel
-                                   //!information.
+                                   //! information.
     int myProcessor;               //!< number of processor this database is for
 
     /*!

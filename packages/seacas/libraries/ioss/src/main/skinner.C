@@ -30,32 +30,32 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <algorithm>
+#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <algorithm>
-#include <functional>
-#include <unordered_set>
-#include <chrono>
-#include <numeric>
 
-#include "Ioss_CodeTypes.h"
-#include "Ioss_Utils.h"
 #include "Ionit_Initializer.h"
+#include "Ioss_CodeTypes.h"
 #include "Ioss_DBUsage.h"
 #include "Ioss_DatabaseIO.h"
 #include "Ioss_ElementBlock.h"
+#include "Ioss_FaceGenerator.h"
 #include "Ioss_IOFactory.h"
 #include "Ioss_NodeBlock.h"
+#include "Ioss_ParallelUtils.h"
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"
-#include "Ioss_FaceGenerator.h"
-#include "Ioss_ParallelUtils.h"
+#include "Ioss_Utils.h"
 
 #include <cassert>
 
@@ -70,8 +70,7 @@
 // ========================================================================
 
 namespace {
-  template <typename INT>
-  void skinner(Skinner::Interface& interface, INT /*dummy*/);
+  template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/);
   std::string codename;
   std::string version = "0.6";
 } // namespace
@@ -89,18 +88,20 @@ int main(int argc, char *argv[])
 
   std::string in_type = "exodusII";
 
-  codename = argv[0];
+  codename   = argv[0];
   size_t ind = codename.find_last_of('/', codename.size());
   if (ind != std::string::npos) {
-    codename = codename.substr(ind+1, codename.size());
+    codename = codename.substr(ind + 1, codename.size());
   }
 
   Ioss::Init::Initializer io;
 
   if (my_rank == 0) {
-    OUTPUT << "Input:    '" << interface.input_filename()  << "', Type: " << interface.input_type()  << '\n';
+    OUTPUT << "Input:    '" << interface.input_filename() << "', Type: " << interface.input_type()
+           << '\n';
     if (!interface.no_output()) {
-      OUTPUT << "Output:   '" << interface.output_filename()  << "', Type: " << interface.output_type()  << '\n';
+      OUTPUT << "Output:   '" << interface.output_filename()
+             << "', Type: " << interface.output_type() << '\n';
     }
   }
 
@@ -110,7 +111,6 @@ int main(int argc, char *argv[])
   else {
     skinner(interface, 0);
   }
-
 
   if (my_rank == 0) {
     OUTPUT << "\n" << codename << " execution successful.\n";
@@ -122,15 +122,14 @@ int main(int argc, char *argv[])
 }
 
 namespace {
-  template <typename INT>
-  void skinner(Skinner::Interface& interface, INT /*dummy*/)
+  template <typename INT> void skinner(Skinner::Interface &interface, INT /*dummy*/)
   {
-    std::string inpfile = interface.input_filename();
+    std::string inpfile    = interface.input_filename();
     std::string input_type = interface.input_type();
 
     Ioss::PropertyManager properties;
     if (interface.ints_64_bit()) {
-      properties.add(Ioss::Property("INTEGER_SIZE_DB",  8));
+      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
       properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
     }
 
@@ -173,12 +172,12 @@ namespace {
 
     // Faces have been generated at this point.
     // Categorize (boundary/interior)
-    size_t interior = 0;
-    size_t boundary = 0;
-    size_t error = 0;
+    size_t interior  = 0;
+    size_t boundary  = 0;
+    size_t error     = 0;
     size_t pboundary = 0;
 
-    for (auto& face : faces) {
+    for (auto &face : faces) {
       if (face.elementCount_ == 2) {
         interior++;
         if (face.sharedWithProc_ != -1) {
@@ -187,7 +186,8 @@ namespace {
       }
       else if (face.elementCount_ == 1) {
         boundary++;
-      } else {
+      }
+      else {
         error++;
       }
     }
@@ -198,20 +198,20 @@ namespace {
     counts[1] = boundary;
     counts[2] = pboundary;
     region.get_database()->util().global_count(counts, global);
-    interior = global[0];
-    boundary = global[1];
-    pboundary= global[2];
+    interior  = global[0];
+    boundary  = global[1];
+    pboundary = global[2];
 #endif
 
     size_t my_rank = region.get_database()->parallel_rank();
     if (my_rank == 0) {
-      OUTPUT << "Face count = " << interior+boundary-pboundary/2
-             << "\tInterior = " << interior-pboundary/2
-             << "\tBoundary = " << boundary
-             << "\tShared   = " << pboundary
-             << "\tError = " << error << "\n"
-             << "Total Time = " << std::chrono::duration<double, std::milli>(duration).count() << " ms\t"
-             << (interior+boundary-pboundary/2)/std::chrono::duration<double>(duration).count()
+      OUTPUT << "Face count = " << interior + boundary - pboundary / 2
+             << "\tInterior = " << interior - pboundary / 2 << "\tBoundary = " << boundary
+             << "\tShared   = " << pboundary << "\tError = " << error << "\n"
+             << "Total Time = " << std::chrono::duration<double, std::milli>(duration).count()
+             << " ms\t"
+             << (interior + boundary - pboundary / 2) /
+                    std::chrono::duration<double>(duration).count()
              << " faces/second\n\n";
 
       OUTPUT << "Hash Statistics: Bucket Count = " << faces.bucket_count()
@@ -227,29 +227,30 @@ namespace {
     // Get vector of all boundary faces which will be output as the skin...
     std::vector<Ioss::Face> boundary_faces;
     boundary_faces.reserve(boundary);
-    for (auto& face : faces) {
+    for (auto &face : faces) {
       if (face.elementCount_ == 1) {
         boundary_faces.push_back(face);
       }
     }
 
     // Iterate the boundary faces and determine which nodes are referenced...
-    size_t node_count = region.get_property("node_count").get_int();
+    size_t           node_count = region.get_property("node_count").get_int();
     std::vector<int> ref_nodes(node_count);
-    size_t quad = 0;
-    size_t tri  = 0;
-    for (const auto& face : boundary_faces) {
+    size_t           quad = 0;
+    size_t           tri  = 0;
+    for (const auto &face : boundary_faces) {
       size_t face_node_count = 0;
       for (auto &gnode : face.connectivity_) {
         if (gnode > 0) {
           face_node_count++;
-          auto node = region.get_database()->node_global_to_local(gnode, true) - 1;
+          auto node       = region.get_database()->node_global_to_local(gnode, true) - 1;
           ref_nodes[node] = 1;
         }
       }
       if (face_node_count == 3) {
         tri++;
-      } else if (face_node_count == 4) {
+      }
+      else if (face_node_count == 4) {
         quad++;
       }
     }
@@ -259,22 +260,22 @@ namespace {
     // Map ids from total mesh down to skin mesh...
     // Also get coordinates...
     std::vector<double> coord_in;
-    Ioss::NodeBlock *nb = region.get_node_blocks()[0];
+    Ioss::NodeBlock *   nb = region.get_node_blocks()[0];
     nb->get_field_data("mesh_model_coordinates", coord_in);
 
-    std::vector<INT>  ids;
+    std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 
-    std::vector<INT> ref_ids(ref_count);
-    std::vector<double> coord_out(3*ref_count);
+    std::vector<INT>    ref_ids(ref_count);
+    std::vector<double> coord_out(3 * ref_count);
 
     size_t j = 0;
-    for (size_t i=0; i < ref_nodes.size(); i++) {
+    for (size_t i = 0; i < ref_nodes.size(); i++) {
       if (ref_nodes[i] == 1) {
-        coord_out[3*j+0] = coord_in[3*i+0];
-        coord_out[3*j+1] = coord_in[3*i+1];
-        coord_out[3*j+2] = coord_in[3*i+2];
-        ref_ids[j++] = ids[i];
+        coord_out[3 * j + 0] = coord_in[3 * i + 0];
+        coord_out[3 * j + 1] = coord_in[3 * i + 1];
+        coord_out[3 * j + 2] = coord_in[3 * i + 2];
+        ref_ids[j++]         = ids[i];
       }
     }
 
@@ -297,25 +298,24 @@ namespace {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
 
-    std::string file = interface.output_filename();
-    std::string type = interface.output_type();
-    Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(type, file,
-                                                    Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD,
-                                                    properties);
+    std::string       file = interface.output_filename();
+    std::string       type = interface.output_type();
+    Ioss::DatabaseIO *dbo  = Ioss::IOFactory::create(type, file, Ioss::WRITE_RESTART,
+                                                    (MPI_Comm)MPI_COMM_WORLD, properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
-
 
     // NOTE: 'output_region' owns 'dbo' pointer at this time
     Ioss::Region output_region(dbo, "skin");
     output_region.begin_mode(Ioss::STATE_DEFINE_MODEL);
 
-    Ioss::NodeBlock *nbo = new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
+    Ioss::NodeBlock *nbo =
+        new Ioss::NodeBlock(output_region.get_database(), "nodeblock_1", ref_count, 3);
     output_region.add(nbo);
 
     Ioss::ElementBlock *quadblock = nullptr;
-    Ioss::ElementBlock *triblock = nullptr;
+    Ioss::ElementBlock *triblock  = nullptr;
     if (quad > 0) {
       quadblock = new Ioss::ElementBlock(output_region.get_database(), "quad", "shell", quad);
       output_region.add(quadblock);
@@ -336,30 +336,32 @@ namespace {
     std::vector<INT> quad_ids;
     std::vector<INT> tri_conn;
     std::vector<INT> tri_ids;
-    quad_conn.reserve(4*quad);
+    quad_conn.reserve(4 * quad);
     quad_ids.reserve(quad);
-    tri_conn.reserve(3*tri);
+    tri_conn.reserve(3 * tri);
     tri_ids.reserve(tri);
 
     bool use_face_ids = !interface.ignoreFaceIds_;
-    INT fid = 1;
-    for (auto& face : boundary_faces) {
+    INT  fid          = 1;
+    for (auto &face : boundary_faces) {
       if (use_face_ids) {
         fid = face.id_;
-        if (fid < 0) { fid = -fid;
+        if (fid < 0) {
+          fid = -fid;
         }
-      } else {
+      }
+      else {
         fid++;
       }
 
       if (face.connectivity_[3] != 0) {
-        for (int i=0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
           quad_conn.push_back(face.connectivity_[i]);
         }
         quad_ids.push_back(fid);
       }
       else {
-        for (int i=0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
           tri_conn.push_back(face.connectivity_[i]);
         }
         tri_ids.push_back(fid);

@@ -699,7 +699,7 @@ namespace Iocgns {
       // * Other method uses 6*ioss_node_count extra memory; 3 reads;
       // and 1 communicate_node_data call.
       //
-      for (size_t d = 0; d < m_decomposition.m_spatialDimension; d++) {
+      for (int d = 0; d < m_decomposition.m_spatialDimension; d++) {
         get_file_node_coordinates(filePtr, d, TOPTR(tmp));
         communicate_node_data(TOPTR(tmp), TOPTR(ioss_tmp), 1);
 

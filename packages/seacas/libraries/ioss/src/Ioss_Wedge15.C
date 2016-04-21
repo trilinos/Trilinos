@@ -53,7 +53,8 @@ void Ioss::St_Wedge15::factory() { static Ioss::St_Wedge15 registerThis; }
 
 // ========================================================================
 namespace {
-  struct Constants {
+  struct Constants
+  {
     static const int nnode     = 15;
     static const int nedge     = 9;
     static const int nedgenode = 3;

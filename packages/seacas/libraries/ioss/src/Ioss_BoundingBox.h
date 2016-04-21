@@ -34,7 +34,8 @@
 #define IOSS_Ioss_BoundingBox_h
 
 namespace Ioss {
-  struct AxisAlignedBoundingBox {
+  struct AxisAlignedBoundingBox
+  {
     AxisAlignedBoundingBox() : xmin(0), ymin(0), zmin(0), xmax(0), ymax(0), zmax(0) {}
 
     AxisAlignedBoundingBox(double xm, double ym, double zm, double xM, double yM, double zM)

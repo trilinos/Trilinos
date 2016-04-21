@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,28 +34,29 @@
 #include <Ioss_VariableType.h>
 #include <cassert>
 #include <cstddef>
-#include <transform/Iotr_Scale3D.h>
 #include <string>
+#include <transform/Iotr_Scale3D.h>
 #include <vector>
 
 #include "Ioss_Transform.h"
 
 namespace Iotr {
 
-  const Scale3D_Factory* Scale3D_Factory::factory()
+  const Scale3D_Factory *Scale3D_Factory::factory()
   {
     static Scale3D_Factory registerThis;
     return &registerThis;
   }
 
-  Scale3D_Factory::Scale3D_Factory()
-    : Factory("scale3D")
+  Scale3D_Factory::Scale3D_Factory() : Factory("scale3D")
   {
     Factory::alias("scale3D", "multiply3D");
   }
 
-  Ioss::Transform* Scale3D_Factory::make(const std::string& /*unused*/) const
-  { return new Scale3D(); }
+  Ioss::Transform *Scale3D_Factory::make(const std::string & /*unused*/) const
+  {
+    return new Scale3D();
+  }
 
   Scale3D::Scale3D()
   {
@@ -63,7 +64,7 @@ namespace Iotr {
     realScale[0] = realScale[1] = realScale[2] = 1.0;
   }
 
-  void Scale3D::set_properties(const std::string& /*name*/, const std::vector<int> &values)
+  void Scale3D::set_properties(const std::string & /*name*/, const std::vector<int> &values)
   {
     assert(values.size() == 3);
     intScale[0] = values[0];
@@ -71,7 +72,7 @@ namespace Iotr {
     intScale[2] = values[2];
   }
 
-  void Scale3D::set_properties(const std::string& /*name*/, const std::vector<double> &values)
+  void Scale3D::set_properties(const std::string & /*name*/, const std::vector<double> &values)
   {
     assert(values.size() == 3);
     realScale[0] = values[0];
@@ -79,8 +80,7 @@ namespace Iotr {
     realScale[2] = values[2];
   }
 
-  const Ioss::VariableType
-  *Scale3D::output_storage(const Ioss::VariableType *in) const
+  const Ioss::VariableType *Scale3D::output_storage(const Ioss::VariableType *in) const
   {
     return in;
   }
@@ -95,32 +95,35 @@ namespace Iotr {
   {
     size_t count = field.transformed_count();
     assert(field.transformed_storage()->component_count() == 3);
-    
+
     if (field.get_type() == Ioss::Field::REAL) {
-      double *rdata = static_cast<double*>(data);
+      double *rdata = static_cast<double *>(data);
 
-      for (size_t i = 0; i < count*3; i+=3) {
-	rdata[i+0] *= realScale[0];
-	rdata[i+1] *= realScale[1];
-	rdata[i+2] *= realScale[2];
+      for (size_t i = 0; i < count * 3; i += 3) {
+        rdata[i + 0] *= realScale[0];
+        rdata[i + 1] *= realScale[1];
+        rdata[i + 2] *= realScale[2];
       }
-    } else if (field.get_type() == Ioss::Field::INTEGER) {
-      int *idata = static_cast<int*>(data);
+    }
+    else if (field.get_type() == Ioss::Field::INTEGER) {
+      int *idata = static_cast<int *>(data);
 
-      for (size_t i = 0; i < count*3; i+=3) {
-	idata[i+0] *= intScale[0];
-	idata[i+1] *= intScale[1];
-	idata[i+2] *= intScale[2];
+      for (size_t i = 0; i < count * 3; i += 3) {
+        idata[i + 0] *= intScale[0];
+        idata[i + 1] *= intScale[1];
+        idata[i + 2] *= intScale[2];
       }
-    } else if (field.get_type() == Ioss::Field::INT64) {
-      int64_t *idata = static_cast<int64_t*>(data);
+    }
+    else if (field.get_type() == Ioss::Field::INT64) {
+      int64_t *idata = static_cast<int64_t *>(data);
 
-      for (size_t i = 0; i < count*3; i+=3) {
-	idata[i+0] *= intScale[0];
-	idata[i+1] *= intScale[1];
-	idata[i+2] *= intScale[2];
+      for (size_t i = 0; i < count * 3; i += 3) {
+        idata[i + 0] *= intScale[0];
+        idata[i + 1] *= intScale[1];
+        idata[i + 2] *= intScale[2];
       }
-    } else {
+    }
+    else {
     }
     return true;
   }

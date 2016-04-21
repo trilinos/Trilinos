@@ -65,7 +65,8 @@ namespace Ioss {
   };
 
 #define MAX_SUFFIX 8
-  struct Suffix {
+  struct Suffix
+  {
     Suffix(const char new_data[MAX_SUFFIX])
     {
       std::strncpy(data, new_data, MAX_SUFFIX);

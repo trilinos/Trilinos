@@ -43,12 +43,14 @@
 #include <sys/types.h>    // for int64_t
 
 /*! \cond INTERNAL */
-struct ncdim { /* dimension */
+struct ncdim
+{ /* dimension */
   char   name[MAX_VAR_NAME_LENGTH];
   size_t size;
 };
 
-struct ncvar { /* variable */
+struct ncvar
+{ /* variable */
   char    name[MAX_VAR_NAME_LENGTH];
   nc_type type;
   int     ndims;
@@ -56,7 +58,8 @@ struct ncvar { /* variable */
   int     natts;
 };
 
-struct ncatt { /* attribute */
+struct ncatt
+{ /* attribute */
   int     var;
   char    name[MAX_VAR_NAME_LENGTH];
   nc_type type;

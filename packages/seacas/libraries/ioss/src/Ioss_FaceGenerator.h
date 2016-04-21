@@ -65,11 +65,13 @@ namespace Ioss {
     std::array<size_t, 4> connectivity_;
   };
 
-  struct FaceHash {
+  struct FaceHash
+  {
     size_t operator()(const Face &face) const { return face.id_; }
   };
 
-  struct FaceEqual {
+  struct FaceEqual
+  {
     bool operator()(const Face &left, const Face &right) const
     {
       if (left.id_ != right.id_) {
@@ -88,7 +90,7 @@ namespace Ioss {
     }
   };
 
-  typedef std::unordered_set<Face, FaceHash, FaceEqual> FaceUnorderedSet;
+  using FaceUnorderedSet = std::unordered_set<Face, FaceHash, FaceEqual>;
   class FaceGenerator
   {
   public:

@@ -400,7 +400,7 @@ void SystemInterface::parse_step_option(const char *tokens)
   //:  <ul>
   //:    <li><missing> -- default -- 1 <= count <= oo  (all steps)</li>
   //:    <li>"X"                  -- X <= count <= X  (just step X). If X == LAST, last step
-  //only</li>
+  // only</li>
   //:    <li>"X:Y"                -- X to Y by 1</li>
   //:    <li>"X:"                 -- X to oo by 1</li>
   //:    <li>":Y"                 -- 1 to Y by 1</li>

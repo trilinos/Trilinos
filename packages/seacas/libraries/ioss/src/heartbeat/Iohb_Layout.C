@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,31 +31,28 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <heartbeat/Iohb_Layout.h>
-#include <iomanip>                      // for operator<<, setw, etc
-#include <string>                       // for operator<<, string, etc
-#include <vector>                       // for vector, vector<>::size_type
+#include <iomanip> // for operator<<, setw, etc
+#include <string>  // for operator<<, string, etc
+#include <vector>  // for vector, vector<>::size_type
 
 namespace Iohb {
   Layout::Layout(bool show_labels, int precision, std::string separator, int field_width)
-    : layout_(), separator_(std::move(separator)), precision_(precision), count_(0), fieldWidth_(field_width),
-      showLabels(show_labels), legendStarted(false)
-  {}
+      : layout_(), separator_(std::move(separator)), precision_(precision), count_(0),
+        fieldWidth_(field_width), showLabels(show_labels), legendStarted(false)
+  {
+  }
 
-  Layout::~Layout()
-  = default;
+  Layout::~Layout() = default;
 
-  std::ostream& operator<<(std::ostream& o, Layout& lo)
+  std::ostream &operator<<(std::ostream &o, Layout &lo)
   {
     o << lo.layout_.str();
     return o;
   }
 
-  void Layout::add_literal(const std::string& label)
-  {
-    layout_ << label;
-  }
+  void Layout::add_literal(const std::string &label) { layout_ << label; }
 
-  void Layout::add_legend(const std::string& label)
+  void Layout::add_legend(const std::string &label)
   {
     if (legendStarted && !separator_.empty()) {
       layout_ << separator_;
@@ -63,7 +60,7 @@ namespace Iohb {
     else {
       legendStarted = true;
     }
-    
+
     if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_) << label;
     }
@@ -72,7 +69,7 @@ namespace Iohb {
     }
   }
 
-  void Layout::add(const std::string& name, double value)
+  void Layout::add(const std::string &name, double value)
   {
     if (count_++ > 0 && !separator_.empty()) {
       layout_ << separator_;
@@ -81,7 +78,8 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_ != 0) {
+    }
+    else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_.setf(std::ios::scientific);
@@ -89,7 +87,7 @@ namespace Iohb {
     layout_ << std::setprecision(precision_) << value;
   }
 
-  void Layout::add(const std::string& name, int value)
+  void Layout::add(const std::string &name, int value)
   {
     if (count_++ > 0 && !separator_.empty()) {
       layout_ << separator_;
@@ -98,13 +96,14 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_ != 0) {
+    }
+    else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
   }
 
-  void Layout::add(const std::string& name, long value)
+  void Layout::add(const std::string &name, long value)
   {
     if (count_++ > 0 && !separator_.empty()) {
       layout_ << separator_;
@@ -113,13 +112,14 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_ != 0) {
+    }
+    else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
   }
 
-  void Layout::add(const std::string& name, const std::string &value)
+  void Layout::add(const std::string &name, const std::string &value)
   {
     if (count_++ > 0 && !separator_.empty()) {
       layout_ << separator_;
@@ -128,19 +128,21 @@ namespace Iohb {
     if (showLabels && name != "") {
       layout_ << name;
       layout_ << "=";
-    } else if (fieldWidth_ != 0) {
+    }
+    else if (fieldWidth_ != 0) {
       layout_ << std::setw(fieldWidth_);
     }
     layout_ << value;
   }
 
-  void Layout::add(const std::string& name, std::vector<double> &value)
+  void Layout::add(const std::string &name, std::vector<double> &value)
   {
     if (value.size() == 1) {
       add(name, value[0]);
-    } else {
+    }
+    else {
       if (count_++ > 0 && !separator_.empty()) {
-	layout_ << separator_;
+        layout_ << separator_;
       }
 
       if (showLabels && !name.empty()) {
@@ -149,72 +151,74 @@ namespace Iohb {
       }
       layout_.setf(std::ios::scientific);
       layout_.setf(std::ios::showpoint);
-      for (std::vector<double>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && (fieldWidth_ != 0)) {
-	  layout_ << std::setw(fieldWidth_);
-	}
+      for (std::vector<double>::size_type i = 0; i < value.size(); i++) {
+        if (!showLabels && (fieldWidth_ != 0)) {
+          layout_ << std::setw(fieldWidth_);
+        }
         layout_ << std::setprecision(precision_) << value[i];
-        if (i < value.size()-1 && !separator_.empty()) {
-	  layout_ << separator_;
-	}
+        if (i < value.size() - 1 && !separator_.empty()) {
+          layout_ << separator_;
+        }
       }
     }
   }
 
-  void Layout::add(const std::string& name, std::vector<int> &value)
+  void Layout::add(const std::string &name, std::vector<int> &value)
   {
     if (value.size() == 1) {
       add(name, value[0]);
-    } else {
+    }
+    else {
       if (count_++ > 0 && !separator_.empty()) {
-	layout_ << separator_;
+        layout_ << separator_;
       }
 
       if (showLabels && name != "") {
-	layout_ << name;
-	layout_ << "=";
+        layout_ << name;
+        layout_ << "=";
       }
-      for (std::vector<int>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && (fieldWidth_ != 0)) {
-	  layout_ << std::setw(fieldWidth_);
-	}
-	layout_ << value[i];
-	if (i < value.size()-1 && !separator_.empty()) {
-	  layout_ << separator_;
-	}
+      for (std::vector<int>::size_type i = 0; i < value.size(); i++) {
+        if (!showLabels && (fieldWidth_ != 0)) {
+          layout_ << std::setw(fieldWidth_);
+        }
+        layout_ << value[i];
+        if (i < value.size() - 1 && !separator_.empty()) {
+          layout_ << separator_;
+        }
       }
     }
   }
 
-  void Layout::add(const std::string& name, std::vector<long> &value)
+  void Layout::add(const std::string &name, std::vector<long> &value)
   {
     if (value.size() == 1) {
       add(name, value[0]);
-    } else {
+    }
+    else {
       if (count_++ > 0 && !separator_.empty()) {
-	layout_ << separator_;
+        layout_ << separator_;
       }
 
       if (showLabels && name != "") {
-	layout_ << name;
-	layout_ << "=";
+        layout_ << name;
+        layout_ << "=";
       }
-      for (std::vector<long>::size_type i=0; i < value.size(); i++) {
-	if (!showLabels && (fieldWidth_ != 0)) {
-	  layout_ << std::setw(fieldWidth_);
-	}
-	layout_ << value[i];
-	if (i < value.size()-1 && !separator_.empty()) {
-	  layout_ << separator_;
-	}
+      for (std::vector<long>::size_type i = 0; i < value.size(); i++) {
+        if (!showLabels && (fieldWidth_ != 0)) {
+          layout_ << std::setw(fieldWidth_);
+        }
+        layout_ << value[i];
+        if (i < value.size() - 1 && !separator_.empty()) {
+          layout_ << separator_;
+        }
       }
     }
   }
 
-  void Layout::add(const std::string& name, std::vector<std::string> &value)
+  void Layout::add(const std::string &name, std::vector<std::string> &value)
   {
     if (value.size() == 1) {
       add(name, value[0]);
-}
+    }
   }
-}  // namespace Iohb
+} // namespace Iohb

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,10 +32,10 @@
 
 #include <Ioss_CodeTypes.h>
 
-#include <iostream>
 #include <iomanip>
-#include <vector>
+#include <iostream>
 #include <string>
+#include <vector>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -43,8 +43,8 @@
 
 #define OUTPUT std::cerr
 #undef NDEBUG
-#include <assert.h>
 #include <Ioss_ConcreteVariableType.h>
+#include <assert.h>
 #include <exodus/Ioex_SuperElement.h>
 
 int main(int argc, char *argv[])
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
   Ioss::StorageInitializer initialize_storage;
 
-  std::string input_file = std::string(argv[argc-1]);
+  std::string input_file = std::string(argv[argc - 1]);
   if (input_file == "") {
     OUTPUT << "Error: No input file specified\n";
     return (EXIT_FAILURE);
@@ -79,22 +79,24 @@ int main(int argc, char *argv[])
   // List the fields on the superelement...
   if (!se.field_exists("Kr")) {
     std::cerr << "ERROR: Stiffness matrix field 'Kr' not found\n";
-  } else {
+  }
+  else {
     Ioss::Field kr = se.get_field("Kr");
     assert(kr.raw_count() == numDOF * numDOF);
   }
-  
+
   if (!se.field_exists("Mr")) {
     std::cerr << "ERROR: Mass matrix field 'Mr' not found\n";
-  } else {
+  }
+  else {
     Ioss::Field mr = se.get_field("Mr");
     assert(mr.raw_count() == numDOF * numDOF);
   }
 
   std::vector<double> stiff_mat(numDOF * numDOF);
   std::vector<double> mass_mat(numDOF * numDOF);
-  size_t kr_size = se.get_field_data("Kr", stiff_mat);
-  size_t mr_size = se.get_field_data("Mr", mass_mat);
+  size_t              kr_size = se.get_field_data("Kr", stiff_mat);
+  size_t              mr_size = se.get_field_data("Mr", mass_mat);
   assert(kr_size == numDOF * numDOF);
   assert(mr_size == numDOF * numDOF);
 
@@ -104,4 +106,3 @@ int main(int argc, char *argv[])
 #endif
   return EXIT_SUCCESS;
 }
-

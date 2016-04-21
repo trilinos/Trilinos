@@ -12,9 +12,11 @@ application codes (including vendor-supplied codes) which access this common dat
 directly or via translators.
 
 The uses of the EXODUS data model include the following:
-    - Problem definition -- mesh generation, specification of locations of boundary conditions and load application, specification of material types.
+    - Problem definition -- mesh generation, specification of locations of boundary conditions and
+load application, specification of material types.
     - Simulation -- model input and results output.
-    - Visualization -- model verification, results postprocessing, data interrogation, and analysis tracking.
+    - Visualization -- model verification, results postprocessing, data interrogation, and analysis
+tracking.
 
 \section avail License and Availability
 The EXODUS library is licensed under the BSD open source license.
@@ -24,7 +26,8 @@ with Sandia Corporation, the U.S. Government retains certain rights in this soft
 
 Redistribution and use in source and binary forms, with or without modification, are permitted
 provided that the following conditions are met:
-  - Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+  - Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
   - Redistributions in binary form must reproduce the above copyright notice, this list
 of conditions and the following disclaimer in the documentation and/or other
 materials provided with the distribution.
@@ -44,8 +47,8 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-The ExodusII library source code is available on Sourceforge at
-http://sourceforge.net/projects/exodusii
+The ExodusII library source code is available on Github at
+https://github.com/gsjaardema/seacas
 
 For bug reports, documentation errors, and enhancement suggestions, contact:
 - Gregory D. Sjaardema
@@ -59,19 +62,22 @@ who desire the advantages of a common data format. The EXODUS model has been
 designed to overcome deficiencies in the EXODUS I file format and meet the following
 functional requirements as specified by these developers:
    - Random read/write access.
-   - Application programming interface (API) -- provide routines callable from FORTRAN, C, and C++ application codes.
-   - Extensible -- allow new data objects to be added without modifying the application programs that use the file format.
+   - Application programming interface (API) -- provide routines callable from FORTRAN, C, and C++
+application codes.
+   - Extensible -- allow new data objects to be added without modifying the application programs
+that use the file format.
    - Machine independent -- data should be independent of the machine which generated it.
    - Real-time access during analysis -- allow access to the data in a file while the file is
 being created.
 
 To address these requirements, the open source database library
-etCDF (http://www.unidata.ucar.edu/software/netcdf/) was selected to handle the low-level data storage. The EXODUS
+etCDF (http://www.unidata.ucar.edu/software/netcdf/) was selected to handle the low-level data
+storage. The EXODUS
 II library functions provide the mapping between FE data objects and
 netCDF dimensions, attributes, and variables. Thus, the code developer
 interacts with the data model using the vocabulary of an FE analyst
 (element connectivity, nodal coordinates, etc.) and is relieved of the
-details of the data access mechanism. 
+details of the data access mechanism.
 
 Because an EXODUS file is a netCDF file, an application program can
 access data via the EXODUS API or the netCDF API directly. Although
@@ -156,15 +162,15 @@ When an EXODUS file is created via the ex_create() function, the
 will be passed as arguments to the API functions and also how the
 integer data will be stored on the database. The ex_open() function
 also provides a mechanism for specifying how integer data will be
-passed as arguments. 
+passed as arguments.
 
 The method uses the 'mode' argument to the ex_open() and
 ex_create() functions.  The mode is a 32-bit integer in which certain
-bits are turned on by or'ing certain predefined constants.  
+bits are turned on by or'ing certain predefined constants.
 
 exoid = ex_create( EX_TEST_FILENAME,
-		   EX_CLOBBER|EX_MAPS_INT64_DB|EX_MAPS_INT64_API,
-		   &appWordSize, &diskWordSize );
+                   EX_CLOBBER|EX_MAPS_INT64_DB|EX_MAPS_INT64_API,
+                   &appWordSize, &diskWordSize );
 
 The constants related to the integer size (32-bit or 64-bit)
 specification are:
@@ -181,7 +187,7 @@ specification are:
 The constants that end with "_DB" specify that that particular integer
 data is stored on the database as 64-bit integers; the constants that
 end with "_API" specify that that particular integer data is passed
-to/from API functions as 64-bit integers.  
+to/from API functions as 64-bit integers.
 
 If the range of the data being transmitted is larger than the
 permitted integer range (for example, if the data is stored on the
@@ -190,14 +196,14 @@ database as 64-bit ints and the application specifies passing data as
 
 The three types of integer data whose storage can be specified are
 - maps (EX_MAPS_INT64_),
-- "bulk data" including connectivity lists and entity lists (EX_BULK_INT64_), and 
+- "bulk data" including connectivity lists and entity lists (EX_BULK_INT64_), and
 - entity ids which are the ids of element, face, edge, and node sets
    and blocks; and map ids (EX_IDS_INT64_)
 
 The function ex_int64_status(exoid) is used to determine the integer
 storage types being used for the EXODUS database 'exoid'.  It returns
 an integer which can be and'ed with the above flags to determine
-either the storage type or function parameter type. 
+either the storage type or function parameter type.
 
 For example, if
 (EX_MAPS_INT64_DB \& ex_int64_status(exoid)) is true, then map data is
@@ -249,14 +255,14 @@ database.  Valid values for 'option' are:
 | EX_OPT_COMPRESSION_LEVEL | In the range [0..9]. A value of 0 indicates no compression
 | EX_OPT_COMPRESSION_SHUFFLE | 1 if enabled, 0 if disabled
 | EX_OPT_INTEGER_SIZE_API | 4 or 8 indicating byte size of integers used in api functions.
-| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on database.
+| EX_OPT_INTEGER_SIZE_DB  | Query only, returns 4 or 8 indicating byte size of integers stored on the database.
 
 The compression-related options are only available on netcdf-4 files
 since the underlying hdf5 compression functionality is used for the
 implementation. The compression level indicates how much effort should
 be expended in the compression and the computational expense increases
 with higher levels; in many cases, a compression level of 1 is
-sufficient. 
+sufficient.
 
 \defgroup ResultsData Results Data
 @{
@@ -276,9 +282,9 @@ file, and error reporting.
 
 \defgroup ModelDescription Model Description
   @{
-The routines in this section read and write information which 
-describe an exodus finite element model. This includes nodal 
-coordinates, element order map, element connectivity arrays, 
+The routines in this section read and write information which
+describe an exodus finite element model. This includes nodal
+coordinates, element order map, element connectivity arrays,
 element attributes, node sets, side sets, and object properties.
   @}
 

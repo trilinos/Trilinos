@@ -54,7 +54,8 @@ void Ioss::St_Pyramid5::factory() { static Ioss::St_Pyramid5 registerThis; }
 
 // ========================================================================
 namespace {
-  struct Constants {
+  struct Constants
+  {
     static const int nnode     = 5;
     static const int nedge     = 8;
     static const int nedgenode = 2;

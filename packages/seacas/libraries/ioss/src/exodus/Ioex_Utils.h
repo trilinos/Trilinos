@@ -24,7 +24,8 @@ namespace Ioex {
   using SideSetSet  = std::set<std::string>;
   using SideSetMap  = std::map<std::string, const std::string, std::less<const std::string>>;
 
-  struct TopologyMapCompare {
+  struct TopologyMapCompare
+  {
     bool operator()(const std::pair<std::string, const Ioss::ElementTopology *> &lhs,
                     const std::pair<std::string, const Ioss::ElementTopology *> &rhs) const
     {

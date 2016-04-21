@@ -787,7 +787,7 @@ namespace Iopx {
       // * NOTE: The read difference is not real since the ex_get_partial_coord
       // function does 3 reads internally.
 
-      for (size_t d = 0; d < m_decomposition.m_spatialDimension; d++) {
+      for (int d = 0; d < m_decomposition.m_spatialDimension; d++) {
         double *coord[3];
         coord[0] = coord[1] = coord[2] = nullptr;
         coord[d]                       = TOPTR(tmp);

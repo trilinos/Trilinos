@@ -149,10 +149,10 @@ namespace Ioex {
     if (status == NC_NOERR && value > tmp) {
       status = nc_put_att_double(rootid, NC_GLOBAL, "last_written_time", NC_DOUBLE, 1, &value);
       if (status != NC_NOERR) {
-	ex_opts(EX_VERBOSE);
-	sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
-		exodusFilePtr);
-	ex_err(routine, errmsg, status);
+        ex_opts(EX_VERBOSE);
+        sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
+                exodusFilePtr);
+        ex_err(routine, errmsg, status);
       }
     }
   }
@@ -741,7 +741,7 @@ namespace Ioex {
         assert(type->component_count() == static_cast<int>(which_names.size()));
         Ioss::Field field(base_name.substr(0, bn_len - 1), Ioss::Field::REAL, type, fld_role,
                           count);
-        for (auto &which_name : which_names) {
+        for (const auto &which_name : which_names) {
           names[which_name][0] = '\0';
         }
         return field;
@@ -1017,7 +1017,7 @@ namespace Ioex {
     // Get all element blocks in region...
     bool                        omitted        = false;
     Ioss::ElementBlockContainer element_blocks = region->get_element_blocks();
-    for (auto block : element_blocks) {
+    for (const auto &block : element_blocks) {
 
       if (Ioss::Utils::block_is_omitted(block)) {
         ssize_t min_id = block->get_offset() + 1;

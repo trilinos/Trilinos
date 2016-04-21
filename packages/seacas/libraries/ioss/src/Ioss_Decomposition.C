@@ -34,8 +34,8 @@
  */
 
 #include <Ioss_Decomposition.h>
-#include <Ioss_ParallelUtils.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_ParallelUtils.h>
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
@@ -132,7 +132,7 @@ namespace {
 
     for (const auto block : el_blocks) {
       if (block.global_count() == 0) {
-	continue;
+        continue;
       }
       std::string            type     = Ioss::Utils::lowercase(block.topologyType);
       Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(type, false);
@@ -302,7 +302,7 @@ namespace Ioss {
 #if !defined(NO_PARMETIS_SUPPORT)
     if (m_method == "KWAY" || m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" ||
         m_method == "METIS_SFC") {
-      metis_decompose((idx_t*)TOPTR(m_pointer), (idx_t*)TOPTR(m_adjacency), element_blocks);
+      metis_decompose((idx_t *)TOPTR(m_pointer), (idx_t *)TOPTR(m_adjacency), element_blocks);
     }
 #endif
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -570,15 +570,15 @@ namespace Ioss {
 #if !defined(NO_PARMETIS_SUPPORT)
   template <typename INT>
   void Decomposition<INT>::metis_decompose(idx_t *pointer, idx_t *adjacency,
-					   std::vector<BlockDecompositionData> &el_blocks)
+                                           std::vector<BlockDecompositionData> &el_blocks)
   {
     std::vector<idx_t> elem_partition(elementCount);
 
     // Determine whether sizeof(INT) matches sizeof(idx_t).
     // If not, decide how to proceed...
     if (sizeof(INT) == sizeof(idx_t)) {
-      internal_metis_decompose(el_blocks, (idx_t *)TOPTR(m_elementDist), pointer,
-                               adjacency, TOPTR(elem_partition));
+      internal_metis_decompose(el_blocks, (idx_t *)TOPTR(m_elementDist), pointer, adjacency,
+                               TOPTR(elem_partition));
     }
 
     // Now know that they don't match... Are we widening or narrowing...
@@ -1085,8 +1085,8 @@ namespace Ioss {
     Ioss::MY_Alltoallv(import_nodes, importNodeCount, importNodeIndex, exportNodeMap,
                        exportNodeCount, exportNodeIndex, m_comm);
 
-    // Map that converts nodes from the global index (1-based) to a
-    // local-per-processor index (1-based)
+// Map that converts nodes from the global index (1-based) to a
+// local-per-processor index (1-based)
 #if DEBUG_OUTPUT
     std::cerr << m_processor << ":\tNode Count = " << nodes.size() << "\n";
 #endif
@@ -1251,8 +1251,8 @@ namespace Ioss {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex,
-			 import_data, importElementCount, importElementIndex, m_comm);
+      Ioss::MY_Alltoallv(export_data, exportElementCount, exportElementIndex, import_data,
+                         importElementCount, importElementIndex, m_comm);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -1290,14 +1290,14 @@ namespace Ioss {
 
       for (int i = 0; i < m_processorCount; i++) {
         export_count[i] *= comp_count;
-        export_disp[i]  *= comp_count;
+        export_disp[i] *= comp_count;
         import_count[i] *= comp_count;
-        import_disp[i]  *= comp_count;
+        import_disp[i] *= comp_count;
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, export_count, export_disp,
-			 import_data, import_count, import_disp, m_comm);
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
+                         import_disp, m_comm);
 
       // Copy the imported data into ioss_data...
       // Some comes before the local data...
@@ -1347,7 +1347,8 @@ namespace Ioss {
     // so this will not cause a deadlock...
     if (m_processor != set.root_ && set.hasEntities[m_processor]) {
       recv_data.resize(size);
-      result = MPI_Recv(TOPTR(recv_data), size, Ioss::mpi_type(T(0)), set.root_, 111, m_comm, &status);
+      result =
+          MPI_Recv(TOPTR(recv_data), size, Ioss::mpi_type(T(0)), set.root_, 111, m_comm, &status);
 
       if (result != MPI_SUCCESS) {
         std::ostringstream errmsg;
@@ -1438,8 +1439,8 @@ namespace Ioss {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(exports, block.exportCount, block.exportIndex,
-			 imports, block.importCount, block.importIndex, m_comm);
+      Ioss::MY_Alltoallv(exports, block.exportCount, block.exportIndex, imports, block.importCount,
+                         block.importIndex, m_comm);
 
       // Map local and imported data to ioss_data.
       for (size_t i = 0; i < block.localMap.size(); i++) {
@@ -1464,14 +1465,14 @@ namespace Ioss {
 
       for (int i = 0; i < m_processorCount; i++) {
         export_count[i] *= comp_count;
-        export_disp[i]  *= comp_count;
+        export_disp[i] *= comp_count;
         import_count[i] *= comp_count;
-        import_disp[i]  *= comp_count;
+        import_disp[i] *= comp_count;
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(exports, export_count, export_disp,
-			 imports, import_count, import_disp, m_comm);
+      Ioss::MY_Alltoallv(exports, export_count, export_disp, imports, import_count, import_disp,
+                         m_comm);
 
       // Map local and imported data to ioss_data.
       for (size_t i = 0; i < block.localMap.size(); i++) {
@@ -1555,8 +1556,8 @@ namespace Ioss {
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex,
-			 import_data, importNodeCount, importNodeIndex, m_comm);
+      Ioss::MY_Alltoallv(export_data, exportNodeCount, exportNodeIndex, import_data,
+                         importNodeCount, importNodeIndex, m_comm);
 
       // Copy the imported data into ioss_data...
       for (size_t i = 0; i < importNodeMap.size(); i++) {
@@ -1591,14 +1592,14 @@ namespace Ioss {
 
       for (int i = 0; i < m_processorCount; i++) {
         export_count[i] *= comp_count;
-        export_disp[i]  *= comp_count;
+        export_disp[i] *= comp_count;
         import_count[i] *= comp_count;
-        import_disp[i]  *= comp_count;
+        import_disp[i] *= comp_count;
       }
 
       // Get my imported data and send my exported data...
-      Ioss::MY_Alltoallv(export_data, export_count, export_disp,
-			 import_data, import_count, import_disp, m_comm);
+      Ioss::MY_Alltoallv(export_data, export_count, export_disp, import_data, import_count,
+                         import_disp, m_comm);
 
       // Copy the imported data into ioss_data...
       for (size_t i = 0; i < importNodeMap.size(); i++) {

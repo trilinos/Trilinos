@@ -32,21 +32,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "skinner_interface.h"
-#include <cstddef>                     // for nullptr
-#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
+#include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Utils.h"
-#include <cstdlib>                      // for exit, EXIT_SUCCESS, getenv
-#include <iostream>                     // for operator<<, basic_ostream, etc
-#include <string>                       // for char_traits, string
-
-
-
+#include "skinner_interface.h"
+#include <cstddef>  // for nullptr
+#include <cstdlib>  // for exit, EXIT_SUCCESS, getenv
+#include <iostream> // for operator<<, basic_ostream, etc
+#include <string>   // for char_traits, string
 
 Skinner::Interface::Interface()
-  :   compose_output("none"), compression_level(0),
-      shuffle(false), debug(false), statistics(false), ints64Bit_(false),
-      netcdf4(false), ignoreFaceIds_(false), noOutput_(false)
+    : compose_output("none"), compression_level(0), shuffle(false), debug(false), statistics(false),
+      ints64Bit_(false), netcdf4(false), ignoreFaceIds_(false), noOutput_(false)
 {
   enroll_options();
 }
@@ -57,33 +53,27 @@ void Skinner::Interface::enroll_options()
 {
   options_.usage("[options] input_file[s] output_file");
 
-  options_.enroll("help", Ioss::GetLongOption::NoValue,
-                  "Print this summary and exit", nullptr);
+  options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", Ioss::GetLongOption::NoValue,
-                  "Print version and exit", nullptr);
+  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
 
-  options_.enroll("64-bit", Ioss::GetLongOption::NoValue,
-                  "True if using 64-bit integers",
-                  nullptr);
+  options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "True if using 64-bit integers", nullptr);
   options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue,
                   "Database type for input file: pamgen|generated|exodus. exodus is the default.",
                   "exodus");
 
   options_.enroll("out_type", Ioss::GetLongOption::MandatoryValue,
-                  "Database type for output file: exodus. exodus is the default.",
-                  "exodus");
+                  "Database type for output file: exodus. exodus is the default.", "exodus");
 
   options_.enroll("no_output", Ioss::GetLongOption::NoValue,
-                  "Do not produce output file, just generate the faces",
-                  nullptr);
+                  "Do not produce output file, just generate the faces", nullptr);
 
   options_.enroll("ignore_face_ids", Ioss::GetLongOption::NoValue,
-                  "Ignore internal face ids and just use 1..num_face",
-                  nullptr);
+                  "Ignore internal face ids and just use 1..num_face", nullptr);
 
-  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue,
-                  "Output database will be a netcdf4 hdf5-based file instead of the classical netcdf file format",
+  options_.enroll("netcdf4", Ioss::GetLongOption::NoValue, "Output database will be a netcdf4 "
+                                                           "hdf5-based file instead of the "
+                                                           "classical netcdf file format",
                   nullptr);
 
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,
@@ -94,32 +84,39 @@ void Skinner::Interface::enroll_options()
                   "Specify the hdf5 compression level [0..9] to be used on the output file.",
                   nullptr);
 
-  options_.enroll("compose", Ioss::GetLongOption::MandatoryValue,
-                  "Specify the parallel-io method to be used to output a single file in a parallel run. "
-                  "Options are default, mpiio, mpiposix, pnetcdf",
-                  nullptr);
+  options_.enroll(
+      "compose", Ioss::GetLongOption::MandatoryValue,
+      "Specify the parallel-io method to be used to output a single file in a parallel run. "
+      "Options are default, mpiio, mpiposix, pnetcdf",
+      nullptr);
 
-  options_.enroll("rcb", Ioss::GetLongOption::NoValue,
-                  "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
-                  nullptr);
-  options_.enroll("rib", Ioss::GetLongOption::NoValue,
-                  "Use recursive inertial bisection method to decompose the input mesh in a parallel run.",
-                  nullptr);
+  options_.enroll(
+      "rcb", Ioss::GetLongOption::NoValue,
+      "Use recursive coordinate bisection method to decompose the input mesh in a parallel run.",
+      nullptr);
+  options_.enroll(
+      "rib", Ioss::GetLongOption::NoValue,
+      "Use recursive inertial bisection method to decompose the input mesh in a parallel run.",
+      nullptr);
 
-  options_.enroll("hsfc", Ioss::GetLongOption::NoValue,
-                  "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
-                  nullptr);
+  options_.enroll(
+      "hsfc", Ioss::GetLongOption::NoValue,
+      "Use hilbert space-filling curve method to decompose the input mesh in a parallel run.",
+      nullptr);
 
-  options_.enroll("metis_sfc", Ioss::GetLongOption::NoValue,
-                  "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
-                  nullptr);
+  options_.enroll(
+      "metis_sfc", Ioss::GetLongOption::NoValue,
+      "Use the metis space-filling-curve method to decompose the input mesh in a parallel run.",
+      nullptr);
 
-  options_.enroll("kway", Ioss::GetLongOption::NoValue,
-                  "Use the metis kway graph-based method to decompose the input mesh in a parallel run.",
-                  nullptr);
+  options_.enroll(
+      "kway", Ioss::GetLongOption::NoValue,
+      "Use the metis kway graph-based method to decompose the input mesh in a parallel run.",
+      nullptr);
 
   options_.enroll("kway_geom", Ioss::GetLongOption::NoValue,
-                  "Use the metis kway graph-based method with geometry speedup to decompose the input mesh in a parallel run.",
+                  "Use the metis kway graph-based method with geometry speedup to decompose the "
+                  "input mesh in a parallel run.",
                   nullptr);
 
   options_.enroll("linear", Ioss::GetLongOption::NoValue,
@@ -134,23 +131,20 @@ void Skinner::Interface::enroll_options()
 
   options_.enroll("random", Ioss::GetLongOption::NoValue,
                   "Use the random method to decompose the input mesh in a parallel run."
-                  "elements assigned randomly to processors in a way that preserves balance (do not use for a real run)",
+                  "elements assigned randomly to processors in a way that preserves balance (do "
+                  "not use for a real run)",
                   nullptr);
 
   options_.enroll("external", Ioss::GetLongOption::NoValue,
                   "Files are decomposed externally into a file-per-processor in a parallel run.",
                   nullptr);
 
-  options_.enroll("debug" , Ioss::GetLongOption::NoValue,
-                  "turn on debugging output",
-                  nullptr);
+  options_.enroll("debug", Ioss::GetLongOption::NoValue, "turn on debugging output", nullptr);
 
-  options_.enroll("statistics" , Ioss::GetLongOption::NoValue,
-                  "output parallel io timing statistics",
-                  nullptr);
+  options_.enroll("statistics", Ioss::GetLongOption::NoValue,
+                  "output parallel io timing statistics", nullptr);
 
-  options_.enroll("copyright", Ioss::GetLongOption::NoValue,
-                  "Show copyright and license data.",
+  options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
 }
 
@@ -159,13 +153,14 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   // Get options from environment variable also...
   char *options = getenv("IO_SKINNER_OPTIONS");
   if (options != nullptr) {
-    std::cerr << "\nThe following options were specified via the IO_SKINNER_OPTIONS environment variable:\n"
+    std::cerr << "\nThe following options were specified via the IO_SKINNER_OPTIONS environment "
+                 "variable:\n"
               << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
-  if ( option_index < 1 ) {
+  if (option_index < 1) {
     return false;
   }
 
@@ -314,10 +309,11 @@ bool Skinner::Interface::parse_options(int argc, char **argv)
   }
 
   // Parse remaining options as directory paths.
-  if (option_index < argc-1) {
+  if (option_index < argc - 1) {
     inputFile_  = argv[option_index++];
     outputFile_ = argv[option_index];
-  } else {
+  }
+  else {
     std::cerr << "\nERROR: input and output filename not specified\n\n";
     return false;
   }

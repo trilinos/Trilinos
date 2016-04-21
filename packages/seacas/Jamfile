@@ -502,7 +502,6 @@ lib io_info_lib
         $(seacas-root)/libraries/ioss/src/main/io_info.C
         $(seacas-root)/libraries/ioss/src/main/volume.C
         $(seacas-root)/libraries/ioss/src/main/info_interface.C
-        $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
     ]
     ioinit
     ioss
@@ -1786,7 +1785,6 @@ exe io_shell
 
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
-    io_info_lib
     ioinit
     ioss
     iotr
