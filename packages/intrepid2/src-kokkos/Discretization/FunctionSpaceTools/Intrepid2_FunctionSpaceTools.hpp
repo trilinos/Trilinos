@@ -506,7 +506,7 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>   inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
                         const int                   whichFace,
-                        const shards::CellTopology &parentCell,
+                        const shards::CellTopology  parentCell,
                         const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch );      
 
     /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
@@ -560,7 +560,7 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>    inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
                         const int                   whichEdge,
-                        const shards::CellTopology &parentCell,
+                        const shards::CellTopology  parentCell,
                         const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch );
 
     /** \brief   Multiplies fields \a <b>inputVals</b> by weighted measures \a <b>inMeasure</b> and

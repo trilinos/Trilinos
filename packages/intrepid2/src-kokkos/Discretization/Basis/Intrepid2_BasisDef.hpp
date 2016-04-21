@@ -443,7 +443,7 @@ namespace Intrepid2 {
   void getValues_HGRAD_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
-                             const shards::CellTopology &cellTopo,
+                             const shards::CellTopology  cellTopo,
                              const ordinal_type          basisCard ) {
     const auto spaceDim = cellTopo.getDimension();
 
@@ -562,7 +562,7 @@ namespace Intrepid2 {
   void getValues_HCURL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
-                             const shards::CellTopology &cellTopo,
+                             const shards::CellTopology  cellTopo,
                              const ordinal_type          basisCard ) {
     
     const auto spaceDim = cellTopo.getDimension();
@@ -647,7 +647,7 @@ namespace Intrepid2 {
   void getValues_HDIV_Args( const outputValueViewType   outputValues,
                             const inputPointViewType    inputPoints,
                             const EOperator             operatorType,
-                            const shards::CellTopology &cellTopo,
+                            const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard ) {
     
     const auto spaceDim = cellTopo.getDimension();
