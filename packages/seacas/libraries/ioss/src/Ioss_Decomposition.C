@@ -115,10 +115,6 @@ namespace {
       exit(EXIT_FAILURE);
     }
 
-    if (my_processor == 0) {
-      std::cout << "\nUsing decomposition method '" << method << "' on " << processor_count
-                << " processors.\n\n";
-    }
     return method;
   }
 
@@ -299,6 +295,10 @@ namespace Ioss {
 #endif
       std::vector<BlockDecompositionData> &element_blocks)
   {
+    if (m_processor == 0) {
+      std::cout << "\nUsing decomposition method '" << m_method << "' on "
+		<< m_processorCount << " processors.\n\n";
+    }
 #if !defined(NO_PARMETIS_SUPPORT)
     if (m_method == "KWAY" || m_method == "GEOM_KWAY" || m_method == "KWAY_GEOM" ||
         m_method == "METIS_SFC") {
