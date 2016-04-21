@@ -276,8 +276,8 @@ public:
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
     Part* root_part = nullptr;
     stk::topology topo = topology;
-    if (topo.is_superelement()) {
-        root_part = &get_cell_topology_root_part(register_superelement_cell_topology(topo));
+    if (topo.is_superelement() || topo.is_superface()) {
+        root_part = &get_cell_topology_root_part(register_super_cell_topology(topo));
     }
     else {
         root_part = &get_cell_topology_root_part(stk::mesh::get_cell_topology(topology));
@@ -551,7 +551,7 @@ public:
    */
   void register_cell_topology(const CellTopology cell_topology, EntityRank in_entity_rank);
 
-  shards::CellTopology register_superelement_cell_topology(stk::topology t);
+  shards::CellTopology register_super_cell_topology(stk::topology t);
 
   /** \brief Return the root cell topology part associated with the given cell topology.
    * This Part is created in register_cell_topology

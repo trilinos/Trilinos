@@ -90,6 +90,47 @@ TEST( stk_topology, side_node_ordinals)
 
 }
 
+TEST( stk_topology, superface_topology)
+{
+    stk::topology t = stk::create_superface_topology(4);
+    EXPECT_EQ( t.num_nodes(), 4u);
+    EXPECT_EQ( t.rank(), stk::topology::FACE_RANK);
+    EXPECT_EQ( 0u, t.num_edges());
+    EXPECT_EQ( 0u, t.num_permutations());
+
+    EXPECT_EQ( true, t.is_superface());
+    {
+      std::ostringstream name;
+      name << t ;
+      std::string goldName("SUPERFACE_TOPOLOGY_4");
+      EXPECT_EQ( goldName, name.str() );
+    }
+
+    stk::topology notSuper = stk::topology::QUAD_4;
+    EXPECT_FALSE( notSuper.is_superface());
+
+    stk::topology newT = stk::create_superface_topology(8);
+
+    EXPECT_NE( newT.num_nodes(), 6u);
+    EXPECT_EQ( newT.rank(), stk::topology::FACE_RANK);
+
+    EXPECT_EQ( true, newT.is_superface());
+    {
+      std::ostringstream name;
+      name << newT ;
+      std::string goldName("SUPERFACE_TOPOLOGY_6");
+      EXPECT_NE( goldName, name.str() );
+    }
+
+    stk::topology anotherT = stk::create_superface_topology(4);
+    EXPECT_EQ(t, anotherT);
+
+    stk::topology badT = stk::create_superface_topology(-2);
+    EXPECT_TRUE(!badT.is_valid());
+    EXPECT_EQ(badT, stk::topology::INVALID_TOPOLOGY);
+    EXPECT_EQ( badT.rank(), stk::topology::INVALID_RANK);
+}
+
 TEST( stk_topology, superelement_topology )
 {
   using stk::topology;

@@ -1831,6 +1831,30 @@ struct topology_data<topology::HEX_27>
 };
 
 //***************************************************************************
+// topology::SUPERFACE -- topology::SUPERFACE
+//***************************************************************************
+
+template <topology::topology_t Topology>
+struct topology_data<Topology, typename boost::enable_if_c< (Topology > topology::SUPERFACE_START && Topology < topology::SUPERFACE_END) >::type >
+  : public topology_data<topology::INVALID_TOPOLOGY>
+{
+  static const topology::topology_t value = Topology;
+  static const topology::topology_t base = value;
+  static const bool is_valid = true;
+  static const topology::rank_t rank = topology::FACE_RANK;
+  static const topology::rank_t side_rank = topology::INVALID_RANK;
+  static const unsigned num_nodes = Topology - topology::SUPERFACE_START;
+
+  typedef boost::mpl::vector_c<   bool
+                                , false // 0d
+                                , true // 1d
+                                , true // 2d
+                                , true // 3d
+                              > spatial_dimension_vector;
+
+};
+
+//***************************************************************************
 // topology::SUPERELEMENT -- topology::SUPERELEMENT
 //***************************************************************************
 
