@@ -14,8 +14,8 @@ typedef double wt;
 #define TRANPOSESECOND false
 
 template <typename ExecSpace, typename crsMat_t>
-void run_experiment(
-    crsMat_t crsmat, int algorithm);
+crsMat_t run_experiment(
+    crsMat_t crsmat, crsMat_t crsmat2, int algorithm);
 template <typename v1>
 struct compare{
   v1 f,s;
@@ -37,7 +37,10 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_OPENMP
      , CMD_USE_CUDA_DEV
      , CMD_SPGEMM_ALGO
-     , CMD_BIN_MTX
+     , CMD_BIN_AMTX
+     , CMD_BIN_RMTX
+     , CMD_BIN_PMTX
+     , CMD_MM_MODE
      , CMD_ERROR
      , CMD_COUNT };
 
@@ -46,7 +49,10 @@ int main (int argc, char ** argv){
 
 
   int cmdline[ CMD_COUNT ] ;
-  char *mtx_bin_file = NULL;
+  char *r_mtx_bin_file = NULL;
+  char *a_mtx_bin_file = NULL;
+  char *p_mtx_bin_file = NULL;
+
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
 
 
@@ -70,8 +76,18 @@ int main (int argc, char ** argv){
       cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
     }
 
-    else if ( 0 == strcasecmp( argv[i] , "mtx" ) ) {
-      mtx_bin_file = argv[++i];
+    else if ( 0 == strcasecmp( argv[i] , "mmmode" ) ) {
+      cmdline[ CMD_MM_MODE ] = atoi( argv[++i] ) ;
+    }
+
+    else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
+      a_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "rmtx" ) ) {
+      r_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "pmtx" ) ) {
+      p_mtx_bin_file = argv[++i];
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
@@ -90,25 +106,35 @@ int main (int argc, char ** argv){
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
-
+        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
         return 0;
       }
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
 
       return 0;
     }
   }
 
-  if (mtx_bin_file == NULL){
+  if (a_mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]" << std::endl;
-
+    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
     return 0;
+  }
+  if (cmdline[ CMD_MM_MODE ] == 1 || cmdline[ CMD_MM_MODE ] == 2){
+    if (r_mtx_bin_file == NULL){
+      std::cerr << "Provide a r mtx binary file rmtx rmatrix_file" << std::endl ;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      return 0;
+    }
+    if (p_mtx_bin_file == NULL){
+      std::cerr << "Provide a p mtx binary file pmtx rmatrix_file" << std::endl ;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      return 0;
+    }
   }
 
   idx m = 0, nnzA = 0, n = 0;
@@ -132,7 +158,7 @@ int main (int argc, char ** argv){
       return 0;
     }
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = n = m;
     idx ne = nnzA;
     Kokkos::Threads::print_configuration(std::cout);
@@ -159,16 +185,125 @@ int main (int argc, char ** argv){
     delete [] xadj;
     delete [] adj;
     delete [] ew;
-    /*
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Threads, idx> crsMat_t;
-    crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
-    delete [] xadj;
-    delete [] adj;
-    delete [] ew;
-    */
+
+    if (cmdline[ CMD_MM_MODE ] == 0){
+      std::cout << "MULTIPLYING A*A" << std::endl;
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 1){
+      {
+        std::cout << "MULTIPLYING A*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
 
 
-    run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING R*(AP)" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 2){
+      {
+        std::cout << "MULTIPLYING R*A" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING (RA)*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+
 
     myExecSpace::finalize();
   }
@@ -194,7 +329,7 @@ int main (int argc, char ** argv){
 
     Kokkos::OpenMP::print_configuration(std::cout);
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = n = m;
     idx ne = nnzA;
 
@@ -216,19 +351,178 @@ int main (int argc, char ** argv){
     KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
 
     graph_t static_graph (columns_view, rowmap_view);
-    crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+    crsMat_t crsmat("CrsMatrix", m, values_view, static_graph);
 
     delete [] xadj;
     delete [] adj;
     delete [] ew;
-/*
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::OpenMP, idx> crsMat_t;
-    crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
-    delete [] xadj;
-    delete [] adj;
-    delete [] ew;
-*/
-    run_experiment<myExecSpace, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+
+    if (cmdline[ CMD_MM_MODE ] == 0){
+      std::cout << "MULTIPLYING A*A" << std::endl;
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ]);
+    }else if (cmdline[ CMD_MM_MODE ] == 1){
+      {
+        std::cout << "MULTIPLYING A*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING R*(AP)" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 2){
+      {
+        std::cout << "MULTIPLYING R*A" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING (RA)*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 3){
+      {
+        std::cout << "MULTIPLYING R*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        crsmat = crsmat2;
+
+        std::cout << "MULTIPLYING (RA)*P" << std::endl;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        rowmap_view = row_map_view_t ("rowmap_view", m+1);
+        columns_view = cols_view_t ("colsmap_view", nnzA);
+        values_view = values_view_t ("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        static_graph = graph_t (columns_view, rowmap_view);
+        crsmat2 = crsMat_t ("CrsMatrix2", ncols, values_view, static_graph);
+
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+
 
     myExecSpace::finalize();
   }
@@ -247,7 +541,7 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
-    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, mtx_bin_file);
+    KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = n = m;
     idx ne = nnzA;
 
@@ -288,15 +582,127 @@ int main (int argc, char ** argv){
 
 
     n = m;
-    /*
-    typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda, idx> crsMat_t;
-    crsMat_t crsmat("CrsMatrix", m, n, nnzA, ew, xadj, adj);
-    delete [] xadj;
-    delete [] adj;
-    delete [] ew;
-     */
 
-    run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+
+    if (cmdline[ CMD_MM_MODE ] == 0){
+      std::cout << "MULTIPLYING A*A" << std::endl;
+      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 1){
+
+      {
+        std::cout << "MULTIPLYING A*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING R*(AP)" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+    else if (cmdline[ CMD_MM_MODE ] == 2){
+      {
+        std::cout << "MULTIPLYING R*A" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+      {
+        std::cout << "MULTIPLYING (RA)*P" << std::endl;
+        idx m = 0, nnzA = 0, n = 0;
+        idx *xadj, *adj;
+        wt *ew;
+        KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+
+        row_map_view_t rowmap_view("rowmap_view", m+1);
+        cols_view_t columns_view("colsmap_view", nnzA);
+        values_view_t values_view("values_view", nnzA);
+
+        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        idx ncols = 0;
+        KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
+        ncols += 1;
+
+
+        graph_t static_graph (columns_view, rowmap_view);
+        crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+        delete [] xadj;
+        delete [] adj;
+        delete [] ew;
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+      }
+    }
+
+
+
 
     Kokkos::Cuda::finalize();
     Kokkos::HostSpace::execution_space::finalize();
@@ -311,8 +717,8 @@ int main (int argc, char ** argv){
 
 
 template <typename ExecSpace, typename crsMat_t>
-void run_experiment(
-    crsMat_t crsMat,
+crsMat_t run_experiment(
+    crsMat_t crsMat, crsMat_t crsMat2,
     int algorithm){
 
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
@@ -331,8 +737,14 @@ void run_experiment(
 
 
   const size_t m = crsMat.numRows();
+  const size_t n = crsMat2.numRows();
+  const size_t k = crsMat2.numCols();
 
-  size_t n = m, k = m;
+  std::cout << "m:" << m << " n:" << n << " k:" << k << std::endl;
+  if (n != crsMat.numCols()){
+    std::cout << "crsMat.numCols():" << crsMat.numCols() << " crsMat2.numRows():" << crsMat2.numRows() << std::endl;
+    exit(1);
+  }
 
   switch (algorithm){
   case 0:
@@ -360,8 +772,8 @@ void run_experiment(
       crsMat.graph.row_map,
       crsMat.graph.entries,
       TRANPOSEFIRST,
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
+      crsMat2.graph.row_map,
+      crsMat2.graph.entries,
       TRANPOSESECOND,
       row_mapC,
       entriesC
@@ -369,6 +781,7 @@ void run_experiment(
 
   Kokkos::fence();
   double symbolic_time = timer1.seconds();
+  std::cout << "symbolic_time:" << symbolic_time << std::endl;
   Kokkos::Impl::Timer timer2;
   KokkosKernels::Experimental::Graph::spgemm_numeric(
       &kh,
@@ -380,9 +793,9 @@ void run_experiment(
       crsMat.values,
       TRANPOSEFIRST,
 
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
-      crsMat.values,
+      crsMat2.graph.row_map,
+      crsMat2.graph.entries,
+      crsMat2.values,
       TRANPOSESECOND,
       row_mapC,
       entriesC,
@@ -402,9 +815,9 @@ void run_experiment(
       crsMat.values,
       TRANPOSEFIRST,
 
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
-      crsMat.values,
+      crsMat2.graph.row_map,
+      crsMat2.graph.entries,
+      crsMat2.values,
       TRANPOSESECOND,
       row_mapC,
       entriesC,
@@ -422,6 +835,22 @@ void run_experiment(
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
   std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
+
+
+
+  {
+    for (int i = 0; i < row_mapC.dimension_0() - 1; ++i){
+      auto subentries = Kokkos::subview(entriesC, Kokkos::make_pair(row_mapC(i), row_mapC(i + 1)));
+      Kokkos::sort(subentries);
+      //KokkosKernels::Experimental::Util::print_1Dview(subentries);
+    }
+  }
+
+
+  typename crsMat_t::StaticCrsGraphType static_graph (entriesC, row_mapC);
+  crsMat_t Ccrsmat("CrsMatrixC", k, valuesC, static_graph);
+  return Ccrsmat;
+
 }
 
 

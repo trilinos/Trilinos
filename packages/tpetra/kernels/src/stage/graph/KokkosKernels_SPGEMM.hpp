@@ -199,6 +199,15 @@ namespace Graph{
       break;
 
     case SPGEMM_KK1:
+    {
+      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+      <KernelHandle,
+      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_,
+      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_>
+      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.KokkosSPGEMM_apply(row_mapC, entriesC, valuesC);
+    }
+
     case SPGEMM_DEFAULT:
     case SPGEMM_SERIAL:
     default:
