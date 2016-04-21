@@ -23,6 +23,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         Rectilinear2D.pmgen
         Spherical.pmgen
         Poisson.pmgen
+	pamgenGraphMetricsTest.xml
         pamgenRectilinearTest2D.xml 
         pamgenRectilinearTest3D.xml 
         pamgenSphericalTest.xml 
