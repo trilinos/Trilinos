@@ -80,6 +80,7 @@
 #include "stk_io/StkMeshIoBroker.hpp"
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_unit_test_utils/BulkDataTester.hpp>
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
 #include <stk_mesh/base/MeshUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -5956,7 +5957,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         mesh.modification_begin();
 
-        stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(mesh, elem, nodes, 1+procId, stk::topology::FACE_RANK,
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(mesh, elem, nodes, 1+procId, stk::topology::FACE_RANK,
                 meta.get_topology_root_part(stk::topology::QUAD_4_2D));
 
         EXPECT_TRUE(mesh.is_valid(side));

@@ -468,42 +468,6 @@ get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh,
     return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
 }
 
-
-stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
-        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part)
-{
-    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, sub_topology_nodes);
-
-    if ((ordinalAndPermutation.first  == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL) ||
-        (ordinalAndPermutation.second == stk::mesh::Permutation::INVALID_PERMUTATION))
-    {
-    	stk::mesh::Entity invalid;
-    	invalid = stk::mesh::Entity::InvalidEntity;
-    	return invalid;
-    }
-
-    stk::mesh::Entity side = mesh.get_entity(to_rank, global_sub_topology_id);
-    if (!mesh.is_valid(side))
-    {
-        side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
-        for (unsigned i=0;i<sub_topology_nodes.size();++i)
-        {
-            mesh.declare_relation(side, sub_topology_nodes[i], i);
-        }
-    }
-    else {
-        const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
-        unsigned numNodes = mesh.num_nodes(side);
-        ThrowRequireMsg(sub_topology_nodes.size() == numNodes, "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
-        for(unsigned i=0; i<numNodes; ++i) {
-            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i], "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
-        }
-    }
-
-    mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);
-    return side;
-}
-
 stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
         EntityRank subcell_rank,
         unsigned subcell_identifier,
