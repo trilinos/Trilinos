@@ -46,12 +46,17 @@
 */
 //#include "Teuchos_GlobalMPISession.hpp"
 
-#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_config.h"
+
+#ifdef HAVE_INTREPID2_DEBUG
+#define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+#endif
+
+#include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
 using namespace std;
-using namespace Intrepid2;
 
 namespace Intrepid2 {
 namespace Test {
@@ -71,7 +76,7 @@ namespace Test {
 }
 
   template<typename ValueType, typename DeviceSpaceType>
-  int HGRAD_QUAD_C1_FEM_Test01(const bool verbose) {
+  int HCURL_QUAD_I1_FEM_Test01(const bool verbose) {
 
   typedef ValueType value_type;
 
@@ -113,34 +118,9 @@ namespace Test {
     int errorFlag = 0;
   
 // ------------------------------------------------------------
-// -- Remove all of this once finished refactoring -- //
-  // Define basis and error flag
-  Basis_HCURL_QUAD_I1_FEM<double, FieldContainer<double> > quadBasis;
-  int errorFlag = 0;
-
-  // Initialize throw counter for exception testing
-  int nException     = 0;
-  int throwCounter   = 0;
-
-  // Array with the 4 vertices of the reference Quadrilateral, its center and 4 more points
-  FieldContainer<double> quadNodes(9, 2);
-  quadNodes(0,0) = -1.0;  quadNodes(0,1) = -1.0;  
-  quadNodes(1,0) =  1.0;  quadNodes(1,1) = -1.0;  
-  quadNodes(2,0) =  1.0;  quadNodes(2,1) =  1.0;  
-  quadNodes(3,0) = -1.0;  quadNodes(3,1) =  1.0;  
-  
-  quadNodes(4,0) =  0.0;  quadNodes(4,1) =  0.0;
-  quadNodes(5,0) =  0.0;  quadNodes(5,1) = -0.5;  
-  quadNodes(6,0) =  0.0;  quadNodes(6,1) =  0.5;  
-  quadNodes(7,0) = -0.5;  quadNodes(7,1) =  0.0;    
-  quadNodes(8,0) =  0.5;  quadNodes(8,1) =  0.0;    
-    
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
-// ------------------------------------------------------------
-
   ordinal_type nthrow = 0, ncatch = 0;
   try{
+#ifdef HAVE_INTREPID2_DEBUG
     Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
 
     // Array with the 4 vertices of the reference Quadrilateral, its center and 4 more points
@@ -159,68 +139,77 @@ namespace Test {
 //    vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0), 4 );
     DynRankView vals = DynRankView(work.data(), numFields, numPoints, 4);
 
+{
     // exception #1: GRAD cannot be applied to HCURL functions 
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD), nthrow, ncatch );
+    INTREPID2_TEST_COMMAND( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD), nthrow, ncatch );
 //    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD), throwCounter, nException );
+}
 
-// ------------------------------
-// completed above, pause on below
-// ------------------------------
-
+{
     // exception #2: DIV cannot be applied to HCURL functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
-    vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0) );
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV), throwCounter, nException );
-        
+//    vals.resize(quadBasis.getCardinality(), quadNodes.dimension(0) );
+    vals = DynRankView(work.data(), numFields, numPoints);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_DIV), nthrow, ncatch );
+}
+{
     // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
     // getDofTag() to access invalid array elements thereby causing bounds check exception
     // exception #3
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0), throwCounter, nException );
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0), nthrow, ncatch );
     // exception #4
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), throwCounter, nException );
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), nthrow, ncatch );
     // exception #5
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,1), throwCounter, nException );
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,1), nthrow, ncatch );
     // exception #6
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(12), throwCounter, nException );
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(12), nthrow, ncatch );
     // exception #7
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1), throwCounter, nException );
-    
-#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1), nthrow, ncatch );
+}
+
     // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
     // exception #8: input points array must be of rank-2
-    FieldContainer<double> badPoints1(4, 5, 3);
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
-    
+{
+    DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints1, OPERATOR_VALUE), nthrow, ncatch );
+}
+{
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, quadBasis.getBaseCellTopology().getDimension() + 1);
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
-    
+    DynRankView ConstructWithLabel(badPoints2, 4, spaceDim+1);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints2, OPERATOR_VALUE), nthrow, ncatch );
+}
+{
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE in 2D
-    FieldContainer<double> badVals1(4, 3);
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals1, quadNodes, OPERATOR_VALUE), throwCounter, nException );
- 
-    FieldContainer<double> badCurls1(4,3,2);
+    DynRankView ConstructWithLabel(badVals1, 4, 3);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals1, quadNodes, OPERATOR_VALUE), nthrow, ncatch );
+}
+{
+    DynRankView ConstructWithLabel(badCurls1, 4, 3, 2);
     // exception #11 output values must be of rank-2 for OPERATOR_CURL
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badCurls1, quadNodes, OPERATOR_CURL), throwCounter, nException );
-    
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badCurls1, quadNodes, OPERATOR_CURL), nthrow, ncatch );
+}
+{
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    FieldContainer<double> badVals2(quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals2, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
-    
+//    FieldContainer<double> badVals2(quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
+    DynRankView ConstructWithLabel(badVals2, numFields + 1, numPoints, spaceDim);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals2, quadNodes, OPERATOR_VALUE), nthrow, ncatch ) ;
+}
+{
     // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-    FieldContainer<double> badVals3(quadBasis.getCardinality(), quadNodes.dimension(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals3, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
-
+    DynRankView ConstructWithLabels(badVals3, numFields, numPoints + 1, spaceDim);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals3, quadNodes, OPERATOR_VALUE), nthrow, ncatch ) ;
+}
+{
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-    FieldContainer<double> badVals4(quadBasis.getCardinality(), quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension() - 1);
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals4, quadNodes, OPERATOR_VALUE), throwCounter, nException ) ;
-        
+    DynRankView ConstructWithLabel(badVals4, numFields, numPoints, spaceDim - 1);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals4, quadNodes, OPERATOR_VALUE), nthrow, ncatch ) ;
+}
+{
     // exception #15: D2 cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-    vals.resize(quadBasis.getCardinality(), 
-                quadNodes.dimension(0),  
-                Intrepid2::getDkCardinality(OPERATOR_D2, quadBasis.getBaseCellTopology().getDimension()));
-    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_D2), throwCounter, nException );
+    vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
+    INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_D2), nthrow, ncatch );
+}
 #endif
     
   }
@@ -233,7 +222,7 @@ namespace Test {
   
   // Check if number of thrown exceptions matches the one we expect 
   // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
-  if (throwCounter != nException) {
+  if (nthrow != ncatch) {
     errorFlag++;
     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
   }

@@ -437,13 +437,13 @@ namespace Intrepid2 {
       \param  cellTopo         [in]  - base cell topology on which the basis is defined
       \param  basisCard        [in]  - cardinality of the basis
   */
-  template<typename ouputValueViewType,
+  template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HGRAD_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
-                             const ordinal_tyoe          basisCard );
+                             const ordinal_type          basisCard );
 
   /** \brief  Runtime check of the arguments for the getValues method in an HCURL-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
@@ -458,7 +458,7 @@ namespace Intrepid2 {
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HCURL_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard );
@@ -476,7 +476,7 @@ namespace Intrepid2 {
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HDIV_Args(  /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard );

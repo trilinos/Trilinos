@@ -119,7 +119,7 @@ namespace Intrepid2 {
       const inputPointViewType  _inputPoints;
 
       KOKKOS_INLINE_FUNCTION
-      Functor( /**/ ouputValueViewType outputValues_,
+      Functor( /**/ outputValueViewType outputValues_,
                /**/ inputPointViewType inputPoints_)
         : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
 
@@ -186,6 +186,6 @@ namespace Intrepid2 {
   };
 }// namespace Intrepid2
 
-#include "Intrepid2_HCURL_QUAD_I1_FEMDef.hpp"
+//#include "Intrepid2_HCURL_QUAD_I1_FEMDef.hpp"
 
 #endif

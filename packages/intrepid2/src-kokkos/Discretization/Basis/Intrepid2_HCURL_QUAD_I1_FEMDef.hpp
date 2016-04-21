@@ -121,10 +121,13 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[]  = { 1, 0, 0, 1,
+      const ordinal_type tags[16]  = { 1, 0, 0, 1,
                                      1, 1, 0, 1,
                                      1, 2, 0, 1,
                                      1, 3, 0, 1 };
+
+      // when exec space is device, this wrapping relies on uvm.
+      Kokkos::View<ordinal_type[16], SpT> tagView(tags);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,

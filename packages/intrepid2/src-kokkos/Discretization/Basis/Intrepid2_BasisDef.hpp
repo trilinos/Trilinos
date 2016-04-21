@@ -59,13 +59,13 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
-  template<typename ouputValueViewType,
+  template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HGRAD_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
-                             const ordinal_tyoe          basisCard ) {
+                             const ordinal_type          basisCard ) {
     const auto spaceDim = cellTopo.getDimension();
 
     // Verify inputPoints array
@@ -181,7 +181,7 @@ namespace Intrepid2 {
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HCURL_Args( /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard ) {
@@ -266,7 +266,7 @@ namespace Intrepid2 {
   template<typename outputValueViewType,
            typename inputPointViewType>
   void getValues_HDIV_Args(  /**/  outputValueViewType   outputValues,
-                             const intputPointViewType   inputPoints,
+                             const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology &cellTopo,
                              const ordinal_type          basisCard ) {
