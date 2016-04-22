@@ -148,9 +148,9 @@ import sys
 
 # Abstract, Solver, and StatusTest namespaces
 __all__ = ['Abstract', 'Solver', 'StatusTest']
-import Abstract
-import Solver
-import StatusTest
+from . import Abstract
+from . import Solver
+from . import StatusTest
 %}
 
 // NOX.Epetra namespace
