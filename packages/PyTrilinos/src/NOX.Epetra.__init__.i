@@ -185,6 +185,7 @@ using namespace NOX::Epetra;
 
 // Epetra import
 %import "Epetra.i"
+%#if PY_VERSION_HEX >= 0x03000000
 
 // EpetraExt import
 #ifdef HAVE_NOX_EPETRAEXT
@@ -256,11 +257,15 @@ del sys, op
 
 // NOX::Epetra::Interface imports
 %teuchos_rcp(NOX::Epetra::Interface::Required)
-%import(module="Interface") "NOX_Epetra_Interface_Required.H"
+%import(module="Epetra.Interface") "NOX_Epetra_Interface_Required.H"
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
+%import(module="Epetra.Interface") "NOX_Epetra_Interface_Jacobian.H"
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
+%import(module="Epetra.Interface") "NOX_Epetra_Interface_Preconditioner.H"
+%pythoncode
+{
+  Interface = Epetra.Interface
+}
 
 //////////////////////////////
 // NOX.Epetra.Group support //
@@ -488,10 +493,10 @@ def defaultGroup(nonlinearParameters, initGuess, reqInterface, jacInterface=None
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Extract parameter lists
     printParams = nonlinearParameters["Printing"     ]
@@ -655,10 +660,10 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(jacobian    , PyTrilinos.Epetra.Operator)
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
-        assert isinstance(preconditioner, (PyTrilinos.Epetra.Operator, Epetra.Operator))
+        assert isinstance(preconditioner, PyTrilinos.Epetra.Operator)
 
     # Get the communicator
     comm = initGuess.Comm()
