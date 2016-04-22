@@ -248,6 +248,14 @@ SET_TARGET_PROPERTIES(pytrilinos
   )
 
 #
+# Get the python version
+EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+                        "import sys; print(sys.version[:3])"
+  OUTPUT_VARIABLE PYTHON_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+#
 # Define the PyTrilinos swig setup
 SET(CMAKE_SWIG_FLAGS "")
 GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
@@ -255,14 +263,13 @@ GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
   )
 LIST(APPEND CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
 LIST(APPEND CMAKE_SWIG_FLAGS -noproxydel)
+LIST(APPEND CMAKE_SWIG_FLAGS -relativeimport)
+IF(NOT ${PYTHON_VERSION} VERSION_LESS "3.0")
+  LIST(APPEND CMAKE_SWIG_FLAGS -py3)
+ENDIF(NOT ${PYTHON_VERSION} VERSION_LESS "3.0")
 
 #
 # Determine the install directory
-EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
-                        "import sys; print(sys.version[:3])"
-  OUTPUT_VARIABLE PYTHON_VERSION
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
 SET(PyTrilinos_INSTALL_DIR
   ${PyTrilinos_INSTALL_PREFIX}/lib/python${PYTHON_VERSION}/site-packages/PyTrilinos
   CACHE PATH "The path where PyTrilinos will be installed"
