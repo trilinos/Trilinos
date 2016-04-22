@@ -258,6 +258,8 @@ public:
     nfval = 0, ngrad = 0;
     sm_->run(fval, alpha, nfval, ngrad, *phi, A, B, *test);
     ls_neval += nfval; ls_ngrad += ngrad;
+
+    LineSearch<Real>::setNextInitialAlpha(alpha); 
   }
 };
 

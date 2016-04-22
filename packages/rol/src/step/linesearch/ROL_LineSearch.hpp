@@ -66,6 +66,7 @@ private:
   EDescent            edesc_;
 
   bool useralpha_;
+  bool usePrevAlpha_; // Use the previous step's accepted alpha as an initial guess
   Real alpha0_;
   int maxit_;
   Real c1_;
@@ -94,15 +95,16 @@ public:
     // Enumerations
     edesc_ = StringToEDescent(parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method"));
     econd_ = StringToECurvatureCondition(parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
-    // Linesearc Parameters
-    alpha0_    = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",one);
-    useralpha_ = parlist.sublist("Step").sublist("Line Search").get("User Defined Initial Step Size",false);
-    acceptMin_ = parlist.sublist("Step").sublist("Line Search").get("Accept Linesearch Minimizer",false);
-    maxit_     = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit",20);
-    c1_        = parlist.sublist("Step").sublist("Line Search").get("Sufficient Decrease Tolerance",oem4);
-    c2_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("General Parameter",p9);
-    c3_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Generalized Wolfe Parameter",p6);
-
+    // Linesearch Parameters
+    alpha0_       = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",one);
+    useralpha_    = parlist.sublist("Step").sublist("Line Search").get("User Defined Initial Step Size",false);
+    usePrevAlpha_ = parlist.sublist("Step").sublist("Line Search").get("Use Previous Step Length as Initial Guess",false);
+    acceptMin_    = parlist.sublist("Step").sublist("Line Search").get("Accept Linesearch Minimizer",false);
+    maxit_        = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit",20);
+    c1_           = parlist.sublist("Step").sublist("Line Search").get("Sufficient Decrease Tolerance",oem4);
+    c2_           = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("General Parameter",p9);
+    c3_           = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Generalized Wolfe Parameter",p6);
+ 
     fmin_      = std::numeric_limits<Real>::max();
     alphaMin_  = 0; 
     itcond_    = false;
@@ -119,6 +121,7 @@ public:
       c3_ = std::min(one-c2_,c3_);
     }
   }
+
 
   virtual void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
                            Objective<Real> &obj, BoundConstraint<Real> &con ) {
@@ -151,6 +154,7 @@ public:
       alpha = 0;
       fnew = fold;
     }
+    setNextInitialAlpha(alpha);
   }
  
 
@@ -262,7 +266,7 @@ protected:
                                const Vector<Real> &x, const Vector<Real> &s, 
                                Objective<Real> &obj, BoundConstraint<Real> &con) {
     Real val(1), one(1), half(0.5), p1(1.e-1);
-    if (useralpha_) {
+    if (useralpha_ || usePrevAlpha_ ) {
       val = alpha0_;
     }
     else {
@@ -288,6 +292,12 @@ protected:
     return val;
   }
 
+  void setNextInitialAlpha( Real alpha ) {
+    if( usePrevAlpha_ ) {
+      alpha0_  = alpha; 
+    }
+  }
+
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha,
                      BoundConstraint<Real> &con ) {
 
@@ -297,6 +307,7 @@ protected:
     if ( con.isActivated() ) {
       con.project(xnew);
     }
+
   }
 
   bool useLocalMinimizer() {
