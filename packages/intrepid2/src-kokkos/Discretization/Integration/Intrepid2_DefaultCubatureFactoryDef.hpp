@@ -52,13 +52,13 @@ namespace Intrepid2 {
   template<typename ExecSpaceType>
   Teuchos::RCP<Cubature<ExecSpaceType> > 
   DefaultCubatureFactory::
-  create<ExecSpaceType>(const shards::CellTopology      &cellTopology,
+  create<ExecSpaceType>(const shards::CellTopology       cellTopology,
                         const std::vector<ordinal_type> &degree) {
     
     // Create generic cubature.
     Teuchos::RCP<Cubature<ExecSpaceType> > pickCubature;
 
-    switch (cellTopology.getBaseCellTopologyData()->key) {
+    switch (cellTopology.getBasekey()) {
     case shards::Line<>::key:
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");

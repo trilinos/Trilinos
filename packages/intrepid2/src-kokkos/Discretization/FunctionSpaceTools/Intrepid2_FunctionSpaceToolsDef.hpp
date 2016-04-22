@@ -339,7 +339,7 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>     inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
                       const int                   whichFace,
-                      const shards::CellTopology &parentCell,
+                      const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( inputJac.rank() != 4, std::invalid_argument,
@@ -379,7 +379,7 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<inputJacValueType,  inputJacProperties...>   inputJac,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
                       const int                   whichEdge,
-                      const shards::CellTopology &parentCell,
+                      const shards::CellTopology  parentCell,
                       const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( (inputJac.rank() != 4), std::invalid_argument,
