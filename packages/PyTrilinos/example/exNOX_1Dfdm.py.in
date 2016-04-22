@@ -235,7 +235,7 @@ class MyInterface(NOX.Epetra.Interface.Required):
             if self.__haveBC0: F[ 0] = ou[ 0] - self.bc0
             if self.__haveBC1: F[-1] = ou[-1] - self.bc1
             return True
-        except Exception, e:
+        except Exception as e:
             print("Proc", self.__myPID,
                   "MyInterface.computeF() has thrown an exception:")
             print(str(type(e))[18:-2] + ":", e)

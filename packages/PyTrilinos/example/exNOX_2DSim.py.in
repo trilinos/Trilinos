@@ -96,7 +96,7 @@ class MyProblem(NOX.Epetra.Interface.Required,
         try:
             F[0] = x[0]*x[0] + x[1]*x[1] - 1
             F[1] = x[1]      - x[0]*x[0]
-        except Exception, e:
+        except Exception as e:
             print("Exception in MyProblem.computeF method")
             print(e)
             return False
@@ -107,7 +107,7 @@ class MyProblem(NOX.Epetra.Interface.Required,
             Jac.InsertGlobalValues(0, [ 2*x[0], 2*x[1]], [0,1])
             Jac.InsertGlobalValues(1, [-2*x[0], 1     ], [0,1])
             Jac.FillComplete()
-        except Exception, e:
+        except Exception as e:
             print("Exception in MyProblem.computeJacobian method")
             print(e)
             return False
