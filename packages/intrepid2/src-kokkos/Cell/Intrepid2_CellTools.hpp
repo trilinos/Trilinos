@@ -107,119 +107,6 @@ namespace Intrepid2 {
 
     //============================================================================================//
     //                                                                                            //
-    //                  Validation of input/output arguments for CellTools methods                //
-    //                                                                                            //
-    //============================================================================================//
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::setJacobian
-        \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
-        \param  points            [in]  - rank-2 (P,D) or rank-3 (C,P,D) array required
-        \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-        \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-        \param  cellTopo          [in]  - cell topology with a reference cell required
-    */
-    template<class ArrayJac, class ArrayPoint, class ArrayCell>
-    static void 
-    validateArguments_setJacobian(const ArrayJac    &          jacobian,
-                                  const ArrayPoint  &          points,
-                                  const ArrayCell   &          cellWorkset,
-                                  const int &                  whichCell,
-                                  const shards::CellTopology & cellTopo);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::setJacobianInv
-        \param  jacobianInv       [in]  - rank and dimensions must match jacobian array
-        \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
-    */
-    template<class ArrayJacInv, class ArrayJac>
-    static void
-    validateArguments_setJacobianInv(const ArrayJacInv &  jacobianInv,
-                                     const ArrayJac    &  jacobian);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::setJacobianDet
-        \param  jacobianDet       [in]  - rank = (jacobian rank - 2) required
-        \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
-    */
-    template<class ArrayJacDet, class ArrayJac>
-    static void 
-    validateArguments_setJacobianDetArgs(const ArrayJacDet &  jacobianDet,
-                                         const ArrayJac    &  jacobian);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::mapToPhysicalFrame
-        \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-        \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-        \param  cellTopo          [in]  - cell topology with a reference cell required
-    */
-    template<class ArrayPhysPoint, class ArrayRefPoint, class ArrayCell>
-    static void 
-    validateArguments_mapToPhysicalFrame(const ArrayPhysPoint &        physPoints,
-                                         const ArrayRefPoint  &        refPoints,
-                                         const ArrayCell      &        cellWorkset,
-                                         const shards::CellTopology &  cellTopo,
-                                         const int&                    whichCell);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with default initial guess.
-        \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-        \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-        \param  cellTopo          [in]  - cell topology with a reference cell required
-    */
-    template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
-    static void 
-    validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
-                                          const ArrayPhysPoint &        physPoints,
-                                          const ArrayCell      &        cellWorkset,
-                                          const shards::CellTopology &  cellTopo,
-                                          const int&                    whichCell);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with user-defined initial guess.
-        \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  initGuess         [in]  - rank and dimensions must match those of physPoints
-        \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-        \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-        \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-        \param  cellTopo          [in]  - cell topology with a reference cell required
-    */
-    template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
-    static void 
-    validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
-                                          const ArrayInitGuess &        initGuess,
-                                          const ArrayPhysPoint &        physPoints,
-                                          const ArrayCell      &        cellWorkset,
-                                          const shards::CellTopology &  cellTopo,
-                                          const int&                    whichCell);
-    
-    
-    
-    /** \brief  Validates arguments to Intrepid2::CellTools::checkPointwiseInclusion
-        \param  inCell            [out] - rank-1  (P) array required
-        \param  physPoints        [in]  - rank-2  (P,D) array required
-        \param  cellWorkset       [in]  - rank-3  (C,N,D) array required
-        \param  whichCell         [in]  - 0 <= whichCell < C required
-        \param  cellTopo          [in]  - cell topology with a reference cell required
-    */
-    template<class ArrayIncl, class ArrayPoint, class ArrayCell>
-    static void
-    validateArguments_checkPointwiseInclusion(ArrayIncl        &            inCell,
-                                              const ArrayPoint &            physPoints,
-                                              const ArrayCell  &            cellWorkset,
-                                              const int &                   whichCell,
-                                              const shards::CellTopology &  cell);
-    
-    //============================================================================================//
-    //                                                                                            //
     //          Parametrization coefficients of edges and faces of reference cells                //
     //                                                                                            //
     //============================================================================================//
@@ -1409,7 +1296,123 @@ public:
 
   };
 
+  //============================================================================================//
+  //                                                                                            //
+  //                  Validation of input/output arguments for CellTools methods                //
+  //                                                                                            //
+  //============================================================================================//
+  
+  /** \brief  Validates arguments to Intrepid2::CellTools::setJacobian
+      \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
+      \param  points            [in]  - rank-2 (P,D) or rank-3 (C,P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+      \param  cellTopo          [in]  - cell topology with a reference cell required
+  */
+  template<typename jacobianViewType,
+           typename pointViewType,
+           typename worksetCellViewType>
+  static void
+  CellTools_setJacobianArgs( const jacobianViewType     jacobian,
+                             const pointViewType        points,
+                             const worksetCellViewType  worksetCell,
+                             const shards::CellTopology cellTopo );
+
+  /** \brief  Validates arguments to Intrepid2::CellTools::setJacobianInv
+      \param  jacobianInv       [in]  - rank and dimensions must match jacobian array
+      \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
+  */
+  template<typename jacobianInvViewType,
+           typename jacobianViewType>
+  static void
+  CellTools_setJacobianInvArgs( const jacobianInvViewType jacobianInv,
+                                const jacobianViewType    jacobian );
+  
+  
+  /** \brief  Validates arguments to Intrepid2::CellTools::setJacobianDet
+      \param  jacobianDet       [in]  - rank = (jacobian rank - 2) required
+      \param  jacobian          [in]  - rank-4 (C,P,D,D) array or rank-3 (P,D,D) array required
+  */
+  template<typename jacobianDetViewType,
+           typename jacobianViewType>
+  static void
+  CellTools_setJacobianDetArgs( const jacobianDetViewType jacobianDet,
+                                const jacobianViewType    jacobian );
+
+  
+  /** \brief  Validates arguments to Intrepid2::CellTools::mapToPhysicalFrame
+      \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+      \param  cellTopo          [in]  - cell topology with a reference cell required
+  */
+  template<typename physPointViewType,
+           typename refPointViewType,
+           typename worksetCellViewType>
+  static void
+  CellTools_mapToPhysicalFrameArgs( const physPointViewType    physPoints,
+                                    const refPointViewType     refPoints,
+                                    const worksetCellViewType  worksetCell,
+                                    const shards::CellTopology cellTopo ); 
+  
+  
+  // /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with default initial guess.
+  //     \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+  //     \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+  //     \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+  //     \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+  //     \param  cellTopo          [in]  - cell topology with a reference cell required
+  // */
+  // template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
+  // static void 
+  // validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+  //                                       const ArrayPhysPoint &        physPoints,
+  //                                       const ArrayCell      &        cellWorkset,
+  //                                       const shards::CellTopology &  cellTopo,
+  //                                       const int&                    whichCell);
+  
+  
+  
+  // /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with user-defined initial guess.
+  //     \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+  //     \param  initGuess         [in]  - rank and dimensions must match those of physPoints
+  //     \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+  //     \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+  //     \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+  //     \param  cellTopo          [in]  - cell topology with a reference cell required
+  // */
+  // template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
+  // static void 
+  // validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
+  //                                       const ArrayInitGuess &        initGuess,
+  //                                       const ArrayPhysPoint &        physPoints,
+  //                                       const ArrayCell      &        cellWorkset,
+  //                                       const shards::CellTopology &  cellTopo,
+  //                                       const int&                    whichCell);
+  
+  
+  
+  // /** \brief  Validates arguments to Intrepid2::CellTools::checkPointwiseInclusion
+  //     \param  inCell            [out] - rank-1  (P) array required
+  //     \param  physPoints        [in]  - rank-2  (P,D) array required
+  //     \param  cellWorkset       [in]  - rank-3  (C,N,D) array required
+  //     \param  whichCell         [in]  - 0 <= whichCell < C required
+  //     \param  cellTopo          [in]  - cell topology with a reference cell required
+  // */
+  // template<class ArrayIncl, class ArrayPoint, class ArrayCell>
+  // static void
+  // validateArguments_checkPointwiseInclusion(ArrayIncl        &            inCell,
+  //                                           const ArrayPoint &            physPoints,
+  //                                           const ArrayCell  &            cellWorkset,
+  //                                           const int &                   whichCell,
+  //                                           const shards::CellTopology &  cell);
+  
+  
+
 } 
+
+#include "Intrepid2_CellToolsDocumentation.hpp"
 
 #include "Intrepid2_CellToolsDefValidateArguments.hpp"
 
