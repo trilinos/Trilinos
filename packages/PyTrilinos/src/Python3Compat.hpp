@@ -45,6 +45,9 @@
 
 #include <Python.h>
 
+/* Treat certain Python API functions as macros to maintain
+ * compatibility between Python 2 and Python 3
+ */
 #if PY_VERSION_HEX >= 0x03000000
 
 #define PyClass_Check(obj) PyObject_IsInstance(obj, (PyObject *)&PyType_Type)
@@ -63,6 +66,17 @@
 #define PyString_AS_STRING(x) PyUnicode_AS_STRING(x)
 #define _PyLong_FromSsize_t(x) PyLong_FromSsize_t(x)
 
+#endif
+
+/**********************************************************************/
+
+/* Convert a Python string object to a char*, and work for both Python
+ * 2 and Python 3.
+ */
+#if PY_VERSION_HEX < 0x03000000
+#define convertPyStringToChar(pyobj) PyString_AsString(pyobj)
+#else
+#define convertPyStringToChar(pyobj) PyBytes_AsString(PyUnicode_AsASCIIString(pyobj))
 #endif
 
 #endif
