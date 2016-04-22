@@ -55,6 +55,7 @@
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
+#include "Python3Compat.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Teuchos includes
@@ -63,16 +64,6 @@
 // Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
-
-////////////////////////////////////////////////////////////////////////
-
-// Convert a Python string object to a char*, and work for both Python
-// 2 and Python 3.
-#if PY_VERSION_HEX < 0x03000000
-#define convertPyStringToChar(pyobj) PyString_AsString(pyobj)
-#else
-#define convertPyStringToChar(pyobj) PyBytes_AsString(PyUnicode_AsASCIIString(pyobj))
-#endif
 
 ////////////////////////////////////////////////////////////////////////
 
