@@ -11,6 +11,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         rcbTest.xml
         multiJaggedTest.xml
         GeomGenWeight.txt
+	chacoGraphMetricsTest.xml
         chacoSimple3dTest.xml
         chacoSimpleTest.xml
         chacoVwgtTest.xml    
