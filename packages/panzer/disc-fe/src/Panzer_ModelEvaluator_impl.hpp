@@ -1400,6 +1400,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
    ///////////////////////////////////////////////////////////////////////////////////////
 
    if(totalParameterCount>0) {
+     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
      ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
    }
 }
@@ -1410,6 +1411,8 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
+
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
