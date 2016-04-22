@@ -53,6 +53,7 @@
     </ParameterList>
     
     <ParameterList name="Zoltan2Parameters">
+      <Parameter name="num_global_parts" type="string" value="4"/>
       <Parameter name="algorithm" type="string" value="multijagged"/>
     </ParameterList>
     
