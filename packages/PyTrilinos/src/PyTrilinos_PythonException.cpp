@@ -69,7 +69,7 @@ PythonException::PythonException() :
   // to a char*, and decrement the reference to the python string
   // representation.
   PyObject * msg = PyObject_Str(errorValue);
-  errorMsg       = PyString_AsString(msg);
+  errorMsg       = convertPyStringToChar(msg);
   Py_DECREF(msg);
 }
 

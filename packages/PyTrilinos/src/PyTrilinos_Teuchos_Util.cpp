@@ -97,7 +97,7 @@ bool setPythonParameter(Teuchos::ParameterList & plist,
   // String values
   else if (PyString_Check(value))
   {
-    plist.set(name, std::string(PyString_AsString(value)));
+    plist.set(name, std::string(convertPyStringToChar(value)));
   }
 
   // None object not allowed: this is a python type not usable by
@@ -371,7 +371,7 @@ bool isEquivalent(PyObject                     * dict,
   while (PyDict_Next(dict, &pos, &key, &value))
   {
     if (!PyString_Check(key)) goto fail;
-    name = std::string(PyString_AsString(key));
+    name = std::string(convertPyStringToChar(key));
     if (!plist.isParameter(name)) goto fail;
     if (plist.isSublist(name))
     {
@@ -524,7 +524,7 @@ bool updateParameterListWithPyDict(PyObject                  * dict,
     }
     else
     {
-      name = std::string(PyString_AsString(key));
+      name = std::string(convertPyStringToChar(key));
     }
     if (!setPythonParameter(plist, name, value))
     {

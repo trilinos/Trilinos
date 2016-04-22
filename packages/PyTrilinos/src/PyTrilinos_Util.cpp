@@ -42,11 +42,13 @@
 
 // Do the local includes first to make sure that Python.h is included before
 // any other standard headers, cf. <http://docs.python.org/2/c-api/intro.html#includes>.
+#include "Python3Compat.hpp"
 #include "PyTrilinos_Util.hpp"
 #include "PyTrilinos_PythonException.hpp"
 #include "swigpyrun.h"
 
 // System includes
+#include <iostream>
 #include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////
@@ -181,7 +183,7 @@ CONST char* getStringObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
-  CONST char * result = PyString_AsString(value);
+  CONST char * result = convertPyStringToChar(value);
   if (PyErr_Occurred()) throw PythonException();
   Py_DECREF(value);
   return result;
@@ -195,7 +197,7 @@ CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i
   PyObject * item  = PyTuple_GetItem(tuple, i);
   Py_DECREF(tuple);
   if (!item) throw PythonException();
-  CONST char * result = PyString_AsString(item);
+  CONST char * result = convertPyStringToChar(item);
   Py_DECREF(item);
   if (PyErr_Occurred()) throw PythonException();
   return result;
