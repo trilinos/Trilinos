@@ -165,7 +165,7 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
             if W:
                 W.ReplaceGlobalValues(0, [ 2*x[0]  , 2*x[1]], [0, 1])
                 W.ReplaceGlobalValues(1, [-2*x[0]*d, d     ], [0, 1])
-        except Exception, e:
+        except Exception as e:
             print('\n\nException raised in EpetraModelEval2DSim.evalModel():')
             print(type(e))
             print(e, '\n')
@@ -197,10 +197,6 @@ def main():
 
     #
     # Output the results
-    print()
-    print("d  =", options.d )
-    print("p0 =", options.p0)
-    print("p1 =", options.p1)
     if solveStatus != NOX.StatusTest.Converged:
         print("Nonlinear solver failed to converge")
         print("End Result: TEST FAILED")
