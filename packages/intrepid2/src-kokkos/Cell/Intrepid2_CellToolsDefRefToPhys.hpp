@@ -274,6 +274,71 @@ namespace Intrepid2 {
     }
   }	
 
+  template<class Scalar>
+  template<class ArraySubcellPoint, class ArrayParamPoint>
+  void CellTools<Scalar>::mapToReferenceSubcell(ArraySubcellPoint     &       refSubcellPoints,
+                                                const ArrayParamPoint &       paramPoints,
+                                                const int                     subcellDim,
+                                                const int                     subcellOrd,
+                                                const shards::CellTopology &  parentCell){
+  
+    int cellDim = parentCell.getDimension();
+    index_type numPts  = static_cast<index_type>(paramPoints.dimension(0));
+
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( !(hasReferenceCell(parentCell) ), std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): the specified cell topology does not have a reference cell.");
+  
+    INTREPID2_TEST_FOR_EXCEPTION( !( (1 <= subcellDim) && (subcellDim <= 2 ) ), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-dimensional subcells.");  
+  
+    INTREPID2_TEST_FOR_EXCEPTION( !( (0 <= subcellOrd) && (subcellOrd < (int)parentCell.getSubcellCount(subcellDim) ) ), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): subcell ordinal out of range.");
+  
+    // refSubcellPoints is rank-2 (P,D1), D1 = cell dimension
+    std::string errmsg = ">>> ERROR (Intrepid2::mapToReferenceSubcell):";
+    INTREPID2_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, refSubcellPoints, 2,2), std::invalid_argument, errmsg);
+    INTREPID2_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, refSubcellPoints, 1, cellDim, cellDim), std::invalid_argument, errmsg);
+                    
+    // paramPoints is rank-2 (P,D2) with D2 = subcell dimension
+    INTREPID2_TEST_FOR_EXCEPTION( !requireRankRange(errmsg, paramPoints, 2,2), std::invalid_argument, errmsg);
+    INTREPID2_TEST_FOR_EXCEPTION( !requireDimensionRange(errmsg, paramPoints, 1, subcellDim, subcellDim), std::invalid_argument, errmsg);    
+  
+    // cross check: refSubcellPoints and paramPoints: dimension 0 must match
+    INTREPID2_TEST_FOR_EXCEPTION( !requireDimensionMatch(errmsg, refSubcellPoints, 0,  paramPoints, 0), std::invalid_argument, errmsg);      
+#endif
+  
+  
+    // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
+    const FieldContainer<double>& subcellMap = getSubcellParametrization(subcellDim, parentCell);
+
+    // Apply the parametrization map to every point in parameter domain
+    if(subcellDim == 2) {
+      for(index_type pt = 0; pt < numPts; pt++){
+        double u = paramPoints(pt,0);
+        double v = paramPoints(pt,1);
+      
+        // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
+        for(int  dim = 0; dim < cellDim; dim++){
+          refSubcellPoints(pt, dim) = subcellMap(subcellOrd, dim, 0) + \
+            subcellMap(subcellOrd, dim, 1)*u + \
+            subcellMap(subcellOrd, dim, 2)*v;
+        }
+      }
+    }
+    else if(subcellDim == 1) {    
+      for(index_type pt = 0; pt < numPts; pt++){
+        for(int dim = 0; dim < cellDim; dim++) {
+          refSubcellPoints(pt, dim) = subcellMap(subcellOrd, dim, 0) + subcellMap(subcellOrd, dim, 1)*paramPoints(pt,0);
+        }
+      }
+    }
+    else{
+      INTREPID2_TEST_FOR_EXCEPTION( !( (subcellDim == 1) || (subcellDim == 2) ), std::invalid_argument, 
+                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): method defined only for 1 and 2-subcells");
+    }
+  }
+  
 }
 
 #endif
