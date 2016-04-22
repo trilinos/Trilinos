@@ -256,9 +256,10 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<absArrayValueType,absArrayProperties...>            absArrayViewType;
     typedef          Kokkos::DynRankView<inArrayValueType, inArrayProperties...>             inArrayViewType;
     typedef          FunctorRealSpaceTools::F_absval<absArrayViewType,inArrayViewType>       FunctorType;
+    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType; 
     
     const auto loopSize = inArray.dimension(0);
-    Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(absArray, inArray) );
   }
 
