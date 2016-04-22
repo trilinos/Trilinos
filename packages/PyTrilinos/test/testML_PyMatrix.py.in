@@ -80,7 +80,7 @@ class MLPyMatrixTestCase(unittest.TestCase):
         myPID = self.comm.MyPID()
         # Create Spaces
         n = 10 * self.comm.NumProc()
-        globalRows = range(myPID*10, (myPID+1)*10)
+        globalRows = list(range(myPID*10, (myPID+1)*10))
         rowSpace = ML.Space(n, globalRows)
         globalCols = globalRows[:]
         if myPID > 0:
@@ -115,7 +115,7 @@ class MLPyMatrixTestCase(unittest.TestCase):
     def testGetRowSpace(self):
         "Test ML.PyMatrix GetRowSpace method"
         myPID = self.comm.MyPID()
-        rows = range(myPID*10, (myPID+1)*10)
+        rows = list(range(myPID*10, (myPID+1)*10))
         rowSpace = self.matrix.GetRowSpace()
         self.failUnless(rowSpace.GetMyGlobalElements(), rows)
 
