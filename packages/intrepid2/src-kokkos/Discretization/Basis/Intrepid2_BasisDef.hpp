@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_BASIS_DEF_HPP__
 #define __INTREPID2_BASIS_DEF_HPP__
 
+#include <stdexcept>
+
 namespace Intrepid2 {
 
   //--------------------------------------------------------------------------------------------//
@@ -57,7 +59,6 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
-  
   ///
   ///    functions for orders, cardinality and etc. of differential operators
   ///
