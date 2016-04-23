@@ -49,6 +49,7 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
+#include "Thyra_EpetraLinearOp.hpp"
 
 #include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"

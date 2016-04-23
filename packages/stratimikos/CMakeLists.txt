@@ -6,6 +6,16 @@ TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()
 
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
+# Original behavior was to include ThyraEpetraAdapters as a required dependency.
+# Modify this to make sure that ThyraEpetraAdapters is enabled if Epetra is, and
+# that ThyraTpetraAdapters is enabled if Tpetra is
+IF(${PACKAGE_NAME}_ENABLE_Epetra )
+  SET(${PACKAGE_NAME}_ENABLE_ThyraEpetraAdapters ON)
+ENDIF()
+IF(${PACKAGE_NAME}_ENABLE_Tpetra )
+  SET(${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters ON)
+ENDIF()
+
 ADD_SUBDIRECTORY(adapters)
 
 ADD_SUBDIRECTORY(src)
