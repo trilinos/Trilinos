@@ -47,7 +47,7 @@
 #include "Panzer_STK_ExodusReaderFactory.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-#ifdef HAVE_IOSS 
+#ifdef PANZER_HAVE_IOSS 
 
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
