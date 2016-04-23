@@ -62,6 +62,18 @@
 namespace Intrepid2 {
 
   namespace Test {
+
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    {                                                                   \
+      try {                                                             \
+        S ;                                                             \
+      }                                                                 \
+      catch (std::logic_error err) {                                    \
+        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+        *outStream << err.what() << '\n';                               \
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+      };                                                                \
+    }
     
     template<typename ValueType, typename DeviceSpaceType>
     int ArrayTools_Test02(const bool verbose) {
@@ -86,48 +98,34 @@ namespace Intrepid2 {
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(std::cout, false);
 
       *outStream                                                        \
-			  << "===============================================================================\n" \
-			  << "|                                                                             |\n" \
-			  << "|                       Unit Test (ArrayTools)                                |\n" \
-			  << "|                                                                             |\n" \
-			  << "|     1) Array operations: scalar multiply                                    |\n" \
-			  << "|                                                                             |\n" \
-			  << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-			  << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-			  << "|                                                                             |\n" \
-				<< "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-			  << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-			  << "|                                                                             |\n" \
-			  << "===============================================================================\n";      
-
+        << "===============================================================================\n" \
+        << "|                                                                             |\n" \
+        << "|                       Unit Test (ArrayTools)                                |\n" \
+        << "|                                                                             |\n" \
+        << "|     1) Array operations: scalar multiply                                    |\n" \
+        << "|                                                                             |\n" \
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
+        << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
+        << "|                                                                             |\n" \
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+        << "|                                                                             |\n" \
+        << "===============================================================================\n";      
+      
       typedef RealSpaceTools<DeviceSpaceType> rst;
       typedef ArrayTools<DeviceSpaceType> art; 
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-      #ifdef HAVE_INTREPID2_DEBUG
-  			art atools;
-			#endif
-      #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
-
-      #define INTREPID_TEST_COMMAND( S )                                                                                  \
-      {                                                                                                                   \
-        try {                                                                                                             \
-          S ;                                                                                                             \
-        }                                                                                                                 \
-        catch (std::logic_error err) {                                                                                    \
-            *outStream << "Expected Error ----------------------------------------------------------------\n";            \
-            *outStream << err.what() << '\n';                                                                             \
-            *outStream << "-------------------------------------------------------------------------------" << "\n\n";    \
-        };                                                                                                                \
-      }
-
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      
+      const value_type tol = Parameters::Tolerence*10000.0;
       int errorFlag = 0;
-
+      
       *outStream                                \
         << "\n"
         << "===============================================================================\n" \
         << "| TEST 1: exceptions                                                   |\n" \
         << "===============================================================================\n";
-
+      
       try{
 
       #ifdef HAVE_INTREPID2_DEBUG
@@ -166,57 +164,57 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(a_2, 2);
 
         *outStream << "-> scalarMultiplyDataField:\n";
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_2_2, a_10_2_2, a_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_2_2, a_2_2, a_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_2_2, a_2_2, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2, a_2_2, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2, a_10_3, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_9_2_2_2_2, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_3_2_2_2, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_3_2_2, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_3_2, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_3, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_2, a_10_2, a_10_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_2, a_10_1, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_2_2, a_10_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_2_2, a_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_2_2, a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2, a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2, a_10_3, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_9_2_2_2_2, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_3_2_2_2, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_3_2_2, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_3_2, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_3, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_2, a_10_2, a_10_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_2, a_10_1, a_10_2_2_2_2) );
         //
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_2_2, a_10_2_2, a_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2, a_2_2, a_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2, a_2_2, a_10_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2, a_10_2, a_2_10) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_2, a_9_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_3_2_2_2, a_10_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_3_2_2, a_10_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_3_2, a_10_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_3, a_10_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_2, a_10_2, a_2_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataField(a_10_2_2_2_2, a_10_1, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_2_2, a_10_2_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2, a_2_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2, a_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2, a_10_2, a_2_10) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_2, a_9_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_3_2_2_2, a_10_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_3_2_2, a_10_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_3_2, a_10_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_3, a_10_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_2, a_10_2, a_2_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataField(a_10_2_2_2_2, a_10_1, a_2_2_2_2) );
 
 
         DynRankView ConstructWithLabel(a_2_2_2, 2, 2, 2);
 
         *outStream << "-> scalarMultiplyDataData:\n";
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_2_2, a_10_2_2, a_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_2, a_2_2, a_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_2_2, a_2_2, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2, a_2_2, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2, a_10_3, a_10_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_9_2_2_2, a_10_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_3_2_2, a_10_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_3_2, a_10_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_3, a_10_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_10_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_10_1, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_2_2, a_10_2_2, a_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_2, a_2_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_2_2, a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2, a_2_2, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2, a_10_3, a_10_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_9_2_2_2, a_10_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_3_2_2, a_10_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_3_2, a_10_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_3, a_10_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_10_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_10_1, a_10_2_2_2) );
         //
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_2_2, a_10_2_2, a_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2_2, a_2_2, a_10_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_2_2, a_10_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2, a_2_2, a_10_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_9_2, a_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_3_2_2, a_10_2, a_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_3_2, a_10_2, a_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_3, a_10_2, a_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_10_2, a_2_2_2) );
-        INTREPID_TEST_COMMAND( atools.scalarMultiplyDataData(a_10_2_2_2, a_10_1, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_2_2, a_10_2_2, a_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2_2, a_2_2, a_10_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2, a_2_2, a_10_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_9_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_3_2_2, a_10_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_3_2, a_10_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_3, a_10_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_10_2, a_2_2_2) );
+        INTREPID2_TEST_ERROR_EXPECTED( art::scalarMultiplyDataData(a_10_2_2_2, a_10_1, a_2_2_2) );
       #endif
 
       }
@@ -254,7 +252,7 @@ namespace Intrepid2 {
         DynRankView ConstructWithLabel(outi_c_f_p_d, c, f, p, d1);
         DynRankView ConstructWithLabel(out_c_f_p_d_d, c, f, p, d1, d2);
         DynRankView ConstructWithLabel(outi_c_f_p_d_d, c, f, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
+
 
         // fill with random numbers
         for (auto i=0;i<c;++i) {
@@ -282,7 +280,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p, data_c_p, in_c_f_p);
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -290,21 +288,21 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p_d, data_c_p, in_c_f_p_d);
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property" << rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -313,14 +311,14 @@ namespace Intrepid2 {
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_c_f_p_d_d(0,0)*c*f*p*d1*d2 << "\n\n";
@@ -351,7 +349,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_f_p_d, c, f, p, d1);
 				DynRankView ConstructWithLabel(out_c_f_p_d_d, c, f, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_f_p_d_d, c, f, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
         // fill with random numbers
         for (auto i=0;i<f;++i)
@@ -388,7 +385,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p);
       art::scalarMultiplyDataField(in_c_f_p, data_c_p_one, in_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -396,7 +393,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d);
       art::scalarMultiplyDataField(in_c_f_p_d, data_c_p_one, in_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -404,7 +401,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -412,7 +409,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -421,14 +418,14 @@ namespace Intrepid2 {
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_f_p_d_d(0,0,0,0)*c*f*p*d1*d2 << "\n\n";
@@ -454,7 +451,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_f_p_d, c, f, p, d1);
 				DynRankView ConstructWithLabel(out_c_f_p_d_d, c, f, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_f_p_d_d, c, f, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
 
         // fill with random numbers
@@ -481,28 +477,28 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(out_c_f_p, data_c_p, in_c_f_p, true);
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p, true);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d, data_c_p, in_c_f_p_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d, true);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d, true);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d, true);
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d, true);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -511,14 +507,14 @@ namespace Intrepid2 {
       deep_copy(in_c_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_c_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_c_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_f_p_d_d(0,0,0,0,0)*c*p*f*d1*d2 << "\n\n";
@@ -549,7 +545,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_f_p_d, c, f, p, d1);
 				DynRankView ConstructWithLabel(out_c_f_p_d_d, c, f, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_f_p_d_d, c, f, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
 
         // fill with random numbers
@@ -587,7 +582,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p, datainv_c_p, out_c_f_p, true);
       art::scalarMultiplyDataField(in_c_f_p, data_c_p_one, in_f_p);
       rst::subtract(outi_c_f_p, in_c_f_p);
-      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -595,7 +590,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d, datainv_c_p, out_c_f_p_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d, data_c_p_one, in_f_p_d);
       rst::subtract(outi_c_f_p_d, in_c_f_p_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -603,7 +598,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_p, out_c_f_p_d_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -611,7 +606,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataField(outi_c_f_p_d_d, datainv_c_1, out_c_f_p_d_d, true);
       art::scalarMultiplyDataField(in_c_f_p_d_d, data_c_p_one, in_f_p_d_d);
       rst::subtract(outi_c_f_p_d_d, in_c_f_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -620,14 +615,14 @@ namespace Intrepid2 {
       deep_copy(in_f_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_p, in_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (5): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataField(out_c_f_p_d_d, data_c_1, in_f_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2)/rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataField (6): check result: "
                    << rst::Serial::vectorNorm(out_c_f_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_1(0,0))*in_f_p_d_d(0,0,0,0)*c*p*f*d1*d2 << "\n\n";
@@ -656,7 +651,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_p_d, c, p, d1);
 				DynRankView ConstructWithLabel(out_c_p_d_d, c, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_p_d_d, c, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
 
         for (auto i=0;i<c;++i) {
@@ -678,28 +672,28 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(out_c_p, data_c_p, in_c_p);
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d, data_c_p, in_c_p_d);
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -708,14 +702,14 @@ namespace Intrepid2 {
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p, 5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
@@ -746,7 +740,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_p_d, c, p, d1);
 				DynRankView ConstructWithLabel(out_c_p_d_d, c, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_p_d_d, c, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
         // fill with random numbers
         for (auto i=0;i<c;++i) {
@@ -779,7 +772,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p);
       art::scalarMultiplyDataData(in_c_p, data_c_p_one, in_p);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -787,7 +780,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d);
       art::scalarMultiplyDataData(in_c_p_d, data_c_p_one, in_p_d);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -795,7 +788,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d);
       art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -803,7 +796,7 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d);
       art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -812,14 +805,14 @@ namespace Intrepid2 {
       deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << data_c_p(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << data_c_1(0,0)*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
@@ -845,7 +838,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_p_d, c, p, d1);
 				DynRankView ConstructWithLabel(out_c_p_d_d, c, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_p_d_d, c, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
         // fill with random numbers
         for (auto i=0;i<c;++i) {
@@ -866,28 +858,28 @@ namespace Intrepid2 {
       art::scalarMultiplyDataData(out_c_p, data_c_p, in_c_p, true);
       art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p, true);
       rst::subtract(outi_c_p, in_c_p);
-      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d, data_c_p, in_c_p_d, true);
       art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d, true);
       rst::subtract(outi_c_p_d, in_c_p_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d, true);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d, true);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d, true);
       art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d, true);
       rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+      if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
         errorFlag = -1000;
       }
@@ -896,14 +888,14 @@ namespace Intrepid2 {
       deep_copy(in_c_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_c_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
         errorFlag = -1000;
       }
       art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_c_p_d_d, true);
-      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > zero) {
+      if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
         *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                    << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                    << (1.0/data_c_p(0,0))*in_c_p_d_d(0,0,0,0)*c*p*d1*d2 << "\n\n";
@@ -934,7 +926,6 @@ namespace Intrepid2 {
 				DynRankView ConstructWithLabel(outi_c_p_d, c, p, d1);
 				DynRankView ConstructWithLabel(out_c_p_d_d, c, p, d1, d2);
 				DynRankView ConstructWithLabel(outi_c_p_d_d, c, p, d1, d2);
-        value_type zero = INTREPID_TOL*10000.0;
 
         // fill with random numbers
         for (auto i=0;i<p;++i) {
@@ -966,7 +957,7 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p, datainv_c_p, out_c_p, true);
         art::scalarMultiplyDataData(in_c_p, data_c_p_one, in_p);
         rst::subtract(outi_c_p, in_c_p);
-        if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (1): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -974,7 +965,7 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d, datainv_c_p, out_c_p_d, true);
         art::scalarMultiplyDataData(in_c_p_d, data_c_p_one, in_p_d);
         rst::subtract(outi_c_p_d, in_c_p_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (2): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -982,7 +973,7 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_p, out_c_p_d_d, true);
         art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (3): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -990,7 +981,7 @@ namespace Intrepid2 {
         art::scalarMultiplyDataData(outi_c_p_d_d, datainv_c_1, out_c_p_d_d, true);
         art::scalarMultiplyDataData(in_c_p_d_d, data_c_p_one, in_p_d_d);
         rst::subtract(outi_c_p_d_d, in_c_p_d_d);
-        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > zero) {
+        if (rst::Serial::vectorNorm(outi_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (4): check scalar inverse property\n\n";
           errorFlag = -1000;
         }
@@ -999,14 +990,14 @@ namespace Intrepid2 {
         deep_copy(in_p_d_d, 1.0); deep_copy(data_c_p,5.0); deep_copy(data_c_1, 5.0);
 
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_p, in_p_d_d, true);
-        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > zero) {
+        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (5): check result: "
                      << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                      << (1.0/data_c_p(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
           errorFlag = -1000;
         }
         art::scalarMultiplyDataData(out_c_p_d_d, data_c_1, in_p_d_d, true);
-        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > zero) {
+        if (std::abs(rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) - (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2)/rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) > tol) {
           *outStream << "\n\nINCORRECT scalarMultiplyDataData (6): check result: "
                      << rst::Serial::vectorNorm(out_c_p_d_d, NORM_ONE) << " != "
                      << (1.0/data_c_1(0,0))*in_p_d_d(0,0,0)*c*p*d1*d2 << "\n\n";
@@ -1032,7 +1023,6 @@ namespace Intrepid2 {
 
       // reset format state of std::cout
       std::cout.copyfmt(oldFormatState);
-     Kokkos::finalize();
       return errorFlag;
     }
   }

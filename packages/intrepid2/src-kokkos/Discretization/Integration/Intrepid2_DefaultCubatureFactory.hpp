@@ -57,13 +57,13 @@
 
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
-#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
-#include "Intrepid2_CubatureDirectTetDefault.hpp"
-#include "Intrepid2_CubatureCompositeTet.hpp"
+//#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
+//#include "Intrepid2_CubatureDirectTriDefault.hpp"
+//#include "Intrepid2_CubatureDirectTetDefault.hpp"
+//#include "Intrepid2_CubatureCompositeTet.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
-#include "Intrepid2_CubatureTensorPyr.hpp"
-#include "Intrepid2_CubaturePolygon.hpp"
+//#include "Intrepid2_CubatureTensorPyr.hpp"
+//#include "Intrepid2_CubaturePolygon.hpp"
 
 namespace Intrepid2 {
   
@@ -84,7 +84,7 @@ namespace Intrepid2 {
     */
     template<typename ExecSpaceType>
     static Teuchos::RCP<Cubature<ExecSpace> > 
-    create( const shards::CellTopology      &cellTopology,
+    create( const shards::CellTopology       cellTopology,
             const std::vector<ordinal_type> &degree );
     
     /** \brief Factory method.
@@ -97,7 +97,7 @@ namespace Intrepid2 {
     */
     template<typename ExecSpaceType>
     static Teuchos::RCP<Cubature<ExecSpace> > 
-    create( const shards::CellTopology &cellTopology,
+    create( const shards::CellTopology  cellTopology,
             const ordinal_type          degree );
 
 

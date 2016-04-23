@@ -144,12 +144,14 @@ namespace BaskerNS
   {
     Int          nblks = 0;
 
-
     strong_component(M,nblks,order_btf_array,btf_tabs);
-
     btf_nblks = nblks;
-
     btf_flag = BASKER_TRUE;
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("BTF nblks returned: %d \n", nblks);
+      }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("BTF nblks returned: %d \n", nblks);
@@ -181,6 +183,30 @@ namespace BaskerNS
       }
     printf("\n");
     #endif
+
+    if (Options.verbose == BASKER_TRUE)
+      {
+	//Print first 3 and last 3 
+	printf("BTF tabs: \n");
+	if (nblks < 10)
+	  {
+	    for(Int i=0; i <nblks+1; i++)
+	      {
+		printf("%d, ", btf_tabs(i));
+	      }
+	  }
+	else
+	  {
+	    printf("%d, %d, %d, ...., ",
+		   btf_tabs(0), btf_tabs(1), btf_tabs(2));
+	    printf("%d, %d, %d",
+		   btf_tabs(nblks-3), btf_tabs(nblks-2),
+		   btf_tabs(nblks-1));
+	  }
+	printf("\n");
+      }//if verbose
+ 
+
 
     permute_col(M, order_btf_array);
     permute_row(M, order_btf_array);
@@ -233,6 +259,12 @@ namespace BaskerNS
     //find schedule
     find_btf_schedule(M, nblks, btf_tabs);
 
+
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("BTF Cut: %d \n",
+	       btf_tabs(btf_tabs_offset));
+      }
 
     #ifdef BASKER_DEBUG_ORDER_BTF
     printf("------------BTF CUT: %d --------------\n", 

@@ -51,12 +51,15 @@
 
 #include "Intrepid2_ConfigDefs.hpp"
 
+#include "Shards_CellTopology.hpp"
+#include "Shards_BasicTopologies.hpp"
+
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
-#include "Intrepid2_CellTools.hpp"
+//#include "Intrepid2_CellTools.hpp"
 
 #include "Kokkos_Core.hpp"
 
@@ -69,11 +72,11 @@ namespace Intrepid2 {
       and FE reference space; in addition, provides several function
       transformation utilities.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class FunctionSpaceTools {
   public:
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
    
@@ -86,13 +89,13 @@ namespace Intrepid2 {
         should contain the values of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+        inputVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
         outVals(c,f,p) 
         = \widehat{u}_f\circ F^{-1}_{c}(x_{c,p}) 
-        = \widehat{u}_f(\widehat{x}_p) =  inVals(f,p) \qquad 0\le c < C \,,
+        = \widehat{u}_f(\widehat{x}_p) =  inputVals(f,p) \qquad 0\le c < C \,,
         \f]
         i.e., it simply replicates the values in the user-provided container to every cell. 
         See Section \ref sec_pullbacks for more details about pullbacks. 
@@ -108,13 +111,13 @@ namespace Intrepid2 {
         \endcode
     */
     template<typename outputValValueType, class ...outputValProperties,
-             typename inValValueType,  class ...inValProperties>
+             typename inputValValueType,     class ...inputValProperties>
     static void 
-    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties> outputVals,
-                         const Kokkos::DynRankView<inValValueType, inValProperties>  inVals );
+    HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputVals,
+                         const Kokkos::DynRankView<inputValValueType, inputValProperties...>        inputVals );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
@@ -128,7 +131,7 @@ namespace Intrepid2 {
         should contain the gradients of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p,*) = \nabla\widehat{u}_f(\widehat{x}_p) \,.
+        inputVals(f,p,*) = \nabla\widehat{u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -160,7 +163,7 @@ namespace Intrepid2 {
                         const char transpose = 'T' );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
@@ -174,7 +177,7 @@ namespace Intrepid2 {
         should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+        inputVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -205,7 +208,7 @@ namespace Intrepid2 {
                          const char transpose = 'T' );
     
     /** \brief Transformation of a curl field in the H-curl space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
@@ -219,7 +222,7 @@ namespace Intrepid2 {
         should contain the curls of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p,*) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
+        inputVals(f,p,*) = \nabla\times\widehat{\bf u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -253,7 +256,7 @@ namespace Intrepid2 {
                         const char transpose = 'T' );
 
     /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P,D).
 
@@ -267,7 +270,7 @@ namespace Intrepid2 {
         should contain the values of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
+        inputVals(f,p,*) = \widehat{\bf u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -301,7 +304,7 @@ namespace Intrepid2 {
                         const char transpose = 'T' );
 
     /** \brief Transformation of a divergence field in the H-div space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
 
@@ -315,7 +318,7 @@ namespace Intrepid2 {
         should contain the divergencies of the vector function set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p) = \nabla\cdot\widehat{\bf u}_f(\widehat{x}_p) \,.
+        inputVals(f,p) = \nabla\cdot\widehat{\bf u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -345,7 +348,7 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
-        reference cell, stored in the user-provided container <var><b>inVals</b></var>
+        reference cell, stored in the user-provided container <var><b>inputVals</b></var>
         and indexed by (F,P), into the output container <var><b>outVals</b></var>,
         defined on cells in physical space and indexed by (C,F,P).
 
@@ -359,7 +362,7 @@ namespace Intrepid2 {
         should contain the values of the functions in the set \f$\{\widehat{\bf u}_f\}_{f=0}^{F}\f$ at the 
         reference points:
         \f[
-        inVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
+        inputVals(f,p) = \widehat{u}_f(\widehat{x}_p) \,.
         \f]
         The method returns   
         \f[
@@ -406,9 +409,9 @@ namespace Intrepid2 {
              typename leftValueValueType,   class ...leftValueProperties,
              typename rightValueValueType,  class ...rightValueProperties>
     static void 
-    integrate( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties> outputValues,
-               const Kokkos::DynRankView<leftValueValueType,  leftValueProperties>   leftValues,
-               const Kokkos::DynRankView<rightValueValueType, rightValueProperties>  rightValues,
+    integrate( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<leftValueValueType,  leftValueProperties...>   leftValues,
+               const Kokkos::DynRankView<rightValueValueType, rightValueProperties...>  rightValues,
                const bool sumInto = false);
     
 
@@ -500,10 +503,10 @@ namespace Intrepid2 {
              typename scratchValueType,     class ...scratchProperties>
     static void 
     computeFaceMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
-                        const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
+                        const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>   inputJac,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
                         const int                   whichFace,
-                        const shards::CellTopology &parentCell,
+                        const shards::CellTopology  parentCell,
                         const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch );      
 
     /** \brief   Returns the weighted integration measures \a <b>outVals</b> with dimensions
@@ -550,23 +553,23 @@ namespace Intrepid2 {
     */
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputJacValueType,    class ...inputJacProperties,
-             typename inputWeightValueType, class ...inputWeightPropertes,
-             typename scratchValueType,     class ...scratchPropertes>
+             typename inputWeightValueType, class ...inputWeightProperties,
+             typename scratchValueType,     class ...scratchProperties>
     static void 
-    computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
-                        const Kokkos::DynRankView<inputJacValueTypem,  inputJacProperties...>   inputJac,
-                        const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights,
+    computeEdgeMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
+                        const Kokkos::DynRankView<inputJacValueType,   inputJacProperties...>    inputJac,
+                        const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights,
                         const int                   whichEdge,
-                        const shards::CellTopology &parentCell,
-                        const Kokkos::DynRankView<scratchValueType,    scratchProperties...>    scratch );
+                        const shards::CellTopology  parentCell,
+                        const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch );
 
-    /** \brief   Multiplies fields \a <b>inVals</b> by weighted measures \a <b>inMeasure</b> and
+    /** \brief   Multiplies fields \a <b>inputVals</b> by weighted measures \a <b>inMeasure</b> and
         returns the field array \a <b>outVals</b>; this is a simple redirection to the call
         FunctionSpaceTools::scalarMultiplyDataField.
 
         \param  outVals     [out] - Output array with scaled field values.
         \param  inMeasure    [in] - Input array containing weighted measures.
-        \param  inVals       [in] - Input fields.
+        \param  inputVals       [in] - Input fields.
     */
     template<typename outputValValueType,       class ...outputValProperties,
              typename inputMeasureValueType, class ...inputMeasureProperties,
@@ -654,9 +657,9 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValuetype,    outputDataProperties>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties> inputDataRight,
+    scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValuetype,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const bool reciprocal = false );
     
     /** \brief Dot product of data and fields; please read the description below.
@@ -694,9 +697,9 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
-                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
-                          const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties>  inputFields );
+    dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                          const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                          const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
     
     /** \brief Dot product of data and data; please read the description below.
 
@@ -732,9 +735,9 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
-                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
-                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties> inputDataRight );
+    dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                         const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                         const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
     
     /** \brief Cross or outer product of data and fields; please read the description below.
 
@@ -774,9 +777,9 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    vectorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
-                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
-                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties>  inputFields );
+    vectorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields );
 
     
     /** \brief Cross or outer product of data and data; please read the description below.
@@ -816,9 +819,9 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    vectorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties> inputDataRight );
+    vectorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight );
 
     /** \brief Matrix-vector or matrix-matrix product of data and fields; please read the description below.
 
@@ -874,9 +877,9 @@ namespace Intrepid2 {
              typename inputDataValueType,   class ...inputDataProperties,
              typename inputFieldValueType,  class ...inputFieldProperties>
     static void 
-    tensorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties> outputFields,
-                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties>   inputData,
-                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties>  inputFields,
+    tensorMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+                             const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
+                             const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                              const char transpose = 'N');
     
     /** \brief Matrix-vector or matrix-matrix product of data and data; please read the description below.
@@ -932,9 +935,9 @@ namespace Intrepid2 {
              typename inputDataLeftValueType,  class ...inputDataLeftProperties,
              typename inputDataRightValueType, class ...inputDataRightProperties>
     static void 
-    tensorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties>     outputData,
-                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties>  inputDataLeft,
-                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties> inputDataRight,
+    tensorMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+                            const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
+                            const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                             const char transpose = 'N' );
 
     /** \brief Applies left (row) signs, stored in the user-provided container

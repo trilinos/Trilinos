@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
-\brief  Unit test for the RealSpaceTools class.
+/** \file test_03.cpp
+\brief  Unit test for the ArrayTools class.
 \author Created by Kyungjoo Kim
 */
 

@@ -359,7 +359,11 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
     }
   if(parameterList->isParameter("verbose"))
     {
-      basker->Options.verbose_matrix_out = parameterList->get<bool>("verbose");
+      basker->Options.verbose = parameterList->get<bool>("verbose");
+    }
+  if(parameterList->isParameter("verbose_matrix"))
+    {
+      basker->Options.verbose_matrix_out = parameterList->get<bool>("verbose_matrix");
     }
   if(parameterList->isParameter("matching"))
     {
@@ -414,6 +418,8 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
       pl->set("realloc" , false, 
 	      "Should realloc space if not enough");
       pl->set("verbose", false,
+	      "Information about factoring");
+      pl->set("verbose_matrix", false,
 	      "Give Permuted Matrices");
       pl->set("matching", true,
 	      "Use WC matching (Not Supported)");

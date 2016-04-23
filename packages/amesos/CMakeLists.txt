@@ -119,7 +119,6 @@ TRIBITS_EXCLUDE_FILES(
   src/SuiteSparse/CAMD/Source/amesos_camd_order.c
   src/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
   src/SuiteSparse/CAMD/Source/amesos_camd_valid.c
-  src/SuiteSparse/CCOLAMD/Source/amesos_ccolamd.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_amd.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_analyze.c
   src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_colamd.c

@@ -59,18 +59,19 @@ public:
            Real &b, Real &fb, int &nfval, int &ngrad,
            ScalarFunction<Real> &f,
            ScalarMinimizationStatusTest<Real> &test) const {
+    Real zero(0), one(1);
     Real gx = f.deriv(x); ngrad++;
-    Real c = x, f0 = fx, eps = 1.e-8, d = 0.0, gd = 0.0;
+    Real c = x, f0 = fx, eps = 1.e-8, d = zero, gd = zero;
     for (int i = 0; i < 8; i++) {
-      if (gx >= 0.0) {
+      if (gx >= zero) {
         b = x;
         a = c;
         break;
       }
-      else if (gx < 0.0 && fx > f0+eps) {
+      else if (gx < zero && fx > f0+eps) {
         for (int j = 0; j < 8; j++) {
-          d = (1.0-t)*0.0 + t*x; gd = f.deriv(d); ngrad++;
-          if ( gd >= 0.0 ) {
+          d = (one-t)*zero + t*x; gd = f.deriv(d); ngrad++;
+          if ( gd >= zero ) {
             b = d;
             break;
           }

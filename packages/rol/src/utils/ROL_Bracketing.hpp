@@ -67,10 +67,11 @@ public:
                    Real &b, Real &fb, int &nfval, int &ngrad,
                    ScalarFunction<Real> &f,
                    ScalarMinimizationStatusTest<Real> &test) const {
-    const Real c = 1.618034;
-    const Real eps = ROL_EPSILON<Real>();
-    const Real lim = 100.0;
-    Real r = 0.0, q = 0.0, u = 0.0, v = 0.0, ulim = 0.0, fu = 0.0, gx = ROL_INF<Real>();
+    Real zero(0), half(0.5), one(1);
+    const Real c(1.618034);
+    const Real eps(ROL_EPSILON<Real>());
+    const Real lim(100);
+    Real r = zero, q = zero, u = zero, v = zero, ulim = zero, fu = zero, gx = ROL_INF<Real>();
     bool deriv = false;
     // f(a) is assumed to be greater than or equal to f(b)
     if ( fb > fa ) {
@@ -83,10 +84,10 @@ public:
       }
       r = (b-a)*(fb-fx);
       q = (b-x)*(fb-fa);
-      v = ((q > r) ? 1.0 : -1.0)*std::max(std::abs(q-r),eps);
-      u = b - 0.5*((b-x)*q - (b-a)*r)/v;
+      v = ((q > r) ? one : -one)*std::max(std::abs(q-r),eps);
+      u = b - half*((b-x)*q - (b-a)*r)/v;
       ulim = b + lim*(x-b);
-      if ( (b-u)*(u-x) > 0.0 ) {
+      if ( (b-u)*(u-x) > zero ) {
         fu = f.value(u); nfval++;
         if ( fu < fx ) {
           a = b; fa = fb;
@@ -99,7 +100,7 @@ public:
         }
         u = x + c*(x-b); fu = f.value(u); nfval++;
       }
-      else if ( (x-u)*(u-ulim) > 0.0 ) {
+      else if ( (x-u)*(u-ulim) > zero ) {
         fu = f.value(u); nfval++;
         if ( fu < fx ) {
           b = x; fb = fx;
@@ -107,7 +108,7 @@ public:
           u = x + c*(x-b); fu = f.value(u); nfval++;
         }
       }
-      else if ( (u-ulim)*(ulim-x) > 0.0) {
+      else if ( (u-ulim)*(ulim-x) > zero) {
         u = ulim; fu = f.value(u); nfval++;
       }
       else {

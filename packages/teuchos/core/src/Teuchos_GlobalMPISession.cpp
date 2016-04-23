@@ -51,7 +51,8 @@
 
 #ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
 #  include "Kokkos_Core.hpp"
-#endif
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
+
 
 
 namespace Teuchos {
@@ -61,6 +62,14 @@ bool GlobalMPISession::haveMPIState_ = false;
 bool GlobalMPISession::mpiIsFinalized_ = false;
 int GlobalMPISession::rank_ = 0 ;
 int GlobalMPISession::nProc_ = 1 ;
+
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+
+// We have to invoke the std::vector's constructor here,
+// because it's a class (static) variable.
+std::vector<std::string> GlobalMPISession::argvCopy_;
+
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 
 
 GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
@@ -143,9 +152,38 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 
 #endif
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+  // mfh 15/16 Apr 2016: This is the one chance we get to save the
+  // command-line arguments, so that we can (later) initialize Kokkos
+  // with the correct number of threads as specified by (e.g.,) the
+  // --kokkos-threads command-line argument.  We won't attempt to
+  // initialize Kokkos now, because not all applications want Kokkos.
+  // Some applications may also prefer to initialize Kokkos with their
+  // own thread count.
+  //
+  // NOTE (mfh 15/16 Apr 2016): While static variables are not thread
+  // safe in general, and this is not thread safe in particular, it
+  // only makes sense to GlobalMPISession's constructor on a single
+  // thread per MPI process anyway, because MPI_Init has the same
+  // requirement.
+
+  const int numArgs = *argc;
+  argvCopy_.resize (numArgs);  
+  for (int c = 0; c < numArgs; ++c) {
+    argvCopy_[c] = std::string ((*argv)[c]); // deep copy
+  }
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE
 }
 
+  
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE  
+std::vector<std::string> GlobalMPISession::getArgv ()
+{
+  return argvCopy_;
+}
+#endif // HAVE_TEUCHOSCORE_KOKKOSCORE  
 
+  
 GlobalMPISession::~GlobalMPISession()
 {
 

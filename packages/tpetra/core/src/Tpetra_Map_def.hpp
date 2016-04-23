@@ -715,7 +715,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
-    typedef typename ArrayView<const GO>::size_type size_type;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of indices over the
@@ -1375,7 +1374,6 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
     typedef GlobalOrdinal GO; // convenient abbreviation
-    typedef Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lg_view_type;
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global

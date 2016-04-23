@@ -51,28 +51,19 @@
 
 namespace Intrepid2 {
 
-  template<typename ExecSpaceType>
-  template<typename outputValueType,     class ...outputProperties,
-           typename leftInputValueType,  class ...leftInputProperties,
-           typename rightInputValueType, class ...rightInputProperties>
-  void
-  ArrayTools<ExecSpaceType>::Internal::
-  dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
-               const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
-               const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
-               const bool hasField ) {
-    typedef leftInputValueType value_type;
-
-    struct Functor {
-      Kokkos::DynRankView<outputValueType,    outputProperties...>     _output;
-      Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  _leftInput;
-      Kokkos::DynRankView<rightInputValueType,rightInputProperties...> _rightInput;
+    namespace FunctorArrayTools {
+    template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
+    struct F_dotMultiply {
+      outputViewType _output;
+      leftInputViewType _leftInput;
+      rightInputViewType _rightInput;
       const bool _hasField;
+      typedef typename leftInputViewType::value_type value_type;
 
       KOKKOS_INLINE_FUNCTION
-      Functor(Kokkos::DynRankView<outputValueType,    outputProperties...>     output_,
-              Kokkos::DynRankView<leftInputValueType, leftInputProperties...>  leftInput_,
-              Kokkos::DynRankView<rightInputValueType,rightInputProperties...> rightInput_,
+      F_dotMultiply(outputViewType output_,
+              leftInputViewType leftInput_,
+              rightInputViewType rightInput_,
               const bool hasField_)
         : _output(output_), _leftInput(leftInput_), _rightInput(rightInput_),
           _hasField(hasField_) {}
@@ -115,11 +106,29 @@ namespace Intrepid2 {
         result() = tmp;
       }
     };
+    } //namespace
+
+  template<typename SpT>
+  template<typename outputValueType,     class ...outputProperties,
+           typename leftInputValueType,  class ...leftInputProperties,
+           typename rightInputValueType, class ...rightInputProperties>
+  void
+  ArrayTools<SpT>::Internal::
+  dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+               const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
+               const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
+               const bool hasField ) {
+
+    typedef Kokkos::DynRankView<outputValueType,    outputProperties...>      outputViewType;
+    typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
+    typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
+    typedef FunctorArrayTools::F_dotMultiply<outputViewType, leftInputViewType, rightInputViewType> FunctorType;
+    typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
                                  /**/       output.dimension(0)*output.dimension(1) );
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, Functor(output, leftInput, rightInput, hasField) );
+    Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField) );
   }
 
 
@@ -173,8 +182,8 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION( outputFields.dimension(0) != inputData.dimension(0), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataField): Zeroth dimensions of the fields output and data input containers (number of integration domains) must agree!");
         for (size_type i=2;i<inputData.rank();++i) {
-          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i+1), std::invalid_argument,
-                                          ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i+1) of inputFields");
+          INTREPID2_TEST_FOR_EXCEPTION( inputData.dimension(i) != inputFields.dimension(i), std::invalid_argument,
+                                          ">>> ERROR (ArrayTools::dotMultiplyDataField): inputData dimension (i) does not match to the dimension (i) of inputFields");
         }
       }
     }
@@ -192,7 +201,6 @@ namespace Intrepid2 {
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   ArrayTools<ExecSpaceType>::
   dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
@@ -224,7 +232,7 @@ namespace Intrepid2 {
       } else {
         INTREPID2_TEST_FOR_EXCEPTION( inputDataLeft.rank() < 2 || inputDataLeft.rank() > 4, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Left data input container must have rank 2, 3 or 4.");
-        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.rank() != (inputDataLeft()-1), std::invalid_argument,
+        INTREPID2_TEST_FOR_EXCEPTION( inputDataRight.rank() != (inputDataLeft.rank()-1), std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Right data input container must have rank one less than the rank of left data input container.");
         INTREPID2_TEST_FOR_EXCEPTION( outputData.rank() != 2, std::invalid_argument,
                                         ">>> ERROR (ArrayTools::dotMultiplyDataData): Data output container must have rank 2.");

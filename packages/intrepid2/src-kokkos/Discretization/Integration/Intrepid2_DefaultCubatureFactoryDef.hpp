@@ -52,13 +52,13 @@ namespace Intrepid2 {
   template<typename ExecSpaceType>
   Teuchos::RCP<Cubature<ExecSpaceType> > 
   DefaultCubatureFactory::
-  create<ExecSpaceType>(const shards::CellTopology      &cellTopology,
+  create<ExecSpaceType>(const shards::CellTopology       cellTopology,
                         const std::vector<ordinal_type> &degree) {
     
     // Create generic cubature.
     Teuchos::RCP<Cubature<ExecSpaceType> > pickCubature;
 
-    switch (cellTopology.getBaseCellTopologyData()->key) {
+    switch (cellTopology.getBasekey()) {
     case shards::Line<>::key:
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
@@ -75,10 +75,9 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
-        std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > lineCubs(2);
-        lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[0]));
-        lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
-        pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>(lineCubs));
+        const auto x_line = CubatureDirectLineGauss<ExecSpaceType>(degree[0]);
+        const auto y_line = ( degree[1] == degree[0] ? x_line : CubatureDirectLineGauss<ExecSpaceType>(degree[1]) );
+        pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>( x_line, y_line ));
       }
       break;
 
@@ -102,11 +101,12 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
-        std::vector< Teuchos::RCP< Cubature<ExecSpaceType> > > lineCubs(3);
-        lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[0]));
-        lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[1]));
-        lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGauss<ExecSpaceType>(degree[2]));
-        pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>(lineCubs));
+        const auto x_line = CubatureDirectLineGauss<ExecSpaceType>(degree[0]);
+        const auto y_line = ( degree[1] == degree[0] ? x_line : CubatureDirectLineGauss<ExecSpaceType>(degree[1]) );
+        const auto z_line = ( degree[2] == degree[0] ? x_line : 
+                              degree[2] == degree[1] ? y_line : CubatureDirectLineGauss<ExecSpaceType>(degree[2]) );
+
+        pickCubature = Teuchos::rcp(new CubatureTensor<ExecSpaceType>( x_line, y_line, z_line ));
       }
       break;
 

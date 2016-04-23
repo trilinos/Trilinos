@@ -46,119 +46,133 @@
             Kokkorized by Kyungjoo Kim
 */
 
+#ifndef __INTREPID2_CUBATURE_TENSOR_DEF_HPP__
+#define __INTREPID2_CUBATURE_TENSOR_DEF_HPP__
+
 namespace Intrepid2 {
 
-  template<typename ExecSpaceType>
-  CubatureTensor<ExecSpaceType>::
-  CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
-                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2 ) {
-    numCubatures_ = 2;
-    cubatures_[0] = cubature1;
-    cubatures_[1] = cubature2;
-
-    dimension_ = 0;
-    for (auto i=0;i<numCubatures;++i) {
-      degree_[i]  = cubatures_[i]->getAccuracy();
-      dimension_ += cubatures_[i]->getDimension();
-    }
+  template<typename SpT>
+  template<typename CT0, typename CT1>
+  CubatureTensor<SpT>::
+  CubatureTensor( const CT0 ct0,
+                  const CT1 ct1 ) 
+    : numCubatures_(2),
+      dimension_(ct0.getDimension()+ct1.getDimension()) { 
+    cubatures_[0] = ct0;
+    cubatures_[1] = ct1;
   }
 
 
-  template<typename ExecSpaceType>
-  CubatureTensor<ExecSpaceType>::
-  CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
-                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2,
-                  const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature3 ) {
-    numCubatures_ = 3;
-    cubatures_[0] = cubature1;
-    cubatures_[1] = cubature2;
-    cubatures_[2] = cubature3;
-
-    dimension_ = 0;
-    for (auto i=0;i<numCubatures;++i) {
-      degree_[i]  = cubatures_[i]->getAccuracy();
-      dimension_ += cubatures_[i]->getDimension();
-    }
+  template<typename SpT>
+  template<typename CT0, typename CT1, typename CT2>
+  CubatureTensor<SpT>::
+  CubatureTensor( const CT0 ct0,
+                  const CT1 ct1,
+                  const CT2 ct2 ) 
+    : numCubatures_(3),
+      dimension_(ct0.getDimension()+ct1.getDimension()+ct2.getDimension()) { 
+    cubatures_[0] = ct0;
+    cubatures_[1] = ct1;
+    cubatures_[2] = ct2;
   }
 
 
-  template <typename ExecSpaceType>
+  template<typename SpT>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void 
-  CubatureTensor<ExecSpaceType>::
+  CubatureTensor<SpT>::
   getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < this->getNumPoints() ||
-                                  cubPoints.dimension(1)  < this->getDimension() ||
-                                  cubWeights.dimension(0) < this->getNumPoints(), std::out_of_range,
-                                ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < getNumPoints() ||
+                                  cubPoints.dimension(1)  < getDimension() ||
+                                  cubWeights.dimension(0) < getNumPoints(), std::out_of_range,
+                                  ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
-    typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  PointViewType;
-    typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> WeightViewType; 
+    typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
+    typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeightViewType; 
 
-    PointViewType  tmpPoints [Parameters::MaxDimension];
-    WeightViewType tmpWeights[Parameters::MaxDimension];
+    // mirroring and where the data is problematic... when it becomes a problem, then deal with it.
+    cubPointViewType  tmpPoints [Parameters::MaxDimension];
+    cubWeightViewType tmpWeights[Parameters::MaxDimension];
 
-    // cannot avoid temporary allocation here
+    // this temporary allocation can be member of cubature; for now, let's do this way.
     // this is cubature setup on the reference cell and called for tensor elements.
     for (auto k=0;k<numCubatures_;++k) {
       const auto cub = cubatures_[k];
-      tmpPoints [k] = PointViewType ("CubatureTensor::getCubature::tmpPoints",  cub->getNumPoints, cub->getDimension());
-      tmpWeights[k] = WeightViewType("CubatureTensor::getCubature::tmpWeights", cub->getNumPoints);
-      cub->getCubature(tmpPoints[k], tmpWeights[k]);
+      tmpPoints [k] = cubPointViewType ("CubatureTensor::getCubature::tmpPoints",  cub.getNumPoints(), cub.getDimension());
+      tmpWeights[k] = cubWeightViewType("CubatureTensor::getCubature::tmpWeights", cub.getNumPoints());
+      cub.getCubature(tmpPoints[k], tmpWeights[k]);
     }      
-
-    // reset all weights to 1.0
-    //const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, this->getNumPoints());
-    //Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights, pointRange), 1.0);
-
+    
     {
-      ordinal_type ii = 0;
-      for (auto k=0;k<numCubatures_;++k) {
-        const auto cub  = cubatures_[k];
-        const auto npts = cub->getNumPoints();
-        const auto dim  = cub->getDimension();
-        for (auto i=0;i<npts;++i) 
-          cubWeights(ii++) = 1.0;
-      }
+      const auto npts = getNumPoints();
+      const auto dim = getDimension();
+      
+      const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, npts);
+      const Kokkos::pair<ordinal_type,ordinal_type> dimRange(0, dim);
+      
+      Kokkos::deep_copy(Kokkos::subdynrankview(cubPoints, pointRange, dimRange), 0.0);
+      Kokkos::deep_copy(Kokkos::subdynrankview(cubWeights, pointRange), 1.0);
     }
 
     // when the input containers are device space, this is better computed on host and copy to devices
     // fill tensor cubature
     {
-      ordinal_type offset[Paramters::MaxDimension+1];
-      for (auto k=0;k<numCubatures_;++k) 
-        offset[k+1] = offs[k] + cubatures_[k]->getDimension();
-      
-      ordinal_type ii = 0;
+      ordinal_type offset[Parameters::MaxDimension+1] = {};
       for (auto k=0;k<numCubatures_;++k) {
-        const auto cub  = cubatures_[k];
-        const auto npts = cub->getNumPoints();
-        const auto dim  = cub->getDimension();
-        
-        const auto points  = tmpPoints[k];
-        const auto weights = tmpWeights[k];
-        
-        const auto offs = offset[k];
-        for (auto i=0;i<npts;++i) {
-          for (auto j=0;j<dim;++j) 
-            cubPoints(ii, offs+j) = points(i, j);
-          cubWeights(ii++) *= weighst(i);
-        }
+        offset[k+1] = offset[k] + cubatures_[k].getDimension();
+      }
+      ordinal_type ii = 0, i[3] = {};
+      switch (numCubatures_) {
+      case 2: {
+        const ordinal_type npts[] = { cubatures_[0].getNumPoints(), cubatures_[1].getNumPoints() };
+        const ordinal_type dim [] = { cubatures_[0].getDimension(), cubatures_[1].getDimension() };
+
+        for (i[1]=0;i[1]<npts[1];++i[1])
+          for (i[0]=0;i[0]<npts[0];++i[0]) {
+            for (auto nc=0;nc<2;++nc) {
+              cubWeights(ii) *= tmpWeights[nc](i[nc]);
+              for (auto j=0;j<dim[nc];++j)  
+                cubPoints(ii, offset[nc]+j) = tmpPoints[nc](i[nc], j);
+            }
+            ++ii;
+          }
+        break;
+      }
+      case 3: {
+        const ordinal_type npts[] = { cubatures_[0].getNumPoints(), cubatures_[1].getNumPoints(), cubatures_[2].getNumPoints() };
+        const ordinal_type dim [] = { cubatures_[0].getDimension(), cubatures_[1].getDimension(), cubatures_[1].getDimension() };
+
+        for (i[2]=0;i[2]<npts[2];++i[2])
+          for (i[1]=0;i[1]<npts[1];++i[1])
+            for (i[0]=0;i[0]<npts[0];++i[0]) {
+              for (auto nc=0;nc<3;++nc) {             
+                cubWeights(ii) *= tmpWeights[nc](i[nc]);
+                for (auto j=0;j<dim[nc];++j) 
+                  cubPoints(ii, offset[nc]+j) = tmpPoints[nc](i[nc], j);
+              }
+              ++ii;
+            }
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( numCubatures_ != 2 || numCubatures_ != 3, std::runtime_error,
+                                      ">>> ERROR (CubatureTensor::getCubature): CubatureTensor supports only 2 or 3 component direct cubatures.");
+      }
       }
     }
-  } 
+  }
 
   
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties,
            typename cellCoordValueType, class ...cellCoordProperties>
   void
-  CubatureTensor<ExecSpaceType>::
+  CubatureTensor<SpT>::
   getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
                Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
@@ -167,41 +181,41 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   ordinal_type
-  CubatureTensor<ExecSpaceType>::
+  CubatureTensor<SpT>::
   getNumPoints() const {
     ordinal_type numCubPoints = 1;
     for (auto i=0;i<numCubatures_;++i) 
-      numCubPoints *= cubatures_[i]->getNumPoints();
+      numCubPoints *= cubatures_[i].getNumPoints();
     return numCubPoints;
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   ordinal_type
-  CubatureTensor<ExecSpaceType>::
+  CubatureTensor<SpT>::
   getDimension() const {
     return dimension_;
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   ordinal_type
-  CubatureTensor<ExecSpaceType>::
-  getNumCubature() const {
+  CubatureTensor<SpT>::
+  getNumCubatures() const {
     return numCubatures_;
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   void
-  CubatureTensor<ExecSpaceType>::
-  getAccuracy( ordinal_type &accuracy[Parameters::MaxDimension],
-               ordinal_type &numCubatures ) const { 
-    numCubatures = numCubatures_;
+  CubatureTensor<SpT>::
+  getAccuracy( ordinal_type *accuracy ) const { 
     for (auto i=0;i<numCubatures_;++i) 
-      accuracy[i] = degree_[i];
+      accuracy[i] = cubatures_[i].getAccuracy();
   }
 
 } // end namespace Intrepid2
+
+#endif

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
+/** \file test_04.cpp
 \brief  Unit test for the ArrayTools class.
 \author Created by Kyungjoo Kim
 */

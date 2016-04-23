@@ -58,26 +58,23 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureTensor
       \brief Defines tensor-product cubature (integration) rules in Intrepid.
   */
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class CubatureTensor : public Cubature<ExecSpaceType> {
   private:
-    
-    /** \brief Degree of polynomials that are integrated exactly by
-        each cubature rule within the tensor product.
-    */
-    ordinal_type degree_[Parameters::MaxDimension];
-
-    /** \brief Dimension of integration domain.
-     */
-    ordinal_type dimension_;
 
     /** \brief Array of cubature rules, stored as FieldContainers.
      */
     ordinal_type numCubatures_;
-    Teuchos::RCP<Cubature<ExecSpaceType> > cubatures_[Parameters::MaxDimension];
+
+    CubatureDirect<ExecSpaceType> cubatures_[Parameters::MaxDimension];
+    
+    /** \brief Dimension of integration domain.
+     */
+    ordinal_type dimension_;
   
   public:
 
+    CubatureTensor() = delete;
     ~CubatureTensor() = default;
 
 
@@ -86,8 +83,10 @@ namespace Intrepid2 {
         \param cubature1        [in]     - First direct cubature rule.
         \param cubature2        [in]     - Second direct cubature rule.
     */
-    CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
-                    const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2 );
+    template<typename CubatureType0, 
+             typename CubatureType1>
+    CubatureTensor( const CubatureType0 cubature0,
+                    const CubatureType1 cubature1 );
     
     /** \brief Constructor.
         
@@ -95,9 +94,12 @@ namespace Intrepid2 {
         \param cubature2        [in]     - Second direct cubature rule.
         \param cubature3        [in]     - Third direct cubature rule.
     */
-    CubatureTensor( const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature1,
-                    const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature2,
-                    const Teuchos::RCP<CubatureDirect<ExecSpaceType> > cubature3 );
+    template<typename CubatureType0, 
+             typename CubatureType1,
+             typename CubatureType2>
+    CubatureTensor( const CubatureType0 cubature0,
+                    const CubatureType1 cubature1,
+                    const CubatureType2 cubature2 );
     
     
     /** \brief Returns cubature points and weights
@@ -141,19 +143,13 @@ namespace Intrepid2 {
      */
     const char* getName() const;
 
-    ///
-    /// CubatureTensor specific
-    ///
-
-    /** \brief Returns
-        The return vector has the size of the degree_ vector.
-    */
-    void getNumCubatures() const;
+    /** \brief Return the number of cubatures.
+     */
+    ordinal_type getNumCubatures() const;
     
     /** \brief Returns max. degree of polynomials that are integrated exactly.
-    */
-    void getAccuracy( ordinal_type &accuracy[Parameters::MaxDimension],
-                      ordinal_type &numCubatures ) const;
+     */
+    void getAccuracy( ordinal_type *accuracy ) const;
   };
   
   
