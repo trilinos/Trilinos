@@ -179,8 +179,8 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
             aux = 2. - 4. * r;
             break;
           case 5:
-            outputValues(5, i0) = 1. - 2. * (r + s);
-            outputValues(8, i0) = 1. - 2. * (r + t);
+            outputValues(5, i0) = 2. * (r + s) - 1.;
+            outputValues(8, i0) = 2. * (r + t) - 1.;
             outputValues(9, i0) = 2. * (s + t) - 1.;
             aux = 4. - 4. * (r + s + t);
             break;
