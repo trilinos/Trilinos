@@ -22,7 +22,7 @@ namespace { // (anonymous)
     using std::cerr;
     using std::endl;
 
-    const bool debug = true;
+    const bool debug = false;
     if (debug) {
       cerr << "Tpetra: get command-line arguments for Kokkos wrapper Nodes"
            << endl;
