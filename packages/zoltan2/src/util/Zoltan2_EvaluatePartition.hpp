@@ -112,6 +112,33 @@ public:
       sharedConstructor(ia, p, problemComm, soln, graphModel);
     }
 
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor
+      \param ia the problem input adapter
+      \param problemComm  the problem communicator
+      \param soln  the solution
+      \param graphModel the graph model
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
+    MPI_Comm comm,
+    const PartitioningSolution<Adapter> *soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
+	Teuchos::opaqueWrapper(comm);
+      RCP<const Comm<int> > problemComm =
+	rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+#endif
+
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
    */
