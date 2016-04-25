@@ -52,13 +52,23 @@ void GameofLife::run_game_of_life(int numSteps)
     }
 }
 
+void GameofLife::put_all_nodes_in_nodeset()
+{
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
+    stk::mesh::Part& nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
+    stk::io::put_io_part_attribute(nodeset1Part);
+    for(stk::mesh::Entity node : nodes)
+        m_bulkData.change_entity_parts(node, stk::mesh::PartVector {&nodeset1Part});
+}
+
 void GameofLife::write_mesh()
 {
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
 
     m_bulkData.modification_begin();
 
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
     for(stk::mesh::Entity element : elements)
     {
         if ( *stk::mesh::field_data(m_lifeField, element) != 1)
@@ -70,12 +80,7 @@ void GameofLife::write_mesh()
         }
     }
 
-    stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
-    stk::mesh::Part &nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
-    stk::io::put_io_part_attribute(nodeset1Part);
-    for(stk::mesh::Entity node : nodes)
-        m_bulkData.change_entity_parts(node, stk::mesh::PartVector{&nodeset1Part});
+    put_all_nodes_in_nodeset();
 
     m_bulkData.modification_end();
 

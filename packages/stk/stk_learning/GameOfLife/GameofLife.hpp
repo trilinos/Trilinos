@@ -117,6 +117,7 @@ private:
     virtual void deactivate_element(stk::mesh::Entity elem) = 0;
 
     void write_output_step();
+    void put_all_nodes_in_nodeset();
 };
 
 inline unsigned GameofLife::get_num_elems_on_proc() const
