@@ -83,9 +83,10 @@ namespace Intrepid2 {
         - RCP to cubature with given specifications.
     */
     template<typename ExecSpaceType>
-    static Teuchos::RCP<Cubature<ExecSpace> > 
+    static Teuchos::RCP<Cubature<ExecSpaceType> > 
     create( const shards::CellTopology       cellTopology,
             const std::vector<ordinal_type> &degree );
+
     
     /** \brief Factory method.
 
@@ -96,7 +97,7 @@ namespace Intrepid2 {
         - RCP to cubature with given specifications.
     */
     template<typename ExecSpaceType>
-    static Teuchos::RCP<Cubature<ExecSpace> > 
+    static Teuchos::RCP<Cubature<ExecSpaceType> > 
     create( const shards::CellTopology  cellTopology,
             const ordinal_type          degree );
 
