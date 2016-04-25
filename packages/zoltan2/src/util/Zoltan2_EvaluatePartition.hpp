@@ -82,6 +82,13 @@ private:
   ArrayRCP<GraphMetricValues<scalar_t> > graphMetrics_;
   ArrayRCP<const GraphMetricValues<scalar_t> > graphMetricsConst_;
 
+  void sharedConstructor(const Adapter *ia,
+			 ParameterList *p,
+			 const RCP<const Comm<int> > &problemComm,
+			 const PartitioningSolution<Adapter> *soln,
+			 const RCP<const GraphModel
+			 <typename Adapter::base_adapter_t> > &graphModel);
+
 public:
 
   /*! \brief Constructor
@@ -98,7 +105,12 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null);
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -184,15 +196,14 @@ public:
   }
 };
 
+  // sharedConstructor
   template <typename Adapter>
-  EvaluatePartition<Adapter>::EvaluatePartition(
+  void EvaluatePartition<Adapter>::sharedConstructor(
   const Adapter *ia, 
   ParameterList *p,
   const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel)
 {
   RCP<const Comm<int> > problemComm;
   if (comm == Teuchos::null) {
