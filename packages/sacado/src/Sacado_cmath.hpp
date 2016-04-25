@@ -31,7 +31,6 @@
 #define SACADO_CMATH_HPP
 
 #include <cmath>        // for most math functions
-#include <algorithm>    // for std::min and std::max
 #include "Sacado_ConfigDefs.h"
 
 // Define some math functions that aren't usually in cmath
