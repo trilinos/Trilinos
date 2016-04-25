@@ -52,7 +52,6 @@
 #define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #endif
 
-#include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_CellTools.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
@@ -70,7 +69,7 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };                                                                  
-
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
     /** \brief  Maps the vertices of the subcell parametrization domain to that subcell. 
         
@@ -90,46 +89,50 @@ namespace Intrepid2 {
         \param  subcDim         [in]  - dimension of the subcells whose parametrizations are tested
         \param  outStream       [in]  - output stream to write
     */
-    template<typename ExecSpaceType,
+    template<typename ValueType,
+             typename DeviceSpaceType,
              typename subcParamVertAType,
              typename subcParamVertBType,
              typename tolType,
-             typename outStreamPtrType,
-             void testSubcellParametrizations( int                        &errorFlag,
-                                               const shards::CellTopology  parentCell,
-                                               const subcParamVertAType    subcParamVert_A,
-                                               const subcParamVertBType    subcParamVert_B,
-                                               const int                   subcDim,
-                                               const tolType               tol,
-                                               const outStreamPtrType      outStreamPtr ) {
-      typedef CellTools<ExecSpaceType> ct;
-      
+             typename outStreamPtrType>
+    void testSubcellParametrizations( int                        &errorFlag,
+                                      const shards::CellTopology  parentCell,
+                                      const subcParamVertAType    subcParamVert_A,
+                                      const subcParamVertBType    subcParamVert_B,
+                                      const int                   subcDim,
+                                      const tolType               tol,
+                                      const outStreamPtrType      outStreamPtr ) {
+      typedef CellTools<DeviceSpaceType> ct;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+
       // Get cell dimension and subcell count
       const auto cellDim   = parentCell.getDimension();
       const auto subcCount = parentCell.getSubcellCount(subcDim);
 
       // Storage for correct reference subcell vertices and for the images of the parametrization domain points
       // set the space large enough .... subcell itself can be a cell
-      const ordinal_type maxVertexCount = 256;
-      DynRankView ConstructWithLabel(refSubcellVerticesMax,  maxVertexCount, cellDim);
-      DynRankView ConstructWithLabel(mappedParamVerticesMax, maxVertexCount, cellDim);
+      const ordinal_type maxNodeCount = 256;
+      DynRankView ConstructWithLabel(refSubcellNodesMax,  maxNodeCount, cellDim);
+      DynRankView ConstructWithLabel(mappedParamNodesMax, maxNodeCount, cellDim);
       
       // Loop over subcells of the specified dimension
       for(auto subcOrd=0;subcOrd<subcCount;++subcOrd) {
         const auto subcVertexCount = parentCell.getVertexCount(subcDim, subcOrd);
-        const Kokkos::pair<ordinal_type,ordinal_type> vertexRange(0, subcVertexCount);
+        const auto subcNodeCount = parentCell.getNodeCount(subcDim, subcOrd);
+
+        const Kokkos::pair<ordinal_type,ordinal_type> nodeRange(0, subcNodeCount);
         
-        auto refSubcellVertices  = Kokkos::subdynrankview( refSubcellVerticesMax,  vertexRange, Kokkos::ALL() );
-        auto mappedParamVertices = Kokkos::subdynrankview( mappedParamVerticesMax, vertexRange, Kokkos::ALL() );
+        auto refSubcellNodes  = Kokkos::subdynrankview( refSubcellNodesMax,  nodeRange, Kokkos::ALL() );
+        auto mappedParamNodes = Kokkos::subdynrankview( mappedParamNodesMax, nodeRange, Kokkos::ALL() );
         
         // Retrieve correct reference subcell vertices
-        ct::getReferenceSubcellVertices(refSubcellVertices, subcDim, subcOrd, parentCell);
-        
+        ct::getReferenceSubcellVertices(refSubcellNodes, subcDim, subcOrd, parentCell);
+
         // Map vertices of the parametrization domain to 1 or 2-subcell with ordinal subcOrd
         switch (subcDim) {
         case 1: {
           // For edges parametrization domain is always 1-cube passed as "subcParamVert_A"
-          ct::mapToReferenceSubcell(mappedParamVertices,
+          ct::mapToReferenceSubcell(mappedParamNodes,
                                     subcParamVert_A,
                                     subcDim,
                                     subcOrd,
@@ -139,14 +142,14 @@ namespace Intrepid2 {
         case 2: {
           // For faces need to treat Triangle and Quadrilateral faces separately          
           if (subcVertexCount == 3) // domain "subcParamVert_A" is the standard 2-simplex  
-            ct::mapToReferenceSubcell(mappedParamVertices,
+            ct::mapToReferenceSubcell(mappedParamNodes,
                                       subcParamVert_A,
                                       subcDim,
                                       subcOrd,
                                       parentCell);
 
           else if (subcVertexCount == 4) // Domain "subcParamVert_B" is the standard 2-cube
-            ct::mapToReferenceSubcell(mappedParamVertices,
+            ct::mapToReferenceSubcell(mappedParamNodes,
                                       subcParamVert_B,
                                       subcDim,
                                       subcOrd,
@@ -165,14 +168,16 @@ namespace Intrepid2 {
         }          
         }
         
-        // Compare the images of the parametrization domain vertices with the true vertices.
+        // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
         for (auto subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
           for (auto i=0;i<cellDim;++i)
-            if (std::abs(mappedParamVertices(subcVertOrd, i) - refSubcellVertices(subcVertOrd, i)) < tol) {
+            if (std::abs(mappedParamNodes(subcVertOrd, i) - refSubcellNodes(subcVertOrd, i)) > tol) {
               ++errorFlag; 
-              *outStream 
+              *outStreamPtr 
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
                 << " Cell Topology = " << parentCell.getName() << "\n"
+                << " Mapped vertex = " << mappedParamNodes(subcVertOrd, i) 
+                << " Reference subcell vertex = " << refSubcellNodes(subcVertOrd, i) << "\n"
                 << " Parametrization of subcell " << subcOrd << " which is "
                 << parentCell.getName(subcDim,subcOrd) << " failed for vertex " << subcVertOrd << ":\n"
                 << " parametrization map fails to map correctly coordinate " << i << " of that vertex\n\n";
@@ -223,7 +228,6 @@ namespace Intrepid2 {
   
         typedef CellTools<DeviceSpaceType> ct;
         typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
         const value_type tol = Parameters::Tolerence*100.0;
 
@@ -269,13 +273,13 @@ namespace Intrepid2 {
               if ( allTopologies[topoOrd].getDimension() > 1 && 
                    ct::hasReferenceCell(allTopologies[topoOrd]) ) {
                 *outStream << " Testing edge parametrization for " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations( errorFlag,
-                                             allTopologies[topoOrd],
-                                             cube_1,
-                                             cube_1,
-                                             subcDim,
-                                             tol,
-                                             outStream );
+                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
+                                                                         allTopologies[topoOrd],
+                                                                         cube_1,
+                                                                         cube_1,
+                                                                         subcDim,
+                                                                         tol,
+                                                                         outStream );
               }
           }
     
@@ -292,15 +296,15 @@ namespace Intrepid2 {
             for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) 
               // Test only 3D topologies that have reference cells
               if ( allTopologies[topoOrd].getDimension() > 2 && 
-                   CellTools::hasReferenceCell(allTopologies[topoOrd]) ) {
+                   ct::hasReferenceCell(allTopologies[topoOrd]) ) {
                 *outStream << " Testing face parametrization for cell topology " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations( errorFlag,
-                                             allTopologies[topoOrd],
-                                             simplex_2,
-                                             cube_2,
-                                             subcDim,
-                                             tol,
-                                             outStream );
+                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
+                                                                         allTopologies[topoOrd],
+                                                                         simplex_2,
+                                                                         cube_2,
+                                                                         subcDim,
+                                                                         tol,
+                                                                         outStream );
               }
           }          
         } catch (std::logic_error err) {

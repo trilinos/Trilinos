@@ -1,4 +1,4 @@
-1;2c// @HEADER
+// @HEADER
 // ************************************************************************
 //
 //                           Intrepid2 Package
@@ -66,43 +66,74 @@ namespace Intrepid2 {
   void 
   CellTools<SpT>::
   setReferenceNodeData() {
-    typedef Kokkos::DynRankView<value_type,Kokkos::LayoutRight,Kokkos::HostSpace> dataViewType;
 
-    refNodeData_.line            = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);
-    refNodeData_.line_3          = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);
+    {
+      // create memory on devices
+      refNodeData_.line            = referenceNodeDataViewType("CellTools::ReferenceNodeData::line",       2, 3);
+      refNodeData_.line_3          = referenceNodeDataViewType("CellTools::ReferenceNodeData::line_3",     3, 3);
+      
+      refNodeData_.triangle        = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle",   3, 3);
+      refNodeData_.triangle_4      = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle_4", 4, 3);    
+      refNodeData_.triangle_6      = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle_6", 6, 3);    
+      
+      refNodeData_.quadrilateral   = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad",       4, 3);    
+      refNodeData_.quadrilateral_8 = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad_8",     8, 3);    
+      refNodeData_.quadrilateral_9 = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad_9",     9, 3);
+      
+      refNodeData_.tetrahedron     = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet",        4, 3);    
+      refNodeData_.tetrahedron_8   = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_8",      8, 3);    
+      refNodeData_.tetrahedron_10  = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_10",    10, 3);
+      refNodeData_.tetrahedron_11  = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_11",    11, 3);    
+      
+      refNodeData_.hexahedron      = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex",        8, 3);    
+      refNodeData_.hexahedron_20   = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex_20",    20, 3);
+      refNodeData_.hexahedron_27   = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex_27",    27, 3);    
+      
+      refNodeData_.pyramid         = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr",        5, 3);    
+      refNodeData_.pyramid_13      = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr_13",    13, 3);
+      refNodeData_.pyramid_14      = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr_14",    14, 3);    
+      
+      refNodeData_.wedge           = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge",      6, 3);
+      refNodeData_.wedge_15        = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge_15",  15, 3);    
+      refNodeData_.wedge_18        = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge_18",  18, 3);    
+    }
 
-    refNodeData_.triangle        = dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-    refNodeData_.triangle_4;     = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-    refNodeData_.triangle_6;     = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
+    {
+      // copy static data to devices
+      Kokkos::deep_copy(refNodeData_.line,            referenceNodeDataViewHostType(&refNodeDataStatic_.line[0][0],             2, 3));
+      Kokkos::deep_copy(refNodeData_.line_3,          referenceNodeDataViewHostType(&refNodeDataStatic_.line_3[0][0],           3, 3));
+      
+      Kokkos::deep_copy(refNodeData_.triangle,        referenceNodeDataViewHostType(&refNodeDataStatic_.triangle[0][0],         3, 3));
+      Kokkos::deep_copy(refNodeData_.triangle_4,      referenceNodeDataViewHostType(&refNodeDataStatic_.triangle_4[0][0],       4, 3));    
+      Kokkos::deep_copy(refNodeData_.triangle_6,      referenceNodeDataViewHostType(&refNodeDataStatic_.triangle_6[0][0],       6, 3));    
+      
+      Kokkos::deep_copy(refNodeData_.quadrilateral,   referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral[0][0],    4, 3));    
+      Kokkos::deep_copy(refNodeData_.quadrilateral_8, referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral_8[0][0],  8, 3));    
+      Kokkos::deep_copy(refNodeData_.quadrilateral_9, referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral_9[0][0],  9, 3));
+      
+      Kokkos::deep_copy(refNodeData_.tetrahedron,     referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron[0][0],      4, 3));    
+      Kokkos::deep_copy(refNodeData_.tetrahedron_8,   referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_8[0][0],    8, 3));    
+      Kokkos::deep_copy(refNodeData_.tetrahedron_10,  referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_10[0][0],  10, 3));
+      Kokkos::deep_copy(refNodeData_.tetrahedron_11,  referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_11[0][0],  11, 3));    
+      
+      Kokkos::deep_copy(refNodeData_.hexahedron,      referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron[0][0],       8, 3));    
+      Kokkos::deep_copy(refNodeData_.hexahedron_20,   referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron_20[0][0],   20, 3));
+      Kokkos::deep_copy(refNodeData_.hexahedron_27,   referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron_27[0][0],   27, 3));    
+      
+      Kokkos::deep_copy(refNodeData_.pyramid,         referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid[0][0],          5, 3));    
+      Kokkos::deep_copy(refNodeData_.pyramid_13,      referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid_13[0][0],      13, 3));
+      Kokkos::deep_copy(refNodeData_.pyramid_14,      referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid_14[0][0],      14, 3));    
+      
+      Kokkos::deep_copy(refNodeData_.wedge,           referenceNodeDataViewHostType(&refNodeDataStatic_.wedge[0][0],            6, 3));
+      Kokkos::deep_copy(refNodeData_.wedge_15,        referenceNodeDataViewHostType(&refNodeDataStatic_.wedge_15[0][0],        15, 3));    
+      Kokkos::deep_copy(refNodeData_.wedge_18,        referenceNodeDataViewHostType(&refNodeDataStatic_.wedge_18[0][0],        18, 3));    
+    }
 
-    refNodeData_.quadrilateral;  = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-    refNodeData_.quadrilateral_8;= dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
-    refNodeData_.quadrilateral_9;= dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-
-    refNodeData_.tetrahedron;    = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-    refNodeData_.tetrahedron_8;  = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
-    refNodeData_.tetrahedron_10; = dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-    refNodeData_.tetrahedron_11; = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-
-    refNodeData_.hexahedron;     = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
-    refNodeData_.hexahedron_20;  = dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-    refNodeData_.hexahedron_27;  = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-
-    refNodeData_.pyramid;        = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
-    refNodeData_.pyramid_13;     = dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-    refNodeData_.pyramid_14;     = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-
-    refNodeData_.wedge;          = dataViewType("CellTools::ReferenceNodeData::triangle", 3, 3);
-    refNodeData_.wedge_15;       = dataViewType("CellTools::ReferenceNodeData::line", 2, 3);    
-    refNodeData_.wedge_18;       = dataViewType("CellTools::ReferenceNodeData::line", 3, 3);    
-
-
-
-    Kokkos::deep_copy(refNodeData_.line, dataViewType(&refNodeDataStatic_.line[0][0], 2, 3));
+    isReferenceNodeDataSet_ = true;
   }
 
   template<typename SpT>
-  template<typename cellVertexValueType,...cellVertexProperties>
+  template<typename cellVertexValueType, class ...cellVertexProperties>
   void
   CellTools<SpT>::
   getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices,
@@ -114,6 +145,12 @@ namespace Intrepid2 {
     
     INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > cell.getVertexCount(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertices.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertices.dimension(0) < cell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
 #endif
     getReferenceNode(cellVertices, 
                      cell, 
@@ -122,7 +159,7 @@ namespace Intrepid2 {
     
   
   template<typename SpT>
-  template<typename subcellVertexValueType,...subcellVertexProperties>
+  template<typename subcellVertexValueType, class ...subcellVertexProperties>
   void
   CellTools<SpT>::
   getReferenceSubcellVertices( /**/  Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
@@ -143,7 +180,8 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.rank() != 2, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcellVertieces must have rank 2." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.dimension(0) != parentCell.getVertexCount(subcellDim, subcellOrd), std::invalid_argument, 
+    // need to match to node count as it invokes getReferenceSubcellNodes
+    INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.dimension(0) != parentCell.getNodeCount(subcellDim, subcellOrd), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSubcellVertices): subcellVertieces dimension(0) must match to parent cell vertex count." );
     
     INTREPID2_TEST_FOR_EXCEPTION( subcellVertices.dimension(1) != parentCell.getDimension(), std::invalid_argument, 
@@ -157,7 +195,7 @@ namespace Intrepid2 {
   
 
   template<typename SpT>
-  template<typename cellNodeValueType, typename ...cellNodeProperties>
+  template<typename cellNodeValueType, class ...cellNodeProperties>
   void
   CellTools<SpT>::
   getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNodes,
@@ -170,18 +208,19 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= cell.getNodeCount(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.rank() == 1, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.dimension(0) > Parameters::MaxDimension, std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
+    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.dimension(0) < cell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
 #endif
 
-    if (isReferenceNodeDataSet_) 
+    if (!isReferenceNodeDataSet_) 
       setReferenceNodeData();
 
-    Kokkos::DynRankView<value_type,SpT,Kokkos::MemoryUnmanaged> ref;
-      
+    //Kokkos::DynRankView<value_type,SpT,Kokkos::MemoryUnmanaged> ref;
+    referenceNodeDataViewType ref;
+
     switch (cell.getKey() ) {
     case shards::Line<2>::key:     
     case shards::ShellLine<2>::key:
@@ -226,20 +265,20 @@ namespace Intrepid2 {
     }
     }
     
-    // subview is one thing we can do
+    // subview version; this is dangerous that users get control over the static data
     // cellNodes = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
 
-    // but probably we need to copy the data
-    const auto dim = cellNodes.dimension(0);
+    // let's copy;
+    const auto dim = cell.getDimension();
     for (auto i=0;i<dim;++i) 
       cellNodes(i) = ref(nodeOrd, i);
   }
 
   template<typename SpT>
-  template<typename subcellNodeValueType, typename ...subcellNodeProperties>
+  template<typename subcellNodeValueType, class ...subcellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceSubcellNodes( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> subcellNodes,
+  getReferenceSubcellNodes( /**/  Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                             const ordinal_type         subcellDim,
                             const ordinal_type         subcellOrd,
                             const shards::CellTopology parentCell ) {
@@ -271,9 +310,9 @@ namespace Intrepid2 {
     for (auto subcNodeOrd=0;subcNodeOrd<subcNodeCount;++subcNodeOrd) {      
       // Get the node number relative to the parent reference cell
       const auto cellNodeOrd = parentCell.getNodeMap(subcellDim, subcellOrd, subcNodeOrd);
-      
+
       auto dst = Kokkos::subdynrankview(subcellNodes, subcNodeOrd, Kokkos::ALL());
-      CellTools<SpT>::getReferenceNode(dst, parentCell, cellNodeOrd);
+      getReferenceNode(dst, parentCell, cellNodeOrd);
     }
   }  
   
@@ -611,9 +650,19 @@ namespace Intrepid2 {
 //   }
 
 
-  template<typename ExecSpaceType>
-  const typename CellTools<ExecSpaceType>::ReferenceNodeDataStatic
-  CellTools<ExecSpaceType>::
+  template<typename SpT>
+  bool 
+  CellTools<SpT>::
+  isReferenceNodeDataSet_ = false;
+
+  template<typename SpT>
+  typename CellTools<SpT>::ReferenceNodeData
+  CellTools<SpT>::
+  refNodeData_ = typename CellTools<SpT>::ReferenceNodeData();
+
+  template<typename SpT>
+  const typename CellTools<SpT>::ReferenceNodeDataStatic
+  CellTools<SpT>::
   refNodeDataStatic_ = {    
     // line
     { // 2
@@ -656,7 +705,7 @@ namespace Intrepid2 {
     { // 10
       { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
-    };
+    },
     { // 11
       { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
@@ -681,7 +730,7 @@ namespace Intrepid2 {
       { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0},
       { 0.0, 0.0, 0.0},
       { 0.0, 0.0,-1.0}, { 0.0, 0.0, 1.0}, {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, {0.0,-1.0, 0.0}, {0.0, 1.0, 0.0} 
-    }
+    },
     // pyramid
     { // 5
       {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0}
@@ -711,8 +760,8 @@ namespace Intrepid2 {
       { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0},
       { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}
     }
-  }
-
+  };
+    
 }
 
 #endif
