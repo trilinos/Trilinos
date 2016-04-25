@@ -461,7 +461,7 @@ namespace {
 
 // ========================================================================
 template <typename INT>
-void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
+void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
     assert(sset->type() == Ioss::SIDESET);
 
@@ -543,7 +543,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
 
 // ========================================================================
 template <typename INT>
-void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/)
+void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
   assert(sset->type() == Ioss::SIDESET);
 
@@ -624,24 +624,20 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
   if (stk::io::db_api_int_size(sset) == 4) {
-    int dummy = 0;
-    process_surface_entity(sset, bulk, dummy, behavior);
+    process_surface_entity<int>(sset, bulk, behavior);
   }
   else {
-    int64_t dummy = 0;
-    process_surface_entity(sset, bulk, dummy, behavior);
+    process_surface_entity<int64_t>(sset, bulk, behavior);
   }
 }
 
 void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
 {
   if (stk::io::db_api_int_size(sset) == 4) {
-    int dummy = 0;
-    process_surface_entity_df(sset, bulk, dummy);
+    process_surface_entity_df<int>(sset, bulk);
   }
   else {
-    int64_t dummy = 0;
-    process_surface_entity_df(sset, bulk, dummy);
+    process_surface_entity_df<int64_t>(sset, bulk);
   }
 }
 
@@ -664,9 +660,9 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 
 template <typename INT>
 #ifdef STK_BUILT_IN_SIERRA
-void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 #else
-void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::ParallelMachine comm, INT /*dummy*/)
+void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::ParallelMachine comm)
 #endif
 {
   // This must be called after the "process_element_blocks" call
@@ -736,7 +732,7 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, stk::Pa
 }
 
 template <typename INT>
-void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
@@ -804,7 +800,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
 }
 
 template <typename INT>
-void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
@@ -849,7 +845,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
 }
 
 template <typename INT>
-void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
 
@@ -1000,7 +996,7 @@ void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
 
 // ========================================================================
 template <typename INT>
-void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   // Should only process nodes that have already been defined via the element
   // blocks connectivity lists.
@@ -1036,7 +1032,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
 
 // ========================================================================
 template <typename INT>
-void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
 {
   // Should only process nodes that have already been defined via the element
   // blocks connectivity lists.
@@ -1466,23 +1462,21 @@ namespace stk {
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
         bool ints64bit = db_api_int_size(region) == 8;
         if (ints64bit) {
-          int64_t zero = 0;
 #ifdef STK_BUILT_IN_SIERRA
-          process_nodeblocks(*region,    bulk_data(), zero);
+          process_nodeblocks<int64_t>(*region,    bulk_data());
 #else
-          process_nodeblocks(*region,    bulk_data(), m_communicator, zero);
+          process_nodeblocks<int64_t>(*region,    bulk_data(), m_communicator);
 #endif
-          process_elementblocks(*region, bulk_data(), zero);
-          process_nodesets(*region,      bulk_data(), zero);
+          process_elementblocks<int64_t>(*region, bulk_data());
+          process_nodesets<int64_t>(*region,      bulk_data());
         } else {
-          int zero = 0;
 #ifdef STK_BUILT_IN_SIERRA
-          process_nodeblocks(*region,    bulk_data(), zero);
+          process_nodeblocks<int>(*region,    bulk_data());
 #else
-          process_nodeblocks(*region,    bulk_data(), m_communicator, zero);
+          process_nodeblocks<int>(*region,    bulk_data(), m_communicator);
 #endif
-          process_elementblocks(*region, bulk_data(), zero);
-          process_nodesets(*region,      bulk_data(), zero);
+          process_elementblocks<int>(*region, bulk_data());
+          process_nodesets<int>(*region,      bulk_data());
         }
 
         bulk_data().resolve_node_sharing();
@@ -1521,17 +1515,15 @@ namespace stk {
 
         bool ints64bit = db_api_int_size(region) == 8;
         if (ints64bit) {
-          int64_t zero = 0;
-          process_node_coords_and_attributes(*region, bulk_data(), zero);
-          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
-          process_nodesets_df(*region,      bulk_data(), zero);
+          process_node_coords_and_attributes<int64_t>(*region, bulk_data());
+          process_elem_attributes_and_implicit_ids<int64_t>(*region, bulk_data());
+          process_nodesets_df<int64_t>(*region,      bulk_data());
           process_sidesets_df(*region,      bulk_data());
         }
         else {
-          int zero = 0;
-          process_node_coords_and_attributes(*region, bulk_data(), zero);
-          process_elem_attributes_and_implicit_ids(*region, bulk_data(), zero);
-          process_nodesets_df(*region,      bulk_data(), zero);
+          process_node_coords_and_attributes<int>(*region, bulk_data());
+          process_elem_attributes_and_implicit_ids<int>(*region, bulk_data());
+          process_nodesets_df<int>(*region,      bulk_data());
           process_sidesets_df(*region,      bulk_data());
         }
 
