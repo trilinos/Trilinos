@@ -58,11 +58,25 @@ void GameofLife::write_mesh()
     stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
 
     m_bulkData.modification_begin();
+
     for(stk::mesh::Entity element : elements)
     {
         if ( *stk::mesh::field_data(m_lifeField, element) != 1)
+        {
+            stk::mesh::EntityVector nodes(m_bulkData.begin_nodes(element), m_bulkData.end_nodes(element));
             m_bulkData.destroy_entity(element);
+            for(unsigned j=0; j<nodes.size(); j++)
+                m_bulkData.destroy_entity(nodes[j]);
+        }
     }
+
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
+    stk::mesh::Part &nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
+    stk::io::put_io_part_attribute(nodeset1Part);
+    for(stk::mesh::Entity node : nodes)
+        m_bulkData.change_entity_parts(node, stk::mesh::PartVector{&nodeset1Part});
+
     m_bulkData.modification_end();
 
     stk::unit_test_util::write_mesh_using_stk_io("pic.g", m_bulkData, m_bulkData.parallel());

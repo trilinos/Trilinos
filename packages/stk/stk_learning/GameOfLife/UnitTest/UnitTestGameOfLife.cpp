@@ -1240,7 +1240,7 @@ TEST(PNGGameofLife, 1ProcTiny)
     }
 }
 
-TEST(TOSDTWD, mesh_mesh_from_png)
+TEST(TOSDTWD, mesh_from_png)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
