@@ -56,17 +56,10 @@ protected:
   Real initDensity_;
   Real minDensity_;
   int powerP_;
-  Real xmax_;
-  Real ymax_;
-  Real cx_;
-  Real cy_;
-
-  int loadCase_;
-  std::vector<Real> param_;
   
   std::vector<Teuchos::RCP<Material_SIMP<Real> > >SIMPmaterial_;
-  Teuchos::RCP<const Tpetra::Map<> >    myCellMap_;
   Teuchos::RCP<Tpetra::MultiVector<> >  myDensity_;
+  Teuchos::RCP<Tpetra::MultiVector<> >  myCellArea_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > CBMat0_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > gradgradMats0_;
 
@@ -77,34 +70,18 @@ public:
   virtual void ElasticitySIMP_Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                          const Teuchos::RCP<std::ostream> &outStream) {
-    Real zero(0), one(1), pi(M_PI);
+    Real one(1.0);
     this->Initialize(comm, parlist, outStream);
-
     // new material parameters
     powerP_      = this->parlist_->sublist("ElasticitySIMP").get("SIMP Power", 3);
     initDensity_ = this->parlist_->sublist("ElasticitySIMP").get("Initial Density", one);
     minDensity_  = this->parlist_->sublist("ElasticitySIMP").get("Minimum Density", one);
-
-    // Loading magnitude and angles
-    loadCase_    = this->parlist_->sublist("ElasticitySIMP").get("Load Case", 0);
-    param_.clear(); param_.resize(3);
-    param_[0] = this->parlist_->sublist("ElasticitySIMP").get("Load Magnitude", one);
-    param_[1] = this->parlist_->sublist("ElasticitySIMP").get("Load Polar Angle", -pi);
-    param_[2] = this->parlist_->sublist("ElasticitySIMP").get("Load Azimuth Angle", zero);
-
-    // Domain width and height
-    xmax_        = this->parlist_->sublist("Geometry").get("Width", one);
-    ymax_        = this->parlist_->sublist("Geometry").get("Height", one);
-    int NX       = this->parlist_->sublist("Geometry").get("NX", 1);
-    int NY       = this->parlist_->sublist("Geometry").get("NY", 1);
-    cx_          = one/static_cast<Real>(NX);
-    cy_          = one/static_cast<Real>(NY);
   }
 
 
   virtual void SetSIMPParallelStructure() { 
     PDE_FEM<Real>::SetParallelStructure();
-    myCellMap_ = Teuchos::rcp(new Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+    this->myCellMap_ = Teuchos::rcp(new Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                               this->myCellIds_, 0, this->commPtr_));
   }
 
@@ -113,15 +90,24 @@ public:
   }
 
   Teuchos::RCP<const Tpetra::Map<> > getCellMap() const {
-    return myCellMap_;
+    return this->myCellMap_;
   }
   
   Teuchos::RCP<Tpetra::MultiVector<> > getMaterialDensity() const {
     return myDensity_;
   }
-
+ 
+// return cell measures 
+  Teuchos::RCP<Tpetra::MultiVector<> > getCellAreas() {
+    myCellArea_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
+    for (int i=0; i<this->numCells_; i++){
+    	myCellArea_ -> replaceGlobalValue(this->myCellIds_[i], 0, this->myCellMeasure_[i]);
+    }
+    return myCellArea_;
+  }
+//
   void ApplyBCToVec (const Teuchos::RCP<Tpetra::MultiVector<> > & u) {
-    Real zero(0);
+    Real zero(0.0);
     // u is myOverlapMap_
     for (int i=0; i<this->myDirichletDofs_.size(); ++i) {
       if (this->myOverlapMap_->isNodeGlobalElement(this->myDirichletDofs_[i]))
@@ -130,13 +116,13 @@ public:
   }
 
   void resetMaterialDensity (const Real val) {
-    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(myCellMap_, 1, true));
+    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     myDensity_->putScalar(val);
     renewMaterialVector ();
   }
 
   void updateMaterialDensity (const Teuchos::RCP<const Tpetra::MultiVector<> > & newDensity) {
-    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(myCellMap_, 1, true));
+    myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     Tpetra::deep_copy(*myDensity_, *newDensity);	
     renewMaterialVector ();
   }
@@ -183,7 +169,7 @@ public:
     CBMat0_ 		 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
     this->CBMat_         = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->materialTensorDim_));
     this->NMat_		 = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_));
-    this->NMatWeighted_   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_));
+    this->NMatWeighted_  = Teuchos::rcp(new Intrepid::FieldContainer<Real>(this->numCells_, full_lfs, this->numCubPoints_, this->spaceDim_));
     this->Construct_N_B_mats();
     Construct_CBmats(ifInitial);
     Intrepid::FunctionSpaceTools::integrate<Real>(*this->gradgradMats0_, // compute local grad.grad (stiffness) matrices
@@ -278,139 +264,6 @@ public:
     }
   }
 
-
-  /*virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
-       if(loadCase_==1 && k==0 && x2 > ymax_-0.05 && x1 > xmax_/2-0.05 && x1 < xmax_/2+0.05)
-               return -10.0;
-       else if(loadCase_==2 && k==0 && x2 > ymax_-0.05 && x1 < 0.05)
-               return -10.0;
-       else if(loadCase_==3 && k==1 && x2 > ymax_-0.05 && x1 > xmax_/2-0.05 && x1 < xmax_/2+0.05)
-               return 10.0;
-       else if(loadCase_==4 && k==1 && x2 > ymax_-0.05 && x1 < 0.05)
-               return 10.0;
-       else if(loadCase_==5 && k==0 && x2 > ymax_-0.05)
-               return -2.0;
-       else if(loadCase_==6 && k==1 && x2 > ymax_-0.05)
-               return 2.0;
-       else if(loadCase_==7 && k==0 && x1 > xmax_-0.05)
-               return -2.0;
-       else if(loadCase_==8 && k==1 && x1 > xmax_-0.05)
-               return 2.0;
-       else 
-               return 0.0; 
-  }*/
-
-
-  virtual void funcRHS(std::vector<Real> &F,
-                 const std::vector<Real> &x) const {
-    Real zero(0);
-    Real loadMag = param_[0], loadAngle1 = param_[1], loadAngle2 = param_[2];
-    F.clear(); F.resize(this->spaceDim_,zero);
-    if (this->spaceDim_ == 2) {
-      //Real eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
-      //Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
-      Real cx(0.1), cy(0.05), half(0.5);
-      Real x1 = x[0], x2 = x[1];
-      switch(loadCase_) {
-        case 0: { // Force applied to center of top boundary
-          if ( x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx) &&
-               x2 > ymax_-cy ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 1: { // Force applied to top right corner
-          if ( (x1 > xmax_-cx) &&
-               (x2 > ymax_-cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 2: { // Force applied to center of right boundary
-          if ( (x1 > xmax_-cx) &&
-               (x2 > half*(ymax_-cy) && x2 < half*(ymax_+cy)) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 3: { // Force applied to lower right corner
-          if ( (x1 > xmax_-cx) &&
-               (x2 < cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 4: { // Force applied to center of bottom boundary
-          if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
-               (x2 < cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  virtual void funcRHS(std::vector<Real> &F,
-                 const std::vector<Real> &x,
-                 const std::vector<Real> &param) const {
-    Real zero(0), half(0.5), six(6), ten(10);
-    Real loadMag = std::pow(ten,param[0]), loadAngle1 = M_PI*(param[1]/six - half); // loadAngle2 = param[2];
-    F.clear(); F.resize(this->spaceDim_,zero);
-    if (this->spaceDim_ == 2) {
-      //Real eps(std::sqrt(ROL::ROL_EPSILON<Real>()));
-      //Real cx(2*cx_+eps), cy(2*cy_+eps), half(0.5);
-      Real cx(0.1), cy(0.05), half(0.5);
-      Real x1 = x[0], x2 = x[1];
-      switch(loadCase_) {
-        case 0: { // Force applied to center of top boundary
-          if ( x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx) &&
-               x2 > ymax_-cy ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 1: { // Force applied to top right corner
-          if ( (x1 > xmax_-cx) &&
-               (x2 > ymax_-cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 2: { // Force applied to center of right boundary
-          if ( (x1 > xmax_-cx) &&
-               (x2 > half*(ymax_-cy) && x2 < half*(ymax_+cy)) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 3: { // Force applied to lower right corner
-          if ( (x1 > xmax_-cx) &&
-               (x2 < cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-        case 4: { // Force applied to center of bottom boundary
-          if ( (x1 > half*(xmax_-cx) && x1 < half*(xmax_+cx)) &&
-               (x2 < cy) ) {
-            F[0] = loadMag*std::sin(loadAngle1);
-            F[1] = loadMag*std::cos(loadAngle1);
-          }
-          break;
-        }
-      }
-    }
-  }
 
 }; // class ElasticitySIMPData
 
