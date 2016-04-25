@@ -116,6 +116,49 @@ namespace Intrepid2 {
   class Basis_HCURL_HEX_I1_FEM : public Basis<ExecSpaceType> {
   public:
 
+    template<EOperator opType>
+    struct Serial {
+      template<typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints);
+    };
+
+    template<typename outputValueViewType,
+             typename inputPointViewType,
+             EOperator opType>
+    struct Functor {
+      /**/  outputValueViewType _outputValues;
+      const inputPointViewType  _inputPoints;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor( /**/ ouputValueViewType outputValues_,
+               /**/ inputPointViewType inputPoints_)
+        : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type pt) const {
+        switch (opType) {
+        case OPERATOR_VALUE: 
+        case OPERATOR_CURL:  {
+          auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
+          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
+          Serial<opType>::getValues( output, input );
+          break;
+        }
+        default: {
+          INTREPID_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                   opType != OPERATOR_CURL,
+                                   ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
+          break;
+        }
+        } //end switch
+      }
+
+    };
+
     /** \brief  Constructor.
      */
     Basis_HCURL_HEX_I1_FEM();
@@ -132,12 +175,10 @@ namespace Intrepid2 {
         \param  operatorType      [in]  - operator applied to basis functions    
     */
     template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties,
-             typename scratchValueType,     class ...scratchProperties>
+             typename inputPointValueType,  class ...inputPointProperties>
     void
     getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-               const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
                const EOperator operatorType  = OPERATOR_VALUE ) const;
 
     /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a

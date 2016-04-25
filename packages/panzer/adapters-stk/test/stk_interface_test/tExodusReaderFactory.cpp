@@ -62,7 +62,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 
 namespace panzer_stk_classic {
 

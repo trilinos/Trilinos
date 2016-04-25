@@ -52,6 +52,137 @@
 
 namespace Intrepid2 {
 
+
+  template<typename SpT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HCURL_HEX_I1_FEM<SpT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+
+    switch (opType) {
+    case OPERATOR_VALUE: {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = (1.0 - y)*(1.0 - z)/8.0;
+      output(0, 1) = 0.0;
+      output(0, 2) = 0.0;
+          
+      output(1, 0) = 0.0;
+      output(1, 1) = (1.0 + x)*(1.0 - z)/8.0;
+      output(1, 2) = 0.0;
+          
+      output(2, 0) = -(1.0 + y)*(1.0 - z)/8.0;
+      output(2, 1) = 0.0;
+      output(2, 2) = 0.0;
+          
+      output(3, 0) = 0.0;
+      output(3, 1) = -(1.0 - x)*(1.0 - z)/8.0;
+      output(3, 2) = 0.0;
+          
+      output(4, 0) = (1.0 - y)*(1.0 + z)/8.0;
+      output(4, 1) = 0.0;
+      output(4, 2) = 0.0;
+          
+      output(5, 0) = 0.0;
+      output(5, 1) = (1.0 + x)*(1.0 + z)/8.0;
+      output(5, 2) = 0.0;
+          
+      output(6, 0) = -(1.0 + y)*(1.0 + z)/8.0;
+      output(6, 1) = 0.0;
+      output(6, 2) = 0.0;
+          
+      output(7, 0) = 0.0;
+      output(7, 1) = -(1.0 - x)*(1.0 + z)/8.0;
+      output(7, 2) = 0.0;
+          
+      output(8, 0) = 0.0;
+      output(8, 1) = 0.0;
+      output(8, 2) = (1.0 - x)*(1.0 - y)/8.0;
+          
+      output(9, 0) = 0.0;
+      output(9, 1) = 0.0;
+      output(9, 2) = (1.0 + x)*(1.0 - y)/8.0;
+          
+      output(10, 0) = 0.0;
+      output(10, 1) = 0.0;
+      output(10, 2) = (1.0 + x)*(1.0 + y)/8.0;
+          
+      output(11, 0) = 0.0;
+      output(11, 1) = 0.0;
+      output(11, 2) = (1.0 - x)*(1.0 + y)/8.0;
+      break;
+    }
+    case OPERATOR_CURL: {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+
+      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = 0.0;
+      output(0, 1) = -(1.0 - y)/8.0;
+      output(0, 2) = (1.0 - z)/8.0;
+
+      output(1, 0) = (1.0 + x)/8.0;
+      output(1, 1) = 0.0;
+      output(1, 2) = (1.0 - z)/8.0;
+
+      output(2, 0) = 0.0;
+      output(2, 1) = (1.0 + y)/8.0;
+      output(2, 2) = (1.0 - z)/8.0;
+
+      output(3, 0) = -(1.0 - x)/8.0;
+      output(3, 1) = 0.0;
+      output(3, 2) = (1.0 - z)/8.0;
+
+      output(4, 0) = 0.0;
+      output(4, 1) = (1.0 - y)/8.0;
+      output(4, 2) = (1.0 + z)/8.0;
+
+      output(5, 0) = -(1.0 + x)/8.0;
+      output(5, 1) = 0.0;
+      output(5, 2) = (1.0 + z)/8.0;
+
+      output(6, 0) = 0.0;
+      output(6, 1) = -(1.0 + y)/8.0;
+      output(6, 2) = (1.0 + z)/8.0;
+
+      output(7, 0) = (1.0 - x)/8.0;
+      output(7, 1) = 0.0;
+      output(7, 2) = (1.0 + z)/8.0;
+
+      output(8, 0) = -(1.0 - x)/8.0;
+      output(8, 1) = (1.0 - y)/8.0;
+      output(8, 2) = 0.0;
+
+      output(9, 0) = -(1.0 + x)/8.0;
+      output(9, 1) = -(1.0 - y)/8.0;
+      output(9, 2) = 0.0;
+
+      output(10, 0) = (1.0 + x)/8.0;
+      output(10, 1) = -(1.0 + y)/8.0;
+      output(10, 2) = 0.0;
+
+      output(11, 0) = (1.0 - x)/8.0;
+      output(11, 1) = (1.0 + y)/8.0;
+      output(11, 2) = 0.0;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_CURL, 
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::Serial::getValues) operator is not supported");
+    }
+    } //end switch
+
+  }
+
   template<typename ExecSpaceType>
   Basis_HCURL_HEX_I1_FEM<ExecSpaceType>::
   Basis_HCURL_HEX_I1_FEM() {
@@ -126,126 +257,13 @@ namespace Intrepid2 {
   
     switch (operatorType) {
     case OPERATOR_VALUE: {
-      struct FunctorValue : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = _inputPoints(i0, 0);
-          const auto y = _inputPoints(i0, 1);
-          const auto z = _inputPoints(i0, 2);
-
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-          _outputValues(0, i0, 0) = (1.0 - y)*(1.0 - z)/8.0;
-          _outputValues(0, i0, 1) = 0.0;
-          _outputValues(0, i0, 2) = 0.0;
-          
-          _outputValues(1, i0, 0) = 0.0;
-          _outputValues(1, i0, 1) = (1.0 + x)*(1.0 - z)/8.0;
-          _outputValues(1, i0, 2) = 0.0;
-          
-          _outputValues(2, i0, 0) = -(1.0 + y)*(1.0 - z)/8.0;
-          _outputValues(2, i0, 1) = 0.0;
-          _outputValues(2, i0, 2) = 0.0;
-          
-          _outputValues(3, i0, 0) = 0.0;
-          _outputValues(3, i0, 1) = -(1.0 - x)*(1.0 - z)/8.0;
-          _outputValues(3, i0, 2) = 0.0;
-          
-          _outputValues(4, i0, 0) = (1.0 - y)*(1.0 + z)/8.0;
-          _outputValues(4, i0, 1) = 0.0;
-          _outputValues(4, i0, 2) = 0.0;
-          
-          _outputValues(5, i0, 0) = 0.0;
-          _outputValues(5, i0, 1) = (1.0 + x)*(1.0 + z)/8.0;
-          _outputValues(5, i0, 2) = 0.0;
-          
-          _outputValues(6, i0, 0) = -(1.0 + y)*(1.0 + z)/8.0;
-          _outputValues(6, i0, 1) = 0.0;
-          _outputValues(6, i0, 2) = 0.0;
-          
-          _outputValues(7, i0, 0) = 0.0;
-          _outputValues(7, i0, 1) = -(1.0 - x)*(1.0 + z)/8.0;
-          _outputValues(7, i0, 2) = 0.0;
-          
-          _outputValues(8, i0, 0) = 0.0;
-          _outputValues(8, i0, 1) = 0.0;
-          _outputValues(8, i0, 2) = (1.0 - x)*(1.0 - y)/8.0;
-          
-          _outputValues(9, i0, 0) = 0.0;
-          _outputValues(9, i0, 1) = 0.0;
-          _outputValues(9, i0, 2) = (1.0 + x)*(1.0 - y)/8.0;
-          
-          _outputValues(10, i0, 0) = 0.0;
-          _outputValues(10, i0, 1) = 0.0;
-          _outputValues(10, i0, 2) = (1.0 + x)*(1.0 + y)/8.0;
-          
-          _outputValues(11, i0, 0) = 0.0;
-          _outputValues(11, i0, 1) = 0.0;
-          _outputValues(11, i0, 2) = (1.0 - x)*(1.0 + y)/8.0;
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorValue(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }      
     case OPERATOR_CURL: {
-      struct FunctorCurl : FunctorBaseWithoutScratch<outputValueViewType,inputPointViewType> {
-        KOKKOS_INLINE_FUNCTION
-        void operator()(const size_type i0) const {
-          const auto x = _inputPoints(i0,0);
-          const auto y = _inputPoints(i0,1);
-          const auto z = _inputPoints(i0,2);
-
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-          _outputValues(0, i0, 0) = 0.0;
-          _outputValues(0, i0, 1) = -(1.0 - y)/8.0;
-          _outputValues(0, i0, 2) = (1.0 - z)/8.0;
-
-          _outputValues(1, i0, 0) = (1.0 + x)/8.0;
-          _outputValues(1, i0, 1) = 0.0;
-          _outputValues(1, i0, 2) = (1.0 - z)/8.0;
-
-          _outputValues(2, i0, 0) = 0.0;
-          _outputValues(2, i0, 1) = (1.0 + y)/8.0;
-          _outputValues(2, i0, 2) = (1.0 - z)/8.0;
-
-          _outputValues(3, i0, 0) = -(1.0 - x)/8.0;
-          _outputValues(3, i0, 1) = 0.0;
-          _outputValues(3, i0, 2) = (1.0 - z)/8.0;
-
-          _outputValues(4, i0, 0) = 0.0;
-          _outputValues(4, i0, 1) = (1.0 - y)/8.0;
-          _outputValues(4, i0, 2) = (1.0 + z)/8.0;
-
-          _outputValues(5, i0, 0) = -(1.0 + x)/8.0;
-          _outputValues(5, i0, 1) = 0.0;
-          _outputValues(5, i0, 2) = (1.0 + z)/8.0;
-
-          _outputValues(6, i0, 0) = 0.0;
-          _outputValues(6, i0, 1) = -(1.0 + y)/8.0;
-          _outputValues(6, i0, 2) = (1.0 + z)/8.0;
-
-          _outputValues(7, i0, 0) = (1.0 - x)/8.0;
-          _outputValues(7, i0, 1) = 0.0;
-          _outputValues(7, i0, 2) = (1.0 + z)/8.0;
-
-          _outputValues(8, i0, 0) = -(1.0 - x)/8.0;
-          _outputValues(8, i0, 1) = (1.0 - y)/8.0;
-          _outputValues(8, i0, 2) = 0.0;
-
-          _outputValues(9, i0, 0) = -(1.0 + x)/8.0;
-          _outputValues(9, i0, 1) = -(1.0 - y)/8.0;
-          _outputValues(9, i0, 2) = 0.0;
-
-          _outputValues(10, i0, 0) = (1.0 + x)/8.0;
-          _outputValues(10, i0, 1) = -(1.0 + y)/8.0;
-          _outputValues(10, i0, 2) = 0.0;
-
-          _outputValues(11, i0, 0) = (1.0 - x)/8.0;
-          _outputValues(11, i0, 1) = (1.0 + y)/8.0;
-          _outputValues(11, i0, 2) = 0.0;
-
-        }
-      };
-      Kokkos::parallel_for( policy, FunctorCurl(outputValues, inputPoints) );
+      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }
     case OPERATOR_DIV: {

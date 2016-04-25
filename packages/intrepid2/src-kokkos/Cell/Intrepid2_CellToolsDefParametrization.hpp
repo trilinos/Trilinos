@@ -106,54 +106,6 @@ namespace Intrepid2 {
   }
   
   template<typename SpT>
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool 
-  CellTools<SpT>::
-  hasReferenceCell( const shards::CellTopology cell ) {
-    bool r_val = false;
-    switch(cell.getKey() ) {
-    case shards::Line<2>::key:
-    case shards::Line<3>::key:
-    case shards::ShellLine<2>::key:
-    case shards::ShellLine<3>::key:
-    case shards::Beam<2>::key:
-    case shards::Beam<3>::key:
-      
-    case shards::Triangle<3>::key:
-    case shards::Triangle<4>::key:
-    case shards::Triangle<6>::key:
-    case shards::ShellTriangle<3>::key:
-    case shards::ShellTriangle<6>::key:
-      
-    case shards::Quadrilateral<4>::key:
-    case shards::Quadrilateral<8>::key:
-    case shards::Quadrilateral<9>::key:
-    case shards::ShellQuadrilateral<4>::key:
-    case shards::ShellQuadrilateral<8>::key:
-    case shards::ShellQuadrilateral<9>::key:
-      
-    case shards::Tetrahedron<4>::key:
-    case shards::Tetrahedron<8>::key:
-    case shards::Tetrahedron<10>::key:
-    case shards::Tetrahedron<11>::key:
-      
-    case shards::Hexahedron<8>::key:
-    case shards::Hexahedron<20>::key:
-    case shards::Hexahedron<27>::key:
-      
-    case shards::Pyramid<5>::key:
-    case shards::Pyramid<13>::key:
-    case shards::Pyramid<14>::key:
-      
-    case shards::Wedge<6>::key:
-    case shards::Wedge<15>::key:
-    case shards::Wedge<18>::key:
-      r_val = true;
-    }
-    return r_val;
-  }
-  
-  template<typename SpT>
   void
   CellTools<SpT>::
   getSubcellParametrization( /**/ subcellParamViewType &subcellParam,  

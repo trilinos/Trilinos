@@ -61,7 +61,7 @@
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 #include <Ionit_Initializer.h>
 #include <stk_io/IossBridge.hpp>
 #endif
@@ -236,7 +236,7 @@ void STK_Interface::initialize(stk_classic::ParallelMachine parallelMach,bool se
    initializeFieldsInSTK(fieldNameToSolution_,nodeRank,setupIO);
    initializeFieldsInSTK(fieldNameToCellField_,elementRank,setupIO);
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
    if(setupIO) {
       // setup Exodus file IO
       /////////////////////////////////////////
@@ -298,7 +298,7 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
          stk_classic::mesh::put_field(*(*uniqueFieldIter),rank,metaData_->universal_part());
    }
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
    if(setupIO) {
       // add solution fields
       std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
@@ -456,7 +456,7 @@ void STK_Interface::writeToExodus(const std::string & filename)
 {
    PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(filename)");
 
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk_classic::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
@@ -475,7 +475,7 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
 {
    PANZER_FUNC_TIME_MONITOR("STK_Interface::setupTransientExodusFile(filename)");
 
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk_classic::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
@@ -492,7 +492,7 @@ void STK_Interface::writeToExodus(double timestep)
 {
    PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(timestep)");
 
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       if(meshData_!=Teuchos::null) {
         currentStateTime_ = timestep;
         stk_classic::io::process_output_request(*meshData_, *bulkData_, timestep);
@@ -509,7 +509,7 @@ void STK_Interface::writeToExodus(double timestep)
 
 bool STK_Interface::isWritable() const
 {
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       return true;
    #else
       return false;
