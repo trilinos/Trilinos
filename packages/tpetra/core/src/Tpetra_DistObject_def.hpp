@@ -809,8 +809,9 @@ namespace Tpetra {
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
-    typedef typename Kokkos::DualView<LocalOrdinal*, device_type>::t_dev::memory_space dev_memory_space;
-    typedef typename Kokkos::DualView<LocalOrdinal*, device_type>::t_host::memory_space host_memory_space;
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::DualView<LO*, device_type>::t_dev::memory_space dev_memory_space;
+    typedef typename Kokkos::DualView<LO*, device_type>::t_host::memory_space host_memory_space;
 
     const bool packOnHost = false;
     const bool debug = false;
@@ -841,13 +842,31 @@ namespace Tpetra {
     //   2. Recall that Teuchos::ArrayView is an unmanaged view.
     //   3. If DistObject ever gets a nonblocking interface, that
     //      interface should take managed views.
-    typedef Kokkos::View<const LocalOrdinal*, execution_space> lo_const_view_type;
+    typedef Kokkos::View<const LO*, execution_space> lo_const_view_type;
     lo_const_view_type permuteToLIDs =
       getKokkosViewDeepCopy<execution_space> (permuteToLIDs_);
     lo_const_view_type permuteFromLIDs =
       getKokkosViewDeepCopy<execution_space> (permuteFromLIDs_);
-    lo_const_view_type remoteLIDs =
-      getKokkosViewDeepCopy<execution_space> (remoteLIDs_);
+
+    // No need to sync this.  packAndPrepareNew will use it to
+    // determine where to pack (in host or device memory).
+    Kokkos::DualView<LO*, device_type> remoteLIDs ("remoteLIDs",
+                                                   remoteLIDs_.size ());
+    {
+      Kokkos::View<const LO*, host_memory_space,
+        Kokkos::MemoryUnmanaged> remoteLIDs_host_in (remoteLIDs_.getRawPtr (),
+                                                     remoteLIDs_.size ());
+      if (packOnHost) {
+        remoteLIDs.template modify<host_memory_space> ();
+        Kokkos::deep_copy (remoteLIDs.template view<host_memory_space> (),
+                           remoteLIDs_host_in);
+      }
+      else { // pack on device
+        remoteLIDs.template modify<dev_memory_space> ();
+        Kokkos::deep_copy (remoteLIDs.template view<dev_memory_space> (),
+                           remoteLIDs_host_in);
+      }
+    }
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -857,21 +876,25 @@ namespace Tpetra {
          " != permuteFromLIDs_.size() = " << permuteFromLIDs_.size () << ".");
     }
 
-    Kokkos::DualView<LocalOrdinal*, device_type> exportLIDs ("exportLIDs", exportLIDs_.size ());
+    Kokkos::DualView<LO*, device_type> exportLIDs ("exportLIDs",
+                                                   exportLIDs_.size ());
     {
-      Kokkos::View<const LocalOrdinal*, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>
-        exportLIDs_host_in (exportLIDs_.getRawPtr (), exportLIDs_.size ());
+      Kokkos::View<const LO*, host_memory_space,
+        Kokkos::MemoryUnmanaged> exportLIDs_host_in (exportLIDs_.getRawPtr (),
+                                                     exportLIDs_.size ());
 
       // mfh 12 Apr 2016: packAndPrepareNew decides where to pack
       // based on the memory space in which exportLIDs was last
       // modified.
       if (packOnHost) {
         exportLIDs.template modify<host_memory_space> ();
-        Kokkos::deep_copy (exportLIDs.template view<host_memory_space> (), exportLIDs_host_in);
+        Kokkos::deep_copy (exportLIDs.template view<host_memory_space> (),
+                           exportLIDs_host_in);
       }
       else {
         exportLIDs.template modify<dev_memory_space> ();
-        Kokkos::deep_copy (exportLIDs.template view<dev_memory_space> (), exportLIDs_host_in);
+        Kokkos::deep_copy (exportLIDs.template view<dev_memory_space> (),
+                           exportLIDs_host_in);
       }
     }
 
@@ -890,7 +913,7 @@ namespace Tpetra {
     if (CM == INSERT || CM == REPLACE) {
       const size_t numIDsToWrite = numSameIDs +
         static_cast<size_t> (permuteToLIDs.size ()) +
-        static_cast<size_t> (remoteLIDs.size ());
+        static_cast<size_t> (remoteLIDs.dimension_0 ());
       if (numIDsToWrite == this->getMap ()->getNodeNumElements ()) {
         // We're overwriting all of our local data in the destination
         // object, so a write-only view suffices.
@@ -990,13 +1013,13 @@ namespace Tpetra {
                                                 exportLIDs.dimension_0 ());
           execution_space::fence ();
         }
-        if (numImportPacketsPerLID_.dimension_0 () != remoteLIDs.size ()) {
+        if (numImportPacketsPerLID_.dimension_0 () != remoteLIDs.dimension_0 ()) {
           // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
           // facilitate #227 debugging, but shouldn't be needed.
           execution_space::fence ();
           numImportPacketsPerLID_ =
             decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
-                                                remoteLIDs.size ());
+                                                remoteLIDs.dimension_0 ());
           execution_space::fence ();
         }
       }
@@ -1060,12 +1083,12 @@ namespace Tpetra {
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
+        const size_t rbufLen = remoteLIDs.dimension_0 () * constantNumPackets;
         if (debug) {
           std::ostringstream os;
           os << "*** doTransferNew: imports_.dimension_0() = "
              << imports_.dimension_0 () << ", rbufLen = " << rbufLen
-             << " = " << remoteLIDs.size ()
+             << " = " << remoteLIDs.dimension_0 ()
              << " * " << constantNumPackets << std::endl;
           std::cerr << os.str ();
         }
@@ -1319,22 +1342,14 @@ namespace Tpetra {
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-          // FIXME (mfh 25 Apr 2016) As part of our #227 work-around,
-          // unpackAndCombineNew will eventually take
-          // numImportPacketsPerLID as a DualView.  For now, it
-          // expects a device View, so give it what it wants.
+          // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
+          // input DualViews, but they DO need to be most recently
+          // updated in the same memory space.
           //
-          // unpackAndCombineNew does not modify any entries of its
-          // numImportsPacketsPerLID argument, so we don't have to set
-          // the modified flag here.
-          //
-          // FIME (25 Apr 2016) Change unpackAndCombineNew so it can
-          // use a const View for numImportPacketsPerLID.
-          numImportPacketsPerLID_.template sync<dev_memory_space> ();
-          imports_.template sync<dev_memory_space> ();
-          unpackAndCombineNew (remoteLIDs,
-                               imports_.template view<dev_memory_space> (),
-                               numImportPacketsPerLID_.template view<dev_memory_space> (),
+          // FIXME (mfh 26 Apr 2016) Check that all input DualViews
+          // were most recently updated in the same memory space, and
+          // sync them to the same place (based on packOnHost) if not.
+          unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
                                constantNumPackets, distor, CM);
         }
       }

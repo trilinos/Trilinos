@@ -2229,13 +2229,12 @@ namespace Tpetra {
       Distributor& /* distor */);
 
     virtual void
-    unpackAndCombineNew (
-      const Kokkos::View<const LocalOrdinal*, execution_space>& importLIDs,
-      const Kokkos::View<const impl_scalar_type*, execution_space>& imports,
-      const Kokkos::View<size_t*, execution_space>& numPacketsPerLID,
-      size_t constantNumPackets,
-      Distributor &distor,
-      CombineMode CM);
+    unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                         const Kokkos::DualView<const impl_scalar_type*, device_type>& imports,
+                         const Kokkos::DualView<const size_t*, device_type>& /* numPacketsPerLID */,
+                         const size_t constantNumPackets,
+                         Distributor& /* distor */,
+                         const CombineMode CM);
 
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);

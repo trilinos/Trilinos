@@ -625,7 +625,9 @@ namespace Tpetra {
                        Distributor& distor)
     {}
 
-    /// \brief Perform any unpacking and combining after communication.
+    /// \brief Perform any unpacking and combining after communication
+    ///   (old version that uses Teuchos memory management classes to
+    ///   hold data).
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
     ///   destination object) we received from other images.
@@ -655,14 +657,38 @@ namespace Tpetra {
                       CombineMode CM)
     {}
 
+    /// \brief Perform any unpacking and combining after communication
+    ///   (new version that uses Kokkos data structures to hold data).
+    ///
+    /// The \c imports input argument controls whether this method
+    /// should unpack on host or unpack on device.
+    ///
+    /// \param importLIDs [in] List of the entries (as LIDs in the
+    ///   destination object) we received from other images.
+    ///
+    /// \param imports [in] Buffer containing data we received.
+    ///
+    /// \param numPacketsPerLID [in] If constantNumPackets is zero,
+    ///   then numPacketsPerLID[i] contains the number of packets
+    ///   imported for importLIDs[i].
+    ///
+    /// \param constantNumPackets [in] If nonzero, then
+    ///   numPacketsPerLID is constant (same value in all entries) and
+    ///   constantNumPackets is that value.  If zero, then
+    ///   numPacketsPerLID[i] is the number of packets imported for
+    ///   importLIDs[i].
+    ///
+    /// \param distor [in] The Distributor object we are using.
+    ///
+    /// \param CM [in] The combine mode to use when combining the
+    ///   imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (
-      const Kokkos::View<const local_ordinal_type*, execution_space> &importLIDs,
-      const Kokkos::View<const packet_type*, execution_space> &imports,
-      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
-      size_t constantNumPackets,
-      Distributor &distor,
-      CombineMode CM)
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                         const Kokkos::DualView<const packet_type*, device_type>& imports,
+                         const Kokkos::DualView<const size_t*, device_type>& numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode CM)
     {}
     //@}
 

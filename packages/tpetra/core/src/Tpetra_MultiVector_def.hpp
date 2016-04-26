@@ -1054,45 +1054,39 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackAndCombineNew (const Kokkos::View<const local_ordinal_type*, execution_space> &importLIDs,
-                       const Kokkos::View<const impl_scalar_type*, execution_space> &imports,
-                       const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
-                       size_t constantNumPackets,
-                       Distributor & /* distor */,
-                       CombineMode CM)
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                       const Kokkos::DualView<const impl_scalar_type*, device_type>& imports,
+                       const Kokkos::DualView<const size_t*, device_type>& /* numPacketsPerLID */,
+                       const size_t constantNumPackets,
+                       Distributor& /* distor */,
+                       const CombineMode CM)
   {
-    using Teuchos::ArrayView;
+    using KokkosRefactor::Details::unpack_array_multi_column;
+    using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    const char tfecfFuncName[] = "unpackAndCombine";
+    typedef impl_scalar_type IST;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::memory_space
+      host_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
+      dev_memory_space;
+    const char tfecfFuncName[] = "unpackAndCombineNew: ";
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
     // If we have no imports, there is nothing to do
-    if (importLIDs.size () == 0) {
+    if (importLIDs.dimension_0 () == 0) {
       return;
     }
 
-    // We don't need numPacketsPerLID; forestall "unused variable"
-    // compile warnings.
-    (void) numPacketsPerLID;
-
-    /* The layout in the export for MultiVectors is as follows:
-       imports = { all of the data from row exportLIDs.front() ;
-                   ....
-                   all of the data from row exportLIDs.back() }
-      This doesn't have the best locality, but is necessary because
-      the data for a Packet (all data associated with an LID) is
-      required to be contiguous. */
-
     const size_t numVecs = getNumVectors ();
-
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
+      static_cast<size_t> (imports.dimension_0 ()) !=
+      numVecs * importLIDs.dimension_0 (),
       std::runtime_error,
-      ": 'imports' buffer size must be consistent with the amount of data to "
-      "be sent.  " << std::endl << "imports.size() = " << imports.size()
-      << " != getNumVectors()*importLIDs.size() = " << getNumVectors() << "*"
-      << importLIDs.size() << " = " << getNumVectors() * importLIDs.size()
-      << ".");
+      "imports.dimension_0() = " << imports.dimension_0 ()
+      << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
+      << " * " << importLIDs.dimension_0 () << " = "
+      << numVecs * importLIDs.dimension_0 () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       constantNumPackets == static_cast<size_t> (0), std::runtime_error,
@@ -1103,67 +1097,153 @@ namespace Tpetra {
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
-    if (numVecs > 0 && importLIDs.size () > 0) {
+    // mfh 12 Apr 2016: Decide where to unpack based on the memory
+    // space in which the imports buffer was last modified.
+    // DistObject::doTransferNew gets to decide this.  We currently
+    // require importLIDs to match (its most recent version must be in
+    // the same memory space as imports' most recent version).
+    const bool unpackOnHost =
+      imports.modified_host () > imports.modified_device ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (unpackOnHost && importLIDs.modified_host () < importLIDs.modified_device (),
+       std::logic_error, "The 'imports' buffer was last modified on host, "
+       "but importLIDs was last modified on device." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! unpackOnHost && importLIDs.modified_host () > importLIDs.modified_device (),
+       std::logic_error, "The 'imports' buffer was last modified on device, "
+       "but importLIDs was last modified on host." << suffix);
 
+    auto X_dual = this->getDualView ();
+    // We have to sync before modifying, because this method may read
+    // as well as write (depending on the CombineMode).  This matters
+    // because copyAndPermute may have modified *this in the other
+    // memory space.
+    if (unpackOnHost) {
+      X_dual.template sync<host_memory_space> ();
+      X_dual.template modify<host_memory_space> ();
+    }
+    else { // unpack on device
+      X_dual.template sync<dev_memory_space> ();
+      X_dual.template modify<dev_memory_space> ();
+    }
+    auto X_d = X_dual.template view<dev_memory_space> ();
+    auto X_h = X_dual.template view<host_memory_space> ();
+    auto imports_d = imports.template view<dev_memory_space> ();
+    auto imports_h = imports.template view<host_memory_space> ();
+    auto importLIDs_d = importLIDs.template view<dev_memory_space> ();
+    auto importLIDs_h = importLIDs.template view<host_memory_space> ();
+
+    Kokkos::DualView<size_t*, device_type> whichVecs;
+    if (! isConstantStride ()) {
+      Kokkos::View<const size_t*, host_memory_space,
+        Kokkos::MemoryUnmanaged> whichVecsIn (whichVectors_.getRawPtr (),
+                                              numVecs);
+      whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);
+      if (unpackOnHost) {
+        whichVecs.template modify<host_memory_space> ();
+        Kokkos::deep_copy (whichVecs.template view<host_memory_space> (), whichVecsIn);
+      }
+      else {
+        whichVecs.template modify<dev_memory_space> ();
+        Kokkos::deep_copy (whichVecs.template view<dev_memory_space> (), whichVecsIn);
+      }
+    }
+    auto whichVecs_d = whichVecs.template view<dev_memory_space> ();
+    auto whichVecs_h = whichVecs.template view<host_memory_space> ();
+
+    /* The layout in the export for MultiVectors is as follows:
+       imports = { all of the data from row exportLIDs.front() ;
+                   ....
+                   all of the data from row exportLIDs.back() }
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
+
+    if (numVecs > 0 && importLIDs.dimension_0 () > 0) {
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
       // custom combine modes, start editing here.  Also, if you trust
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::InsertOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::InsertOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs);
+          }
         }
-        else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::InsertOp(),
-            numVecs);
+        else { // not constant stride
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else if (CM == ADD) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::AddOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::AddOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op, numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op, numVecs);
+          }
         }
-        else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::AddOp(),
-            numVecs);
+        else { // not constant stride
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else if (CM == ABSMAX) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::AbsMaxOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::AbsMaxOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs);
+          }
         }
         else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::AbsMaxOp(),
-            numVecs);
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else {
