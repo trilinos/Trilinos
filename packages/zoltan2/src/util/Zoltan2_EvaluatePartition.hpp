@@ -91,8 +91,31 @@ private:
 
 public:
 
-  /*! \brief Constructor
+  /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
+      \param p the parameter list
+      \param soln  the solution
+      \param graphModel the graph model
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
+    const PartitioningSolution<Adapter> *soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+
+
+  /*! \brief Constructor where Teuchos communicator is specified
+      \param ia the problem input adapter
+      \param p the parameter list
       \param problemComm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
@@ -113,9 +136,10 @@ public:
     }
 
 #ifdef HAVE_ZOLTAN2_MPI
-  /*! \brief Constructor
+  /*! \brief Constructor for MPI builds
       \param ia the problem input adapter
-      \param problemComm  the problem communicator
+      \param p the parameter list
+      \param comm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
 
