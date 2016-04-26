@@ -571,8 +571,29 @@ namespace Tpetra {
         numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (numExportPacketsPerLID_);
-        packAndPrepare (src, exportLIDs, exports_old_, numExportPacketsPerLID,
+
+        // FIXME (mfh 26 Apr 2016) For backwards compatibility, use
+        // the old packAndPrepare interface that takes and resizes the
+        // exports buffer as a Teuchos::Array<packet_type>.  Then,
+        // copy out that buffer into the host version of exports_.
+
+        Teuchos::Array<packet_type> exportsOld;
+        packAndPrepare (src, exportLIDs, exportsOld, numExportPacketsPerLID,
                         constantNumPackets, distor);
+        const size_t exportsLen = static_cast<size_t> (exportsOld.size ());
+        if (static_cast<size_t> (exports_.dimension_0 ()) != exportsLen) {
+          // FIXME (mfh 26 Apr 2016) Fences around (UVM) allocations
+          // facilitate #227 debugging, but we shouldn't need them.
+          execution_space::fence ();
+          exports_ = decltype (exports_) ("exports", exportsLen);
+          execution_space::fence ();
+        }
+        Kokkos::View<const packet_type*, Kokkos::HostSpace,
+          Kokkos::MemoryUnmanaged> exportsOldK (exportsOld.getRawPtr (),
+                                                exportsLen);
+        exports_.template modify<Kokkos::HostSpace> ();
+        Kokkos::deep_copy (exports_.template view<Kokkos::HostSpace> (),
+                           exportsOldK);
       }
     }
 
@@ -651,24 +672,32 @@ namespace Tpetra {
             reallocImportsIfNeeded (totalImportPackets, debug);
 
             // We don't need to sync imports_, because it is only for
-            // output here.  This legacy version of doTransfer only
-            // uses host arrays.
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
             imports_.template modify<Kokkos::HostSpace> ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            distor.doReversePostsAndWaits (exports_old_().getConst(),
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doReversePostsAndWaits (hostExports,
                                            numExportPacketsPerLID,
                                            hostImports,
                                            numImportPacketsPerLID);
           }
           else {
             // We don't need to sync imports_, because it is only for
-            // output here.  This legacy version of doTransfer only
-            // uses host arrays.
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
             imports_.template modify<Kokkos::HostSpace> ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            distor.doReversePostsAndWaits (exports_old_ ().getConst (),
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doReversePostsAndWaits (hostExports,
                                            constantNumPackets,
                                            hostImports);
           }
@@ -704,24 +733,32 @@ namespace Tpetra {
             reallocImportsIfNeeded (totalImportPackets, debug);
 
             // We don't need to sync imports_, because it is only for
-            // output here.  This legacy version of doTransfer only
-            // uses host arrays.
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
             imports_.template modify<Kokkos::HostSpace> ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            distor.doPostsAndWaits (exports_old_().getConst(),
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doPostsAndWaits (hostExports,
                                     numExportPacketsPerLID,
                                     hostImports,
                                     numImportPacketsPerLID);
           }
           else {
             // We don't need to sync imports_, because it is only for
-            // output here.  This legacy version of doTransfer only
-            // uses host arrays.
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
             imports_.template modify<Kokkos::HostSpace> ();
             Teuchos::ArrayView<packet_type> hostImports =
               getArrayViewFromDualView (imports_);
-            distor.doPostsAndWaits (exports_old_ ().getConst (),
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doPostsAndWaits (hostExports,
                                     constantNumPackets,
                                     hostImports);
           }

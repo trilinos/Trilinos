@@ -54,6 +54,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Distributor.hpp"
+#include "Kokkos_DualView.hpp"
 #include <Teuchos_Array.hpp>
 #include <utility>
 
@@ -120,7 +121,7 @@ template<typename Scalar,
 void
 packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
                               const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                              Teuchos::Array<char>& exports,
+                              Kokkos::DualView<char*, typename Node::device_type>& exports,
                               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                               size_t& constantNumPackets,
                               Distributor &distor,
@@ -483,7 +484,7 @@ template<typename Scalar,
 void
 packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& SourceMatrix,
                               const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                              Teuchos::Array<char>& exports,
+                              Kokkos::DualView<char*, typename Node::device_type>& exports,
                               const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                               size_t& constantNumPackets,
                               Distributor &distor,
@@ -587,9 +588,25 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   // entries.  All the column indices (as global indices) go first,
   // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
-    exports.resize (totalNumBytes);
-    View<char*, HES, MemoryUnmanaged> exportsK (exports.getRawPtr (),
-                                                totalNumBytes);
+    if (static_cast<size_t> (exports.dimension_0 ()) != static_cast<size_t> (totalNumBytes)) {
+      // FIXME (26 Apr 2016) Fences around (UVM) allocations only
+      // temporarily needed for #227 debugging.  Should be able to
+      // remove them after that's fixed.
+      typedef typename Node::device_type device_type;
+      typedef typename device_type::execution_space execution_space;
+      execution_space::fence ();
+      exports = Kokkos::DualView<char*, device_type> ("exports", totalNumBytes);
+      execution_space::fence ();
+    }
+
+    // mfh 26 Apr 2016: The code below currently fills on host.  We
+    // may change this in the future.
+    exports.template modify<Kokkos::HostSpace> ();
+    auto exportsK_managed = exports.template view<Kokkos::HostSpace> ();
+    // We take subviews in a loop, so it might pay to use an unmanaged
+    // View to reduce reference count update overhead.
+    View<char*, Kokkos::HostSpace, MemoryUnmanaged> exportsK = exportsK_managed;
+
     // Current position (in bytes) in the 'exports' output array.
     size_t offset = 0;
 

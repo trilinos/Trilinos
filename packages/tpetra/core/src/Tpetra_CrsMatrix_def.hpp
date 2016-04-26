@@ -6887,7 +6887,7 @@ namespace Tpetra {
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
         Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
-                                                   destMat->exports_old_,
+                                                   destMat->exports_,
                                                    numExportPacketsPerLID,
                                                    constantNumPackets, Distor,
                                                    SourcePids);
@@ -6927,7 +6927,7 @@ namespace Tpetra {
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
       Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
-                                                 destMat->exports_old_,
+                                                 destMat->exports_,
                                                  numExportPacketsPerLID,
                                                  constantNumPackets, Distor,
                                                  SourcePids);
@@ -6964,7 +6964,12 @@ namespace Tpetra {
           destMat->imports_.template modify<Kokkos::HostSpace> ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
-          Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
+          // This is a legacy host pack/unpack path, so use the host
+          // version of exports_.
+          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<const char> hostExports =
+            getArrayViewFromDualView (destMat->exports_);
+          Distor.doReversePostsAndWaits (hostExports,
                                          numExportPacketsPerLID,
                                          hostImports,
                                          numImportPacketsPerLID);
@@ -6973,7 +6978,12 @@ namespace Tpetra {
           destMat->imports_.template modify<Kokkos::HostSpace> ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
-          Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
+          // This is a legacy host pack/unpack path, so use the host
+          // version of exports_.
+          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<const char> hostExports =
+            getArrayViewFromDualView (destMat->exports_);
+          Distor.doReversePostsAndWaits (hostExports,
                                          constantNumPackets,
                                          hostImports);
         }
@@ -7002,7 +7012,12 @@ namespace Tpetra {
           destMat->imports_.template modify<Kokkos::HostSpace> ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
-          Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
+          // This is a legacy host pack/unpack path, so use the host
+          // version of exports_.
+          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<const char> hostExports =
+            getArrayViewFromDualView (destMat->exports_);
+          Distor.doPostsAndWaits (hostExports,
                                   numExportPacketsPerLID,
                                   hostImports,
                                   numImportPacketsPerLID);
@@ -7011,7 +7026,12 @@ namespace Tpetra {
           destMat->imports_.template modify<Kokkos::HostSpace> ();
           Teuchos::ArrayView<char> hostImports =
             getArrayViewFromDualView (destMat->imports_);
-          Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
+          // This is a legacy host pack/unpack path, so use the host
+          // version of exports_.
+          destMat->exports_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<const char> hostExports =
+            getArrayViewFromDualView (destMat->exports_);
+          Distor.doPostsAndWaits (hostExports,
                                   constantNumPackets,
                                   hostImports);
         }

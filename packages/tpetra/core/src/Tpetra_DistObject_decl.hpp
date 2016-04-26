@@ -713,7 +713,6 @@ namespace Tpetra {
     void
     reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
 
-  protected:
     /// \brief Number of packets to receive for each receive operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -729,14 +728,13 @@ namespace Tpetra {
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
     Kokkos::DualView<size_t*, execution_space> numImportPacketsPerLID_;
 
-  private:
-    //! Buffer from which packed data are exported (sent to other processes).
+    /// \brief Buffer from which packed data are exported (sent to
+    ///   other processes).
+    ///
+    /// Unfortunately, I had to declare this protected, because
+    /// CrsMatrix uses it at one point.  Please, nobody else use it.
     Kokkos::DualView<packet_type*, device_type> exports_;
 
-  protected:
-    Teuchos::Array<packet_type> exports_old_;
-
-  protected:
     /// \brief Number of packets to send for each send operation.
     ///
     /// This array is used in Distributor::doPosts() (and
