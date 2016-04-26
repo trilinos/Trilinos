@@ -294,5 +294,9 @@ private:
 
 #include "Panzer_GatherSolution_BlockedTpetra_impl.hpp"
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+#include "Panzer_GatherSolution_BlockedTpetra_Hessian.hpp"
+#endif
+
 // **************************************************************
 #endif

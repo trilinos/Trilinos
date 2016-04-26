@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
-  int max_concurrency = 1024;
+  int max_concurrency = 250000;
   clp.setOption("max-concurrency", &max_concurrency, "Max number of concurrent tasks");
 
   int max_task_dependence = 3;

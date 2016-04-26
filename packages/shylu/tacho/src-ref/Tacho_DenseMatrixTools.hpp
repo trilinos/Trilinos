@@ -133,7 +133,6 @@ namespace Tacho {
     /// - Callable in KokkosFunctors (o)
     /// - Blocking with fence (o)
 
-    /// \brief fill hier matrix 
     template<typename DenseMatrixHierType,
              typename DenseMatrixFlatType,
              typename OrdinalType>
@@ -148,34 +147,71 @@ namespace Tacho {
                      typename DenseMatrixFlatType::space_type
                      >::value,
                      "Space type of input matrices does not match" );
-      
-      typedef typename DenseMatrixHierType::space_type space_type;
-      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
 
       const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
       const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
-
-      space_type::execution_space::fence();
-
-      Kokkos::parallel_for( range_policy(0, hn),
-                            [&](const ordinal_type j)
-                            {
-                              const OrdinalType offn = nb*j;
-                              const OrdinalType ntmp = offn + nb; 
-                              const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
-
-                              //#pragma unroll
-                              for (ordinal_type i=0;i<hm;++i) {
-                                const OrdinalType offm = mb*i;
-                                const OrdinalType mtmp = offm + mb; 
-                                const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
-                                hier.Value(i, j).setView(flat, offm, m,
-                                                         /**/  offn, n);
-                              }
-                            } );
-
-      space_type::execution_space::fence();
+      
+      for (auto j=0;j<hn;++j) {
+        const OrdinalType offn = nb*j;
+        const OrdinalType ntmp = offn + nb; 
+        const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
+        
+        //#pragma unroll
+        for (auto i=0;i<hm;++i) {
+          const OrdinalType offm = mb*i;
+          const OrdinalType mtmp = offm + mb; 
+          const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
+          hier.Value(i, j).setView(flat, offm, m,
+                                   /**/  offn, n);
+        }
+      }
+    
     }
+
+
+    /// \brief fill hier matrix 
+    // template<typename DenseMatrixHierType,
+    //          typename DenseMatrixFlatType,
+    //          typename OrdinalType>
+    // KOKKOS_INLINE_FUNCTION
+    // static void
+    // getHierMatrix(DenseMatrixHierType &hier,
+    //               const DenseMatrixFlatType &flat,
+    //               const OrdinalType mb,
+    //               const OrdinalType nb) {
+    //   static_assert( Kokkos::Impl::is_same<
+    //                  typename DenseMatrixHierType::space_type,
+    //                  typename DenseMatrixFlatType::space_type
+    //                  >::value,
+    //                  "Space type of input matrices does not match" );
+      
+    //   typedef typename DenseMatrixHierType::space_type space_type;
+    //   typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
+
+    //   const OrdinalType hm = hier.NumRows(), hn = hier.NumCols();
+    //   const OrdinalType fm = flat.NumRows(), fn = flat.NumCols();
+
+    //   space_type::execution_space::fence();
+
+    //   Kokkos::parallel_for( range_policy(0, hn),
+    //                         [&](const ordinal_type j)
+    //                         {
+    //                           const OrdinalType offn = nb*j;
+    //                           const OrdinalType ntmp = offn + nb; 
+    //                           const OrdinalType n    = ntmp < fn ? nb : (fn - offn); 
+
+    //                           //#pragma unroll
+    //                           for (ordinal_type i=0;i<hm;++i) {
+    //                             const OrdinalType offm = mb*i;
+    //                             const OrdinalType mtmp = offm + mb; 
+    //                             const OrdinalType m    = mtmp < fm ? mb : (fm - offm); 
+    //                             hier.Value(i, j).setView(flat, offm, m,
+    //                                                      /**/  offn, n);
+    //                           }
+    //                         } );
+
+    //   space_type::execution_space::fence();
+    // }
 
     template<typename DenseMatrixHierType,
              typename DenseMatrixFlatType,
@@ -193,6 +229,7 @@ namespace Tacho {
                      >::value,
                      "Space type of input matrices does not match" );
       
+      typedef typename DenseMatrixHierType::ordinal_type ordinal_type;
       typedef typename DenseMatrixHierType::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
 

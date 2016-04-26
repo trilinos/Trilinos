@@ -54,19 +54,24 @@ private:
 
   Real eps_;
 
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::SmoothedWorstCaseQuadrangle): Smoothing parameter must be positive!");
+  }
+
 public:
 
-  SmoothedWorstCaseQuadrangle(const Real eps) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
-    eps_  = ((eps > zero) ? eps : one);
+  SmoothedWorstCaseQuadrangle(const Real eps)
+    : ExpectationQuad<Real>(), eps_(eps) {
+    checkInputs();
   }
 
   SmoothedWorstCaseQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Smoothed Worst-Case Quadrangle");
-    Real eps = list.get("Smoothing Parameter",one);
-    eps_  = ((eps > zero) ? eps : one);
+    eps_ = list.get<Real>("Smoothing Parameter");
+    checkInputs();
   }
 
   Real error(Real x, int deriv = 0) {

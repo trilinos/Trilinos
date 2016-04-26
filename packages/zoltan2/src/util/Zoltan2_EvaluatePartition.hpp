@@ -82,6 +82,13 @@ private:
   ArrayRCP<GraphMetricValues<scalar_t> > graphMetrics_;
   ArrayRCP<const GraphMetricValues<scalar_t> > graphMetricsConst_;
 
+  void sharedConstructor(const Adapter *ia,
+			 ParameterList *p,
+			 const RCP<const Comm<int> > &problemComm,
+			 const PartitioningSolution<Adapter> *soln,
+			 const RCP<const GraphModel
+			 <typename Adapter::base_adapter_t> > &graphModel);
+
 public:
 
   /*! \brief Constructor
@@ -98,7 +105,39 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null);
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor
+      \param ia the problem input adapter
+      \param problemComm  the problem communicator
+      \param soln  the solution
+      \param graphModel the graph model
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
+    MPI_Comm comm,
+    const PartitioningSolution<Adapter> *soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
+	Teuchos::opaqueWrapper(comm);
+      RCP<const Comm<int> > problemComm =
+	rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+#endif
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -166,12 +205,12 @@ public:
    *     to one less than the number of weights provided in the input.
    *  If there were no weights, this is the cut count.
    */
-  void getWeightCut(scalar_t &cut, int idx=0) const{
-    if (graphMetrics_.size() < idx)  // idx too high
-      cut = graphMetrics_[graphMetrics_.size()-1].getGlobalMax();
+  void getMaxWeightedEdgeCut(scalar_t &cut, int idx=0) const{
+    if (idx >= graphMetrics_.size())  // idx too high
+      cut = graphMetrics_[graphMetrics_.size() - 1].getGlobalMax();
     else if (idx < 0)   //  idx too low
       cut = graphMetrics_[0].getGlobalMax();
-    else                       // idx weight
+    else                       // 
       cut = graphMetrics_[idx].getGlobalMax();
   }
 
@@ -184,15 +223,14 @@ public:
   }
 };
 
+  // sharedConstructor
   template <typename Adapter>
-  EvaluatePartition<Adapter>::EvaluatePartition(
+  void EvaluatePartition<Adapter>::sharedConstructor(
   const Adapter *ia, 
   ParameterList *p,
   const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel)
 {
   RCP<const Comm<int> > problemComm;
   if (comm == Teuchos::null) {

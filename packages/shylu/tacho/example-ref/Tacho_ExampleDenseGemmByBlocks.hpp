@@ -83,7 +83,7 @@ namespace Tacho {
       os.str("");
       
       // host matrices
-      DenseMatrixBaseHostType AA_host, BB_host, CC_host("CC_host", m, m), CB_host("CB_host", m, m);
+      DenseMatrixBaseHostType AA_host, BB_host, CC_host("CC_host", m, m), CB_host;
       {
         if (ArgTransA == Trans::NoTranspose) 
           AA_host = DenseMatrixBaseHostType("AA_host", m, k); 
@@ -107,6 +107,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<CC_host.NumRows();++i)
             CC_host.Value(i,j) = 2.0*((value_type)rand()/(RAND_MAX)) - 1.0;
         
+        CB_host.createConfTo(CC_host);
         DenseMatrixTools::copy(CB_host, CC_host);
       }
 

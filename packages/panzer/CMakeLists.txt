@@ -17,7 +17,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
   PANZER_FADTYPE
-  "Build with debug code enabled."
+  "Choose the Sacado automatic differentiation scalart type (default is DFad)."
   "Sacado::Fad::DFad<RealType>" )
 
 TRIBITS_ADD_ENABLE_TEUCHOS_TIME_MONITOR_OPTION()

@@ -87,7 +87,7 @@ void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd
 template <typename EvalT,typename Traits>
 void FieldSpy<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
-  std::cout << "SPY: Name = \"" << source.fieldTag().name() << "\" at t = " << workset.time << "\n";
+  std::cout << "SPY: Name = \"" << source.fieldTag().identifier() << "\" at t = " << workset.time << "\n";
   for (int cell=0;cell<workset.num_cells;++cell) {
     std::cout << "SPY: ";
     for (int point = 0; point < source.dimension(1); ++point) {

@@ -70,11 +70,17 @@ private:
 
   bool firstReset_;
 
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((thresh_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::FDivergence): Threshold must be positive!");
+  }
+
 public:
-  FDivergence(const Real thresh) : RiskMeasure<Real>(),
+  FDivergence(const Real thresh) : RiskMeasure<Real>(), thresh_(thresh),
     xlam_(0), xmu_(0), vlam_(0), vmu_(0), valLam_(0), valMu_(0),
     firstReset_(true) {
-    thresh_ = thresh > (Real)0 ? thresh : (Real)1.e-2;
+    checkInputs();
   }
 
   FDivergence(Teuchos::ParameterList &parlist) : RiskMeasure<Real>(),
@@ -82,8 +88,8 @@ public:
     firstReset_(true) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("F-Divergence");
-    Real thresh = list.get("Threshold",1.e-2);
-    thresh_ = thresh > (Real)0 ? thresh : (Real)1.e-2;
+    thresh_ = list.get<Real>("Threshold");
+    checkInputs();
   }
 
   virtual Real Fprimal(Real x, int deriv = 0) = 0;

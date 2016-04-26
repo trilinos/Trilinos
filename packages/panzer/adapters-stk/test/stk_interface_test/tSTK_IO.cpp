@@ -54,7 +54,7 @@
 
 #include "Intrepid2_FieldContainer.hpp"
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 
 using Teuchos::RCP;
 using Teuchos::rcp;

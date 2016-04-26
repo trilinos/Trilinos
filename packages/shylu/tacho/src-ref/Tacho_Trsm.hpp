@@ -14,8 +14,8 @@ namespace Tacho {
   template<int ArgSide,int ArgUplo, int ArgTrans,
            int ArgAlgo, int ArgVariant,
            template<int,int> class ControlType = Control>
-  struct Trsm {
-
+  class Trsm {
+  public:
     // data-parallel interface with nested task generation
     // ===================================================
     template<typename PolicyType,
@@ -33,7 +33,7 @@ namespace Tacho {
       fprintf(stderr, ">> Template Args - Side %d, Uplo %d, Trans %d, Algo %d, Variant %d\n", 
               ArgSide, ArgUplo, ArgTrans, ArgAlgo, ArgVariant);           
       TACHO_TEST_FOR_ABORT( true, MSG_INVALID_TEMPLATE_ARGS );
-      return 0;
+      return -1;
     }
 
     // task-data parallel interface
@@ -115,5 +115,6 @@ namespace Tacho {
 }
 
 #include "Tacho_Trsm_Left_Upper_ConjTrans.hpp"
+#include "Tacho_Trsm_Left_Upper_NoTrans.hpp"
 
 #endif

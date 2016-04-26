@@ -1,0 +1,79 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="pamgenTest">
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="./driverinputs"/>
+    <Parameter name="input file" type="string" value="Poisson"/>
+    <Parameter name="file type" type="string" value="Pamgen"/>
+  </ParameterList>
+  
+  <ParameterList name="test1">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="input adapter" type="string" value="PamgenMesh"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+      <Parameter name="debug_level" type="string" value="verbose_detailed_status"/>
+      <Parameter name="imbalance_tolerance" type="double" value="1.1"/>
+      <Parameter name="num_global_parts" type="string" value="4"/>
+      <Parameter name="partitioning_approach" type="string" value="partition"/>
+      <Parameter name="algorithm" type="string" value="scotch"/>
+    </ParameterList>i
+    
+    <ParameterList name="Graph Metrics">
+      <ParameterList name="cut count">
+	<ParameterList name="global sum">
+          <Parameter name="lower" type="double" value="52.0"/>
+          <Parameter name="upper" type="double" value="52.0"/>
+	</ParameterList>
+	<ParameterList name="global maximum">
+          <Parameter name="lower" type="double" value="16.0"/>
+          <Parameter name="upper" type="double" value="16.0"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+  
+</ParameterList>

@@ -143,12 +143,12 @@
     </ParameterList>
 
     <ParameterList name="Output">
-        <Parameter name="File Name" type="string" value="energy-ss.exo.exo"/>
+        <Parameter name="File Name" type="string" value="energy-ss-tp.exo"/>
     </ParameterList>
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss_"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss-tp_"/> 
     </ParameterList>
 
     <ParameterList name="Active Parameters">
@@ -203,7 +203,7 @@
           <ParameterList name="NOX Stratimikos Options">
           </ParameterList>
           <ParameterList name="Stratimikos">
-            <Parameter name="Linear Solver Type" type="string" value="AztecOO"/>
+            <Parameter name="Linear Solver Type" type="string" value="Belos"/>
             <Parameter name="Preconditioner Type" type="string" value="None"/>
             <ParameterList name="Linear Solver Types">
               <ParameterList name="AztecOO">

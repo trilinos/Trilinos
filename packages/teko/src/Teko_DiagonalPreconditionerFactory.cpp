@@ -50,7 +50,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
 
-#include "Tpetra/Teko_TpetraHelpers.hpp"
+#include "Teko_TpetraHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
 using Teuchos::rcp;

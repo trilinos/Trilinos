@@ -53,19 +53,25 @@ class LogExponentialQuadrangle : public ExpectationQuad<Real> {
 private:
   Real coeff_;
 
-public:
-
-  LogExponentialQuadrangle(const Real coeff = 1) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
-    coeff_ = ((coeff > zero) ? coeff : one);
+  void checkInputs(void) const {
+    Real zero(0);
+    TEUCHOS_TEST_FOR_EXCEPTION((coeff_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::LogExponentialQuadrangle): Rate must be positive!");
   }
 
-  LogExponentialQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
-    Real zero(0), one(1);
+public:
+
+  LogExponentialQuadrangle(const Real coeff = 1)
+    : ExpectationQuad<Real>(), coeff_(coeff) {
+    checkInputs();
+  }
+
+  LogExponentialQuadrangle(Teuchos::ParameterList &parlist)
+    : ExpectationQuad<Real>() {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Exponential Quadrangle");
-    Real coeff = list.get("Rate",one);
-    coeff_ = ((coeff > zero) ? coeff : one);
+    coeff_ = list.get<Real>("Rate");
+    checkInputs();
   }
 
   Real error(Real x, int deriv = 0) {

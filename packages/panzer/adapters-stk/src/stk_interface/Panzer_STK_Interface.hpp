@@ -61,7 +61,7 @@
 
 #include <unordered_map>
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 #include <stk_io/MeshReadWriteUtils.hpp>
 #endif
 
@@ -857,7 +857,7 @@ protected:
    double initialStateTime_; // the time stamp at the time this object was constructed (default 0.0)
    double currentStateTime_; // the time stamp set by the user when writeToExodus is called (default 0.0)
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
    // I/O support
    Teuchos::RCP<stk_classic::io::MeshData> meshData_;
 #endif

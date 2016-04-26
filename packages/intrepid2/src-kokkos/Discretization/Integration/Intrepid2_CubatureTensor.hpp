@@ -43,111 +43,116 @@
 /** \file   Intrepid_CubatureTensor.hpp
     \brief  Header file for the Intrepid2::CubatureTensor class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_TENSOR_HPP
-#define INTREPID2_CUBATURE_TENSOR_HPP
+#ifndef __INTREPID2_CUBATURE_TENSOR_HPP__
+#define __INTREPID2_CUBATURE_TENSOR_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
-#include "Teuchos_Assert.hpp"
-
 
 namespace Intrepid2 {
 
-/** \class Intrepid2::CubatureTensor
-    \brief Defines tensor-product cubature (integration) rules in Intrepid.
-*/
-template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
-class CubatureTensor : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight> {
+  /** \class Intrepid2::CubatureTensor
+      \brief Defines tensor-product cubature (integration) rules in Intrepid.
+  */
+  template<typename ExecSpaceType = void>
+  class CubatureTensor : public Cubature<ExecSpaceType> {
   private:
 
-  /** \brief Degree of polynomials that are integrated exactly by
-             each cubature rule within the tensor product.
-  */
-  std::vector<int> degree_;
+    /** \brief Array of cubature rules, stored as FieldContainers.
+     */
+    ordinal_type numCubatures_;
 
-  /** \brief Dimension of integration domain.
-  */
-  int dimension_;
-
-  /** \brief Array of cubature rules, stored as FieldContainers.
-  */
-  std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures_;
+    CubatureDirect<ExecSpaceType> cubatures_[Parameters::MaxDimension];
+    
+    /** \brief Dimension of integration domain.
+     */
+    ordinal_type dimension_;
   
   public:
 
-  ~CubatureTensor() {}
-
-  /** \brief Constructor.
-
-      \param cubatures        [in]     - Array of cubatures that represent the building blocks
-                                         of the tensor product.
-  */
-  CubatureTensor( std::vector< Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > > cubatures);
-
-  /** \brief Constructor.
-
-      \param cubature1        [in]     - First direct cubature rule.
-      \param cubature2        [in]     - Second direct cubature rule.
-  */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2);
-
-  /** \brief Constructor.
-
-      \param cubature1        [in]     - First direct cubature rule.
-      \param cubature2        [in]     - Second direct cubature rule.
-      \param cubature3        [in]     - Third direct cubature rule.
-  */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature1,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature2,
-                 Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature3);
-
-  /** \brief Constructor.
-
-      \param cubature         [in]     - Direct cubature rule.
-      \param n                [in]     - Number of copies of the cubature rule in the tensor product.
-  */
-  CubatureTensor(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature, int n);
-
-  /** \brief Returns cubature points and weights
-             (return arrays must be pre-sized/pre-allocated).
-
-      \param cubPoints       [out]     - Vector containing the cubature points.
-      \param cubWeights      [out]     - Vector of corresponding cubature weights.
-  */
-  virtual void getCubature(ArrayPoint  & cubPoints,
-                           ArrayWeight & cubWeights) const;
-
-  /** \brief Returns cubature points and weights.
-              Method for physical space cubature, throws an exception.
-
-       \param cubPoints             [out]        - Array containing the cubature points.
-       \param cubWeights            [out]        - Array of corresponding cubature weights.
-       \param cellCoords             [in]        - Array of cell coordinates
-  */
-  virtual void getCubature(ArrayPoint& cubPoints,
-                           ArrayWeight& cubWeights,
-                           ArrayPoint& cellCoords) const;
-
-  /** \brief Returns the number of cubature points.
-  */
-  virtual int getNumPoints() const;
-
-  /** \brief Returns dimension of integration domain.
-  */
-  virtual int getDimension() const;
-
-  /** \brief Returns max. degree of polynomials that are integrated exactly.
-             The return vector has the size of the degree_ vector.
-  */
-  virtual void getAccuracy(std::vector<int> & degree) const;
-
-}; // end class CubatureTensor 
+    CubatureTensor() = delete;
+    ~CubatureTensor() = default;
 
 
+    /** \brief Constructor.
+        
+        \param cubature1        [in]     - First direct cubature rule.
+        \param cubature2        [in]     - Second direct cubature rule.
+    */
+    template<typename CubatureType0, 
+             typename CubatureType1>
+    CubatureTensor( const CubatureType0 cubature0,
+                    const CubatureType1 cubature1 );
+    
+    /** \brief Constructor.
+        
+        \param cubature1        [in]     - First direct cubature rule.
+        \param cubature2        [in]     - Second direct cubature rule.
+        \param cubature3        [in]     - Third direct cubature rule.
+    */
+    template<typename CubatureType0, 
+             typename CubatureType1,
+             typename CubatureType2>
+    CubatureTensor( const CubatureType0 cubature0,
+                    const CubatureType1 cubature1,
+                    const CubatureType2 cubature2 );
+    
+    
+    /** \brief Returns cubature points and weights
+        (return arrays must be pre-sized/pre-allocated).
+        
+        \param cubPoints       [out]     - Vector containing the cubature points.
+        \param cubWeights      [out]     - Vector of corresponding cubature weights.
+    */
+
+    template<typename cubPointValueType,  class ...cubPointProperties,
+             typename cubWeightValueType, class ...cubWeightProperties>
+    void
+    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
+
+    
+    /** \brief Returns cubature points and weights.
+        Method for physical space cubature, throws an exception.
+        
+        \param cubPoints             [out]        - Array containing the cubature points.
+        \param cubWeights            [out]        - Array of corresponding cubature weights.
+        \param cellCoords             [in]        - Array of cell coordinates
+    */
+    template<typename cubPointValueType,  class ...cubPointProperties,
+             typename cubWeightValueType, class ...cubWeightProperties,
+             typename cellCoordValueType, class ...cellCoordProperties>
+    void
+    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
+                 Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const;
+    
+    /** \brief Returns the number of cubature points.
+     */
+    ordinal_type getNumPoints() const;
+    
+    /** \brief Returns dimension of integration domain.
+     */
+    ordinal_type getDimension() const;
+
+    /** \brief Returns cubature name.
+     */
+    const char* getName() const;
+
+    /** \brief Return the number of cubatures.
+     */
+    ordinal_type getNumCubatures() const;
+    
+    /** \brief Returns max. degree of polynomials that are integrated exactly.
+     */
+    void getAccuracy( ordinal_type *accuracy ) const;
+  };
+  
+  
 } // end namespace Intrepid2
 
 

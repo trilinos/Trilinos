@@ -43,18 +43,17 @@
 /** \file   Intrepid_Cubature.hpp
     \brief  Header file for the Intrepid2::Cubature class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_HPP
-#define INTREPID2_CUBATURE_HPP
+#ifndef __INTREPID2_CUBATURE_HPP__
+#define __INTREPID2_CUBATURE_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
-#include "Intrepid2_FieldContainer.hpp"
 #include "Intrepid2_Types.hpp"
+#include "Intrepid2_Utils.hpp"
 
 namespace Intrepid2 {
-
-
 
   /** \struct Intrepid2::CubatureTemplate
       \brief  Template for the cubature rules used by Intrepid. Cubature template consists of
@@ -106,87 +105,78 @@ namespace Intrepid2 {
   */
 
 
-  struct CubatureTemplate {
-
-    /** \brief  Number of cubature points stored in the template.
-     */
-    int               numPoints_;
-
-    /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
-     */
-    double            points_[INTREPID2_MAX_INTEGRATION_POINTS][INTREPID2_MAX_DIMENSION];
-
-    /** \brief  Array with the associated cubature weights.
-     */
-    double            weights_[INTREPID2_MAX_INTEGRATION_POINTS];
-
-  };
-
-/** \class Intrepid2::Cubature
-    \brief Defines the base class for cubature (integration) rules in Intrepid.
-
-    Cubature template (rule) consists of cubature points and cubature weights.
-    Intrepid provides a small collection of frequently used cubature rule templates
-    for FEM reconstructions on simplices (edge, tri, tet) and the pyramid cell,
-    defined in the derived classes of CubatureDirect.
-
-    For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
-    templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
-*/
-template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
-class Cubature {
-  private:
-
+  /** \class Intrepid2::Cubature
+      \brief Defines the base class for cubature (integration) rules in Intrepid.
+      
+      Cubature template (rule) consists of cubature points and cubature weights.
+      Intrepid provides a small collection of frequently used cubature rule templates
+      for FEM reconstructions on simplices (edge, tri, tet) and the pyramid cell,
+      defined in the derived classes of CubatureDirect.
+      
+      For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
+      templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
+  */
+  template<typename ExecSpaceType = void>
+  class Cubature {
   public:
 
-  Cubature() {}
-
-  virtual ~Cubature() {}
-
-
-  /** \brief Returns cubature points and weights
-             (return arrays must be pre-sized/pre-allocated).
-
-      \param cubPoints       [out]     - Array containing the cubature points.
-      \param cubWeights      [out]     - Array of corresponding cubature weights.
-  */
-  virtual void getCubature(ArrayPoint  & cubPoints,
-                           ArrayWeight & cubWeights) const = 0;
-
-  /** \brief Returns cubature points and weights on physical cells
-             (return arrays must be pre-sized/pre-allocated).
-
-      \param cubPoints       [out]     - Array containing the cubature points.
-      \param cubWeights      [out]     - Array of corresponding cubature weights.
-      \param cellVertices    [in]      - Array containing the cell vertices.
-  */
-  virtual void getCubature(ArrayPoint  & cubPoints,
-                           ArrayWeight & cubWeights,
-                           ArrayPoint  & cellVertices) const = 0;
-
-  /** \brief Returns the number of cubature points.
-  */
-  virtual int getNumPoints() const = 0;
-
-
-  /** \brief Returns dimension of the integration domain.
-  */
-  virtual int getDimension() const = 0;
-
-
-  /** \brief Returns algebraic accuracy (e.g. max. degree of polynomial
-             that is integrated exactly). For tensor-product or sparse
-             rules, algebraic accuracy for each coordinate direction
-             is returned.
-
-             Since the size of the return argument need not be known
-             ahead of time, other return options are possible, depending
-             on the type of the cubature rule. 
-  */
-  virtual void getAccuracy(std::vector<int> & accuracy) const = 0;
-
-}; // class Cubature 
-
+    Cubature() = default;
+    ~Cubature() = default;
+    
+    
+    /** \brief Returns cubature points and weights
+        (return arrays must be pre-sized/pre-allocated).
+        
+        \param cubPoints       [out]     - Array containing the cubature points.
+        \param cubWeights      [out]     - Array of corresponding cubature weights.
+    */
+    template<typename cubPointValueType,  class ...cubPointProperties,
+             typename cubWeightValueType, class ...cubWeightProperties>
+    void getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
+    }
+    
+    /** \brief Returns cubature points and weights on physical cells
+        (return arrays must be pre-sized/pre-allocated).
+        
+        \param cubPoints       [out]     - Array containing the cubature points.
+        \param cubWeights      [out]     - Array of corresponding cubature weights.
+        \param cellVertices    [in]      - Array containing the cell vertices.
+    */
+    template<typename cubPointValueType,   class ...cubPointProperties,
+             typename cubWeightValueType,  class ...cubWeightProperties,
+             typename cellVertexValueType, class ...cellVertexProperties>
+    void getCubature( Kokkos::DynRankView<cubPointValueType,  cubPointProperties...>   cubPoints,
+                      Kokkos::DynRankView<cubWeightValueType, cubWeightProperties...>  cubWeights,
+                      Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
+    }
+    
+    /** \brief Returns the number of cubature points.
+     */
+    ordinal_type getNumPoints() const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getNumPoints): this method should be over-riden by derived classes.");
+      return 0;
+    }
+    
+    
+    /** \brief Returns dimension of the integration domain.
+     */
+    ordinal_type getDimension() const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
+      return 0;
+    }
+    
+    /** \brief Returns cubature name.
+     */
+    const char* getName() const  { return "Cubature"; }
+  }; 
+  
 }// end namespace Intrepid2
 
 

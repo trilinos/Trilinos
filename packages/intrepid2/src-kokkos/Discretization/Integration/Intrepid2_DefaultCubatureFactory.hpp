@@ -41,87 +41,82 @@
 // @HEADER
 
 /** \file   Intrepid_DefaultCubatureFactory.hpp
-\brief  Header file for the abstract base class Intrepid2::DefaultCubatureFactory.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Header file for the abstract base class Intrepid2::DefaultCubatureFactory.
+    \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP
-#define INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP
+#ifndef __INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP__
+#define __INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
-#include "Intrepid2_Cubature.hpp"
+#include "Intrepid2_Utils.hpp"
+
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_RCP.hpp"
 
-/////   list of default cubature includes   /////
-
+#include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
-#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
-#include "Intrepid2_CubatureDirectTriDefault.hpp"
-#include "Intrepid2_CubatureDirectTetDefault.hpp"
-#include "Intrepid2_CubatureCompositeTet.hpp"
+//#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
+//#include "Intrepid2_CubatureDirectTriDefault.hpp"
+//#include "Intrepid2_CubatureDirectTetDefault.hpp"
+//#include "Intrepid2_CubatureCompositeTet.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
-#include "Intrepid2_CubatureTensorPyr.hpp"
-#include "Intrepid2_CubaturePolygon.hpp"
-
-///// end of list of default cubature includes /////
-
+//#include "Intrepid2_CubatureTensorPyr.hpp"
+//#include "Intrepid2_CubaturePolygon.hpp"
 
 namespace Intrepid2 {
   
-/** \class Intrepid2::DefaultCubatureFactory
-    \brief A factory class that generates specific instances of cubatures.
-*/
-template<class Scalar, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint >
-class DefaultCubatureFactory {
-  private:
+  /** \class Intrepid2::DefaultCubatureFactory
+      \brief A factory class that generates specific instances of cubatures.
+  */
 
+  class DefaultCubatureFactory {
   public:
+
+    /** \brief Factory method.
+
+        \param cell        [in]    - Cell topology.
+        \param degree      [in]    - Array of polynomial degrees, one for each component cubature.
+
+        \return
+        - RCP to cubature with given specifications.
+    */
+    template<typename ExecSpaceType>
+    static Teuchos::RCP<Cubature<ExecSpace> > 
+    create( const shards::CellTopology       cellTopology,
+            const std::vector<ordinal_type> &degree );
     
-  /** \brief Default constructor.
-  */
-  DefaultCubatureFactory() {};
+    /** \brief Factory method.
 
-  /** \brief Destructor.
-  */
-  virtual ~DefaultCubatureFactory() {};
+        \param cell        [in]    - Cell topology.
+        \param degree      [in]    - A single polynomial degree, used for all component cubatures.
 
-  /** \brief Factory method.
+        \return
+        - RCP to cubature with given specifications.
+    */
+    template<typename ExecSpaceType>
+    static Teuchos::RCP<Cubature<ExecSpace> > 
+    create( const shards::CellTopology  cellTopology,
+            const ordinal_type          degree );
 
-      \param cell        [in]    - Cell topology.
-      \param degree      [in]    - Array of polynomial degrees, one for each component cubature.
 
-      \return
-              - RCP to cubature with given specifications.
-  */
-  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology & cellTopology,
-                                                                const std::vector<int> & degree);
-
-  /** \brief Factory method.
-
-      \param cell        [in]    - Cell topology.
-      \param degree      [in]    - A single polynomial degree, used for all component cubatures.
-
-      \return
-              - RCP to cubature with given specifications.
-  */
-  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology & cellTopology,
-                                                                int   degree);
-  
-  /** \brief Factory method for polygon cubature.
+    /** \brief Factory method for polygon cubature.
       
-      \param cellTopology   [in]   - Cell topology
-      \param cellVertices   [in]   - Vertices of physical cell
-      \param degree         [in]   - A single polynomial degree used for all triangles in tessalation
+        \param cellTopology   [in]   - Cell topology
+        \param cellVertices   [in]   - Vertices of physical cell
+        \param degree         [in]   - A single polynomial degree used for all triangles in tessalation
       
-      \return 
-               - RCP to cubature with given specifications.
-  */
-  Teuchos::RCP<Cubature<Scalar,ArrayPoint,ArrayWeight> > create(const shards::CellTopology& cellTopology,
-								const ArrayPoint& cellVertices,
-								int degree);
-
-};
+        \return 
+        - RCP to cubature with given specifications.
+    */
+    // template<typename ExecSpaceType>
+    // template<typename cellVertexValueType, class ...cellVertexProperties>
+    // static Teuchos::RCP<Cubature<ExecSpace> > 
+    // create( const shards::CellTopology &cellTopology,
+    //         const Kokkos::DynRankView<cellVertexValueType,cellVertexProperties> cellVertices,
+    //         const ordinal_type degree );
+  };
   
 }// namespace Intrepid2
 

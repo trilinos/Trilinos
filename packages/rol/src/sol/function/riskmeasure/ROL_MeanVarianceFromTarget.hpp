@@ -66,71 +66,81 @@ private:
   std::vector<Real> coeff_;
   uint NumMoments_;
 
+  void checkInputs(void) const {
+    int oSize = order_.size(), cSize = coeff_.size();
+    TEUCHOS_TEST_FOR_EXCEPTION((oSize!=cSize),std::invalid_argument,
+      ">>> ERROR (ROL::MeanVarianceFromTarget): Order and coefficient arrays have different sizes!");
+    Real zero(0), two(2);
+    for (int i = 0; i < oSize; i++) {
+      TEUCHOS_TEST_FOR_EXCEPTION((order_[i] < two), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVarianceFromTarget): Element of order array out of range!");
+      TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
+        ">>> ERROR (ROL::MeanVarianceFromTarget): Element of coefficient array out of range!");
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+      ">>> ERROR (ROL::MeanVarianceFromTarget): PositiveFunction pointer is null!");
+  }
+
 public:
 
-  MeanVarianceFromTarget( Real target, Real order, Real coeff,
-                          Teuchos::RCP<PositiveFunction<Real> > &pf )
+  MeanVarianceFromTarget( const Real target, const Real order, const Real coeff,
+                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
-    Real zero(0), one(1), two(2);
-    target_.clear(); order_.clear(); coeff_.clear();
-    target_.push_back(target);
-    order_.push_back((order < two) ? two : order);
-    coeff_.push_back((coeff < zero) ? one : coeff);
+    target_.clear(); target_.push_back(target);
+    order_.clear();  order_.push_back(order);
+    coeff_.clear();  coeff_.push_back(coeff);
+    checkInputs();
     NumMoments_ = order_.size();
   }
 
-  MeanVarianceFromTarget( std::vector<Real> &target, std::vector<Real> &order, std::vector<Real> &coeff, 
-                          Teuchos::RCP<PositiveFunction<Real> > &pf )
+  MeanVarianceFromTarget( const std::vector<Real> &target,
+                          const std::vector<Real> &order,
+                          const std::vector<Real> &coeff, 
+                          const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf) {
-    Real zero(0), one(1), two(2);
-    NumMoments_ = order.size();
     target_.clear(); order_.clear(); coeff_.clear();
-    if ( NumMoments_ != target.size() ) {
-      target.resize(NumMoments_,zero);
-    }
-    if ( NumMoments_ != coeff.size() ) {
-      coeff.resize(NumMoments_,one);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
+    for ( uint i = 0; i < target.size(); i++ ) {
       target_.push_back(target[i]);
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
     }
+    for ( uint i = 0; i < order.size(); i++ ) {
+      order_.push_back(order[i]);
+    }
+    for ( uint i = 0; i < coeff.size(); i++ ) {
+      coeff_.push_back(coeff[i]);
+    }
+    checkInputs();
+    NumMoments_ = order_.size();
   }
   
   MeanVarianceFromTarget( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>() {
-    Real zero(0), one(1), two(2);
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target");
     // Get data from parameter list
     Teuchos::Array<Real> target
       = Teuchos::getArrayFromStringParameter<double>(list,"Targets");
+    target_ = target.toVector();
     Teuchos::Array<Real> order
       = Teuchos::getArrayFromStringParameter<double>(list,"Orders");
+    order_ = order.toVector();
     Teuchos::Array<Real> coeff
       = Teuchos::getArrayFromStringParameter<double>(list,"Coefficients");
-    // Check inputs
-    NumMoments_ = order.size();
-    target_.clear(); order_.clear(); coeff_.clear();
-    if ( NumMoments_ != static_cast<uint>(target.size()) ) {
-      target.resize(NumMoments_,zero);
-    }
-    if ( NumMoments_ != static_cast<uint>(coeff.size()) ) {
-      coeff.resize(NumMoments_,one);
-    }
-    for ( uint i = 0; i < NumMoments_; i++ ) {
-      target_.push_back(target[i]);
-      order_.push_back((order[i] < two) ? two : order[i]);
-      coeff_.push_back((coeff[i] < zero) ? one : coeff[i]);
-    }
+    coeff_ = coeff.toVector();
     // Build (approximate) positive function
-    if ( list.get("Deviation Type","Upper") == "Upper" ) {
+    std::string type = list.get<std::string>("Deviation Type");
+    if ( type == "Upper" ) {
       positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     }
-    else {
+    else if ( type == "Absolute" ) {
       positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> (ROL::MeanDeviation): Deviation type is not recoginized!");
+    }
+    // Check inputs
+    checkInputs();
+    NumMoments_ = order.size();
   }
   
   void update(const Real val, const Real weight) {

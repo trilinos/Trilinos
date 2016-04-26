@@ -40,7 +40,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 
 using Teuchos::RCP;
 using Teuchos::rcp;

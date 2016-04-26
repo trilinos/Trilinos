@@ -251,58 +251,11 @@ namespace Tpetra {
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
 #ifdef HAVE_TPETRA_DEBUG
+    // Global sum of numLocalElements over all processes.
     // Keep this for later debug checks.
-    GST debugGlobalSum = 0; // Will be global sum of numLocalElements
-    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
-                         outArg (debugGlobalSum));
-    // In debug mode only, check whether numGlobalElements and
-    // indexBase are the same over all processes in the communicator.
-    {
-      GST proc0NumGlobalElements = numGlobalElements;
-      broadcast<int, GST> (*comm_, 0, outArg (proc0NumGlobalElements));
-      GST minNumGlobalElements = numGlobalElements;
-      GST maxNumGlobalElements = numGlobalElements;
-      reduceAll<int, GST> (*comm, REDUCE_MIN, numGlobalElements, outArg (minNumGlobalElements));
-      reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
-        std::invalid_argument,
-        "Tpetra::Map constructor: All processes must provide the same number "
-        "of global elements.  This is true even if that argument is Teuchos::"
-        "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
-        "compute the global number of elements.  Process 0 set numGlobalElements"
-        " = " << proc0NumGlobalElements << ".  The calling process "
-        << comm->getRank () << " set numGlobalElements = " << numGlobalElements
-        << ".  The min and max values over all processes are "
-        << minNumGlobalElements << " resp. " << maxNumGlobalElements << ".");
-
-      GO proc0IndexBase = indexBase;
-      broadcast<int, GO> (*comm_, 0, outArg (proc0IndexBase));
-      GO minIndexBase = indexBase;
-      GO maxIndexBase = indexBase;
-      reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
-      reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        minIndexBase != maxIndexBase || indexBase != minIndexBase,
-        std::invalid_argument,
-        "Tpetra::Map constructor: "
-        "All processes must provide the same indexBase argument.  "
-        "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-        "process " << comm->getRank () << " set indexBase = " << indexBase
-        << ".  The min and max values over all processes are "
-        << minIndexBase << " resp. " << maxIndexBase << ".");
-
-      // Make sure that the sum of numLocalElements over all processes
-      // equals numGlobalElements.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numGlobalElements != GSTI && debugGlobalSum != numGlobalElements,
-        std::invalid_argument,
-        "Tpetra::Map constructor: The sum of numLocalElements over all "
-        "processes = " << debugGlobalSum << " != numGlobalElements = "
-        << numGlobalElements << ".  If you would like this constructor to "
-        "compute numGlobalElements for you, you may set numGlobalElements = "
-        "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
-    }
+    const GST debugGlobalSum =
+      initialNonuniformDebugCheck (numGlobalElements, numLocalElements,
+                                   indexBase, comm);
 #endif // HAVE_TPETRA_DEBUG
 
     // Distribute the elements across the nodes so that they are
@@ -360,20 +313,14 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  global_size_t
   Map<LocalOrdinal,GlobalOrdinal,Node>::
-  Map (global_size_t numGlobalElements,
-       const Teuchos::ArrayView<const GlobalOrdinal> &entryList,
-       GlobalOrdinal indexBase,
-       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-       const Teuchos::RCP<Node> &node) :
-    comm_ (comm),
-    node_ (node),
-    uniform_ (false),
-    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
+  initialNonuniformDebugCheck (const global_size_t numGlobalElements,
+                               const size_t numLocalElements,
+                               const GlobalOrdinal indexBase,
+                               const Teuchos::RCP<const Teuchos::Comm<int> >& comm) const
   {
-    using Teuchos::arcp;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
+#ifdef HAVE_TPETRA_DEBUG
     using Teuchos::broadcast;
     using Teuchos::outArg;
     using Teuchos::ptr;
@@ -381,28 +328,20 @@ namespace Tpetra {
     using Teuchos::REDUCE_MIN;
     using Teuchos::REDUCE_SUM;
     using Teuchos::reduceAll;
-    using Teuchos::typeName;
-    typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
-    typedef typename ArrayView<const GO>::size_type size_type;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
-    // The user has specified the distribution of elements over the
-    // processes, via entryList.  The distribution is not necessarily
-    // contiguous or equally shared over the processes.
+    // The user has specified the distribution of indices over the
+    // processes.  The distribution is not necessarily contiguous or
+    // equally shared over the processes.
+    //
+    // We assume that the number of local elements can be stored in a
+    // size_t.  The instance member numLocalElements_ is a size_t, so
+    // this variable and that should have the same type.
 
-    // The length of entryList on this node is the number of local
-    // elements (on this node), even though entryList contains global
-    // indices.  We assume that the number of local elements can be
-    // stored in a size_t; numLocalElements_ is a size_t, so this
-    // variable and that should have the same type.
-    const size_t numLocalElements = as<size_t> (entryList.size ());
-
-#ifdef HAVE_TPETRA_DEBUG
-    // Keep this for later debug checks.
     GST debugGlobalSum = 0; // Will be global sum of numLocalElements
-    reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
+    reduceAll<int, GST> (*comm, REDUCE_SUM, static_cast<GST> (numLocalElements),
                          outArg (debugGlobalSum));
     // In debug mode only, check whether numGlobalElements and
     // indexBase are the same over all processes in the communicator.
@@ -411,10 +350,13 @@ namespace Tpetra {
       broadcast<int, GST> (*comm_, 0, outArg (proc0NumGlobalElements));
       GST minNumGlobalElements = numGlobalElements;
       GST maxNumGlobalElements = numGlobalElements;
-      reduceAll<int, GST> (*comm, REDUCE_MIN, numGlobalElements, outArg (minNumGlobalElements));
-      reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements, outArg (maxNumGlobalElements));
+      reduceAll<int, GST> (*comm, REDUCE_MIN, numGlobalElements,
+                           outArg (minNumGlobalElements));
+      reduceAll<int, GST> (*comm, REDUCE_MAX, numGlobalElements,
+                           outArg (maxNumGlobalElements));
       TEUCHOS_TEST_FOR_EXCEPTION(
-        minNumGlobalElements != maxNumGlobalElements || numGlobalElements != minNumGlobalElements,
+        minNumGlobalElements != maxNumGlobalElements ||
+        numGlobalElements != minNumGlobalElements,
         std::invalid_argument,
         "Tpetra::Map constructor: All processes must provide the same number "
         "of global elements.  This is true even if that argument is Teuchos::"
@@ -443,16 +385,63 @@ namespace Tpetra {
 
       // Make sure that the sum of numLocalElements over all processes
       // equals numGlobalElements.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ((numGlobalElements != GSTI) && (debugGlobalSum != numGlobalElements)),
-        std::invalid_argument,
-        "Tpetra::Map constructor: The sum of entryList.size() over all "
-        "processes = " << debugGlobalSum << " != numGlobalElements = "
-        << numGlobalElements << ".  If you would like this constructor to "
-        "compute numGlobalElements for you, you may set numGlobalElements = "
-        "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numGlobalElements != GSTI && debugGlobalSum != numGlobalElements,
+         std::invalid_argument, "Tpetra::Map constructor: The sum of each "
+         "process' number of indices over all processes, " << debugGlobalSum
+         << " != numGlobalElements = " << numGlobalElements << ".  If you "
+         "would like this constructor to compute numGlobalElements for you, "
+         "you may set numGlobalElements = "
+         "Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid() on input.  "
+         "Please note that this is NOT necessarily -1.");
     }
+
+    return debugGlobalSum;
+#else
+    return static_cast<global_size_t> (0);
 #endif // HAVE_TPETRA_DEBUG
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  initWithNonownedHostIndexList (const global_size_t numGlobalElements,
+                                 const Kokkos::View<const GlobalOrdinal*,
+                                   Kokkos::LayoutLeft,
+                                   Kokkos::HostSpace,
+                                   Kokkos::MemoryUnmanaged>& entryList,
+                                 const GlobalOrdinal indexBase,
+                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+  {
+    using Kokkos::LayoutLeft;
+    using Kokkos::subview;
+    using Kokkos::View;
+    using Teuchos::as;
+    using Teuchos::broadcast;
+    using Teuchos::outArg;
+    using Teuchos::ptr;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef global_size_t GST;
+    const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
+
+    // The user has specified the distribution of elements over the
+    // processes, via entryList.  The distribution is not necessarily
+    // contiguous or equally shared over the processes.
+
+    // The length of entryList on this node is the number of local
+    // elements (on this node), even though entryList contains global
+    // indices.  We assume that the number of local elements can be
+    // stored in a size_t; numLocalElements_ is a size_t, so this
+    // variable and that should have the same type.
+    const size_t numLocalElements = static_cast<size_t> (entryList.size ());
+
+    initialNonuniformDebugCheck (numGlobalElements, numLocalElements,
+                                 indexBase, comm);
 
     // FIXME (mfh 20 Feb 2013) The global reduction is redundant,
     // since the directory Map will have to do the same thing.  We
@@ -462,7 +451,8 @@ namespace Tpetra {
     if (numGlobalElements != GSTI) {
       numGlobalElements_ = numGlobalElements; // Use the user's value.
     } else { // The user wants us to compute the sum.
-      reduceAll<int, GST> (*comm, REDUCE_SUM, as<GST> (numLocalElements),
+      reduceAll<int, GST> (*comm, REDUCE_SUM,
+                           static_cast<GST> (numLocalElements),
                            outArg (numGlobalElements_));
     }
 
@@ -502,7 +492,7 @@ namespace Tpetra {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
       // doing so, fill in the LID -> GID table.
-      Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
+      View<GO*, LayoutLeft, device_type> lgMap ("lgMap", numLocalElements_);
       auto lgMap_host = Kokkos::create_mirror_view (lgMap);
 
       firstContiguousGID_ = entryList[0];
@@ -538,11 +528,25 @@ namespace Tpetra {
       maxMyGID_ = lastContiguousGID_;
 
       // Compute the GID -> LID lookup table, _not_ including the
-      // initial sequence of contiguous GIDs.
-      ArrayView<const GO> nonContigEntries =
-        entryList (as<size_type> (i), entryList.size () - as<size_type> (i));
-      glMap_ = global_to_local_table_type (nonContigEntries, firstContiguousGID_,
-                                           lastContiguousGID_, as<LO> (i));
+      // initial sequence of contiguous GIDs.  Its constructor expects
+      // an owned device View, so we definitely must make a deep copy
+      // of the subview of the input indices.
+      {
+        auto nceHost = // NonContiguous Entries
+          subview (entryList, std::pair<size_t, size_t> (i, entryList.size ()));
+        View<GO*, LayoutLeft, device_type> nce ("nce", nceHost.size ());
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (static_cast<size_t> (nce.size ()) !=
+           static_cast<size_t> (entryList.size () - i),
+           std::logic_error, "Tpetra::Map noncontiguous constructor: "
+           "nce.size() = " << nce.size () << " != entryList.size() - i = "
+           << (entryList.size () - i) << " = " << entryList.size () << " - "
+           << i << ".  Please report this bug to the Tpetra developers.");
+        Kokkos::deep_copy (nce, nceHost);
+        glMap_ = global_to_local_table_type (nce, firstContiguousGID_,
+                                             lastContiguousGID_,
+                                             static_cast<LO> (i));
+      }
 
       for ( ; i < numLocalElements_; ++i) {
         const GO curGid = entryList[i];
@@ -564,6 +568,8 @@ namespace Tpetra {
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      // We've already created this, so use it.
+      lgMapHost_ = lgMap_host;
     }
     else {
       // This insures tests for GIDs in the range
@@ -635,6 +641,54 @@ namespace Tpetra {
     //setupDirectory ();
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const GlobalOrdinal indexList[],
+       const LocalOrdinal indexListSize,
+       const GlobalOrdinal indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm) :
+    comm_ (comm),
+    node_ (defaultArgNode<Node> ()),
+    uniform_ (false),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
+  {
+    // Not quite sure if I trust all code to behave correctly if the
+    // pointer is nonnull but the array length is nonzero, so I'll
+    // make sure the raw pointer is null if the length is zero.
+    const GlobalOrdinal* const indsRaw = indexListSize == 0 ? NULL : indexList;
+    Kokkos::View<const GlobalOrdinal*,
+                 Kokkos::LayoutLeft,
+                 Kokkos::HostSpace,
+                 Kokkos::MemoryUnmanaged> inds (indsRaw, indexListSize);
+    initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map (const global_size_t numGlobalElements,
+       const Teuchos::ArrayView<const GlobalOrdinal>& entryList,
+       const GlobalOrdinal indexBase,
+       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+       const Teuchos::RCP<Node>& node) :
+    comm_ (comm),
+    node_ (node),
+    uniform_ (false),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, Node> ())
+  {
+    const size_t numLclInds = static_cast<size_t> (entryList.size ());
+
+    // Not quite sure if I trust both ArrayView and View to behave
+    // correctly if the pointer is nonnull but the array length is
+    // nonzero, so I'll make sure it's null if the length is zero.
+    const GlobalOrdinal* const indsRaw =
+      numLclInds == 0 ? NULL : entryList.getRawPtr ();
+    Kokkos::View<const GlobalOrdinal*,
+                 Kokkos::LayoutLeft,
+                 Kokkos::HostSpace,
+                 Kokkos::MemoryUnmanaged> inds (indsRaw, numLclInds);
+    initWithNonownedHostIndexList (numGlobalElements, inds, indexBase, comm);
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -661,7 +715,6 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
-    typedef typename ArrayView<const GO>::size_type size_type;
     const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of indices over the
@@ -852,6 +905,8 @@ namespace Tpetra {
 
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      // We've already created this, so use it.
+      lgMapHost_ = lgMap_host;
     }
     else {
       // This insures tests for GIDs in the range
@@ -982,9 +1037,8 @@ namespace Tpetra {
       // This is a host Kokkos::View access, with no RCP or ArrayRCP
       // involvement.  As a result, it is thread safe.
       //
-      // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap_ is a CUDA
-      // device View.
-      return lgMap_[localIndex];
+      // lgMapHost_ is a host pointer; this does NOT assume UVM.
+      return lgMapHost_[localIndex];
     }
   }
 
@@ -1273,9 +1327,7 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Kokkos::View<const GlobalOrdinal*,
-               Kokkos::LayoutLeft,
-               typename Map<LocalOrdinal, GlobalOrdinal, Node>::device_type>
+  typename Map<LocalOrdinal,GlobalOrdinal,Node>::global_indices_array_type
   Map<LocalOrdinal,GlobalOrdinal,Node>::getMyGlobalIndices () const
   {
     typedef LocalOrdinal LO;
@@ -1306,8 +1358,12 @@ namespace Tpetra {
       lg_view_type lgMap ("lgMap", numElts);
       FillLgMap<LO, GO, DT> fillIt (lgMap, minMyGID_);
 
+      auto lgMapHost = Kokkos::create_mirror_view (lgMap);
+      Kokkos::deep_copy (lgMapHost, lgMap);
+
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
+      lgMapHost_ = lgMapHost;
     }
 
     return lgMap_;
@@ -1318,49 +1374,19 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeElementList () const
   {
     typedef GlobalOrdinal GO; // convenient abbreviation
-    typedef Kokkos::View<GO*, Kokkos::LayoutLeft, device_type> lg_view_type;
 
     // If the local-to-global mapping doesn't exist yet, and if we
     // have local entries, then create and fill the local-to-global
     // mapping.
-    const bool needToCreateLocalToGlobalMapping =
-      lgMap_.dimension_0 () == 0 && numLocalElements_ > 0;
+    (void) this->getMyGlobalIndices ();
 
-    if (needToCreateLocalToGlobalMapping) {
-#ifdef HAVE_TEUCHOS_DEBUG
-      // The local-to-global mapping should have been set up already
-      // for a noncontiguous map.
-      TEUCHOS_TEST_FOR_EXCEPTION( ! isContiguous(), std::logic_error,
-        "Tpetra::Map::getNodeElementList: The local-to-global mapping (lgMap_) "
-        "should have been set up already for a noncontiguous Map.  Please report"
-        " this bug to the Tpetra team.");
-#endif // HAVE_TEUCHOS_DEBUG
-
-      typedef typename Teuchos::ArrayRCP<GO>::size_type size_type;
-      const size_type numElts = static_cast<size_type> (getNodeNumElements ());
-
-      lg_view_type lgMap ("lgMap", numElts);
-      if (numElts != 0) {
-        auto lgMap_host = Kokkos::create_mirror_view (lgMap);
-        GO gid = minMyGID_;
-        for (size_type k = 0; k < numElts; ++k, ++gid) {
-          lgMap_host[k] = gid;
-        }
-        // We filled lgMap on host; now, sync it back to device.
-        Kokkos::deep_copy (lgMap, lgMap_host);
-      }
-
-      // "Commit" the local-to-global lookup table we filled in above.
-      lgMap_ = lgMap;
-    }
-
-    // NOTE (mfh 12 Jan 2016) This assumes UVM, if lgMap is a CUDA
-    // device View.
-    const GO* lgMapHostRawPtr = lgMap_.ptr_on_device ();
+    // This does NOT assume UVM; lgMapHost_ is a host pointer.
+    const GO* lgMapHostRawPtr = lgMapHost_.ptr_on_device ();
     // The third argument forces ArrayView not to try to track memory
     // in a debug build.  We have to use it because the memory does
     // not belong to a Teuchos memory management class.
-    return Teuchos::ArrayView<const GO> (lgMapHostRawPtr, lgMap_.dimension_0 (),
+    return Teuchos::ArrayView<const GO> (lgMapHostRawPtr,
+                                         lgMapHost_.dimension_0 (),
                                          Teuchos::RCP_DISABLE_NODE_LOOKUP);
   }
 
@@ -1605,6 +1631,7 @@ namespace Tpetra {
       }
 
       map->lgMap_ = lgMap_;
+      map->lgMapHost_ = lgMapHost_;
       map->glMap_ = glMap_;
       map->node_ = node_;
 

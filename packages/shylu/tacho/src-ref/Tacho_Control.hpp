@@ -26,6 +26,16 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::InternalBlas, Variant::One };
   };
 
+  template<> struct Control<AlgoHerk::DenseByBlocks,Variant::One> {
+    static constexpr int Herk[2] = { AlgoHerk::ExternalBlas, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas, Variant::One };
+  };
+
+  template<> struct Control<AlgoHerk::DenseByBlocks,Variant::Two> {
+    static constexpr int Herk[2] = { AlgoHerk::InternalBlas, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::InternalBlas, Variant::One };
+  };
+
   template<> struct Control<AlgoTrsm::DenseByBlocks,Variant::One> {
     static constexpr int Gemm[2] = { AlgoGemm::ExternalBlas, Variant::One };
     static constexpr int Trsm[2] = { AlgoTrsm::ExternalBlas, Variant::One };
@@ -67,12 +77,30 @@ namespace Tacho {
   };
 
   // - Fine grained SuperNodalByblocks
-  // template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
-  //   static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,             Variant::One };
-  //   static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodesByBlocks, Variant::One };
-  //   static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodesByBlocks, Variant::One };
-  //   static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodesByBlocks, Variant::One };
-  // };
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Three> {
+    static constexpr int Chol[2] = { AlgoChol::SuperNodesByBlocks,             Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseSparseSuperNodesByBlocks, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::SparseSparseSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseSparseSuperNodesByBlocks, Variant::One };
+  };
+
+  // - SparseByBlocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::One> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseUnblocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseUnblocked, Variant::One };
+  };
+
+  // - SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Two> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodes, Variant::One };
+  };
+
+  // - Fine grained SuperNodalByblocks
+  template<> struct Control<AlgoTriSolve::ByBlocks,Variant::Three> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodesByBlocks, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodesByBlocks, Variant::One };
+  };
 
   // // ----------------------------------------------------------------------------------
 

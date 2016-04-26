@@ -16,5 +16,6 @@
 
 // Supernodal factorization
 #include "Tacho_Chol_Upper_SuperNodes.hpp"
+#include "Tacho_Chol_Upper_SuperNodesByBlocks.hpp"
 
 #endif

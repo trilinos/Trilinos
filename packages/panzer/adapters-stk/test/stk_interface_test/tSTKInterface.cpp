@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    TEST_EQUALITY(mesh.getEntityCounts(sideRank),0);
    TEST_EQUALITY(mesh.getEntityCounts(elmtRank),2);
 
-   #ifdef HAVE_IOSS
+   #ifdef PANZER_HAVE_IOSS
       TEST_ASSERT(mesh.isWritable());
       TEST_NOTHROW(mesh.writeToExodus("simplemesh.exo"));
    #else

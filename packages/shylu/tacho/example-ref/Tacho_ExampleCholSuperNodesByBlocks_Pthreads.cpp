@@ -19,6 +19,10 @@ using namespace Tacho;
 
 int main (int argc, char *argv[]) {
 
+#ifdef HAVE_SHYLUTACHO_VTUNE
+  __itt_pause();
+#endif
+
   Teuchos::CommandLineProcessor clp;
   clp.setDocString("Tacho::DenseMatrixBase examples on Pthreads execution space.\n");
 
@@ -58,11 +62,14 @@ int main (int argc, char *argv[]) {
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
 
-  int nrhs = 1;
-  clp.setOption("nrhs", &team_size, "# of right hand side");
+  int nrhs = 0;
+  clp.setOption("nrhs", &nrhs, "# of right hand side");
+
+  int mb = 0;
+  clp.setOption("mb", &mb, "Dense nested blocks size");
 
   int nb = 1;
-  clp.setOption("nb", &team_size, "column block size of right hand side");
+  clp.setOption("nb", &nb, "Column block size of right hand side");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -81,7 +88,7 @@ int main (int argc, char *argv[]) {
       (file_input, 
        treecut, prunecut, fill_level, rows_per_team, 
        max_concurrency, max_task_dependence, team_size,
-       nrhs, nb,
+       nrhs, mb, nb,
        verbose);
 #else
     r_val = -1;

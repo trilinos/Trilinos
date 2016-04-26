@@ -29,6 +29,8 @@ namespace Tacho {
            CrsExecViewTypeA &A,
            CrsExecViewTypeB &B) {
 
+    typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
+
     if (member.team_rank() == 0) {
       DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> AA; //(A.Flat());
       DenseMatrixView<typename CrsExecViewTypeA::flat_mat_base_type> BB; //(B.Flat());

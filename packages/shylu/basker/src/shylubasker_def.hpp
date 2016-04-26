@@ -277,6 +277,12 @@ namespace BaskerNS
   {
 
     // printf("befor symbolic\n");
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Symbolic\n");
+	printf("Matrix: %d %d %d \n",
+	       nrow, ncol, nnz);
+      }
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
       {
@@ -310,6 +316,11 @@ namespace BaskerNS
 			     A);
 	  }
 	sort_matrix(A);
+	
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Matrix Loaded \n");
+	  }
 
 	if(Options.verbose_matrix_out == BASKER_TRUE)
 	  {
@@ -347,6 +358,12 @@ namespace BaskerNS
 	  }
 	*/
 	btf_order2();
+	
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Ordering Found \n");
+	  }
+
 	//if(btf_tabs_offset != 0)
 	if((Options.btf == BASKER_TRUE) &&
 	   (btf_tabs_offset != 0))
@@ -354,6 +371,12 @@ namespace BaskerNS
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
 	  }
 	order_flag = BASKER_TRUE;
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker P2P Thread Barriers Init\n");
+	  }
+
 	//std::cout << "Time Order/Init arrays " 
 	//	  << timer_order.seconds()
 	//	  << std::endl;
@@ -384,17 +407,26 @@ namespace BaskerNS
 	  {
 	    sfactor_inc();
 	  }
-	
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Nonzero Counts Found \n");
+	  }
 	symb_flag = BASKER_TRUE;
       }
 
     
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Symbolic Done \n");
+      }
     
     //printf("\nTEST ALM\n");
     //ALM(0)(0).info();
     //printf("\n");
 
     
+
     return 0;
 	
   }//end Symbolic()
@@ -423,6 +455,14 @@ namespace BaskerNS
   {
 
     int err = 0;
+
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Factor Called\n");
+	printf("Matrix: %d %d %d \n",
+	       nrow, ncol, nnz);
+      }
+
     
     /*
     int err = A.copy_values(nrow, ncol, nnz, col_ptr, 
@@ -475,6 +515,11 @@ namespace BaskerNS
       }
     //err = sfactor_copy();
     err = sfactor_copy2();
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Copy Structure Done \n");
+      }
+
     //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {
@@ -497,6 +542,11 @@ namespace BaskerNS
     if(err == BASKER_ERROR)
       {
 	return BASKER_ERROR;
+      }
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Factor Done \n");
       }
 
     /*

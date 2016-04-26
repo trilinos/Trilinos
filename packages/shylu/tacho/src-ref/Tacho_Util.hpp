@@ -91,7 +91,7 @@ namespace Tacho {
 
   class Util {
   public:
-    static const size_t LabelSize = 64;
+    static constexpr size_t LabelSize = 64;
 
     template<typename T>
     KOKKOS_INLINE_FUNCTION
@@ -341,6 +341,23 @@ namespace Tacho {
     // - Flat sparse with nested dense matrices
     static constexpr int SuperNodes             = 1301;
     static constexpr int SuperNodesByBlocks     = 1302;
+  };
+
+  /// \class AlgoTriSolve
+  /// \brief Various Cholesky algorithms for sparse and dense factorization.
+  class AlgoTriSolve {
+  public:
+    // - Flat sparse matrix
+    static constexpr int Dummy                  = 1400;
+    static constexpr int Unblocked              = 1401;
+    static constexpr int ExternalPardiso        = 1402;
+
+    // - Block sparse matrix
+    static constexpr int ByBlocks               = 1501;
+
+    // - Flat sparse with nested dense matrices
+    static constexpr int SuperNodes             = 1701;
+    static constexpr int SuperNodesByBlocks     = 1702;
   };
 
   /// \class AlgoBlas

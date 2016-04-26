@@ -43,116 +43,150 @@
 /** \file   Intrepid_HCURL_QUAD_I1_FEMDef.hpp
     \brief  Definition file for default FEM basis functions of degree 1 for H(curl) functions on Qadrilateral cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
+            Kokkorized by Kyungjoo Kim
 */
+
+#ifndef __INTREPID2_HCURL_QUAD_I1_FEM_DEF_HPP__
+#define __INTREPID2_HCURL_QUAD_I1_FEM_DEF_HPP__
+
 
 namespace Intrepid2 {
 
-template<class Scalar, class ArrayScalar>
-Basis_HCURL_QUAD_I1_FEM<Scalar,ArrayScalar>::Basis_HCURL_QUAD_I1_FEM()
-  {
-    this -> basisCardinality_  = 4;
-    this -> basisDegree_       = 1;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_DEFAULT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+  
+  template<typename SpT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HCURL_QUAD_I1_FEM<SpT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
 
-    initializeTags();
-    this->basisTagsAreSet_ = true;
+    switch (opType) {
+    case OPERATOR_VALUE: {
+      const auto x = input(0);
+      const auto y = input(1);
+
+      // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = (1.0 - y)/4.0;
+      output(0, 1) =  0.0;
+          
+      output(1, 0) =  0.0;
+      output(1, 1) = (1.0 + x)/4.0;
+          
+      output(2, 0) =-(1.0 + y)/4.0;
+      output(2, 1) =  0.0;
+          
+      output(3, 0) =  0.0;
+      output(3, 1) =-(1.0 - x)/4.0;
+      break;
+    }
+    case OPERATOR_CURL: {
+      const auto x = input(0);
+      const auto y = input(1);
+
+      // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
+      output(0) = 0.25;
+      output(1) = 0.25;
+      output(2) = 0.25;
+      output(3) = 0.25;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_CURL, 
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C1_FEM::Serial::getValues) operator is not supported");
+    }
+    } //end switch
+
   }
-  
-template<class Scalar, class ArrayScalar>
-void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
-  // Basis-dependent intializations
-  int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
 
-  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-  int tags[]  = {
-                  1, 0, 0, 1,
-                  1, 1, 0, 1,
-                  1, 2, 0, 1,
-                  1, 3, 0, 1};
-  
-  // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
-                              this -> ordinalToTag_,
-                              tags,
-                              this -> basisCardinality_,
+
+  template<typename SpT>
+  Basis_HCURL_QUAD_I1_FEM<SpT>::
+  Basis_HCURL_QUAD_I1_FEM()  {
+    this->basisCardinality_  = 4;
+    this->basisDegree_       = 1;
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this->basisType_         = BASIS_FEM_DEFAULT;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    // initialize tags
+    {
+      // Basis-dependent intializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+      
+      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+      const ordinal_type tags[16]  = { 1, 0, 0, 1,
+                                     1, 1, 0, 1,
+                                     1, 2, 0, 1,
+                                     1, 3, 0, 1 };
+
+      // when exec space is device, this wrapping relies on uvm.
+      Kokkos::View<ordinal_type[16], SpT> tagView(tags);
+
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
                               tagSize,
                               posScDim,
                               posScOrd,
                               posDfOrd);
-}
+    }
+  }
 
-
-
-template<class Scalar, class ArrayScalar>
-void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                            const ArrayScalar &  inputPoints,
-                                                            const EOperator      operatorType) const {
   
-// Verify arguments
+  template<typename SpT>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  void
+  Basis_HCURL_QUAD_I1_FEM<SpT>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+             const EOperator operatorType = OPERATOR_VALUE ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-  Intrepid2::getValues_HCURL_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
+    Intrepid2::getValues_HCURL_Args(outputValues,
+                                    inputPoints,
+                                    operatorType,
+                                    this->getBaseCellTopology(),
+                                    this->getCardinality() );
 #endif
+    
+    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
+    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+
+    // Number of evaluation points = dim 0 of inputPoints
+    const auto loopSize = inputPoints.dimension(0);
+    Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
- // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);
+    switch (operatorType) {
 
-  // Temporaries: (x,y) coordinates of the evaluation point
-  Scalar x = 0.0;                                    
-  Scalar y = 0.0;                                    
-  
-  switch (operatorType) {
-    case OPERATOR_VALUE:
-      for (int i0 = 0; i0 < dim0; i0++) {
-        x = inputPoints(i0, 0);
-        y = inputPoints(i0, 1);
-        
-        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = (1.0 - y)/4.0;
-        outputValues(0, i0, 1) =  0.0;
-
-        outputValues(1, i0, 0) =  0.0;
-        outputValues(1, i0, 1) = (1.0 + x)/4.0;
-
-        outputValues(2, i0, 0) =-(1.0 + y)/4.0;
-        outputValues(2, i0, 1) =  0.0;
-
-        outputValues(3, i0, 0) =  0.0;
-        outputValues(3, i0, 1) =-(1.0 - x)/4.0;
-      }
+    case OPERATOR_VALUE: {
+      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
-    case OPERATOR_CURL:
-      for (int i0 = 0; i0 < dim0; i0++) {
-        
-        // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        outputValues(0, i0) = 0.25;
-        outputValues(1, i0) = 0.25;
-        outputValues(2, i0) = 0.25;
-        outputValues(3, i0) = 0.25;
-      }
+    }
+    case OPERATOR_CURL: {
+      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_CURL> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
-    case OPERATOR_DIV:
-       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_QUAD_I1_FEM): DIV is invalid operator for HCURL Basis Functions");
+    }
+    case OPERATOR_DIV: {
+      INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV, std::invalid_argument,
+                                    ">>> ERROR (Basis_HCURL_QUAD_I1_FEM::getValues): DIV is invalid operator for HCURL Basis Functions");
       break;
-      
-    case OPERATOR_GRAD:
-       TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_GRAD), std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_QUAD_I1_FEM): GRAD is invalid operator for HCURL Basis Functions");
+    }
+    case OPERATOR_GRAD: {
+      INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_GRAD, std::invalid_argument,
+                                    ">>> ERROR (Basis_HCURL_QUAD_I1_FEM::getValues): GRAD is invalid operator for HCURL Basis Functions");
       break;
-
+    }
     case OPERATOR_D1:
     case OPERATOR_D2:
     case OPERATOR_D3:
@@ -162,70 +196,64 @@ void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &      
     case OPERATOR_D7:
     case OPERATOR_D8:
     case OPERATOR_D9:
-    case OPERATOR_D10:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_D1)    ||
-                            (operatorType == OPERATOR_D2)    ||
-                            (operatorType == OPERATOR_D3)    ||
-                            (operatorType == OPERATOR_D4)    ||
-                            (operatorType == OPERATOR_D5)    ||
-                            (operatorType == OPERATOR_D6)    ||
-                            (operatorType == OPERATOR_D7)    ||
-                            (operatorType == OPERATOR_D8)    ||
-                            (operatorType == OPERATOR_D9)    ||
-                            (operatorType == OPERATOR_D10) ),
-                          std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_QUAD_I1_FEM): Invalid operator type");
+    case OPERATOR_D10: {
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_D1)    ||
+                                    (operatorType == OPERATOR_D2)    ||
+                                    (operatorType == OPERATOR_D3)    ||
+                                    (operatorType == OPERATOR_D4)    ||
+                                    (operatorType == OPERATOR_D5)    ||
+                                    (operatorType == OPERATOR_D6)    ||
+                                    (operatorType == OPERATOR_D7)    ||
+                                    (operatorType == OPERATOR_D8)    ||
+                                    (operatorType == OPERATOR_D9)    ||
+                                    (operatorType == OPERATOR_D10),
+                                    std::invalid_argument,
+                                    ">>> ERROR (Basis_HCURL_QUAD_I1_FEM::getValues): Invalid operator type");
       break;
-
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (operatorType != OPERATOR_VALUE) &&
-                            (operatorType != OPERATOR_GRAD)  &&
-                            (operatorType != OPERATOR_CURL)  &&
-                            (operatorType != OPERATOR_DIV)   &&
-                            (operatorType != OPERATOR_D1)    &&
-                            (operatorType != OPERATOR_D2)    &&
-                            (operatorType != OPERATOR_D3)    &&
-                            (operatorType != OPERATOR_D4)    &&
-                            (operatorType != OPERATOR_D5)    &&
-                            (operatorType != OPERATOR_D6)    &&
-                            (operatorType != OPERATOR_D7)    &&
-                            (operatorType != OPERATOR_D8)    &&
-                            (operatorType != OPERATOR_D9)    &&
-                            (operatorType != OPERATOR_D10) ),
-                          std::invalid_argument,
-                          ">>> ERROR (Basis_HCURL_QUAD_I1_FEM): Invalid operator type");
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType != OPERATOR_VALUE) &&
+                                    (operatorType != OPERATOR_GRAD)  &&
+                                    (operatorType != OPERATOR_CURL)  &&
+                                    (operatorType != OPERATOR_DIV)   &&
+                                    (operatorType != OPERATOR_D1)    &&
+                                    (operatorType != OPERATOR_D2)    &&
+                                    (operatorType != OPERATOR_D3)    &&
+                                    (operatorType != OPERATOR_D4)    &&
+                                    (operatorType != OPERATOR_D5)    &&
+                                    (operatorType != OPERATOR_D6)    &&
+                                    (operatorType != OPERATOR_D7)    &&
+                                    (operatorType != OPERATOR_D8)    &&
+                                    (operatorType != OPERATOR_D9)    &&
+                                    (operatorType != OPERATOR_D10),
+                                    std::invalid_argument,
+                                    ">>> ERROR (Basis_HCURL_QUAD_I1_FEM::getValues): Invalid operator type");
+    }
+    }
   }
-}
 
-
-  
-template<class Scalar, class ArrayScalar>
-void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                            const ArrayScalar &    inputPoints,
-                                                            const ArrayScalar &    cellVertices,
-                                                            const EOperator        operatorType) const {
-  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HCURL_QUAD_I1_FEM): FEM Basis calling an FVD member function");
-                                                             }
-
-template<class Scalar, class ArrayScalar>
-void Basis_HCURL_QUAD_I1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const {
+  template<typename SpT>
+  template<typename dofCoordValueType, class ...dofCoordProperties>
+  void
+  Basis_HCURL_QUAD_I1_FEM<SpT>::
+  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-  // Verify rank of output array.
-  TEUCHOS_TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
-                      ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) rank = 2 required for DofCoords array");
-  // Verify 0th dimension of output array.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<index_type>(DofCoords.dimension(0)) == static_cast<index_type>(this -> basisCardinality_) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
-  // Verify 1st dimension of output array.
-  TEUCHOS_TEST_FOR_EXCEPTION( !( static_cast<index_type>(DofCoords.dimension(1)) == static_cast<index_type>(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
+    // Verify rank of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
+    // Verify 0th dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->basisCardinality_, std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+    // Verify 1st dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-
-  DofCoords(0,0) =  0.0;   DofCoords(0,1) = -1.0;
-  DofCoords(1,0) =  1.0;   DofCoords(1,1) =  0.0;
-  DofCoords(2,0) =  0.0;   DofCoords(2,1) =  1.0;
-  DofCoords(3,0) = -1.0;   DofCoords(3,1) =  0.0;
-}
+    dofCoords(0,0) =  0.0;   dofCoords(0,1) = -1.0;
+    dofCoords(1,0) =  1.0;   dofCoords(1,1) =  0.0;
+    dofCoords(2,0) =  0.0;   dofCoords(2,1) =  1.0;
+    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  0.0;
+  }
 
 }// namespace Intrepid2
+
+#endif

@@ -25,4 +25,7 @@
 /* Define if want to build with Teuchos enabled */
 #cmakedefine HAVE_SHYLUTACHO_TEUCHOS
 
+/* Define if want to build with Teuchos enabled */
+#cmakedefine HAVE_SHYLUTACHO_AMESOS
+
 #endif

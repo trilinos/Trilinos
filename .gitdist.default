@@ -1,8 +1,8 @@
+packages/moocho
+packages/xSDKTrilinos
 TriBITS
 TriBITS/TriBITSDoc
-packages/moocho
 DataTransferKit
+preCopyrightTrilinos
 DrekarBase
 DrekarResearch
-preCopyrightTrilinos
-

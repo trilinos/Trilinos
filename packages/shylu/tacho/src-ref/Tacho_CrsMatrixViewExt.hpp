@@ -13,6 +13,12 @@ namespace Tacho {
   template<typename VT, typename OT, typename ST, typename SpT>
   class DenseMatrixBase;
 
+  template<typename MT>
+  class DenseMatrixView;
+
+  template<typename MT>
+  class TaskView;
+
   template<typename CrsMatBaseType>
   class CrsMatrixViewExt : public CrsMatrixView<CrsMatBaseType> {
   public:
@@ -23,13 +29,13 @@ namespace Tacho {
     typedef typename CrsMatBaseType::size_type     size_type;
 
     typedef DenseMatrixBase<value_type,ordinal_type,size_type,space_type> flat_mat_base_type;
-    // typedef DenseMatrixBase<TaskView<DenseMatrixView<flat_mat_base_type> >,
-    //                         ordinal_type,size_type,space_type> hier_mat_base_type;
+    typedef DenseMatrixBase<TaskView<DenseMatrixView<flat_mat_base_type> >,
+                            ordinal_type,size_type,space_type> hier_mat_base_type;
 
   private:
 
     flat_mat_base_type _A;
-    // hier_mat_base_type _H;
+    hier_mat_base_type _H;
 
   public:
 
@@ -62,26 +68,32 @@ namespace Tacho {
     }
 
     KOKKOS_INLINE_FUNCTION
+    hier_mat_base_type& Hier() { return _H; }
+    
+    KOKKOS_INLINE_FUNCTION
+    hier_mat_base_type  Hier() const { return _H; }
+
+    KOKKOS_INLINE_FUNCTION
     CrsMatrixViewExt()
-      : CrsMatrixView<CrsMatBaseType>(), _A()//, _H()
+      : CrsMatrixView<CrsMatBaseType>(), _A(), _H()
     { }
 
     template<typename MT>
     KOKKOS_INLINE_FUNCTION
     CrsMatrixViewExt(const CrsMatrixViewExt<MT> &b)
-      : CrsMatrixView<MT>(b), _A(b._A)//, _H(b._H)
+      : CrsMatrixView<MT>(b), _A(b._A), _H(b._H)
     { }
 
     KOKKOS_INLINE_FUNCTION
     CrsMatrixViewExt(const CrsMatBaseType &b)
-      : CrsMatrixView<CrsMatBaseType>(b), _A()//, _H()
+      : CrsMatrixView<CrsMatBaseType>(b), _A(), _H()
     { }
 
     KOKKOS_INLINE_FUNCTION
     CrsMatrixViewExt(const CrsMatBaseType &b,
                      const ordinal_type offm, const ordinal_type m,
                      const ordinal_type offn, const ordinal_type n)
-      : CrsMatrixView<CrsMatBaseType>(b, offm, m, offn, n), _A()//, _H()
+      : CrsMatrixView<CrsMatBaseType>(b, offm, m, offn, n), _A(), _H()
     { }
 
     KOKKOS_INLINE_FUNCTION

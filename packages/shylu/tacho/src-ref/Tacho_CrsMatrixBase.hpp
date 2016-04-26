@@ -224,6 +224,24 @@ namespace Tacho {
       setLabel(label); 
     }
 
+    /// \brief Constructor with label
+    KOKKOS_INLINE_FUNCTION
+    CrsMatrixBase(const char *label,
+                  const ordinal_type m,
+                  const ordinal_type n,
+                  const size_type nnz) 
+      : _m(0),
+        _n(0),
+        _nnz(0),
+        _ap_begin(),
+        _ap_end(),
+        _aj(),
+        _ax()
+    { 
+      setLabel(label); 
+      createInternalArrays(m, n, nnz);
+    }
+
     /// \brief Copy constructor (shallow copy), for deep-copy use a method copy
     template<typename VT,
              typename OT,

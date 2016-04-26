@@ -121,9 +121,6 @@ namespace BaskerNS
     //printf("scotch.  num_threads: %d lvls: %d \n", 
     //	   num_threads, lvls);
     part_scotch(M, BT, lvls);
-
-
-  
     return 0;
   }//end part_scotch
 
@@ -182,6 +179,7 @@ namespace BaskerNS
       {
         BASKER_ASSERT(self_edge == (sg.m-1), 
 		      "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+	//JDB: comeback need to have a better way to exit
 	exit(0);
 	//Need to clean up this 
       }

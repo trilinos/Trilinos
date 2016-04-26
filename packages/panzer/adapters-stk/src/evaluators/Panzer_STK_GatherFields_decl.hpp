@@ -87,6 +87,8 @@ private:
   std::vector<VariableField*> stkFields_;
  
   Teuchos::RCP<const STK_Interface> mesh_;
+ 
+  bool isConstant_;
 
   GatherFields();
 

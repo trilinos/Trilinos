@@ -129,7 +129,7 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
     Intrepid2::FunctionSpaceTools::
       integrate<ScalarT>(residual, normal_dot_flux, 
 			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
-			 Intrepid2::COMP_BLAS);
+			 Intrepid2::COMP_CPP);
 }
 
 //**********************************************************************
