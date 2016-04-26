@@ -179,7 +179,7 @@ public:
     numProcs_  = comm->getSize();
     *outStream_ << "Total number of processors: " << numProcs_ << std::endl;
 
-    basisOrder_ = parlist->sublist("PDE FEM").get("Order of FE Discretization", 1);
+    basisOrder_ = parlist->sublist("PDE FEM").get<int>("Order of FE Discretization");
   }
 
   void SetDiscretization(const Teuchos::RCP<MeshManager<Real> > &meshMgr,
@@ -201,7 +201,7 @@ public:
   }
 
   virtual void SetParallelStructure(void) {
-    int cellSplit = parlist_->sublist("Geometry").get("Partition type", 1);
+    int cellSplit = parlist_->sublist("Geometry").get<int>("Partition type");
     /****************************************************/
     /*** Build parallel communication infrastructure. ***/
     /****************************************************/

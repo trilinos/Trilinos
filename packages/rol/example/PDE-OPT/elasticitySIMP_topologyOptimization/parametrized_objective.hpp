@@ -64,7 +64,7 @@ public:
   ParametrizedObjective_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                               const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     data_ = data;
-    alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);
+    alpha_ = parlist->sublist("Problem").get<Real>("Penalty parameter");
   }
 
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
