@@ -13,13 +13,23 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     example_01
     SOURCES example_01.cpp
     ARGS PrintItAll
-    NUM_MPI_PROCS 4
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+  
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_02
+    SOURCES example_02.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ElasticityDataCopy
+    ElasticitySIMPDataCopy
     SOURCE_FILES
       input.xml
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

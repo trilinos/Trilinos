@@ -95,6 +95,7 @@ protected:
   Real alpha_;
   int  basisOrder_;
 
+  Teuchos::RCP<const Tpetra::Map<> >    myCellMap_;
   Teuchos::RCP<const Tpetra::Map<> >    myOverlapMap_;
   Teuchos::RCP<const Tpetra::Map<> >    myUniqueMap_;
   Teuchos::RCP<Tpetra::CrsGraph<> >     matGraph_;
@@ -108,15 +109,27 @@ protected:
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_overlap_;
   Teuchos::RCP<Tpetra::MultiVector<> >  vecF_dirichlet_;
-
+  
+  Teuchos::Array<Real> myCellMeasure_;
   Teuchos::Array<int> myCellIds_;
-  std::vector<Teuchos::Array<int> > myDirichletCellIds_;
+// Elements on Boundary  
+  std::vector<Teuchos::Array<int> > myBoundaryCellIds_;
+// DBC
   Teuchos::Array<int> myDirichletDofs_;
+// BC Sides 
+  std::vector<int > my_dbc_;
+  std::vector<int > my_nbc_;
+
+//Point load on Bundary!
+  std::vector<int> myPointLoadDofs_;
+  std::vector<Real> myPointLoadVals_;
 
   Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
 //  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
 
   shards::CellTopology cellType_;
+  
+  int sideDim_;
   int spaceDim_;
   int numNodesPerCell_;
   int numCubPoints_;
@@ -180,6 +193,8 @@ public:
     cellType_ = (basisPtrs_[0])->getBaseCellTopology(); // get the cell type from any basis
     spaceDim_ = cellType_.getDimension();        // retrieve spatial dimension
     numNodesPerCell_ = cellType_.getNodeCount(); // retrieve number of nodes per cell
+    
+    sideDim_ = spaceDim_ - 1;
 
     coord_iface_ = Teuchos::rcp_dynamic_cast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basisPtrs_[0]);
     dofMgr_ = Teuchos::rcp(new DofManager<Real>(meshMgr_, basisPtrs_));
@@ -245,6 +260,8 @@ public:
     **/
     myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
+    myCellMap_ = Teuchos::rcp(new Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                              this->myCellIds_, 0, this->commPtr_));
   }
   
   virtual void SetUpLocalIntrepidArrays(void) {
@@ -317,14 +334,27 @@ public:
                                                   *cellNodes_,
                                                   cellType_);
     
+    ComputeCellTotalMeasures();
   } 
-  
+ 
+  virtual void ComputeCellTotalMeasures(void)
+  {
+	for (int i=0; i<numCells_; ++i){
+		Real temp = 0.0;
+		for(int j=0; j<numCubPoints_; ++j){	
+    			temp += (*cellWeightedMeasure_)(i, j);
+		}
+		myCellMeasure_.push_back(temp);
+	}
+	std::cout<<"First cell total measure: "<<myCellMeasure_[0]<<std::endl;
+  }
+
+
   virtual void ComputeLocalSystemMats(void) { }
    
   virtual void ComputeLocalForceVec(void) { }
   
   virtual void SetUpTrueDataOnNodes(void) { }
-  
   
   virtual void AssembleSystemMats(void) { 
     /****************************************/
@@ -378,46 +408,20 @@ public:
                                           (*datavalVecF_)[i*numLocalDofs_+j]);
       }
     }
+    
+    //Assemble the point loads!
+    for (unsigned i=0; i<myPointLoadDofs_.size(); i++)
+    {
+        vecF_overlap_->sumIntoGlobalValue(myPointLoadDofs_[i],
+                                          0,
+                                          myPointLoadVals_[i]);
+    }
+
+    // change map	
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
   }
   
-  virtual void updateF(const std::vector<Real> &param) {
-    Intrepid::FieldContainer<int> &cellDofs = *(dofMgr_->getCellDofs());
-    int numLocalDofs = cellDofs.dimension(1);
-    std::vector<Real> F(1), x(spaceDim_);
-    for (int i = 0; i < numCells_; ++i) {
-      for (int j = 0; j < numCubPoints_; ++j) {
-        for (int k = 0; k < spaceDim_; ++k) {
-          x[k] = (*cubPointsPhysical_)(i,j,k);
-        }
-        funcRHS(F,x,param);
-        (*dataF_)(i,j) = F[0];
-      }
-    }
-    Intrepid::FunctionSpaceTools::integrate<Real>(*datavalVecF_,
-                                                  *dataF_,
-                                                  *valPhysicalWeighted_,
-                                                  Intrepid::COMP_CPP);
-    // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
-    for (int i = 0; i < numCells_; ++i) {
-      for (int j = 0; j < numCubPoints_; ++j) {
-        vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),0,
-                                                   (*datavalVecF_)[i*numLocalDofs+j]);
-      }
-    }
-    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());
-    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);
-
-    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
-    for (int i = 0; i < myDirichletDofs_.size(); ++i) {
-      if (myUniqueMap_->isNodeGlobalElement(myDirichletDofs_[i])) {
-        vecF_dirichlet_->replaceGlobalValue(myDirichletDofs_[i], 0, 0);
-      }
-    }
-  }
   
   virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
@@ -432,36 +436,62 @@ public:
       }
     }
   }
-  
-  // check to see if a globaldof is on boundary
+ 
+  // find the local index of a global cell
+  virtual int find_local_index(int globalCell)
+  {
+	return myCellMap_->getLocalElement(globalCell);
+/*
+	for(int i=0; i<numCells_; i++)
+	{
+		if(myCellIds_[i] == globalCell)
+			return i;
+	}
+	return -1;
+*/
+  }
+
+  // check to see if a globaldof is on dirichlet boundary
   virtual bool check_myGlobalDof_on_boundary(int globalDof) {
     if (std::binary_search(myDirichletDofs_.begin(), myDirichletDofs_.end(), globalDof)) {
       return true;
     }
     return false;
   }
-  
-  //create myDirichletCellIds_ and myDirichletDofs_
-  virtual void SetUpMyDBCInfo(std::vector<int> dbc_side) {
+
+  //create myBoundaryCellIds_ and myDirichletDofs_
+  virtual void SetUpMyDBCInfo(bool ifUseCoordsToSpecifyBC, std::vector<int> dbc_side) 
+{
+    if(ifUseCoordsToSpecifyBC){
+	my_dbc_.resize(4);
+	my_dbc_ = {0, 1, 2, 3};
+    }else{
+    	my_dbc_ = dbc_side;
+    }
+    //Print to check my BC info
+    *outStream_<<"My dbc numbers: ";
+    for(unsigned i=0; i<my_dbc_.size(); i++)
+    	*outStream_<<my_dbc_[i];
+    *outStream_<<std::endl;
+    //
     Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
     Teuchos::Array<int> mySortedCellIds_(myCellIds_);
     std::sort(mySortedCellIds_.begin(), mySortedCellIds_.end());
     mySortedCellIds_.erase( std::unique(mySortedCellIds_.begin(), mySortedCellIds_.end()), mySortedCellIds_.end() );
     
-    myDirichletCellIds_.resize(dss[0].size());
-    
+    myBoundaryCellIds_.resize(dss[0].size());
     for (int i=0; i<static_cast<int>(dss[0].size()); ++i) {
       for (int j=0; j<dss[0][i].dimension(0); ++j) {
         if (std::binary_search(mySortedCellIds_.begin(), mySortedCellIds_.end(), dss[0][i](j))) {
-          myDirichletCellIds_[i].push_back(dss[0][i](j));
+          myBoundaryCellIds_[i].push_back(dss[0][i](j));
         }
       }
     }
     
     cte_ = *(meshMgr_->getCellToEdgeMap());
     Intrepid::FieldContainer<int>  &nodeDofs = *(dofMgr_->getNodeDofs());
-    Intrepid::FieldContainer<int>  &edgeDofs = *(dofMgr_->getEdgeDofs());
+    //Intrepid::FieldContainer<int>  &edgeDofs = *(dofMgr_->getEdgeDofs());
     std::vector<std::vector<int> > dofTags = (basisPtrs_[0])->getAllDofTags();
     int numDofsPerNode = 0;
     int numDofsPerEdge = 0;
@@ -477,12 +507,13 @@ public:
     int nfields = basisPtrs_.size();
     numDofsPerNode = numDofsPerNode * nfields;
     numDofsPerEdge = numDofsPerEdge * nfields;
-  
-    int n_dbc = dbc_side.size();
-    for (int i=0; i<static_cast<int>(myDirichletCellIds_.size()); ++i) {
+    	
+    Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
+    int n_dbc = my_dbc_.size();
+    for (int i=0; i<static_cast<int>(myBoundaryCellIds_.size()); ++i) {
       bool isdbc = false;
       for(int i_dbc = 0; i_dbc < n_dbc; i_dbc++) {
-        if(i == dbc_side[i_dbc]) {
+        if(i == my_dbc_[i_dbc]) {
           isdbc = true;
           break;
         }
@@ -490,23 +521,90 @@ public:
       if(!isdbc)
         continue;	
       
-      for (int j=0; j<myDirichletCellIds_[i].size(); ++j) {
-        for (int k=0; k<numDofsPerNode; ++k) {
-          const CellTopologyData * ctd = cellType_.getCellTopologyData();
-          Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][i].node), cellType_.getVertexCount(spaceDim_-1, i));
-          for (int l=0; l<static_cast<int>(cellType_.getVertexCount(spaceDim_-1, i)); ++l) {
-            myDirichletDofs_.push_back(nodeDofs(ctn_(myDirichletCellIds_[i][j], locNodes[l]), k));
-          }
+      for (int j=0; j<myBoundaryCellIds_[i].size(); ++j) {
+/*	
+	int ifDBCCell = check_DBC_By_Coords(myBoundaryCellIds_[i][j], i);
+	if(ifDBCCell < 1)
+		continue;
+*/      
+	std::vector<Real> x(spaceDim_);
+        const CellTopologyData * ctd = cellType_.getCellTopologyData();
+        Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][i].node), cellType_.getVertexCount(spaceDim_-1, i));
+        for (int l=0; l<static_cast<int>(cellType_.getVertexCount(spaceDim_-1, i)); ++l) {
+            	x[0]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0);
+            	x[1]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1);
+	// use coordinates to check if a DOF is DBC DOF
+	    	int ifDBCNode = check_DBC_Coords_Range( x );
+	    	if(ifDBCNode < 0){
+			continue;
+		}
+		else if(ifDBCNode == 0){
+			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing X direction"<<std::endl;
+            		myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0));
+		}
+		else if(ifDBCNode == 1 && numDofsPerNode >= 2){
+			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing Y direction"<<std::endl;
+            		myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1));
+		}
+		else {
+			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing ALL direction"<<std::endl;
+			for (int k=0; k<numDofsPerNode; ++k) {
+            			myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), k));
+          		}
+		}
         }
+	// edge dofs are NOT in use	
+	/*
         for (int k=0; k<numDofsPerEdge; ++k) {
-           myDirichletDofs_.push_back(edgeDofs(cte_(myDirichletCellIds_[i][j], i), k));
+           myDirichletDofs_.push_back(edgeDofs(cte_(myBoundaryCellIds_[i][j], i), k));
         }
+	*/
       }
     }
     std::sort(myDirichletDofs_.begin(), myDirichletDofs_.end());
     myDirichletDofs_.erase( std::unique(myDirichletDofs_.begin(), myDirichletDofs_.end()), myDirichletDofs_.end() );
   }
 
+  virtual int check_DBC_Coords_Range( std::vector<Real> x )
+  {
+// return value :
+// -1: not a DBC node
+//  0: x direction fixed
+//  1: y direction fixed
+//  5: both x, y direction are fixed
+	return 5;
+  }
+//
+//
+//
+virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist) {}
+//
+//note that the point load is only allowed to applied on the boundary, not inside the body! 2D only
+  virtual void check_and_Apply_PointLoad_By_Coords(bool ifUpdateF, const std::vector<Real> &param, int globalCellNum, int pointload_bc) {
+	Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
+        const CellTopologyData * ctd = cellType_.getCellTopologyData();
+        Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][pointload_bc].node), cellType_.getVertexCount(spaceDim_-1, pointload_bc));
+	std::vector<Real> x1(spaceDim_);
+	std::vector<Real> x2(spaceDim_);
+	std::vector<int > localNodeNum(2);
+        x1[0]=nodes(ctn_(globalCellNum, locNodes[0]), 0);
+        x1[1]=nodes(ctn_(globalCellNum, locNodes[0]), 1);
+        x2[0]=nodes(ctn_(globalCellNum, locNodes[1]), 0);
+        x2[1]=nodes(ctn_(globalCellNum, locNodes[1]), 1);
+	ApplyPointLoad(ifUpdateF, param, pointload_bc, globalCellNum, localNodeNum, x1, x2);
+  }
+
+  virtual void ApplyPointLoad(bool ifUpdateF, const std::vector<Real> &param, int pointload_bc,
+			      int globalCellNum, std::vector<int> &localNodeNum, std::vector<Real> &coord1, std::vector<Real> &coord2) 
+  { 
+    	//Intrepid::FieldContainer<int>  &nodeDofs = *(dofMgr_->getNodeDofs());
+	//bool isLoadPosContainedInCurrentSegment = false;
+	//int whichNodeIsCloserToPos = -1;
+	return;
+  }
+//
+//
+//
   virtual void EnforceDBC(void) {    
     // Apply Dirichlet conditions.
     // zero out row and column, make matrix symmetric  
@@ -642,8 +740,8 @@ public:
     }
   }
 
- virtual Real funcRHS(const Real &x1, const Real &x2) const { return 0.0; }
- virtual void funcRHS(std::vector<Real> &F,
+ virtual Real funcRHS_BodyForce(const Real &x1, const Real &x2) const { return 0.0; }
+ virtual void funcRHS_BodyForce(std::vector<Real> &F,
                 const std::vector<Real> &x,
                 const std::vector<Real> &param) const {
    F.clear(); F.resize(1);

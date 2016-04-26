@@ -54,6 +54,8 @@ template<class Real>
 class EqualityConstraint_PDEOPT_ElasticitySIMP_Volume : public ROL::EqualityConstraint<Real> {
 private:
   Real volFrac_;
+  Real totalMeasure_;
+  Teuchos::RCP<Tpetra::MultiVector<> > cellMeasures_;
 
   ROL::Vector<Real> & castRiskVector(ROL::Vector<Real> &x) const {
     try {
@@ -79,6 +81,14 @@ public:
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                                   const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     volFrac_ = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
+    cellMeasures_= data->getCellAreas();
+    Teuchos::RCP<Tpetra::MultiVector<> > unit
+      = Teuchos::rcp(new Tpetra::MultiVector<>(cellMeasures_->getMap(), 1, true));
+    unit->putScalar(1.0);
+    Teuchos::Array<Real> sumM(1, 0);
+    cellMeasures_->dot(*unit, sumM);
+    totalMeasure_ = sumM[0];
+    std::cout<<"Volume Constraints: volfrac_="<<volFrac_<<", totalMeasure_="<<totalMeasure_<<std::endl;
   }
 
   using ROL::EqualityConstraint<Real>::value;
@@ -88,12 +98,20 @@ public:
     const ROL::Vector<Real> & zr = castConstRiskVector(z);
     Teuchos::RCP<const Tpetra::MultiVector<> > zp
       = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(zr)).getVector();
+
     Teuchos::RCP<Tpetra::MultiVector<> > unit
       = Teuchos::rcp(new Tpetra::MultiVector<>(zp->getMap(), 1, true));
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumZ(1, 0);
     zp->dot(*unit, sumZ);
     (*cp)[0] = sumZ[0] - static_cast<Real>(zp->getGlobalLength())*volFrac_;
+
+/*
+    Teuchos::Array<Real> sumZ(1, 0);
+    cellMeasures_->dot(*zp, sumZ);
+    (*cp)[0] = sumZ[0] - totalMeasure_ * volFrac_;
+    std::cout<<sumZ[0]<<", "<<totalMeasure_<<", "<<volFrac_<<std::endl;
+*/
   }
 
   void applyJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v,
@@ -103,12 +121,19 @@ public:
     const ROL::Vector<Real> & vr = castConstRiskVector(v);
     Teuchos::RCP<const Tpetra::MultiVector<> > vp
       = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(vr)).getVector();
+
     Teuchos::RCP<Tpetra::MultiVector<> > unit
       = Teuchos::rcp(new Tpetra::MultiVector<>(vp->getMap(), 1, true));
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumV(1, 0);
     vp->dot(*unit, sumV);
     (*jvp)[0] = sumV[0];
+
+/*
+    Teuchos::Array<Real> sumV(1, 0);
+    cellMeasures_->dot(*vp, sumV);
+    (*jvp)[0] = sumV[0];
+*/
   }
 
   void applyAdjointJacobian(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v,
@@ -119,8 +144,14 @@ public:
       = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(ajvr)).getVector();
     Teuchos::RCP<const std::vector<Real> > vp
       = (Teuchos::dyn_cast<const ROL::StdVector<Real> >(v)).getVector();
+
     ajvp->putScalar(1.0);
     ajvp->scale((*vp)[0]);
+
+/*
+    Tpetra::deep_copy(*ajvp, *cellMeasures_);	
+    ajvp->scale((*vp)[0]);
+*/
   }
 
   void applyAdjointHessian(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,

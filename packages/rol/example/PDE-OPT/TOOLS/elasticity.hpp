@@ -44,6 +44,7 @@
 #ifndef ROL_PDEOPT_ELASTICITY_H
 #define ROL_PDEOPT_ELASTICITY_H
 
+#include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "../TOOLS/PDE_FEM.hpp"
@@ -56,7 +57,31 @@ protected:
   Real E_;
   Real poissonR_;
   bool planeStrain_;
-  
+
+// dbc cases
+  int DBC_Case_;
+// parametrized loads
+  std::vector<Real> param_;
+// geometry and loads information
+  Real xmin_;
+  Real ymin_;
+  Real xmax_;
+  Real ymax_;
+// body force
+  Real bodyforce_Magnitude_;
+  Real bodyforce_Angle_;
+// traction
+  int  traction_Side_;
+  Real traction_Magnitude_;
+  Real traction_Angle_;
+// point load
+  Real pointload_loc_x_;
+  Real pointload_loc_y_;
+  Real pointload_Magnitude_;
+  Real pointload_Angle_;
+  std::vector<int > my_pointload_bc_;
+//
+
   std::vector<Teuchos::RCP<Material<Real> > > material_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > BMat_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > BMatWeighted_;
@@ -65,6 +90,21 @@ protected:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > NMatWeighted_;
   int materialTensorDim_;
 
+// for boundary integration of traction force
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > NMatWeighted_Side;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_weights_side;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > cub_points_side_physical;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > jacobian_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > jacobian_det_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > weighted_measure_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > value_of_basis_at_cub_points_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > transformed_value_of_basis_at_cub_points_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > weighted_transformed_value_of_basis_at_cub_points_side_refcell;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > tractions;
+  Teuchos::RCP<Intrepid::FieldContainer<Real> > tractions_on_dofs;
+//
 public:
 
   Elasticity() {}
@@ -84,11 +124,22 @@ public:
     planeStrain_      = parlist->sublist("Elasticity").get("Plane Strain", false);
     E_ 	              = parlist->sublist("Elasticity").get("Young's Modulus", 1.0);
     poissonR_         = parlist->sublist("Elasticity").get("Poisson Ratio", 0.3);
-     
+    xmin_        =  parlist->sublist("Geometry").get("X0", 0.0);
+    ymin_        =  parlist->sublist("Geometry").get("Y0", 0.0);
+    xmax_        =  parlist->sublist("Geometry").get("Width", 1.0);
+    ymax_        =  parlist->sublist("Geometry").get("Height", 1.0);
+    // DBC cases
+    DBC_Case_    = this->parlist_->sublist("Elasticity").get("DBC Case", 0);
+    // Parameters for stochastic loads
+    param_.clear(); param_.resize(3);
+    param_[0] = this->parlist_->sublist("Elasticity").get("Param Load Magnitude", 1.0);
+    param_[1] = this->parlist_->sublist("Elasticity").get("Param Load Polar Angle", 0.0);
+    param_[2] = this->parlist_->sublist("Elasticity").get("Param Load Azimuth Angle", 0.0);
+       
     /****************************************************************************/
     /*** Initialize mesh / finite element fields / degree-of-freedom manager. ***/
     /****************************************************************************/
-    int basisOrder = parlist->sublist("PDE FEM").get("Order of FE Discretization", 1);
+    int basisOrder = parlist->sublist("Elasticity").get("Order of FE Discretization", 1);
     Teuchos::RCP<MeshManager<Real> > meshMgr = Teuchos::rcp(new MeshManager_Rectangle<Real>(*parlist));
     int spaceDim = 2;
     std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs(spaceDim,Teuchos::null);
@@ -108,7 +159,105 @@ public:
     PDE_FEM<Real>::printMeshData(*outStream);
   }
 
-  virtual void CreateMaterial(void) {
+//
+// for rectangular domain
+virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist)
+{ 
+    bodyforce_Magnitude_ = parlist->sublist("Elasticity").get("Bodyforce Magnitude", 0.0);
+    bodyforce_Angle_ = parlist->sublist("Elasticity").get("Bodyforce Angle", 0.0);
+    traction_Side_  =  parlist->sublist("Elasticity").get("Traction Side", 1);
+    traction_Magnitude_ = parlist->sublist("Elasticity").get("Traction Magnitude", 0.0);
+    traction_Angle_ = parlist->sublist("Elasticity").get("Traction Angle", 0.0);
+    pointload_loc_x_ = parlist->sublist("Elasticity").get("Pointload Location X", 0.0);
+    pointload_loc_y_ = parlist->sublist("Elasticity").get("Pointload Location Y", 0.0);
+    pointload_Magnitude_ = parlist->sublist("Elasticity").get("Pointload Magnitude", 0.0);
+    pointload_Angle_ = parlist->sublist("Elasticity").get("Pointload Angle", 0.0);
+    
+    this->my_nbc_.push_back(traction_Side_);
+
+// calculate the distance of the point load to the boundary and move it to the closesd boundary point
+// only works for rectangular domain
+// first make sure the point load is in the domain
+    if(pointload_loc_x_ < xmin_)
+	pointload_loc_x_ = xmin_;
+    if(pointload_loc_x_ > xmax_)
+	pointload_loc_x_ = xmax_;
+    if(pointload_loc_y_ < ymin_)
+	pointload_loc_y_ = ymin_;
+    if(pointload_loc_y_ > ymax_)
+	pointload_loc_y_ = ymax_;
+//    
+    Real distx1 = std::abs(pointload_loc_x_ - xmin_);
+    Real distx2 = std::abs(pointload_loc_x_ - xmax_);
+    Real movx = std::min(distx1, distx2);
+    Real disty1 = std::abs(pointload_loc_y_ - ymin_);
+    Real disty2 = std::abs(pointload_loc_y_ - ymax_);
+    Real movy = std::min(disty1, disty2);
+// slight perturbation 
+// pointload will be moved to the closest boundary node eventually
+// perturbation trick to avoid parrallel issues
+    Real eps = 1e-8 * (std::min((xmax_-xmin_), (ymax_-ymin_)));
+   if(movx <= movy && distx1 <= distx2)
+   {
+	// mov load to the left boundary
+	pointload_loc_x_ = xmin_ + eps;
+	my_pointload_bc_.push_back(3);
+	// perturb y	
+	if(disty1 <= disty2)
+		pointload_loc_y_ = pointload_loc_y_ + eps;
+	else
+		pointload_loc_y_ = pointload_loc_y_ - eps;
+   }
+   else if(movx <= movy && distx1 > distx2)
+   {
+	// mov load to the right boundary
+	pointload_loc_x_ = xmax_ - eps;
+	my_pointload_bc_.push_back(1);
+	//perturb y	
+	if(disty1 <= disty2)
+		pointload_loc_y_ = pointload_loc_y_ + eps;
+	else
+		pointload_loc_y_ = pointload_loc_y_ - eps;
+   }
+   else if(movx > movy && disty1 <= disty2)
+   {
+	// mov load to the bottom boundary
+	pointload_loc_y_ = ymin_ + eps;
+ 	my_pointload_bc_.push_back(0);
+	// perturb x
+	if(distx1 <= distx2)
+		pointload_loc_x_ = pointload_loc_x_ + eps;
+	else
+		pointload_loc_x_ = pointload_loc_x_ - eps;
+   }
+   else
+   {
+	// mov load to the top boundary
+	pointload_loc_y_ = ymax_ - eps;
+	my_pointload_bc_.push_back(2);
+	// perturb x
+	if(distx1 <= distx2)
+		pointload_loc_x_ = pointload_loc_x_ + eps;
+	else
+		pointload_loc_x_ = pointload_loc_x_ - eps;
+   }
+   
+// print to check
+   *this->outStream_<<"Load processing finished."<<std::endl;
+   *this->outStream_<<"My nbc numbers: ";
+    for(unsigned i=0; i<this->my_nbc_.size(); i++)
+    	*this->outStream_<<this->my_nbc_[i];
+   *this->outStream_<<std::endl;
+   *this->outStream_<<"My pbc numbers: ";
+    for(unsigned i=0; i<my_pointload_bc_.size(); i++)
+    	*this->outStream_<<my_pointload_bc_[i];
+   *this->outStream_<<std::endl;
+   *this->outStream_<<"My pointload location: "<<pointload_loc_x_<<", "<<pointload_loc_y_<<std::endl;
+//
+}
+//
+
+virtual void CreateMaterial(void) {
     int numCells = PDE_FEM<Real>::GetNumCells();
     int spaceDim = PDE_FEM<Real>::GetSpaceDim();
     for(int i = 0; i < numCells; ++i) {
@@ -125,17 +274,7 @@ public:
     int numCubPoints = PDE_FEM<Real>::GetNumCubPoints();
     int lfs = PDE_FEM<Real>::GetLocalFieldSize();
     int full_lfs = lfs * spaceDim;
-/* 
-    int numLocalDofs = PDE_FEM<Real>::GetNumLocalDofs();
-    if(numLocalDofs != full_lfs) {
-      std::cout << "numLocalDofs DOES NOT match full_lfs, numLocalDofs = " << numLocalDofs
-                << ", full_lfs = " << full_lfs << std::endl;
-    }
-    else {
-      std::cout << "numLocalDofs DOES match full_lfs, numLocalDofs = " << numLocalDofs
-                << ", full_lfs = " << full_lfs << std::endl;
-    }
-*/	
+    
     this->gradgradMats_ = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, full_lfs));
     this->valvalMats_   = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCells, full_lfs, full_lfs));
     
@@ -159,7 +298,170 @@ public:
                                                   *NMatWeighted_,
                                                   Intrepid::COMP_CPP);
   } 
+  
+  
+// new
+// constructing Nmat on side
+void Construct_Nmat_on_Side(int numCub) {
+    int spaceDim = PDE_FEM<Real>::GetSpaceDim();
+    int lfs = PDE_FEM<Real>::GetLocalFieldSize();
+    int full_lfs = lfs * spaceDim;
+    NMatWeighted_Side = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, full_lfs, numCub, spaceDim));
+    NMatWeighted_Side -> initialize(0.0);
+    
+    if(spaceDim == 2) {
+        for (int j=0; j < numCub; ++j) {
+      	  for (int k=0; k<lfs; ++k) {
+            (*NMatWeighted_Side)(0, k*spaceDim+0, j, 0) = (*weighted_transformed_value_of_basis_at_cub_points_side_refcell)(0, k, j);
+            (*NMatWeighted_Side)(0, k*spaceDim+1, j, 1) = (*weighted_transformed_value_of_basis_at_cub_points_side_refcell)(0, k, j);
+	  }
+        }
+    }
+
+    if(spaceDim == 3) {
+        for (int j=0; j < numCub; ++j) {
+          for (int k=0; k<lfs; ++k) {
+            (*NMatWeighted_Side)(0, k*spaceDim+0, j, 0) = (*weighted_transformed_value_of_basis_at_cub_points_side_refcell)(0, k, j);
+            (*NMatWeighted_Side)(0, k*spaceDim+1, j, 1) = (*weighted_transformed_value_of_basis_at_cub_points_side_refcell)(0, k, j);
+            (*NMatWeighted_Side)(0, k*spaceDim+2, j, 2) = (*weighted_transformed_value_of_basis_at_cub_points_side_refcell)(0, k, j);
+          }
+        }
+    } 
+}
+
+
+// adding point load to right hand side vector
+virtual void AddPointLoadToRHS(bool ifUpdateF, const std::vector<Real> &param)
+{
+    int n_pbc = my_pointload_bc_.size(); 
+    for (int i=0; i<n_pbc; i++) {
+      int pbc_num = my_pointload_bc_[i];
+      for (int j=0; j<this->myBoundaryCellIds_[pbc_num].size(); ++j) {
+	int myGlobalCellId = this->myBoundaryCellIds_[pbc_num][j];
+	// apply possible point loads
+	this->check_and_Apply_PointLoad_By_Coords(ifUpdateF, param, myGlobalCellId, pbc_num);
+      }
+    }
+}
+
+// adding traction boundary data into right hand side vector
+virtual void ModifyLocalForceVecWithSideTractions(bool ifUpdateF, const std::vector<Real> &param)
+{
+
+    int cellDim = PDE_FEM<Real>::GetSpaceDim();
+    int lfs = PDE_FEM<Real>::GetLocalFieldSize(); //number of dof each dimension
+    int full_lfs = lfs*cellDim;
+    int numNodesPerCell = this->numNodesPerCell_;
+
+    shards::CellTopology sideType(shards::getCellTopologyData< shards::Line<> >());
+    int cubDegree = 10;                                                             
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                                          // create cubature factory
+    Teuchos::RCP<Intrepid::Cubature<Real> > sideCub = cubFactory.create(sideType, cubDegree);
+    int numCubPointsSide = sideCub->getNumPoints();
+    *this->outStream_<<"numCubPointsSide: "<<numCubPointsSide<<std::endl;
+
+    int sideDim = this->sideDim_;
+    int n_nbc = this->my_nbc_.size(); 
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > thiscellNodes;
+    thiscellNodes = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numNodesPerCell, cellDim));
+    Intrepid::FieldContainer<Real> &nodes = *(this->meshMgr_)->getNodes();
+
+    *this->outStream_<<"n_nbc: "<<n_nbc<<std::endl;
+    for (int i=0; i<n_nbc; i++) {
+      int nbc_num = this->my_nbc_[i];
+      //std::cout<<"nbc_num: "<<nbc_num<<std::endl;
+      for (int j=0; j<this->myBoundaryCellIds_[nbc_num].size(); ++j) {
+	int myGlobalCellId = this->myBoundaryCellIds_[nbc_num][j];
+	//*this->outStream_<<"myGlobalCellId: "<<myGlobalCellId<<std::endl;
+
+	// apply traction        
+        for (int m=0; m<numNodesPerCell; ++m) {
+          for (int n=0; n<cellDim; ++n) {
+             (*thiscellNodes)(0, m, n) = nodes(this->ctn_(myGlobalCellId, m), n);
+	  }
+	}
+        //std::cout<<"first node coords: "<<(*thiscellNodes)(0, 0, 0)<<", "<<(*thiscellNodes)(0, 0, 1)<<std::endl;
+        cub_points_side = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide, sideDim));
+        cub_weights_side = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide));
+        cub_points_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(numCubPointsSide, cellDim));
+        cub_points_side_physical= Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim));
+        jacobian_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim, cellDim));
+        jacobian_det_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide));
+        weighted_measure_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide));
+        value_of_basis_at_cub_points_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(lfs, numCubPointsSide));
+        transformed_value_of_basis_at_cub_points_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, lfs, numCubPointsSide));
+        weighted_transformed_value_of_basis_at_cub_points_side_refcell = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, lfs, numCubPointsSide));
+        tractions = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, numCubPointsSide, cellDim));
+ 	tractions_on_dofs = Teuchos::rcp(new Intrepid::FieldContainer<Real>(1, full_lfs));
+          
+	// compute traction b.c. contributions and adjust rhs
+        sideCub->getCubature(*cub_points_side, *cub_weights_side);
+        
+        // compute geometric cell information
+        Intrepid::CellTools<Real>::mapToReferenceSubcell(*cub_points_side_refcell, *cub_points_side, sideDim, nbc_num, this->cellType_);
+        Intrepid::CellTools<Real>::setJacobian(*jacobian_side_refcell, *cub_points_side_refcell, *thiscellNodes, this->cellType_);
+        Intrepid::CellTools<Real>::setJacobianDet(*jacobian_det_side_refcell, *jacobian_side_refcell);
+        
+	// compute weighted edge measure
+        Intrepid::FunctionSpaceTools::computeEdgeMeasure<Real>(*weighted_measure_side_refcell,
+                                                           *jacobian_side_refcell,
+                                                           *cub_weights_side,
+                                                           nbc_num,
+                                                           this->cellType_);
+        
+	// tabulate values of basis functions at side cubature points, in the reference parent cell domain
+        (*this->basisPtrs_[0]).getValues(*value_of_basis_at_cub_points_side_refcell, *cub_points_side_refcell, Intrepid::OPERATOR_VALUE);
+        // transform
+        Intrepid::FunctionSpaceTools::HGRADtransformVALUE<Real>(*transformed_value_of_basis_at_cub_points_side_refcell,
+                                                            *value_of_basis_at_cub_points_side_refcell);
+        
+	// multiply with weighted measure
+        Intrepid::FunctionSpaceTools::multiplyMeasure<Real>(*weighted_transformed_value_of_basis_at_cub_points_side_refcell,
+                                                        *weighted_measure_side_refcell,
+                                                        *transformed_value_of_basis_at_cub_points_side_refcell);
+	Construct_Nmat_on_Side(numCubPointsSide);
+        
+	// compute Neumann data
+        // map side cubature points in reference parent cell domain to physical space
+        Intrepid::CellTools<Real>::mapToPhysicalFrame(*cub_points_side_physical, *cub_points_side_refcell, *thiscellNodes, this->cellType_);
+	//std::cout<<"cub_points_side_physical:"<<(*cub_points_side_physical)(0,0,0)<<", "<<(*cub_points_side_physical)(0,0,1)<<std::endl;
+        // now compute data
+    	std::vector<Real> x(cellDim), F(cellDim);
+        for (int m = 0; m < numCubPointsSide; ++m) {
+        	for (int n = 0; n < cellDim; ++n) {
+          		x[n] = (*cub_points_side_physical)(0,m,n);
+		}
+		if(ifUpdateF){
+			funcRHS_NBC(F, x, param);
+		}else{
+        		funcRHS_NBC(F,x);
+		}
+        	for (int n = 0; n < cellDim; ++n) {
+          		(*tractions)(0,m,n) = F[n];
+        	}
+      	}
+       Intrepid::FunctionSpaceTools::integrate<Real>(*tractions_on_dofs,
+                                             *tractions,
+                                             *NMatWeighted_Side,
+                                             Intrepid::COMP_CPP);
+	
+       // adjust RHS
+       for (int m=0; m < full_lfs; ++m) {
+    		(*this->datavalVecF_)(this->find_local_index(myGlobalCellId), m) += (*tractions_on_dofs)(0, m);
+	}
+     
+//check tractions on dofs 
+/*
+       *this->outStream_<<"tractions_on_dofs: ";
+       for(int m=0; m<full_lfs; ++m)
+	  *this->outStream_<<(*tractions_on_dofs)(0, m)<<", ";
+       *this->outStream_<<std::endl;
+*/
+      }
+    }	
+}
    
+
   virtual void ComputeLocalForceVec(void) {
     int spaceDim = PDE_FEM<Real>::GetSpaceDim();
     int numCells = PDE_FEM<Real>::GetNumCells();
@@ -175,7 +477,7 @@ public:
         for (int k = 0; k < spaceDim; ++k) {
           x[k] = (*this->cubPointsPhysical_)(i,j,k);
 	}
-        funcRHS(F,x);
+        funcRHS_BodyForce(F,x);
         for (int k = 0; k < spaceDim; ++k) {
           (*this->dataF_)(i,j,k) = F[k];
         }
@@ -185,6 +487,12 @@ public:
 						  *this->dataF_,
                                                   *NMatWeighted_,
                                                   Intrepid::COMP_CPP);
+
+    // new 
+    *this->outStream_<<"Modifying local force vectors using boundary tractions"<<std::endl;	
+    ModifyLocalForceVecWithSideTractions(false, {});
+    AddPointLoadToRHS(false, {});
+    *this->outStream_<<"Modifying Done!"<<std::endl;
   }
 
   void Construct_N_B_mats(void) {
@@ -334,7 +642,7 @@ public:
         for (int k = 0; k < spaceDim; ++k) {
           x[k] = (*this->cubPointsPhysical_)(i,j,k);
 	}
-        funcRHS(F,x,param);
+        funcRHS_BodyForce(F,x,param);
         for (int k = 0; k < spaceDim; ++k) {
           (*this->dataF_)(i,j,k) = F[k];
         }
@@ -344,6 +652,12 @@ public:
 						  *this->dataF_,
                                                   *NMatWeighted_,
                                                   Intrepid::COMP_CPP);
+//Update Boundary trations and point force
+    *this->outStream_<<"Modifying local force vectors using boundary tractions"<<std::endl;	
+    ModifyLocalForceVecWithSideTractions(true, param);
+    AddPointLoadToRHS(true, param);
+    *this->outStream_<<"Modifying Done!"<<std::endl;
+//
     // vecF_ requires assembly using vecF_overlap_ and redistribution
     this->vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(this->matA_->getRangeMap(), 1, true));
     this->vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(this->myOverlapMap_, 1, true));
@@ -369,20 +683,167 @@ public:
     }
   }
 
-  virtual void funcRHS(std::vector<Real> &F,
+
+// load functions, can be parametrized
+// modification for stochastic loads should be made here
+  virtual void funcRHS_BodyForce(std::vector<Real> &F,
                  const std::vector<Real> &x) const {
     Real zero(0);
     F.clear();
     F.resize(this->spaceDim_,zero);
+    F[0] = bodyforce_Magnitude_*std::cos(bodyforce_Angle_);
+    F[1] = bodyforce_Magnitude_*std::sin(bodyforce_Angle_);
   }
 
-  virtual void funcRHS(std::vector<Real> &F,
+  virtual void funcRHS_BodyForce(std::vector<Real> &F,
                  const std::vector<Real> &x,
                  const std::vector<Real> &param) const {
     Real zero(0);
     F.clear();
     F.resize(this->spaceDim_,zero);
+    F[0] = bodyforce_Magnitude_*std::cos(bodyforce_Angle_);
+    F[1] = bodyforce_Magnitude_*std::sin(bodyforce_Angle_);
   }
+
+  virtual void funcRHS_NBC(std::vector<Real> &F,
+                 const std::vector<Real> &x) const {
+    Real zero(0);
+    F.clear();
+    F.resize(this->spaceDim_,zero);
+    F[0] = traction_Magnitude_*std::cos(traction_Angle_);
+    F[1] = traction_Magnitude_*std::sin(traction_Angle_);
+  }
+
+  virtual void funcRHS_NBC(std::vector<Real> &F,
+                 const std::vector<Real> &x,
+                 const std::vector<Real> &param) const {
+    Real zero(0);
+    F.clear();
+    F.resize(this->spaceDim_,zero);
+    F[0] = traction_Magnitude_*std::cos(traction_Angle_);
+    F[1] = traction_Magnitude_*std::sin(traction_Angle_);
+  }
+
+  virtual void funcRHS_PtLoad(std::vector<Real> &F) const {
+    Real zero(0);
+    F.clear();
+    F.resize(this->spaceDim_,zero);
+    F[0] = pointload_Magnitude_*std::cos(pointload_Angle_);
+    F[1] = pointload_Magnitude_*std::sin(pointload_Angle_);
+  }
+
+  virtual void funcRHS_PtLoad(std::vector<Real> &F,
+                 const std::vector<Real> &param) const {
+    Real zero(0);
+    F.clear();
+    F.resize(this->spaceDim_,zero);
+    F[0] = pointload_Magnitude_*std::cos(pointload_Angle_);
+    F[1] = pointload_Magnitude_*std::sin(pointload_Angle_);
+  }
+//
+//
+
+
+virtual void ApplyPointLoad(bool ifUpdateF, const std::vector<Real> &param, int pointload_bc,
+			      int globalCellNum, std::vector<int> &localNodeNum, std::vector<Real> &coord1, std::vector<Real> &coord2) 
+{ 
+    	Teuchos::RCP<Intrepid::FieldContainer<int> > nodeDofs = this->dofMgr_->getNodeDofs();
+	bool isLoadPosContainedInCurrentSegment = false;
+	int whichNodeIsCloser = -1;
+// if update F, provides parametrized computation of F[0] and F[1]
+	std::vector<Real> F;
+	if(ifUpdateF)
+        	funcRHS_PtLoad(F,param);
+	else
+        	funcRHS_PtLoad(F);
+//
+      	Real x11 = coord1[0], x12 = coord1[1];
+      	Real x21 = coord2[0], x22 = coord2[1];
+	Real fx = pointload_loc_x_;
+	Real fy = pointload_loc_y_;
+	int pbc_num = pointload_bc;
+	
+	if(pbc_num == 0 || pbc_num == 2)
+	{
+          	if ( ((x11-fx)*(x21-fx)<0) && ((x12-fy)*(x22-fy)>0) )
+	  	{
+			isLoadPosContainedInCurrentSegment = true;
+			if(std::abs(x11-fx) <= std::abs(x21-fx))
+				whichNodeIsCloser = 1;
+			else
+				whichNodeIsCloser = 2;
+          	}
+        }
+	if(pbc_num == 1 || pbc_num == 3)
+	{
+          	if ( ((x11-fx)*(x21-fx)>0) && ((x12-fy)*(x22-fy)<0) )
+	  	{
+			isLoadPosContainedInCurrentSegment = true;
+			if(std::abs(x12-fy) <= std::abs(x22-fy))
+				whichNodeIsCloser = 1;
+			else
+				whichNodeIsCloser = 2;
+          	}
+        }
+	if(isLoadPosContainedInCurrentSegment)
+	{
+            this->myPointLoadDofs_.push_back((*nodeDofs)(this->ctn_(globalCellNum, localNodeNum[whichNodeIsCloser-1]), 0));
+            this->myPointLoadVals_.push_back(F[0]);
+            this->myPointLoadDofs_.push_back((*nodeDofs)(this->ctn_(globalCellNum, localNodeNum[whichNodeIsCloser-1]), 1));
+            this->myPointLoadVals_.push_back(F[1]);
+// print to check
+	   *this->outStream_<<"Point load applied, at cell: "<<globalCellNum<<std::endl;
+       	   *this->outStream_<<"Point load values: "<<F[0]<<", "<<F[1]<<std::endl;
+	   if(whichNodeIsCloser == 1)
+       		   *this->outStream_<<"Point load position: "<<x11<<", "<<x12<<std::endl;
+	   else
+       		   *this->outStream_<<"Point load position: "<<x21<<", "<<x22<<std::endl;
+        }
+} // ApplyPointLoad
+
+
+// DBC cases, add more to extend
+  virtual int check_DBC_Coords_Range( std::vector<Real> x )
+  {
+// return value :
+// -1: not a DBC node
+//  0: x direction fixed
+//  1: y direction fixed
+//  5: both x, y direction are fixed
+//
+      Real x1 = x[0], x2 = x[1];
+      Real eps(1e-6);
+      switch(DBC_Case_) {
+        case 0: { // Fix bottom two cornors, left corner x, y, right cornor only y
+	  if(x2<ymin_ + eps && x1<xmin_ + eps)
+		return 5;
+	  if(x2<ymin_ + eps && x1>xmax_ - eps)
+		return 1;
+	  break;
+	}
+        case 1: { // Fix botom two cornors, both x, y
+	  if(x2<ymin_ + eps && (x1<xmin_ + eps || x1>xmax_ - eps))
+		return 5;
+	  break;
+	}
+        case 2: { // Fix left boundary, both x, y
+          if(x1<xmin_ + eps)
+		return 5;
+	  break;
+	}
+        case 3: { // Fix bottom boundary, both x, y
+          if(x2<ymin_ + eps)
+		return 5;
+	  break;
+        }
+        case 4: { // Fix ALL boundary, both x, y
+	  return 5;
+	  break;
+	}
+     }
+     return -1;
+  }
+
 
 }; // class Elasticity
 
