@@ -19,9 +19,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
-
-
-
+#include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_unit_test_utils/getOption.h>
 
 typedef stk::mesh::Field<int> ScalarIntField;
 
