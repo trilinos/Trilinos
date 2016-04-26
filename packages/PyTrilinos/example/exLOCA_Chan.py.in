@@ -44,6 +44,7 @@ Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
 EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
 NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
 LOCA      = fromPyTrilinosImport('LOCA'     , options.testharness)
+print(dir(LOCA.Epetra.Interface))
 
 # ######################################################################
 
@@ -150,6 +151,7 @@ def main():
   locaSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
 
   globalData = LOCA.createGlobalData(paramList)
+  print("mro =", type(interface).mro())
   group = LOCA.Epetra.Group(globalData, printParams, interface, locaSoln, linSys, p)
 
   print('--> group done!')
