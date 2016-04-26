@@ -540,7 +540,19 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) = 0;
 
-    /// \brief Whether lass (???) implements old or new interface
+    /// \brief Whether the subclass implements the "old" or "new"
+    ///   (Kokkos-friendly) interface.
+    ///
+    /// The "old" interface consists of copyAndPermute,
+    /// packAndPrepare, and unpackAndCombine.  The "new" interface
+    /// consists of copyAndPermuteNew, packAndPrepareNew, and
+    /// unpackAndCombineNew.  The new interface is preferred because
+    /// it facilitates thread parallelization using Kokkos data
+    /// structures.
+    ///
+    /// At some point, we will remove the old interface, and rename
+    /// the "new" interface (by removing "New" from the methods'
+    /// names), so that it becomes the only interface.
     virtual bool useNewInterface () { return false; }
 
     /// \brief Perform copies and permutations that are local to this process.
