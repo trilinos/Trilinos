@@ -6045,7 +6045,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                         const Teuchos::ArrayView<const char>& imports,
-                        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
                         size_t constantNumPackets,
                         Distributor & /* distor */,
                         CombineMode combineMode)
@@ -6834,14 +6834,17 @@ namespace Tpetra {
     // Tpetra-specific stuff
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
     if (constantNumPackets == 0) {
+      // FIXME (mfh 25 Apr 2016) Once we've finished fixing #227, we
+      // may be able to remove these fences that protect allocations.
+      execution_space::fence ();
       destMat->numExportPacketsPerLID_ =
         decltype (destMat->numExportPacketsPerLID_) ("numExportPacketsPerLID",
                                                      ExportLIDs.size ());
+      execution_space::fence ();
       destMat->numImportPacketsPerLID_ =
         decltype (destMat->numImportPacketsPerLID_) ("numImportPacketsPerLID",
                                                      RemoteLIDs.size ());
-      destMat->host_numImportPacketsPerLID_ =
-        Kokkos::create_mirror_view (destMat->numImportPacketsPerLID_);
+      execution_space::fence ();
     }
     else {
       // There are a constant number of packets per element.  We
@@ -6949,7 +6952,9 @@ namespace Tpetra {
           destMat->numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+          destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
           Distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
                                          numImportPacketsPerLID);
           size_t totalImportPackets = 0;
@@ -6985,7 +6990,9 @@ namespace Tpetra {
           destMat->numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
           Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
             getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+          destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+            getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
           Distor.doPostsAndWaits (numExportPacketsPerLID, 1,
                                   numImportPacketsPerLID);
           size_t totalImportPackets = 0;
@@ -7024,7 +7031,9 @@ namespace Tpetra {
 #endif
 
     // Backwards compatibility measure.  We'll use this again below.
-    Teuchos::ArrayView<size_t> numImportPacketsPerLID (destMat->host_numImportPacketsPerLID_.ptr_on_device (), destMat->host_numImportPacketsPerLID_.dimension_0 ());
+    destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+    Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
+      getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
 
     Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
                                           destMat->host_imports_.size ());
@@ -7056,16 +7065,6 @@ namespace Tpetra {
       CSR_colind_LID.resize (mynnz);
     }
 
-    // FIXME (mfh 15 May 2014) This should work fine if CrsMatrix
-    // inherits from DistObject (in which case all arrays that get
-    // passed in here are Teuchos::Array), but it won't work if
-    // CrsMatrix inherits from DistObjectKA (in which case all arrays
-    // that get passed in here are Kokkos::View).
-    //
-    // In the latter case, imports_ only has a device view.
-    // numImportPacketsPerLIDs_ is a device view, and also has a host
-    // view (host_numImportPacketsPerLID_).
-    //
     // FIXME (mfh 15 May 2014) Why can't we abstract this out as an
     // unpackAndCombine method on a "CrsArrays" object?  This passing
     // in a huge list of arrays is icky.  Can't we have a bit of an

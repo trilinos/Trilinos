@@ -518,14 +518,17 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
+        // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+        // facilitate #227 debugging, but we shouldn't need them.
+        execution_space::fence ();
         numExportPacketsPerLID_ =
           decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
                                               exportLIDs.size ());
+        execution_space::fence ();
         numImportPacketsPerLID_ =
           decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
                                               remoteLIDs.size ());
-        host_numImportPacketsPerLID_ =
-          Kokkos::create_mirror_view (numImportPacketsPerLID_);
+        execution_space::fence ();
       }
 
       {
@@ -617,13 +620,22 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            // First communicate the number of packets per LID to receive.
+
             // Make sure that host has the latest version, since we're
             // using the version on host.  If host has the latest
             // version already, syncing to host does nothing.
             numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
             Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
               getArrayViewFromDualView (numExportPacketsPerLID_);
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+
+            // numImportPacketsPerLID_ is the output array here, so
+            // mark it as modified.  It's strictly output, so we don't
+            // have to sync from device.
+            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+              getArrayViewFromDualView (numImportPacketsPerLID_);
             distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
                                            numImportPacketsPerLID);
             size_t totalImportPackets = 0;
@@ -680,13 +692,22 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
+            // First communicate the number of packets per LID to receive.
+
             // Make sure that host has the latest version, since we're
             // using the version on host.  If host has the latest
             // version already, syncing to host does nothing.
             numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
             Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
               getArrayViewFromDualView (numExportPacketsPerLID_);
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+
+            // numImportPacketsPerLID_ is the output array here, so
+            // mark it as modified.  It's strictly output, so we don't
+            // have to sync from device.
+            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+              getArrayViewFromDualView (numImportPacketsPerLID_);
             distor.doPostsAndWaits (numExportPacketsPerLID, 1,
                                     numImportPacketsPerLID);
             size_t totalImportPackets = 0;
@@ -742,9 +763,18 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
+
           Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
                                                        host_imports_.dimension_0 ());
+          // NOTE (mfh 25 Apr 2016) unpackAndCombine doesn't actually
+          // change its numImportPacketsPerLID argument, so we don't
+          // have to mark it modified here.
+          numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          // FIXME (mfh 25 Apr 2016) unpackAndCombine doesn't actually
+          // change its numImportPacketsPerLID argument, so we should
+          // be able to use a const Teuchos::ArrayView here.
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+            getArrayViewFromDualView (numImportPacketsPerLID_);
           unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
                             constantNumPackets, distor, CM);
         }
@@ -953,10 +983,13 @@ namespace Tpetra {
           execution_space::fence ();
         }
         if (numImportPacketsPerLID_.dimension_0 () != remoteLIDs.size ()) {
+          // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+          // facilitate #227 debugging, but shouldn't be needed.
           execution_space::fence ();
-          Kokkos::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
+          numImportPacketsPerLID_ =
+            decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
+                                                remoteLIDs.size ());
           execution_space::fence ();
-          host_numImportPacketsPerLID_ = Kokkos::create_mirror_view (numImportPacketsPerLID_);
         }
       }
 
@@ -1101,16 +1134,26 @@ namespace Tpetra {
               std::cerr << ">>> 9.1. Variable # packets / LID: first comm" << std::endl;
             }
             numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
             distor.doReversePostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<Kokkos::HostSpace> ()),
                                            1,
-                                           host_numImportPacketsPerLID_);
+                                           numImportPacketsPerLID_.template view<Kokkos::HostSpace> ());
             size_t totalImportPackets = 0;
             // FIXME (mfh 17 Feb 2014) This would be a good place for
             // a Kokkos reduction.  numImportPacketsPerLID_ has as
             // many entries as the number of LIDs on the calling
             // process.
-            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID_[i];
+            {
+              typedef decltype (numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host host_view_type;
+              typedef typename host_view_type::const_type const_host_view_type;
+
+              const_host_view_type host_numImportPacketsPerLID =
+                numImportPacketsPerLID_.template view<Kokkos::HostSpace> ();
+              const view_size_type numLids = host_numImportPacketsPerLID.size ();
+              for (view_size_type i = 0; i < numLids; ++i) {
+                totalImportPackets += host_numImportPacketsPerLID[i];
+              }
             }
 
             if (debug) {
@@ -1151,25 +1194,26 @@ namespace Tpetra {
 
             if (packOnHost) {
               numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+              numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
               // FIXME (mfh 12 Apr 2016) This needs to use the host
               // version of imports_ in order to use host only.
               distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
                                              getArrayViewFromDualView (numExportPacketsPerLID_),
                                              imports_,
-                                             getArrayView (host_numImportPacketsPerLID_));
+                                             getArrayViewFromDualView (numImportPacketsPerLID_));
             }
             else {
               // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
-              // can take numExportPacketsPerLID as a View or
-              // DualView, rather than as a Teuchos::ArrayView, then
-              // we can use the device version of
-              // numExportPacketsPerLID.  For now, we'll use the host
-              // version.
+              // can take numExportPacketsPerLID and
+              // numImportPacketsPerLID as a View or DualView, rather
+              // than as a Teuchos::ArrayView, then we can use their
+              // device version.  For now, we'll use the host version.
               numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+              numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
               distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
                                              getArrayViewFromDualView (numExportPacketsPerLID_),
                                              imports_,
-                                             getArrayView (host_numImportPacketsPerLID_));
+                                             getArrayViewFromDualView (numImportPacketsPerLID_));
             }
           }
           else {
@@ -1210,15 +1254,25 @@ namespace Tpetra {
             }
 
             numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
             distor.doPostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<Kokkos::HostSpace> ()), 1,
-                                    host_numImportPacketsPerLID_);
+                                    numImportPacketsPerLID_.template view<Kokkos::HostSpace> ());
             size_t totalImportPackets = 0;
-            // FIXME (mfh 17 Feb 2014) This would be a good place for
-            // a Kokkos reduction.  numImportPacketsPerLID_ has as
-            // many entries as the number of LIDs on the calling
-            // process.
-            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID_[i];
+            {
+              typedef decltype (numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host host_view_type;
+              typedef typename host_view_type::const_type const_host_view_type;
+              const_host_view_type host_numImportPacketsPerLID =
+                numImportPacketsPerLID_.template view<Kokkos::HostSpace> ();
+
+              // FIXME (mfh 17 Feb 2014) This would be a good place for
+              // a Kokkos reduction.  numImportPacketsPerLID_ has as
+              // many entries as the number of LIDs on the calling
+              // process.
+              const view_size_type numLids = host_numImportPacketsPerLID.size ();
+              for (view_size_type i = 0; i < numLids; ++i) {
+                totalImportPackets += host_numImportPacketsPerLID[i];
+              }
             }
 
             if (debug) {
@@ -1258,25 +1312,26 @@ namespace Tpetra {
 
             if (packOnHost) {
               numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+              numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
               // FIXME (mfh 12 Apr 2016) This needs to use the host
               // version of imports_ in order to use host only.
               distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
                                       getArrayViewFromDualView (numExportPacketsPerLID_),
                                       imports_,
-                                      getArrayView (host_numImportPacketsPerLID_));
+                                      getArrayViewFromDualView (numImportPacketsPerLID_));
             }
             else { // pack on device
               // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
-              // can take numExportPacketsPerLID as a View or
-              // DualView, rather than as a Teuchos::ArrayView, then
-              // we can use the device version of
-              // numExportPacketsPerLID.  For now, we'll use the host
-              // version.
+              // can take numExportPacketsPerLID and
+              // numImportPacketsPerLID as a View or DualView, rather
+              // than as a Teuchos::ArrayView, then we can use their
+              // device version.  For now, we'll use the host version.
               numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+              numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
               distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
                                       getArrayViewFromDualView (numExportPacketsPerLID_),
                                       imports_,
-                                      getArrayView (host_numImportPacketsPerLID_));
+                                      getArrayViewFromDualView (numImportPacketsPerLID_));
             }
           }
           else {
@@ -1308,14 +1363,6 @@ namespace Tpetra {
           std::cerr << ">>> 10. Copy numImportPacketsPerLID to device" << std::endl;
         }
 
-        // FIXME (mfh 17 Feb 2014) This array should just live on the
-        // device and stay there.  There is no need for a host view,
-        // as long as unpackAndCombine(new) knows what to do with a
-        // device view.
-        //
-        // Copy numImportPacketsPerLID to device
-        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID_);
-
         if (debug) {
           std::cerr << ">>> 11. unpackAndCombineNew" << std::endl;
         }
@@ -1324,7 +1371,20 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-          unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
+
+          // FIXME (mfh 25 Apr 2016) As part of our #227 work-around,
+          // unpackAndCombineNew will eventually take
+          // numImportPacketsPerLID as a DualView.  For now, it
+          // expects a device View, so give it what it wants.
+          //
+          // FIXME (mfh 25 Apr 2016) unpackAndCombineNew shouldn't
+          // actually modify any entries of its
+          // numImportsPacketsPerLID argument, so we don't have to set
+          // the modified flag here.  We should be able to use a const
+          // View as well.
+          numImportPacketsPerLID_.template sync<dev_memory_space> ();
+          unpackAndCombineNew (remoteLIDs, imports_,
+                               numImportPacketsPerLID_.d_view,
                                constantNumPackets, distor, CM);
         }
       }

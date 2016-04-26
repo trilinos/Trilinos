@@ -716,11 +716,9 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
     ///
-    /// Unfortunately, I had to declare these protected, because
-    /// CrsMatrix uses them at one point.  Please, nobody else use
-    /// them.
-    Kokkos::View<size_t*, execution_space> numImportPacketsPerLID_;
-    typename Kokkos::View<size_t*, execution_space>::HostMirror host_numImportPacketsPerLID_;
+    /// Unfortunately, I had to declare this protected, because
+    /// CrsMatrix uses it at one point.  Please, nobody else use it.
+    Kokkos::DualView<size_t*, execution_space> numImportPacketsPerLID_;
 
   private:
     //! Buffer from which packed data are exported (sent to other processes).
