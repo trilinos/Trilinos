@@ -29,7 +29,7 @@
     <Parameter name="Initial Density"                      type="double" value="1.0"   />
     <Parameter name="Minimum Density"                      type="double" value="1.e-4" />
     <Parameter name="SIMP Power"                           type="int"    value="3"     />
-    <Parameter name="Use Force Dot Displacement Objective" type="bool"   value="false" />
+    <Parameter name="Use Force Dot Displacement Objective" type="bool"   value="true"  />
   </ParameterList>
   
   <ParameterList name="ElasticityTopoOpt">
