@@ -69,6 +69,6 @@ supports the following sub-modules:
 __all__ = ['MooreSpence',
            'MinimallyAugmented'
            ]
-import MooreSpence
-import MinimallyAugmented
+from . import MooreSpence
+from . import MinimallyAugmented
 %}

@@ -182,11 +182,13 @@ using Teuchos::rcp;
 %import "NOX.Epetra.__init__.i"
 %import "NOX.Epetra.Interface.i"
 
-// Allow import from the parent directory
+// Allow import from this and parent directory
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 from .. import Abstract

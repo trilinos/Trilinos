@@ -108,6 +108,14 @@ LOCA.TurningPoint.MinimallyAugmented supports the following classes:
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::AbstractGroup)
 %teuchos_rcp(LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup)
 
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
+
 // Base class support
 %import "NOX.Abstract.i"
 %import(module="MultiContinuation") "LOCA_MultiContinuation_AbstractGroup.H"

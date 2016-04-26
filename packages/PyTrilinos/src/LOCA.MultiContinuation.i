@@ -140,6 +140,15 @@ LOCA.MultiContinuation supports the following classes:
 %teuchos_rcp(LOCA::MultiContinuation::ConstraintInterfaceMVDX)
 %teuchos_rcp(LOCA::MultiContinuation::Factory)
 
+// Allow import from this directory
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir in sys.path: sys.path.append(thisDir)
+del sys, op
+%}
+
 // Import base class declarations
 %import "NOX.Abstract.i"
 %import(module="Extended") "LOCA_Extended_MultiAbstractGroup.H"

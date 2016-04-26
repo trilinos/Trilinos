@@ -214,7 +214,6 @@ from . import Hopf
 from . import Pitchfork
 from . import Homotopy
 from . import PhaseTransition
-from . import Abstract
 from . import Parameter
 from . import BorderedSolver
 from . import BorderedSystem
@@ -252,6 +251,14 @@ from . import AnasaziOperator
 // import it here
 %teuchos_rcp(LOCA::Abstract::Iterator)
 %import(module="Abstract") "LOCA_Abstract_Iterator.H"
+
+// At this point, 'Abstract' will be 'NOX.Abstract', but we need it
+// to be 'LOCA.Abstract'
+%pythoncode
+%{
+del Abstract
+from . import Abstract
+%}
 
 // LOCA Stepper class
 %teuchos_rcp(LOCA::Stepper)

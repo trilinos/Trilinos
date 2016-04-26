@@ -235,20 +235,13 @@ using namespace NOX::Epetra;
 %pythoncode
 %{
 import sys, os.path as op
-parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+thisDir   = op.dirname(op.abspath(__file__))
+parentDir = op.normpath(op.join(thisDir,".."))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 
-// NOX base classes
-// %ignore *::getX;
-// %ignore *::getF;
-// %ignore *::getGradient;
-// %ignore *::getNewton;
-// %rename(getX       ) *::getXPtr;
-// %rename(getF       ) *::getFPtr;
-// %rename(getGradient) *::getGradientPtr;
-// %rename(getNewton  ) *::getNewtonPtr;
 %teuchos_rcp(NOX::Abstract::Group)
 %import(module="Abstract") "NOX_Abstract_Group.H"
 %import(module="Abstract") "NOX_Abstract_PrePostOperator.H"
@@ -257,15 +250,11 @@ del sys, op
 
 // NOX::Epetra::Interface imports
 %teuchos_rcp(NOX::Epetra::Interface::Required)
-%import(module="Epetra.Interface") "NOX_Epetra_Interface_Required.H"
+%import(module="Interface") "NOX_Epetra_Interface_Required.H"
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%import(module="Epetra.Interface") "NOX_Epetra_Interface_Jacobian.H"
+%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
 %teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-%import(module="Epetra.Interface") "NOX_Epetra_Interface_Preconditioner.H"
-%pythoncode
-{
-  Interface = Epetra.Interface
-}
+%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
 
 //////////////////////////////
 // NOX.Epetra.Group support //
