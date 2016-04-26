@@ -310,7 +310,9 @@ void SimpleColoredPng::store_special_colors_with_coordinates(unsigned row, unsig
 
 void SimpleColoredPng::update_image_value_ignoring_white(unsigned row, unsigned col)
 {
-    if (m_imageVector[row][col] != 0xffffffff)
+    bool isWhite = m_imageVector[row][col] == 0xffffffff;
+    bool isTransparent = (m_imageVector[row][col] & 0xff) == 0;
+    if(!isWhite && !isTransparent)
         m_imageVector[row][col] = 0xff;
 }
 
