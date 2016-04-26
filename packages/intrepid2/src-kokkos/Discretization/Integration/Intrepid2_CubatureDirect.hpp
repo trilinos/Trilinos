@@ -70,10 +70,12 @@ namespace Intrepid2 {
       All templates are defined on a reference cell and can be mapped to physical space
       cells by the methods available in the MultiCell class.
   */
-  template<typename ExecSpaceType = void>
-  class CubatureDirect : public Cubature<ExecSpaceType> {
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureDirect
+    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
   protected:
-    typedef double value_type;
 
     // data is defined on the host space and this is static
     struct CubatureDataStatic {
@@ -84,11 +86,11 @@ namespace Intrepid2 {
 
       /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
        */
-      value_type points_[Parameters::MaxIntegrationPoints][Parameters::MaxDimension];
-      
+      pointValueType points_[Parameters::MaxIntegrationPoints][Parameters::MaxDimension];
+
       /** \brief  Array with the associated cubature weights.
        */
-      value_type weights_[Parameters::MaxIntegrationPoints];
+      weightValueType weights_[Parameters::MaxIntegrationPoints];
     };
 
     // data is defined on exec space and deep-copied when an object is created
@@ -100,11 +102,11 @@ namespace Intrepid2 {
 
       /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
        */
-      Kokkos::View<value_type*[Parameters::MaxDimension],ExecSpaceType> points_;
+      Kokkos::DynRankView<pointValueType,ExecSpaceType> points_;
 
       /** \brief  Array with the associated cubature weights.
        */
-      Kokkos::View<value_type*,ExecSpaceType> weights_;
+      Kokkos::DynRankView<weightValueType,ExecSpaceType> weights_;
     };
 
     /** \brief The degree of polynomials that are integrated
@@ -153,93 +155,81 @@ namespace Intrepid2 {
       range_type pointRange(0, this->getNumPoints());
       range_type dimRange  (0, this->getDimension());
       {
-        // cub is Kokkos view
-        const auto cub = cubData.points_;
-
-        // for deep copy it needs to be translated to dynrankview
-        // i need exact view structure to get this conversion (padding, layout and space).
-        const auto org = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), cub.dimension(0), cub.dimension(1));
-
-        // then reduce the range accordingly
-        const auto src = Kokkos::subdynrankview(org,       pointRange, dimRange);
-        /**/  auto dst = Kokkos::subdynrankview(cubPoints, pointRange, dimRange);
+        const auto src = Kokkos::subdynrankview(cubData.points_, pointRange, dimRange);
+        /**/  auto dst = Kokkos::subdynrankview(cubPoints,       pointRange, dimRange);
 
         Kokkos::deep_copy( dst, src );
       }
       {
-        const auto cub = cubData.weights_;
-        const auto org = Kokkos::DynRankView<value_type,ExecSpaceType>(cub.data(), cub.dimension(0));
-
-        const auto src = Kokkos::subdynrankview(org,        pointRange);
-        /**/  auto dst = Kokkos::subdynrankview(cubWeights, pointRange);
+        const auto src = Kokkos::subdynrankview(cubData.weights_, pointRange);
+        /**/  auto dst = Kokkos::subdynrankview(cubWeights,       pointRange);
 
         Kokkos::deep_copy(dst ,src);
       }
     }
 
-    CubatureDirect(const ordinal_type degree, 
-                   const ordinal_type dimension) 
-      : degree_(degree), 
-        dimension_(dimension),
-        cubatureData_() {}
-
   public:
-
-    CubatureDirect() = default;
-    CubatureDirect(const CubatureDirect &b) = default;
-    ~CubatureDirect() = default;
 
     //
     // Cubature public functions
     //
 
-    /** \brief Returns cubature points and weights
+    class Internal {
+    private:
+      CubatureDirect *obj_;
 
-        \param cubPoints       [out]     - Array containing the cubature points.
-        \param cubWeights      [out]     - Array of corresponding cubature weights.
-    */
-    template<typename cubPointValueType,  class ...cubPointProperties,
-             typename cubWeightValueType, class ...cubWeightProperties>
+    public:
+      Internal(CubatureDirect *obj)
+        : obj_(obj) {}
+
+      /** \brief Returns cubature points and weights
+
+          \param cubPoints       [out]     - Array containing the cubature points.
+          \param cubWeights      [out]     - Array of corresponding cubature weights.
+      */
+      template<typename cubPointValueType,  class ...cubPointProperties,
+               typename cubWeightValueType, class ...cubWeightProperties>
+      void
+      getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+        obj_->getCubatureFromData(cubPoints, cubWeights, obj_->cubatureData_);
+      }
+
+    };
+    Internal impl_;
+
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    virtual
     void
-    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
-      getCubatureFromData(cubPoints, cubWeights, cubatureData_);
-    }
-
-
-    /** \brief Returns cubature points and weights.
-        Method for physical space cubature, throws an exception.
-
-        \param cubPoints             [out]        - Array containing the cubature points.
-        \param cubWeights            [out]        - Array of corresponding cubature weights.
-        \param cellCoords             [in]        - Array of cell coordinates
-    */
-    template<typename cubPointValueType,  class ...cubPointProperties,
-             typename cubWeightValueType, class ...cubWeightProperties,
-             typename cellCoordValueType, class ...cellCoordProperties>
-    void
-    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-                 Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (CubatureDirect::getCubature): Cubature defined in reference space calling method for physical space cubature.");
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights ) const {
+      impl_.getCubature( cubPoints,
+                         cubWeights );
     }
 
     /** \brief Returns the number of cubature points.
      */
-    ordinal_type getNumPoints() const {
+    virtual
+    ordinal_type
+    getNumPoints() const {
       return cubatureData_.numPoints_;
     }
 
     /** \brief Returns dimension of integration domain.
      */
-    ordinal_type getDimension() const {
+    virtual
+    ordinal_type
+    getDimension() const {
       return dimension_;
     }
 
     /** \brief Returns cubature name.
      */
-    const char* getName() const {
+    virtual
+    const char*
+    getName() const {
       return "CubatureDirect";
     }
 
@@ -248,6 +238,38 @@ namespace Intrepid2 {
     */
     ordinal_type getAccuracy() const {
       return degree_;
+    }
+
+    CubatureDirect()
+      : degree_(),
+        dimension_(),
+        cubatureData_(),
+        impl_(this) {}
+
+    CubatureDirect(const CubatureDirect &b)
+      : degree_(b.degree_),
+        dimension_(b.dimension_),
+        cubatureData_(b.cubatureData_),
+        impl_(this) {}
+
+    CubatureDirect(const ordinal_type degree,
+                   const ordinal_type dimension)
+      : degree_(degree),
+        dimension_(dimension),
+        cubatureData_(),
+        impl_(this) {}
+
+    virtual~CubatureDirect() = default;
+
+    CubatureDirect& operator=(const CubatureDirect &b) {
+      if (this != &b) {
+        Cubature<ExecSpaceType,pointValueType,weightValueType>::operator= (b);
+        degree_ = b.degree_;
+        dimension_ = b.dimension_;
+        cubatureData_ = b.cubatureData_;
+        // do not copy impl
+      }
+      return *this;
     }
 
   };

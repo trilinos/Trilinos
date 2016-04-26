@@ -52,14 +52,14 @@
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
-  
+
   /** \class  Intrepid2::Basis_HGRAD_QUAD_C1_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Quadrilateral cell
-      
+
       Implements Lagrangian basis of degree 1 on the reference Quadrilateral cell. The basis has
-      cardinality 4 and spans a COMPLETE bi-linear polynomial space. Basis functions are dual 
+      cardinality 4 and spans a COMPLETE bi-linear polynomial space. Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
-    
+
       \verbatim
       =================================================================================================
       |         |           degree-of-freedom-tag table                    |                           |
@@ -79,8 +79,10 @@ namespace Intrepid2 {
       \endverbatim
   */
 
-  template<typename ExecSpaceType = void>
-  class Basis_HGRAD_QUAD_C1_FEM : public Basis<ExecSpaceType> {
+  template<typename ExecSpaceType = void,
+           typename outputValueType = double,
+           typename pointValueType = double>
+  class Basis_HGRAD_QUAD_C1_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
 
     template<EOperator opType>
@@ -136,39 +138,75 @@ namespace Intrepid2 {
       }
     };
 
+    class Internal {
+    private:
+      Basis_HGRAD_QUAD_C1_FEM *obj_;
+
+    public:
+      Internal(Basis_HGRAD_QUAD_C1_FEM *obj)
+        : obj_(obj) {}
+
+      /** \brief  FEM basis evaluation on a <strong>reference Quadrilateral</strong> cell.
+
+          Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
+          points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of
+          I/O array arguments see Section \ref basis_md_array_sec .
+
+          \param  outputValues      [out] - rank-2 or 3 array with the computed basis values
+          \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points
+          \param  operatorType      [in]  - operator applied to basis functions
+      */
+      template<typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      void
+      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                 const EOperator operatorType  = OPERATOR_VALUE ) const;
+
+
+      /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+          <strong>reference Quadrilateral</strong>.
+
+          \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+          dimensioned (F,D)
+      */
+      template<typename dofCoordValueType, class ...dofCoordProperties>
+      void
+      getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
+    };
+    Internal impl_;
 
     /** \brief Constructor.
      */
     Basis_HGRAD_QUAD_C1_FEM();
-  
-    
-    /** \brief  FEM basis evaluation on a <strong>reference Quadrilateral</strong> cell. 
-    
-        Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-        points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of 
-        I/O array arguments see Section \ref basis_md_array_sec .
-  
-        \param  outputValues      [out] - rank-2 or 3 array with the computed basis values
-        \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
-        \param  operatorType      [in]  - operator applied to basis functions        
-    */
-    template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties>
-    void
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-               const EOperator operatorType  = OPERATOR_VALUE ) const;
-  
-  
-    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-        <strong>reference Quadrilateral</strong>.
+    Basis_HGRAD_QUAD_C1_FEM(const Basis_HGRAD_QUAD_C1_FEM &b)
+      : Basis<ExecSpaceType,outputValueType,pointValueType>(b),
+        impl_(this) {}
 
-        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-        dimensioned (F,D)
-    */
-    template<typename dofCoordValueType, class ...dofCoordProperties>
+    Basis_HGRAD_QUAD_C1_FEM& operator=(const Basis_HGRAD_QUAD_C1_FEM &b) {
+      if (this != &b) {
+        Basis<ExecSpaceType,outputValueType,pointValueType>::operator= (b);
+        // do not copy impl
+      }
+      return *this;
+    }
+
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+
+    virtual
     void
-    getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
+    getValues( /**/  outputViewType outputValues,
+               const pointViewType  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE ) const {
+      impl_.getValues( outputValues, inputPoints, operatorType );
+    }
+
+    virtual
+    void
+    getDofCoords( pointViewType dofCoords ) const {
+      impl_.getDofCoords( dofCoords );
+    }
 
   };
 }// namespace Intrepid2

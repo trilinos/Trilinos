@@ -315,151 +315,149 @@ namespace Intrepid2 {
       getReferenceNode(dst, parentCell, cellNodeOrd);
     }
   }  
-  
-//   template<class Scalar>
-//   template<class ArrayEdgeTangent>
-//   void CellTools<Scalar>::getReferenceEdgeTangent(ArrayEdgeTangent &            refEdgeTangent,
-//                                                   const int &                   edgeOrd,
-//                                                   const shards::CellTopology &  parentCell){
-  
-//     int spaceDim  = parentCell.getDimension();
-  
-// #ifdef HAVE_INTREPID2_DEBUG
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (0 <= edgeOrd) && (edgeOrd < (int)parentCell.getSubcellCount(1) ) ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( refEdgeTangent.size() == spaceDim ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
-// #endif
-//     // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
-//     // (subcOrd, coordinate, coefficient)
-//     const FieldContainer<double>& edgeMap = getSubcellParametrization(1, parentCell);
-  
-//     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
-//     //                                     => edge Tangent: -> C_1(*)
-//     refEdgeTangent(0) = edgeMap(edgeOrd, 0, 1);
-//     refEdgeTangent(1) = edgeMap(edgeOrd, 1, 1);
-  
-//     // Skip last coordinate for 2D parent cells
-//     if(spaceDim == 3) {
-//       refEdgeTangent(2) = edgeMap(edgeOrd, 2, 1);  
-//     }
-//   }
 
+  template<typename SpT>  
+  template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
+  void
+  CellTools<SpT>::
+  getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
+                           const ordinal_type         edgeOrd,
+                           const shards::CellTopology parentCell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 2 &&
+                                  parentCell.getDimension() != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): two or three-dimensional parent cell required");
+  
+    INTREPID2_TEST_FOR_EXCEPTION( edgeOrd <  0 ||
+                                  edgeOrd >= parentCell.getSubcellCount(1), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): edge ordinal out of bounds");  
 
-
-//   template<class Scalar>
-//   template<class ArrayFaceTangentU, class ArrayFaceTangentV>
-//   void CellTools<Scalar>::getReferenceFaceTangents(ArrayFaceTangentU &           uTan,
-//                                                    ArrayFaceTangentV &           vTan,
-//                                                    const int &                   faceOrd,
-//                                                    const shards::CellTopology &  parentCell){
-  
-// #ifdef HAVE_INTREPID2_DEBUG
-//     int spaceDim  = parentCell.getDimension();
-//     INTREPID2_TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
-
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (getrank(uTan) == 1)  && (getrank(vTan) == 1) ), std::invalid_argument,  
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( uTan.dimension(0) == spaceDim ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
-
-//     INTREPID2_TEST_FOR_EXCEPTION( !( vTan.dimension(0) == spaceDim ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
-// #endif
-  
-//     // Face parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
-//     // (subcOrd, coordinate, coefficient): retrieve this array
-//     const FieldContainer<double>& faceMap = getSubcellParametrization(2, parentCell);
-  
-//     /*  All ref. face maps have affine coordinate functions:  f_dim(u,v) = C_0(dim) + C_1(dim)*u + C_2(dim)*v
-//      *                           `   => Tangent vectors are:  uTan -> C_1(*);    vTan -> C_2(*)
-//      */
-//     // set uTan -> C_1(*)
-//     uTan(0) = faceMap(faceOrd, 0, 1);
-//     uTan(1) = faceMap(faceOrd, 1, 1);
-//     uTan(2) = faceMap(faceOrd, 2, 1);
+    INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.rank() != 1, std::invalid_argument,  
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
     
-//     // set vTan -> C_2(*)
-//     vTan(0) = faceMap(faceOrd, 0, 2);
-//     vTan(1) = faceMap(faceOrd, 1, 2);
-//     vTan(2) = faceMap(faceOrd, 2, 2);
-//   }
-
-
-
-//   template<class Scalar>
-//   template<class ArraySideNormal>
-//   void CellTools<Scalar>::getReferenceSideNormal(ArraySideNormal &             refSideNormal,
-//                                                  const int &                   sideOrd,
-//                                                  const shards::CellTopology &  parentCell){
-//     int spaceDim  = parentCell.getDimension();
- 
-// #ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( refEdgeTangent.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): output array size is required to match space dimension");  
+#endif
+    // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
+    // (subcOrd, coordinate, coefficient)
+    subcellParamViewType edgeMap;
+    getSubcellParametrization(edgeMap, 1, parentCell);
   
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (spaceDim == 2) || (spaceDim == 3) ), std::invalid_argument, 
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
+    // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
+    //                                     => edge Tangent: -> C_1(*)
+    const auto dim = parentCell.getDimension();
+    for (auto i=0;i<dim;++i)
+      refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
+  }
+
+
+  template<typename SpT>
+  template<typename refFaceTanUValueType,...refFaceTanUProperties,
+           typename refFaceTanVValueType,...refFaceTanVProperties>
+  void
+  CellTools<SpT>::
+  getReferenceFaceTangents( /**/  Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
+                            /**/  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+                            const ordinal_type         faceOrd,
+                            const shards::CellTopology parentCell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): three-dimensional parent cell required");  
   
-//     // Check side ordinal: by definition side is subcell whose dimension = spaceDim-1
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (0 <= sideOrd) && (sideOrd < (int)parentCell.getSubcellCount(spaceDim - 1) ) ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
-// #endif 
-//     if(spaceDim == 2){
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): face ordinal out of bounds");  
     
-//       // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
-//       getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
+    INTREPID2_TEST_FOR_EXCEPTION( uTan.rank() != 1 || vTan.rank() != 1, std::invalid_argument,  
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): rank = 1 required for output arrays"); 
+  
+    INTREPID2_TEST_FOR_EXCEPTION( uTan.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
+
+    INTREPID2_TEST_FOR_EXCEPTION( vTan.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
+#endif
+  
+    // Face parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
+    // (subcOrd, coordinate, coefficient): retrieve this array
+    subcellParamViewType faceMap;
+    getSubcellParametrization(faceMap, 2, parentCell);
+  
+    /*  All ref. face maps have affine coordinate functions:  f_dim(u,v) = C_0(dim) + C_1(dim)*u + C_2(dim)*v
+     *                           `   => Tangent vectors are:  uTan -> C_1(*);    vTan -> C_2(*)
+     */
+
+    // set uTan -> C_1(*)
+    // set vTan -> C_2(*)
+    const auto dim = parentCell.getDimension();
+    for (auto i=0;i<dim;++i) {
+      uTan(i) = faceMap(faceOrd, i, 1);
+      vTan(i) = faceMap(faceOrd, i, 2);
+    }
+  }
+
+  template<typename SpT>
+  template<typename refSideNormalValueType, class ...refSideNormalProperties>
+  void
+  CellTools<SpT>::
+  getReferenceSideNormal( /**/  Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
+                          const ordinal_type         sideOrd,
+                          const shards::CellTopology parentCell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 2 &&
+                                  parentCell.getDimension() != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): two or three-dimensional parent cell required");
+  
+    // Check side ordinal: by definition side is subcell whose dimension = parentCell.getDimension()-1
+    INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= parentCell.getSubcellCount(parentCell.getDimension() - 1), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
+#endif 
+
+    const auto dim = parentCell.getDimension();
+    if (dim == 2) {
+      // 2D parent cells: side = 1D subcell (edge), call the edge tangent method and rotate tangents
+      getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
     
-//       // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
-//       Scalar temp = refSideNormal(0);
-//       refSideNormal(0) = refSideNormal(1);
-//       refSideNormal(1) = -temp;
-//     }
-//     else{
-//       // 3D parent cell: side = 2D subcell (face), call the face normal method.
-//       getReferenceFaceNormal(refSideNormal, sideOrd, parentCell);
-//     }
-//   }
-  
+      // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
+      refSideNormalValueType tmp = refSideNormal(0);
+      refSideNormal(0) = refSideNormal(1);
+      refSideNormal(1) = -tmp;
+    } else {
+      // 3D parent cell: side = 2D subcell (face), call the face normal method.
+      getReferenceFaceNormal(refSideNormal, sideOrd, parentCell);
+    }
+  }
 
 
-//   template<class Scalar>
-//   template<class ArrayFaceNormal>
-//   void CellTools<Scalar>::getReferenceFaceNormal(ArrayFaceNormal &             refFaceNormal,
-//                                                  const int &                   faceOrd,
-//                                                  const shards::CellTopology &  parentCell){
-//     int spaceDim  = parentCell.getDimension();
-// #ifdef HAVE_INTREPID2_DEBUG
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !(spaceDim == 3), std::invalid_argument, 
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( (0 <= faceOrd) && (faceOrd < (int)parentCell.getSubcellCount(2) ) ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
-  
-//     INTREPID2_TEST_FOR_EXCEPTION( !( getrank(refFaceNormal) == 1 ), std::invalid_argument,  
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
+  template<typename SpT>
+  template<typename refFaceNormalValueType, class ...refFaceNormalProperties>>
+  void 
+  CellTools<SpT>::
+  getReferenceFaceNormal( /**/  Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
+                          const ordinal_type         faceOrd,
+                          const shards::CellTopology parentCell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( parentCell.getDimension() != 3, std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): three-dimensional parent cell required");  
     
-//     INTREPID2_TEST_FOR_EXCEPTION( !( static_cast<index_type>(refFaceNormal.dimension(0)) == static_cast<index_type>(spaceDim) ), std::invalid_argument,
-//                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
-// #endif
-
-//     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
-//     FieldContainer<Scalar> uTan(spaceDim);
-//     FieldContainer<Scalar> vTan(spaceDim);
-//     getReferenceFaceTangents(uTan, vTan, faceOrd, parentCell);
+    INTREPID2_TEST_FOR_EXCEPTION( faceOrd < 0 || faceOrd >= parentCell.getSubcellCount(2), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): face ordinal out of bounds");  
+    
+    INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.rank() != 1, std::invalid_argument,  
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): rank = 1 required for output array"); 
   
-//     // Compute the vector product of the reference face tangents:
-//     RealSpaceTools<Scalar>::vecprod(refFaceNormal, uTan, vTan);
-//   }
+    INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.dimension(0) != parentCell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
+#endif
+    
+    // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
+    Kokkos::DynRankView<refFaceNormalValueType,SpT>
+    FieldContainer<Scalar> uTan(spaceDim);
+    FieldContainer<Scalar> vTan(spaceDim);
+    getReferenceFaceTangents(uTan, vTan, faceOrd, parentCell);
+  
+    // Compute the vector product of the reference face tangents:
+    RealSpaceTools<Scalar>::vecprod(refFaceNormal, uTan, vTan);
+  }
 
 //   template<class Scalar>
 //   template<class ArrayEdgeTangent, class ArrayJac>

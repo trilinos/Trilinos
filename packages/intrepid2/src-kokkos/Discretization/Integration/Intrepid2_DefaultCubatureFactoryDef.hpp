@@ -55,15 +55,15 @@ namespace Intrepid2 {
   template<typename SpT>
   Teuchos::RCP<Cubature<SpT> > 
   DefaultCubatureFactory::
-  create<SpT>( const shards::CellTopology       cellTopology,
-               const std::vector<ordinal_type> &degree ) {
-    
+  create( const shards::CellTopology       cellTopology,
+          const std::vector<ordinal_type> &degree ) {
+
     // Create generic cubature.
     Teuchos::RCP<Cubature<SpT> > r_val;
 
-    switch (cellTopology.getBasekey()) {
+    switch (cellTopology.getBaseCellTopologyData()->key) {
     case shards::Line<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 1), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       r_val = Teuchos::rcp(new CubatureDirectLineGauss<SpT>(degree[0]));
       break;
@@ -75,7 +75,7 @@ namespace Intrepid2 {
     //   break;
 
     case shards::Quadrilateral<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 2), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 2, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
         const auto x_line = CubatureDirectLineGauss<SpT>(degree[0]);
@@ -101,7 +101,7 @@ namespace Intrepid2 {
     //   break;
 
     case shards::Hexahedron<>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 3, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
         const auto x_line = CubatureDirectLineGauss<SpT>(degree[0]);
@@ -155,13 +155,11 @@ namespace Intrepid2 {
   template<typename SpT>
   Teuchos::RCP<Cubature<SpT> > 
   DefaultCubatureFactory::
-  create<SpT>(const shards::CellTopology &cellTopology,
-                        const ordinal_type          degree) {
+  create( const shards::CellTopology cellTopology,
+          const ordinal_type         degree ) {
     // uniform order for 3 axes
-    std::vector<int> degreeArray;
-    degreeArray.assign(3, degree);
-
-    return create(cellTopology, degreeArray);
+    const std::vector<ordinal_type> degreeArray(3, degree);
+    return create<SpT>(cellTopology, degreeArray);
   }
 
 

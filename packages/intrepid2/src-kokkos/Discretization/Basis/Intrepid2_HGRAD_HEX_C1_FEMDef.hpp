@@ -54,13 +54,13 @@ namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT>
+  template<typename SpT, typename OT, typename PT>
   template<EOperator opType>
   template<typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   KOKKOS_INLINE_FUNCTION
   void
-  Basis_HGRAD_HEX_C1_FEM<SpT>::Serial<opType>::
+  Basis_HGRAD_HEX_C1_FEM<SpT,OT,PT>::Serial<opType>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
     switch (opType) {
@@ -74,11 +74,11 @@ namespace Intrepid2 {
       output(1) = (1.0 + x)*(1.0 - y)*(1.0 - z)/8.0;
       output(2) = (1.0 + x)*(1.0 + y)*(1.0 - z)/8.0;
       output(3) = (1.0 - x)*(1.0 + y)*(1.0 - z)/8.0;
-          
+
       output(4) = (1.0 - x)*(1.0 - y)*(1.0 + z)/8.0;
       output(5) = (1.0 + x)*(1.0 - y)*(1.0 + z)/8.0;
       output(6) = (1.0 + x)*(1.0 + y)*(1.0 + z)/8.0;
-      output(7) = (1.0 - x)*(1.0 + y)*(1.0 + z)/8.0;        
+      output(7) = (1.0 - x)*(1.0 + y)*(1.0 + z)/8.0;
       break;
     }
     case OPERATOR_GRAD : {
@@ -90,31 +90,31 @@ namespace Intrepid2 {
       output(0, 0) = -(1.0 - y)*(1.0 - z)/8.0;
       output(0, 1) = -(1.0 - x)*(1.0 - z)/8.0;
       output(0, 2) = -(1.0 - x)*(1.0 - y)/8.0;
-          
+
       output(1, 0) =  (1.0 - y)*(1.0 - z)/8.0;
       output(1, 1) = -(1.0 + x)*(1.0 - z)/8.0;
       output(1, 2) = -(1.0 + x)*(1.0 - y)/8.0;
-          
+
       output(2, 0) =  (1.0 + y)*(1.0 - z)/8.0;
       output(2, 1) =  (1.0 + x)*(1.0 - z)/8.0;
       output(2, 2) = -(1.0 + x)*(1.0 + y)/8.0;
-          
+
       output(3, 0) = -(1.0 + y)*(1.0 - z)/8.0;
       output(3, 1) =  (1.0 - x)*(1.0 - z)/8.0;
       output(3, 2) = -(1.0 - x)*(1.0 + y)/8.0;
-          
+
       output(4, 0) = -(1.0 - y)*(1.0 + z)/8.0;
       output(4, 1) = -(1.0 - x)*(1.0 + z)/8.0;
       output(4, 2) =  (1.0 - x)*(1.0 - y)/8.0;
-          
+
       output(5, 0) =  (1.0 - y)*(1.0 + z)/8.0;
       output(5, 1) = -(1.0 + x)*(1.0 + z)/8.0;
       output(5, 2) =  (1.0 + x)*(1.0 - y)/8.0;
-          
+
       output(6, 0) =  (1.0 + y)*(1.0 + z)/8.0;
       output(6, 1) =  (1.0 + x)*(1.0 + z)/8.0;
       output(6, 2) =  (1.0 + x)*(1.0 + y)/8.0;
-          
+
       output(7, 0) = -(1.0 + y)*(1.0 + z)/8.0;
       output(7, 1) =  (1.0 - x)*(1.0 + z)/8.0;
       output(7, 2) =  (1.0 - x)*(1.0 + y)/8.0;
@@ -125,57 +125,57 @@ namespace Intrepid2 {
       const auto y = input(1);
       const auto z = input(2);
 
-      // output is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6) 
+      // output is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality = 6)
       output(0, 0) =  0.0;                    // {2, 0, 0}
       output(0, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
       output(0, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
       output(0, 3) =  0.0;                    // {0, 2, 0}
       output(0, 4) =  (1.0 - x)/8.0;          // {0, 1, 1}
       output(0, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(1, 0) =  0.0;                    // {2, 0, 0}
       output(1, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
       output(1, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
       output(1, 3) =  0.0;                    // {0, 2, 0}
       output(1, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
       output(1, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(2, 0) =  0.0;                    // {2, 0, 0}
       output(2, 1) =  (1.0 - z)/8.0;          // {1, 1, 0}
       output(2, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
       output(2, 3) =  0.0;                    // {0, 2, 0}
       output(2, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
       output(2, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(3, 0) =  0.0;                    // {2, 0, 0}
       output(3, 1) = -(1.0 - z)/8.0;          // {1, 1, 0}
       output(3, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
       output(3, 3) =  0.0;                    // {0, 2, 0}
       output(3, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
       output(3, 5) =  0.0;                    // {0, 0, 2}
-          
-          
+
+
       output(4, 0) =  0.0;                    // {2, 0, 0}
       output(4, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
       output(4, 2) = -(1.0 - y)/8.0;          // {1, 0, 1}
       output(4, 3) =  0.0;                    // {0, 2, 0}
       output(4, 4) = -(1.0 - x)/8.0;          // {0, 1, 1}
       output(4, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(5, 0) =  0.0;                    // {2, 0, 0}
       output(5, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
       output(5, 2) =  (1.0 - y)/8.0;          // {1, 0, 1}
       output(5, 3) =  0.0;                    // {0, 2, 0}
       output(5, 4) = -(1.0 + x)/8.0;          // {0, 1, 1}
       output(5, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(6, 0) =  0.0;                    // {2, 0, 0}
       output(6, 1) =  (1.0 + z)/8.0;          // {1, 1, 0}
       output(6, 2) =  (1.0 + y)/8.0;          // {1, 0, 1}
       output(6, 3) =  0.0;                    // {0, 2, 0}
       output(6, 4) =  (1.0 + x)/8.0;          // {0, 1, 1}
       output(6, 5) =  0.0;                    // {0, 0, 2}
-          
+
       output(7, 0) =  0.0;                    // {2, 0, 0}
       output(7, 1) = -(1.0 + z)/8.0;          // {1, 1, 0}
       output(7, 2) = -(1.0 + y)/8.0;          // {1, 0, 1}
@@ -206,25 +206,26 @@ namespace Intrepid2 {
   }
 
   // -------------------------------------------------------------------------------------
-  
-  template<typename SpT>
-  Basis_HGRAD_HEX_C1_FEM<SpT>::
-  Basis_HGRAD_HEX_C1_FEM() {
+
+  template<typename SpT, typename OT, typename PT>
+  Basis_HGRAD_HEX_C1_FEM<SpT,OT,PT>::
+  Basis_HGRAD_HEX_C1_FEM()
+    : impl_(this) {
     this->basisCardinality_  = 8;
-    this->basisDegree_       = 1;    
+    this->basisDegree_       = 1;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
     this->basisType_         = BASIS_FEM_DEFAULT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
 
     // initialize tags
-    {  
+    {
       // Basis-dependent intializations
       const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
-      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+
+      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration
       ordinal_type tags[32]  = { 0, 0, 0, 1,
                                  0, 1, 0, 1,
                                  0, 2, 0, 1,
@@ -250,11 +251,11 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename SpT, typename OT, typename PT>
   template<typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<SpT>::
+  Basis_HGRAD_HEX_C1_FEM<SpT,OT,PT>::Internal::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const EOperator operatorType ) const {
@@ -262,8 +263,8 @@ namespace Intrepid2 {
     Intrepid2::getValues_HGRAD_Args(outputValues,
                                     inputPoints,
                                     operatorType,
-                                    this->getBaseCellTopology(),
-                                    this->getCardinality() );
+                                    obj_->getBaseCellTopology(),
+                                    obj_->getCardinality() );
 #endif
 
     typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -273,14 +274,14 @@ namespace Intrepid2 {
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-  
+
     switch (operatorType) {
-    
+
     case OPERATOR_VALUE: {
       typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-    }      
+    }
     case OPERATOR_GRAD:
     case OPERATOR_D1: {
       typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
@@ -292,7 +293,7 @@ namespace Intrepid2 {
                                     ">>> ERROR (Basis_HGRAD_HEX_C1_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
     }
-      
+
     case OPERATOR_DIV: {
       INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                                     ">>> ERROR (Basis_HGRAD_HEX_C1_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
@@ -303,7 +304,7 @@ namespace Intrepid2 {
       typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
+
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:
@@ -325,31 +326,31 @@ namespace Intrepid2 {
 
 
 
-  template<typename SpT>
+  template<typename SpT, typename OT, typename PT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HGRAD_HEX_C1_FEM<SpT>::
+  Basis_HGRAD_HEX_C1_FEM<SpT,OT,PT>::Internal::
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) rank = 2 required for dofCoords array");
     // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->basisCardinality_, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
     // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
 
-    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;  
-    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0; dofCoords(1,2) = -1.0;  
-    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0; dofCoords(2,2) = -1.0;  
-    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0; dofCoords(3,2) = -1.0;  
-    dofCoords(4,0) = -1.0;   dofCoords(4,1) = -1.0; dofCoords(4,2) =  1.0;  
-    dofCoords(5,0) =  1.0;   dofCoords(5,1) = -1.0; dofCoords(5,2) =  1.0;  
-    dofCoords(6,0) =  1.0;   dofCoords(6,1) =  1.0; dofCoords(6,2) =  1.0;  
-    dofCoords(7,0) = -1.0;   dofCoords(7,1) =  1.0; dofCoords(7,2) =  1.0;  
+    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;
+    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0; dofCoords(1,2) = -1.0;
+    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0; dofCoords(2,2) = -1.0;
+    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0; dofCoords(3,2) = -1.0;
+    dofCoords(4,0) = -1.0;   dofCoords(4,1) = -1.0; dofCoords(4,2) =  1.0;
+    dofCoords(5,0) =  1.0;   dofCoords(5,1) = -1.0; dofCoords(5,2) =  1.0;
+    dofCoords(6,0) =  1.0;   dofCoords(6,1) =  1.0; dofCoords(6,2) =  1.0;
+    dofCoords(7,0) = -1.0;   dofCoords(7,1) =  1.0; dofCoords(7,2) =  1.0;
   }
 
 }// namespace Intrepid2
