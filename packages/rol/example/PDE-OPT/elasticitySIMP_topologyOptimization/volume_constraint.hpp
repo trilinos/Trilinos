@@ -77,26 +77,6 @@ private:
     }
   }
 
-  ROL::Vector<Real> & castRiskVector(ROL::Vector<Real> &x) const {
-    try {
-      ROL::RiskVector<Real> & rx = Teuchos::dyn_cast<ROL::RiskVector<Real> >(x);
-      return *(rx.getVector());
-    }
-    catch (std::exception &e) {
-      return x;
-    }
-  }
-
-  const ROL::Vector<Real> & castConstRiskVector(const ROL::Vector<Real> &x) const {
-    try {
-      const ROL::RiskVector<Real> & rx = Teuchos::dyn_cast<const ROL::RiskVector<Real> >(x);
-      return *(rx.getVector());
-    }
-    catch (std::exception &e) {
-      return x;
-    }
-  }
-
 public:
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                                   const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
