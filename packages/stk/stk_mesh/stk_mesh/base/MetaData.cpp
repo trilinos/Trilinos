@@ -667,7 +667,9 @@ shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
     cell_topology_data->subcell_count[2]  = 0 ;
     cell_topology_data->subcell_count[3]  = 0 ;
 
-    if (topo.is_superface())
+    if (topo.is_superedge())
+        register_cell_topology(cell_topology, stk::topology::EDGE_RANK);
+    else if (topo.is_superface())
         register_cell_topology(cell_topology, stk::topology::FACE_RANK);
     else
         register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
@@ -872,7 +874,7 @@ void set_topology(Part & part, stk::topology topo)
     meta.declare_part(part.name(), topo.rank());
   }
 
-  if (topo.is_superelement() || topo.is_superface()) {
+  if (topo.is_super_topology()) {
     // Need to (possibly) create a CellTopology corresponding to this superelement stk::topology.
     shards::CellTopology cell_topology = meta.register_super_cell_topology(topo);
     set_cell_topology(part, cell_topology);
@@ -1034,6 +1036,8 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
     return create_superelement_topology(shards_topology.getNodeCount());
   else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPERFACE", 9) == 0)
     return create_superface_topology(shards_topology.getNodeCount());
+  else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPEREDGE", 9) == 0)
+    return create_superedge_topology(shards_topology.getNodeCount());
 
   if (t.defined_on_spatial_dimension(spatial_dimension))
     return t;

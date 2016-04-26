@@ -253,6 +253,8 @@ unsigned topology::num_nodes() const
   topology::apply_functor< functor > apply;
   if (m_value < END_TOPOLOGY)
       return apply(m_value);
+  else if (is_superedge())
+      return m_value - SUPEREDGE_START;
   else if (is_superface())
       return m_value - SUPERFACE_START;
   else
@@ -266,6 +268,8 @@ topology::rank_t topology::rank() const
   topology::apply_functor< functor > apply;
   if (m_value < END_TOPOLOGY)
       return apply(m_value);
+  else if (is_superedge())
+      return topology::EDGE_RANK;
   else if (is_superface())
       return topology::FACE_RANK;
   else if (is_superelement())

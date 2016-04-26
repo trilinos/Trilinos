@@ -276,7 +276,7 @@ public:
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
     Part* root_part = nullptr;
     stk::topology topo = topology;
-    if (topo.is_superelement() || topo.is_superface()) {
+    if (topo.is_super_topology()) {
         root_part = &get_cell_topology_root_part(register_super_cell_topology(topo));
     }
     else {

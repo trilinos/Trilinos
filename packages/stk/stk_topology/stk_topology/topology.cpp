@@ -95,6 +95,8 @@ std::string topology::name() const
     oss << "SUPERELEMENT_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERELEMENT_START);
   else if ( is_superface() )
     oss << "SUPERFACE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPERFACE_START);
+  else if ( is_superedge() )
+    oss << "SUPEREDGE_TOPOLOGY_" << (static_cast<unsigned>(m_value) - topology::SUPEREDGE_START);
   else
     oss << "UNKNOWN_TOPOLOGY_" << (static_cast<unsigned>(m_value));
 
