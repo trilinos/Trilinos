@@ -719,6 +719,10 @@ namespace Tpetra {
 
     /// \brief Hook for releasing views.
     ///
+    /// \note This is no longer called (and is therefore no longer
+    ///   needed) for subclasses for which useNewInterface() returns
+    ///   \c true.
+    ///
     /// doTransfer() calls this on both the source and destination
     /// objects, once it no longer needs to access that object's data.
     /// By default, this method does nothing.  Implementations may use
