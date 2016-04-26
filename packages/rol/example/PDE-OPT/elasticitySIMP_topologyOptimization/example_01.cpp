@@ -104,29 +104,34 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    Teuchos::RCP<ElasticitySIMPOperators<RealT> > data = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(comm, parlist, outStream));
+    Teuchos::RCP<ElasticitySIMPOperators<RealT> > data
+      = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(comm, parlist, outStream));
     /*** Build vectors and dress them up as ROL vectors. ***/
     Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getCellMap();
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dw_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
-    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp   = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > z_rcp   = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > du_rcp  = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > dw_rcp  = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp  = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > dz2_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
-    Teuchos::RCP<std::vector<RealT> >    vscale_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
-    Teuchos::RCP<std::vector<RealT> >    vc_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
+    Teuchos::RCP<std::vector<RealT> >    vc_rcp     = Teuchos::rcp(new std::vector<RealT>(1, 0));
     Teuchos::RCP<std::vector<RealT> >    vc_lam_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
+    Teuchos::RCP<std::vector<RealT> >    vscale_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
     // Set all values to 1 in u, z.
     u_rcp->putScalar(1.0);
     // Set z to gray solution.
-    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5), one(1), two(2);
+    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get<RealT>("Volume Fraction");
     z_rcp->putScalar(volFrac);
-    (*vscale_rcp)[0] = one/std::pow(static_cast<RealT>(z_rcp->getGlobalLength())*(one-volFrac),two);
+    RealT W = parlist->sublist("Geometry").get<RealT>("Width");
+    RealT H = parlist->sublist("Geometry").get<RealT>("Height");
+    RealT one(1), two(2);
+    (*vscale_rcp)[0] = one/std::pow(W*H*(one-volFrac),two);
 
    //test     
    /*data->updateMaterialDensity (z_rcp);
-    Teuchos::RCP<Tpetra::MultiVector<RealT> > rhs = Teuchos::rcp(new Tpetra::MultiVector<> (data->getVecF()->getMap(), 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<RealT> > rhs
+      = Teuchos::rcp(new Tpetra::MultiVector<> (data->getVecF()->getMap(), 1, true));
     data->ApplyMatAToVec(rhs, u_rcp);
     data->outputTpetraVector(rhs, "KU0.txt");
     data->ApplyInverseJacobian1ToVec(u_rcp, rhs, false);
@@ -145,11 +150,11 @@ int main(int argc, char *argv[]) {
     dz_rcp->randomize();
     dz2_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
-    Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dwp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dw_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dzp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > up   = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > zp   = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dup  = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dwp  = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dw_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dzp  = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dz2p = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dz2_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > vcp
       = Teuchos::rcp(new ROL::PrimalScaledStdVector<RealT>(vc_rcp,vscale_rcp));

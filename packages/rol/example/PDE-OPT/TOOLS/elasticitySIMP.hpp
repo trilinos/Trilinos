@@ -70,12 +70,12 @@ public:
   virtual void ElasticitySIMP_Initialize(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                          const Teuchos::RCP<std::ostream> &outStream) {
-    Real one(1.0);
     this->Initialize(comm, parlist, outStream);
     // new material parameters
-    powerP_      = this->parlist_->sublist("ElasticitySIMP").get("SIMP Power", 3);
-    initDensity_ = this->parlist_->sublist("ElasticitySIMP").get("Initial Density", one);
-    minDensity_  = this->parlist_->sublist("ElasticitySIMP").get("Minimum Density", one);
+    Teuchos::ParameterList &list = this->parlist_->sublist("ElasticitySIMP");
+    powerP_      = list.get<int>("SIMP Power");
+    initDensity_ = list.get<Real>("Initial Density");
+    minDensity_  = list.get<Real>("Minimum Density");
   }
 
 

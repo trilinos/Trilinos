@@ -80,7 +80,7 @@ public:
                                           const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                           const Teuchos::RCP<std::ostream> &outStream) {
     ElasticitySIMP<Real>::ElasticitySIMP_Initialize(comm, parlist, outStream);
-    volFrac_           = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
+    volFrac_           = parlist->sublist("ElasticityTopoOpt").get<Real>("Volume Fraction");
     this->initDensity_ = volFrac_;
   }
 

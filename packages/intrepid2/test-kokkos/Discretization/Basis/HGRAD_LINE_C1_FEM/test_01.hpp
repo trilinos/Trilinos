@@ -59,7 +59,7 @@
 namespace Intrepid2 {
 
   namespace Test {
-    
+
 #define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
     try {                                                               \
       ++nthrow;                                                         \
@@ -71,11 +71,9 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
-    
+
     template<typename ValueType, typename DeviceSpaceType>
     int HGRAD_LINE_C1_FEM_Test01(const bool verbose) {
-
-      typedef ValueType value_type;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -111,11 +109,18 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      const value_type tol = Parameters::Tolerence;
+      const ValueType tol = Parameters::Tolerence;
       int errorFlag = 0;
+
+      // for virtual function, value and point types are declared in the class
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> lineBasis;
+      //typedef typename decltype(lineBasis)::outputViewType outputViewType;
+      //typedef typename decltype(lineBasis)::pointViewType  pointViewType;
 
       *outStream
         << "\n"
@@ -127,7 +132,6 @@ namespace Intrepid2 {
       try{
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankView ConstructWithLabel(lineNodes, 4, 1);
@@ -146,6 +150,7 @@ namespace Intrepid2 {
         // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
           INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
@@ -229,8 +234,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
-
         const auto numFields = lineBasis.getCardinality();
         const auto allTags = lineBasis.getAllDofTags();
 
@@ -294,7 +297,7 @@ namespace Intrepid2 {
 
       try{
         // VALUE: Each row gives the 2 correct basis set values at an evaluation point
-        const value_type basisValues[][2] = {
+        const ValueType basisValues[][2] = {
           { 1.0, 0.0 },
           { 0.0, 1.0 },
           { 0.5, 0.5 },
@@ -302,7 +305,7 @@ namespace Intrepid2 {
         };
 
         // GRAD, DIV, CURL and D1: each row gives the 2 correct values of the gradients of the 2 basis functions
-        const value_type basisDerivs[][2][1] = {
+        const ValueType basisDerivs[][2][1] = {
           { {-0.5}, {0.5} },
           { {-0.5}, {0.5} },
           { {-0.5}, {0.5} },
@@ -347,10 +350,10 @@ namespace Intrepid2 {
         // Check derivatives of basis function: resize vals to rank-3 container
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
-          const EOperator ops[] = { OPERATOR_GRAD, 
-                                    OPERATOR_DIV, 
-                                    OPERATOR_CURL, 
-                                    OPERATOR_D1, 
+          const EOperator ops[] = { OPERATOR_GRAD,
+                                    OPERATOR_DIV,
+                                    OPERATOR_CURL,
+                                    OPERATOR_D1,
                                     OPERATOR_MAX };
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];

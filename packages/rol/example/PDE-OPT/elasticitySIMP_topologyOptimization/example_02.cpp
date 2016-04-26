@@ -126,9 +126,12 @@ int main(int argc, char *argv[]) {
     // Set all values to 1 in u, z.
     u_rcp->putScalar(1.0);
     // Set z to gray solution.
-    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5), one(1), two(2);
+    RealT volFrac = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
     z_rcp->putScalar(volFrac);
-    (*vscale_rcp)[0] = one/std::pow(static_cast<RealT>(z_rcp->getGlobalLength())*(one-volFrac),two);
+    RealT W = parlist->sublist("Geometry").get<RealT>("Width");
+    RealT H = parlist->sublist("Geometry").get<RealT>("Height");
+    RealT one(1), two(2);
+    (*vscale_rcp)[0] = one/std::pow(W*H*(one-volFrac),two);
 
     // Randomize d vectors.
     du_rcp->randomize();

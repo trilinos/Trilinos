@@ -493,192 +493,192 @@ public:
                               const ordinal_type         subcellOrd,
                               const shards::CellTopology parentCell );
 
-    // /** \brief  Computes constant tangent vectors to edges of 2D or 3D reference cells. 
+    /** \brief  Computes constant tangent vectors to edges of 2D or 3D reference cells. 
         
-    //     Returns rank-1 array with dimension (D), D=2 or D=3; such that
-    //     \f[
-    //     {refEdgeTangent}(*) = \hat{\bf t}_i = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
-    //     \f]
-    //     where \f$\hat{\Phi}_i : R =[-1,1]\mapsto \hat{\mathcal E}_i\f$ is the parametrization map
-    //     of the specified reference edge \f$\hat{\mathcal E}_i\f$, given by
-    //     \f[
-    //     \hat{\Phi}_i(t) = \left\{\begin{array}{ll}
-    //     (\hat{x}(t),\hat{y}(t),\hat{z}(t)) & \mbox{for 3D parent cells} \\[1ex]
-    //     (\hat{x}(t),\hat{y}(t))            & \mbox{for 2D parent cells} \\[1ex]
-    //     \end{array}\right.
-    //     \f]
-    //     The length of computed edge tangents is one-half the length of their associated edges:
-    //     \f[
-    //     |\hat{\bf t}_i | = {1\over 2} |\hat{\mathcal E}_i |\,.
-    //     \f]
-    //     Because the edges of all reference cells are always affine images of [-1,1],
-    //     the edge tangent is constant vector field. 
+        Returns rank-1 array with dimension (D), D=2 or D=3; such that
+        \f[
+        {refEdgeTangent}(*) = \hat{\bf t}_i = {\partial\hat{\Phi}_i(t)\over\partial t}\,,
+        \f]
+        where \f$\hat{\Phi}_i : R =[-1,1]\mapsto \hat{\mathcal E}_i\f$ is the parametrization map
+        of the specified reference edge \f$\hat{\mathcal E}_i\f$, given by
+        \f[
+        \hat{\Phi}_i(t) = \left\{\begin{array}{ll}
+        (\hat{x}(t),\hat{y}(t),\hat{z}(t)) & \mbox{for 3D parent cells} \\[1ex]
+        (\hat{x}(t),\hat{y}(t))            & \mbox{for 2D parent cells} \\[1ex]
+        \end{array}\right.
+        \f]
+        The length of computed edge tangents is one-half the length of their associated edges:
+        \f[
+        |\hat{\bf t}_i | = {1\over 2} |\hat{\mathcal E}_i |\,.
+        \f]
+        Because the edges of all reference cells are always affine images of [-1,1],
+        the edge tangent is constant vector field. 
         
-    //     \param  refEdgeTangent    [out] - rank-1 array (D) with the edge tangent; D = cell dimension
-    //     \param  edgeOrd           [in]  - ordinal of the edge whose tangent is computed
-    //     \param  parentCell        [in]  - cell topology of the parent reference cell
-    // */
-    // template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
-    // static void 
-    // getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
-    //                          const ordinal_type         edgeOrd,
-    //                          const shards::CellTopology parentCell );
-
-    // /** \brief  Computes pairs of constant tangent vectors to faces of a 3D reference cells. 
-        
-    //     Returns 2 rank-1 arrays with dimension (D), D=3, such that       
-    //     \f[
-    //     {refFaceTanU}(*) = \hat{\bf t}_{i,u} = {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
-    //     \left({\partial\hat{x}(u,v)\over\partial u}, 
-    //     {\partial\hat{y}(u,v)\over\partial u},
-    //     {\partial\hat{z}(u,v)\over\partial u} \right) ;
-    //     \f]
-    //     \f[
-    //     {refFaceTanV}(*) = \hat{\bf t}_{i,v} = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
-    //     \left({\partial\hat{x}(u,v)\over\partial v}, 
-    //     {\partial\hat{y}(u,v)\over\partial v},
-    //     {\partial\hat{z}(u,v)\over\partial v} \right)\,;
-    //     \f]
-    //     where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
-    //     is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
-    //     \f[
-    //     \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
-    //     \f]
-    //     and 
-    //     \f[
-    //     R = \left\{\begin{array}{rl} 
-    //     \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
-    //     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
-    //     \end{array}\right.
-    //     \f]
-    //     Because the faces of all reference cells are always affine images of \e R , 
-    //     the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
-    //     are linear and the face tangents are constant vectors.  
-        
-    //     \param  refFaceTanU       [out] - rank-1 array (D) with (constant) tangent in u-direction
-    //     \param  refFaceTanV       [out] - rank-1 array (D) with (constant) tangent in v-direction
-    //     \param  faceOrd           [in]  - ordinal of the face whose tangents are computed
-    //     \param  parentCell        [in]  - cell topology of the parent 3D reference cell
-    // */
-    // template<typename refFaceTanUValueType,...refFaceTanUProperties,
-    //          typename refFaceTanVValueType,...refFaceTanVProperties>
-    // static void 
-    // getReferenceFaceTangents( /**/  Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
-    //                           /**/  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
-    //                           const ordinal_type         faceOrd,
-    //                           const shards::CellTopology parentCell );
+        \param  refEdgeTangent    [out] - rank-1 array (D) with the edge tangent; D = cell dimension
+        \param  edgeOrd           [in]  - ordinal of the edge whose tangent is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
+    static void 
+    getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
+                             const ordinal_type         edgeOrd,
+                             const shards::CellTopology parentCell );
     
-    // /** \brief  Computes constant normal vectors to sides of 2D or 3D reference cells. 
+    /** \brief  Computes pairs of constant tangent vectors to faces of a 3D reference cells. 
         
-    //     A side is defined as a subcell of dimension one less than that of its parent cell. 
-    //     Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
-    //     are 2-subcells (faces).
+        Returns 2 rank-1 arrays with dimension (D), D=3, such that       
+        \f[
+        {refFaceTanU}(*) = \hat{\bf t}_{i,u} = {\partial\hat{\Phi}_i(u,v)\over\partial u} = 
+        \left({\partial\hat{x}(u,v)\over\partial u}, 
+        {\partial\hat{y}(u,v)\over\partial u},
+        {\partial\hat{z}(u,v)\over\partial u} \right) ;
+        \f]
+        \f[
+        {refFaceTanV}(*) = \hat{\bf t}_{i,v} = {\partial\hat{\Phi}_i(u,v)\over \partial v} = 
+        \left({\partial\hat{x}(u,v)\over\partial v}, 
+        {\partial\hat{y}(u,v)\over\partial v},
+        {\partial\hat{z}(u,v)\over\partial v} \right)\,;
+        \f]
+        where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
+        is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
+        \f[
+        \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
+        \f]
+        and 
+        \f[
+        R = \left\{\begin{array}{rl} 
+        \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+        [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
+        \end{array}\right.
+        \f]
+        Because the faces of all reference cells are always affine images of \e R , 
+        the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
+        are linear and the face tangents are constant vectors.  
         
-    //     Returns rank-1 array with dimension (D), D = 2 or 3 such that
-    //     \f[
-    //     {refSideNormal}(*) = \hat{\bf n}_i =
-    //     \left\{\begin{array}{rl} 
-    //     \displaystyle
-    //     \left({\partial\hat{\Phi}_i(t)\over\partial t}\right)^{\perp} 
-    //     & \mbox{for 2D parent cells} \\[2ex]
-    //     \displaystyle
-    //     {\partial\hat{\Phi}_{i}\over\partial u} \times 
-    //     {\partial\hat{\Phi}_{i}\over\partial v}   & \mbox{for 3D parent cells} 
-    //     \end{array}\right.
-    //     \f]
-    //     where \f$ (u_1,u_2)^\perp = (u_2, -u_1)\f$, and \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ 
-    //     is the parametrization map of the specified reference side \f$\hat{\mathcal S}_i\f$ given by
-    //     \f[
-    //     \hat{\Phi}_i(u,v) = 
-    //     \left\{\begin{array}{rl}
-    //     (\hat{x}(t),\hat{y}(t))                   & \mbox{for 2D parent cells} \\[1ex]
-    //     (\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))  & \mbox{for 3D parent cells}
-    //     \end{array}\right.
+        \param  refFaceTanU       [out] - rank-1 array (D) with (constant) tangent in u-direction
+        \param  refFaceTanV       [out] - rank-1 array (D) with (constant) tangent in v-direction
+        \param  faceOrd           [in]  - ordinal of the face whose tangents are computed
+        \param  parentCell        [in]  - cell topology of the parent 3D reference cell
+    */
+    template<typename refFaceTanUValueType,...refFaceTanUProperties,
+             typename refFaceTanVValueType,...refFaceTanVProperties>
+    static void 
+    getReferenceFaceTangents( /**/  Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
+                              /**/  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+                              const ordinal_type         faceOrd,
+                              const shards::CellTopology parentCell );
+    
+    /** \brief  Computes constant normal vectors to sides of 2D or 3D reference cells. 
         
-    //     \f]
-    //     For sides of 2D cells \e R=[-1,1] and for sides of 3D cells 
-    //     \f[
-    //     R = \left\{\begin{array}{rl} 
-    //     \{(0,0),(1,0),(0,1)\}   & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
-    //     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral} \,.
-    //     \end{array}\right.
-    //     \f]
-    //     For 3D cells the length of computed side normals is proportional to side area:
-    //     \f[
-    //     |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
-    //     2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
-    //     \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
-    //     \end{array}\right.
-    //     \f]
-    //     For 2D cells the length of computed side normals is proportional to side length:
-    //     \f[
-    //     |\hat{\bf n}_i | = {1\over 2} |\hat{\mathcal F}_i |\,.
-    //     \f]
-    //     Because the sides of all reference cells are always affine images of \e R , 
-    //     the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization maps 
-    //     are linear and the side normal is a constant vector.  
+        A side is defined as a subcell of dimension one less than that of its parent cell. 
+        Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells
+        are 2-subcells (faces).
         
-    //     \remark
-    //     - For 3D cells the reference side normal coincides with the face normal computed by
-    //     CellTools<Scalar>::getReferenceFaceNormal and these two methods are completely equivalent.
-    //     - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}= \hat{\bf t}^\perp = (t_2,-t_1)\f$
-    //     where \f$\hat{{\bf t}}=(t_1,t_2)\f$ is the tangent vector computed by 
-    //     CellTools<Scalar>::getReferenceEdgeTangent. Therefore, the pair 
-    //     \f$(\hat{{\bf n}},\hat{{\bf t}})\f$ is positively oriented.
+        Returns rank-1 array with dimension (D), D = 2 or 3 such that
+        \f[
+        {refSideNormal}(*) = \hat{\bf n}_i =
+        \left\{\begin{array}{rl} 
+        \displaystyle
+        \left({\partial\hat{\Phi}_i(t)\over\partial t}\right)^{\perp} 
+        & \mbox{for 2D parent cells} \\[2ex]
+        \displaystyle
+        {\partial\hat{\Phi}_{i}\over\partial u} \times 
+        {\partial\hat{\Phi}_{i}\over\partial v}   & \mbox{for 3D parent cells} 
+        \end{array}\right.
+        \f]
+        where \f$ (u_1,u_2)^\perp = (u_2, -u_1)\f$, and \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal S}_i\f$ 
+        is the parametrization map of the specified reference side \f$\hat{\mathcal S}_i\f$ given by
+        \f[
+        \hat{\Phi}_i(u,v) = 
+        \left\{\begin{array}{rl}
+        (\hat{x}(t),\hat{y}(t))                   & \mbox{for 2D parent cells} \\[1ex]
+        (\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))  & \mbox{for 3D parent cells}
+        \end{array}\right.
         
-    //     \param  refSideNormal     [out] - rank-1 array (D) with (constant) side normal
-    //     \param  sideOrd           [in]  - ordinal of the side whose normal is computed
-    //     \param  parentCell        [in]  - cell topology of the parent reference cell
-    // */
-    // template<typename refSideNormalValueType, class ...refSideNormalProperties>
-    // static void
-    // getReferenceSideNormal( /**/  Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
-    //                         const ordinal_type         sideOrd,
-    //                         const shards::CellTopology parentCell );
+        \f]
+        For sides of 2D cells \e R=[-1,1] and for sides of 3D cells 
+        \f[
+        R = \left\{\begin{array}{rl} 
+        \{(0,0),(1,0),(0,1)\}   & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
+        [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral} \,.
+        \end{array}\right.
+        \f]
+        For 3D cells the length of computed side normals is proportional to side area:
+        \f[
+        |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+        2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+        \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
+        \end{array}\right.
+        \f]
+        For 2D cells the length of computed side normals is proportional to side length:
+        \f[
+        |\hat{\bf n}_i | = {1\over 2} |\hat{\mathcal F}_i |\,.
+        \f]
+        Because the sides of all reference cells are always affine images of \e R , 
+        the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization maps 
+        are linear and the side normal is a constant vector.  
+        
+        \remark
+        - For 3D cells the reference side normal coincides with the face normal computed by
+        CellTools<Scalar>::getReferenceFaceNormal and these two methods are completely equivalent.
+        - For 2D cells the reference side normal is defined by \f$\hat{{\bf n}}= \hat{\bf t}^\perp = (t_2,-t_1)\f$
+        where \f$\hat{{\bf t}}=(t_1,t_2)\f$ is the tangent vector computed by 
+        CellTools<Scalar>::getReferenceEdgeTangent. Therefore, the pair 
+        \f$(\hat{{\bf n}},\hat{{\bf t}})\f$ is positively oriented.
+        
+        \param  refSideNormal     [out] - rank-1 array (D) with (constant) side normal
+        \param  sideOrd           [in]  - ordinal of the side whose normal is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename refSideNormalValueType, class ...refSideNormalProperties>
+    static void
+    getReferenceSideNormal( /**/  Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
+                            const ordinal_type         sideOrd,
+                            const shards::CellTopology parentCell );
 
-    // /** \brief  Computes constant normal vectors to faces of 3D reference cell. 
+    /** \brief  Computes constant normal vectors to faces of 3D reference cell. 
         
-    //     Returns rank-1 array with dimension (D), D=3 such that
-    //     \f[
-    //     {refFaceNormal}(*) = \hat{\bf n}_i = {\partial\hat{\Phi}_{i}\over\partial u} \times 
-    //     {\partial\hat{\Phi}_{i}\over\partial v}
-    //     \f]
-    //     where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
-    //     is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
-    //     \f[
-    //     \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
-    //     \f]
-    //     and 
-    //     \f[
-    //     R = \left\{\begin{array}{rl} 
-    //     \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
-    //     [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
-    //     \end{array}\right.
-    //     \f]
-    //     The length of computed face normals is proportional to face area:
-    //     \f[
-    //     |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
-    //     2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
-    //     \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
-    //     \end{array}\right.
-    //     \f]
-    //     Because the faces of all reference cells are always affine images of \e R , 
-    //     the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
-    //     are linear and the face normal is a constant vector.  
+        Returns rank-1 array with dimension (D), D=3 such that
+        \f[
+        {refFaceNormal}(*) = \hat{\bf n}_i = {\partial\hat{\Phi}_{i}\over\partial u} \times 
+        {\partial\hat{\Phi}_{i}\over\partial v}
+        \f]
+        where \f$\hat{\Phi}_i: R \mapsto \hat{\mathcal F}_i\f$  
+        is the parametrization map of the specified reference face \f$\hat{\mathcal F}_i\f$ given by
+        \f[
+        \hat{\Phi}_i(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v))
+        \f]
+        and 
+        \f[
+        R = \left\{\begin{array}{rl} 
+        \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
+        [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
+        \end{array}\right.
+        \f]
+        The length of computed face normals is proportional to face area:
+        \f[
+        |\hat{\bf n}_i | = \left\{\begin{array}{rl} 
+        2 \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$  is Triangle} \\[1ex]
+        \mbox{Area}(\hat{\mathcal F}_i) & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral} \,.
+        \end{array}\right.
+        \f]
+        Because the faces of all reference cells are always affine images of \e R , 
+        the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
+        are linear and the face normal is a constant vector.  
         
-    //     \remark
-    //     The method CellTools::getReferenceFaceTangents computes the reference face tangents
-    //     \f${\partial\hat{\Phi}_{i}/\partial u}\f$ and \f${\partial\hat{\Phi}_{i}/\partial v}\f$.
+        \remark
+        The method CellTools::getReferenceFaceTangents computes the reference face tangents
+        \f${\partial\hat{\Phi}_{i}/\partial u}\f$ and \f${\partial\hat{\Phi}_{i}/\partial v}\f$.
         
-    //     \param  refFaceNormal     [out] - rank-1 array (D) with (constant) face normal
-    //     \param  faceOrd           [in]  - ordinal of the face whose normal is computed
-    //     \param  parentCell        [in]  - cell topology of the parent reference cell
-    // */
-    // template<typename refFaceNormalValueType, class ...refFaceNormalProperties>>
-    // static void 
-    // getReferenceFaceNormal( /**/  Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
-    //                         const ordinal_type         faceOrd,
-    //                         const shards::CellTopology parentCell );
+        \param  refFaceNormal     [out] - rank-1 array (D) with (constant) face normal
+        \param  faceOrd           [in]  - ordinal of the face whose normal is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+    */
+    template<typename refFaceNormalValueType, class ...refFaceNormalProperties>>
+    static void 
+    getReferenceFaceNormal( /**/  Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
+                            const ordinal_type         faceOrd,
+                            const shards::CellTopology parentCell );
     
     // /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset 
     //     \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets). 

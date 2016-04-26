@@ -121,25 +121,29 @@ public:
     /****************************************************************************/
     /*** Grab the elasticity information. ***************************************/
     /****************************************************************************/
-    planeStrain_      = parlist->sublist("Elasticity").get("Plane Strain", false);
-    E_ 	              = parlist->sublist("Elasticity").get("Young's Modulus", 1.0);
-    poissonR_         = parlist->sublist("Elasticity").get("Poisson Ratio", 0.3);
-    xmin_        =  parlist->sublist("Geometry").get("X0", 0.0);
-    ymin_        =  parlist->sublist("Geometry").get("Y0", 0.0);
-    xmax_        =  parlist->sublist("Geometry").get("Width", 1.0);
-    ymax_        =  parlist->sublist("Geometry").get("Height", 1.0);
+    Teuchos::ParameterList &Elist = parlist->sublist("Elasticity");
+    planeStrain_ = Elist.get<bool>("Plane Strain");
+    E_ 	         = Elist.get<Real>("Young's Modulus");
+    poissonR_    = Elist.get<Real>("Poisson Ratio");
+    Teuchos::ParameterList &Glist = parlist->sublist("Geometry");
+    xmin_        = Glist.get<Real>("X0");
+    ymin_        = Glist.get<Real>("Y0");
+    xmax_        = Glist.get<Real>("Width");
+    ymax_        = Glist.get<Real>("Height");
     // DBC cases
-    DBC_Case_    = this->parlist_->sublist("Elasticity").get("DBC Case", 0);
+    DBC_Case_    = Elist.get<int>("DBC Case");
     // Parameters for stochastic loads
+    Real zero(0);
     param_.clear(); param_.resize(3);
-    param_[0] = this->parlist_->sublist("Elasticity").get("Param Load Magnitude", 1.0);
-    param_[1] = this->parlist_->sublist("Elasticity").get("Param Load Polar Angle", 0.0);
-    param_[2] = this->parlist_->sublist("Elasticity").get("Param Load Azimuth Angle", 0.0);
+    param_[0] = Elist.get("Param Load Magnitude",     zero);
+    param_[1] = Elist.get("Param Load Polar Angle",   zero);
+    param_[2] = Elist.get("Param Load Azimuth Angle", zero);
        
     /****************************************************************************/
     /*** Initialize mesh / finite element fields / degree-of-freedom manager. ***/
     /****************************************************************************/
-    int basisOrder = parlist->sublist("Elasticity").get("Order of FE Discretization", 1);
+    Teuchos::ParameterList &Plist = parlist->sublist("PDE FEM");
+    int basisOrder = Plist.get<int>("Order of FE Discretization");
     Teuchos::RCP<MeshManager<Real> > meshMgr = Teuchos::rcp(new MeshManager_Rectangle<Real>(*parlist));
     int spaceDim = 2;
     std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs(spaceDim,Teuchos::null);
@@ -163,15 +167,17 @@ public:
 // for rectangular domain
 virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist)
 { 
-    bodyforce_Magnitude_ = parlist->sublist("Elasticity").get("Bodyforce Magnitude", 0.0);
-    bodyforce_Angle_ = parlist->sublist("Elasticity").get("Bodyforce Angle", 0.0);
-    traction_Side_  =  parlist->sublist("Elasticity").get("Traction Side", 1);
-    traction_Magnitude_ = parlist->sublist("Elasticity").get("Traction Magnitude", 0.0);
-    traction_Angle_ = parlist->sublist("Elasticity").get("Traction Angle", 0.0);
-    pointload_loc_x_ = parlist->sublist("Elasticity").get("Pointload Location X", 0.0);
-    pointload_loc_y_ = parlist->sublist("Elasticity").get("Pointload Location Y", 0.0);
-    pointload_Magnitude_ = parlist->sublist("Elasticity").get("Pointload Magnitude", 0.0);
-    pointload_Angle_ = parlist->sublist("Elasticity").get("Pointload Angle", 0.0);
+    Real zero(0);
+    Teuchos::ParameterList &Elist = parlist->sublist("Elasticity");
+    bodyforce_Magnitude_ = Elist.get("Bodyforce Magnitude",  zero);
+    bodyforce_Angle_     = Elist.get("Bodyforce Angle",      zero);
+    traction_Side_       = Elist.get("Traction Side",        1);
+    traction_Magnitude_  = Elist.get("Traction Magnitude",   zero);
+    traction_Angle_      = Elist.get("Traction Angle",       zero);
+    pointload_loc_x_     = Elist.get("Pointload Location X", zero);
+    pointload_loc_y_     = Elist.get("Pointload Location Y", zero);
+    pointload_Magnitude_ = Elist.get("Pointload Magnitude",  zero);
+    pointload_Angle_     = Elist.get("Pointload Angle",      zero);
     
     this->my_nbc_.push_back(traction_Side_);
 
