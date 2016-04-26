@@ -112,7 +112,7 @@ namespace Intrepid2 {
       break;
     }
     case 3: {
-      INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != cellWorkset.dimension(0), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != worksetCell.dimension(0), std::invalid_argument,
                                     ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobian): dim 0 (number of cells) of points array must equal dim 0 of cellWorkset array");
 
       INTREPID2_TEST_FOR_EXCEPTION( points.dimension(2) != cellTopo.getDimension(), std::invalid_argument,
@@ -148,17 +148,17 @@ namespace Intrepid2 {
                                 const jacobianViewType    jacobian ) {
     // Validate input jacobian array: admissible ranks & dimensions are: 
     // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-    const auto jacobRank = jacobian.rank();
-    INTREPID2_TEST_FOR_EXCEPTION( jacobRank != 4 && 
-                                  jacobRank != 3, std::invalid_argument,
+    const auto jacoRank = jacobian.rank();
+    INTREPID2_TEST_FOR_EXCEPTION( jacoRank != 4 && 
+                                  jacoRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): rank = 4 or 3 required for jacobian array." );
   
     // Verify correctness of spatial dimensions - they are the last two dimensions of the array: rank-2 and rank-1
-    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacobRank - 1) != jacobian.dimension(jacobRank - 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacoRank - 1) != jacobian.dimension(jacoRank - 2), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): dim(rank-2) = dim(rank-2) (same spatial dimensions) required for jacobian array." );
     
-    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacobRank - 1) < 1 || 
-                                  jacobian.dimension(jacobRank - 1) > 3, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacoRank - 1) < 1 || 
+                                  jacobian.dimension(jacoRank - 1) > 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): dim(rank-1) and dim(rank-2) (spatial dimensions) must be between 1 and 3." );
     
     // Validate output jacobianInv array: must have the same rank and dimensions as the input array.
@@ -180,17 +180,17 @@ namespace Intrepid2 {
                                 const jacobianViewType    jacobian ) {
     // Validate input jacobian array: admissible ranks & dimensions are: 
     // - rank-4 with dimensions (C,P,D,D), or rank-3 with dimensions (P,D,D).
-    const auto jacobRank = jacobian.rank();
-    INTREPID2_TEST_FOR_EXCEPTION( jacobRank != 4 &&
-                                  jacobRank != 3, std::invalid_argument,
+    const auto jacoRank = jacobian.rank();
+    INTREPID2_TEST_FOR_EXCEPTION( jacoRank != 4 &&
+                                  jacoRank != 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): rank = 4 or 3 required for jacobian array." );
   
     // Verify correctness of spatial dimensions - they are the last two dimensions of the array: rank-2 and rank-1
-    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacobRank - 1) != jacobian.dimension(jacobRank - 2), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacoRank - 1) != jacobian.dimension(jacoRank - 2), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): dim(rank-2) = dim(rank-2) (same spatial dimensions) required for jacobian array." );
   
-    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacobRank - 1) < 1 || 
-                                  jacobian.dimension(jacobRank - 1) > 3, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( jacobian.dimension(jacoRank - 1) < 1 || 
+                                  jacobian.dimension(jacoRank - 1) > 3, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::validateArguments_setJacobianInv): dim(rank-1) and dim(rank-2) (spatial dimensions) must be between 1 and 3." );
     
     // Validate output jacobianDet array

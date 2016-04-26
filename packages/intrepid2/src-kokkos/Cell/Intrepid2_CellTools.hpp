@@ -103,10 +103,9 @@ namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   class CellTools {
-  private:
+  public:
 
     typedef double value_type;
-    static bool isInitialized_;    
 
     /** \brief  Checks if a cell topology has reference cell
         \param  cell              [in]  - cell topology
@@ -116,7 +115,7 @@ namespace Intrepid2 {
     static bool 
     hasReferenceCell( const shards::CellTopology cellTopo ) {
       bool r_val = false;
-      switch(cell.getKey() ) {
+      switch ( cellTopo.getKey() ) {
       case shards::Line<2>::key:
       case shards::Line<3>::key:
       case shards::ShellLine<2>::key:
@@ -133,9 +132,9 @@ namespace Intrepid2 {
       case shards::Quadrilateral<4>::key:
       case shards::Quadrilateral<8>::key:
       case shards::Quadrilateral<9>::key:
-      case shards::ShellQuadrilateral<4>::key:
-      case shards::ShellQuadrilateral<8>::key:
-      case shards::ShellQuadrilateral<9>::key:
+        //case shards::ShellQuadrilateral<4>::key:
+        //case shards::ShellQuadrilateral<8>::key:
+        //case shards::ShellQuadrilateral<9>::key:
 
       // case shards::Tetrahedron<4>::key:
       // case shards::Tetrahedron<8>::key:
@@ -158,7 +157,10 @@ namespace Intrepid2 {
       return r_val;
     }
 
+  private:
+
     // reference nodes initialized 
+    typedef Kokkos::DynRankView<const value_type,Kokkos::LayoutRight,Kokkos::HostSpace> referenceNodeDataViewHostType;
     struct ReferenceNodeDataStatic {
       value_type line[2][3], line_3[3][3];
       value_type triangle[3][3], triangle_4[4][3], triangle_6[6][3];
@@ -169,18 +171,19 @@ namespace Intrepid2 {
       value_type wedge[6][3], wedge_15[15][3], wedge_18[18][3];
     };
 
+    typedef Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> referenceNodeDataViewType;
     struct ReferenceNodeData {
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> line, line_3;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> triangle, triangle_4, triangle_6;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> quadrilateral, quadrilateral_8, quadrilateral_9;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> tetrahedron, tetrahedron_8, tetrahedron_10, tetrahedron_11;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> hexahedron, hexahedron_20, hexahedron_27;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> pyramid, pyramid_13, pyramid_14;
-      Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> wedge, wedge_15, wedge_18;
+      referenceNodeDataViewType line, line_3;
+      referenceNodeDataViewType triangle, triangle_4, triangle_6;
+      referenceNodeDataViewType quadrilateral, quadrilateral_8, quadrilateral_9;
+      referenceNodeDataViewType tetrahedron, tetrahedron_8, tetrahedron_10, tetrahedron_11;
+      referenceNodeDataViewType hexahedron, hexahedron_20, hexahedron_27;
+      referenceNodeDataViewType pyramid, pyramid_13, pyramid_14;
+      referenceNodeDataViewType wedge, wedge_15, wedge_18;
     };
 
-    static const ReferenceNodeDataStatic refNodeDataStatic_;
-    static       ReferenceNodeDataStatic refNodeData_;
+    static  const ReferenceNodeDataStatic refNodeDataStatic_;
+    static        ReferenceNodeData       refNodeData_;
 
     static bool isReferenceNodeDataSet_;
     static void setReferenceNodeData();
@@ -193,15 +196,19 @@ namespace Intrepid2 {
 
     // static variables
     typedef Kokkos::DynRankView<value_type,ExecSpaceType> subcellParamViewType;
-    struct CachedSubcellParams {
-      static subcellParamViewType dummy, 
-        lineEdges,  // edge maps for 2d non-standard cells; shell line and beam
-        triEdges, quadEdges, // edge maps for 2d standard cells
-        shellTriEdges, shellQuadEdges, // edge maps for 3d non-standard cells; shell tri and quad
-        tetEdges, hexEdges, pyrEdges, wedgeEdges, // edge maps for 3d standard cells
-        shellTriFaces, shellQuadFaces, // face maps for 3d non-standard cells
-        tetFaces, hexFaces, pyrFaces, wedgeFaces; // face maps for 3d standard cells
+    struct SubcellParamData {
+      subcellParamViewType dummy; 
+      subcellParamViewType lineEdges;  // edge maps for 2d non-standard cells; shell line and beam
+      subcellParamViewType triEdges, quadEdges; // edge maps for 2d standard cells
+      subcellParamViewType shellTriEdges, shellQuadEdges; // edge maps for 3d non-standard cells; shell tri and quad
+      subcellParamViewType tetEdges, hexEdges, pyrEdges, wedgeEdges; // edge maps for 3d standard cells
+      subcellParamViewType shellTriFaces, shellQuadFaces; // face maps for 3d non-standard cells
+      subcellParamViewType tetFaces, hexFaces, pyrFaces, wedgeFaces; // face maps for 3d standard cells
     };
+
+    static SubcellParamData subcellParamData_;
+
+    static bool isSubcellParametrizationSet_;    
     static void setSubcellParametrization();
 
     // // hgrad functions
@@ -413,7 +420,7 @@ public:
         \param  vertexOrd         [in]  - vertex ordinal 
         \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
     */
-    template<typename cellVertexValueType,...cellVertexProperties>
+    template<typename cellVertexValueType, class ...cellVertexProperties>
     static void 
     getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices, 
                         const shards::CellTopology cell,
@@ -434,7 +441,7 @@ public:
                 coordinates of the vertices of the reference cell itself. 
                 Note that this requires \e subcellOrd=0.
     */
-    template<typename subcellVertexValueType,...subcellVertexProperties>
+    template<typename subcellVertexValueType, class ...subcellVertexProperties>
     static void 
     getReferenceSubcellVertices( /**/  Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
                                  const ordinal_type         subcellDim,
@@ -458,7 +465,7 @@ public:
         \param  vertexOrd         [in]  - node ordinal 
         \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
     */
-    template<typename cellNodeValueType, typename ...cellNodeProperties>
+    template<typename cellNodeValueType, class ...cellNodeProperties>
     static void 
     getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNodes,
                       const shards::CellTopology  cell,
@@ -479,9 +486,9 @@ public:
       \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
       coordinates of the nodes of the reference cell itself. Note that this requires \c subcellOrd=0.
     */
-    template<typename subcellNodeValueType, typename ...subcellNodeProperties>
+    template<typename subcellNodeValueType, class ...subcellNodeProperties>
     static void
-    getReferenceSubcellNodes( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> subcellNodes,
+    getReferenceSubcellNodes( /**/  Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                               const ordinal_type         subcellDim,
                               const ordinal_type         subcellOrd,
                               const shards::CellTopology parentCell );
@@ -1498,10 +1505,10 @@ public:
 #include "Intrepid2_CellToolsDefValidateArguments.hpp"
 #include "Intrepid2_CellToolsDefNodeInfo.hpp"
 
-//#include "Intrepid2_CellToolsDefParametrization.hpp"
+#include "Intrepid2_CellToolsDefParametrization.hpp"
 //#include "Intrepid2_CellToolsDefJacobian.hpp"
 
-//#include "Intrepid2_CellToolsDefRefToPhys.hpp"
+#include "Intrepid2_CellToolsDefRefToPhys.hpp"
 
 // not yet converted ...
 
