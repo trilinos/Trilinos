@@ -383,6 +383,27 @@ namespace panzer {
          resp->setDerivative(resp->buildEpetraDerivative());
      }
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+     // handle panzer::Traits::Hessian (do a quick safety check, response is null or appropriate for jacobian)
+     Teuchos::RCP<panzer::ResponseBase> respHesBase = responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName);
+     std::cout << "******************************************************" << std::endl;
+     std::cout << "EPETRA DOING IT " << respHesBase << std::endl;
+     std::cout << "******************************************************" << std::endl;
+     if(respHesBase!=Teuchos::null) {
+       typedef panzer::Traits::Hessian RespEvalT;
+
+       // check that the response supports interactions with the model evaluator
+       Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respHesBase);
+       TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                  "panzer::ModelEvaluator_Epetra::addResponse: Response with name \"" << responseName << "\" "
+                                  "resulted in bad cast to panzer::ResponseMESupportBase<Hessian>, the type of the response is incompatible!");
+
+       // setup the vector (register response as epetra)
+       if(resp->supportsDerivative())
+         resp->setDerivative(resp->buildDerivative());
+     }
+#endif
+
      g_names_.push_back(responseName);
 
      return g_names_.size()-1;

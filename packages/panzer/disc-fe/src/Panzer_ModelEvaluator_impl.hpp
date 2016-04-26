@@ -904,6 +904,49 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+evalModel_D2gDx2(int respIndex,
+                 const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                 const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // set model parameters from supplied inArgs
+  setParameters(inArgs);
+
+  std::cout << "Setting derivative A" << std::endl;
+  {
+    std::string responseName = responses_[respIndex]->name;
+  std::cout << "Setting derivativeB " << std::endl;
+    Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Hessian> > resp
+        = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Hessian> >(
+            responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName));
+  std::cout << "Setting derivative C; " << resp<< std::endl;
+    resp->setDerivative(D2gDx2);
+  }
+
+  std::cout << "Setting derivative" << std::endl;
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  // evaluate responses
+  responseLibrary_->addResponsesToInArgs<panzer::Traits::Hessian>(ae_inargs);
+  responseLibrary_->evaluate<panzer::Traits::Hessian>(ae_inargs);
+
+  // reset parameters back to nominal values
+  resetParameters();
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {

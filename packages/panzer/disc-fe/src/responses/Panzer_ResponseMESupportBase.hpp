@@ -129,6 +129,37 @@ private:
    ResponseMESupportBase(const ResponseMESupportBase<panzer::Traits::Tangent> &);
 };
 
-}
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template < >
+class ResponseMESupportBase<panzer::Traits::Hessian> : public ResponseBase {
+public:
+   ResponseMESupportBase(const std::string & responseName)
+     : ResponseBase(responseName) {}
+
+   virtual ~ResponseMESupportBase() {}
+ 
+   //! Does this response support derivative evaluation?
+   virtual bool supportsDerivative() const = 0;
+
+   // This is the Thyra view of the world
+   ///////////////////////////////////////////////////////////
+
+   //! Get an <code>Epetra_Operator</code> for this response, map is constructed lazily.
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const = 0;
+
+   /** Set the derivative (to be filled) for this response. This must be 
+     * constructed from the vector space returned by <code>getMap</code>.
+     */
+   virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative) = 0;
+
+private:
+   // hide these methods
+   ResponseMESupportBase();
+   ResponseMESupportBase(const ResponseMESupportBase<panzer::Traits::Hessian> &);
+};
+
+#endif
+
+} 
 
 #endif
