@@ -274,6 +274,26 @@ void run(const UserInputForTests &uinput,
                 << std::endl;
     }
   }
+  if (adapter_name == "XpetraCrsGraph") {
+    typedef xcrsGraph_adapter::lno_t lno_t;
+    typedef xcrsGraph_adapter::gno_t gno_t;
+    typedef xcrsGraph_adapter::scalar_t scalar_t;
+    int ewgtDim = reinterpret_cast<const xcrsGraph_adapter *>(ia)->getNumWeightsPerEdge();
+    lno_t localNumObj = reinterpret_cast<const xcrsGraph_adapter *>(ia)->getLocalNumVertices();
+    const gno_t *vertexIds;
+    reinterpret_cast<const xcrsGraph_adapter *>(ia)->getVertexIDsView(vertexIds);
+    const lno_t *offsets;
+    const gno_t *adjIds;
+    reinterpret_cast<const xcrsGraph_adapter *>(ia)->getEdgesView(offsets, adjIds);
+    for (int edim = 0; edim < ewgtDim; edim++) {
+      const scalar_t *weights;
+      int stride=0;
+      reinterpret_cast<xcrsGraph_adapter *>(ia)->getEdgeWeightsView(weights, stride, edim);
+      for (lno_t i=0; i < localNumObj; i++)
+	for (lno_t j=offsets[i], k=0; j < offsets[i + 1]; j++, k++)
+	  printf("%d %d %d %f\n", edim, vertexIds[i], adjIds[j], weights[stride*k]);
+    }
+  }
 #endif
 
   ////////////////////////////////////////////////////////////
