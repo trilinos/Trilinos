@@ -81,7 +81,6 @@ namespace Intrepid2 {
 
     template<typename ValueType, typename DeviceSpaceType>
     int Integration_Test04(const bool verbose) {
-      typedef ValueType value_type;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -118,8 +117,13 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 3D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+      typedef ValueType pointValueType;
+      typedef ValueType weightValueType;
+      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureTensor<DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
       
       const auto tol = 10.0 * Parameters::Tolerence;
 
@@ -159,20 +163,23 @@ namespace Intrepid2 {
 
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          const auto line = CubatureDirectLineGauss<DeviceSpaceType>(cubDeg);
-          CubatureTensor<DeviceSpaceType> hexCub( line, line, line );
-
+          CubatureLineType line(cubDeg);
+          CubatureTensorType hexCub( line, line, line );
+          *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";
+          
           ordinal_type cnt = 0;
           for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg) 
-              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) 
-                testInt(cubDeg, cnt) = computeIntegralOfMonomial<value_type>(hexCub,
-                                                                             cubPoints,
-                                                                             cubWeights,
-                                                                             xDeg,
-                                                                             yDeg,
-                                                                             zDeg);
+              for (auto zDeg=0;zDeg<=(cubDeg-xDeg-yDeg);++zDeg,++cnt) {
+                testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(hexCub,
+                                                                            cubPoints,
+                                                                            cubWeights,
+                                                                            xDeg,
+                                                                            yDeg,
+                                                                            zDeg);
+              }
         }
+
 
         // get analytic values
         if (filecompare.is_open()) {

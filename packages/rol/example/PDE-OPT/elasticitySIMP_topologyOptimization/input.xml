@@ -3,22 +3,31 @@
   <ParameterList name="Problem">
     <Parameter name="Penalty parameter" type="double"  value="1e-8" />
   </ParameterList>
+
+  <ParameterList name="PDE FEM">
+    <Parameter name="Order of FE Discretization" type="int" value="1" />
+  </ParameterList>
   
   <ParameterList name="Elasticity">
-    <Parameter name="Order of FE discretization"  type="int"    value="1"    />
-    <Parameter name="Plane Strain"                type="bool"   value="false"/>
-    <Parameter name="Young's Modulus"             type="double" value="1.0"  />
-    <Parameter name="Poisson Ratio"               type="double" value="0.3"  />
+    <Parameter name="Plane Strain"         type="bool"   value="false"          />
+    <Parameter name="Young's Modulus"      type="double" value="1.0"            />
+    <Parameter name="Poisson Ratio"        type="double" value="0.3"            />
+    <Parameter name="DBC Case"             type="int"    value="2"              />
+    <Parameter name="Bodyforce Magnitude"  type="double" value="0.0"            />
+    <Parameter name="Bodyforce Angle"      type="double" value="0.0"            />
+    <Parameter name="Traction Side"        type="int"    value="1"              />
+    <Parameter name="Traction Magnitude"   type="double" value="1.0"            />
+    <Parameter name="Traction Angle"       type="double" value="-1.5707963268"  />
+    <Parameter name="Pointload Magnitude"  type="double" value="0.0"            />
+    <Parameter name="Pointload Angle"      type="double" value="-1.5707963268"  />
+    <Parameter name="Pointload Location X" type="double" value="1.0"            />
+    <Parameter name="Pointload Location Y" type="double" value="0.5"            />
   </ParameterList>
-
+  
   <ParameterList name="ElasticitySIMP">
-    <Parameter name="Initial Density"    type="double" value="0.75"    />
-    <Parameter name="Minimum Density"    type="double" value="1.e-4"   />
-    <Parameter name="SIMP Power"         type="int"    value="3"       />
-    <Parameter name="Load Case"          type="int"    value="0"       />
-    <Parameter name="Load Magnitude"     type="double" value="10.0"    />
-    <Parameter name="Load Polar Angle"   type="double" value="-1.5708" />
-    <Parameter name="Load Azimuth Angle" type="double" value="0.0"     />
+    <Parameter name="Initial Density" type="double" value="1.0"   />
+    <Parameter name="Minimum Density" type="double" value="1.e-4" />
+    <Parameter name="SIMP Power"      type="int"    value="3"     />
   </ParameterList>
   
   <ParameterList name="ElasticityTopoOpt">
@@ -27,13 +36,13 @@
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="1.0"  />
-    <Parameter name="Height"            type="double"  value="1.0"  />
-    <Parameter name="X0"                type="double"  value="0.0"  />
-    <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="20"   />
-    <Parameter name="NY"                type="int"     value="20"   />
-    <Parameter name="Partition type"    type="int"     value="1"    />
+    <Parameter name="Width"          type="double" value="1.0" />
+    <Parameter name="Height"         type="double" value="1.0" />
+    <Parameter name="X0"             type="double" value="0.0" />
+    <Parameter name="Y0"             type="double" value="0.0" />
+    <Parameter name="NX"             type="int"    value="10"  />
+    <Parameter name="NY"             type="int"    value="10"  />
+    <Parameter name="Partition type" type="int"    value="1"   />
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->

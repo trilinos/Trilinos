@@ -58,7 +58,6 @@
 #include "Intrepid2_Utils_ExtData.hpp"
 
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
-#include "Intrepid2_CubatureTensor.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -81,7 +80,6 @@ namespace Intrepid2 {
 
     template<typename ValueType, typename DeviceSpaceType>
     int Integration_Test02(const bool verbose) {
-      typedef ValueType value_type;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -118,8 +116,12 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 1D                                        |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+      typedef ValueType pointValueType;
+      typedef ValueType weightValueType;
+      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
 
       const auto tol = 10.0 * Parameters::Tolerence;
 
@@ -157,12 +159,12 @@ namespace Intrepid2 {
         
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          CubatureDirectLineGauss<DeviceSpaceType> lineCub(cubDeg);
+          CubatureLineType lineCub(cubDeg);
           for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) 
-            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<value_type>(lineCub,
-                                                                             cubPoints,
-                                                                             cubWeights,
-                                                                             polyDeg);
+            testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
+                                                                            cubPoints,
+                                                                            cubWeights,
+                                                                            polyDeg);
         }
         
         // get analytic values

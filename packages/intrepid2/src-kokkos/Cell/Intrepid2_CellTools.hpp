@@ -103,7 +103,90 @@ namespace Intrepid2 {
 
   template<typename ExecSpaceType>
   class CellTools {
+  public:
+
+    typedef double value_type;
+
+    /** \brief  Checks if a cell topology has reference cell
+        \param  cell              [in]  - cell topology
+        \return true if the cell topology has reference cell, false oterwise
+    */
+    KOKKOS_FORCEINLINE_FUNCTION
+    static bool 
+    hasReferenceCell( const shards::CellTopology cellTopo ) {
+      bool r_val = false;
+      switch ( cellTopo.getKey() ) {
+      case shards::Line<2>::key:
+      case shards::Line<3>::key:
+      case shards::ShellLine<2>::key:
+      case shards::ShellLine<3>::key:
+      case shards::Beam<2>::key:
+      case shards::Beam<3>::key:
+
+      // case shards::Triangle<3>::key:
+      // case shards::Triangle<4>::key:
+      // case shards::Triangle<6>::key:
+      // case shards::ShellTriangle<3>::key:
+      // case shards::ShellTriangle<6>::key:
+
+      case shards::Quadrilateral<4>::key:
+      case shards::Quadrilateral<8>::key:
+      case shards::Quadrilateral<9>::key:
+        //case shards::ShellQuadrilateral<4>::key:
+        //case shards::ShellQuadrilateral<8>::key:
+        //case shards::ShellQuadrilateral<9>::key:
+
+      // case shards::Tetrahedron<4>::key:
+      // case shards::Tetrahedron<8>::key:
+      // case shards::Tetrahedron<10>::key:
+      // case shards::Tetrahedron<11>::key:
+
+      case shards::Hexahedron<8>::key:
+      case shards::Hexahedron<20>::key:
+      case shards::Hexahedron<27>::key:
+
+      // case shards::Pyramid<5>::key:
+      // case shards::Pyramid<13>::key:
+      // case shards::Pyramid<14>::key:
+
+      // case shards::Wedge<6>::key:
+      // case shards::Wedge<15>::key:
+      // case shards::Wedge<18>::key:
+        r_val = true;
+      }
+      return r_val;
+    }
+
   private:
+
+    // reference nodes initialized 
+    typedef Kokkos::DynRankView<const value_type,Kokkos::LayoutRight,Kokkos::HostSpace> referenceNodeDataViewHostType;
+    struct ReferenceNodeDataStatic {
+      value_type line[2][3], line_3[3][3];
+      value_type triangle[3][3], triangle_4[4][3], triangle_6[6][3];
+      value_type quadrilateral[4][3], quadrilateral_8[8][3], quadrilateral_9[9][3];
+      value_type tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[10][3];
+      value_type hexahedron[8][3], hexahedron_20[20][3], hexahedron_27[27][3];
+      value_type pyramid[5][3], pyramid_13[13][3], pyramid_14[14][3];
+      value_type wedge[6][3], wedge_15[15][3], wedge_18[18][3];
+    };
+
+    typedef Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> referenceNodeDataViewType;
+    struct ReferenceNodeData {
+      referenceNodeDataViewType line, line_3;
+      referenceNodeDataViewType triangle, triangle_4, triangle_6;
+      referenceNodeDataViewType quadrilateral, quadrilateral_8, quadrilateral_9;
+      referenceNodeDataViewType tetrahedron, tetrahedron_8, tetrahedron_10, tetrahedron_11;
+      referenceNodeDataViewType hexahedron, hexahedron_20, hexahedron_27;
+      referenceNodeDataViewType pyramid, pyramid_13, pyramid_14;
+      referenceNodeDataViewType wedge, wedge_15, wedge_18;
+    };
+
+    static  const ReferenceNodeDataStatic refNodeDataStatic_;
+    static        ReferenceNodeData       refNodeData_;
+
+    static bool isReferenceNodeDataSet_;
+    static void setReferenceNodeData();
 
     //============================================================================================//
     //                                                                                            //
@@ -112,49 +195,44 @@ namespace Intrepid2 {
     //============================================================================================//
 
     // static variables
-    typedef Kokkos::DynRankView<double,ExecSpaceType> subcellParamViewType;
-    struct CachedSubcellParams {
-      static subcellParamViewType dummy, 
-        lineEdges,  // edge maps for 2d non-standard cells; shell line and beam
-        triEdges, quadEdges, // edge maps for 2d standard cells
-        shellTriEdges, shellQuadEdges, // edge maps for 3d non-standard cells; shell tri and quad
-        tetEdges, hexEdges, pyrEdges, wedgeEdges, // edge maps for 3d standard cells
-        shellTriFaces, shellQuadFaces, // face maps for 3d non-standard cells
-        tetFaces, hexFaces, pyrFaces, wedgeFaces; // face maps for 3d standard cells
+    typedef Kokkos::DynRankView<value_type,ExecSpaceType> subcellParamViewType;
+    struct SubcellParamData {
+      subcellParamViewType dummy; 
+      subcellParamViewType lineEdges;  // edge maps for 2d non-standard cells; shell line and beam
+      subcellParamViewType triEdges, quadEdges; // edge maps for 2d standard cells
+      subcellParamViewType shellTriEdges, shellQuadEdges; // edge maps for 3d non-standard cells; shell tri and quad
+      subcellParamViewType tetEdges, hexEdges, pyrEdges, wedgeEdges; // edge maps for 3d standard cells
+      subcellParamViewType shellTriFaces, shellQuadFaces; // face maps for 3d non-standard cells
+      subcellParamViewType tetFaces, hexFaces, pyrFaces, wedgeFaces; // face maps for 3d standard cells
     };
-    static bool isInitialized;    
+
+    static SubcellParamData subcellParamData_;
+
+    static bool isSubcellParametrizationSet_;    
     static void setSubcellParametrization();
 
-    // hgrad functions
-    struct CachedHgradBasis {
-      struct c1 {
-        static const Basis_HGRAD_LINE_C1_FEM<ExecSpaceType>     line;
-        static const Basis_HGRAD_TRI_C1_FEM<ExecSpaceType>      tri;
-        static const Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType>     quad;
-        static const Basis_HGRAD_TET_C1_FEM<ExecSpaceType>      tet;
-        static const Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>      hex;
-        static const Basis_HGRAD_WEDGE_C1_FEM<ExecSpaceType>    wedge;
-        static const Basis_HGRAD_PYR_C1_FEM<ExecSpaceType>      pyr;
-      };
-      // struct c2 {
-      //   static const Basis_HGRAD_TRI_C2_FEM<ExecSpaceType>      tri;
-      //   static const Basis_HGRAD_QUAD_C2_FEM<ExecSpaceType>     quad;
-      //   static const Basis_HGRAD_TET_C2_FEM<ExecSpaceType>      tet;
-      //   static const Basis_HGRAD_HEX_C2_FEM<ExecSpaceType>      hex;
-      //   static const Basis_HGRAD_WEDGE_C2_FEM<ExecSpaceType>    wedge;
-      // };  
-    };
-    static Basis<ExecSpaceType>* 
-    getHgradBasis( const shards::CellTopology cellTopo );
+    // // hgrad functions
+    // struct CachedHgradBasis {
+    //   struct c1 {
+    //     static const Basis_HGRAD_LINE_C1_FEM<ExecSpaceType>     line;
+    //     static const Basis_HGRAD_TRI_C1_FEM<ExecSpaceType>      tri;
+    //     static const Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType>     quad;
+    //     static const Basis_HGRAD_TET_C1_FEM<ExecSpaceType>      tet;
+    //     static const Basis_HGRAD_HEX_C1_FEM<ExecSpaceType>      hex;
+    //     static const Basis_HGRAD_WEDGE_C1_FEM<ExecSpaceType>    wedge;
+    //     static const Basis_HGRAD_PYR_C1_FEM<ExecSpaceType>      pyr;
+    //   };
+    //   // struct c2 {
+    //   //   static const Basis_HGRAD_TRI_C2_FEM<ExecSpaceType>      tri;
+    //   //   static const Basis_HGRAD_QUAD_C2_FEM<ExecSpaceType>     quad;
+    //   //   static const Basis_HGRAD_TET_C2_FEM<ExecSpaceType>      tet;
+    //   //   static const Basis_HGRAD_HEX_C2_FEM<ExecSpaceType>      hex;
+    //   //   static const Basis_HGRAD_WEDGE_C2_FEM<ExecSpaceType>    wedge;
+    //   // };  
+    // };
+    // static Basis<ExecSpaceType>* 
+    // getHgradBasis( const shards::CellTopology cellTopo );
 
-    /** \brief  Checks if a cell topology has reference cell
-        \param  cell              [in]  - cell topology
-        \return 1 if the cell topology has reference cell, 
-                0 oterwise
-    */
-    KOKKOS_FORCEINLINE_FUNCTION
-    static bool 
-    hasReferenceCell( const shards::CellTopology cellTopo );
 
 
     /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
@@ -228,99 +306,99 @@ public:
     //                                                                                            //
     //============================================================================================//
     
-    /** \brief  Computes the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+    // /** \brief  Computes the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
       
-                There are three use cases:
-        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for a \b specified physical
-                cell \f${\mathcal C}\f$ from a cell workset on a \b single set of reference points stored
-                in a rank-2 (P,D) array;
-        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
-                in a cell workset on a \b single set of reference points stored in a rank-2 (P,D) array;
-        \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
-                in a cell workset on \b multiple reference point sets having the same number of points, 
-                indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
+    //             There are three use cases:
+    //     \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for a \b specified physical
+    //             cell \f${\mathcal C}\f$ from a cell workset on a \b single set of reference points stored
+    //             in a rank-2 (P,D) array;
+    //     \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+    //             in a cell workset on a \b single set of reference points stored in a rank-2 (P,D) array;
+    //     \li     Computes Jacobians \f$DF_{c}\f$ of the reference-to-physical map for \b all physical cells
+    //             in a cell workset on \b multiple reference point sets having the same number of points, 
+    //             indexed by cell ordinal, and stored in a rank-3 (C,P,D) array;
       
-                For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
-                relative to \c cellWorkset returns a rank-3 (P,D,D) array such that
-        \f[ 
-                \mbox{jacobian}(p,i,j)   = [DF_{c}(\mbox{points}(p))]_{ij} \quad \mbox{for $0\le c < C$ - fixed} 
-        \f]
-                For a single point set in a rank-2 array (P,D) and \c whichCell=-1 (default value) returns
-                a rank-4 (C,P,D,D) array such that
-        \f[
-                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(p))]_{ij} \quad c=0,\ldots, C
-        \f]
-                For multiple sets of reference points in a rank-3 (C,P,D) array returns 
-                rank-4 (C,P,D,D) array such that
-        \f[ 
-                \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(c,p))]_{ij} \quad c=0,\ldots, C
-        \f]
-                This setting requires the default value \c whichCell=-1. 
+    //             For a single point set in a rank-2 array (P,D) and \c whichCell set to a valid cell ordinal
+    //             relative to \c cellWorkset returns a rank-3 (P,D,D) array such that
+    //     \f[ 
+    //             \mbox{jacobian}(p,i,j)   = [DF_{c}(\mbox{points}(p))]_{ij} \quad \mbox{for $0\le c < C$ - fixed} 
+    //     \f]
+    //             For a single point set in a rank-2 array (P,D) and \c whichCell=-1 (default value) returns
+    //             a rank-4 (C,P,D,D) array such that
+    //     \f[
+    //             \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(p))]_{ij} \quad c=0,\ldots, C
+    //     \f]
+    //             For multiple sets of reference points in a rank-3 (C,P,D) array returns 
+    //             rank-4 (C,P,D,D) array such that
+    //     \f[ 
+    //             \mbox{jacobian}(c,p,i,j) = [DF_{c}(\mbox{points}(c,p))]_{ij} \quad c=0,\ldots, C
+    //     \f]
+    //             This setting requires the default value \c whichCell=-1. 
       
-                Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map_DF 
-                for definition of the Jacobian. 
+    //             Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map_DF 
+    //             for definition of the Jacobian. 
       
-                The default \c whichCell = -1 forces computation of all cell Jacobians and 
-                requiers rank-4 output array. Computation of single cell Jacobians is forced by  
-                selecting a valid cell ordinal \c whichCell and requires rank-3 output array.
+    //             The default \c whichCell = -1 forces computation of all cell Jacobians and 
+    //             requiers rank-4 output array. Computation of single cell Jacobians is forced by  
+    //             selecting a valid cell ordinal \c whichCell and requires rank-3 output array.
       
-                \warning
-                The points are not required to be in the reference cell associated with the specified 
-                cell topology. CellTools provides several inclusion tests methods to check whether 
-                or not the points are inside a reference cell.
+    //             \warning
+    //             The points are not required to be in the reference cell associated with the specified 
+    //             cell topology. CellTools provides several inclusion tests methods to check whether 
+    //             or not the points are inside a reference cell.
       
-        \param  jacobian          [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
-        \param  points            [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points 
-        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
-        \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
-     */
-    template<typename jacobianValueType, class ...jacobianProperties,
-             typename pointValueType,    class ...pointProperties,
-             typename worksetCellValueType,  class ...worksetCellProperties,
-             typename HgradBasisType>
-    static void 
-    setJacobian( /**/  Kokkos::DynRankView<jacobianValueType,...jacobianProperties> jacobian,
-                 const Kokkos::DynRankView<pointValueType,...pointProperties>       points,
-                 const Kokkos::DynRankView<worksetCellValueType,...worksetCellProperties>   worksetCell,
-                 const shards::CellTopology cellTopo,
-                 const ordinal_type         whichCell = -1 );
+    //     \param  jacobian          [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
+    //     \param  points            [in]  - rank-2/3 array with dimensions (P,D)/(C,P,D) with the evaluation points 
+    //     \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+    //     \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation); default is -1      
+    //  */
+    // template<typename jacobianValueType, class ...jacobianProperties,
+    //          typename pointValueType,    class ...pointProperties,
+    //          typename worksetCellValueType,  class ...worksetCellProperties,
+    //          typename HgradBasisType>
+    // static void 
+    // setJacobian( /**/  Kokkos::DynRankView<jacobianValueType,...jacobianProperties> jacobian,
+    //              const Kokkos::DynRankView<pointValueType,...pointProperties>       points,
+    //              const Kokkos::DynRankView<worksetCellValueType,...worksetCellProperties>   worksetCell,
+    //              const shards::CellTopology cellTopo,
+    //              const ordinal_type         whichCell = -1 );
     
-    /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+    // /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
         
-        Returns rank-4 or rank-3 array with dimensions (C,P,D,D) or (P,D,D) such that 
-        \f[ 
-        \mbox{jacobianInv}(c,p,*,*) = \mbox{jacobian}^{-1}(c,p,*,*) \quad c = 0,\ldots, C
-        \quad\mbox{or}\quad
-        \mbox{jacobianInv}(p,*,*)   = \mbox{jacobian}^{-1}(p,*,*) 
-        \f]
+    //     Returns rank-4 or rank-3 array with dimensions (C,P,D,D) or (P,D,D) such that 
+    //     \f[ 
+    //     \mbox{jacobianInv}(c,p,*,*) = \mbox{jacobian}^{-1}(c,p,*,*) \quad c = 0,\ldots, C
+    //     \quad\mbox{or}\quad
+    //     \mbox{jacobianInv}(p,*,*)   = \mbox{jacobian}^{-1}(p,*,*) 
+    //     \f]
         
-        \param  jacobianInv       [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the inverse Jacobians
-        \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
-    */
-    template<typename jacobianInvValueType, class ...jacobianInvProperties,
-             typename jacobianValueType,    class ...jacobianProperties>
-    static void 
-    setJacobianInv( /**/  Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,
-                    const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian );
+    //     \param  jacobianInv       [out] - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the inverse Jacobians
+    //     \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
+    // */
+    // template<typename jacobianInvValueType, class ...jacobianInvProperties,
+    //          typename jacobianValueType,    class ...jacobianProperties>
+    // static void 
+    // setJacobianInv( /**/  Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,
+    //                 const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian );
     
-    /** \brief  Computes the determinant of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
+    // /** \brief  Computes the determinant of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
         
-        Returns rank-2 or rank-1 array with dimensions (C,P)/(P) such that 
-        \f[ 
-        \mbox{jacobianDet}(c,p) = \mbox{det}(\mbox{jacobian}(c,p,*,*)) \quad c=0,\ldots, C 
-        \quad\mbox{or}\quad
-        \mbox{jacobianDet}(p)   = \mbox{det}(\mbox{jacobian}(p,*,*)) 
-        \f]
+    //     Returns rank-2 or rank-1 array with dimensions (C,P)/(P) such that 
+    //     \f[ 
+    //     \mbox{jacobianDet}(c,p) = \mbox{det}(\mbox{jacobian}(c,p,*,*)) \quad c=0,\ldots, C 
+    //     \quad\mbox{or}\quad
+    //     \mbox{jacobianDet}(p)   = \mbox{det}(\mbox{jacobian}(p,*,*)) 
+    //     \f]
         
-        \param  jacobianDet       [out] - rank-2/1 array with dimensions (C,P)/(P) with Jacobian determinants
-        \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
-    */
-    template<typename jacobianDetValueType, class ...jacobianDetProperties,
-             typename jacobianValueType,    class ...jacobianProperties>
-    static void 
-    setJacobianDet( /**/  Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,
-                    const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian );
+    //     \param  jacobianDet       [out] - rank-2/1 array with dimensions (C,P)/(P) with Jacobian determinants
+    //     \param  jacobian          [in]  - rank-4/3 array with dimensions (C,P,D,D)/(P,D,D) with the Jacobians
+    // */
+    // template<typename jacobianDetValueType, class ...jacobianDetProperties,
+    //          typename jacobianValueType,    class ...jacobianProperties>
+    // static void 
+    // setJacobianDet( /**/  Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,
+    //                 const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian );
     
 
     //============================================================================================//
@@ -328,6 +406,92 @@ public:
     //                     Node information                                                       //
     //                                                                                            //
     //============================================================================================//
+
+    // the node information can be used inside of kokkos functor and needs kokkos inline and 
+    // exception should be an abort. for now, let's not decorate 
+
+    /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex. 
+      
+                Requires cell topology with a reference cell. Vertex coordinates are always returned 
+                as an (x,y,z)-triple regardlesss of the actual topological cell dimension. The unused 
+                coordinates are set to zero, e.g., vertex 0 of Line<2> is returned as {-1,0,0}.                
+                
+        \param  cell              [in]  - cell topology of the cell
+        \param  vertexOrd         [in]  - vertex ordinal 
+        \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
+    */
+    template<typename cellVertexValueType, class ...cellVertexProperties>
+    static void 
+    getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices, 
+                        const shards::CellTopology cell,
+                        const ordinal_type         vertexOrd );
+    
+    
+    /** \brief  Retrieves the Cartesian coordinates of all vertices of a reference subcell.
+      
+                Returns rank-2 array with the Cartesian coordinates of the vertices of the 
+                specified reference cell subcell. Requires cell topology with a reference cell.
+      
+        \param  subcellVertices   [out] - rank-2 (V,D) array with the Cartesian coordinates of the reference subcell vertices
+        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
+        \param  subcellOrd        [in]  - ordinal of the subcell
+        \param  parentCell        [in]  - topology of the cell that owns the subcell
+      
+        \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
+                coordinates of the vertices of the reference cell itself. 
+                Note that this requires \e subcellOrd=0.
+    */
+    template<typename subcellVertexValueType, class ...subcellVertexProperties>
+    static void 
+    getReferenceSubcellVertices( /**/  Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
+                                 const ordinal_type         subcellDim,
+                                 const ordinal_type         subcellOrd,
+                                 const shards::CellTopology parentCell );
+    
+
+    
+    /** \brief  Retrieves the Cartesian coordinates of a reference cell node.
+      
+                Returns Cartesian coordinates of a reference cell node. Requires cell topology 
+                with a reference cell. Node coordinates are always returned as an (x,y,z)-triple
+                regardlesss of the actual topological cell dimension. The unused coordinates are
+                set to zero, e.g., node 0 of Line<2> is returned as {-1,0,0}.      
+      
+        \remark
+               Because the nodes of a cell with a base topology coincide with its vertices, for cells
+               with base topology this method is equivalent to CellTools<Scalar>::getReferenceVertex.
+      
+        \param  cell              [in]  - cell topology of the cell
+        \param  vertexOrd         [in]  - node ordinal 
+        \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
+    */
+    template<typename cellNodeValueType, class ...cellNodeProperties>
+    static void 
+    getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNodes,
+                      const shards::CellTopology  cell,
+                      const ordinal_type          nodeOrd );
+    
+    
+    
+    /** \brief  Retrieves the Cartesian coordinates of all nodes of a reference subcell.
+      
+                Returns rank-2 array with the Cartesian coordinates of the nodes of the 
+                specified reference cell subcell. Requires cell topology with a reference cell.
+      
+        \param  subcellNodes      [out] - rank-2 (N,D) array with the Cartesian coordinates of the reference subcell nodes
+        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
+        \param  subcellOrd        [in]  - ordinal of the subcell
+        \param  parentCell        [in]  - topology of the cell that owns the subcell
+      
+      \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
+      coordinates of the nodes of the reference cell itself. Note that this requires \c subcellOrd=0.
+    */
+    template<typename subcellNodeValueType, class ...subcellNodeProperties>
+    static void
+    getReferenceSubcellNodes( /**/  Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
+                              const ordinal_type         subcellDim,
+                              const ordinal_type         subcellOrd,
+                              const shards::CellTopology parentCell );
 
     /** \brief  Computes constant tangent vectors to edges of 2D or 3D reference cells. 
         
@@ -359,7 +523,7 @@ public:
     getReferenceEdgeTangent( /**/ Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
                              const ordinal_type         edgeOrd,
                              const shards::CellTopology parentCell );
-
+    
     /** \brief  Computes pairs of constant tangent vectors to faces of a 3D reference cells. 
         
         Returns 2 rank-1 arrays with dimension (D), D=3, such that       
@@ -516,281 +680,205 @@ public:
                             const ordinal_type         faceOrd,
                             const shards::CellTopology parentCell );
     
-    /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset 
-        \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets). 
+    // /** \brief  Computes non-normalized tangent vectors to physical edges in an edge workset 
+    //     \f$\{\mathcal{E}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of edge worksets). 
         
-        For every edge in the workset the tangents are computed at the points 
-        \f${\bf x}_p = F_c(\hat{\Phi}_i(t_p))\in\mathcal{E}_{c,i}\f$ that are images of points
-        from <var>R=[-1,1]</var> on edge \f$\mathcal{E}_{c,i}\f$. Returns rank-3 array with 
-        dimensions (C,P,D1), D1=2 or D1=3 such that 
-        \f[
-        {edgeTangents}(c,p,d) = 
-        DF_c(\hat{\Phi}_i(t_p))\cdot {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\,; \qquad t_p \in R
-        \f]
-        In this formula: 
-        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical edge \f${\mathcal E}_{c,i}\f$;
-        \li     \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference edge
-        \f$\hat{\mathcal E}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent that has the 
-        same local ordinal as the edges in the workset;
-        \li     \f$ \hat{\Phi}_i R\mapsto\hat{\mathcal E}_i \f$ is parametrization of reference edge \f$\hat{\mathcal E}_i\f$;
+    //     For every edge in the workset the tangents are computed at the points 
+    //     \f${\bf x}_p = F_c(\hat{\Phi}_i(t_p))\in\mathcal{E}_{c,i}\f$ that are images of points
+    //     from <var>R=[-1,1]</var> on edge \f$\mathcal{E}_{c,i}\f$. Returns rank-3 array with 
+    //     dimensions (C,P,D1), D1=2 or D1=3 such that 
+    //     \f[
+    //     {edgeTangents}(c,p,d) = 
+    //     DF_c(\hat{\Phi}_i(t_p))\cdot {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\,; \qquad t_p \in R
+    //     \f]
+    //     In this formula: 
+    //     \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical edge \f${\mathcal E}_{c,i}\f$;
+    //     \li     \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference edge
+    //     \f$\hat{\mathcal E}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent that has the 
+    //     same local ordinal as the edges in the workset;
+    //     \li     \f$ \hat{\Phi}_i R\mapsto\hat{\mathcal E}_i \f$ is parametrization of reference edge \f$\hat{\mathcal E}_i\f$;
         
-        \warning
-        \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(t_p))\f$, 
-        where \f$ t_p \in R=[-1,1] \f$, i.e., Jacobians of the parent cells evaluated at points 
-        that are located on reference edge \f$\hat{\mathcal E}_i\f$ having the same local ordinal as
-        the edges in the workset.
+    //     \warning
+    //     \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(t_p))\f$, 
+    //     where \f$ t_p \in R=[-1,1] \f$, i.e., Jacobians of the parent cells evaluated at points 
+    //     that are located on reference edge \f$\hat{\mathcal E}_i\f$ having the same local ordinal as
+    //     the edges in the workset.
         
-        \param  edgeTangents      [out] - rank-3 array (C,P,D1) with tangents on workset edges
-        \param  worksetJacobians  [in]  - rank-4 array (C,P,D1,D1) with Jacobians evaluated at ref. edge points
-        \param  worksetEdgeOrd    [in]  - edge ordinal, relative to ref. cell, of the edge workset
-        \param  parentCell        [in]  - cell topology of the parent reference cell
-    */
-    template<typename edgeTangentValueType,     class ...edgeTangentProperties,
-             typename worksetJacobianValueType, class ...worksetJacobianProperties>
-    static void
-    getPhysicalEdgeTangents( /**/  Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
-                             const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
-                             const ordinal_type         worksetEdgeOrd,
-                             const shards::CellTopology parentCell );
+    //     \param  edgeTangents      [out] - rank-3 array (C,P,D1) with tangents on workset edges
+    //     \param  worksetJacobians  [in]  - rank-4 array (C,P,D1,D1) with Jacobians evaluated at ref. edge points
+    //     \param  worksetEdgeOrd    [in]  - edge ordinal, relative to ref. cell, of the edge workset
+    //     \param  parentCell        [in]  - cell topology of the parent reference cell
+    // */
+    // template<typename edgeTangentValueType,     class ...edgeTangentProperties,
+    //          typename worksetJacobianValueType, class ...worksetJacobianProperties>
+    // static void
+    // getPhysicalEdgeTangents( /**/  Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
+    //                          const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
+    //                          const ordinal_type         worksetEdgeOrd,
+    //                          const shards::CellTopology parentCell );
     
-    /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset 
-        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+    // /** \brief  Computes non-normalized tangent vector pairs to physical faces in a face workset 
+    //     \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
         
-        For every face in the workset the tangents are computed at the points 
-        \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
-        from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$. 
-        Returns 2 rank-3 arrays with dimensions (C,P,D), D=3 such that
-        \f[
-        {faceTanU}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u};\qquad
-        {faceTanV}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_{i}\over\partial v}\,;
-        \qquad (u_p, v_p) \in R \,.
-        \f]
-        In this formula:
-        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
-        \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
-        tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents; 
-        that has the same local ordinal as the faces in the workset;
-        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
-        \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
-        \f[
-        R = 
-        \left\{\begin{array}{rl} 
-        \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
-        [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
-        \end{array}\right.
-        \f]
+    //     For every face in the workset the tangents are computed at the points 
+    //     \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
+    //     from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$. 
+    //     Returns 2 rank-3 arrays with dimensions (C,P,D), D=3 such that
+    //     \f[
+    //     {faceTanU}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u};\qquad
+    //     {faceTanV}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_{i}\over\partial v}\,;
+    //     \qquad (u_p, v_p) \in R \,.
+    //     \f]
+    //     In this formula:
+    //     \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
+    //     \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+    //     tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents; 
+    //     that has the same local ordinal as the faces in the workset;
+    //     \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+    //     \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+    //     \f[
+    //     R = 
+    //     \left\{\begin{array}{rl} 
+    //     \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
+    //     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
+    //     \end{array}\right.
+    //     \f]
         
-        \warning
-        \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
-        where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
-        that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
-        the faces in the workset.
+    //     \warning
+    //     \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+    //     where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+    //     that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
+    //     the faces in the workset.
         
-        \param  faceTanU          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
-        \param  faceTanV          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
-        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
-        \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
-        \param  parentCell        [in]  - cell topology of the parent reference cell
-    */
-    template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
-    static void 
-    getPhysicalFaceTangents(ArrayFaceTangentU &           faceTanU,
-                            ArrayFaceTangentV &           faceTanV,
-                            const ArrayJac &              worksetJacobians,
-                            const int &                   worksetFaceOrd,
-                            const shards::CellTopology &  parentCell);
+    //     \param  faceTanU          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+    //     \param  faceTanV          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+    //     \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+    //     \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
+    //     \param  parentCell        [in]  - cell topology of the parent reference cell
+    // */
+    // template<class ArrayFaceTangentU, class ArrayFaceTangentV, class ArrayJac>
+    // static void 
+    // getPhysicalFaceTangents(ArrayFaceTangentU &           faceTanU,
+    //                         ArrayFaceTangentV &           faceTanV,
+    //                         const ArrayJac &              worksetJacobians,
+    //                         const int &                   worksetFaceOrd,
+    //                         const shards::CellTopology &  parentCell);
     
-    /** \brief  Computes non-normalized normal vectors to physical sides in a side workset 
-        \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. 
+    // /** \brief  Computes non-normalized normal vectors to physical sides in a side workset 
+    //     \f$\{\mathcal{S}_{c,i}\}_{c=0}^{N}\f$. 
         
-        For every side in the workset the normals are computed at the points 
-        \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ that are images of points 
-        from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.   
-        A side is defined as a subcell of dimension one less than that of its  parent cell. 
-        Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells are 2-subcells (faces).
+    //     For every side in the workset the normals are computed at the points 
+    //     \f${\bf x}_p = F_c(\hat{\Phi}_i(P_p))\in\mathcal{S}_{c,i}\f$ that are images of points 
+    //     from the parametrization domain \e R  on side \f$\mathcal{S}_{c,i}\f$.   
+    //     A side is defined as a subcell of dimension one less than that of its  parent cell. 
+    //     Therefore, sides of 2D cells are 1-subcells (edges) and sides of 3D cells are 2-subcells (faces).
         
-        Returns rank-3 array with dimensions (C,P,D), D = 2 or 3, such that 
-        \f[
-        {sideNormals}(c,p,d) = 
-        \left\{\begin{array}{crl} 
-        \displaystyle
-        \left(DF_c(\hat{\Phi}_i(t_p))\cdot 
-        {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\right)^{\perp} &  t_p\in R 
-        & \mbox{for 2D parent cells} \\[2ex]
-        \displaystyle
-        \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
-        \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
-        & (u_p, v_p) \in R                          & \mbox{for 3D parent cells}
-        \end{array}\right.
-        \f]
-        In this formula:
-        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical side \f${\mathcal S}_{c,i}\f$;
-        \li     For 2D cells: \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference side (edge)
-        \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent, that has the 
-        same local ordinal as the sides in the workset;
-        \li     For 3D cells: \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
-        tangents on reference side (face) \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents,
-        that has the same local ordinal as the sides in the workset;
-        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal S}_i\f$ is parametrization of reference side \f$\hat{\mathcal S}_i\f$;
-        \li     \e R  is the parametrization domain for reference side \f$\hat{\mathcal S}_i\f$. For
-        2D parent cells \e R=[-1,1] and for 3D parent cells
-        \f[
-        R = \left\{\begin{array}{rl} 
-        \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
-        [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral}
-        \end{array}\right.
-        \f]
+    //     Returns rank-3 array with dimensions (C,P,D), D = 2 or 3, such that 
+    //     \f[
+    //     {sideNormals}(c,p,d) = 
+    //     \left\{\begin{array}{crl} 
+    //     \displaystyle
+    //     \left(DF_c(\hat{\Phi}_i(t_p))\cdot 
+    //     {\partial{\hat{\Phi}}_{i}(t_p)\over\partial t}\right)^{\perp} &  t_p\in R 
+    //     & \mbox{for 2D parent cells} \\[2ex]
+    //     \displaystyle
+    //     \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
+    //     \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
+    //     & (u_p, v_p) \in R                          & \mbox{for 3D parent cells}
+    //     \end{array}\right.
+    //     \f]
+    //     In this formula:
+    //     \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical side \f${\mathcal S}_{c,i}\f$;
+    //     \li     For 2D cells: \f$ {\partial{\hat{\Phi}}_{i}/\partial t}\f$ is the (constant) tangent to reference side (edge)
+    //     \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceEdgeTangent, that has the 
+    //     same local ordinal as the sides in the workset;
+    //     \li     For 3D cells: \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+    //     tangents on reference side (face) \f$\hat{\mathcal S}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents,
+    //     that has the same local ordinal as the sides in the workset;
+    //     \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal S}_i\f$ is parametrization of reference side \f$\hat{\mathcal S}_i\f$;
+    //     \li     \e R  is the parametrization domain for reference side \f$\hat{\mathcal S}_i\f$. For
+    //     2D parent cells \e R=[-1,1] and for 3D parent cells
+    //     \f[
+    //     R = \left\{\begin{array}{rl} 
+    //     \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal S}_i$ is Triangle} \\[1ex]
+    //     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal S}_i$ is Quadrilateral}
+    //     \end{array}\right.
+    //     \f]
         
-        \remark
-        - For 3D cells the physical side normals coincides with the face normals computed by
-        CellTools<Scalar>::getPhysicalFaceNormals and these two methods are completely equivalent.
-        - For 2D cells the physical side normals are defined by \f${\bf n}=(t_2,-t_1)\f$
-        where \f${\bf t}=(t_1,t_2)\f$ are the physical edge tangents computed by 
-        CellTools<Scalar>::getPhysicalEdgeTangents. Therefore, the pairs \f$({\bf n},{\bf t})\f$ are positively oriented.
+    //     \remark
+    //     - For 3D cells the physical side normals coincides with the face normals computed by
+    //     CellTools<Scalar>::getPhysicalFaceNormals and these two methods are completely equivalent.
+    //     - For 2D cells the physical side normals are defined by \f${\bf n}=(t_2,-t_1)\f$
+    //     where \f${\bf t}=(t_1,t_2)\f$ are the physical edge tangents computed by 
+    //     CellTools<Scalar>::getPhysicalEdgeTangents. Therefore, the pairs \f$({\bf n},{\bf t})\f$ are positively oriented.
         
         
-        \warning
-        \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(P_p))\f$, 
-        where \f$P_p\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
-        that are located on reference side \f$\hat{\mathcal S}_i\f$ having the same local ordinal as
-        the sides in the workset.
+    //     \warning
+    //     \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(P_p))\f$, 
+    //     where \f$P_p\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+    //     that are located on reference side \f$\hat{\mathcal S}_i\f$ having the same local ordinal as
+    //     the sides in the workset.
         
-        \param  sideNormals       [out] - rank-3 array (C,P,D), normals at workset sides
-        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. side points
-        \param  worksetSideOrd    [in]  - side ordinal, relative to ref. cell, of the side workset
-        \param  parentCell        [in]  - cell topology of the parent reference cell
-    */
-    template<class ArraySideNormal, class ArrayJac>
-    static void 
-    getPhysicalSideNormals(ArraySideNormal &             sideNormals,
-                           const ArrayJac &              worksetJacobians,
-                           const int &                   worksetSideOrd,
-                           const shards::CellTopology &  parentCell);
+    //     \param  sideNormals       [out] - rank-3 array (C,P,D), normals at workset sides
+    //     \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. side points
+    //     \param  worksetSideOrd    [in]  - side ordinal, relative to ref. cell, of the side workset
+    //     \param  parentCell        [in]  - cell topology of the parent reference cell
+    // */
+    // template<class ArraySideNormal, class ArrayJac>
+    // static void 
+    // getPhysicalSideNormals(ArraySideNormal &             sideNormals,
+    //                        const ArrayJac &              worksetJacobians,
+    //                        const int &                   worksetSideOrd,
+    //                        const shards::CellTopology &  parentCell);
     
-    /** \brief  Computes non-normalized normal vectors to physical faces in a face workset 
-        \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
+    // /** \brief  Computes non-normalized normal vectors to physical faces in a face workset 
+    //     \f$\{\mathcal{F}_{c,i}\}_{c=0}^{N}\f$; (see \ref sec_cell_topology_subcell_wset for definition of face worksets). 
         
-        For every face in the workset the normals are computed at the points 
-        \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
-        from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$.  
-        Returns rank-3 array with dimensions (C,P,D), D=3, such that 
-        \f[
-        {faceNormals}(c,p,d) = 
-        \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
-        \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
-        \qquad (u_p, v_p) \in R \,.
-        \f]
-        In this formula:
-        \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
-        \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
-        tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents;
-        that has the same local ordinal as the faces in the workset;
-        \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
-        \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
-        \f[
-        R = \left\{\begin{array}{rl} 
-        \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
-        [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
-        \end{array}\right.
-        \f]
+    //     For every face in the workset the normals are computed at the points 
+    //     \f${\bf x}_p = F_c(\hat{\Phi}_i(u_p,v_p))\in\mathcal{F}_{c,i}\f$ that are images of points
+    //     from the parametrization domain \e R  on face \f$\mathcal{F}_{c,i}\f$.  
+    //     Returns rank-3 array with dimensions (C,P,D), D=3, such that 
+    //     \f[
+    //     {faceNormals}(c,p,d) = 
+    //     \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial u}\right) \times
+    //     \left( DF_c(\hat{\Phi}_i(u_p, v_p))\cdot {\partial\hat{\Phi}_i\over\partial v}\right) \,;
+    //     \qquad (u_p, v_p) \in R \,.
+    //     \f]
+    //     In this formula:
+    //     \li     \f$ DF_c \f$ is Jacobian of parent cell \f${\mathcal C}\f$ that owns physical face \f${\mathcal F}_{c,i}\f$;
+    //     \li     \f$ {\partial\hat{\Phi}_i/\partial u}, {\partial\hat{\Phi}_i/\partial v}\f$ are the (constant) 
+    //     tangents on reference face \f$\hat{\mathcal F}_i\f$; see CellTools<Scalar>::getReferenceFaceTangents;
+    //     that has the same local ordinal as the faces in the workset;
+    //     \li     \f$ \hat{\Phi}_i : R\mapsto \hat{\mathcal F}_i\f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+    //     \li     \e R  is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+    //     \f[
+    //     R = \left\{\begin{array}{rl} 
+    //     \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
+    //     [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
+    //     \end{array}\right.
+    //     \f]
         
-        \warning
-        \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
-        where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
-        that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
-        the faces in the workset.
+    //     \warning
+    //     \c worksetJacobians must contain the values of \f$DF_c(\hat{\Phi}_i(u_p,v_p))\f$, 
+    //     where \f$(u_p,v_p)\in R\f$, i.e., Jacobians of the parent cells evaluated at points 
+    //     that are located on reference face \f$\hat{\mathcal F}_i\f$ having the same local ordinal as
+    //     the faces in the workset.
         
-        \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
-        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
-        \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
-        \param  parentCell        [in]  - cell topology of the parent reference cell
-    */
-    template<class ArrayFaceNormal, class ArrayJac>
-    static void 
-    getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
-                           const ArrayJac &              worksetJacobians,
-                           const int &                   worksetFaceOrd,
-                           const shards::CellTopology &  parentCell);
-    
-    
-    
-    
-    /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex. 
-      
-                Requires cell topology with a reference cell. Vertex coordinates are always returned 
-                as an (x,y,z)-triple regardlesss of the actual topological cell dimension. The unused 
-                coordinates are set to zero, e.g., vertex 0 of Line<2> is returned as {-1,0,0}.                
-                
-        \param  cell              [in]  - cell topology of the cell
-        \param  vertexOrd         [in]  - vertex ordinal 
-        \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
-    */
-    static const double* getReferenceVertex(const shards::CellTopology& cell,
-                                            const int                   vertexOrd);
+    //     \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
+    //     \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+    //     \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
+    //     \param  parentCell        [in]  - cell topology of the parent reference cell
+    // */
+    // template<class ArrayFaceNormal, class ArrayJac>
+    // static void 
+    // getPhysicalFaceNormals(ArrayFaceNormal &             faceNormals,
+    //                        const ArrayJac &              worksetJacobians,
+    //                        const int &                   worksetFaceOrd,
+    //                        const shards::CellTopology &  parentCell);
     
     
     
-    /** \brief  Retrieves the Cartesian coordinates of all vertices of a reference subcell.
-      
-                Returns rank-2 array with the Cartesian coordinates of the vertices of the 
-                specified reference cell subcell. Requires cell topology with a reference cell.
-      
-        \param  subcellVertices   [out] - rank-2 (V,D) array with the Cartesian coordinates of the reference subcell vertices
-        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
-        \param  subcellOrd        [in]  - ordinal of the subcell
-        \param  parentCell        [in]  - topology of the cell that owns the subcell
-      
-        \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
-                coordinates of the vertices of the reference cell itself. 
-                Note that this requires \e subcellOrd=0.
-    */
-    template<class ArraySubcellVert>
-    static void getReferenceSubcellVertices(ArraySubcellVert &          subcellVertices,
-                                            const int                   subcellDim,
-                                            const int                   subcellOrd,
-                                            const shards::CellTopology& parentCell);
     
-
-    
-    /** \brief  Retrieves the Cartesian coordinates of a reference cell node.
-      
-                Returns Cartesian coordinates of a reference cell node. Requires cell topology 
-                with a reference cell. Node coordinates are always returned as an (x,y,z)-triple
-                regardlesss of the actual topological cell dimension. The unused coordinates are
-                set to zero, e.g., node 0 of Line<2> is returned as {-1,0,0}.      
-      
-        \remark
-               Because the nodes of a cell with a base topology coincide with its vertices, for cells
-               with base topology this method is equivalent to CellTools<Scalar>::getReferenceVertex.
-      
-        \param  cell              [in]  - cell topology of the cell
-        \param  vertexOrd         [in]  - node ordinal 
-        \return pointer to array with the (x,y,z) coordinates of the specified reference vertex
-    */
-    static void getReferenceNode( Kokkos::DynRankView
-                                 const shards::CellTopology  cell,
-                                          const int                   nodeOrd);
-    
-    
-    
-    /** \brief  Retrieves the Cartesian coordinates of all nodes of a reference subcell.
-      
-                Returns rank-2 array with the Cartesian coordinates of the nodes of the 
-                specified reference cell subcell. Requires cell topology with a reference cell.
-      
-        \param  subcellNodes      [out] - rank-2 (N,D) array with the Cartesian coordinates of the reference subcell nodes
-        \param  subcellDim        [in]  - dimension of the subcell; 0 <= subcellDim <= parentCell dimension
-        \param  subcellOrd        [in]  - ordinal of the subcell
-        \param  parentCell        [in]  - topology of the cell that owns the subcell
-      
-      \remark When \c subcellDim = dimension of the \c parentCell this method returns the Cartesian 
-      coordinates of the nodes of the reference cell itself. Note that this requires \c subcellOrd=0.
-    */
-    template<class ArraySubcellNode>
-    static void getReferenceSubcellNodes(ArraySubcellNode&          subcellNodes,
-                                        const int                   subcellDim,
-                                        const int                   subcellOrd,
-                                        const shards::CellTopology& parentCell);
 
 
 
@@ -1415,11 +1503,11 @@ public:
 #include "Intrepid2_CellToolsDocumentation.hpp"
 
 #include "Intrepid2_CellToolsDefValidateArguments.hpp"
+#include "Intrepid2_CellToolsDefNodeInfo.hpp"
 
 #include "Intrepid2_CellToolsDefParametrization.hpp"
-#include "Intrepid2_CellToolsDefJacobian.hpp"
+//#include "Intrepid2_CellToolsDefJacobian.hpp"
 
-#include "Intrepid2_CellToolsDefNodeInfo.hpp"
 #include "Intrepid2_CellToolsDefRefToPhys.hpp"
 
 // not yet converted ...

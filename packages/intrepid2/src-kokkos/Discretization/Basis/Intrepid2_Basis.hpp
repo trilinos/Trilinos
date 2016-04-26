@@ -86,7 +86,9 @@ namespace Intrepid2 {
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename ExecSpaceType = void>
+  template<typename ExecSpaceType = void,
+           typename outputValueType = double,
+           typename pointValueType = double>
   class Basis {
   public:
     typedef Kokkos::View<ordinal_type,ExecSpaceType> ordinal_view_type;
@@ -215,10 +217,10 @@ namespace Intrepid2 {
   public:
 
     Basis() = default;
-    ~Basis() = default;
+    virtual~Basis() = default;
 
-    // for not let's leave out kokkos inline function on getvalues.
-    // not yet known how to nest parallel_for inside parallel_for
+    typedef Kokkos::DynRankView<outputValueType,ExecSpaceType> outputViewType;
+    typedef Kokkos::DynRankView<pointValueType,ExecSpaceType>  pointViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -238,16 +240,14 @@ namespace Intrepid2 {
         approximated function space are admissible. When the order of the operator exceeds the
         degree of the basis, the output array is filled with the appropriate number of zeros.
     */
-    template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties>
+    virtual
     void
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+    getValues( /**/  outputViewType outputValues,
+               const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getValues): this method (FEM) is not supported or should be over-riden accordingly by derived classes.");
     }
-
 
     /** \brief  Evaluation of an FVD basis evaluation on a <strong>physical cell</strong>.
 
@@ -268,16 +268,28 @@ namespace Intrepid2 {
         of the cell into simplices. Because differential operators are not meaningful for such
         spaces, the default operator type in this method is set to OPERATOR_VALUE.
     */
-    template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties,
-             typename cellVertexValueType,  class ...cellVertexProperties>
+    virtual
     void
-    getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                const Kokkos::DynRankView<cellVertexValueType, cellVertexProperties...>  cellVertices,
+    getValues(  /**/  outputViewType outputValues,
+                const pointViewType  inputPoints,
+                const pointViewType  cellVertices,
                 const EOperator operatorType = OPERATOR_VALUE ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getValues): this method (FVD) is not supported or should be over-riden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getValues): this method (FVM) is not supported or should be over-riden accordingly by derived classes.");
+    }
+
+
+    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+        <strong>reference Quadrilateral</strong>.
+
+        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+        dimensioned (F,D)
+    */
+    virtual
+    void
+    getDofCoords( pointViewType dofCoords ) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
 
     /** \brief  Returns cardinality of the basis
@@ -359,7 +371,7 @@ namespace Intrepid2 {
 #endif
       return r_val;
     }
-    
+
     /** \brief DoF tag to ordinal data structure */
     const ordinal_type_array_3d
     getAllDofOrdinal() const {

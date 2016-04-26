@@ -41,28 +41,32 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_ELASTICITY_DATA_H
-#define ROL_PDEOPT_ELASTICITY_DATA_H
+#ifndef ROL_PDEOPT_ELASTICITY_SIMP_DATA_H
+#define ROL_PDEOPT_ELASTICITY_SIMP_DATA_H
 
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
-#include "../TOOLS/elasticity.hpp"
+#include "../TOOLS/elasticitySIMP.hpp"
 
 template<class Real>
-class ElasticityData : public Elasticity <Real> {
+class ElasticitySIMPData : public ElasticitySIMP <Real> {
 
 private:
 
 public:
 
-ElasticityData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+ElasticitySIMPData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
              const Teuchos::RCP<Teuchos::ParameterList> &parlist,
              const Teuchos::RCP<std::ostream> &outStream) 
 {
-	this->Initialize (comm, parlist, outStream);
-	this->SetParallelStructure();
+    	this->ElasticitySIMP_Initialize(comm, parlist, outStream);
+        Real iniDens = parlist->sublist("ElasticitySIMP").get("Initial Density", 1.0);
+    	this->initDensity_ = iniDens;
+	std::cout<<"initial density: "<<iniDens<<std::endl;
+	//
+    	this->SetSIMPParallelStructure();
 	this->SetUpLocalIntrepidArrays();
-	this->ComputeLocalSystemMats();
+	this->ComputeLocalSystemMats(true);
 	this->AssembleSystemMats();
 	//Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
 	std::vector<int> dbc_side {};
@@ -74,8 +78,9 @@ ElasticityData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
 	//
 	this->EnforceDBC();
 	this->ConstructSolvers();
+   	//test_mats();
 }
 
-}; // class ElasticityData
+}; // class ElasticitySIMPData
 
 #endif

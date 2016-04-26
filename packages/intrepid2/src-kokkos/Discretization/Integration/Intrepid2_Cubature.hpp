@@ -107,81 +107,93 @@ namespace Intrepid2 {
 
   /** \class Intrepid2::Cubature
       \brief Defines the base class for cubature (integration) rules in Intrepid.
-      
+
       Cubature template (rule) consists of cubature points and cubature weights.
       Intrepid provides a small collection of frequently used cubature rule templates
       for FEM reconstructions on simplices (edge, tri, tet) and the pyramid cell,
       defined in the derived classes of CubatureDirect.
-      
+
       For quad, hex, and triprism cells cubature templates are tensor products of CubatureDirect
       templates. The tensor-product cubatures are defined in the derived class CubatureTensor.
   */
-  template<typename ExecSpaceType = void>
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
   class Cubature {
   public:
 
-    Cubature() = default;
-    ~Cubature() = default;
-    
-    
+    typedef Kokkos::DynRankView<pointValueType,ExecSpaceType>   pointViewType;
+    typedef Kokkos::DynRankView<weightValueType,ExecSpaceType>  weightViewType;
+
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).
-        
+
         \param cubPoints       [out]     - Array containing the cubature points.
         \param cubWeights      [out]     - Array of corresponding cubature weights.
     */
-    template<typename cubPointValueType,  class ...cubPointProperties,
-             typename cubWeightValueType, class ...cubWeightProperties>
-    void getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                      Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
+    virtual
+    void
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights ) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
     }
-    
+
     /** \brief Returns cubature points and weights on physical cells
         (return arrays must be pre-sized/pre-allocated).
-        
+
         \param cubPoints       [out]     - Array containing the cubature points.
         \param cubWeights      [out]     - Array of corresponding cubature weights.
         \param cellVertices    [in]      - Array containing the cell vertices.
     */
-    template<typename cubPointValueType,   class ...cubPointProperties,
-             typename cubWeightValueType,  class ...cubWeightProperties,
-             typename cellVertexValueType, class ...cellVertexProperties>
-    void getCubature( Kokkos::DynRankView<cubPointValueType,  cubPointProperties...>   cubPoints,
-                      Kokkos::DynRankView<cubWeightValueType, cubWeightProperties...>  cubWeights,
-                      Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices) const {
+    virtual
+    void
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights,
+                 pointViewType  cellVertices) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getCubature): this method should be over-riden by derived classes.");
     }
-    
+
     /** \brief Returns the number of cubature points.
      */
-    ordinal_type getNumPoints() const {
+    virtual
+    ordinal_type
+    getNumPoints() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getNumPoints): this method should be over-riden by derived classes.");
       return 0;
     }
-    
-    
+
+
     /** \brief Returns dimension of the integration domain.
      */
-    ordinal_type getDimension() const {
+    virtual
+    ordinal_type
+    getDimension() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Cubature::getDimension): this method should be over-riden by derived classes.");
       return 0;
     }
-    
+
     /** \brief Returns cubature name.
      */
-    const char* getName() const  { return "Cubature"; }
-  }; 
-  
+    virtual
+    const char*
+    getName() const  {
+      return "Cubature";
+    }
+
+    Cubature() = default;
+    virtual~Cubature() = default;
+
+  };
+
 }// end namespace Intrepid2
 
 
 /*! \mainpage INTREPID Documentation (Development Version)
- 
+
   \image html intrepid.png
   \image latex intrepid.jpg "Reconnaissance balloon ``Intrepid''" width=1in
 
@@ -203,7 +215,7 @@ namespace Intrepid2 {
   an implementation of a multi-dimensional array that can be used for that purpose, or
   users can write their own multi-dimensional arrays as long as a minimal interface
   is supported.
- 
+
   \section overview_sec Overview
 
   Current release of %Intrepid includes the following features:
@@ -236,7 +248,7 @@ namespace Intrepid2 {
   and an appropriate integration rule.
 
   \subsection topo_qs_sec Step 1: Select a cell topology
-  
+
   \code
       shards::CellTopology cellType = shards::getCellTopologyData< shards::Tetrahedron<> >(); // cell type: tetrahedron
       int spaceDim = cellType->getDimension();                                                // retrieve spatial dimension
@@ -257,7 +269,7 @@ namespace Intrepid2 {
 
 
   \subsection bases_qs_sec Step 3: Select discrete basis
-  
+
   \code
       Basis_HGRAD_TET_C1_FEM<double, DynRankView<double> > tetBasis;                       // create tet basis
       int numFields = tetBasis.getCardinality();                                              // get basis cardinality
@@ -285,7 +297,7 @@ namespace Intrepid2 {
 
   We assume that the array \c cell_nodes is filled with nodes defining a set of computational (physical) cells.
 
-  \subsection tabulate_qs_sec Step 5: Evaluate differential operator applied to basis at cubature points 
+  \subsection tabulate_qs_sec Step 5: Evaluate differential operator applied to basis at cubature points
 
   \code
       myCub->getCubature(cub_points, cub_weights);                                          // retrieve cubature points and weights

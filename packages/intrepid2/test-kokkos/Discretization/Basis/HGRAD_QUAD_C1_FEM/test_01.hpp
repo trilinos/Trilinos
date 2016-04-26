@@ -74,8 +74,6 @@ namespace Intrepid2 {
     template<typename ValueType, typename DeviceSpaceType>
     int HGRAD_QUAD_C1_FEM_Test01(const bool verbose) {
 
-      typedef ValueType value_type;
-
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -110,11 +108,18 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      const value_type tol = Parameters::Tolerence;
+      const ValueType tol = Parameters::Tolerence;
       int errorFlag = 0;
+
+      // for virtual function, value and point types are declared in the class
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> quadBasis;
+      //typedef typename decltype(quadBasis)::outputViewType outputViewType;
+      //typedef typename decltype(quadBasis)::pointViewType  pointViewType;
 
       *outStream
         << "\n"
@@ -126,7 +131,6 @@ namespace Intrepid2 {
       try{
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType> quadBasis;
 
         // Define array containing the 4 vertices of the reference QUAD and its center.
         DynRankView ConstructWithLabel(quadNodes, 5, 2);
@@ -152,7 +156,7 @@ namespace Intrepid2 {
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(3,0,0), nthrow, ncatch ); // #2
-          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), nthrow, ncatch ); // #3 
+          INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(1,1,1), nthrow, ncatch ); // #3
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofOrdinal(0,4,0), nthrow, ncatch ); // #4
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(5),         nthrow, ncatch ); // #5
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getDofTag(-1),        nthrow, ncatch ); // #6
@@ -229,8 +233,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType> quadBasis;
-
         const auto numFields = quadBasis.getCardinality();
         const auto allTags = quadBasis.getAllDofTags();
 
@@ -294,7 +296,7 @@ namespace Intrepid2 {
 
       try {
         // VALUE: Each row gives the 4 correct basis set values at an evaluation point
-        const value_type basisValues[][4] = {
+        const ValueType basisValues[][4] = {
           { 1.0, 0.0, 0.0, 0.0  },
           { 0.0, 1.0, 0.0, 0.0  },
           { 0.0, 0.0, 1.0, 0.0  },
@@ -303,35 +305,33 @@ namespace Intrepid2 {
         };
 
         // GRAD and D1: each row gives the 8 correct values of the gradients of the 4 basis functions
-        const value_type basisGrads[][4][2] = {
+        const ValueType basisGrads[][4][2] = {
           { { -0.5, -0.5  },    { 0.5,  0.0  },     { 0.0,  0.0 },    {  0.0,  0.5 } },
           { { -0.5,  0.0  },    { 0.5, -0.5  },     { 0.0,  0.5 },    {  0.0,  0.0 } },
           { {  0.0,  0.0  },    { 0.0, -0.5  },     { 0.5,  0.5 },    { -0.5,  0.0 } },
           { {  0.0, -0.5  },    { 0.0,  0.0  },     { 0.5,  0.0 },    { -0.5,  0.5 } },
           { { -0.25,-0.25 },    { 0.25,-0.25 },     { 0.25, 0.25},    { -0.25, 0.25} }
         };
-        
+
         // CURL: each row gives the 8 correct values of the curls of the 4 basis functions
-        const value_type basisCurls[][4][2] = {
+        const ValueType basisCurls[][4][2] = {
           { { -0.5,  0.5 },    { 0.0, -0.5 },    { 0.0,  0.0 },    { 0.5,  0.0 } },
           { {  0.0,  0.5 },    {-0.5, -0.5 },    { 0.5,  0.0 },    { 0.0,  0.0 } },
           { {  0.0,  0.0 },    {-0.5,  0.0 },    { 0.5, -0.5 },    { 0.0,  0.5 } },
           { { -0.5,  0.0 },    { 0.0,  0.0 },    { 0.0, -0.5 },    { 0.5,  0.5 } },
           { {-0.25,  0.25},    {-0.25,-0.25},    { 0.25,-0.25},    { 0.25, 0.25} }
         };
-        
+
         //D2: each row gives the 12 correct values of all 2nd derivatives of the 4 basis functions
-        const value_type basisD2[][4][3] = {
+        const ValueType basisD2[][4][3] = {
           { { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 },   { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 } },
           { { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 },   { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 } },
           { { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 },   { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 } },
           { { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 },   { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 } },
           { { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 },   { 0.0, 0.25, 0.0 },   { 0.0,-0.25, 0.0 } }
         };
-        
-        
-        Basis_HGRAD_QUAD_C1_FEM<DeviceSpaceType> quadBasis;
-        
+
+
         // Define array containing the 4 vertices of the reference QUAD and its center.
         DynRankView ConstructWithLabel(quadNodes, 5, 2);
         quadNodes(0,0) = -1.0;  quadNodes(0,1) = -1.0;
@@ -354,12 +354,12 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints);
           quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
-          for (auto i=0;i<numFields;++i) 
-            for (auto j=0;j<numPoints;++j) 
+          for (auto i=0;i<numFields;++i)
+            for (auto j=0;j<numPoints;++j)
               if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                
+
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
@@ -377,13 +377,13 @@ namespace Intrepid2 {
             const auto op = ops[h];
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
             quadBasis.getValues(vals, quadNodes, op);
-            for (auto i=0;i<numFields;++i) 
-              for (auto j=0;j<numPoints;++j) 
-                for (auto k=0;k<spaceDim;++k) 
+            for (auto i=0;i<numFields;++i)
+              for (auto j=0;j<numPoints;++j)
+                for (auto k=0;k<spaceDim;++k)
                   if (std::abs(vals(i,j,k) - basisGrads[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    
+
                     // Output the multi-index of the value where the error is:
                     *outStream << " At multi-index { ";
                     *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
@@ -392,46 +392,46 @@ namespace Intrepid2 {
                   }
           }
         }
-        
+
         // Check CURL of basis function: resize vals just for illustration!
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
           quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
-            for (auto i=0;i<numFields;++i) 
-              for (auto j=0;j<numPoints;++j) 
-                for (auto k=0;k<spaceDim;++k) 
-                  if (std::abs(vals(i,j,k) - basisCurls[j][i][k]) > tol) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    
-                    // Output the multi-index of the value where the error is:
-                    *outStream << " At multi-index { ";
-                    *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                    *outStream << "}  computed curl component: " << vals(i,j,k)
-                               << " but reference curl component: " << basisCurls[j][i][k] << "\n";
-                  }
+          for (auto i=0;i<numFields;++i)
+            for (auto j=0;j<numPoints;++j)
+              for (auto k=0;k<spaceDim;++k)
+                if (std::abs(vals(i,j,k) - basisCurls[j][i][k]) > tol) {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+                  // Output the multi-index of the value where the error is:
+                  *outStream << " At multi-index { ";
+                  *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                  *outStream << "}  computed curl component: " << vals(i,j,k)
+                             << " but reference curl component: " << basisCurls[j][i][k] << "\n";
+                }
         }
-        
+
 
         // Check D2 of basis function
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
           quadBasis.getValues(vals, quadNodes, OPERATOR_D2);
-            for (auto i=0;i<numFields;++i) 
-              for (auto j=0;j<numPoints;++j) 
-                for (auto k=0;k<D2Cardin;++k) 
-                  if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
-                    errorFlag++;
-                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    
-                    // Output the multi-index of the value where the error is:
-                    *outStream << " At multi-index { ";
-                    *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                    *outStream << "}  computed D2 component: " << vals(i,j,k)
-                               << " but reference D2 component: " << basisD2[j][i][k] << "\n";
-                  }
+          for (auto i=0;i<numFields;++i)
+            for (auto j=0;j<numPoints;++j)
+              for (auto k=0;k<D2Cardin;++k)
+                if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
+                  errorFlag++;
+                  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+                  // Output the multi-index of the value where the error is:
+                  *outStream << " At multi-index { ";
+                  *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                  *outStream << "}  computed D2 component: " << vals(i,j,k)
+                             << " but reference D2 component: " << basisD2[j][i][k] << "\n";
+                }
         }
-        
+
 
         // Check all higher derivatives - must be zero.
         {
@@ -456,12 +456,12 @@ namespace Intrepid2 {
                   if (std::abs(vals(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                    
+
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
-                  *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                  *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
-                             << " but reference D" << ord << " component:  0 \n";
+                    *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
+                    *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
+                               << " but reference D" << ord << " component:  0 \n";
                   }
           }
         }
@@ -508,7 +508,7 @@ namespace Intrepid2 {
 
         DynRankView ConstructWithLabel(bvals, numFields, numFields);
         DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
-        
+
         // Check mathematical correctness.
         quadBasis.getDofCoords(cvals);
         quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
@@ -518,7 +518,7 @@ namespace Intrepid2 {
               errorFlag++;
               std::stringstream ss;
               ss << "\n Value of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << bvals(i,j) << " but should be 0.0\n";
-              *outStream << ss.str(); 
+              *outStream << ss.str();
             }
             else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > tol)) {
               errorFlag++;

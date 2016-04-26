@@ -82,10 +82,40 @@ private:
   ArrayRCP<GraphMetricValues<scalar_t> > graphMetrics_;
   ArrayRCP<const GraphMetricValues<scalar_t> > graphMetricsConst_;
 
+  void sharedConstructor(const Adapter *ia,
+			 ParameterList *p,
+			 const RCP<const Comm<int> > &problemComm,
+			 const PartitioningSolution<Adapter> *soln,
+			 const RCP<const GraphModel
+			 <typename Adapter::base_adapter_t> > &graphModel);
+
 public:
 
-  /*! \brief Constructor
+  /*! \brief Constructor where communicator is Teuchos default.
       \param ia the problem input adapter
+      \param p the parameter list
+      \param soln  the solution
+      \param graphModel the graph model
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
+    const PartitioningSolution<Adapter> *soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+
+
+  /*! \brief Constructor where Teuchos communicator is specified
+      \param ia the problem input adapter
+      \param p the parameter list
       \param problemComm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
@@ -98,7 +128,40 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null);
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+
+#ifdef HAVE_ZOLTAN2_MPI
+  /*! \brief Constructor for MPI builds
+      \param ia the problem input adapter
+      \param p the parameter list
+      \param comm  the problem communicator
+      \param soln  the solution
+      \param graphModel the graph model
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+    EvaluatePartition(const Adapter *ia, 
+    ParameterList *p,
+    MPI_Comm comm,
+    const PartitioningSolution<Adapter> *soln,
+    const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
+		    Teuchos::null):
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
+    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    {
+      RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
+	Teuchos::opaqueWrapper(comm);
+      RCP<const Comm<int> > problemComm =
+	rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+      sharedConstructor(ia, p, problemComm, soln, graphModel);
+    }
+#endif
 
   /*! \brief Return the metric values.
    *  \param values on return is the array of values.
@@ -184,15 +247,14 @@ public:
   }
 };
 
+  // sharedConstructor
   template <typename Adapter>
-  EvaluatePartition<Adapter>::EvaluatePartition(
+  void EvaluatePartition<Adapter>::sharedConstructor(
   const Adapter *ia, 
   ParameterList *p,
   const RCP<const Comm<int> > &comm,
   const PartitioningSolution<Adapter> *soln,
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel)
 {
   RCP<const Comm<int> > problemComm;
   if (comm == Teuchos::null) {

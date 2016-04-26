@@ -57,12 +57,17 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureDirectLineGauss
       \brief Defines Gauss integration rules on a line.
   */
-  template<typename ExecSpaceType = void>
-  class CubatureDirectLineGauss : public CubatureDirect<ExecSpaceType> {
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureDirectLineGauss
+    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
   public:
-    typedef typename CubatureDirect<ExecSpaceType>::value_type         value_type;
-    typedef typename CubatureDirect<ExecSpaceType>::CubatureDataStatic CubatureDataStatic;
-    typedef typename CubatureDirect<ExecSpaceType>::CubatureData       CubatureData;
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureData       CubatureData;
+
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
   private:
     // static data initialize upto 62 but we only support upto Parameters::MaxCubatureDegreeEdge
@@ -73,21 +78,24 @@ namespace Intrepid2 {
     static const CubatureDataStatic cubatureDataStatic_[cubatureDataStaticSize]; // initialized once
 
   public:
-    
+
     /** \brief Constructor.
         \param degree           [in]     - The degree of polynomials that are integrated
-                                           exactly by this cubature rule. Default: 0.
+        exactly by this cubature rule. Default: 0.
     */
     CubatureDirectLineGauss(const ordinal_type degree = 0);
-    ~CubatureDirectLineGauss() = default;
-    
+
     /** \brief Returns cubature name.
      */
-    const char* getName() const {
+    virtual
+    const char*
+    getName() const {
       return "CubatureDirectLineGauss";
     }
+
+
   };
-  
+
 } // end namespace Intrepid2
 
 // include templated definitions
