@@ -701,8 +701,17 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::View<packet_type*, execution_space> imports_;
-    typename decltype (imports_)::HostMirror host_imports_;
+    Kokkos::DualView<packet_type*, execution_space> imports_;
+
+    /// \brief Reallocate imports_ if needed.
+    ///
+    /// This unfortunately must be declared protected, for the same
+    /// reason that imports_ is declared protected.
+    ///
+    /// \param newSize [in] New size of imports_.
+    /// \param debug [in] Whether to print (copious) debug output to stderr.
+    void
+    reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
 
   protected:
     /// \brief Number of packets to receive for each receive operation.

@@ -6852,11 +6852,7 @@ namespace Tpetra {
       // elements) how many incoming elements we expect, so we can
       // resize the buffer accordingly.
       const size_t rbufLen = RemoteLIDs.size() * constantNumPackets;
-      if (static_cast<size_t> (destMat->imports_.size ()) != rbufLen ||
-          destMat->host_imports_.size () != destMat->imports_.size ()) {
-        Kokkos::realloc (destMat->imports_, rbufLen);
-        destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
-      }
+      destMat->reallocImportsIfNeeded (rbufLen);
     }
 
     // Pack & Prepare w/ owning PIDs
@@ -6962,21 +6958,21 @@ namespace Tpetra {
             totalImportPackets += numImportPacketsPerLID[i];
           }
 
-          if (static_cast<size_t> (destMat->imports_.size ()) != totalImportPackets ||
-              destMat->host_imports_.size () != destMat->imports_.size ()) {
-            Kokkos::realloc (destMat->imports_, totalImportPackets);
-            destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
-          }
-          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
-                                                destMat->host_imports_.size ());
+          // Reallocation MUST go before setting the modified flag,
+          // because it may clear out the flags.
+          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<char> hostImports =
+            getArrayViewFromDualView (destMat->imports_);
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
                                          numExportPacketsPerLID,
                                          hostImports,
                                          numImportPacketsPerLID);
         }
         else { // constant number of packets per LI
-          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
-                                                destMat->host_imports_.size ());
+          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<char> hostImports =
+            getArrayViewFromDualView (destMat->imports_);
           Distor.doReversePostsAndWaits (destMat->exports_old_ ().getConst (),
                                          constantNumPackets,
                                          hostImports);
@@ -7000,21 +6996,21 @@ namespace Tpetra {
             totalImportPackets += numImportPacketsPerLID[i];
           }
 
-          if (static_cast<size_t> (destMat->imports_.size ()) != totalImportPackets ||
-              destMat->host_imports_.size () != destMat->imports_.size ()) {
-            Kokkos::realloc (destMat->imports_, totalImportPackets);
-            destMat->host_imports_ = Kokkos::create_mirror_view (destMat->imports_);
-          }
-          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
-                                                destMat->host_imports_.size ());
+          // Reallocation MUST go before setting the modified flag,
+          // because it may clear out the flags.
+          destMat->reallocImportsIfNeeded (totalImportPackets);
+          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<char> hostImports =
+            getArrayViewFromDualView (destMat->imports_);
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
                                   numExportPacketsPerLID,
                                   hostImports,
                                   numImportPacketsPerLID);
         }
         else { // constant number of packets per LID
-          Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
-                                                destMat->host_imports_.size ());
+          destMat->imports_.template modify<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<char> hostImports =
+            getArrayViewFromDualView (destMat->imports_);
           Distor.doPostsAndWaits (destMat->exports_old_ ().getConst (),
                                   constantNumPackets,
                                   hostImports);
@@ -7034,9 +7030,9 @@ namespace Tpetra {
     destMat->numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
     Teuchos::ArrayView<const size_t> numImportPacketsPerLID =
       getArrayViewFromDualView (destMat->numImportPacketsPerLID_);
-
-    Teuchos::ArrayView<char> hostImports (destMat->host_imports_.ptr_on_device (),
-                                          destMat->host_imports_.size ());
+    destMat->imports_.template sync<Kokkos::HostSpace> ();
+    Teuchos::ArrayView<const char> hostImports =
+      getArrayViewFromDualView (destMat->imports_);
     size_t mynnz =
       Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
                                                         hostImports,
