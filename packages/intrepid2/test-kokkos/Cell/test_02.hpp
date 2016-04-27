@@ -79,7 +79,6 @@ namespace Intrepid2 {
         
     template<typename ValueType, typename DeviceSpaceType>
     int CellTools_Test02(const bool verbose) {
-      typedef ValueType value_type;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -119,9 +118,9 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       typedef CellTools<DeviceSpaceType> ct;
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
-      const value_type tol = Parameters::Tolerence*100.0;
+      const ValueType tol = Parameters::Tolerence*100.0;
 
       int errorFlag = 0;
 
@@ -172,7 +171,7 @@ namespace Intrepid2 {
               continue;
             
             // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
-            if( cell.getDimension() >= 2 && cell.getKey() != shards::Pyramid<5>::key ) { 
+            if ( cell.getDimension() >= 2 && cell.getKey() != shards::Pyramid<5>::key ) { 
               const auto cellDim  = cell.getDimension();
               const auto nCount   = cell.getNodeCount();
               const auto vCount   = cell.getVertexCount();
@@ -180,9 +179,8 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(refCellVertices, nCount, cellDim);
               ct::getReferenceSubcellVertices(refCellVertices, cellDim, 0, cell);
               
-              *outStream << " Testing edge tangents";
-              if(cellDim == 2) { *outStream << " and normals"; }          
-              *outStream <<" for cell topology " <<  (cell).getName() <<"\n";
+              *outStream << " Testing edge tangents (and normals for cellDim = 2) for cell topology " 
+                         <<  (cell).getName() << " cellDim = " << cellDim <<"\n";
                             
               // Array for physical cell vertices ( must have rank 3 for setJacobians)
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
@@ -191,7 +189,7 @@ namespace Intrepid2 {
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
               for (auto v=0;v<vCount;++v) 
                 for (auto d=0;d<cellDim;++d) {
-                  const auto delta = Teuchos::ScalarTraits<value_type>::random()/8.0;
+                  const auto delta = Teuchos::ScalarTraits<ValueType>::random()/8.0;
                   physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
                 }
         
