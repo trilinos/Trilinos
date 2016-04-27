@@ -502,7 +502,8 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   typedef GlobalOrdinal GO;
   typedef CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> matrix_type;
   typedef typename matrix_type::impl_scalar_type ST;
-  typedef typename Node::execution_space execution_space;
+  typedef typename Node::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
   typedef typename GetHostExecSpace<execution_space>::host_execution_space HES;
   typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef typename ArrayView<const LO>::size_type size_type;
@@ -588,12 +589,11 @@ packAndPrepareWithOwningPIDs (const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdina
   // entries.  All the column indices (as global indices) go first,
   // then all their owning process ranks, and then the values.
   if (totalNumEntries > 0) {
-    if (static_cast<size_t> (exports.dimension_0 ()) != static_cast<size_t> (totalNumBytes)) {
+    if (static_cast<size_t> (exports.dimension_0 ()) !=
+        static_cast<size_t> (totalNumBytes)) {
       // FIXME (26 Apr 2016) Fences around (UVM) allocations only
       // temporarily needed for #227 debugging.  Should be able to
       // remove them after that's fixed.
-      typedef typename Node::device_type device_type;
-      typedef typename device_type::execution_space execution_space;
       execution_space::fence ();
       exports = Kokkos::DualView<char*, device_type> ("exports", totalNumBytes);
       execution_space::fence ();
