@@ -1211,7 +1211,7 @@ namespace Intrepid2 {
                                    initGuess,
                                    physPoints,
                                    worksetCell,
-                                   createHGradBasis<phsPointValueType,initGuessValueType>(cellTopo));
+                                   createHGradBasis<physPointValueType,initGuessValueType>(cellTopo));
     }
 
 
@@ -1583,10 +1583,9 @@ namespace Intrepid2 {
 #include "Intrepid2_CellToolsDefJacobian.hpp"
 
 #include "Intrepid2_CellToolsDefRefToPhys.hpp"
+// #include "Intrepid2_CellToolsDefPhysToRef.hpp"
 
 // not yet converted ...
-
-// #include "Intrepid2_CellToolsDefPhysToRef.hpp"
 // #include "Intrepid2_CellToolsDefInclusion.hpp"
 
 // #include "Intrepid2_CellToolsDefDebug.hpp"

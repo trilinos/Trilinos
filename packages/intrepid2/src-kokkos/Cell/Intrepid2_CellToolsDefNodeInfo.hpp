@@ -621,10 +621,18 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
   
     if (dim == 2) {
-      Kokkos::DynRankView<sideNormalValueType,SpT> refSideNormal("CellTools::getPhysicalSideNormals::refSideNormal", dim);
-      getReferenceSideNormal(refSideNormal, worksetSideOrd, parentCell);
+      // compute edge tangents and rotate it
+      Kokkos::DynRankView<sideNormalValueType,SpT> edgeTangents("CellTools::getPhysicalSideNormals::edgeTan", 
+                                                                sideNormals.dimension(0),
+                                                                sideNormals.dimension(1),
+                                                                sideNormals.dimension(2));
+      getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
-      RealSpaceTools<SpT>::matvec(sideNormals, worksetJacobians, refSideNormal);    
+      Kokkos::DynRankView<sideNormalValueType,SpT> rotation("CellTools::getPhysicalSideNormals::rotation", dim, dim);
+      rotation(0,0) =  0; rotation(0,1) =  1;
+      rotation(1,0) = -1; rotation(1,1) =  0;
+
+      RealSpaceTools<SpT>::matvec(sideNormals, rotation, edgeTangents);    
     } else {
       getPhysicalFaceNormals(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
     }
