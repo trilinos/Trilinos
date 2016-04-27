@@ -444,6 +444,9 @@ namespace BaskerNS
     #ifdef BASKER_KOKKOS_TIME
     stats.time_nfactor += timer.seconds();
     #endif
+
+    factor_flag = BASKER_TRUE;
+
     return 0;
   }//end Factor()
 
@@ -557,6 +560,8 @@ namespace BaskerNS
     
     //DEBUG_PRINT();
 
+    factor_flag = BASKER_TRUE;
+
     return 0;
 
   }//end Factor()
@@ -583,8 +588,18 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, 
 					   Entry *x)
   {
-    // printf("Currrently not used \n");
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Solve Called \n");
+      }
+    
     solve_interface(x,b);
+
+    if(Options.verbose == BASKER_TRUe)
+      {
+	printf("Basker Solve Done \n");
+      }
+
     return 0;
   }//Solve(Entry *, Entry *);
 
@@ -594,7 +609,18 @@ namespace BaskerNS
                                          Entry *b,
                                          Entry *x)
   {
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker MultiSolve Called \n");
+      }
+
     solve_interface(nrhs,x,b);
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Multisolve Done \n");
+      }
+
     return 0;
   }
 

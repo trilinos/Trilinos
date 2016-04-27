@@ -1467,6 +1467,11 @@ namespace BaskerNS
       {
     //=====Move into 2D ND-Structure====/
     //Find submatices view shapes
+	
+
+	printMTX("A_BTF.mtx", BTF_A);
+       
+
     clean_2d();
     //printf("Done with clean 2d\n");
     //ALM(0)(0).info();
@@ -1514,8 +1519,10 @@ namespace BaskerNS
     */
 
     //If same pattern, permute using pivot, and reset
+    //printf("gn: %d \n", gn);
     if((Options.same_pattern == BASKER_TRUE))
       {
+	printf("reset gperm");
 	if(same_pattern_flag == BASKER_FALSE)
 	  {
 	    MALLOC_INT_1DARRAY(gperm_same, gn);
@@ -1526,21 +1533,42 @@ namespace BaskerNS
 	      }
 	    same_pattern_flag = BASKER_TRUE;
 	  }
-	else
-	  {
-	    for(Int i = 0; i < gn; i++)
-	      {
-		gperm(i) = BASKER_MAX_IDX;
-	      }
-	  }
+	
 	//Everyone permutes
 	//JDB: come back
+      }
+    else
+      {
+	for(Int i = 0; i < gn; i++)
+	  {
+	    gperm(i) = BASKER_MAX_IDX;
+	  }
+
+	//Clear pend btf
+	/*
+	for(Int b =0; b < btf_nblks; b++)
+	  {
+	    BASKER_MATRIX& Ltemp = LBTF(b);
+	    Ltemp.clear_pend();
+	  }
+	*/
+
       }
     //test
     //printMTX("A_BTF.mtx", BTF_A);
 
     //test 
     // printMTX("extra_C.mtx", BTF_C);
+
+    if(factor_flag == BASKER_TRUE)
+      {
+	typedef Kokkos::TeamPolicy<Exe_Space> TeamPolicy;
+	kokkos_reset_factor<Int,Entry,Exe_Space>
+	  reset_factors(this);
+	Kokkos::parallel_for(TeamPolicy(num_threads,1),
+			     reset_factors);
+	Kokkos::fence();
+      }
 
     return 0;
   }//sfactor_copy2()

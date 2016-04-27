@@ -26,6 +26,7 @@ namespace BaskerNS
     ncol    = 0;
     nrow    = 0;
     nnz     = 0;
+    mnnz    = 0;
     v_fill  = BASKER_FALSE;
     tpivot  = 0;
     #ifdef BASKER_2DL
@@ -134,6 +135,7 @@ namespace BaskerNS
     scol = _sc;
     ncol = _n;
     nnz  = 0;
+    mnnz = 0;
   }//end set_shape()
 
   template <class Int, class Entry, class Exe_Space>
@@ -186,6 +188,7 @@ namespace BaskerNS
 	col_ptr(i) = (Int) BASKER_MAX_IDX;
       }
     nnz = 0;
+    mnnz = 0;
 
   }//end clean_col()
 
@@ -199,6 +202,7 @@ namespace BaskerNS
     nrow = _m;
     ncol = _n;
     nnz  = _nnz;
+    mnnz = _nnz;
     
     if(ncol >= 0)
       {
@@ -427,6 +431,19 @@ namespace BaskerNS
 	  }
       }
   }//end init_pend()
+
+  template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int,Entry,Exe_Space>::clear_pend()
+  {
+    if(ncol > 0)
+      {
+	for(Int i = 0 ; i < ncol+1; ++i)
+	  {
+	    pend(i) = BASKER_MAX_IDX;
+	  }
+      }
+  }// end clear_pend()
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
