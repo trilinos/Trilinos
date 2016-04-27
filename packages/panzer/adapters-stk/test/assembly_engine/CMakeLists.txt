@@ -9,12 +9,16 @@ INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/bcstrategy)
 SET(UNIT_TEST_DRIVER
   ${TEUCHOS_STD_UNIT_TEST_MAIN})
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  assembly_engine
-  SOURCES assembly_engine.cpp ${UNIT_TEST_DRIVER}
-  COMM serial mpi
-  NUM_MPI_PROCS 4
-  )
+IF(NOT Phalanx_KOKKOS_DEVICE_TYPE STREQUAL "CUDA")
+  # the structure of this problem combined with repeated reinitialization
+  # is causing real problems on CUDA... prevent it!
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    assembly_engine
+    SOURCES assembly_engine.cpp ${UNIT_TEST_DRIVER}
+    COMM serial mpi
+    NUM_MPI_PROCS 4
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   simple_bc
