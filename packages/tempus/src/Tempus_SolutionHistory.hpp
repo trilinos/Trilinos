@@ -4,7 +4,7 @@
 // Teuchos
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_Array.hpp"
 // Tempus
 #include "Tempus_SolutionState.hpp"

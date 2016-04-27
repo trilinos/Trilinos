@@ -2,12 +2,16 @@
 #define TEMPUS_SOLUTIONHISTORY_IMPL_HPP
 
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_SolutionStateMetaData.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ParameterList;
 
 namespace {
 
@@ -48,15 +52,14 @@ namespace {
 namespace Tempus {
 
 template<class Scalar>
-SolutionHistory<Scalar>::SolutionHistory(
-  RCP<ParameterList> pList_ = Teuchos::null )
+SolutionHistory<Scalar>::SolutionHistory(RCP<ParameterList> pList_)
 {
   // Create history, an array of solution states.
-  history = rcp(new Array<SolutionState<Scalar> >);
+  history = rcp(new Teuchos::Array<SolutionState<Scalar> >);
 
   if (pList_ == Teuchos::null) {
     pList     = Teuchos::null;
-    interpolator  = Teuchos::null;
+    //interpolator  = Teuchos::null;
     storage_limit = StorageLimit_default;
     historyPolicy = HISTORY_POLICY_KEEP_NEWEST;
   } else {
@@ -109,7 +112,7 @@ void SolutionHistory<Scalar>::addState(
     }
     case HISTORY_POLICY_UNLIMITED:
       break;
-    default: {
+    default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - unknown history policy.\n");
     }
@@ -119,7 +122,8 @@ void SolutionHistory<Scalar>::addState(
   if (history->size() == 0) {
     history->push_back(state_);
   } else {
-    Array<SolutionState<Scalar> >::iterator state_it = history->begin();
+    typename Teuchos::Array<SolutionState<Scalar> >::iterator
+      state_it = history->begin();
     for (state_it; state_it < history->end(); ++state_it) {
       if (state_ < state_it) break;
     }
@@ -132,7 +136,8 @@ void SolutionHistory<Scalar>::removeState(
   const RCP<SolutionState<Scalar> >& state_)
 {
   if (history->size() != 0) {
-    Array<SolutionState<Scalar> >::reverse_iterator state_it =history->rbegin();
+    typename Teuchos::Array<SolutionState<Scalar> >::reverse_iterator
+      state_it = history->rbegin();
     for (state_it; state_it < history->rend(); ++state_it) {
       if (state_ == state_it) break;
     }
@@ -149,7 +154,7 @@ void SolutionHistory<Scalar>::removeState(
 
 
 template<class Scalar>
-void SolutionHistory<Scalar>::removeState(const Scalar time) const
+void SolutionHistory<Scalar>::removeState(const Scalar time)
 {
   RCP<SolutionState<Scalar> > tmpState = findState(time);
   removeState(tmpState);
@@ -166,8 +171,9 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
     "        [Min, Max] = [" << minTime() << ", " << maxTime() << "]\n"
     "        time = "<< time <<"\n");
 
-  reltol = 1.0e-14;
-  Array<SolutionState<Scalar> >::iterator state_it = history->begin();
+  Scalar reltol = 1.0e-14;
+  typename Teuchos::Array<SolutionState<Scalar> >::iterator
+    state_it = history->begin();
   // Linear search
   for (state_it; state_it < history->end(); ++state_it) {
     if (abs((state_it.getTime()-time)/state_it.getTime()) < reltol) break;
@@ -175,7 +181,7 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
 
   TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->end(), std::logic_error,
     "Error - SolutionHistory::findState()!\n"
-    "        Did not find a SolutionState with time = " <<time<< std:endl);
+    "        Did not find a SolutionState with time = " <<time<< std::endl);
 
   return history[state_it];
 }
@@ -200,14 +206,14 @@ SolutionHistory<Scalar>::interpolateState(const Scalar time) const
 
 
 template<class Scalar>
-RCP<SolutionState<Scalar> > SolutionHistory::getCurrentState() const
+RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getCurrentState() const
 {
   return currentState;
 }
 
 
 template<class Scalar>
-RCP<SolutionState<Scalar> > SolutionHistory::getWorkingState() const
+RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getWorkingState() const
 {
   return workingState;
 }
@@ -222,7 +228,7 @@ RCP<SolutionState<Scalar> > SolutionHistory::getWorkingState() const
  *       equal to the current time step.
  */
 template<class Scalar>
-RCP<SolutionState<Scalar> > SolutionHistory::initWorkingState()
+RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::initWorkingState()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(history->size() == 0, std::logic_error,
     "Error - SolutionHistory::initWorkingState()\n"
@@ -238,12 +244,12 @@ RCP<SolutionState<Scalar> > SolutionHistory::initWorkingState()
 
 
 template<class Scalar>
-void SolutionHistory::promoteWorkingState()
+void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  RCP<MetaData<Scalar> > md = workingState->metaData;
-  md->time += dt;
+  RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData;
+  md->time += md->dt;
   md->iStep++;
-  md->nConsecutiveFailures = std::max(0,md->nConsecutiveFailures-1)
+  md->nConsecutiveFailures = std::max(0,md->nConsecutiveFailures-1);
   md->status = SolutionStatus::PASSING;
   md->isAccepted = true;
   md->isRestartable = true;
@@ -262,7 +268,6 @@ void SolutionHistory<Scalar>::setStorage(int storage)
     "Error - requested storage limit = " << storage_limit
     << " is smaller than the current number of states stored = "
     << history->size() << "!\n");
-  }
 }
 
 
@@ -295,13 +300,6 @@ Scalar SolutionHistory<Scalar>::maxTime() const
 
 
 template<class Scalar>
-int SolutionHistory<Scalar>::getInterplatorOrder() const
-{
-  return(interpolator->order());
-}
-
-
-template<class Scalar>
 std::string SolutionHistory<Scalar>::description() const
 {
   std::string name = "Tempus::SolutionHistory";
@@ -317,7 +315,7 @@ void SolutionHistory<Scalar>::describe(
   if ((Teuchos::as<int>(verbLevel)==Teuchos::as<int>(Teuchos::VERB_DEFAULT)) ||
       (Teuchos::as<int>(verbLevel)>=Teuchos::as<int>(Teuchos::VERB_LOW)    )  ){
     out << description() << "::describe" << std::endl;
-    out << "interpolator     = " << interpolator->description() << std::endl;
+    //out << "interpolator     = " << interpolator->description() << std::endl;
     out << "storage_limit    = " << storage_limit << std::endl;
     out << "historyPolicy    = " << historyPolicy << std::endl;
     out << "number of states = " << history->size() << std::endl;
@@ -344,7 +342,7 @@ void SolutionHistory<Scalar>::setParameterList(
 
   Teuchos::readVerboseObjectSublist(&*pList,this);
 
-  setInterpolator(interpolator);
+  //setInterpolator(interpolator);
 
   HistoryPolicy policy_ = PolicyValidator->getIntegralValue(
       *pList, Selection_name, Selection_default);
@@ -404,44 +402,44 @@ RCP<ParameterList> SolutionHistory<Scalar>::unsetParameterList()
 }
 
 
-template<class Scalar>
-void SolutionHistory<Scalar>::setInterpolator(
-  const RCP<InterpolatorBase<Scalar> >& interpolator_)
-{
-  if (interpolator_ == Teuchos::null) {
-    interpolator = linearInterpolator<Scalar>();
-  } else {
-    interpolator = interpolator_;
-  }
-  if (Teuchos::as<int>(this->getVerbLevel()) >=
-      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
-    *out << "interpolator = " << interpolator_->description() << std::endl;
-  }
-}
-
-template<class Scalar>
-RCP<InterpolatorBase<Scalar> >
-  SolutionHistory<Scalar>::getNonconstInterpolator()
-{
-  return interpolator;
-}
-
-template<class Scalar>
-RCP<const InterpolatorBase<Scalar> >
-  SolutionHistory<Scalar>::getInterpolator() const
-{
-  return interpolator;
-}
-
-template<class Scalar>
-RCP<InterpolatorBase<Scalar> > SolutionHistory<Scalar>::unSetInterpolator()
-{
-  RCP<InterpolatorBase<Scalar> > old_interpolator = interpolator;
-  interpolator = linearInterpolator<Scalar>();
-  return old_interpolator;
-}
+//template<class Scalar>
+//void SolutionHistory<Scalar>::setInterpolator(
+//  const RCP<InterpolatorBase<Scalar> >& interpolator_)
+//{
+//  if (interpolator_ == Teuchos::null) {
+//    interpolator = linearInterpolator<Scalar>();
+//  } else {
+//    interpolator = interpolator_;
+//  }
+//  if (Teuchos::as<int>(this->getVerbLevel()) >=
+//      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+//    RCP<Teuchos::FancyOStream> out = this->getOStream();
+//    Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
+//    *out << "interpolator = " << interpolator_->description() << std::endl;
+//  }
+//}
+//
+//template<class Scalar>
+//RCP<InterpolatorBase<Scalar> >
+//  SolutionHistory<Scalar>::getNonconstInterpolator()
+//{
+//  return interpolator;
+//}
+//
+//template<class Scalar>
+//RCP<const InterpolatorBase<Scalar> >
+//  SolutionHistory<Scalar>::getInterpolator() const
+//{
+//  return interpolator;
+//}
+//
+//template<class Scalar>
+//RCP<InterpolatorBase<Scalar> > SolutionHistory<Scalar>::unSetInterpolator()
+//{
+//  RCP<InterpolatorBase<Scalar> > old_interpolator = interpolator;
+//  interpolator = linearInterpolator<Scalar>();
+//  return old_interpolator;
+//}
 
 
 } // namespace Tempus
