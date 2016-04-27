@@ -1,5 +1,8 @@
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_IntegratorBasic_impl.hpp"
+
+#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
 
 namespace Tempus {
 
@@ -14,3 +17,5 @@ IntegratorBasic(
   const Teuchos::RCP<Thyra::VectorBase<double> >&xdotdot=Teuchos::null);
 
 } // namespace Tempus
+
+#endif
