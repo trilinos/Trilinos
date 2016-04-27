@@ -48,7 +48,7 @@
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_MeshFactory.hpp"
 
-#ifdef HAVE_IOSS
+#ifdef PANZER_HAVE_IOSS
 
 #include <stk_io/MeshReadWriteUtils.hpp>
 

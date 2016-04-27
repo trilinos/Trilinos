@@ -43,7 +43,7 @@
 #ifndef __Panzer_STK_ParameterListCallback_hpp__
 #define __Panzer_STK_ParameterListCallback_hpp__
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -124,6 +124,6 @@ private:
 
 #include "Panzer_STK_ParameterListCallback_impl.hpp"
 
-#endif // HAVE_TEKO
+#endif // PANZER_HAVE_TEKO
 
 #endif

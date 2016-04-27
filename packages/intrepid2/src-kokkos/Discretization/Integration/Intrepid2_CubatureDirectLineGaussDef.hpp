@@ -48,44 +48,42 @@
 
 namespace Intrepid2 {
   
-  template <typename ExecSpaceType>
-  CubatureDirectLineGauss<ExecSpaceType>::
+  template <typename SpT, typename PT, typename WT>
+  CubatureDirectLineGauss<SpT,PT,WT>::
   CubatureDirectLineGauss(const ordinal_type degree) 
-    : CubatureDirect<ExecSpaceType>(degree, 1) {
+    : CubatureDirect<SpT>(degree, 1) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 || 
                                   degree > Parameters::MaxCubatureDegreeEdge, std::out_of_range,
                                   ">>> ERROR (CubatureDirectLineGauss): No cubature rule implemented for the desired polynomial degree.");
 
-    typedef
-      Kokkos::View
-      <const value_type[Parameters::MaxIntegrationPoints][Parameters::MaxDimension],Kokkos::HostSpace> pointViewType;
-    
-    typedef
-      Kokkos::View
-      <const value_type[Parameters::MaxIntegrationPoints],Kokkos::HostSpace> weightViewType;
+    typedef Kokkos::DynRankView<const PT,Kokkos::LayoutRight,Kokkos::HostSpace> pointViewHostType;
+    typedef Kokkos::DynRankView<const WT,Kokkos::LayoutRight,Kokkos::HostSpace> weightViewHostType;
     
     this->cubatureData_.numPoints_ = cubatureDataStatic_[this->degree_].numPoints_;
     const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, this->cubatureData_.numPoints_);
     {
-      const pointViewType points(cubatureDataStatic_[this->degree_].points_[0]);
-      const auto src = Kokkos::subview(points, pointRange, Kokkos::ALL());
-      
-      this->cubatureData_.points_ = 
-        Kokkos::View<value_type*[Parameters::MaxDimension],ExecSpaceType>
-        ("CubatureDirectLineGauss::cubatureData_::points_", pointRange.second, Parameters::MaxDimension);
-      
-      Kokkos::deep_copy(this->cubatureData_.points_, src);
+      // src
+      const pointViewHostType points(&(cubatureDataStatic_[this->degree_].points_[0][0]), 
+                                     pointRange.second,
+                                     Parameters::MaxDimension);
+      // dst
+      this->cubatureData_.points_ = Kokkos::DynRankView<PT,SpT>("CubatureDirectLineGauss::cubatureData_::points_", 
+                                                                pointRange.second, 
+                                                                Parameters::MaxDimension);
+      // copy
+      Kokkos::deep_copy(this->cubatureData_.points_, points);
     }
     {
-      const weightViewType weights(cubatureDataStatic_[this->degree_].weights_);
-      const auto src = Kokkos::subview(weights, pointRange);
+      // src
+      const weightViewHostType weights(&(cubatureDataStatic_[this->degree_].weights_[0]),
+                                       pointRange.second);
       
-      this->cubatureData_.weights_ = 
-        Kokkos::View<value_type*,ExecSpaceType>
-        ("CubatureDirectLineGauss::cubatureData_::weights_", pointRange.second);
-      
-      Kokkos::deep_copy(this->cubatureData_.weights_, src);
+      // dst
+      this->cubatureData_.weights_ = Kokkos::DynRankView<WT,SpT>("CubatureDirectLineGauss::cubatureData_::weights_", 
+                                                                 pointRange.second);
+      // copy
+      Kokkos::deep_copy(this->cubatureData_.weights_, weights);
     }
   } 
   
@@ -103,9 +101,9 @@ namespace Intrepid2 {
     This static const member contains templates for Gauss(-Legendre) rules.
   */
   
-  template<typename ExecSpaceType>
-  const typename CubatureDirectLineGauss<ExecSpaceType>::CubatureDataStatic 
-  CubatureDirectLineGauss<ExecSpaceType>::
+  template<typename SpT, typename PT, typename WT>
+  const typename CubatureDirect<SpT,PT,WT>::CubatureDataStatic 
+  CubatureDirectLineGauss<SpT,PT,WT>::
   cubatureDataStatic_[cubatureDataStaticSize] = {
     // Collection of Gauss rules on [-1,1]
     // The rule with array index i is exact for polynomials up to order i

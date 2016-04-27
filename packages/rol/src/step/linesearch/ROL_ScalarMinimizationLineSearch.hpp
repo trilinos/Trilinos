@@ -171,7 +171,8 @@ private:
 
 public:
   // Constructor
-  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist )
+  ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
+    const Teuchos::RCP<ScalarMinimization<Real> > &sm = Teuchos::null  )
     : LineSearch<Real>(parlist) {
     Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
     Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
@@ -186,19 +187,28 @@ public:
     plist.sublist("Scalar Minimization").set("Type",type);
     plist.sublist("Scalar Minimization").sublist(type).set("Tolerance",tol);
     plist.sublist("Scalar Minimization").sublist(type).set("Iteration Limit",niter);
-    if ( type == "Brent's" ) {
-      sm_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(plist));
-    }
-    else if ( type == "Bisection" ) {
-      sm_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(plist));
-    }
-    else if ( type == "Golden Section" ) {
-      sm_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(plist));
+
+    if( sm == Teuchos::null ) { // No user-provided ScalarMinimization object
+
+      if ( type == "Brent's" ) {
+        sm_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(plist));
+      }
+      else if ( type == "Bisection" ) {
+        sm_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(plist));
+      }
+      else if ( type == "Golden Section" ) {
+        sm_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(plist));
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
+      }
     }
     else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> (ROL::ScalarMinimizationLineSearch): Undefined ScalarMinimization type!");
+      sm_ = sm;
     }
+
+
     // Status test for line search
     econd_ = StringToECurvatureCondition(list0.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     max_nfval_ = list0.get("Function Evaluation Limit",20);
@@ -258,6 +268,8 @@ public:
     nfval = 0, ngrad = 0;
     sm_->run(fval, alpha, nfval, ngrad, *phi, A, B, *test);
     ls_neval += nfval; ls_ngrad += ngrad;
+
+    LineSearch<Real>::setNextInitialAlpha(alpha); 
   }
 };
 

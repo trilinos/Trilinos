@@ -63,22 +63,17 @@ ElasticityData(const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
 	this->SetParallelStructure();
 	this->SetUpLocalIntrepidArrays();
 	this->ComputeLocalSystemMats();
-	this->ComputeLocalForceVec();
 	this->AssembleSystemMats();
+	//Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
+	std::vector<int> dbc_side {};
+	this->SetUpMyDBCInfo(true, dbc_side);
+	//Setup all loads 
+    	this->process_loading_information(parlist);
+	this->ComputeLocalForceVec();
 	this->AssembleRHSVector();
 	//
-	std::vector<int> dbc_side {0, 1, 2, 3};
-	this->SetUpMyDBCInfo(dbc_side);
 	this->EnforceDBC();
 	this->ConstructSolvers();
-   	//test_mats();
-}
-
-virtual Real funcRHS_2D(const Real &x1, const Real &x2, const int k) {
-	if(k==0)
- 		return 1.0;
-	else 
-		return 0.0; 
 }
 
 }; // class ElasticityData

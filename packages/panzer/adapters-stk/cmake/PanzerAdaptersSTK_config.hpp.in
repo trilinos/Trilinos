@@ -8,9 +8,9 @@
 #include "PanzerDiscFE_config.hpp"
 
 #cmakedefine PANZER_STK_DEBUG
-#cmakedefine HAVE_IOSS
-#cmakedefine HAVE_TEKO
-#cmakedefine HAVE_MUELU
-#cmakedefine HAVE_IFPACK2
+#cmakedefine PANZER_HAVE_IOSS
+#cmakedefine PANZER_HAVE_TEKO
+#cmakedefine PANZER_HAVE_MUELU
+#cmakedefine PANZER_HAVE_IFPACK2
 
 #endif

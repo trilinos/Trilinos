@@ -51,44 +51,46 @@
 
 namespace Intrepid2 {
 
-  template<typename SpT>
+  template<typename SpT, typename PT, typename WT>
   template<typename CT0, typename CT1>
-  CubatureTensor<SpT>::
+  CubatureTensor<SpT,PT,WT>::
   CubatureTensor( const CT0 ct0,
                   const CT1 ct1 ) 
     : numCubatures_(2),
-      dimension_(ct0.getDimension()+ct1.getDimension()) { 
+      dimension_(ct0.getDimension()+ct1.getDimension()),
+      impl_(this) {
     cubatures_[0] = ct0;
     cubatures_[1] = ct1;
   }
 
 
-  template<typename SpT>
+  template<typename SpT, typename PT, typename WT>
   template<typename CT0, typename CT1, typename CT2>
-  CubatureTensor<SpT>::
+  CubatureTensor<SpT,PT,WT>::
   CubatureTensor( const CT0 ct0,
                   const CT1 ct1,
                   const CT2 ct2 ) 
     : numCubatures_(3),
-      dimension_(ct0.getDimension()+ct1.getDimension()+ct2.getDimension()) { 
+      dimension_(ct0.getDimension()+ct1.getDimension()+ct2.getDimension()),
+      impl_(this) { 
     cubatures_[0] = ct0;
     cubatures_[1] = ct1;
     cubatures_[2] = ct2;
   }
 
 
-  template<typename SpT>
+  template<typename SpT, typename PT, typename WT>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void 
-  CubatureTensor<SpT>::
+  CubatureTensor<SpT,PT,WT>::Internal::
   getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // check size of cubPoints and cubWeights
-    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < getNumPoints() ||
-                                  cubPoints.dimension(1)  < getDimension() ||
-                                  cubWeights.dimension(0) < getNumPoints(), std::out_of_range,
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0)  < obj_->getNumPoints() ||
+                                  cubPoints.dimension(1)  < obj_->getDimension() ||
+                                  cubWeights.dimension(0) < obj_->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
     typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
@@ -100,16 +102,16 @@ namespace Intrepid2 {
 
     // this temporary allocation can be member of cubature; for now, let's do this way.
     // this is cubature setup on the reference cell and called for tensor elements.
-    for (auto k=0;k<numCubatures_;++k) {
-      const auto cub = cubatures_[k];
+    for (auto k=0;k<obj_->numCubatures_;++k) {
+      const auto &cub = obj_->cubatures_[k];
       tmpPoints [k] = cubPointViewType ("CubatureTensor::getCubature::tmpPoints",  cub.getNumPoints(), cub.getDimension());
       tmpWeights[k] = cubWeightViewType("CubatureTensor::getCubature::tmpWeights", cub.getNumPoints());
       cub.getCubature(tmpPoints[k], tmpWeights[k]);
     }      
     
     {
-      const auto npts = getNumPoints();
-      const auto dim = getDimension();
+      const auto npts = obj_->getNumPoints();
+      const auto dim = obj_->getDimension();
       
       const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, npts);
       const Kokkos::pair<ordinal_type,ordinal_type> dimRange(0, dim);
@@ -122,14 +124,14 @@ namespace Intrepid2 {
     // fill tensor cubature
     {
       ordinal_type offset[Parameters::MaxDimension+1] = {};
-      for (auto k=0;k<numCubatures_;++k) {
-        offset[k+1] = offset[k] + cubatures_[k].getDimension();
+      for (auto k=0;k<obj_->numCubatures_;++k) {
+        offset[k+1] = offset[k] + obj_->cubatures_[k].getDimension();
       }
       ordinal_type ii = 0, i[3] = {};
-      switch (numCubatures_) {
+      switch (obj_->numCubatures_) {
       case 2: {
-        const ordinal_type npts[] = { cubatures_[0].getNumPoints(), cubatures_[1].getNumPoints() };
-        const ordinal_type dim [] = { cubatures_[0].getDimension(), cubatures_[1].getDimension() };
+        const ordinal_type npts[] = { obj_->cubatures_[0].getNumPoints(), obj_->cubatures_[1].getNumPoints() };
+        const ordinal_type dim [] = { obj_->cubatures_[0].getDimension(), obj_->cubatures_[1].getDimension() };
 
         for (i[1]=0;i[1]<npts[1];++i[1])
           for (i[0]=0;i[0]<npts[0];++i[0]) {
@@ -143,8 +145,8 @@ namespace Intrepid2 {
         break;
       }
       case 3: {
-        const ordinal_type npts[] = { cubatures_[0].getNumPoints(), cubatures_[1].getNumPoints(), cubatures_[2].getNumPoints() };
-        const ordinal_type dim [] = { cubatures_[0].getDimension(), cubatures_[1].getDimension(), cubatures_[1].getDimension() };
+        const ordinal_type npts[] = { obj_->cubatures_[0].getNumPoints(), obj_->cubatures_[1].getNumPoints(), obj_->cubatures_[2].getNumPoints() };
+        const ordinal_type dim [] = { obj_->cubatures_[0].getDimension(), obj_->cubatures_[1].getDimension(), obj_->cubatures_[2].getDimension() };
 
         for (i[2]=0;i[2]<npts[2];++i[2])
           for (i[1]=0;i[1]<npts[1];++i[1])
@@ -159,61 +161,11 @@ namespace Intrepid2 {
         break;
       }
       default: {
-        INTREPID2_TEST_FOR_EXCEPTION( numCubatures_ != 2 || numCubatures_ != 3, std::runtime_error,
+        INTREPID2_TEST_FOR_EXCEPTION( obj_->numCubatures_ != 2 || obj_->numCubatures_ != 3, std::runtime_error,
                                       ">>> ERROR (CubatureTensor::getCubature): CubatureTensor supports only 2 or 3 component direct cubatures.");
       }
       }
     }
-  }
-
-  
-  template<typename SpT>
-  template<typename cubPointValueType,  class ...cubPointProperties,
-           typename cubWeightValueType, class ...cubWeightProperties,
-           typename cellCoordValueType, class ...cellCoordProperties>
-  void
-  CubatureTensor<SpT>::
-  getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-               Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-               Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const {
-    INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                  ">>> ERROR (CubatureTensor::getCubature): Cubature defined in reference space calling method for physical space cubature.");
-  }
-
-
-  template<typename SpT>
-  ordinal_type
-  CubatureTensor<SpT>::
-  getNumPoints() const {
-    ordinal_type numCubPoints = 1;
-    for (auto i=0;i<numCubatures_;++i) 
-      numCubPoints *= cubatures_[i].getNumPoints();
-    return numCubPoints;
-  }
-
-
-  template<typename SpT>
-  ordinal_type
-  CubatureTensor<SpT>::
-  getDimension() const {
-    return dimension_;
-  }
-
-
-  template<typename SpT>
-  ordinal_type
-  CubatureTensor<SpT>::
-  getNumCubatures() const {
-    return numCubatures_;
-  }
-
-
-  template<typename SpT>
-  void
-  CubatureTensor<SpT>::
-  getAccuracy( ordinal_type *accuracy ) const { 
-    for (auto i=0;i<numCubatures_;++i) 
-      accuracy[i] = cubatures_[i].getAccuracy();
   }
 
 } // end namespace Intrepid2

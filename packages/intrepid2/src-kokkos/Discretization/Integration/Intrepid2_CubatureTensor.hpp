@@ -58,101 +58,152 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureTensor
       \brief Defines tensor-product cubature (integration) rules in Intrepid.
   */
-  template<typename ExecSpaceType = void>
-  class CubatureTensor : public Cubature<ExecSpaceType> {
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureTensor
+    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
   private:
 
-    /** \brief Array of cubature rules, stored as FieldContainers.
+    /** \brief Array of cubature rules.
      */
     ordinal_type numCubatures_;
 
-    CubatureDirect<ExecSpaceType> cubatures_[Parameters::MaxDimension];
-    
+    CubatureDirect<ExecSpaceType,pointValueType,weightValueType> cubatures_[Parameters::MaxDimension];
+
     /** \brief Dimension of integration domain.
      */
     ordinal_type dimension_;
-  
+
   public:
 
-    CubatureTensor() = delete;
-    ~CubatureTensor() = default;
+    class Internal {
+    private:
+      CubatureTensor *obj_;
 
+    public:
+      Internal(CubatureTensor *obj)
+        : obj_(obj) {}
+
+      /** \brief Returns cubature points and weights
+          (return arrays must be pre-sized/pre-allocated).
+
+          \param cubPoints       [out]     - Vector containing the cubature points.
+          \param cubWeights      [out]     - Vector of corresponding cubature weights.
+      */
+
+      template<typename cubPointValueType,  class ...cubPointProperties,
+               typename cubWeightValueType, class ...cubWeightProperties>
+      void
+      getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
+                   Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
+
+    };
+    Internal impl_;
+
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
+    virtual
+    void
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights ) const {
+      impl_.getCubature( cubPoints,
+                         cubWeights );
+    }
+
+    /** \brief Returns the number of cubature points.
+     */
+    virtual
+    ordinal_type
+    getNumPoints() const {
+      ordinal_type numCubPoints = 1;
+      for (auto i=0;i<numCubatures_;++i)
+        numCubPoints *= cubatures_[i].getNumPoints();
+      return numCubPoints;
+    }
+
+    /** \brief Returns dimension of integration domain.
+     */
+    virtual
+    ordinal_type
+    getDimension() const {
+      return dimension_;
+    }
+
+    /** \brief Returns cubature name.
+     */
+    virtual
+    const char*
+    getName() const {
+      return "CubatureTensor";
+    }
+
+    /** \brief Return the number of cubatures.
+     */
+    ordinal_type getNumCubatures() const {
+      return numCubatures_;
+    }
+
+    /** \brief Returns max. degree of polynomials that are integrated exactly.
+     */
+    void getAccuracy( ordinal_type *accuracy ) const {
+      for (auto i=0;i<numCubatures_;++i)
+        accuracy[i] = cubatures_[i].getAccuracy();
+    }
+
+    CubatureTensor() 
+      : numCubatures_(0),
+        dimension_(0),
+        impl_(this) {}
+
+    CubatureTensor(const CubatureTensor &b)
+      : numCubatures_(b.numCubatures_),
+        dimension_(b.dimension_),
+        impl_(this) {
+      for (auto i=0;i<numCubatures_;++i) 
+        cubatures_[i] = b.cubatures_[i];
+    }
+    virtual~CubatureTensor() = default;
 
     /** \brief Constructor.
-        
+
         \param cubature1        [in]     - First direct cubature rule.
         \param cubature2        [in]     - Second direct cubature rule.
     */
-    template<typename CubatureType0, 
+    template<typename CubatureType0,
              typename CubatureType1>
     CubatureTensor( const CubatureType0 cubature0,
                     const CubatureType1 cubature1 );
-    
+
     /** \brief Constructor.
-        
+
         \param cubature1        [in]     - First direct cubature rule.
         \param cubature2        [in]     - Second direct cubature rule.
         \param cubature3        [in]     - Third direct cubature rule.
     */
-    template<typename CubatureType0, 
+    template<typename CubatureType0,
              typename CubatureType1,
              typename CubatureType2>
     CubatureTensor( const CubatureType0 cubature0,
                     const CubatureType1 cubature1,
                     const CubatureType2 cubature2 );
-    
-    
-    /** \brief Returns cubature points and weights
-        (return arrays must be pre-sized/pre-allocated).
-        
-        \param cubPoints       [out]     - Vector containing the cubature points.
-        \param cubWeights      [out]     - Vector of corresponding cubature weights.
-    */
 
-    template<typename cubPointValueType,  class ...cubPointProperties,
-             typename cubWeightValueType, class ...cubWeightProperties>
-    void
-    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const;
+    CubatureTensor& operator=(const CubatureTensor &b) {
+      if (this != &b) {
+        Cubature<ExecSpaceType,pointValueType,weightValueType>::operator= (b);
+        numCubatures_ = b.numCubatures_;
+        for (auto i=0;i<numCubatures_;++i)
+          cubatures_[i] = b.cubatures_[i];
+        dimension_ = b.dimension_;
+        // do not copy impl
+      }
+      return *this;
+    }
 
-    
-    /** \brief Returns cubature points and weights.
-        Method for physical space cubature, throws an exception.
-        
-        \param cubPoints             [out]        - Array containing the cubature points.
-        \param cubWeights            [out]        - Array of corresponding cubature weights.
-        \param cellCoords             [in]        - Array of cell coordinates
-    */
-    template<typename cubPointValueType,  class ...cubPointProperties,
-             typename cubWeightValueType, class ...cubWeightProperties,
-             typename cellCoordValueType, class ...cellCoordProperties>
-    void
-    getCubature( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
-                 Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights,
-                 Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...> cellCoords ) const;
-    
-    /** \brief Returns the number of cubature points.
-     */
-    ordinal_type getNumPoints() const;
-    
-    /** \brief Returns dimension of integration domain.
-     */
-    ordinal_type getDimension() const;
-
-    /** \brief Returns cubature name.
-     */
-    const char* getName() const;
-
-    /** \brief Return the number of cubatures.
-     */
-    ordinal_type getNumCubatures() const;
-    
-    /** \brief Returns max. degree of polynomials that are integrated exactly.
-     */
-    void getAccuracy( ordinal_type *accuracy ) const;
   };
-  
-  
+
+
 } // end namespace Intrepid2
 
 

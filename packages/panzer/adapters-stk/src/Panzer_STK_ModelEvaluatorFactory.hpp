@@ -70,7 +70,7 @@
 
 #include "Thyra_EpetraModelEvaluator.hpp"
 
-#ifdef HAVE_TEKO 
+#ifdef PANZER_HAVE_TEKO 
 #include "Teko_RequestHandler.hpp"
 #endif
 
@@ -256,24 +256,10 @@ namespace panzer_stk_classic {
                      const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                      const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                      const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
-                     #ifdef HAVE_TEKO 
+                     #ifdef PANZER_HAVE_TEKO 
                      , const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null
                      #endif 
                      ) const;
-
-    static Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-    buildLOWSFactory(bool blockedAssembly,
-                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                     const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                     #ifdef HAVE_TEKO 
-                     const Teuchos::RCP<Teko::RequestHandler> & req_handler=Teuchos::null,
-                     #endif 
-                     bool writeCoordinates=false,
-                     bool writeTopo=false
-                     );
 
     //! Get the workset container associated with the mesh database.
     Teuchos::RCP<panzer::WorksetContainer> getWorksetContainer() const 
@@ -321,22 +307,6 @@ namespace panzer_stk_classic {
                                            const Teuchos::ParameterList & closure_models,
                                            int workset_size, Teuchos::ParameterList & user_data) const;
 
-    /** Build LOWS factory.
-      */
-    template <typename GO> static
-    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > 
-    buildLOWSFactory(bool blockedAssembly,
-                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                     const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
-                     const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                     const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                     const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                     #ifdef HAVE_TEKO 
-                     const Teuchos::RCP<Teko::RequestHandler> & req_handler,
-                     #endif 
-                     bool writeCoordinates=false,
-                     bool writeTopo=false
-                     );
 
   private:
 

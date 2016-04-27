@@ -49,6 +49,8 @@
 #ifndef __INTREPID2_BASIS_DEF_HPP__
 #define __INTREPID2_BASIS_DEF_HPP__
 
+#include <stdexcept>
+
 namespace Intrepid2 {
 
   //--------------------------------------------------------------------------------------------//
@@ -57,7 +59,6 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
-  
   ///
   ///    functions for orders, cardinality and etc. of differential operators
   ///
@@ -443,7 +444,7 @@ namespace Intrepid2 {
   void getValues_HGRAD_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
-                             const shards::CellTopology &cellTopo,
+                             const shards::CellTopology  cellTopo,
                              const ordinal_type          basisCard ) {
     const auto spaceDim = cellTopo.getDimension();
 
@@ -562,7 +563,7 @@ namespace Intrepid2 {
   void getValues_HCURL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
-                             const shards::CellTopology &cellTopo,
+                             const shards::CellTopology  cellTopo,
                              const ordinal_type          basisCard ) {
     
     const auto spaceDim = cellTopo.getDimension();
@@ -647,7 +648,7 @@ namespace Intrepid2 {
   void getValues_HDIV_Args( const outputValueViewType   outputValues,
                             const inputPointViewType    inputPoints,
                             const EOperator             operatorType,
-                            const shards::CellTopology &cellTopo,
+                            const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard ) {
     
     const auto spaceDim = cellTopo.getDimension();

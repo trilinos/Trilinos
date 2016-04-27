@@ -1500,7 +1500,7 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm
-                   #ifdef HAVE_TEKO
+                   #ifdef PANZER_HAVE_TEKO
                    , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
                    #endif
                    ) const
@@ -1522,60 +1522,15 @@ namespace panzer_stk_classic {
       writeTopo = p.sublist("Options").get<bool>("Write Topology");
 
 
-    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params,
-                            #ifdef HAVE_TEKO
+    return panzer_stk_classic::buildLOWSFactory(
+                            blockedAssembly,globalIndexer,conn_manager,
+                            Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
+                            #ifdef PANZER_HAVE_TEKO
                             reqHandler,
                             #endif
                             writeCoordinates,
                             writeTopo
                             );
-  }
-
-  template<typename ScalarT>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
-  buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
-                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                   #ifdef HAVE_TEKO
-                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
-                   #endif
-                   bool writeCoordinates,
-                   bool writeTopo
-                   )
-  {
-    return panzer_stk_classic::buildLOWSFactory(blockedAssembly, globalIndexer, conn_manager,
-                                                Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
-                                                #ifdef HAVE_TEKO
-                                                reqHandler,
-                                                #endif
-                                                writeCoordinates, writeTopo);
-  }
-
-  template<typename ScalarT>
-  template<typename GO>
-  Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > ModelEvaluatorFactory<ScalarT>::
-  buildLOWSFactory(bool blockedAssembly,
-                   const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer,
-                   const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
-                   const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
-                   const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                   #ifdef HAVE_TEKO
-                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
-                   #endif
-                   bool writeCoordinates,
-                   bool writeTopo
-                   )
-  {
-    return panzer_stk_classic::buildLOWSFactory<GO>(blockedAssembly, globalIndexer, stkConn_manager,
-                                                    Teuchos::as<int>(mesh->getDimension()), mpi_comm, strat_params,
-                                                    #ifdef HAVE_TEKO
-                                                    reqHandler,
-                                                    #endif
-                                                    writeCoordinates, writeTopo);
   }
 
   template<typename ScalarT>

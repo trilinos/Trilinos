@@ -81,7 +81,6 @@ namespace Intrepid2 {
     
     template<typename ValueType, typename DeviceSpaceType>
     int Integration_Test03(const bool verbose) {
-      typedef ValueType value_type;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -119,8 +118,13 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 2D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+      typedef ValueType pointValueType;
+      typedef ValueType weightValueType;
+      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureTensor<DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
 
       const auto tol = 10.0 * Parameters::Tolerence;
 
@@ -158,17 +162,17 @@ namespace Intrepid2 {
         
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          const auto line = CubatureDirectLineGauss<DeviceSpaceType>(cubDeg);
-          CubatureTensor<DeviceSpaceType> quadCub( line, line );
-          
+          CubatureLineType line(cubDeg);
+          CubatureTensorType quadCub( line, line );
+
           ordinal_type cnt = 0;
           for (auto xDeg=0;xDeg<=cubDeg;++xDeg) 
             for (auto yDeg=0;yDeg<=(cubDeg-xDeg);++yDeg,++cnt) 
-              testInt(cubDeg, cnt) = computeIntegralOfMonomial<value_type>(quadCub,
-                                                                           cubPoints,
-                                                                           cubWeights,
-                                                                           xDeg, 
-                                                                           yDeg);
+              testInt(cubDeg, cnt) = computeIntegralOfMonomial<ValueType>(quadCub,
+                                                                          cubPoints,
+                                                                          cubWeights,
+                                                                          xDeg, 
+                                                                          yDeg);
         }
 
         // get analytic values

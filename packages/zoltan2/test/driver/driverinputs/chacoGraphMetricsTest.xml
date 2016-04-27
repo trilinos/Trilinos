@@ -1,0 +1,74 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="chacoEdgeWeight">
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="../../../../../packages/zoltan/test/ch_ewgt"/>
+    <Parameter name="input file" type="string" value="ewgt"/>
+    <Parameter name="file type" type="string" value="Chaco"/>
+  </ParameterList>
+  
+  <ParameterList name="Problem1">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="num_global_parts" type="string" value="4"/>
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+    </ParameterList>
+    
+    <ParameterList name="Graph Metrics">
+      <ParameterList name="weight 0">
+	<ParameterList name="global sum">
+	  <Parameter name="lower" type="double" value="39.0"/>
+	  <Parameter name="upper" type="double" value="39.0"/>
+	</ParameterList>
+	<ParameterList name="global maximum">
+	  <Parameter name="lower" type="double" value="23.0"/>
+	  <Parameter name="upper" type="double" value="23.0"/>
+	</ParameterList>
+      </ParameterList>
+    </ParameterList>
+      
+  </ParameterList>
+</ParameterList>

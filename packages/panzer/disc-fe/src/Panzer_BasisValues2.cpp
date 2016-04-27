@@ -784,5 +784,8 @@ template class BasisValues2<SCALAR>;
 
 BASIS_VALUES_INSTANTIATION(panzer::Traits::RealType)
 BASIS_VALUES_INSTANTIATION(panzer::Traits::FadType)
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+BASIS_VALUES_INSTANTIATION(panzer::Traits::HessianType)
+#endif
 
 } // namespace panzer

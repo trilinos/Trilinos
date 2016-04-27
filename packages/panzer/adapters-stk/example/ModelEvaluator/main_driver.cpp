@@ -58,19 +58,20 @@
 #include "Phalanx_KokkosUtilities.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
-#include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_ClosureModel_Factory_TemplateManager.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
+#include "Panzer_ModelEvaluator.hpp"
 
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SetupLOWSFactory.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_STK_ModelEvaluatorFactory.hpp"
 #include "Panzer_STK_IOClosureModel_Factory_TemplateBuilder.hpp"
 #include "Panzer_STK_ResponseEvaluatorFactory_SolutionWriter.hpp"
 
@@ -268,8 +269,9 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////
     
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
-        = panzer_stk_classic::ModelEvaluatorFactory<double>::buildLOWSFactory(false, dofManager, conn_manager, 
-                                                                              mesh, comm, lin_solver_pl,Teuchos::null);
+        = panzer_stk_classic::buildLOWSFactory(false, dofManager, conn_manager, 
+                                               Teuchos::as<int>(mesh->getDimension()), 
+                                               comm, lin_solver_pl,Teuchos::null);
   
     // build and setup model evaluatorlinear solver 
     /////////////////////////////////////////////////////////////
