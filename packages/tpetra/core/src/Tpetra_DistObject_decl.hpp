@@ -513,14 +513,19 @@ namespace Tpetra {
 
     virtual void
     doTransferNew (const SrcDistObject& src,
-                   CombineMode CM,
-                   size_t numSameIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
-                   Distributor &distor,
-                   ReverseOption revOp);
+                   const CombineMode CM,
+                   const size_t numSameIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& permuteToLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& permuteFromLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& remoteLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& exportLIDs,
+                   Distributor& distor,
+                   const ReverseOption revOp,
+                   const bool commOnHost);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///

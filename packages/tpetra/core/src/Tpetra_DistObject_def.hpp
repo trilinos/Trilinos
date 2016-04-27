@@ -440,14 +440,48 @@ namespace Tpetra {
               const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
               const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
               const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
-              Distributor &distor,
+              Distributor& distor,
               ReverseOption revOp)
   {
-    if (this->useNewInterface()) {
-      doTransferNew(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+    typedef LocalOrdinal LO;
+    typedef device_type DT;
+
+    if (this->useNewInterface ()) {
+      const bool commOnHost = false;
+
+      // Convert arguments to Kokkos::DualView.  This currently
+      // involves deep copy, either to host or to device (depending on
+      // commOnHost).  At some point, we need to change the interface
+      // of doTransfer so it takes DualView (or just View) rather than
+      // Teuchos::ArrayView, so that we won't need this deep copy.
+      //
+      // We don't need to sync the arguments.  commOnHost determines
+      // where the most recent version lives.
+      Kokkos::DualView<LO*, DT> permuteToLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (permuteToLIDs_,
+                                              "permuteToLIDs",
+                                              commOnHost);
+      Kokkos::DualView<LO*, DT> permuteFromLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (permuteFromLIDs_,
+                                              "permuteFromLIDs",
+                                              commOnHost);
+      // No need to sync this.  packAndPrepareNew will use it to
+      // determine where to pack (in host or device memory).
+      Kokkos::DualView<LO*, DT> remoteLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (remoteLIDs_,
+                                              "remoteLIDs",
+                                              commOnHost);
+      Kokkos::DualView<LO*, DT> exportLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (exportLIDs_,
+                                              "exportLIDs",
+                                              commOnHost);
+
+      doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
+                     remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
-      doTransferOld(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+      doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
+                     remoteLIDs_, exportLIDs_, distor, revOp);
     }
   }
 
@@ -820,61 +854,41 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   doTransferNew (const SrcDistObject& src,
-                 CombineMode CM,
-                 size_t numSameIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
-                 Distributor &distor,
-                 ReverseOption revOp)
+                 const CombineMode CM,
+                 const size_t numSameIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& permuteToLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& permuteFromLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& remoteLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& exportLIDs,
+                 Distributor& distor,
+                 const ReverseOption revOp,
+                 const bool commOnHost)
   {
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     typedef LocalOrdinal LO;
-    typedef typename Kokkos::DualView<LO*, device_type>::t_dev::memory_space dev_memory_space;
-    typedef typename Kokkos::DualView<LO*, device_type>::t_host::memory_space host_memory_space;
-
-    const bool packOnHost = false;
+    typedef typename Kokkos::DualView<LO*,
+      device_type>::t_dev::memory_space dev_memory_space;
+    typedef typename Kokkos::DualView<LO*,
+      device_type>::t_host::memory_space host_memory_space;
     const bool debug = false;
 
     if (debug) {
       std::ostringstream os;
-      os << ">>> DistObject::doTransferNew: remoteLIDs_.size() = "
-         << remoteLIDs_.size () << std::endl;
+      os << ">>> DistObject::doTransferNew: remoteLIDs.size() = "
+         << remoteLIDs.dimension_0 () << std::endl;
       std::cerr << os.str ();
     }
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-    // Convert arguments to Kokkos::DualView.  This currently involves
-    // deep copy, either to host or to device (depending on
-    // packOnHost).  At some point, we need to change the interface of
-    // doTransferNew so it takes DualView (or just View) rather than
-    // Teuchos::ArrayView, so that we won't need this deep copy.
-    //
-    // We don't need to sync the arguments.  packOnHost determines
-    // where the most recent version lives.
-    Kokkos::DualView<LO*, device_type> permuteToLIDs =
-      getDualViewCopyFromArrayView<LO, device_type> (permuteToLIDs_,
-                                                     "permuteToLIDs",
-                                                     packOnHost);
-    Kokkos::DualView<LO*, device_type> permuteFromLIDs =
-      getDualViewCopyFromArrayView<LO, device_type> (permuteFromLIDs_,
-                                                     "permuteFromLIDs",
-                                                     packOnHost);
-    // No need to sync this.  packAndPrepareNew will use it to
-    // determine where to pack (in host or device memory).
-    Kokkos::DualView<LO*, device_type> remoteLIDs =
-      getDualViewCopyFromArrayView<LO, device_type> (remoteLIDs_, "remoteLIDs",
-                                                     packOnHost);
-    Kokkos::DualView<LO*, device_type> exportLIDs =
-      getDualViewCopyFromArrayView<LO, device_type> (exportLIDs_, "exportLIDs",
-                                                     packOnHost);
 
     if (debug) {
       std::cerr << ">>> 1. checkSizes" << std::endl;
@@ -963,11 +977,11 @@ namespace Tpetra {
             "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
           std::cerr << os.str ();
         }
-        // Ask the source to pack data.  Also ask it whether there are a
-        // constant number of packets per element (constantNumPackets is
-        // an output argument).  If there are, constantNumPackets will
-        // come back nonzero.  Otherwise, the source will fill the
-        // numExportPacketsPerLID_ array.
+        // Ask the source to pack data.  Also ask it whether there are
+        // a constant number of packets per element
+        // (constantNumPackets is an output argument).  If there are,
+        // constantNumPackets will come back nonzero.  Otherwise, the
+        // source will fill the numExportPacketsPerLID_ array.
         packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
                            constantNumPackets, distor);
         if (debug) {
@@ -1034,7 +1048,8 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             if (debug) {
-              std::cerr << ">>> 7.1. Variable # packets / LID: first comm" << std::endl;
+              std::cerr << ">>> 7.1. Variable # packets / LID: first comm"
+                        << std::endl;
             }
             numExportPacketsPerLID_.template sync<host_memory_space> ();
             numImportPacketsPerLID_.template sync<host_memory_space> ();
@@ -1069,7 +1084,7 @@ namespace Tpetra {
               std::cerr << ">>> 7.3. Second comm" << std::endl;
             }
 
-            if (packOnHost) {
+            if (commOnHost) {
               numExportPacketsPerLID_.template sync<host_memory_space> ();
               numImportPacketsPerLID_.template sync<host_memory_space> ();
               // imports_ is for output only, so we don't need to sync it.
@@ -1106,7 +1121,7 @@ namespace Tpetra {
                  << std::endl;
               std::cerr << os.str ();
             }
-            if (packOnHost) {
+            if (commOnHost) {
               // imports_ is for output only, so we don't need to sync it.
               imports_.template modify<host_memory_space> ();
               distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
@@ -1167,7 +1182,7 @@ namespace Tpetra {
               std::cerr << ">>> 7.3. Second comm" << std::endl;
             }
 
-            if (packOnHost) {
+            if (commOnHost) {
               numExportPacketsPerLID_.template sync<host_memory_space> ();
               numImportPacketsPerLID_.template sync<host_memory_space> ();
               // imports_ is for output only, so we don't need to sync it.
@@ -1204,7 +1219,7 @@ namespace Tpetra {
               std::cerr << os.str ();
             }
 
-            if (packOnHost) {
+            if (commOnHost) {
               // imports_ is for output only, so we don't need to sync it.
               imports_.template modify<host_memory_space> ();
               distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
@@ -1236,7 +1251,7 @@ namespace Tpetra {
           //
           // FIXME (mfh 26 Apr 2016) Check that all input DualViews
           // were most recently updated in the same memory space, and
-          // sync them to the same place (based on packOnHost) if not.
+          // sync them to the same place (based on commOnHost) if not.
           unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
                                constantNumPackets, distor, CM);
         }
