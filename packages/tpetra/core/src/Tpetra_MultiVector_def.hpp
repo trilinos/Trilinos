@@ -768,8 +768,8 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
-    typedef typename dual_view_type::t_dev::memory_space dev_memory_space;
-    typedef typename dual_view_type::t_host::memory_space host_memory_space;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    typedef typename dual_view_type::t_host::memory_space HMS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
 
@@ -792,12 +792,12 @@ namespace Tpetra {
       srcDualView.modified_host () > srcDualView.modified_device ();
     dual_view_type tgtDualView = this->getDualView ();
     if (copyOnHost) {
-      tgtDualView.template sync<host_memory_space> ();
-      tgtDualView.template modify<host_memory_space> ();
+      tgtDualView.template sync<HMS> ();
+      tgtDualView.template modify<HMS> ();
     }
     else {
-      tgtDualView.template sync<dev_memory_space> ();
-      tgtDualView.template modify<dev_memory_space> ();
+      tgtDualView.template sync<DMS> ();
+      tgtDualView.template modify<DMS> ();
     }
 
     // TODO (mfh 15 Sep 2013) When we replace
@@ -822,8 +822,8 @@ namespace Tpetra {
     if (numSameIDs > 0) {
       const std::pair<size_t, size_t> rows (0, numSameIDs);
       if (copyOnHost) {
-        auto tgt_h = tgtDualView.template view<host_memory_space> ();
-        auto src_h = create_const_view (srcDualView.template view<host_memory_space> ());
+        auto tgt_h = tgtDualView.template view<HMS> ();
+        auto src_h = create_const_view (srcDualView.template view<HMS> ());
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -836,8 +836,8 @@ namespace Tpetra {
         }
       }
       else { // copy on device
-        auto tgt_d = tgtDualView.template view<dev_memory_space> ();
-        auto src_d = create_const_view (srcDualView.template view<dev_memory_space> ());
+        auto tgt_d = tgtDualView.template view<DMS> ();
+        auto src_d = create_const_view (srcDualView.template view<DMS> ());
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -888,12 +888,12 @@ namespace Tpetra {
     if (nonConstStride) {
       if (this->whichVectors_.size () == 0) {
         Kokkos::DualView<size_t*, device_type> tmpTgt ("tgtWhichVecs", numCols);
-        tmpTgt.template modify<host_memory_space> ();
+        tmpTgt.template modify<HMS> ();
         for (size_t j = 0; j < numCols; ++j) {
           tmpTgt.h_view(j) = j;
         }
         if (! copyOnHost) {
-          tmpTgt.template sync<dev_memory_space> ();
+          tmpTgt.template sync<DMS> ();
         }
         tgtWhichVecs = tmpTgt;
       }
@@ -913,12 +913,12 @@ namespace Tpetra {
 
       if (sourceMV.whichVectors_.size () == 0) {
         Kokkos::DualView<size_t*, device_type> tmpSrc ("srcWhichVecs", numCols);
-        tmpSrc.template modify<host_memory_space> ();
+        tmpSrc.template modify<HMS> ();
         for (size_t j = 0; j < numCols; ++j) {
           tmpSrc.h_view(j) = j;
         }
         if (! copyOnHost) {
-          tmpSrc.template sync<dev_memory_space> ();
+          tmpSrc.template sync<DMS> ();
         }
         srcWhichVecs = tmpSrc;
       }
@@ -939,20 +939,22 @@ namespace Tpetra {
     }
 
     if (copyOnHost) {
-      auto tgt_h = tgtDualView.template view<host_memory_space> ();
-      auto src_h = srcDualView.template view<host_memory_space> ();
-      permuteToLIDs_nc.template sync<host_memory_space> ();
-      auto permuteToLIDs_h = permuteToLIDs_nc.template view<host_memory_space> ();
-      permuteFromLIDs_nc.template sync<host_memory_space> ();
-      auto permuteFromLIDs_h = permuteFromLIDs_nc.template view<host_memory_space> ();
+      auto tgt_h = tgtDualView.template view<HMS> ();
+      auto src_h = create_const_view (srcDualView.template view<HMS> ());
+      permuteToLIDs_nc.template sync<HMS> ();
+      auto permuteToLIDs_h =
+        create_const_view (permuteToLIDs_nc.template view<HMS> ());
+      permuteFromLIDs_nc.template sync<HMS> ();
+      auto permuteFromLIDs_h =
+        create_const_view (permuteFromLIDs_nc.template view<HMS> ());
 
       if (nonConstStride) {
         // No need to sync first, because copyOnHost argument to
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_h =
-          create_const_view (tgtWhichVecs.template view<host_memory_space> ());
+          create_const_view (tgtWhichVecs.template view<HMS> ());
         auto srcWhichVecs_h =
-          create_const_view (srcWhichVecs.template view<host_memory_space> ());
+          create_const_view (srcWhichVecs.template view<HMS> ());
         permute_array_multi_column_variable_stride (tgt_h, src_h,
                                                     permuteToLIDs_h,
                                                     permuteFromLIDs_h,
@@ -965,20 +967,22 @@ namespace Tpetra {
       }
     }
     else { // copy on device
-      auto tgt_d = tgtDualView.template view<dev_memory_space> ();
-      auto src_d = srcDualView.template view<dev_memory_space> ();
-      permuteToLIDs_nc.template sync<dev_memory_space> ();
-      auto permuteToLIDs_d = permuteToLIDs_nc.template view<dev_memory_space> ();
-      permuteFromLIDs_nc.template sync<dev_memory_space> ();
-      auto permuteFromLIDs_d = permuteFromLIDs_nc.template view<dev_memory_space> ();
+      auto tgt_d = tgtDualView.template view<DMS> ();
+      auto src_d = create_const_view (srcDualView.template view<DMS> ());
+      permuteToLIDs_nc.template sync<DMS> ();
+      auto permuteToLIDs_d =
+        create_const_view (permuteToLIDs_nc.template view<DMS> ());
+      permuteFromLIDs_nc.template sync<DMS> ();
+      auto permuteFromLIDs_d =
+        create_const_view (permuteFromLIDs_nc.template view<DMS> ());
 
       if (nonConstStride) {
         // No need to sync first, because copyOnHost argument to
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_d =
-          create_const_view (tgtWhichVecs.template view<dev_memory_space> ());
+          create_const_view (tgtWhichVecs.template view<DMS> ());
         auto srcWhichVecs_d =
-          create_const_view (srcWhichVecs.template view<dev_memory_space> ());
+          create_const_view (srcWhichVecs.template view<DMS> ());
         permute_array_multi_column_variable_stride (tgt_d, src_d,
                                                     permuteToLIDs_d,
                                                     permuteFromLIDs_d,
