@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+Release update 12.6.3 Apr 27, 2016
+
+1. Belos - Fix issue were code that depended on Tpetra was always being
+   compiled.
+
+
 Release update 12.6.2 Apr 20, 2016
 
 1. Framework - Optionally install TriBITS.
