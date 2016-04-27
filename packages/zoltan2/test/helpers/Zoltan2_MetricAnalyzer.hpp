@@ -81,7 +81,6 @@ public:
   ///
   /// @param metricsPlist parameter list defining tolerances
   /// @param problem the problem whose metrics are to be analyzed
-  /// @param comm an RCP for a communicator
   /// @param[out] msg_stream a std::ostringstream stream to return information from the analysis
   ///
   /// @return returns a boolean value indicated pass/failure.
@@ -97,7 +96,6 @@ public:
 	  // follows the original layout but doesn't fit that well into the new design scheme we are currently implementing
 	  const std::vector<std::string> & allPossibleTypes = Zoltan2::BaseClassMetrics<zscalar_t>::static_allMetricNames_;
 	  for(auto metricType : allPossibleTypes) {
-		  // this will actually print the list of metrics of this type which follow the original format
 		  msg_stream << std::endl;
 		  msg_stream << "Printing data for: " << metricType << std::endl;
 		  metricObject->printMetrics(msg_stream, metricType); // Sequence is to print the metrics, then do analysis, then print the results, for each class type found
@@ -124,8 +122,8 @@ public:
 //      </ParameterList>
 
 	  // first let's get a list of all the headings, so "metriccheck1", "metriccheck2" in this case
-	  // note that in the current architecture we don't actually care what those names are - they just have to be unique
-	  // we could change this to enforce those names with errors if we wish
+	  // I've currently got this enforcing those names strictly to make sure formatting is correct
+	  // But really the headings could just be any unique names and are arbitrary
 	  int countFailedMetricChecks = 0;
 	  auto iterateArbitraryHeadingNames = metricsParameters.begin(); // iterator
 
@@ -164,12 +162,16 @@ public:
 
 private:
 
-  static zscalar_t convertKeyWordAndWeightIndexToValue( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject, std::string keyWord, int weightIndex, int selectedNormedSetting ) {
+  static zscalar_t convertParameterChoicesToEvaluatePartitionAPICall( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject, std::string keyWord, int weightIndex, int selectedNormedSetting ) {
+
 	  // now we want to validate the keyword is one of the allowed types
 	  // "imbalance" - getWeightImbalance()
+	  // "imbalance" with "normed" option - getNormedImabalance()
+	  // "imbalance" with "weight" option - getWeightImbalance()
 	  // "total edge cuts" - getTotalEdgeCuts()
+	  // "total edge cuts" with "weight" option - getTotalWeightEdgeCut()
 	  // "max edge cuts" - getMaxEdgeCuts()
-	  // "normed imbalance" - getNormedImbalance()          CHECK - we didn't specify this naming convention yet due to a typo in the discussion documents
+	  // "max edge cuts" with "weight" option - getMaxWeightEdgeCut()
 
 	  // this is going to need some consideration - how is the adapter scalar_t type to be properly handled?
 	  zscalar_t theValue = 0;
@@ -183,34 +185,34 @@ private:
 		  throw std::logic_error( "'normed' was specified but this only has meaning for the 'imbalance' parameter." );
 	  }
 
-	  // there is some redundancy here but I am trying to parallel the API usage of EvaluatePartition exactly
+	  // Here I am trying to parallel the API usage of EvaluatePartition exactly
 	  if( keyWord == "imbalance" ) {
 		  if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {	// -1 is the code for optional (meaning it was not specified)
 			  if( selectedNormedSetting == 1 ) {
-				  metricObject->getNormedImbalance(theValue);
+				  theValue = metricObject->getNormedImbalance();
 			  }
 			  else {
-				  metricObject->getObjectCountImbalance(theValue); // this will be index 0
+				  theValue = metricObject->getObjectCountImbalance(); // this will be index 0
 			  }
 		  }
 		  else {
-			  metricObject->getWeightImbalance(theValue, weightIndex); // this will get the proper index specified
+			  theValue = metricObject->getWeightImbalance(weightIndex); // this will get the proper index specified
 		  }
 	  }
 	  else if( keyWord == "total edge cuts") {
 		  if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-			  metricObject->getTotalEdgeCut(theValue);
+			  theValue = metricObject->getTotalEdgeCut();
 		  }
 		  else {
-			  metricObject->getTotalWeightEdgeCut(theValue, weightIndex);
+			  theValue = metricObject->getTotalWeightEdgeCut(weightIndex);
 		  }
     }
 	  else if( keyWord == "max edge cuts" ) {
 		  if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-			  metricObject->getMaxEdgeCut(theValue);
+			  theValue = metricObject->getMaxEdgeCut();
 		  }
 		  else {
-			  metricObject->getMaxWeightEdgeCut(theValue, weightIndex);
+			  theValue = metricObject->getMaxWeightEdgeCut(weightIndex);
 		  }
 	  }
 	  else {
@@ -242,7 +244,7 @@ private:
 		  bool bNormSetting = metricCheckParameters.get<bool>(NORMED_PARAMETER_NAME);
 		  selectedNormedSetting = bNormSetting ? 1 : 0;
 		  if( selectedNormedSetting != 0 && selectedNormedSetting != 1 ) {
-			  throw std::logic_error( "Optional normed parameter was specified as: " + std::to_string(selectedNormedSetting) + "   Normed parameter must be 0 or 1." );
+			  throw std::logic_error( "Optional normed parameter was specified as: " + std::to_string(selectedNormedSetting) + "   Normed parameter must be true or false." );
 		  }
 	  }
 
@@ -252,7 +254,7 @@ private:
 		  std::string theKeyWord = metricCheckParameters.get<std::string>(KEYWORD_PARAMETER_NAME);
 
 		  // this is going to need some consideration - how is the adapter scalar_t type to be properly handled?
-		  zscalar_t theValue = convertKeyWordAndWeightIndexToValue(metricObject, theKeyWord, selectedWeightIndex, selectedNormedSetting );
+		  zscalar_t theValue = convertParameterChoicesToEvaluatePartitionAPICall(metricObject, theKeyWord, selectedWeightIndex, selectedNormedSetting );
 
 		  // now we can obtain the upper and lower bounds for this test
 		  if( !metricCheckParameters.isParameter(UPPER_PARAMETER_NAME)) {

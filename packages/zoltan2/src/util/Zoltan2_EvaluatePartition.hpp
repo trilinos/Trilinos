@@ -247,40 +247,99 @@ public:
   }
 
   /*! \brief Return the object count imbalance.
-   *  \param imbalance on return is the object count imbalance.
    */
-  void getObjectCountImbalance(scalar_t &imbalance) const {
-	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
-	imbalance = metrics[0]->getMetricValue("maximum imbalance");
+  scalar_t getObjectCountImbalance() const {
+	base_metric_array_type metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+
+	if( metrics.size() <= 0 ) {
+	    throw std::logic_error( "getObjectCountImbalance() was called but no metrics data was generated for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + "." );
+	}
+	return metrics[0]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the object normed weight imbalance.
-   *  \param imbalance on return is the object normed weight imbalance.
-   *  If there were no weights, this is the object count imbalance.
-   *  If there was one weight, it is the imbalance with respect to that weight.
+   *  Normed imbalance is only valid if there is at least 2 elements - the second one is the normed imbalance.
+   *  If we have weights (which start at the second element) the spec is to have this return that element.
    */
-  void getNormedImbalance(scalar_t &imbalance) const{
-	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
-    if (metrics.size() > 1)
-      imbalance = metrics[1]->getMetricValue("maximum imbalance");
-    else
-      imbalance = metrics[0]->getMetricValue("maximum imbalance");
+  scalar_t getNormedImbalance() const{
+	base_metric_array_type metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+
+	if( metrics.size() <= 0 ) {
+	    throw std::logic_error( "getNormedImbalance() was called but no metrics data was generated for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + "." );
+	}
+	if( metrics.size() <= 1 ) {
+		 throw std::logic_error( "getNormedImbalance() was called but the normed data does not exist for " + std::to_string(metrics.size()) + "." );
+	}
+
+    return metrics[1]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the imbalance for the requested weight.
-   *  \param imbalance on return is the requested value.
-   *  \param idx is the weight index requested, ranging from zero
-   *     to one less than the number of weights provided in the input.
-   *  If there were no weights, this is the object count imbalance.
    */
-  void getWeightImbalance(scalar_t &imbalance, int idx=0) const{
-	base_metric_array_type metrics = getAllMetricsOfType( IMBALANCE_METRICS_TYPE_NAME );
-    if (metrics.size() > 2)  // idx of multiple weights
-      imbalance = metrics[idx+2]->getMetricValue("maximum imbalance");
-    else if (metrics.size() == 2)   //  only one weight
-      imbalance = metrics[1]->getMetricValue("maximum imbalance");
-    else                       // no weights, return object count imbalance
-      imbalance = metrics[0]->getMetricValue("maximum imbalance");
+  scalar_t getWeightImbalance(int weightIndex) const {
+	// In this case we could have:
+		// Option 1
+			// object count
+		// Option 2
+			// object count
+			// weight 0
+		// Option 3
+			// object count
+			// normed imbalance
+			// weight 0
+			// weight 1
+
+	// if we have multiple weights (meaning array size if 2 or greater) than the weights begin on index 2
+	// if we have one weight 0 (option 2) then the weights begin on index 1
+	base_metric_array_type metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+	int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 0 : 1;
+	int numberOfWeights = metrics.size() - weight0IndexStartsAtThisArrayIndex;
+	int useArayIndex = weight0IndexStartsAtThisArrayIndex + weightIndex;
+	if( metrics.size() < useArayIndex ) {
+   	    throw std::logic_error( "getWeightImbalance(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + " is weight " + std::to_string(numberOfWeights-1) + "." );
+    }
+    return metrics[useArayIndex]->getMetricValue("maximum imbalance");
+  }
+
+  /*! \brief Return the max cut for the requested weight.
+   */
+  scalar_t getMaxEdgeCut() const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+	if( graphMetrics.size() != 1 ) {
+	    throw std::logic_error( "getMaxEdgeCut() was called for " + std::string(GRAPH_METRICS_TYPE_NAME) + " but this is data is weighted. Use getMaxWeightEdgeCut(int weightIndex) instead." );
+	}
+	return graphMetrics[0]->getMetricValue("global maximum");
+  }
+
+  /*! \brief getMaxWeightEdgeCuts weighted for the specified index
+   */
+  scalar_t getMaxWeightEdgeCut(int weightIndex) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+	if( graphMetrics.size() <= weightIndex ) {
+	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size()-1) + "." );
+	}
+    return graphMetrics[weightIndex]->getMetricValue("global maximum");
+  }
+
+  /*! \brief getTotalEdgeCut
+   */
+  scalar_t getTotalEdgeCut() const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+	if( graphMetrics.size() != 1 ) {
+	    throw std::logic_error( "getTotalEdgeCut() was called for " + std::string(GRAPH_METRICS_TYPE_NAME) + " but this is data is weighted. Use getTotalWeightEdgeCut(int weightIndex) instead." );
+	}
+	return graphMetrics[0]->getMetricValue("global sum");
+  }
+
+  /*! \brief getTotalWeightEdgeCut weighted for the specified index
+   */
+  scalar_t getTotalWeightEdgeCut(int weightIndex) const{
+	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+
+	if( graphMetrics.size() <= weightIndex ) {
+	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size()-1) + "." );
+	}
+    return graphMetrics[weightIndex]->getMetricValue("global sum");
   }
 
   /*! \brief Print all the metrics based on the  metric object type
@@ -302,46 +361,6 @@ public:
 	    Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
 	  else if( metricType == IMBALANCE_METRICS_TYPE_NAME )
 		Zoltan2::printMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
-  }
-
-  /*! \brief Return the max cut for the requested weight.
-   *  \param cut on return is the requested value.
-   *  \param idx is the weight index reqested, ranging from zero
-   *     to one less than the number of weights provided in the input.
-   *  If there were no weights, this is the cut count.
-   */
-
-  void getMaxEdgeCut(scalar_t &cut, int idx=0) const{
-	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
-	cut = graphMetrics[0]->getMetricValue("global maximum");
-  }
-
-  /*! \brief getMaxWeightEdgeCuts */
-  void getMaxWeightEdgeCut(scalar_t &cut, int idx=0) const{
-	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
-    if (graphMetrics.size() > 2)  // idx of multiple weights
-    	cut = graphMetrics[idx+2]->getMetricValue("global maximum");
-    else if (graphMetrics.size() == 2)   //  only one weight
-    	cut = graphMetrics[1]->getMetricValue("global maximum");
-    else                       // no weights, return cut count
-    	cut = graphMetrics[0]->getMetricValue("global maximum");
-  }
-
-  /*! \brief getTotalEdgeCut */
-  void getTotalEdgeCut(scalar_t &cut, int idx=0) const{
-	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
-	cut = graphMetrics[0]->getMetricValue("global sum");
-  }
-
-  /*! \brief getTotalWeightEdgeCut */
-  void getTotalWeightEdgeCut(scalar_t &cut, int idx=0) const{
-	base_metric_array_type graphMetrics = getAllMetricsOfType( GRAPH_METRICS_TYPE_NAME );
-    if (graphMetrics.size() > 2)  // idx of multiple weights
-    	cut = graphMetrics[idx+2]->getMetricValue("global sum");
-    else if (graphMetrics.size() == 2)   //  only one weight
-    	cut = graphMetrics[1]->getMetricValue("global sum");
-    else                       // no weights, return cut count
-    	cut = graphMetrics[0]->getMetricValue("global sum");
   }
 };
 

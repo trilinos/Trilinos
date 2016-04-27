@@ -127,7 +127,7 @@ template <typename scalar_t>
 
   os << std::setw(20) << label;
   os << std::setw(12) << std::setprecision(4) << this->getMetricValue("global sum");
-  os << std::setw(12) << std::setprecision(4) << this->getMetricValue("global max");
+  os << std::setw(12) << std::setprecision(4) << this->getMetricValue("global maximum");
 
   os << std::endl;
 }

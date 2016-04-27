@@ -297,9 +297,12 @@ int main(int narg, char *arg[]) {
     if (!me) {
       metricObject->printMetrics(cout);
 
-      if (action == "scotch") {
-	metricObject->printGraphMetrics(cout);
-      }
+    // MDM - the printMetrics now outputs all the metrics data (ImbalanceMetrics and GraphMetrics)
+    // This may change and we will want to go back to case where you choose one or the other
+    // 
+    //  if (action == "scotch") {
+	//metricObject->printMetrics(cout);
+    //  }
     }
   }
   else {
