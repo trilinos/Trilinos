@@ -218,7 +218,6 @@ namespace Intrepid2 {
     if (!isReferenceNodeDataSet_) 
       setReferenceNodeData();
 
-    //Kokkos::DynRankView<value_type,SpT,Kokkos::MemoryUnmanaged> ref;
     referenceNodeDataViewType ref;
 
     switch (cell.getKey() ) {
@@ -451,7 +450,9 @@ namespace Intrepid2 {
     
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<refFaceNormalValueType,SpT> refFaceTanU(dim), refFaceTanV(dim);
+    Kokkos::DynRankView<refFaceNormalValueType,SpT> 
+      refFaceTanU("CellTools::getReferenceFaceNormal::refFaceTanU", dim), 
+      refFaceTanV("CellTools::getReferenceFaceNormal::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
     RealSpaceTools<SpT>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
@@ -496,7 +497,7 @@ namespace Intrepid2 {
   
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan(dim);
+    Kokkos::DynRankView<edgeTangentValueType,SpT> refEdgeTan("CellTools::getPhysicalEdgeTangents::refEdgeTan", dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
     RealSpaceTools<SpT>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
@@ -533,7 +534,7 @@ namespace Intrepid2 {
     }
 
     // (3) worksetJacobians in rank-4 (C,P,D,D) and D=3 is required
-    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians != 4, std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.rank() != 4, std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians must have rank 4." );  
 
     INTREPID2_TEST_FOR_EXCEPTION( worksetJacobians.dimension(2) != 3, std::invalid_argument, 
@@ -551,8 +552,8 @@ namespace Intrepid2 {
     
     // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
-    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU(dim);
-    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV(dim);
+    Kokkos::DynRankView<faceTanUValueType,SpT> refFaceTanU("CellTools::getPhysicalFaceTangents::refFaceTanU", dim);
+    Kokkos::DynRankView<faceTanVValueType,SpT> refFaceTanV("CellTools::getPhysicalFaceTangents::refFaceTanV", dim);
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
     RealSpaceTools<SpT>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
@@ -582,7 +583,7 @@ namespace Intrepid2 {
     const auto dim = parentCell.getDimension();
   
     if (dim == 2) {
-      Kokkos::DynRankView<sideNormalValueType,SpT> refSideNormal(dim);
+      Kokkos::DynRankView<sideNormalValueType,SpT> refSideNormal("CellTools::getPhysicalSideNormals::refSideNormal", dim);
       getReferenceSideNormal(refSideNormal, worksetSideOrd, parentCell);
 
       RealSpaceTools<SpT>::matvec(sideNormals, worksetJacobians, refSideNormal);    
@@ -632,15 +633,15 @@ namespace Intrepid2 {
     const auto facePtCount = worksetJacobians.dimension(1);
     const auto dim = parentCell.getDimension();
     Kokkos::DynRankView<faceNormalValueType,SpT> 
-      refFaceTanU(worksetSize, facePtCount, dim), 
-      refFaceTanV(worksetSize, facePtCount, dim);
+      faceTanU("CellTools::getPhysicalFaceNormals::faceTanU", worksetSize, facePtCount, dim), 
+      faceTanV("CellTools::getPhysicalFaceNormals::faceTanV", worksetSize, facePtCount, dim);
 
-    getPhysicalFaceTangents(refFaceTanU, refFaceTanV, 
+    getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 
                             worksetFaceOrd, 
                             parentCell);
   
-    RealSpaceTools<SpT>::vecprod(faceNormals, refFaceTanU, refFaceTanV);
+    RealSpaceTools<SpT>::vecprod(faceNormals, faceTanU, faceTanV);
   }
 
 

@@ -75,7 +75,7 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };                                                                  
-
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
         
     template<typename ValueType, typename DeviceSpaceType>
     int CellTools_Test02(const bool verbose) {
@@ -120,7 +120,8 @@ namespace Intrepid2 {
   
       typedef CellTools<DeviceSpaceType> ct;
       typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const value_type tol = Parameters::Tolerence*100.0;
 
       int errorFlag = 0;
 
@@ -196,6 +197,8 @@ namespace Intrepid2 {
         
               // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals
               DynRankView ConstructWithLabel(refEdgePoints,          numCubPoints, cellDim);        
+
+              // here, 1 means that the container includes a single cell
               DynRankView ConstructWithLabel(edgePointsJacobians, 1, numCubPoints, cellDim, cellDim);
               DynRankView ConstructWithLabel(edgePointTangents,   1, numCubPoints, cellDim);
               DynRankView ConstructWithLabel(edgePointNormals,    1, numCubPoints, cellDim);        
@@ -208,9 +211,9 @@ namespace Intrepid2 {
                  *    2. Compute parent cell Jacobians at ref. edge points
                  *    3. Compute physical edge tangents
                  */
-                ct::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, (cell) );
-                ct::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, (cell) );
-                ct::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, (cell)); 
+                ct::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, cell);
+                ct::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, cell);
+                ct::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, cell); 
 
                 /*
                  * Compute tangents directly using parametrization of phys. edge and compare with CellTools tangents.
@@ -231,7 +234,7 @@ namespace Intrepid2 {
                     edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
                     
                     // Compare with d-component of edge tangent by CellTools
-                    if ( std::abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > tol ){
+                    if ( std::abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -248,7 +251,7 @@ namespace Intrepid2 {
                   // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
                   if (cellDim == 2) {
                     ct::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, cell);
-                    if( std::abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > tol ){
+                    if ( std::abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -260,7 +263,7 @@ namespace Intrepid2 {
                         << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
                         << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
                     }
-                    if( abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > INTREPID2_THRESHOLD ){
+                    if ( std::abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"

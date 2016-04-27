@@ -137,12 +137,12 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      bool dbgInfo = false; 
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.rank() != 2, dbgInfo, 
+      bool dbgInfo = false;
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.rank() != 2, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix argument must be 2!");
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.dimension(0) != inMat.dimension(1), dbgInfo, 
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.dimension(0) != inMat.dimension(1), dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Matrix is not square!");
-      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.dimension(0) < 1 || inMat.dimension(0) > 3, dbgInfo, 
+      INTREPID2_TEST_FOR_DEBUG_ABORT( inMat.dimension(0) < 1 || inMat.dimension(0) > 3, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
       if (dbgInfo) return inMatValueType(0);
@@ -174,7 +174,7 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      bool dbgInfo = false; 
+      bool dbgInfo = false;
       INTREPID2_TEST_FOR_DEBUG_ABORT( inVec1.rank() != 1 || inVec2.rank() != 1, dbgInfo,
                                       ">>> ERROR (RealSpaceTools::dot): Vector arguments must have rank 1!");
       INTREPID2_TEST_FOR_DEBUG_ABORT( inVec1.dimension(0) != inVec2.dimension(0), dbgInfo,
@@ -200,7 +200,7 @@ namespace Intrepid2 {
 
   //
   // use parallel for
-  // 
+  //
 
   // ------------------------------------------------------------------------------------
 
@@ -210,12 +210,12 @@ namespace Intrepid2 {
     struct F_absval {
       absArrayViewType _absArray;
       inArrayViewType  _inArray;
-      
+
       KOKKOS_INLINE_FUNCTION
       F_absval( absArrayViewType absArray_,
                 inArrayViewType  inArray_ )
         : _absArray(absArray_), _inArray(inArray_) {}
-      
+
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
         const auto jend = _inArray.dimension(1);
@@ -231,7 +231,7 @@ namespace Intrepid2 {
       }
     };
   }
-  
+
   template<typename SpT>
   template<typename absArrayValueType, class ...absArrayProperties,
            typename inArrayValueType,  class ...inArrayProperties>
@@ -243,7 +243,7 @@ namespace Intrepid2 {
     {
       INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() > 5, std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::absval): Input array container has rank larger than 5.");
-      
+
       INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != absArray.rank(), std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::absval): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray.rank();++i) {
@@ -256,8 +256,8 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<absArrayValueType,absArrayProperties...>            absArrayViewType;
     typedef          Kokkos::DynRankView<inArrayValueType, inArrayProperties...>             inArrayViewType;
     typedef          FunctorRealSpaceTools::F_absval<absArrayViewType,inArrayViewType>       FunctorType;
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType; 
-    
+    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
     const auto loopSize = inArray.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(absArray, inArray) );
@@ -314,12 +314,12 @@ namespace Intrepid2 {
               const ENorm normType ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inVecs.rank() != (normArray.rank()+1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inVecs.rank() != (normArray.rank()+1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vectorNorm): Ranks of norm and vector array arguments are incompatible!");
-      INTREPID2_TEST_FOR_EXCEPTION( inVecs.rank() < 2 || inVecs.rank() > 3, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inVecs.rank() < 2 || inVecs.rank() > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vectorNorm): Rank of vector array must be 2 or 3!");
       for (size_t i=0;i<inVecs.rank()-1;++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inVecs.dimension(i) != normArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inVecs.dimension(i) != normArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::vectorNorm): Dimensions of norm and vector arguments do not agree!");
       }
     }
@@ -328,7 +328,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<normArrayValueType,normArrayProperties...>        normArrayViewType;
     typedef          Kokkos::DynRankView<inVecValueType,    inVecProperties...>            inVecViewType;
     typedef          FunctorRealSpaceTools::F_vectorNorm<normArrayViewType,inVecViewType>  FunctorType;
-    typedef typename ExecSpace<typename inVecViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType; 
+    typedef typename ExecSpace<typename inVecViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // normArray rank is either 1 or 2
     const auto loopSize = normArray.dimension(0)*normArray.dimension(1);
@@ -389,15 +389,15 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     {
 
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != transposeMats.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != transposeMats.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::transpose): Matrix array arguments do not have identical ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::transpose): Rank of matrix array must be 2, 3, or 4!");
       for (size_t i=0;i<inMats.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != transposeMats.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != transposeMats.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::transpose): Dimensions of matrix arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::transpose): Matrices are not square!");
     }
 #endif
@@ -430,7 +430,7 @@ namespace Intrepid2 {
       F_inverse( inverseMatViewType inverseMats_,
                  inMatViewType      inMats_ )
         : _inverseMats(inverseMats_), _inMats(inMats_) {}
-      
+
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type iter) const {
         ordinal_type i, j;
@@ -454,7 +454,7 @@ namespace Intrepid2 {
         {
           bool dbgInfo = false;
 #ifdef HAVE_INTREPID2_DEBUG_INF_CHECK
-          INTREPID2_TEST_FOR_DEBUG_ABORT( val == 0, dbgInfo, 
+          INTREPID2_TEST_FOR_DEBUG_ABORT( val == 0, dbgInfo,
                                           ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
 #endif
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
@@ -519,17 +519,17 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != inverseMats.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != inverseMats.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrix array arguments do not have identical ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Rank of matrix array must be 2, 3, or 4!");
       for (size_t i=0;i<inMats.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inverseMats.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inverseMats.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::inverse): Dimensions of matrix arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) < 1 || inMats.dimension(inMats.rank()-2) > 3, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) < 1 || inMats.dimension(inMats.rank()-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::inverse): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
@@ -588,17 +588,17 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != detArray.rank()+2, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != detArray.rank()+2, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Determinant and matrix array arguments do not have compatible ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 3 || inMats.rank() > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Rank of matrix array must be 3 or 4!");
       for (size_t i=0;i<inMats.rank()-2;++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != detArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != detArray.dimension(i), std::invalid_argument,
                                        ">>> ERROR (RealSpaceTools::det): Dimensions of determinant and matrix array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) != inMats.dimension(inMats.rank()-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Matrices are not square!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) < 1 || inMats.dimension(inMats.rank()-2) > 3, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-2) < 1 || inMats.dimension(inMats.rank()-2) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::det): Spatial dimension must be 1, 2, or 3!");
     }
 #endif
@@ -629,7 +629,7 @@ namespace Intrepid2 {
              inArray1Viewtype inArray1_,
              inArray2ViewType inArray2_ )
         : _sumArray(sumArray_), _inArray1(inArray1_), _inArray2(inArray2_) {}
-      
+
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
         const auto jend = _sumArray.dimension(1);
@@ -659,11 +659,11 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       INTREPID2_TEST_FOR_EXCEPTION( inArray1.rank() != inArray2.rank() ||
-                                      inArray1.rank() != sumArray.rank(), std::invalid_argument, 
+                                      inArray1.rank() != sumArray.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::add): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray1.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inArray1.dimension(i) != inArray2.dimension(i) ||
-                                        inArray1.dimension(i) != sumArray.dimension(i), std::invalid_argument, 
+                                        inArray1.dimension(i) != sumArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::add): Dimensions of array arguments do not agree!");
       }
     }
@@ -692,10 +692,10 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != inoutSumArray.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != inoutSumArray.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::sum): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != inoutSumArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != inoutSumArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::sum): Dimensions of array arguments do not agree!");
       }
     }
@@ -749,11 +749,11 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     {
       INTREPID2_TEST_FOR_EXCEPTION( inArray1.rank() != inArray2.rank() ||
-                                      inArray1.rank() != diffArray.rank(), std::invalid_argument, 
+                                      inArray1.rank() != diffArray.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray1.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inArray1.dimension(i) != inArray2.dimension(i) ||
-                                        inArray1.dimension(i) != diffArray.dimension(i), std::invalid_argument, 
+                                        inArray1.dimension(i) != diffArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
       }
     }
@@ -781,10 +781,10 @@ namespace Intrepid2 {
             const Kokkos::DynRankView<inArrayValueType,       inArrayProperties...>        inArray ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != inoutDiffArray.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != inoutDiffArray.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::subtract): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != inoutDiffArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != inoutDiffArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::subtract): Dimensions of array arguments do not agree!");
       }
     }
@@ -837,22 +837,22 @@ namespace Intrepid2 {
          const ValueType alpha ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
-    { 
-      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() > 5, std::invalid_argument, 
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() > 5, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::scale): Input array container has rank larger than 5.");
-      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != scaledArray.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inArray.rank() != scaledArray.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::scale): Array arguments must have identical ranks!");
       for (size_t i=0;i<inArray.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != scaledArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inArray.dimension(i) != scaledArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::scale): Dimensions of array arguments do not agree!");
       }
     }
 #endif
-    
+
     typedef          Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...>               scaledArrayViewtype;
     typedef          Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>                   inArrayViewType;
-    typedef          FunctorRealSpaceTools::F_scale<ValueType,scaledArrayViewtype,inArrayViewType> FunctorType; 
-    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType          ExecSpaceType;                                             
+    typedef          FunctorRealSpaceTools::F_scale<ValueType,scaledArrayViewtype,inArrayViewType> FunctorType;
+    typedef typename ExecSpace<typename inArrayViewType::execution_space,SpT>::ExecSpaceType          ExecSpaceType;
 
     const auto loopSize = scaledArray.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -920,18 +920,18 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() != (dotArray.rank()+1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() != (dotArray.rank()+1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::dot): Ranks of norm and vector array arguments are incompatible!");
-      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() != inVecs2.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() != inVecs2.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::dot): Ranks of input vector arguments must be identical!");
-      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() < 2 || inVecs1.rank() > 3, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inVecs1.rank() < 2 || inVecs1.rank() > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::dot): Rank of input vector arguments must be 2 or 3!");
       for (size_t i=0;i<inVecs1.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inVecs1.dimension(i) != inVecs2.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inVecs1.dimension(i) != inVecs2.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::dot): Dimensions of input vector arguments do not agree!");
       }
       for (size_t i=0;i<dotArray.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inVecs1.dimension(i) != dotArray.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inVecs1.dimension(i) != dotArray.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::dot): Dimensions of dot-product and vector arrays do not agree!");
       }
     }
@@ -940,7 +940,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...>                 dotArrayViewType;
     typedef          Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>                   inVec1ViewType;
     typedef          Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>                   inVec2ViewType;
-    typedef          FunctorRealSpaceTools::F_dot<dotArrayViewType,inVec1ViewType,inVec2ViewType> FunctorType;   
+    typedef          FunctorRealSpaceTools::F_dot<dotArrayViewType,inVec1ViewType,inVec2ViewType> FunctorType;
     typedef typename ExecSpace<typename inVec1ViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
 
     const auto loopSize = dotArray.dimension(0)*dotArray.dimension(1);
@@ -991,7 +991,7 @@ namespace Intrepid2 {
 
         for (size_t i=0;i<iend;++i)
           for (size_t j=0;j<jend;++j)
-            result(i) += mat(i, j)*vec(j); 
+            result(i) += mat(i, j)*vec(j);
       }
     };
   }
@@ -1008,28 +1008,28 @@ namespace Intrepid2 {
 
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (inVecs.rank()+1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() != (inVecs.rank()+1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Vector and matrix array arguments do not have compatible ranks!");
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.rank() < 2 || inMats.rank() > 4, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Rank of matrix array must be 2, 3 or 4!");
-      INTREPID2_TEST_FOR_EXCEPTION( matVecs.rank() != inVecs.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( matVecs.rank() != inVecs.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Vector arrays must be have the same rank!");
       for (size_t i=0;i<inMats.rank()-2;++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inVecs.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(i) != inVecs.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector and matrix array arguments do not agree!");
       }
       for (size_t i=0;i<inVecs.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( matVecs.dimension(i) != inVecs.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( matVecs.dimension(i) != inVecs.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::matvec): Dimensions of vector array arguments do not agree!");
       }
-      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-1) != inVecs.dimension(inVecs.rank()-1), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inMats.dimension(inMats.rank()-1) != inVecs.dimension(inVecs.rank()-1), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::matvec): Matrix column dimension does not match to the length of a vector!");
     }
 #endif
 
     typedef          Kokkos::DynRankView<matVecValueType,matVecProperties...>                    matVecViewType;
     typedef          Kokkos::DynRankView<inMatValueType, inMatProperties...>                     inMatViewType;
-    typedef          Kokkos::DynRankView<inVecValueType, inVecProperties...>                     inVecViewType; 
+    typedef          Kokkos::DynRankView<inVecValueType, inVecProperties...>                     inVecViewType;
     typedef          FunctorRealSpaceTools::F_matvec<matVecViewType,inMatViewType,inVecViewType> FunctorType;
     typedef typename ExecSpace<typename inMatViewType::execution_space,SpT>::ExecSpaceType       ExecSpaceType;
 
@@ -1112,29 +1112,31 @@ namespace Intrepid2 {
        *      (2) spatial dimension should be 2 or 3
        */
       // (1) check rank range on inLeft and then compare the other arrays with inLeft
-      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() < 1 || inLeft.rank() > 3, std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() < 1 || inLeft.rank() > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vecprod): Rank of matrix array must be 1, 2, or 3!");
-      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == inRight.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == inRight.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vecprod): Right and left arrays must be have the same rank!");
-      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == vecProd.rank(), std::invalid_argument, 
+      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == vecProd.rank(), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vecprod): Left and vecProd arrays must be have the same rank!");
       for (size_t i=0;i<inLeft.rank();++i) {
-        INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != inRight.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != inRight.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
-        INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != vecProd.dimension(i), std::invalid_argument, 
+        INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != vecProd.dimension(i), std::invalid_argument,
                                         ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
       }
-      
+
       // (2) spatial dimension ordinal = array rank - 1. Suffices to check only one array because we just
       //     checked whether or not the arrays have matching dimensions.
       INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(inLeft.rank()-1) < 2 ||
-                                      inLeft.dimension(inLeft.rank()-1) > 3, std::invalid_argument, 
+                                      inLeft.dimension(inLeft.rank()-1) > 3, std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::vecprod): Dimensions of arrays (rank-1) must be 2 or 3!");
     }
 #endif
-                                                                                                                                                              
-    typedef          Kokkos::DynRankView<inLeftValueType, inLeftProperties...>                        inLeftViewType;                                                                           
-    typedef typename ExecSpace<typename inLeftViewType::execution_space,SpT>::ExecSpaceType           ExecSpaceType;                                                        
+    typedef          Kokkos::DynRankView<vecProdValueType, vecProdProperties...>                      vecProdViewType;
+    typedef          Kokkos::DynRankView<inLeftValueType, inLeftProperties...>                        inLeftViewType;
+    typedef          Kokkos::DynRankView<inRightValueType, inRightProperties...>                      inRightViewType;
+    typedef          FunctorRealSpaceTools::F_vecprod<vecProdViewType,inLeftViewType,inRightViewType> FunctorType;
+    typedef typename ExecSpace<typename inLeftViewType::execution_space,SpT>::ExecSpaceType           ExecSpaceType;
 
     const auto r = inLeft.rank();
     const auto loopSize = ( r == 1 ? 1 :
@@ -1142,7 +1144,7 @@ namespace Intrepid2 {
                             /**/     inLeft.dimension(0)*inLeft.dimension(1) );
     const bool is_vecprod_3d = (inLeft.dimension(inLeft.rank() - 1) == 3);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-    Kokkos::parallel_for( policy, Functor(vecProd, inLeft, inRight, is_vecprod_3d) );
+    Kokkos::parallel_for( policy, FunctorType(vecProd, inLeft, inRight, is_vecprod_3d) );
   }
 
   // ------------------------------------------------------------------------------------

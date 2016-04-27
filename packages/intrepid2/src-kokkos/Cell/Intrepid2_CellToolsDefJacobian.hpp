@@ -87,7 +87,7 @@ namespace Intrepid2 {
         /**/  auto jac  = Kokkos::subdynrankview( _jacobian, cell, pt, Kokkos::ALL(),Kokkos::ALL());
         const auto dofs = Kokkos::subdynrankview( _worksetCells, cell, Kokkos::ALL(), Kokkos::ALL());
 
-        const auto gradRank = grad.rank(); 
+        const auto gradRank = _basisGrads.rank(); 
         const auto grad = ( gradRank == 3 ? Kokkos::subdynrankview( _basisGrads,       Kokkos::ALL(), pt, Kokkos::ALL()) :
                             /**/            Kokkos::subdynrankview( _basisGrads, cell, Kokkos::ALL(), pt, Kokkos::ALL()));
         
@@ -95,10 +95,12 @@ namespace Intrepid2 {
         const auto cardinality = grad.dimension(0);
 
         for (auto i=0;i<dim;++i)
-          for (auto j=0;j<dim;++j) 
+          for (auto j=0;j<dim;++j) {
+            jac(i, j) = 0;
             for (auto bf=0;bf<cardinality;++bf) 
               jac(i, j) += dofs(bf, i)*grad(bf, j);
-      } 
+          } 
+      }
     };
   }
 
@@ -114,26 +116,26 @@ namespace Intrepid2 {
                const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG    
-    validateArguments_setJacobian(jacobian, points, cellWorkset, whichCell,  basis->getBaseCellTopology());
+    CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology());
 #endif
     const auto cellTopo = basis->getBaseCellTopology();
     const auto spaceDim = cellTopo.getDimension();
-    const auto numCells = workset.dimension(0);
+    const auto numCells = worksetCell.dimension(0);
     
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
     const auto pointRank = points.rank();
     const auto numPoints = (pointRank == 2 ? points.dimension(0) : points.dimension(1));
     const auto basisCardinality = basis->getCardinality();    
 
-    typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobianViewType;
-    typedef Kokkos::DynRankView<pointValueType,pointProperties...>       pointViewType;
+    typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobianViewType;
+    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
 
-    auto grads = ( pointRank == 2 ? jacobianViewType("CellTools::setJacobian::grads",           basisCardinality, numPoints, spaceDim) :
-                   /**/             jacobianViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim));
+    jacobianViewType grads;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
+      grads = jacobianViewType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -141,18 +143,17 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      const auto iend = points.dimension(0);
-      for (auto cell=0;cell<numCells;++cell) {
+      grads = jacobianViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      for (auto cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
-                         Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
-                         OPERATOR_GRAD);
-      }
+                        Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
+                        OPERATOR_GRAD);
       break;
     }
     }
 
-    typedef          FunctorCellTools::F_setJacobian<jacobianViewType,pointViewType,jacobianViewType> FunctorType;
-    typedef typename ExecSpace<typename pointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,jacobianViewType> FunctorType;
+    typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
       
     const auto loopSize = jacobian.dimension(0)*jacobian.dimension(1);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

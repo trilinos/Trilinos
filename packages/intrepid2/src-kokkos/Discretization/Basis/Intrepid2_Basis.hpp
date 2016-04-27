@@ -317,7 +317,7 @@ namespace Intrepid2 {
 
         \return Base cell topology
     */
-    const shards::CellTopology
+    shards::CellTopology
     getBaseCellTopology() const {
       return basisCellTopology_;
     }

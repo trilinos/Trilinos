@@ -54,6 +54,8 @@
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"
 
+#include "Teuchos_RCP.hpp" 
+
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -104,8 +106,6 @@ namespace Intrepid2 {
   template<typename ExecSpaceType>
   class CellTools {
   public:
-
-    typedef double value_type;
 
     /** \brief  Checks if a cell topology has reference cell
         \param  cell              [in]  - cell topology
@@ -197,25 +197,25 @@ namespace Intrepid2 {
       case shards::ShellQuadrilateral<9>::key: 
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                      ">>> ERROR (Intrepid2::CellTools::setJacobian): Cell topology not supported.");
+                                      ">>> ERROR (Intrepid2::CellTools::createHGradBasis): Cell topology not supported.");
       }
       }
       return r_val;
     }
 
     // reference nodes initialized
-    typedef Kokkos::DynRankView<const value_type,Kokkos::LayoutRight,Kokkos::HostSpace> referenceNodeDataViewHostType;
+    typedef Kokkos::DynRankView<const double,Kokkos::LayoutRight,Kokkos::HostSpace> referenceNodeDataViewHostType;
     struct ReferenceNodeDataStatic {
-      value_type line[2][3], line_3[3][3];
-      value_type triangle[3][3], triangle_4[4][3], triangle_6[6][3];
-      value_type quadrilateral[4][3], quadrilateral_8[8][3], quadrilateral_9[9][3];
-      value_type tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[10][3];
-      value_type hexahedron[8][3], hexahedron_20[20][3], hexahedron_27[27][3];
-      value_type pyramid[5][3], pyramid_13[13][3], pyramid_14[14][3];
-      value_type wedge[6][3], wedge_15[15][3], wedge_18[18][3];
+      double line[2][3], line_3[3][3];
+      double triangle[3][3], triangle_4[4][3], triangle_6[6][3];
+      double quadrilateral[4][3], quadrilateral_8[8][3], quadrilateral_9[9][3];
+      double tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[10][3];
+      double hexahedron[8][3], hexahedron_20[20][3], hexahedron_27[27][3];
+      double pyramid[5][3], pyramid_13[13][3], pyramid_14[14][3];
+      double wedge[6][3], wedge_15[15][3], wedge_18[18][3];
     };
 
-    typedef Kokkos::DynRankView<value_type,Kokkos::LayoutRight,ExecSpaceType> referenceNodeDataViewType;
+    typedef Kokkos::DynRankView<double,Kokkos::LayoutRight,ExecSpaceType> referenceNodeDataViewType;
     struct ReferenceNodeData {
       referenceNodeDataViewType line, line_3;
       referenceNodeDataViewType triangle, triangle_4, triangle_6;
@@ -239,7 +239,7 @@ namespace Intrepid2 {
     //============================================================================================//
 
     // static variables
-    typedef Kokkos::DynRankView<value_type,ExecSpaceType> subcellParamViewType;
+    typedef Kokkos::DynRankView<double,ExecSpaceType> subcellParamViewType;
     struct SubcellParamData {
       subcellParamViewType dummy;
       subcellParamViewType lineEdges;  // edge maps for 2d non-standard cells; shell line and beam
@@ -381,18 +381,20 @@ namespace Intrepid2 {
     setJacobian( /**/  Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian,
                  const Kokkos::DynRankView<pointValueType,pointProperties...>             points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                 const HGradBasisPtrType hgradBasis );
+                 const HGradBasisPtrType basis );
 
     template<typename jacobianValueType,    class ...jacobianProperties,
              typename pointValueType,       class ...pointProperties,
-             typename worksetCellValueType, class ...worksetCellProperties,
-             typename HgradBasisType>
+             typename worksetCellValueType, class ...worksetCellProperties>
     static void
     setJacobian( /**/  Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobian,
                  const Kokkos::DynRankView<pointValueType,pointProperties...>       points,
                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                  const shards::CellTopology cellTopo ) {
-      setJacobian(jacobian, points, worksetCell, createHGradBasis(cellTopo));
+      setJacobian(jacobian, 
+                  points, 
+                  worksetCell, 
+                  createHGradBasis<jacobianValueType,pointValueType>(cellTopo));
     }
 
     /** \brief  Computes the inverse of the Jacobian matrix \e DF of the reference-to-physical frame map \e F.
@@ -980,7 +982,7 @@ namespace Intrepid2 {
     mapToPhysicalFrame( /**/  Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
-                        const HGradBasisPtrType hgradBasis );
+                        const HGradBasisPtrType basis );
 
     template<typename physPointValueType,   class ...physPointProperties,
              typename refPointValueType,    class ...refPointProperties,
@@ -990,7 +992,12 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      mapToPhysicalFrame(physPoints, refPoints, worksetCell, createHGradBasis(cellTopo));
+      typedef Kokkos::DynRankView<physPointValueType,physPointProperties...> physPointViewType;
+      typedef Kokkos::DynRankView<refPointValueType,refPointProperties...>   refPointViewType;
+      mapToPhysicalFrame(physPoints, 
+                         refPoints, 
+                         worksetCell, 
+                         createHGradBasis<physPointValueType,refPointValueType>(cellTopo));
     }
 
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
