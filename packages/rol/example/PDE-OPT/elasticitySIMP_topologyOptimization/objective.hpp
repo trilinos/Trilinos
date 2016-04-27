@@ -61,17 +61,28 @@ private:
   Real scale_;
   bool useFU_;
 
+  Teuchos::RCP<const Tpetra::Vector<> > Zscale_;
+
 public:
 
   Objective_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
-                           const Teuchos::RCP<Teuchos::ParameterList> &parlist)
+                                  const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data) {
     alpha_ = parlist->sublist("Problem").get<Real>("Penalty parameter");
+    // Compute compliance scaling
     Teuchos::Array<Real> dotF(1, 0);
     (data_->getVecF())->dot(*(data_->getVecF()),dotF);
     Real minDensity = parlist->sublist("ElasticitySIMP").get<Real>("Minimum Density");
     scale_ = minDensity/dotF[0];
     useFU_ = parlist->sublist("ElasticitySIMP").get<bool>("Use Force Dot Displacement Objective");
+    // Compute density scaling vector
+    bool useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
+    Teuchos::RCP<Tpetra::MultiVector<> > cellMeasures = data->getCellAreas();
+    if ( !useZscale ) {
+      Real one(1);
+      cellMeasures->putScalar(one);
+    }
+    Zscale_ = cellMeasures->getVector(0);
   }
 
   void update(const ROL::Vector<Real> &u,
@@ -145,7 +156,8 @@ public:
       data_->ApplyAdjointJacobian2ToVec (gp, up, up);
     }
 
-    gp->update(alpha_, *zp, scale_);
+    Tpetra::MultiVector<> Wzp(*zp); Wzp.elementWiseMultiply(1,*Zscale_,*zp,0);
+    gp->update(alpha_, Wzp, scale_);
   }
 
   void hessVec_11(ROL::Vector<Real> &hv,
@@ -227,7 +239,8 @@ public:
       data_->ApplyAdjointHessian22ToVec (hvp, up, vp, up);
     }
 
-    hvp->update(alpha_, *vp, scale_);
+    Tpetra::MultiVector<> Wvp(*vp); Wvp.elementWiseMultiply(1,*Zscale_,*vp,0);
+    hvp->update(alpha_, Wvp, scale_);
   }
 
 };
