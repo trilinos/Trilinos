@@ -2026,6 +2026,7 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 
   const MeshIndex& idx = mesh_index(e_from);
 
+  ThrowAssertMsg(local_id <= INVALID_CONNECTIVITY_ORDINAL, "local_id = " << local_id << ", max = " << INVALID_CONNECTIVITY_ORDINAL);
   bool modified = idx.bucket->declare_relation(idx.bucket_ordinal, e_to, static_cast<ConnectivityOrdinal>(local_id), permut);
 
   if (modified)
