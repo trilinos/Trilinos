@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
+#include <stk_mesh/base/SkinBoundary.hpp> 
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
@@ -18,6 +19,9 @@
 #include <string>                       // for string, operator==, etc
 #include <vector>
 #include <Ioss_EntityType.h>            // for EntityType, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stddef.h>                     // for size_t
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
 namespace
 {
@@ -61,6 +65,92 @@ struct NodeConnectivityInfo
     std::vector<int> nodeConn;
 };
 
+typedef stk::mesh::Field<int> ScalarIntField;
+
+class AnimateMeshDeletion
+{
+public:
+    AnimateMeshDeletion(stk::mesh::BulkData &bulk, ScalarIntField &statusField, const std::string &animationFileName) :
+        m_bulkData(bulk),
+        m_stkIo(bulk.parallel()),
+        m_fileHandler(0),
+        m_statusField(statusField),
+        m_animationFileName(animationFileName)
+    {
+        initialize_status_field();
+        create_output_mesh();
+    }
+
+    ~AnimateMeshDeletion() {}
+
+    void initialize_status_field()
+    {
+        int val = 0;
+        stk::mesh::put_field(m_statusField, m_bulkData.mesh_meta_data().universal_part(), &val);
+    }
+
+    void create_output_mesh()
+    {
+        m_stkIo.set_bulk_data(m_bulkData);
+        m_fileHandler = m_stkIo.create_output_mesh(m_animationFileName, stk::io::WRITE_RESULTS);
+        m_stkIo.add_field(m_fileHandler, m_statusField);
+        m_stkIo.write_output_mesh(m_fileHandler);
+    }
+
+    void deactivate_element(stk::mesh::EntityId elemId)
+    {
+        stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+        *stk::mesh::field_data(m_statusField, elem) = 1;
+    }
+
+    void activate_element(stk::mesh::EntityId elemId)
+    {
+        stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+        *stk::mesh::field_data(m_statusField, elem) = 0;
+    }
+
+    void animate(const std::vector<stk::mesh::EntityId> elemIds, int numSteps)
+    {
+        initialize_status_field();
+
+        int numElem = elemIds.size();
+
+        for (int m_time = 0; m_time <= numSteps; m_time++)
+        {
+            if((0 != m_time) && (m_time <= numElem))
+            {
+                stk::mesh::EntityId elemId = elemIds[m_time-1];
+                deactivate_element(elemId);
+            }
+
+            m_stkIo.begin_output_step(m_fileHandler, m_time);
+            m_stkIo.write_defined_output_fields(m_fileHandler);
+            m_stkIo.end_output_step(m_fileHandler);
+        }
+    }
+
+private:
+    stk::mesh::BulkData &m_bulkData;
+    stk::io::StkMeshIoBroker m_stkIo;
+    size_t m_fileHandler;
+    ScalarIntField &m_statusField;
+    std::string m_animationFileName;
+};
+
+void print_delete_diagnostics(const stk::mesh::BulkData &bulkData,  /* const stk::mesh::EntityVector& localElems, */ DeletedMeshInfo &meshInfo)
+{
+    int data[2];
+    int data_sum[2];
+
+    data[0] = meshInfo.elemIds.size();
+    data[1] = stk::mesh::count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK)); // localElems.size();
+
+    stk::all_reduce_sum(bulkData.parallel(), data, data_sum, 2);
+
+    if(0 == bulkData.parallel_rank())
+        std::cout << "Deleting " << data_sum[0] << " elements (" << (100.0*data_sum[0])/data_sum[1] << "% of mesh)" << std::endl;
+}
+
 void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::string &meshSpec, DeletedMeshInfo &meshInfo)
 {
     int nx, ny, nz;
@@ -91,6 +181,8 @@ void get_ids_along_boundary(const stk::mesh::BulkData &bulkData, const std::stri
     }
 
     meshInfo.elemIds.resize(count);
+
+    print_delete_diagnostics(bulkData, meshInfo);
 }
 
 bool is_element_on_processor_boundary(const stk::mesh::ElemElemGraph& eeGraph, stk::mesh::Entity localElement)
@@ -139,24 +231,28 @@ void decrement_node_connectivity(const stk::mesh::BulkData &bulkData,
     for(unsigned i=0; i<numNodes; ++i)
     {
         stk::mesh::Entity node = nodes[i];
+
         int index = nodeConnInfo.nodeConnMap[node];
         nodeConnInfo.nodeConn[index]--;
+
+        EXPECT_TRUE( nodeConnInfo.nodeConn[index] > 0);
     }
 }
 
-unsigned num_local_elements(const stk::mesh::BulkData &bulkData, stk::mesh::Entity node)
+int num_local_elements(const stk::mesh::BulkData &bulkData, stk::mesh::Entity node)
 {
-    unsigned numElems = bulkData.num_elements(node);
+    int numElems = bulkData.num_elements(node);
+    int numLocalElems = numElems;
     const stk::mesh::Entity * elements = bulkData.begin(node, stk::topology::ELEM_RANK);
 
-    for(unsigned i=0; i<numElems; ++i)
+    for(int i=0; i<numElems; ++i)
     {
         stk::mesh::Entity elem = elements[i];
         if(!bulkData.bucket(elem).owned())
-            numElems--;
+            numLocalElems--;
     }
 
-    return numElems;
+    return numLocalElems;
 }
 
 void initialize_node_connectivity_map(const stk::mesh::BulkData &bulkData,
@@ -217,7 +313,6 @@ void populate_processor_boundary_perforated_mesh_ids(const stk::mesh::BulkData &
 
 void get_perforated_mesh_ids(const stk::mesh::BulkData &bulkData, const stk::mesh::ElemElemGraph& eeGraph, DeletedMeshInfo &meshInfo)
 {
-
     stk::mesh::EntityVector localElems;
     stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK), localElems);
 
@@ -231,7 +326,7 @@ void get_perforated_mesh_ids(const stk::mesh::BulkData &bulkData, const stk::mes
 
     populate_processor_boundary_perforated_mesh_ids(bulkData, eeGraph, localElems, nodeConnInfo, meshInfo);
 
-    //std::cout << "Deleting " << meshInfo.elemIds.size() << " perforated elements" << std::endl;
+    print_delete_diagnostics(bulkData, meshInfo);
 }
 
 void print_memory(stk::ParallelMachine communicator, const std::string &preamble)
@@ -294,12 +389,14 @@ public:
         double startTime = stk::wall_time();
 
         enabledTimerSet.setEnabledTimerMask(CHILDMASK2);
+
         {
             print_memory(bulk.parallel(), "Before elem graph creation");
             stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createGraphTimer, communicator);
             elemGraph = new stk::mesh::ElemElemGraph(bulk);
             print_memory(bulk.parallel(), "After elem graph creation");
         }
+
 
         elemGraphUpdater = new ElemElemGraphUpdaterWithTiming(bulk, *elemGraph, addElemTimer, deleteElemTimer);
         bulk.register_observer(elemGraphUpdater);
@@ -324,7 +421,7 @@ protected:
             stk::mesh::EntityId elemId = meshInfo.elemIds[i];
             stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
 
-            EXPECT_TRUE(bulkData.is_valid(elem));
+//            EXPECT_TRUE(bulkData.is_valid(elem));
 
             meshInfo.elemNodes[i].assign(bulkData.begin_nodes(elem), bulkData.end_nodes(elem));
 
@@ -361,7 +458,7 @@ protected:
         get_ids_along_boundary(bulkData, meshSpec, meshInfo);
 
         delete_elements(meshInfo);
-        stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
@@ -386,11 +483,16 @@ protected:
     stk::diag::Timer createGraphTimer;
 };
 
+
+
 class PerforatedElementGraphPerformance : public ElementGraphPerformance
 {
 public:
-    PerforatedElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec) :
-        ElementGraphPerformance(bulk, fileSpec)
+  PerforatedElementGraphPerformance(stk::mesh::BulkData &bulk, const std::string &fileSpec, bool animate) :
+      ElementGraphPerformance(bulk, fileSpec),
+      createBulkGraphTimer("create bulk graph", CHILDMASK2, rootTimer),
+      createBoundaryTimer("create boundary", CHILDMASK2, rootTimer),
+      doAnimation(animate)
     {
 
     }
@@ -405,19 +507,58 @@ protected:
     {
         DeletedMeshInfo meshInfo;
 
+	stk::mesh::Part& surface = bulkData.mesh_meta_data().declare_part("Skinned Surface");
+	create_exposed_boundary(surface);
+
         unsigned oldGraphEdgeCount = elemGraph->num_edges();
         get_perforated_mesh_ids(bulkData, *elemGraph, meshInfo);
 
         delete_elements(meshInfo);
-        stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
+        //stk::unit_test_util::write_mesh_using_stk_io("afterDelete.g", bulkData, bulkData.parallel());
         unsigned newGraphEdgeCount = elemGraph->num_edges();
         ASSERT_TRUE(oldGraphEdgeCount > newGraphEdgeCount);
 
         add_elements(meshInfo);
-        stk::unit_test_util::write_mesh_using_stk_io("afterAdd.g", bulkData, bulkData.parallel());
+        //stk::unit_test_util::write_mesh_using_stk_io("afterAdd.g", bulkData, bulkData.parallel());
         unsigned finalGraphEdgeCount = elemGraph->num_edges();
         ASSERT_EQ(oldGraphEdgeCount, finalGraphEdgeCount);
+
+        animate_death(meshInfo.elemIds);
     }
+
+    void create_exposed_boundary(stk::mesh::Part& surface)
+    {
+        {
+            print_memory(bulkData.parallel(), "Before bulk data elem graph creation");
+            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createBulkGraphTimer, communicator);
+            bulkData.initialize_face_adjacent_element_graph();
+            print_memory(bulkData.parallel(), "After bulk data elem graph creation");
+        }
+
+        {
+            stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(createBoundaryTimer, bulkData.parallel());
+            stk::mesh::create_exposed_block_boundary_sides(bulkData, bulkData.mesh_meta_data().universal_part(), {&surface});
+        }
+    }
+
+    void animate_death(const std::vector<stk::mesh::EntityId> elemIds)
+    {
+        if(doAnimation)
+        {
+            int numSteps, numElem = elemIds.size();
+
+            stk::all_reduce_max(bulkData.parallel(), &numElem, &numSteps, 1);
+
+            ScalarIntField &deathField = static_cast<ScalarIntField &> (*bulkData.mesh_meta_data().get_field(stk::topology::ELEM_RANK, "death"));
+            AnimateMeshDeletion deathAnimation(bulkData, deathField, "deathAnimation.e");
+
+            deathAnimation.animate(elemIds, numSteps);
+        }
+    }
+
+    stk::diag::Timer createBulkGraphTimer;
+    stk::diag::Timer createBoundaryTimer;
+    bool doAnimation;
 };
 
 class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
@@ -425,13 +566,23 @@ class PerforatedElementGraphPerformanceTest : public stk::unit_test_util::MeshFi
 protected:
     void run_element_graph_perf_test()
     {
-        PerforatedElementGraphPerformance perfTester(get_bulk(), get_mesh_spec());
+      PerforatedElementGraphPerformance perfTester(get_bulk(), get_mesh_spec(), doAnimation);
         perfTester.run_performance_test();
     }
     std::string get_mesh_spec()
     {
         return unitTestUtils::getOption("-file", "NO_FILE_SPECIFIED");
     }
+    void declare_animation_field()
+    {
+        if(doAnimation)
+        {
+          ScalarIntField &deathField = get_meta().declare_field<ScalarIntField>(stk::topology::ELEMENT_RANK, "death");
+          int val = 0;
+          stk::mesh::put_field(deathField, get_meta().universal_part(), &val);
+        }
+    }
+    bool doAnimation = false;
 };
 
 class ElementGraphPerformanceTest : public stk::unit_test_util::MeshFixture
@@ -482,7 +633,9 @@ TEST_F(ElementGraphPerformanceTest, read_mesh_no_aura)
 
 TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp)
 {
+    print_memory(MPI_COMM_WORLD, "Before mesh creation");
     allocate_bulk(stk::mesh::BulkData::AUTO_AURA);
+    declare_animation_field();
     stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
     run_element_graph_perf_test();
@@ -490,7 +643,9 @@ TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp)
 
 TEST_F(PerforatedElementGraphPerformanceTest, read_mesh_with_auto_decomp_no_aura)
 {
+    print_memory(MPI_COMM_WORLD, "Before mesh creation");
     allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    declare_animation_field();
     stk::unit_test_util::read_from_serial_file_and_decompose(get_mesh_spec(), get_bulk(), "rcb");
 
     run_element_graph_perf_test();
