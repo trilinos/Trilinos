@@ -447,7 +447,7 @@ namespace Intrepid2 {
              typename cellVertexValueType, class ...cellVertexProperties>
     static void
     getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
-                            Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellVertex,
+                            Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                             const shards::CellTopology cell );
 
     /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex.
@@ -1519,41 +1519,42 @@ namespace Intrepid2 {
                                     const shards::CellTopology cellTopo );
 
 
-  // /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with default initial guess.
-  //     \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-  //     \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-  //     \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-  //     \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-  //     \param  cellTopo          [in]  - cell topology with a reference cell required
-  // */
-  // template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
-  // static void
-  // validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
-  //                                       const ArrayPhysPoint &        physPoints,
-  //                                       const ArrayCell      &        cellWorkset,
-  //                                       const shards::CellTopology &  cellTopo,
-  //                                       const int&                    whichCell);
+  /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with default initial guess.
+      \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+      \param  cellTopo          [in]  - cell topology with a reference cell required
+  */
+  template<typename refPointViewType, 
+           typename physPointViewType, 
+           typename worksetCellViewType>
+  static void
+  CellTools_mapToReferenceFrameArgs( const refPointViewType     refPoints,
+                                     const physPointViewType    physPoints,
+                                     const worksetCellViewType  worksetCell,
+                                     const shards::CellTopology cellTopo );
 
 
 
-  // /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with user-defined initial guess.
-  //     \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-  //     \param  initGuess         [in]  - rank and dimensions must match those of physPoints
-  //     \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
-  //     \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
-  //     \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
-  //     \param  cellTopo          [in]  - cell topology with a reference cell required
-  // */
-  // template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
-  // static void
-  // validateArguments_mapToReferenceFrame(const ArrayRefPoint  &        refPoints,
-  //                                       const ArrayInitGuess &        initGuess,
-  //                                       const ArrayPhysPoint &        physPoints,
-  //                                       const ArrayCell      &        cellWorkset,
-  //                                       const shards::CellTopology &  cellTopo,
-  //                                       const int&                    whichCell);
-
-
+  /** \brief  Validates arguments to Intrepid2::CellTools::mapToReferenceFrame with user-defined initial guess.
+      \param  physPoints        [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  initGuess         [in]  - rank and dimensions must match those of physPoints
+      \param  refPoints         [in]  - rank-3 (C,P,D) array or rank-2 (P,D) array required
+      \param  cellWorkset       [in]  - rank-3 (C,N,D) array required
+      \param  whichCell         [in]  - default = -1 or 0 <= whichCell < C required
+      \param  cellTopo          [in]  - cell topology with a reference cell required
+  */
+  template<typename refPointViewType, 
+           typename initGuessViewType, 
+           typename physPointViewType, 
+           typename worksetCellViewType>
+  static void
+  CellTools_mapToReferenceFrameInitGuess( const refPointViewType     refPoints,
+                                          const initGuessViewType    initGuess,
+                                          const physPointViewType    physPoints,
+                                          const worksetCellViewType  worksetCell,
+                                          const shards::CellTopology cellTopo );
 
   // /** \brief  Validates arguments to Intrepid2::CellTools::checkPointwiseInclusion
   //     \param  inCell            [out] - rank-1  (P) array required
@@ -1583,7 +1584,7 @@ namespace Intrepid2 {
 #include "Intrepid2_CellToolsDefJacobian.hpp"
 
 #include "Intrepid2_CellToolsDefRefToPhys.hpp"
-// #include "Intrepid2_CellToolsDefPhysToRef.hpp"
+#include "Intrepid2_CellToolsDefPhysToRef.hpp"
 
 // not yet converted ...
 // #include "Intrepid2_CellToolsDefInclusion.hpp"

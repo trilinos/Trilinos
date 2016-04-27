@@ -114,10 +114,9 @@ namespace Intrepid2 {
                       const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                       const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    validateArguments_mapToPhysicalFrame( physPoints, refPoints, worksetCell, basis->getBaseTopology() );
+    CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
 #endif
-    const auto cellTopo = basis->getBaseTopology();
-    const auto spaceDim = cellTopo.getDimension();
+    const auto cellTopo = basis->getBaseCellTopology();
     const auto numCells = worksetCell.dimension(0);
 
     //points can be rank-2 (P,D), or rank-3 (C,P,D)
@@ -125,15 +124,15 @@ namespace Intrepid2 {
     const auto numPoints = (refPointRank == 2 ? refPoints.dimension(0) : refPoints.dimension(1));
     const auto basisCardinality = basis->getCardinality();
 
-    typedef Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPointViewType;
-    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
+    typedef Kokkos::DynRankView<physPointValueType,physPointProperties...> physPointViewType;
+    typedef Kokkos::DynRankView<physPointValueType,SpT> physPointViewSpType;
 
-    physPointViewType vals;
+    physPointViewSpType vals;
 
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = physPointViewType("CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
+      vals = physPointViewSpType("CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -141,7 +140,7 @@ namespace Intrepid2 {
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
-      vals = physPointViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      vals = physPointViewSpType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       for (auto cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
@@ -150,7 +149,8 @@ namespace Intrepid2 {
     }
     }
 
-    typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,physPointViewType> FunctorType;
+    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
+    typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,physPointViewSpType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     const auto loopSize = physPoints.dimension(0)*physPoints.dimension(1);

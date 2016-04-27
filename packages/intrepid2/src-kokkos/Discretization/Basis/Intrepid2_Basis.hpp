@@ -219,6 +219,7 @@ namespace Intrepid2 {
     Basis() = default;
     virtual~Basis() = default;
 
+    // receives input arguements
     typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
     typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
 

@@ -1,4 +1,4 @@
-1;2c// @HEADER
+// @HEADER
 // ************************************************************************
 //
 //                           Intrepid2 Package
@@ -74,27 +74,26 @@ namespace Intrepid2 {
                        const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                        const shards::CellTopology cellTopo ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    CellTools_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo);
+    CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
 #endif  
     typedef RealSpaceTools<SpT> rst;
     typedef Kokkos::DynRankView<refPointValueType,refPointProperties...> refPointViewType;
+    typedef Kokkos::DynRankView<refPointValueType,SpT> refPointViewSpType;
+
     const auto spaceDim  = cellTopo.getDimension();
-    refPointViewType 
+    refPointViewSpType 
       cellCenter("CellTools::mapToReferenceFrame::cellCenter", spaceDim), 
       cellVertex("CellTools::mapToReferenceFrame::cellCenter", spaceDim);
-    getReferenceCellCenter(cellCenter, cellVertex);
-  
-    // Resize initial guess depending on the rank of the physical points array
+    getReferenceCellCenter(cellCenter, cellVertex, cellTopo);
 
-  
     // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
-    const auto numCells = cellWorkset.dimension(0);
+    const auto numCells = worksetCell.dimension(0);
     const auto numPoints = physPoints.dimension(1);
     
-    refPointViewType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
+    refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
     rst::clone(initGuess, cellCenter);
-
-    mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, cellTopo);  
+    
+    mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, worksetCell, cellTopo);  
   }
   
 
@@ -112,15 +111,15 @@ namespace Intrepid2 {
                                 const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                                 const HGradBasisPtrType basis ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    CellTools_mapToReferenceFrame(refPoints, initGuess, physPoints, worksetCell, 
-                                  basis->getBaseTopology());
+    CellTools_mapToReferenceFrameInitGuessArgs(refPoints, initGuess, physPoints, worksetCell, 
+                                               basis->getBaseCellTopology());
 #endif
-    const auto cellTopo = basis->getBaseTopology();
+    const auto cellTopo = basis->getBaseCellTopology();
     const auto spaceDim = cellTopo.getDimension();
 
     // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. 
     // Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
-    const auto numCells = cellWorkset.dimension(0);
+    const auto numCells = worksetCell.dimension(0);
     const auto numPoints = physPoints.dimension(1);
 
     typedef RealSpaceTools<SpT> rst;
@@ -131,6 +130,10 @@ namespace Intrepid2 {
     xViewType 
       xOld("CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim),
       xTmp("CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
+
+    // Set initial guess to xOld; we can do soft copy with initGuess but leave it not touched 
+    // user may want to keep the same init guess
+    Kokkos::deep_copy(xOld, initGuess);
     
     typedef Kokkos::DynRankView<physPointValueType,SpT> jacobianViewType;
     jacobianViewType
@@ -141,9 +144,6 @@ namespace Intrepid2 {
     errorViewType 
       errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints),
       errorCellwise ("CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells);
-
-    // Set initial guess to xOld
-    Kokkos::deep_copy(xOld, initGuess);
 
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
@@ -156,7 +156,7 @@ namespace Intrepid2 {
       // The Newton step.
       mapToPhysicalFrame(xTmp, xOld, worksetCell, basis); // xTmp <- F(xOld)
       rst::subtract(xTmp, physPoints, xTmp);              // xTmp <- physPoints - F(xOld)
-      rst::matvec(refPoints, jacobInv, xTmp);             // refPoints <- DF^{-1}( physPoints - F(xOld) )
+      rst::matvec(refPoints, jacobianInv, xTmp);          // refPoints <- DF^{-1}( physPoints - F(xOld) )
       rst::add(refPoints, xOld);                          // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
 
       // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|

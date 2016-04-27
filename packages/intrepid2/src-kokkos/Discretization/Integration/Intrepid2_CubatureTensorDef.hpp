@@ -93,8 +93,8 @@ namespace Intrepid2 {
                                   cubWeights.dimension(0) < obj_->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
-    typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
-    typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeightViewType; 
+    typedef Kokkos::DynRankView<cubPointValueType, SpT>  cubPointViewType;
+    typedef Kokkos::DynRankView<cubWeightValueType,SpT> cubWeightViewType; 
 
     // mirroring and where the data is problematic... when it becomes a problem, then deal with it.
     cubPointViewType  tmpPoints [Parameters::MaxDimension];

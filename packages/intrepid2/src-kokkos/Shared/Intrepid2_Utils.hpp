@@ -132,7 +132,7 @@ namespace Intrepid2 {
                 const DimType dim0,
                 const DimType dim1,
                 const IterType iter) {
-      DimType tmp;
+      IdxType tmp;
       unrollIndex(tmp, k, dim0*dim1, iter);
       unrollIndex(  i, j, dim0,      tmp);
     }

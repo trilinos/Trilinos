@@ -127,15 +127,15 @@ namespace Intrepid2 {
     const auto numPoints = (pointRank == 2 ? points.dimension(0) : points.dimension(1));
     const auto basisCardinality = basis->getCardinality();    
 
-    typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobianViewType;
-    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
-
-    jacobianViewType grads;
+    typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobianViewType;
+    typedef Kokkos::DynRankView<jacobianValueType,SpT>                   jacobianViewSpType;
+    
+    jacobianViewSpType grads;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = jacobianViewType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = jacobianViewSpType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -143,7 +143,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = jacobianViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = jacobianViewSpType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
       for (auto cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
@@ -152,7 +152,8 @@ namespace Intrepid2 {
     }
     }
 
-    typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,jacobianViewType> FunctorType;
+    typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
+    typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,jacobianViewSpType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
       
     const auto loopSize = jacobian.dimension(0)*jacobian.dimension(1);
@@ -168,7 +169,7 @@ namespace Intrepid2 {
   setJacobianInv( /**/  Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,     
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    validateArguments_setJacobianInv(jacobianInv, jacobian);
+    CellTools_setJacobianInvArgs(jacobianInv, jacobian);
 #endif
     RealSpaceTools<SpT>::inverse(jacobianInv, jacobian);
   }

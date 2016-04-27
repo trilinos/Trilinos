@@ -138,7 +138,7 @@ namespace Intrepid2 {
   void 
   CellTools<SpT>::
   getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
-                          Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellVertex,
+                          Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                           const shards::CellTopology cell ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
