@@ -155,9 +155,8 @@ public:
         = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       data_->ApplyAdjointJacobian2ToVec (gp, up, up);
     }
-
-    Tpetra::MultiVector<> Wzp(*zp); Wzp.elementWiseMultiply(1,*Zscale_,*zp,0);
-    gp->update(alpha_, Wzp, scale_);
+    gp->update(alpha_, *zp, scale_);
+    gp->elementWiseMultiply(1,*Zscale_,*gp,0);
   }
 
   void hessVec_11(ROL::Vector<Real> &hv,
@@ -218,6 +217,7 @@ public:
       data_->ApplyAdjointJacobian2ToVec (hvp, up, vp);
       Real two(2);
       hvp->scale(two*scale_);
+      hvp->elementWiseMultiply(1,*Zscale_,*hvp,0);
     }
   }
 
@@ -238,9 +238,8 @@ public:
         = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
       data_->ApplyAdjointHessian22ToVec (hvp, up, vp, up);
     }
-
-    Tpetra::MultiVector<> Wvp(*vp); Wvp.elementWiseMultiply(1,*Zscale_,*vp,0);
-    hvp->update(alpha_, Wvp, scale_);
+    hvp->update(alpha_, *vp, scale_);
+    hvp->elementWiseMultiply(1,*Zscale_,*hvp,0);
   }
 
 };

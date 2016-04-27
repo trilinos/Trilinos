@@ -73,7 +73,6 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
     mutable Teuchos::RCP<DualScaledTpetraMultiVector<Real> > dual_vec_;
 
   public:
-    virtual ~PrimalScaledTpetraMultiVector() {}
 
     PrimalScaledTpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
                                   const Teuchos::RCP<const Tpetra::Vector<Real,LO,GO,Node> > &scale_vec)
@@ -83,30 +82,38 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
       TEUCHOS_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      Real v; // Need this to make a 1-element ArrayView
-      Teuchos::ArrayView<Real> val(&v,1);
       const Tpetra::MultiVector<Real,LO,GO,Node> &ex
         = *(Teuchos::dyn_cast<const TpetraMultiVector<Real,LO,GO,Node> >(x).getVector());
-      Tpetra::MultiVector<Real,LO,GO,Node> wex(ex); wex.elementWiseMultiply(1,*scale_vec_,ex,0);
-      const Tpetra::MultiVector<Real,LO,GO,Node> &ey = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
+        = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      // Scale x with scale_vec_
+      Tpetra::MultiVector<Real,LO,GO,Node> wex(ex);
+      wex.elementWiseMultiply(1,*scale_vec_,ex,0);
+      // Perform Euclidean dot between *this and scaled x
+      Teuchos::Array<Real> val(1, 0);
       ey.dot( wex, val );
       return val[0];
     }
 
     Teuchos::RCP<Vector<Real> > clone() const {
-      const Tpetra::MultiVector<Real,LO,GO,Node> &ey = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
-      size_t n = ey.getNumVectors();  
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
+        = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      size_t n = ey.getNumVectors();
       return Teuchos::rcp(new PrimalScaledTpetraMultiVector<Real,LO,GO,Node>(
              Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(ey.getMap(),n,false)),
              scale_vec_));
     }
 
     const Vector<Real> & dual() const {
-      const Tpetra::MultiVector<Real,LO,GO,Node> &yval
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
-      Tpetra::MultiVector<Real,LO,GO,Node> tmp(yval); tmp.elementWiseMultiply(1,*scale_vec_,yval,0);
+      // Scale *this with scale_vec_
+      Tpetra::MultiVector<Real,LO,GO,Node> wey(ey);
+      wey.elementWiseMultiply(1,*scale_vec_,ey,0);
+      // Return a copy of scaled *this
       dual_vec_ = Teuchos::rcp(new DualScaledTpetraMultiVector<Real,LO,GO,Node>(
-                  Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(tmp)), scale_vec_));
+                  Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(wey)),
+                  scale_vec_));
       return *dual_vec_;
     }
 
@@ -116,10 +123,9 @@ template <class Real, class LO, class GO, class Node>
 class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
   private:
     const Teuchos::RCP<const Tpetra::Vector<Real,LO,GO,Node> > scale_vec_;
-    mutable Teuchos::RCP<PrimalScaledTpetraMultiVector<Real> > dual_vec_;
+    mutable Teuchos::RCP<PrimalScaledTpetraMultiVector<Real> > primal_vec_;
 
   public:
-    virtual ~DualScaledTpetraMultiVector() {}
 
     DualScaledTpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
                                 const Teuchos::RCP<const Tpetra::Vector<Real,LO,GO,Node> > &scale_vec)
@@ -129,19 +135,24 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
       TEUCHOS_TEST_FOR_EXCEPTION( (TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      Real v; // Need this to make a 1-element ArrayView
-      Teuchos::ArrayView<Real> val(&v,1);
       const Tpetra::MultiVector<Real,LO,GO,Node> &ex
         = *(Teuchos::dyn_cast<const TpetraMultiVector<Real,LO,GO,Node> >(x).getVector());
-      Tpetra::Vector<Real,LO,GO,Node> W(*scale_vec_); W.reciprocal(*scale_vec_);
-      Tpetra::MultiVector<Real,LO,GO,Node> wex(ex); wex.elementWiseMultiply(1,W,ex,0);
-      const Tpetra::MultiVector<Real,LO,GO,Node> &ey = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
+        = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      // Scale x with 1/scale_vec_
+      Tpetra::Vector<Real,LO,GO,Node> W(*scale_vec_);
+      W.reciprocal(*scale_vec_);
+      Tpetra::MultiVector<Real,LO,GO,Node> wex(ex);
+      wex.elementWiseMultiply(1,W,ex,0);
+      // Perform Euclidean dot between *this and scaled x
+      Teuchos::Array<Real> val(1, 0);
       ey.dot( wex, val );
       return val[0];
     }
 
     Teuchos::RCP<Vector<Real> > clone() const {
-      const Tpetra::MultiVector<Real,LO,GO,Node> &ey = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
+        = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
       return Teuchos::rcp(new DualScaledTpetraMultiVector<Real,LO,GO,Node>(
              Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(ey.getMap(),n,false)),
@@ -149,13 +160,18 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
     }
 
     const Vector<Real> & dual() const {
-      const Tpetra::MultiVector<Real,LO,GO,Node> &yval
+      const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
-      Tpetra::Vector<Real,LO,GO,Node> W(*scale_vec_); W.reciprocal(*scale_vec_);
-      Tpetra::MultiVector<Real,LO,GO,Node> tmp(yval); tmp.elementWiseMultiply(1,W,yval,0);
-      dual_vec_ = Teuchos::rcp(new PrimalScaledTpetraMultiVector<Real,LO,GO,Node>(
-                  Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(tmp)), scale_vec_));
-      return *dual_vec_;
+      // Scale *this with 1/scale_vec_
+      Tpetra::Vector<Real,LO,GO,Node> W(*scale_vec_);
+      W.reciprocal(*scale_vec_);
+      Tpetra::MultiVector<Real,LO,GO,Node> wey(ey);
+      wey.elementWiseMultiply(1,W,ey,0);
+      // Return a copy of scaled *this
+      primal_vec_ = Teuchos::rcp(new PrimalScaledTpetraMultiVector<Real,LO,GO,Node>(
+                    Teuchos::rcp(new Tpetra::MultiVector<Real,LO,GO,Node>(wey)),
+                    scale_vec_));
+      return *primal_vec_;
     }
 
 }; // class DualScaledTpetraMultiVector

@@ -54,13 +54,23 @@ template<class Real>
 class EqualityConstraint_PDEOPT_ElasticitySIMP : public ROL::EqualityConstraint_SimOpt<Real> {
 private:
 
-  Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
+  const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
+  Teuchos::RCP<const Tpetra::Vector<> > Zscale_;
 
 public:
 
   EqualityConstraint_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
                                            const Teuchos::RCP<Teuchos::ParameterList> &parlist)
-    : data_(data) {}
+    : data_(data) {
+    // Compute density scaling vector
+    bool useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
+    Teuchos::RCP<Tpetra::MultiVector<> > cellMeasures = data->getCellAreas();
+    if ( !useZscale ) {
+      Real one(1);
+      cellMeasures->putScalar(one);
+    }
+    Zscale_ = cellMeasures->getVector(0);
+  }
 
   using ROL::EqualityConstraint_SimOpt<Real>::value;
   
@@ -81,6 +91,21 @@ public:
     cp->update(-one, *(data_->getVecF()), one);
   }
 
+  void solve(ROL::Vector<Real> &c,
+             ROL::Vector<Real> &u,
+       const ROL::Vector<Real> &z,
+             Real &tol) {
+    Teuchos::RCP<Tpetra::MultiVector<> > up
+      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(u)).getVector();
+    Teuchos::RCP<const Tpetra::MultiVector<> > zp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    // Solve PDE    
+    data_->updateMaterialDensity(zp);
+    data_->constructSolverWithNewMaterial();
+    data_->ApplyInverseJacobian1ToVec(up, data_->getVecF(), false);
+    // Compute residual
+    EqualityConstraint_PDEOPT_ElasticitySIMP<Real>::value(c,u,z,tol);
+  }
 
   void applyJacobian_1(ROL::Vector<Real> &jv,
                  const ROL::Vector<Real> &v,
@@ -151,6 +176,7 @@ public:
 
     data_->updateMaterialDensity (zp);
     data_->ApplyAdjointJacobian2ToVec (ajvp, up, vp);
+//    ajvp->elementWiseMultiply(1,*Zscale_,*ajvp,0);
   }
 
 
