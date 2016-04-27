@@ -580,9 +580,9 @@ namespace Tpetra {
     {}
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
-                       size_t numSameIDs,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteToLIDs,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteFromLIDs)
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
     {}
 
     /// \brief Perform any packing or preparation required for communication.

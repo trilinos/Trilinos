@@ -851,34 +851,22 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    // Convert arguments to Kokkos::View's (involves deep copy to device)
+    // Convert arguments to Kokkos::DualView.  This currently involves
+    // deep copy, either to host or to device (depending on
+    // packOnHost).  At some point, we need to change the interface of
+    // doTransferNew so it takes DualView (or just View) rather than
+    // Teuchos::ArrayView, so that we won't need this deep copy.
     //
-    // FIXME (mfh 17 Feb 2014) getKokkosViewDeepCopy _always_ does a
-    // deep copy.  It has to, since it returns a managed Kokkos::View,
-    // but the input Teuchos::ArrayView is unmanaged.  One way to fix
-    // this would be to change the interface by replacing the
-    // Teuchos::ArrayView inputs with Kokkos::View inputs.  This is
-    // the approach taken by Kokkos::DistObjectKA.  Some points:
-    //
-    //   1. It's perfectly OK to change the interface of doTransfer.
-    //      It should take Kokkos::View by default, and convert to
-    //      Teuchos::Array{RCP,View} if needed internally.
-    //   2. Recall that Teuchos::ArrayView is an unmanaged view.
-    //   3. If DistObject ever gets a nonblocking interface, that
-    //      interface should take managed views.
-    typedef Kokkos::View<const LO*, execution_space> lo_const_view_type;
-    lo_const_view_type permuteToLIDs =
-      getKokkosViewDeepCopy<execution_space> (permuteToLIDs_);
-    lo_const_view_type permuteFromLIDs =
-      getKokkosViewDeepCopy<execution_space> (permuteFromLIDs_);
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (permuteFromLIDs.size ()) !=
-         static_cast<size_t> (permuteFromLIDs_.size ()), std::logic_error,
-         "permuteFromLIDs.size() = " << permuteFromLIDs.size () <<
-         " != permuteFromLIDs_.size() = " << permuteFromLIDs_.size () << ".");
-    }
-
+    // We don't need to sync the arguments.  packOnHost determines
+    // where the most recent version lives.
+    Kokkos::DualView<LO*, device_type> permuteToLIDs =
+      getDualViewCopyFromArrayView<LO, device_type> (permuteToLIDs_,
+                                                     "permuteToLIDs",
+                                                     packOnHost);
+    Kokkos::DualView<LO*, device_type> permuteFromLIDs =
+      getDualViewCopyFromArrayView<LO, device_type> (permuteFromLIDs_,
+                                                     "permuteFromLIDs",
+                                                     packOnHost);
     // No need to sync this.  packAndPrepareNew will use it to
     // determine where to pack (in host or device memory).
     Kokkos::DualView<LO*, device_type> remoteLIDs =
@@ -908,7 +896,7 @@ namespace Tpetra {
       std::cerr << ">>> 2. copyAndPermuteNew" << std::endl;
     }
 
-    if (numSameIDs + permuteToLIDs.size() != 0) {
+    if (numSameIDs + permuteToLIDs.dimension_0 () != 0) {
       // There is at least one GID to copy or permute.
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
