@@ -133,10 +133,48 @@ namespace Intrepid2 {
   }
 
   template<typename SpT>
+  template<typename cellCenterValueType, class ...cellCenterProperties,
+           typename cellVertexValueType, class ...cellVertexProperties>
+  void 
+  CellTools<SpT>::
+  getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
+                          Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellVertex,
+                          const shards::CellTopology cell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): the specified cell topology does not have a reference cell." );
+    
+    INTREPID2_TEST_FOR_EXCEPTION( cellCenter.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have rank 1." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellCenter.dimension(0) < cell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension bigger than Parameters::MaxDimension." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have rank 1." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension bigger than Parameters::MaxDimension." );
+#endif
+    const auto vertexCount = cell.getVertexCount();
+    const auto dim = cell.getDimension();
+
+    for (auto i=0;i<dim;++i) {
+      cellCenter(i) = 0;
+      for (auto vertOrd=0;vertOrd<vertexCount;++vertOrd) {
+        getReferenceVertex(cellVertex, cell, vertOrd); 
+        cellCenter(i) += cellVertex(i);
+      }
+      cellCenter(i) /= vertexCount;
+    }
+  }
+
+
+  template<typename SpT>
   template<typename cellVertexValueType, class ...cellVertexProperties>
   void
   CellTools<SpT>::
-  getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices,
+  getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                       const shards::CellTopology cell,
                       const ordinal_type         vertexOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -146,13 +184,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( (vertexOrd < 0) || vertexOrd > cell.getVertexCount(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceVertex): invalid node ordinal for the specified cell topology." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertices.rank() != 1, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertices.dimension(0) < cell.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.dimension(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
 #endif
-    getReferenceNode(cellVertices, 
+    getReferenceNode(cellVertex, 
                      cell, 
                      vertexOrd);
   }
@@ -198,7 +236,7 @@ namespace Intrepid2 {
   template<typename cellNodeValueType, class ...cellNodeProperties>
   void
   CellTools<SpT>::
-  getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNodes,
+  getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                     const shards::CellTopology  cell,
                     const ordinal_type          nodeOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -208,11 +246,11 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= cell.getNodeCount(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have rank 1." );
+    INTREPID2_TEST_FOR_EXCEPTION( cellNode.rank() != 1, std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have rank 1." );
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellNodes.dimension(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension bigger than Parameters::MaxDimension." );
+    INTREPID2_TEST_FOR_EXCEPTION( cellNode.dimension(0) < cell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension bigger than Parameters::MaxDimension." );
 #endif
 
     if (!isReferenceNodeDataSet_) 
@@ -265,12 +303,12 @@ namespace Intrepid2 {
     }
     
     // subview version; this is dangerous that users get control over the static data
-    // cellNodes = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
+    // cellNode = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
 
     // let's copy;
     const auto dim = cell.getDimension();
     for (auto i=0;i<dim;++i) 
-      cellNodes(i) = ref(nodeOrd, i);
+      cellNode(i) = ref(nodeOrd, i);
   }
 
   template<typename SpT>

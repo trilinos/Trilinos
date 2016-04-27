@@ -144,10 +144,10 @@ namespace Intrepid2 {
     case 3: { 
       // For CVFEM
       grads = jacobianViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
-      // for (auto cell=0;cell<numCells;++cell) 
-      //   basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
-      //                   Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
-      //                   OPERATOR_GRAD);
+      for (auto cell=0;cell<numCells;++cell) 
+        basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
+                         Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
+                         OPERATOR_GRAD);
       break;
     }
     }

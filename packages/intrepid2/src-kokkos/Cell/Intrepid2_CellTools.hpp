@@ -443,6 +443,13 @@ namespace Intrepid2 {
     // the node information can be used inside of kokkos functor and needs kokkos inline and
     // exception should be an abort. for now, let's not decorate
 
+    template<typename cellCenterValueType, class ...cellCenterProperties,
+             typename cellVertexValueType, class ...cellVertexProperties>
+    static void
+    getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
+                            Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellVertex,
+                            const shards::CellTopology cell );
+
     /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex.
 
         Requires cell topology with a reference cell. Vertex coordinates are always returned
@@ -455,7 +462,7 @@ namespace Intrepid2 {
     */
     template<typename cellVertexValueType, class ...cellVertexProperties>
     static void
-    getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertices,
+    getReferenceVertex( /**/  Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                         const shards::CellTopology cell,
                         const ordinal_type         vertexOrd );
 
@@ -500,7 +507,7 @@ namespace Intrepid2 {
     */
     template<typename cellNodeValueType, class ...cellNodeProperties>
     static void
-    getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNodes,
+    getReferenceNode( /**/  Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                       const shards::CellTopology  cell,
                       const ordinal_type          nodeOrd );
 
@@ -1060,134 +1067,152 @@ namespace Intrepid2 {
                            const shards::CellTopology parentCell );
 
 
-    // //============================================================================================//
-    // //                                                                                            //
-    // //                      Physical-to-reference frame mapping and its inverse                   //
-    // //                                                                                            //
-    // //============================================================================================//
+    //============================================================================================//
+    //                                                                                            //
+    //                      Physical-to-reference frame mapping and its inverse                   //
+    //                                                                                            //
+    //============================================================================================//
 
 
-    // /** \brief  Computes \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
-    //     using a default initial guess.
+    /** \brief  Computes \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
+        using a default initial guess.
 
-    //     There are two use cases:
-    //     \li     Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a
-    //     cell workset to a \b single set of points stored in a rank-2 (P,D) array;
-    //     \li     Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
-    //     having the same number of points, indexed by cell ordinal, and stored in a rank-3
-    //     (C,P,D) array (default mode).
+        There are two use cases:
+        \li     Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a
+        cell workset to a \b single set of points stored in a rank-2 (P,D) array;
+        \li     Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
+        having the same number of points, indexed by cell ordinal, and stored in a rank-3
+        (C,P,D) array (default mode).
 
-    //     For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that
-    //     \f[
-    //     \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d
-    //     \f]
-    //     The \c whichCell argument selects the physical cell and is required to be a valid cell
-    //     ordinal for \c cellWorkset array.
+        For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that
+        \f[
+        \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d
+        \f]
+        The \c whichCell argument selects the physical cell and is required to be a valid cell
+        ordinal for \c cellWorkset array.
 
-    //     For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
-    //     \f[
-    //     \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
-    //     \f]
-    //     The default value \e whichCell=-1 selects this mode.
+        For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
+        \f[
+        \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
+        \f]
+        The default value \e whichCell=-1 selects this mode.
 
-    //     Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
-    //     for definition of the mapping function. Presently supported cell topologies are
+        Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
+        for definition of the mapping function. Presently supported cell topologies are
 
-    //     \li     1D:   \c Line<2>
-    //     \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
-    //     \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
+        \li     1D:   \c Line<2>
+        \li     2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+        \li     3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
 
-    //     \warning
-    //     Computation of the inverse map in this method uses default selection of the initial guess
-    //     based on cell topology:
-    //     \li     \c Line topologies: line center (0)
-    //     \li     \c Triangle topologies: the point (1/3, 1/3)
-    //     \li     \c Quadrilateral topologies: the point (0, 0)
-    //     \li     \c Tetrahedron topologies: the point (1/6, 1/6, 1/6)
-    //     \li     \c Hexahedron topologies: the point (0, 0, 0)
-    //     \li     \c Wedge topologies: the point (1/2, 1/2, 0)
-    //     For some cells with extended topologies, these initial guesses may not be good enough
-    //     for Newton's method to converge in the allotted number of iterations. A version of this
-    //     method with user-supplied initial guesses is also available.
+        \warning
+        Computation of the inverse map in this method uses default selection of the initial guess
+        based on cell topology:
+        \li     \c Line topologies: line center (0)
+        \li     \c Triangle topologies: the point (1/3, 1/3)
+        \li     \c Quadrilateral topologies: the point (0, 0)
+        \li     \c Tetrahedron topologies: the point (1/6, 1/6, 1/6)
+        \li     \c Hexahedron topologies: the point (0, 0, 0)
+        \li     \c Wedge topologies: the point (1/2, 1/2, 0)
+        For some cells with extended topologies, these initial guesses may not be good enough
+        for Newton's method to converge in the allotted number of iterations. A version of this
+        method with user-supplied initial guesses is also available.
 
-    //     \warning
-    //     The array \c physPoints represents an arbitrary set (or sets) of points in the physical
-    //     frame that are not required to belong in the physical cell (cells) that define(s) the reference
-    //     to physical mapping. As a result, the images of these points in the reference frame
-    //     are not necessarily contained in the reference cell corresponding to the specified
-    //     cell topology.
+        \warning
+        The array \c physPoints represents an arbitrary set (or sets) of points in the physical
+        frame that are not required to belong in the physical cell (cells) that define(s) the reference
+        to physical mapping. As a result, the images of these points in the reference frame
+        are not necessarily contained in the reference cell corresponding to the specified
+        cell topology.
 
-    //     \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
-    //     \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
-    //     \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-    //     \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
-    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+        \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
+        \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
 
-    //     \todo   Implement method for non-standard (shell, beam, etc) topologies.
-    // */
-    // template<typename refPointValueType,  class ...refPointProperties,
-    //          typename physPointValueType, class ...physPointProperties,
-    //          typename worksetCellValueType,   class ...worksetCellProperties>
-    // static void
-    // mapToReferenceFrame( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>    refPoints,
-    //                      const Kokkos::DynRankView<physPointValueType,physPointProperties...>  physPoints,
-    //                      const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...>      worksetCell,
-    //                      const shards::CellTopology cellTopo );
+        \todo   Implement method for non-standard (shell, beam, etc) topologies.
+    */
+    template<typename refPointValueType,    class ...refPointProperties,
+             typename physPointValueType,   class ...physPointProperties,
+             typename worksetCellValueType, class ...worksetCellProperties>
+    static void
+    mapToReferenceFrame( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>    refPoints,
+                         const Kokkos::DynRankView<physPointValueType,physPointProperties...>  physPoints,
+                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...>      worksetCell,
+                         const shards::CellTopology cellTopo );
 
-    // /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
-    //     using user-supplied initial guess.
+    /** \brief  Computation of \f$ F^{-1}_{c} \f$, the inverse of the reference-to-physical frame map
+        using user-supplied initial guess.
 
-    //     There are two use cases:
-    //     \li       Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a
-    //     cell workset to a \b single set of points stored in a rank-2 (P,D) array;
-    //     \li       Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
-    //     having the same number of points, indexed by cell ordinal, and stored in a rank-3
-    //     (C,P,D) array (default mode).
+        There are two use cases:
+        \li       Applies \f$ F^{-1}_{c} \f$ for a \b specified physical cell \f${\mathcal C}\f$ from a
+        cell workset to a \b single set of points stored in a rank-2 (P,D) array;
+        \li       Applies \f$ F^{-1}_{c} \f$ for \b all cells in a cell workset to \b multiple point sets
+        having the same number of points, indexed by cell ordinal, and stored in a rank-3
+        (C,P,D) array (default mode).
 
-    //     For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that
-    //     \f[
-    //     \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d
-    //     \f]
-    //     The \c whichCell argument selects the physical cell and is required to be a valid cell
-    //     ordinal for \c cellWorkset array.
+        For a single point set in a rank-2 array (P,D) returns a rank-2 (P,D) array such that
+        \f[
+        \mbox{refPoints}(p,d) = \Big(F^{-1}_c(physPoint(p,*)) \Big)_d
+        \f]
+        The \c whichCell argument selects the physical cell and is required to be a valid cell
+        ordinal for \c cellWorkset array.
 
-    //     For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
-    //     \f[
-    //     \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
-    //     \f]
-    //     The default value \c whichCell=-1 selects this mode.
+        For multiple point sets in a rank-3 (C,P,D) array returns a rank-3 (C,P,D) array such that
+        \f[
+        \mbox{refPoints}(c,p,d) = \Big(F^{-1}_c(physPoint(c,p,*)) \Big)_d
+        \f]
+        The default value \c whichCell=-1 selects this mode.
 
-    //     Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
-    //     for definition of the mapping function. Presently supported cell topologies are
+        Requires cell topology with a reference cell. See Section \ref sec_cell_topology_ref_map
+        for definition of the mapping function. Presently supported cell topologies are
 
-    //     \li       1D:   \c Line<2>
-    //     \li       2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
-    //     \li       3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
+        \li       1D:   \c Line<2>
+        \li       2D:   \c Triangle<3>, \c Triangle<6>, \c Quadrilateral<4>, \c Quadrilateral<9>
+        \li       3D:   \c Tetrahedron<4>, \c Tetrahedron<10>, \c Hexahedron<8>, \c Hexahedron<27>
 
-    //     \warning
-    //     The array \c physPoints represents an arbitrary set (or sets) of points in the physical
-    //     frame that are not required to belong in the physical cell (cells) that define(s) the reference
-    //     to physical mapping. As a result, the images of these points in the reference frame
-    //     are not necessarily contained in the reference cell corresponding to the specified
-    //     cell topology.
+        \warning
+        The array \c physPoints represents an arbitrary set (or sets) of points in the physical
+        frame that are not required to belong in the physical cell (cells) that define(s) the reference
+        to physical mapping. As a result, the images of these points in the reference frame
+        are not necessarily contained in the reference cell corresponding to the specified
+        cell topology.
 
-    //     \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
-    //     \param  initGuess         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with the initial guesses for each point
-    //     \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
-    //     \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
-    //     \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
-    //     \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
-    // */
-    // template<typename refPointValueType,  class ...refPointProperties,
-    //          typename initGuessValueType, class ...initGuessProperties,
-    //          typename physPointValueType, class ...physPointProperties,
-    //          typename worksetCellValueType,   class ...worksetCellProperties>
-    // static void
-    // mapToReferenceFrameInitGuess( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>    refPoints,
-    //                               const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>  initGuess,
-    //                               const Kokkos::DynRankView<physPointValueType,physPointProperties...>  physPoints,
-    //                               const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...>      worksetCell,
-    //                               const shards::CellTopology cellTopo );
+        \param  refPoints         [out] - rank-3/2 array with dimensions (C,P,D)/(P,D) with the images of the physical points
+        \param  initGuess         [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with the initial guesses for each point
+        \param  physPoints        [in]  - rank-3/2 array with dimensions (C,P,D)/(P,D) with points in physical frame
+        \param  cellWorkset       [in]  - rank-3 array with dimensions (C,N,D) with the nodes of the cell workset
+        \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map; default is -1
+        \param  cellTopo          [in]  - cell topology of the cells stored in \c cellWorkset
+    */
+    template<typename refPointValueType,    class ...refPointProperties,
+             typename initGuessValueType,   class ...initGuessProperties,
+             typename physPointValueType,   class ...physPointProperties,
+             typename worksetCellValueType, class ...worksetCellProperties,
+             typename HGradBasisPtrType>
+    static void
+    mapToReferenceFrameInitGuess( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                                  const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
+                                  const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                                  const HGradBasisPtrType basis );
+
+    template<typename refPointValueType,    class ...refPointProperties,
+             typename initGuessValueType,   class ...initGuessProperties,
+             typename physPointValueType,   class ...physPointProperties,
+             typename worksetCellValueType, class ...worksetCellProperties>
+    static void
+    mapToReferenceFrameInitGuess( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                                  const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
+                                  const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                                  const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                                  const shards::CellTopology cellTopo ) {
+      mapToReferenceFrameInitGuess(refPoints,
+                                   initGuess,
+                                   physPoints,
+                                   worksetCell,
+                                   createHGradBasis<phsPointValueType,initGuessValueType>(cellTopo));
+    }
 
 
     // //============================================================================================//

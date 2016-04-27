@@ -205,6 +205,90 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    template<typename outputViewType,
+             typename inputViewType>
+    struct F_clone {
+      outputViewType _output;
+      inputViewType  _input;
+
+      KOKKOS_INLINE_FUNCTION
+      F_clone( outputViewType output_,
+               inputViewType  input_ )
+        : _output(output_), _input(input_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type iter) const {
+        ordinal_type k0, k1, k2;
+        const auto rankDiff = _output.rank() - _input.rank();
+        switch (rankDiff) {
+        case 3:
+          Util::unrollIndex( k0, k1, k2,
+                             _output.dimension(0),
+                             _output.dimension(1),
+                             iter );
+          break;
+        case 2:
+          Util::unrollIndex( k0, k1, 
+                             _output.dimension(0),
+                             iter );
+          break;
+        case 1:
+          k0 = iter;
+          break;
+        }
+        
+        auto out = (rankDiff == 3 ? Kokkos::subdynrankview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 2 ? Kokkos::subdynrankview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 1 ? Kokkos::subdynrankview(_output, k0,         Kokkos::ALL(), Kokkos::ALL()) :
+                    /**/            Kokkos::subdynrankview(_output,             Kokkos::ALL(), Kokkos::ALL()));
+        const auto iend = _input.dimension(0);
+        const auto jend = _input.dimension(1);
+        for (auto i=0;i<iend;++i)
+          for (auto j=0;j<jend;++j)
+            out(i,j) = _input(i,j);
+      }
+    };
+  }
+
+  template<typename SpT>
+  template<typename outputValueType, class ...ouputProperties,
+           typename inputValueType,  class ...inputProperties>
+  void
+  RealSpaceTools<SpT>::
+  clone( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+         const Kokkos::DynRankView<inputValueType,inputProperteis...> input ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    {
+      INTREPID2_TEST_FOR_EXCEPTION( input.rank() > 2, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::clone): Input container has rank larger than 2.");
+
+      INTREPID2_TEST_FOR_EXCEPTION( ouput.rank() > 5, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::clone): Output container has rank larger than 5.");
+
+      INTREPID2_TEST_FOR_EXCEPTION( input.rank() > output.rank(), std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::clone): Input container rank should be smaller than ouput rank.");
+      const size_type rankDiff = output.rank() - input.rank();
+      for (auto i=0;i<input.rank();++i) {
+        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(rankDiff + i), std::invalid_argument,
+                                      ">>> ERROR (RealSpaceTools::clone): Dimensions of array arguments do not agree!");
+      }
+    }
+#endif
+    typedef          Kokkos::DynRankView<outputValueType,outputProperties...>     outputViewType;
+    typedef          Kokkos::DynRankView<inputValueType,inputProperties...>       inputViewType;
+    typedef          FunctorRealSpaceTools::F_clone<outputViewType,inputViewType> FunctorType;
+    typedef typename ExecSpace<typename inputViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+    size_type loopSize = 1;
+    const auto rankDiff = output.rank() - input.rank();
+    for (auto i=0;i<rankDiff;++i)
+      loopSize *= output.dimension(i);
+
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::parallel_for( policy, FunctorType(output, input) );
+  }
+
+  namespace FunctorRealSpaceTools {
     template<typename absArrayViewType,
              typename inArrayViewType>
     struct F_absval {
