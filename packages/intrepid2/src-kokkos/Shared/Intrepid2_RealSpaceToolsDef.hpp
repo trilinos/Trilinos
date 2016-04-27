@@ -1231,16 +1231,16 @@ namespace Intrepid2 {
        */
       // (1) check rank range on inLeft and then compare the other arrays with inLeft
       INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() < 1 || inLeft.rank() > 3, std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::vecprod): Rank of matrix array must be 1, 2, or 3!");
-      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == inRight.rank(), std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::vecprod): Right and left arrays must be have the same rank!");
-      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() == vecProd.rank(), std::invalid_argument,
-                                      ">>> ERROR (RealSpaceTools::vecprod): Left and vecProd arrays must be have the same rank!");
+                                    ">>> ERROR (RealSpaceTools::vecprod): Rank of matrix array must be 1, 2, or 3!");
+      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() != inRight.rank(), std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::vecprod): Right and left arrays must be have the same rank!");
+      INTREPID2_TEST_FOR_EXCEPTION( inLeft.rank() != vecProd.rank(), std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::vecprod): Left and vecProd arrays must be have the same rank!");
       for (size_t i=0;i<inLeft.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != inRight.dimension(i), std::invalid_argument,
-                                        ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
+                                      ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
         INTREPID2_TEST_FOR_EXCEPTION( inLeft.dimension(i) != vecProd.dimension(i), std::invalid_argument,
-                                        ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
+                                      ">>> ERROR (RealSpaceTools::vecprod): Dimensions of matrix arguments do not agree!");
       }
 
       // (2) spatial dimension ordinal = array rank - 1. Suffices to check only one array because we just
