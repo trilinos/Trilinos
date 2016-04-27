@@ -1,5 +1,8 @@
+#include "Tempus_config.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperForwardEuler_impl.hpp"
+
+#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
 
 namespace Tempus {
 
@@ -18,3 +21,5 @@ StepperForwardEuler(
   Array<RCP<Thyra::NonlinearSolverBase<double> > >  solvers =Teuchos::null);
 
 } // namespace Tempus
+
+#endif

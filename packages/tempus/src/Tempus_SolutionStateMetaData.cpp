@@ -1,5 +1,8 @@
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionStateMetaData_impl.hpp"
+
+#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
 
 namespace Tempus {
 
@@ -24,3 +27,5 @@ SolutionStateMetaData(const double time,
                       const double accuracy);
 
 } // namespace Tempus
+
+#endif

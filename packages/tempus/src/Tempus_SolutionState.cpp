@@ -1,5 +1,8 @@
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionState_impl.hpp"
+
+#ifdef HAVE_TEMPUS_EXPLICIT_INSTANTIATION
 
 namespace Tempus {
 
@@ -35,3 +38,5 @@ SolutionState(const double time,
               const RCP<Tempus::StepperState<double> >& stepperState);
 
 } // namespace Tempus
+
+#endif
