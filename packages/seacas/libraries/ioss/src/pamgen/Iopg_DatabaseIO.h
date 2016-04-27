@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,32 +33,59 @@
 #ifndef SIERRA_Iopg_DatabaseIO_h
 #define SIERRA_Iopg_DatabaseIO_h
 
-#include <Ioss_DBUsage.h>               // for DatabaseUsage
-#include <Ioss_DatabaseIO.h>            // for DatabaseIO
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <Ioss_Map.h>                   // for Map
-#include <stddef.h>                     // for size_t
-#include <stdint.h>                     // for int64_t
-#include <string>                       // for string
-#include <vector>                       // for vector
-#include "Ioss_State.h"                 // for State
+#include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
+#include <Ioss_DBUsage.h>    // for DatabaseUsage
+#include <Ioss_DatabaseIO.h> // for DatabaseIO
+#include <Ioss_IOFactory.h>  // for IOFactory
+#include <Ioss_Map.h>        // for Map
+#include <stddef.h>          // for size_t
+#include <stdint.h>          // for int64_t
+#include <string>            // for string
+#include <vector>            // for vector
 
-namespace Ioss { class CommSet; }
-namespace Ioss { class EdgeBlock; }
-namespace Ioss { class EdgeSet; }
-namespace Ioss { class ElementBlock; }
-namespace Ioss { class ElementSet; }
-namespace Ioss { class FaceBlock; }
-namespace Ioss { class FaceSet; }
-namespace Ioss { class Field; }
-namespace Ioss { class NodeBlock; }
-namespace Ioss { class NodeSet; }
-namespace Ioss { class PropertyManager; }
-namespace Ioss { class Region; }
-namespace Ioss { class SideBlock; }
-namespace Ioss { class SideSet; }
-
+namespace Ioss {
+  class CommSet;
+}
+namespace Ioss {
+  class EdgeBlock;
+}
+namespace Ioss {
+  class EdgeSet;
+}
+namespace Ioss {
+  class ElementBlock;
+}
+namespace Ioss {
+  class ElementSet;
+}
+namespace Ioss {
+  class FaceBlock;
+}
+namespace Ioss {
+  class FaceSet;
+}
+namespace Ioss {
+  class Field;
+}
+namespace Ioss {
+  class NodeBlock;
+}
+namespace Ioss {
+  class NodeSet;
+}
+namespace Ioss {
+  class PropertyManager;
+}
+namespace Ioss {
+  class Region;
+}
+namespace Ioss {
+  class SideBlock;
+}
+namespace Ioss {
+  class SideSet;
+}
 
 namespace Ioss {
   class GroupingEntity;
@@ -71,33 +98,31 @@ namespace Iopg {
   class IOFactory : public Ioss::IOFactory
   {
   public:
-    static const IOFactory* factory();
+    static const IOFactory *factory();
+
   private:
     IOFactory();
-    Ioss::DatabaseIO* make_IO(const std::string& filename,
-			      Ioss::DatabaseUsage db_usage,
-			      MPI_Comm communicator,
-			      const Ioss::PropertyManager &properties) const;
+    Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
   };
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
   public:
-    DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties);
-    DatabaseIO(const DatabaseIO& from) =delete;
-    DatabaseIO& operator=(const DatabaseIO& from) =delete;
+    DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
+               MPI_Comm communicator, const Ioss::PropertyManager &properties);
+    DatabaseIO(const DatabaseIO &from) = delete;
+    DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO();
 
-    int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const {return 0;}
-    int64_t element_global_to_local(int64_t /* global */) const {return 0;}
+    int64_t node_global_to_local(int64_t /* global */, bool /* must_exist */) const { return 0; }
+    int64_t element_global_to_local(int64_t /* global */) const { return 0; }
 
     // Check capabilities of input/output database...  Returns an
     // unsigned int with the supported Ioss::EntityTypes or'ed
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
-    unsigned entity_field_support() const {return 0;}
+    unsigned entity_field_support() const { return 0; }
 
     // Eliminate as much memory as possible, but still retain meta data information
     // Typically, eliminate the maps...
@@ -106,98 +131,127 @@ namespace Iopg {
     void read_meta_data();
 
     bool begin(Ioss::State state);
-    bool   end(Ioss::State state);
+    bool end(Ioss::State state);
 
     bool begin_state(Ioss::Region *region, int state, double time);
-    bool   end_state(Ioss::Region *region, int state, double time);
+    bool end_state(Ioss::Region *region, int state, double time);
 
-    std::string title()               const     {return databaseTitle;}
-    int    spatial_dimension()   const     {return spatialDimension;}
-    int    node_count()          const     {return nodeCount;}
-    int    side_count()          const     {return 0;}
-    int    element_count()       const     {return elementCount;}
-    int    node_block_count()    const     {return nodeBlockCount;}
-    int    element_block_count() const     {return elementBlockCount;}
-    int    sideset_count()       const     {return sidesetCount;}
-    int    nodeset_count()       const     {return nodesetCount;}
-    int    maximum_symbol_length() const {return 32;}
+    std::string title() const { return databaseTitle; }
+    int         spatial_dimension() const { return spatialDimension; }
+    int         node_count() const { return nodeCount; }
+    int         side_count() const { return 0; }
+    int         element_count() const { return elementCount; }
+    int         node_block_count() const { return nodeBlockCount; }
+    int         element_block_count() const { return elementBlockCount; }
+    int         sideset_count() const { return sidesetCount; }
+    int         nodeset_count() const { return nodesetCount; }
+    int         maximum_symbol_length() const { return 32; }
 
     void get_block_adjacencies(const Ioss::ElementBlock *eb,
-			       std::vector<std::string> &block_adjacency) const;
+                               std::vector<std::string> &block_adjacency) const;
 
-    void compute_block_membership(Ioss::SideBlock *efblock,
-				  std::vector<std::string> &block_membership) const;
+    void compute_block_membership(Ioss::SideBlock *         efblock,
+                                  std::vector<std::string> &block_membership) const;
 
   private:
     void read_region();
     void read_communication_metadata();
-      
+
     void get_nodeblocks();
     void get_elemblocks();
     void get_nodesets();
     void get_sidesets();
     void get_commsets();
-      
-    int get_side_connectivity(const Ioss::SideBlock* fb, int id, int side_count,
-			      int *fconnect, size_t data_size) const;
-    int get_side_distributions(const Ioss::SideBlock* fb, int id,
-			       int side_count, double *dist_fact, size_t data_size) const;
 
-    const Ioss::Map& get_node_map() const;
-    const Ioss::Map& get_element_map() const;
-      
+    int get_side_connectivity(const Ioss::SideBlock *fb, int id, int side_count, int *fconnect,
+                              size_t data_size) const;
+    int get_side_distributions(const Ioss::SideBlock *fb, int id, int side_count, double *dist_fact,
+                               size_t data_size) const;
+
+    const Ioss::Map &get_node_map() const;
+    const Ioss::Map &get_element_map() const;
+
     void compute_block_adjacencies() const;
 
-    int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+    int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
 
-    int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const {return 0;}
-    int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-
+    int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const
+    {
+      return 0;
+    }
+    int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
 
     std::string databaseTitle;
 
@@ -215,8 +269,8 @@ namespace Iopg {
     IntVector nodeCmapNodeCnts;
     IntVector elemCmapIds;
     IntVector elemCmapElemCnts;
-    int commsetNodeCount;
-    int commsetElemCount;
+    int       commsetNodeCount;
+    int       commsetElemCount;
 
     // MAPS -- Used to convert from local exodusII ids/names to Sierra
     // database global ids/names
@@ -224,7 +278,7 @@ namespace Iopg {
     mutable Ioss::Map nodeMap;
     mutable Ioss::Map elemMap;
 
-    mutable std::vector<std::vector<bool> > blockAdjacency;
+    mutable std::vector<std::vector<bool>> blockAdjacency;
 
     mutable bool blockAdjacenciesCalculated; // True if the lazy creation of
     // block adjacencies has been calculated.

@@ -49,105 +49,197 @@
 #define ROL_PDEOPT_ELASTICITYSIMP_OBJECTIVE_H
 
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_TpetraMultiVector.hpp"
+#include "ROL_ScaledTpetraMultiVector.hpp"
 #include "data.hpp"
 
 template<class Real>
 class Objective_PDEOPT_ElasticitySIMP : public ROL::Objective_SimOpt<Real> {
 private:
 
-  Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
+  const Teuchos::RCP<ElasticitySIMPOperators<Real> > data_;
   Real alpha_;
+  Real scale_;
+  bool useFU_;
+
+  Teuchos::RCP<const Tpetra::Vector<> > Zscale_;
 
 public:
 
   Objective_PDEOPT_ElasticitySIMP(const Teuchos::RCP<ElasticitySIMPOperators<Real> > &data,
-                           const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
-    data_ = data;
+                                  const Teuchos::RCP<Teuchos::ParameterList> &parlist)
+    : data_(data) {
     alpha_ = parlist->sublist("Problem").get<Real>("Penalty parameter");
+    // Compute compliance scaling
+    Teuchos::Array<Real> dotF(1, 0);
+    (data_->getVecF())->dot(*(data_->getVecF()),dotF);
+    Real minDensity = parlist->sublist("ElasticitySIMP").get<Real>("Minimum Density");
+    scale_ = minDensity/dotF[0];
+    useFU_ = parlist->sublist("ElasticitySIMP").get<bool>("Use Force Dot Displacement Objective");
+    // Compute density scaling vector
+    bool useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
+    Teuchos::RCP<Tpetra::MultiVector<> > cellMeasures = data->getCellAreas();
+    if ( !useZscale ) {
+      Real one(1);
+      cellMeasures->putScalar(one);
+    }
+    Zscale_ = cellMeasures->getVector(0);
   }
 
-  Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+  void update(const ROL::Vector<Real> &u,
+              const ROL::Vector<Real> &z,
+              bool flag = true,
+              int iter = -1) {
+    Teuchos::RCP<const Tpetra::MultiVector<> > zp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    data_->updateMaterialDensity(zp);
+  }
+
+  Real value(const ROL::Vector<Real> &u,
+             const ROL::Vector<Real> &z,
+             Real &tol) {
+    Teuchos::RCP<const Tpetra::MultiVector<> > up
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+    Teuchos::RCP<const Tpetra::MultiVector<> > zp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
     
-    data_->updateMaterialDensity (zp);
-    
-    // K u
-    Teuchos::RCP<Tpetra::MultiVector<> > matvecp = Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
-    data_->ApplyJacobian1ToVec(matvecp, up);
-    
-    Teuchos::Array<Real> dotvalU(1, 0);
-    Teuchos::Array<Real> dotvalZ(1, 0);
-    //u K u
-    up->dot(*matvecp, dotvalU);
+   Teuchos::Array<Real> dotvalU(1, 0);
+    if ( useFU_ ) {
+      up->dot(*(data_->getVecF()), dotvalU);
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > matvecp
+        = Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
+      data_->ApplyJacobian1ToVec(matvecp, up);
+      up->dot(*matvecp, dotvalU);
+    }
+
     //z z
-    zp->dot(*zp, dotvalZ);
+    Real dotvalZ = z.dot(z);
 
-    return(0.5*dotvalU[0] + 0.5*alpha_*dotvalZ[0]);
+    Real half(0.5);
+    return scale_*dotvalU[0] + half*alpha_*dotvalZ;
   }
 
-  void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > gp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyJacobian1ToVec(gp, up);
+  void gradient_1(ROL::Vector<Real> &g,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    Teuchos::RCP<Tpetra::MultiVector<> > gp
+      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
+    if ( useFU_ ) {
+      Tpetra::deep_copy(*gp, *(data_->getVecF()));
+    }
+    else {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      data_->ApplyJacobian1ToVec(gp, up);
+      Real two(2);
+      gp->scale(two);
+    }
+    gp->scale(scale_);
   }
 
-  void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > gp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyAdjointJacobian2ToVec (gp, up, up);
-    gp->update(alpha_, *zp, 0.5);
+  void gradient_2(ROL::Vector<Real> &g,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    Teuchos::RCP<Tpetra::MultiVector<> > gp
+      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(g)).getVector();
+    Teuchos::RCP<const Tpetra::MultiVector<> > zp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+    if ( useFU_ ) {
+      g.zero();
+    }
+    else {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      data_->ApplyAdjointJacobian2ToVec (gp, up, up);
+    }
+    gp->update(alpha_, *zp, scale_);
+    gp->elementWiseMultiply(1,*Zscale_,*gp,0);
   }
 
-  void hessVec_11(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
-                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > hvp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyJacobian1ToVec(hvp, vp);
+  void hessVec_11(ROL::Vector<Real> &hv,
+            const ROL::Vector<Real> &v,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    if ( useFU_ ) {
+      hv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > hvp
+        = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      data_->ApplyJacobian1ToVec(hvp, vp);
+      Real two(2);
+      hvp->scale(two*scale_);
+    }
   }
 
-  void hessVec_12(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
-                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > hvp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyJacobian2ToVec (hvp, up, vp);
+  void hessVec_12(ROL::Vector<Real> &hv,
+            const ROL::Vector<Real> &v,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    if ( useFU_ ) {
+      hv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > hvp
+        = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      data_->ApplyJacobian2ToVec (hvp, up, vp);
+      Real two(2);
+      hvp->scale(two*scale_);
+    }
   }
 
-  void hessVec_21(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
-                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > hvp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyAdjointJacobian2ToVec (hvp, up, vp);
+  void hessVec_21(ROL::Vector<Real> &hv,
+            const ROL::Vector<Real> &v,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    if ( useFU_ ) {
+      hv.zero();
+    }
+    else {
+      Teuchos::RCP<Tpetra::MultiVector<> > hvp
+        = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > vp
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+      Teuchos::RCP<const Tpetra::MultiVector<> > up
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      data_->ApplyAdjointJacobian2ToVec (hvp, up, vp);
+      Real two(2);
+      hvp->scale(two*scale_);
+      hvp->elementWiseMultiply(1,*Zscale_,*hvp,0);
+    }
   }
 
-  void hessVec_22(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
-                  const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<Tpetra::MultiVector<> > hvp = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > vp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > up = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
-    Teuchos::RCP<const Tpetra::MultiVector<> > zp = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
-    
-    data_->updateMaterialDensity (zp);
-    data_->ApplyAdjointHessian22ToVec (hvp, up, vp, up);
-    hvp->update(alpha_, *vp, 0.5);
+  void hessVec_22(ROL::Vector<Real> &hv,
+            const ROL::Vector<Real> &v,
+            const ROL::Vector<Real> &u,
+            const ROL::Vector<Real> &z,
+                  Real &tol) {
+    Teuchos::RCP<Tpetra::MultiVector<> > hvp
+      = (Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(hv)).getVector();
+    Teuchos::RCP<const Tpetra::MultiVector<> > vp
+      = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(v)).getVector();
+    if ( useFU_ ) {
+      hv.zero();
+    }
+    else {
+      Teuchos::RCP<const Tpetra::MultiVector<> > up
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(u)).getVector();
+      data_->ApplyAdjointHessian22ToVec (hvp, up, vp, up);
+    }
+    hvp->update(alpha_, *vp, scale_);
+    hvp->elementWiseMultiply(1,*Zscale_,*hvp,0);
   }
 
 };

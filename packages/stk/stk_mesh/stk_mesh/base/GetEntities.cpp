@@ -144,7 +144,15 @@ void count_entities(
   }
 }
 
-//----------------------------------------------------------------------
+unsigned get_num_entities(const stk::mesh::BulkData &bulk)
+{
+    unsigned numEntities = 0;
+    std::vector<unsigned> countPerRank;
+    stk::mesh::count_entities(bulk.mesh_meta_data().universal_part(), bulk, countPerRank);
+    for(unsigned count : countPerRank)
+        numEntities += count;
+    return numEntities;
+}
 
 } // namespace mesh
 } // namespace stk

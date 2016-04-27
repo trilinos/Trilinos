@@ -34,6 +34,14 @@
 #include <gtest/gtest.h>
 #include <stk_search/OctTreeOps.hpp>
 #include <stk_search/OctTree.hpp>
+
+// These two files are somewhat poisonous because they bring in boost code that
+// fails checks for variable shadowing.  Thus, we keep them out of OctTreeOps.hpp
+// and OctTree.hpp even though they contain illustrative (but not exemplary) implementations
+// of classes that are suitable template arguments.
+#include <stk_search/IdentProc.hpp>
+#include <stk_search/BoundingBox.hpp>
+
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 
 #include <gtest/gtest.h>

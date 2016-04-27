@@ -57,11 +57,6 @@
 
 namespace stk { namespace mesh { class Part; } }
 
-
-
-
-
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Part;
@@ -89,6 +84,17 @@ TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
   uncommited_metadata.commit();
 }
 
+TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)
+{
+    const int spatial_dimension = 3;
+    MetaData meta(spatial_dimension);
+    unsigned numNodes = 11;
+    stk::topology superTopo = stk::create_superelement_topology(numNodes);
+    Part& part = meta.declare_part_with_topology("super-part", superTopo);
+    stk::topology partTopo = meta.get_topology(part);
+    EXPECT_TRUE(partTopo.is_superelement());
+    EXPECT_EQ(numNodes, partTopo.num_nodes());
+}
 
 TEST( UnitTestMetaData, testMetaData )
 {

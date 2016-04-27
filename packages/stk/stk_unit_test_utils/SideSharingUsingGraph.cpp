@@ -66,7 +66,7 @@ void resolve_parallel_side_connections(BulkDataElemGraphFaceSharingTester& bulkD
     stk::CommSparse comm(bulkData.parallel());
     stk::unit_test_util::allocate_and_send(comm, sideSharingDataToSend, idAndSides);
     stk::unit_test_util::unpack_data(comm, bulkData.parallel_rank(), bulkData.parallel_size(), sideSharingDataReceived);
-
+    stk::mesh::EntityVector sideNodes;
     for(stk::unit_test_util::SideSharingData &sideSharingData : sideSharingDataReceived)
     {
         stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
@@ -82,7 +82,7 @@ void resolve_parallel_side_connections(BulkDataElemGraphFaceSharingTester& bulkD
         stk::mesh::EntityRank sideRank = bulkData.mesh_meta_data().side_rank();
         if(!bulkData.is_valid(side))
         {
-            stk::mesh::EntityVector sideNodes = stk::mesh::impl::get_element_side_nodes_from_topology(bulkData, element, sideOrdinal);
+            stk::mesh::impl::fill_element_side_nodes_from_topology(bulkData, element, sideOrdinal, sideNodes);
 
             // MANOJ: communicate keys instead of ids, and this will be better.
 
@@ -126,7 +126,7 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
     // Element 2, side 3: face 23
     // Are these faces the same? Yes: delete face 23, then connect face 15 to element 2 with negative permutation
 
-    stk::mesh::ElemElemGraph graph(bulkData, bulkData.mesh_meta_data().locally_owned_part());
+    stk::mesh::ElemElemGraph graph(bulkData);
 
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {
@@ -134,7 +134,7 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
         stk::mesh::impl::LocalId localElemId = graph.get_local_element_id(elementAndSide.element);
         for(const stk::mesh::GraphEdge& edge : graph.get_edges_for_element(localElemId))
         {
-            if(edge.side1 == elementAndSide.side && edge.elem2 < 0)
+            if(edge.side1() == elementAndSide.side && edge.elem2() < 0)
             {
                 const stk::mesh::impl::ParallelInfo &pInfo = graph.get_parallel_info_for_graph_edge(edge);
                 const stk::mesh::Entity* nodes = bulkData.begin_nodes(sidesThatNeedFixing[i]);
@@ -153,8 +153,8 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
 
                 sideSharingDataThisProc.push_back(localTemp);
 
-                stk::mesh::EntityId localId = -edge.elem2;
-                idAndSides.push_back({localId, edge.side2});
+                stk::mesh::EntityId localId = -edge.elem2();
+                idAndSides.push_back({localId, edge.side2()});
             }
         }
     }

@@ -14,6 +14,11 @@
 
 #include "TetFixture.hpp"
 
+#include <stk_unit_test_utils/MeshFixture.hpp>
+#include <stk_unit_test_utils/getOption.h>
+
+#include "../../stk_io/stk_io/StkMeshIoBroker.hpp"
+
 class DisconnectMesh : public DGTetFixture {};
 
 void disconnectMesh(const stk::mesh::MetaData &oldMeta,
@@ -47,6 +52,168 @@ TEST_F(DisconnectMesh, tet)
 
     stk::unit_test_util::write_mesh_using_stk_io("mike_new.g", newBulkData, newBulkData.parallel());
 }
+
+class TOSDTWD : public stk::unit_test_util::MeshFixture
+{
+protected:
+    TOSDTWD() : stk::unit_test_util::MeshFixture(3) {}
+    virtual ~TOSDTWD() {}
+};
+
+
+TEST_F(TOSDTWD, disconnect_mesh)
+{
+    std::string exodusFileName = unitTestUtils::getOption("-i", "generated:10x10x10");
+
+    std::string mesh_name = "blown_up.g";
+    std::string results_name = "output_results.g";
+
+    {
+        setup_mesh(exodusFileName, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
+        stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
+        disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
+        stk::unit_test_util::write_mesh_using_stk_io(mesh_name, newBulkData, newBulkData.parallel());
+    }
+
+    {
+       stk::io::StkMeshIoBroker stkIo(get_comm());
+       stkIo.add_mesh_database(mesh_name, stk::io::READ_MESH);
+
+       stkIo.create_input_mesh();
+
+       typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+
+       const std::string fieldName = "disp";
+       CoordFieldType& field = stkIo.meta_data().declare_field<CoordFieldType>(stk::topology::NODE_RANK, fieldName);
+       stk::mesh::Field<double>& active_status = stkIo.meta_data().declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "active_status");
+
+       stk::mesh::put_field(field, stkIo.meta_data().universal_part());
+       stk::mesh::put_field(active_status, stkIo.meta_data().universal_part());
+
+       stkIo.populate_bulk_data();
+
+       size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
+
+       stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
+       stkIo.add_field(fh, active_status); /*@\label{io:results:add_field}*/
+
+       std::vector<stk::mesh::Entity> elements;
+       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::ELEM_RANK, elements);
+
+       CoordFieldType *coords = stkIo.meta_data().get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
+       std::vector<std::vector<double> > direct(elements.size());
+
+       double minx = 0, miny = 0, minz = 0, maxx = 0, maxy = 0, maxz = 0;
+
+       double xc = 0, yc = 0, zc = 0;
+       for(size_t i = 0; i < elements.size(); i++)
+       {
+           unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
+           const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
+           double exc = 0, eyc = 0, ezc = 0;
+           for(unsigned j=0;j<num_nodes;++j)
+           {
+               double *node_data = stk::mesh::field_data(*coords, nodes[j]);
+               exc += node_data[0];
+               eyc += node_data[1];
+               ezc += node_data[2];
+               minx = std::min(minx, node_data[0]);
+               miny = std::min(miny, node_data[1]);
+               minz = std::min(minz, node_data[2]);
+               maxx = std::max(maxx, node_data[0]);
+               maxy = std::max(maxy, node_data[1]);
+               maxz = std::max(maxz, node_data[2]);
+           }
+
+           exc /= num_nodes;
+           eyc /= num_nodes;
+           ezc /= num_nodes;
+           xc += exc;
+           yc += eyc;
+           zc += ezc;
+           direct[i].resize(3);
+           direct[i][0] = exc;
+           direct[i][1] = eyc;
+           direct[i][2] = ezc;
+       }
+
+       xc /= elements.size();
+       yc /= elements.size();
+       zc /= elements.size();
+
+       for(size_t i=0;i<direct.size();++i)
+       {
+           direct[i][0] -= xc;
+           direct[i][1] -= yc;
+           direct[i][2] -= zc;
+           double mag = sqrt(direct[i][0]*direct[i][0] +
+                             direct[i][1]*direct[i][1] +
+                             direct[i][2]*direct[i][2]);
+           direct[i][0] /= mag;
+           direct[i][1] /= mag;
+           direct[i][2] /= mag;
+       }
+
+       std::cerr << "(x,y,z) centroid = (" << xc << ", " << yc << ", " << zc << ")\n";
+
+       int num_steps = 100;
+
+       double dx = 0, dy = 0, dz = 0;
+
+       double lenx = maxx - minx;
+       double leny = maxy - miny;
+
+       double char_len = std::min(lenx, leny);
+
+       for(int step = 0; step < num_steps; step++)
+        {
+            double time = step;
+            double delta_ = (char_len/num_steps)*step;
+
+            for(size_t i = 0; i < elements.size(); i++)
+            {
+                dx = direct[i][0]*delta_;
+                dy = direct[i][1]*delta_;
+                dz = direct[i][2]*delta_;
+
+                unsigned num_nodes = stkIo.bulk_data().num_nodes(elements[i]);
+                const stk::mesh::Entity *nodes = stkIo.bulk_data().begin_nodes(elements[i]);
+
+                bool gone = false;
+                for(unsigned j=0;j<num_nodes;++j)
+                {
+                    double *disp = stk::mesh::field_data(field, nodes[j]);
+                    disp[0] = dx;
+                    disp[1] = dy;
+                    disp[2] = dz;
+
+                    double *node_data = stk::mesh::field_data(*coords, nodes[j]);
+                    double val1=0, val2=0, val3=0;
+                    val1 = node_data[0] + dx - xc;
+                    val2 = node_data[1] + dy - yc;
+                    val3 = node_data[2] + dz - zc;
+
+                    double dist = val1*val1 + val2*val2 + val3*val3;
+
+                    if(dist > 100)
+                        gone = true;
+                }
+
+                double *status = stk::mesh::field_data(active_status, elements[i]);
+                if (gone)
+                    *status = 0;
+                else
+                    *status = 1;
+            }
+
+            stkIo.begin_output_step(fh, time);
+            stkIo.write_defined_output_fields(fh);
+            stkIo.end_output_step(fh);
+        }
+     }
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

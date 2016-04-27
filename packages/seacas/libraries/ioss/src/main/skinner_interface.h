@@ -2,23 +2,23 @@
  * Copyright(C) 2015 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,55 +30,54 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 #ifndef skinner_SystemInterface_h
 #define skinner_SystemInterface_h
 
-#include <iosfwd>                       // for ostream
-#include <string>                       // for string
-#include "Ioss_GetLongOpt.h"            // for GetLongOption
-
+#include "Ioss_GetLongOpt.h" // for GetLongOption
+#include <iosfwd>            // for ostream
+#include <string>            // for string
 
 namespace Skinner {
   class Interface
-    {
-    public:
-      Interface();
-      ~Interface();
+  {
+  public:
+    Interface();
+    ~Interface();
 
-      bool parse_options(int argc, char **argv);
+    bool parse_options(int argc, char **argv);
 
-      bool ints_64_bit() const {return ints64Bit_;}
+    bool ints_64_bit() const { return ints64Bit_; }
 
-      bool no_output() const {return noOutput_;}
+    bool no_output() const { return noOutput_; }
 
-      std::string input_filename() const {return inputFile_;}
-      std::string output_filename() const {return outputFile_;}
-      std::string input_type() const {return inFiletype_;}
-      std::string output_type() const {return outFiletype_;}
+    std::string input_filename() const { return inputFile_; }
+    std::string output_filename() const { return outputFile_; }
+    std::string input_type() const { return inFiletype_; }
+    std::string output_type() const { return outFiletype_; }
 
-    private:
-      void enroll_options();
+  private:
+    void enroll_options();
 
-      Ioss::GetLongOption options_;
+    Ioss::GetLongOption options_;
 
-      std::string inputFile_;
-      std::string outputFile_;
-      std::string inFiletype_;
-      std::string outFiletype_;
+    std::string inputFile_;
+    std::string outputFile_;
+    std::string inFiletype_;
+    std::string outFiletype_;
 
-    public:
-      std::string decomp_method;
-      std::string compose_output;
-      int  compression_level;
-      bool shuffle;
-      bool debug;
-      bool statistics;
-      bool ints64Bit_;
-      bool netcdf4;
-      bool ignoreFaceIds_;
-      bool noOutput_;
-    };
+  public:
+    std::string decomp_method;
+    std::string compose_output;
+    int         compression_level;
+    bool        shuffle;
+    bool        debug;
+    bool        statistics;
+    bool        ints64Bit_;
+    bool        netcdf4;
+    bool        ignoreFaceIds_;
+    bool        noOutput_;
+  };
 }
 #endif

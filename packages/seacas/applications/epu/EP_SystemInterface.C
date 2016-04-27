@@ -2,23 +2,23 @@
  * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,23 +30,23 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 #include "EP_SystemInterface.h"
 
-#include "GetLongOpt.h"                 // for GetLongOption, etc
+#include "GetLongOpt.h" // for GetLongOption, etc
 
-#include <ctype.h>                      // for tolower
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair, make_pair
-#include <iostream>
 #include <algorithm>
+#include <ctype.h> // for tolower
+#include <iostream>
+#include <stddef.h> // for size_t
+#include <string>   // for string, basic_string, etc
+#include <utility>  // for pair, make_pair
 #include <vector>
 
-#include <limits.h>
 #include <cstdlib>
 #include <cstring>
+#include <limits.h>
 
 #include "EP_Version.h"
 #include "SL_tokenize.h"
@@ -56,24 +56,24 @@ namespace {
   {
     const char *c1 = s1.c_str();
     const char *c2 = s2.c_str();
-    for ( ; ; c1++, c2++) {
+    for (;; c1++, c2++) {
       if (std::tolower(*c1) != std::tolower(*c2))
-	return (std::tolower(*c1) - std::tolower(*c2));
+        return (std::tolower(*c1) - std::tolower(*c2));
       if (*c1 == '\0')
-	return 0;
+        return 0;
     }
   }
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
 }
 
 Excn::SystemInterface::SystemInterface()
-  : inExtension_(""), outExtension_(""),
-    cwd_(""), rootDirectory_(), subDirectory_(""), basename_(""),
-    raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0), partCount_(-1),
-    debugLevel_(0), screenWidth_(0),
-    stepMin_(1), stepMax_(INT_MAX), stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0),
-    sumSharedNodes_(false), addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
-    useNetcdf4_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false), outputSharedNodes_(false)
+    : inExtension_(""), outExtension_(""), cwd_(""), rootDirectory_(), subDirectory_(""),
+      basename_(""), raidOffset_(0), raidCount_(0), processorCount_(1), startPart_(0),
+      partCount_(-1), debugLevel_(0), screenWidth_(0), stepMin_(1), stepMax_(INT_MAX),
+      stepInterval_(1), subcycle_(-1), cycle_(-1), compressData_(0), sumSharedNodes_(false),
+      addProcessorId_(false), mapIds_(true), omitNodesets_(false), omitSidesets_(false),
+      useNetcdf4_(false), append_(false), intIs64Bit_(false), subcycleJoin_(false),
+      outputSharedNodes_(false)
 {
   enroll_options();
 }
@@ -84,188 +84,167 @@ void Excn::SystemInterface::enroll_options()
 {
   options_.usage("[options] basename");
 
-  options_.enroll("help", GetLongOption::NoValue,
-		  "Print this summary and exit", nullptr);
+  options_.enroll("help", GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", GetLongOption::NoValue,
-		  "Print version and exit", nullptr);
+  options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
 
   options_.enroll("auto", GetLongOption::NoValue,
-		  "Automatically set Root, Proc, Ext from filename 'Root/basename.ext.#p.00'.",
-		  nullptr);
+                  "Automatically set Root, Proc, Ext from filename 'Root/basename.ext.#p.00'.",
+                  nullptr);
   options_.enroll("map", GetLongOption::NoValue,
-		  "Map element ids to original order if possible [default]", nullptr);
+                  "Map element ids to original order if possible [default]", nullptr);
 
-  options_.enroll("nomap", GetLongOption::NoValue,
-		  "Do not map element ids to original order", nullptr);
+  options_.enroll("nomap", GetLongOption::NoValue, "Do not map element ids to original order",
+                  nullptr);
 
   options_.enroll("extension", GetLongOption::MandatoryValue,
-		  "Exodus database extension for the input files", "e");
+                  "Exodus database extension for the input files", "e");
 
   options_.enroll("output_extension", GetLongOption::MandatoryValue,
-		  "Exodus database extension for the output file", nullptr);
+                  "Exodus database extension for the output file", nullptr);
 
-  options_.enroll("offset", GetLongOption::MandatoryValue,
-		  "Raid Offset", nullptr);
+  options_.enroll("offset", GetLongOption::MandatoryValue, "Raid Offset", nullptr);
 
-  options_.enroll("raid_count", GetLongOption::MandatoryValue,
-		  "Number of raids", "0");
+  options_.enroll("raid_count", GetLongOption::MandatoryValue, "Number of raids", "0");
 
-  options_.enroll("processor_count", GetLongOption::MandatoryValue,
-		  "Number of processors", "1");
+  options_.enroll("processor_count", GetLongOption::MandatoryValue, "Number of processors", "1");
 
-  options_.enroll("current_directory", GetLongOption::MandatoryValue,
-		  "Current Directory", ".");
+  options_.enroll("current_directory", GetLongOption::MandatoryValue, "Current Directory", ".");
 
-  options_.enroll("Root_directory", GetLongOption::MandatoryValue,
-		  "Root directory", nullptr);
+  options_.enroll("Root_directory", GetLongOption::MandatoryValue, "Root directory", nullptr);
 
   options_.enroll("Subdirectory", GetLongOption::MandatoryValue,
-		  "subdirectory containing input exodusII files", nullptr);
+                  "subdirectory containing input exodusII files", nullptr);
 
-  options_.enroll("width", GetLongOption::MandatoryValue,
-		  "Width of output screen, default = 80",
-		  "80");
-  
+  options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
+                  "80");
+
   options_.enroll("add_processor_id", GetLongOption::NoValue,
-		  "Add 'processor_id' element variable to the output file",
-		  nullptr);
+                  "Add 'processor_id' element variable to the output file", nullptr);
 
-  options_.enroll("netcdf4", GetLongOption::NoValue,
-		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements",
-		  nullptr);
+  options_.enroll("netcdf4", GetLongOption::NoValue, "Create output database using the HDF5-based "
+                                                     "netcdf which allows for up to 2.1 GB "
+                                                     "nodes/elements",
+                  nullptr);
 
   options_.enroll("large_model", GetLongOption::NoValue,
-		  "Create output database using the HDF5-based netcdf which allows for up to 2.1 GB nodes/elements (deprecated; use netcdf4 instead)",
-		  nullptr);
+                  "Create output database using the HDF5-based netcdf which allows for up to 2.1 "
+                  "GB nodes/elements (deprecated; use netcdf4 instead)",
+                  nullptr);
 
   options_.enroll("append", GetLongOption::NoValue,
-		  "Append to database instead of opening a new database.\n"
-		  "\t\tTimestep transfer will start after last timestep on database",
-		  nullptr);
+                  "Append to database instead of opening a new database.\n"
+                  "\t\tTimestep transfer will start after last timestep on database",
+                  nullptr);
 
   options_.enroll("64", GetLongOption::NoValue,
-		  "The output database will be written in the 64-bit integer mode",
-		  nullptr);
+                  "The output database will be written in the 64-bit integer mode", nullptr);
 
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
-		  "The output database will be written using compression (netcdf-4 mode only).\n"
-		  "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
-		  nullptr);
+                  "The output database will be written using compression (netcdf-4 mode only).\n"
+                  "\t\tValue ranges from 0 (no compression) to 9 (max compression) inclusive.",
+                  nullptr);
 
   options_.enroll("steps", GetLongOption::MandatoryValue,
-		  "Specify subset of timesteps to transfer to output file.\n"
-		  "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
-		  "\t\tEnter LAST for last step",
-		  "1:");
+                  "Specify subset of timesteps to transfer to output file.\n"
+                  "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
+                  "\t\tEnter LAST for last step",
+                  "1:");
 
   options_.enroll("Part_count", GetLongOption::MandatoryValue,
-		  "How many pieces (files) of the model should be joined.",
-		  "0");
+                  "How many pieces (files) of the model should be joined.", "0");
 
-  options_.enroll("start_part", GetLongOption::MandatoryValue,
-		  "Start with piece {n} (file)",
-		  "0");
+  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {n} (file)", "0");
 
   options_.enroll("subcycle", GetLongOption::OptionalValue,
-		  "Subcycle. Create $val subparts if $val is specified.\n"
-		  "\t\tOtherwise, create multiple parts each of size 'Part_count'.\n"
-		  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
-		  "\t\tUseful if the maximum number of open files is less\n"
-		  "\t\tthan the processor count.",
-		  nullptr, "0");
+                  "Subcycle. Create $val subparts if $val is specified.\n"
+                  "\t\tOtherwise, create multiple parts each of size 'Part_count'.\n"
+                  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
+                  "\t\tUseful if the maximum number of open files is less\n"
+                  "\t\tthan the processor count.",
+                  nullptr, "0");
 
   options_.enroll("cycle", GetLongOption::MandatoryValue,
-		  "Cycle number. If subcycle # is specified, then only execute\n"
-		  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
-		  "-1");
+                  "Cycle number. If subcycle # is specified, then only execute\n"
+                  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
+                  "-1");
 
   options_.enroll("join_subcycles", GetLongOption::NoValue,
-		  "If -subcycle is specified, then after the subcycle files are processed,\n"
-		  "\t\trun epu one more time and join the subcycle files into a single file.",
-		  nullptr);
-  
+                  "If -subcycle is specified, then after the subcycle files are processed,\n"
+                  "\t\trun epu one more time and join the subcycle files into a single file.",
+                  nullptr);
+
   options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
-		  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
-		  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
-		  "\t\tThe default behavior assumes that the values are equal.",
-		  nullptr);
-  
+                  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
+                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
+                  "\t\tThe default behavior assumes that the values are equal.",
+                  nullptr);
+
   options_.enroll("gvar", GetLongOption::MandatoryValue,
-		  "Comma-separated list of global variables to be joined or ALL or NONE.",
-		  nullptr);
+                  "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
 
   options_.enroll("evar", GetLongOption::MandatoryValue,
-		  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
-		  "\t\tVariables can be limited to certain blocks by appending a\n"
-		  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
-		  nullptr);
+                  "Comma-separated list of element variables to be joined or ALL or NONE.\n"
+                  "\t\tVariables can be limited to certain blocks by appending a\n"
+                  "\t\tcolon followed by the block id.  E.g. -evar sigxx:10:20",
+                  nullptr);
 
   options_.enroll("nvar", GetLongOption::MandatoryValue,
-		  "Comma-separated list of nodal variables to be joined or ALL or NONE.",
-		  nullptr);
+                  "Comma-separated list of nodal variables to be joined or ALL or NONE.", nullptr);
 
   options_.enroll("nsetvar", GetLongOption::MandatoryValue,
-		  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
-		  nullptr);
+                  "Comma-separated list of nodeset variables to be joined or ALL or NONE.",
+                  nullptr);
 
   options_.enroll("ssetvar", GetLongOption::MandatoryValue,
-		  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
-		  nullptr);
+                  "Comma-separated list of sideset variables to be joined or ALL or NONE.",
+                  nullptr);
 
   options_.enroll("omit_nodesets", GetLongOption::NoValue,
-		  "Don't transfer nodesets to output file.",
-		  nullptr);
+                  "Don't transfer nodesets to output file.", nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
-		  "Don't transfer sidesets to output file.",
-		  nullptr);
+                  "Don't transfer sidesets to output file.", nullptr);
 
-  options_.enroll("output_shared_nodes",  GetLongOption::NoValue,
-		  "Output list of shared nodes and the processors they are shared with.",
-		  nullptr);
-  
+  options_.enroll("output_shared_nodes", GetLongOption::NoValue,
+                  "Output list of shared nodes and the processors they are shared with.", nullptr);
+
   options_.enroll("debug", GetLongOption::MandatoryValue,
-		  "debug level (values are or'd)\n"
-		  "\t\t  1 = timing information.\n"
-		  "\t\t  2 = Check consistent nodal field values between processors.\n"
-		  "\t\t  4 = Verbose Element block information.\n"
-		  "\t\t  8 = Check consistent nodal coordinates between processors.\n"
-		  "\t\t 16 = Verbose Sideset information.\n"
-		  "\t\t 32 = Verbose Nodeset information.\n"
-		  "\t\t 64 = put exodus library into verbose mode.\n"
-		  "\t\t128 = Check consistent global field values between processors.",
-		  "0");
+                  "debug level (values are or'd)\n"
+                  "\t\t  1 = timing information.\n"
+                  "\t\t  2 = Check consistent nodal field values between processors.\n"
+                  "\t\t  4 = Verbose Element block information.\n"
+                  "\t\t  8 = Check consistent nodal coordinates between processors.\n"
+                  "\t\t 16 = Verbose Sideset information.\n"
+                  "\t\t 32 = Verbose Nodeset information.\n"
+                  "\t\t 64 = put exodus library into verbose mode.\n"
+                  "\t\t128 = Check consistent global field values between processors.",
+                  "0");
 
-  options_.enroll("copyright", GetLongOption::NoValue,
-		  "Show copyright and license data.",
-		  nullptr);
+  options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 }
 
 bool Excn::SystemInterface::parse_options(int argc, char **argv)
 {
-#if (__SUNPRO_CC == 0x500)
-  using namespace std;
-#endif
-
   // Get options from environment variable also...
   char *options = getenv("EPU_OPTIONS");
   if (options != nullptr) {
-    std::cout << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
-	      << "\t" << options << "\n\n";
+    std::cout
+        << "\nThe following options were specified via the EPU_OPTIONS environment variable:\n"
+        << "\t" << options << "\n\n";
     options_.parse(options, options_.basename(*argv));
   }
 
   int option_index = options_.parse(argc, argv);
-  if ( option_index < 1 )
+  if (option_index < 1)
     return false;
 
   if (options_.retrieve("help")) {
     options_.usage();
     std::cout << "\n\tCan also set options via EPU_OPTIONS environment variable.\n\n"
-	      << "\tWrites: current_directory/basename.suf\n"
-	      << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
-	      << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
+              << "\tWrites: current_directory/basename.suf\n"
+              << "\tReads:  root#o/sub/basename.suf.#p.0 to\n"
+              << "\t\troot(#o+#p)%#r/sub/basename.suf.#p.#p\n";
     std::cout << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
@@ -274,7 +253,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     // Version is printed up front, just exit...
     exit(0);
   }
-  
+
   {
     const char *temp = options_.retrieve("extension");
     if (temp != nullptr) {
@@ -393,7 +372,8 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("add_processor_id")) {
     addProcessorId_ = true;
-  } else {
+  }
+  else {
     addProcessorId_ = false;
   }
 
@@ -457,97 +437,101 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("omit_nodesets")) {
     omitNodesets_ = true;
-  } else {
+  }
+  else {
     omitNodesets_ = false;
   }
-  
+
   if (options_.retrieve("omit_sidesets")) {
     omitSidesets_ = true;
-  } else {
+  }
+  else {
     omitSidesets_ = false;
   }
-  
+
   if (options_.retrieve("output_shared_nodes")) {
     outputSharedNodes_ = true;
   }
-  
+
   if (options_.retrieve("copyright")) {
     std::cout << "\n"
-	      << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
-	      << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
-	      << "certain rights in this software\n"
-	      << "\n"
-	      << "Redistribution and use in source and binary forms, with or without\n"
-	      << "modification, are permitted provided that the following conditions are\n"
-	      << "met:\n"
-	      << "\n"
-	      << "    * Redistributions of source code must retain the above copyright\n"
-	      << "      notice, this list of conditions and the following disclaimer.\n"
-	      << "\n"
-	      << "    * Redistributions in binary form must reproduce the above\n"
-	      << "      copyright notice, this list of conditions and the following\n"
-	      << "      disclaimer in the documentation and/or other materials provided\n"
-	      << "      with the distribution.\n"
-	      << "\n"
-	      << "    * Neither the name of Sandia Corporation nor the names of its\n"
-	      << "      contributors may be used to endorse or promote products derived\n"
-	      << "      from this software without specific prior written permission.\n"
-	      << "\n"
-	      << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-	      << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-	      << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-	      << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-	      << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-	      << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-	      << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-	      << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-	      << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-	      << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-	      << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+              << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
+              << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
+              << "certain rights in this software\n"
+              << "\n"
+              << "Redistribution and use in source and binary forms, with or without\n"
+              << "modification, are permitted provided that the following conditions are\n"
+              << "met:\n"
+              << "\n"
+              << "    * Redistributions of source code must retain the above copyright\n"
+              << "      notice, this list of conditions and the following disclaimer.\n"
+              << "\n"
+              << "    * Redistributions in binary form must reproduce the above\n"
+              << "      copyright notice, this list of conditions and the following\n"
+              << "      disclaimer in the documentation and/or other materials provided\n"
+              << "      with the distribution.\n"
+              << "\n"
+              << "    * Neither the name of Sandia Corporation nor the names of its\n"
+              << "      contributors may be used to endorse or promote products derived\n"
+              << "      from this software without specific prior written permission.\n"
+              << "\n"
+              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
     exit(EXIT_SUCCESS);
-  }  
-  
+  }
+
   // Parse remaining options as directory paths.
   if (option_index < argc) {
     basename_ = argv[option_index];
-    
+
     if (options_.retrieve("auto")) {
       // Determine Root, Proc, Extension, and Basename automatically
       // by parsing the basename_ entered by the user.  Assumed to be
       // in the form: "/directory/sub/basename.ext.#proc.34"
       bool success = decompose_filename(basename_);
       if (!success) {
-        std::cerr << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an existing filename.\n"
-                  << "       The entered basename does not contain an extension or processor count.\n";
+        std::cerr
+            << "\nERROR: (EPU) If the '-auto' option is specified, the basename must specify an "
+               "existing filename.\n"
+            << "       The entered basename does not contain an extension or processor count.\n";
         return false;
       }
     }
-  } else {
+  }
+  else {
     std::cerr << "\nERROR: (EPU) basename not specified\n\n";
     return false;
   }
   return true;
 }
 
-void Excn::SystemInterface::dump(std::ostream &) const
-{
-}
+void Excn::SystemInterface::dump(std::ostream &) const {}
 
 std::string Excn::SystemInterface::output_suffix() const
 {
   if (outExtension_ == "") {
     return inExtension_;
-  } else {
+  }
+  else {
     return outExtension_;
   }
-} 
+}
 
 void Excn::SystemInterface::show_version()
 {
   std::cout << qainfo[0] << "\n"
-	    << "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
-	    << "\tExodusII Parallel Unification Program\n"
-	    << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
+            << "\t(Out of Many One -- see http://www.greatseal.com/mottoes/unum.html)\n"
+            << "\tExodusII Parallel Unification Program\n"
+            << "\t(Version: " << qainfo[2] << ") Modified: " << qainfo[1] << '\n';
 }
 
 void Excn::SystemInterface::parse_step_option(const char *tokens)
@@ -555,7 +539,7 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
   //: The defined formats for the count attribute are:<br>
   //:  <ul>
   //:    <li><missing> -- default -- 1 <= count <= oo  (all steps)</li>
-  //:    <li>"X"                  -- X <= count <= X  (just step X) LAST for last step.</li> 
+  //:    <li>"X"                  -- X <= count <= X  (just step X) LAST for last step.</li>
   //:    <li>"X:Y"                -- X to Y by 1</li>
   //:    <li>"X:"                 -- X to oo by 1</li>
   //:    <li>":Y"                 -- 1 to Y by 1</li>
@@ -564,7 +548,7 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
   //: The count and step must always be >= 0
 
   // Break into tokens separated by ":"
-  
+
   // Default is given in constructor above...
 
   if (tokens != nullptr) {
@@ -576,35 +560,38 @@ void Excn::SystemInterface::parse_step_option(const char *tokens)
       vals[1] = stepMax_;
       vals[2] = stepInterval_;
 
-      int j=0;
-      for (auto & val : vals) {
-	// Parse 'i'th field
-	char tmp_str[128];;
-	int k=0;
+      int j = 0;
+      for (auto &val : vals) {
+        // Parse 'i'th field
+        char tmp_str[128];
+        ;
+        int k = 0;
 
-	while (tokens[j] != '\0' && tokens[j] != ':') {
-	  tmp_str[k++] = tokens[j++];
-	}
+        while (tokens[j] != '\0' && tokens[j] != ':') {
+          tmp_str[k++] = tokens[j++];
+        }
 
-	tmp_str[k] = '\0';
-	if (strlen(tmp_str) > 0)
-	  val = strtoul(tmp_str, nullptr, 0);
-	
-	if (tokens[j++] == '\0') {
-	  break; // Reached end of string
-	}
+        tmp_str[k] = '\0';
+        if (strlen(tmp_str) > 0)
+          val = strtoul(tmp_str, nullptr, 0);
+
+        if (tokens[j++] == '\0') {
+          break; // Reached end of string
+        }
       }
       stepMin_      = abs(vals[0]);
       stepMax_      = abs(vals[1]);
       stepInterval_ = abs(vals[2]);
-    } else if (case_strcmp("LAST", tokens) == 0) {
+    }
+    else if (case_strcmp("LAST", tokens) == 0) {
       stepMin_ = stepMax_ = -1;
-    } else {
+    }
+    else {
       // Does not contain a separator, min == max
       stepMin_ = stepMax_ = strtol(tokens, nullptr, 0);
     }
   }
-} 
+}
 
 bool Excn::SystemInterface::decompose_filename(const std::string &cs)
 {
@@ -623,28 +610,28 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   if (ind == std::string::npos)
     return false;
   s.erase(ind);
-  
+
   // Now find the processor count...
   ind = s.find_last_of(".", std::string::npos);
   if (ind == std::string::npos)
     return false;
-  
-  std::string tmp = s.substr(ind+1); // Skip the '.'
+
+  std::string tmp = s.substr(ind + 1); // Skip the '.'
   processorCount_ = strtol(tmp.c_str(), nullptr, 10);
   if (processorCount_ <= 0) {
-    std::cerr << "\nERROR: (EPU) Invalid processor count specified: '"
-	      << processorCount_ << "'. Must be greater than zero.\n";
+    std::cerr << "\nERROR: (EPU) Invalid processor count specified: '" << processorCount_
+              << "'. Must be greater than zero.\n";
     return false;
   }
   s.erase(ind);
-  
+
   // Should now be an extension...
   ind = s.find_last_of(".", std::string::npos);
   if (ind == std::string::npos) {
     inExtension_ = "";
   }
   else {
-    inExtension_ = s.substr(ind+1);
+    inExtension_ = s.substr(ind + 1);
     s.erase(ind);
   }
 
@@ -654,18 +641,19 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // is the portion preceding the '/'
   ind = s.find_last_of("/", std::string::npos);
   if (ind != std::string::npos) {
-    basename_ = s.substr(ind+1,std::string::npos);
-    rootDirectory_ = s.substr(0,ind);
-  } else {
+    basename_      = s.substr(ind + 1, std::string::npos);
+    rootDirectory_ = s.substr(0, ind);
+  }
+  else {
     basename_ = s;
   }
 
   std::cout << "\nThe following options were determined automatically:\n"
-	    << "\t basename = '" << basename_ << "'\n"
-	    << "\t-processor_count " << processorCount_ << "\n"
-	    << "\t-extension " << inExtension_ << "\n"
-	    << "\t-Root_directory " << rootDirectory_ << "\n\n";
-  
+            << "\t basename = '" << basename_ << "'\n"
+            << "\t-processor_count " << processorCount_ << "\n"
+            << "\t-extension " << inExtension_ << "\n"
+            << "\t-Root_directory " << rootDirectory_ << "\n\n";
+
   return true;
 }
 
@@ -673,30 +661,28 @@ namespace {
   std::string LowerCase(const std::string &name)
   {
     std::string s = name;
-    std::transform (s.begin(), s.end(),    // source
-		    s.begin(),             // destination
-		    ::tolower);            // operation
+    std::transform(s.begin(), s.end(), // source
+                   s.begin(),          // destination
+                   ::tolower);         // operation
     return s;
   }
 
   typedef std::vector<std::string> StringVector;
-  bool string_id_sort(const std::pair<std::string,int> &t1,
-		      const std::pair<std::string,int> &t2)
+  bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
-    return t1.first < t2.first || (!(t2.first < t1.first) &&
-				   t1.second < t2.second);
+    return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
   }
 
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list)
   {
     // Break into tokens separated by ","
-  
+
     // Value of num_vars includes optional add_processor_id
 
     if (tokens != nullptr) {
-      std::string token_string(tokens);
+      std::string  token_string(tokens);
       StringVector var_list = SLIB::tokenize(token_string, ",");
-    
+
       // At this point, var_list is either a single string, or a string
       // separated from 1 or more block ids with ":" delimiter.
       // For example, sigxx:1:10:100 would indicate that the variable
@@ -705,18 +691,19 @@ namespace {
       // written for all blocks.
       auto I = var_list.begin();
       while (I != var_list.end()) {
-	StringVector name_id = SLIB::tokenize(*I, ":");
-	std::string var_name = LowerCase(name_id[0]);
-	if (name_id.size() == 1) {
-	  (*variable_list).push_back(std::make_pair(var_name,0));
-	} else {
-	  for (size_t i=1; i < name_id.size(); i++) {
-	    // Convert string to integer...
-	    int id = strtoul(name_id[i].c_str(), nullptr, 0);
-	    (*variable_list).push_back(std::make_pair(var_name,id));
-	  }
-	}
-	++I;
+        StringVector name_id  = SLIB::tokenize(*I, ":");
+        std::string  var_name = LowerCase(name_id[0]);
+        if (name_id.size() == 1) {
+          (*variable_list).push_back(std::make_pair(var_name, 0));
+        }
+        else {
+          for (size_t i = 1; i < name_id.size(); i++) {
+            // Convert string to integer...
+            int id = strtoul(name_id[i].c_str(), nullptr, 0);
+            (*variable_list).push_back(std::make_pair(var_name, id));
+          }
+        }
+        ++I;
       }
       // Sort the list...
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);

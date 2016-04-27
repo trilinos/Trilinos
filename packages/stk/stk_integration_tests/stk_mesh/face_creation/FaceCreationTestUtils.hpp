@@ -15,6 +15,10 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>  // for MeshTestFixture
 
+#include "penso/penso.hpp"
+#include "stk_mesh/base/MeshDiagnostics.hpp"
+#include "stk_util/parallel/ParallelReduceBool.hpp"
+
 namespace stk {
 namespace mesh {
     class SideSetEntry;
@@ -60,7 +64,7 @@ inline bool can_find_face_for_elem_side(const stk::mesh::BulkData& bulkData, stk
 inline void expect_side_exists_for_elem_side(const stk::mesh::BulkData& bulkData, const std::string &filename, const Side& side)
 {
     stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, side.elementId);
-    if(bulkData.is_valid(element))
+    if(bulkData.is_valid(element) && bulkData.bucket(element).owned())
         EXPECT_TRUE(can_find_face_for_elem_side(bulkData, element, side.sideOrdinal))
                 << filename << " couldn't find face for side: " << side.elementId << ", " << side.sideOrdinal << ".";
 }
@@ -77,7 +81,7 @@ inline void expect_all_sides_exist_for_elem_side(const stk::mesh::BulkData& bulk
 inline void read_and_decompose_mesh(const std::string &filename, stk::mesh::BulkData &bulkData)
 {
     if(bulkData.parallel_rank() == 0)
-        std::cerr << "\t***** reading " << filename << " *****" << std::endl;
+        std::cout << "\t***** reading " << filename << " *****" << std::endl;
     stk::unit_test_util::read_from_serial_file_and_decompose(filename, bulkData, "cyclic");
 }
 
@@ -157,6 +161,14 @@ protected:
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
+        penso::make_mesh_consistent_with_parallel_mesh_rule1(bulkData);
+
+        stk::mesh::SplitCoincidentInfo splitCoincidentElementsAfter = stk::mesh::get_split_coincident_elements(bulkData);
+        bool allOkAfterThisProc = splitCoincidentElementsAfter.size()==0;
+        ASSERT_TRUE(allOkAfterThisProc);
+        bool allOkEverywhereAfter = stk::is_true_on_all_procs(bulkData.parallel(), allOkAfterThisProc);
+        EXPECT_TRUE(allOkEverywhereAfter);
+
         test_side_creation(bulkData, testCase);
     }
 

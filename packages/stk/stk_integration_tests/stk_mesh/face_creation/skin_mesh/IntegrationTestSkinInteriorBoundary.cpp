@@ -32,18 +32,18 @@ const SideTestUtil::TestCaseData interiorBlockBoundaryTestCases =
   /* filename, max#procs, #side,  sideset */
     {"AB.e",      2,        1,    {{1, 5}, {2, 4}}},
     {"Ae.e",      2,        1,    {{1, 5}, {2, 1}}},
-    {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
     {"AeB.e",     3,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 4}}},
-    {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
-    {"ef.e",      2,        0,    {}},
-    {"eff.e",     3,        0,    {}},
-
-    {"AP.e",      2,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"Tg.e",      2,        0,    {}},
-    {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}}
+    {"ZY.e",      2,        1,    {{1, 5}, {2, 4}}},
+
+    {"2D_AB.e",     2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_AeB.e",    3,       2,     {{1, 0}, {2, 2}, {3, 0}, {3, 1}}},
+    {"2D_AtB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}},
+    {"2D_ArB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}},
+    {"2D_AmB.e",    3,       1,     {{1, 0}, {2, 2}, {3, 0}}}
 };
 
 const SideTestUtil::TestCaseData failingInteriorBlockBoundaryTestCases =
@@ -52,21 +52,35 @@ const SideTestUtil::TestCaseData failingInteriorBlockBoundaryTestCases =
     {"AefA.e",    4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
 };
 
+const SideTestUtil::TestCaseData interiorBlockBoundaryCoincidentElementTestCases =
+{
+    {"Aef.e",     3,        1,    {{1, 5}, {2, 1}, {3, 1}}},
+    {"AefB.e",    4,        2,    {{1, 5}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 4}}},
+    {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
+
+    {"AP.e",      2,        0,    {}},
+};
+
 const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockTestCases =
 {
   /* filename, max#procs, #side,  sideset */
     {"AB.e",      2,        1,    {{1, 5}}},
     {"Ae.e",      2,        1,    {{1, 5}}},
-    {"Aef.e",     3,        1,    {{1, 5}}},
     {"AeB.e",     3,        1,    {{1, 5}}},
-    {"AefB.e",    4,        1,    {{1, 5}}},
-    {"ef.e",      2,        0,    {}},
-    {"eff.e",     3,        0,    {}},
 
     {"AB_doubleKissing.e", 2, 2,  {{1, 1}, {1, 2}}},
 
     {"Tg.e",      2,        0,    {}},
     {"ZY.e",      2,        1,    {{1, 5}}}
+};
+
+const SideTestUtil::TestCaseData createInteriorBoundaryForOneBlockCoincidentElementTestCases =
+{
+    {"Aef.e",     3,        1,    {{1, 5}}},
+    {"AefB.e",    4,        1,    {{1, 5}}},
+    {"ef.e",      2,        0,    {}},
+    {"eff.e",     3,        0,    {}},
 };
 
 class InteriorBlockBoundaryTester : public SideTestUtil::SideCreationTester
@@ -112,14 +126,33 @@ TEST(CreateInteriorBoundaryForSingleBlockTest, run_all_test_cases_aura)
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
 
-TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_no_aura)
+TEST(CreateInteriorBoundaryForSingleBlockTest, run_all_test_cases_no_aura)
 {
     OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+//np3 fails consistency checks due to face having different node ordering on different procs.  Maybe due to split coincidents
+// (failing before split coincident element support was removed)
 TEST(InteriorBlockBoundaryTest, DISABLED_failing_run_all_test_cases_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(failingInteriorBlockBoundaryTestCases, stk::mesh::BulkData::AUTO_AURA);
 }
-
+TEST(InteriorBlockBoundaryTest, run_coincident_element_test_cases_no_aura)
+{
+    InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST(CreateInteriorBoundaryForSingleBlockTest, run_coincident_element_test_cases_no_aura)
+{
+    OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST(InteriorBlockBoundaryTest, np1_run_coincident_element_test_cases_no_aura)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+        InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST(CreateInteriorBoundaryForSingleBlockTest, np1_run_coincident_element_test_cases_no_aura)
+{
+    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+        OneBlockInteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForOneBlockCoincidentElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
 }

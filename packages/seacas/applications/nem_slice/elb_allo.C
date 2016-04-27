@@ -33,14 +33,14 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 
 #include "elb_allo.h"
 #include "elb_format.h"
 
-static void *smalloc (size_t n);
+static void *smalloc(size_t n);
 
 /******************************************************************************
  *
@@ -76,76 +76,76 @@ static void *smalloc (size_t n);
  *****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void *array_alloc (int numdim , ...)
+void *array_alloc(int numdim, ...)
 {
-   struct dim {
-      size_t	index;	/* Number of elements in the dimension	*/
-      size_t	total;	/* Total number of elements 		*/
-      size_t	size;	/* Size of a single element in bytes	*/
-      size_t	off;	/* offset from beginning of array	*/
-   }	dim[3];		/* Info about each dimension 		*/
-   size_t total;	/* Total size of the array		*/
-   void *dfield;	/* ptr to avoid lint complaints		*/
-   char *field;		/* The multi-dimensional array		*/
-   char **ptr;		/* Pointer offset			*/
-   char *data;		/* Data offset				*/
-   va_list va;		/* Current pointer in the argument list	*/
+  struct dim
+  {
+    size_t index; /* Number of elements in the dimension	*/
+    size_t total; /* Total number of elements 		*/
+    size_t size;  /* Size of a single element in bytes	*/
+    size_t off;   /* offset from beginning of array	*/
+  } dim[3];       /* Info about each dimension 		*/
+  size_t  total;  /* Total size of the array		*/
+  void *  dfield; /* ptr to avoid lint complaints		*/
+  char *  field;  /* The multi-dimensional array		*/
+  char ** ptr;    /* Pointer offset			*/
+  char *  data;   /* Data offset				*/
+  va_list va;     /* Current pointer in the argument list	*/
 
-   va_start(va, numdim);
+  va_start(va, numdim);
 
-   if (numdim <= 0) {
-     fprintf(stderr,
-             "array_alloc ERROR: number of dimensions, %d, is <=0\n", numdim);
-     va_end(va);
-     return nullptr;
-   } else if (numdim > 3) {
-     fprintf(stderr,
-             "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
-     va_end(va);
-     return nullptr;
-   }
+  if (numdim <= 0) {
+    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is <=0\n", numdim);
+    va_end(va);
+    return nullptr;
+  }
+  else if (numdim > 3) {
+    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
+    va_end(va);
+    return nullptr;
+  }
 
-   dim[0].index = va_arg(va, size_t);
+  dim[0].index = va_arg(va, size_t);
 
-   if (dim[0].index <= 0) {
-     va_end(va);
-     return nullptr;
-   }
+  if (dim[0].index <= 0) {
+    va_end(va);
+    return nullptr;
+  }
 
-   dim[0].total = dim[0].index;
-   dim[0].size = sizeof(void *);
-   dim[0].off = 0;
-   for (int i=1; i<numdim; i++) {
-      dim[i].index = va_arg(va, size_t);
-      if (dim[i].index <= 0) {
-	va_end(va);
-	return nullptr;
-      }
+  dim[0].total = dim[0].index;
+  dim[0].size  = sizeof(void *);
+  dim[0].off   = 0;
+  for (int i = 1; i < numdim; i++) {
+    dim[i].index = va_arg(va, size_t);
+    if (dim[i].index <= 0) {
+      va_end(va);
+      return nullptr;
+    }
 
-      dim[i].total = dim[i-1].total * dim[i].index;
-      dim[i].size = sizeof(void *);
-      dim[i].off = dim[i-1].off + dim[i-1].total * dim[i-1].size;
-   }
-   dim[numdim-1].size = va_arg(va, size_t);
-   va_end(va);
+    dim[i].total = dim[i - 1].total * dim[i].index;
+    dim[i].size  = sizeof(void *);
+    dim[i].off   = dim[i - 1].off + dim[i - 1].total * dim[i - 1].size;
+  }
+  dim[numdim - 1].size = va_arg(va, size_t);
+  va_end(va);
 
-   /* Round up the last offset value so data is properly aligned. */
-   dim[numdim-1].off = dim[numdim-1].size *
-       ((dim[numdim-1].off+dim[numdim-1].size-1)/dim[numdim-1].size);
+  /* Round up the last offset value so data is properly aligned. */
+  dim[numdim - 1].off = dim[numdim - 1].size *
+                        ((dim[numdim - 1].off + dim[numdim - 1].size - 1) / dim[numdim - 1].size);
 
-   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
+  total = dim[numdim - 1].off + dim[numdim - 1].total * dim[numdim - 1].size;
 
-   dfield = (void *) smalloc(total);
-   field = (char *) dfield;
+  dfield = (void *)smalloc(total);
+  field  = (char *)dfield;
 
-   for (int i=0; i<numdim - 1; i++) {
-      ptr = (char **) (field + dim[i].off);
-      data = (char *) (field + dim[i+1].off);
-      for (size_t j=0; j<dim[i].total; j++) {
-	 ptr[j] = data + j * dim[i+1].size * dim[i+1].index;
-      }
-   }
-   return(dfield);
+  for (int i = 0; i < numdim - 1; i++) {
+    ptr  = (char **)(field + dim[i].off);
+    data = (char *)(field + dim[i + 1].off);
+    for (size_t j = 0; j < dim[i].total; j++) {
+      ptr[j] = data + j * dim[i + 1].size * dim[i + 1].index;
+    }
+  }
+  return (dfield);
 }
 
 /* Safe version of malloc.  Does not initialize memory .*/
@@ -153,21 +153,22 @@ void *array_alloc (int numdim , ...)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-static void *smalloc (size_t n)
+static void *smalloc(size_t n)
 {
-	void *pntr = nullptr;	/* return value */
+  void *pntr = nullptr; /* return value */
 
-	if (n == 0)
-	  pntr = nullptr;
-	else
-	  pntr = malloc(n);
+  if (n == 0)
+    pntr = nullptr;
+  else
+    pntr = malloc(n);
 
-	if(pntr == nullptr && n != 0) {
-	  fprintf(stderr, "smalloc: Out of space - number of bytes "
-		  "requested = " ST_ZU "\n", n);
-	  exit(0);
-	}
-   	return (pntr);
+  if (pntr == nullptr && n != 0) {
+    fprintf(stderr, "smalloc: Out of space - number of bytes "
+                    "requested = " ST_ZU "\n",
+            n);
+    exit(0);
+  }
+  return (pntr);
 }
 
 /*****************************************************************************/

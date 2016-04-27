@@ -219,8 +219,8 @@ namespace Intrepid2 {
     Basis() = default;
     virtual~Basis() = default;
 
-    typedef Kokkos::DynRankView<outputValueType,ExecSpaceType> outputViewType;
-    typedef Kokkos::DynRankView<pointValueType,ExecSpaceType>  pointViewType;
+    typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
+    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -317,7 +317,7 @@ namespace Intrepid2 {
 
         \return Base cell topology
     */
-    const shards::CellTopology
+    shards::CellTopology
     getBaseCellTopology() const {
       return basisCellTopology_;
     }

@@ -1,6 +1,8 @@
 #ifndef BASKER_TYPES_HPP
 #define BASKER_TYPES_HPP
 
+#define BASKER_DEBUG
+
 //MACRO TURN ON FUCNTIONS
 #define BASKER_KOKKOS         //Use Kokkos
 #define BASKER_ATOMIC         //Use Atomics (OLD)
@@ -98,6 +100,9 @@ enum BASKER_INCOMPLETE_CODE
     if(!(a))                     \
       {printf("\n\n%s\n\n", s);} \
     ASSERT(a);                   \
+    assert(a);			 \
+    if(!(a))                     \
+      exit(0);                  \
   }
 #else
 #define BASKER_ASSERT(a,s)      \

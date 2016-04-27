@@ -251,7 +251,12 @@ unsigned topology::num_nodes() const
 {
   typedef topology_detail::num_nodes_impl functor;
   topology::apply_functor< functor > apply;
-  return m_value < SUPERELEMENT_START ? apply(m_value) : m_value - SUPERELEMENT_START;
+  if (m_value < END_TOPOLOGY)
+      return apply(m_value);
+  else if (is_superface())
+      return m_value - SUPERFACE_START;
+  else
+      return m_value - SUPERELEMENT_START;
 }
 
 inline
@@ -259,7 +264,13 @@ topology::rank_t topology::rank() const
 {
   typedef topology_detail::rank_impl functor;
   topology::apply_functor< functor > apply;
-  return m_value < SUPERELEMENT_START ? apply(m_value) : ( m_value > SUPERELEMENT_START ? topology::ELEMENT_RANK : topology::INVALID_RANK);
+  if (m_value < END_TOPOLOGY)
+      return apply(m_value);
+  else if (is_superface())
+      return topology::FACE_RANK;
+  else if (is_superelement())
+      return topology::ELEMENT_RANK;
+  return topology::INVALID_RANK;
 }
 
 template <typename NodeArrayA, typename NodeArrayB>

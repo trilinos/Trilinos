@@ -51,6 +51,15 @@ public:
     virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
     {
     }
+
+    virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
+    {
+        valuesToReduce.clear();
+    }
+
+    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
+    {
+    }
 };
 
 }

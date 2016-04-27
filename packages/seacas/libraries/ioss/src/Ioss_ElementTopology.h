@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,85 +33,86 @@
 #ifndef IOSS_Ioss_Element_Topology_h
 #define IOSS_Ioss_Element_Topology_h
 
-#include <Ioss_CodeTypes.h>             // for IntVector
-#include <functional>                   // for less
-#include <map>                          // for map, map<>::value_compare
-#include <string>                       // for string, operator<
-#include <vector>                       // for vector
-namespace Ioss { class ElementTopology; }
-
+#include <Ioss_CodeTypes.h>
+#include <map>    // for map, map<>::value_compare
+#include <string> // for string, operator<
+#include <vector> // for vector
+namespace Ioss {
+  class ElementTopology;
+}
 
 namespace Ioss {
-  enum class ElementShape {UNKNOWN, POINT, LINE, TRI, QUAD, TET, PYRAMID, WEDGE, HEX};
+  enum class ElementShape { UNKNOWN, POINT, LINE, TRI, QUAD, TET, PYRAMID, WEDGE, HEX };
 
-  typedef std::map<std::string, ElementTopology*,
-    std::less<std::string> > ElementTopologyMap;
+  typedef std::map<std::string, ElementTopology *, std::less<std::string>> ElementTopologyMap;
   typedef ElementTopologyMap::value_type ETM_VP;
 
-  class ETRegistry {
+  class ETRegistry
+  {
   public:
     void insert(const Ioss::ETM_VP &value, bool delete_me);
-    ElementTopologyMap::iterator begin() {return m_registry.begin();}
-    ElementTopologyMap::iterator end()   {return m_registry.end();}
-    ElementTopologyMap::iterator find(const std::string &type) {return m_registry.find(type);}
+    ElementTopologyMap::iterator begin() { return m_registry.begin(); }
+    ElementTopologyMap::iterator end() { return m_registry.end(); }
+    ElementTopologyMap::iterator find(const std::string &type) { return m_registry.find(type); }
 
     ~ETRegistry();
     std::map<std::string, std::string> customFieldTypes;
+
   private:
-    Ioss::ElementTopologyMap m_registry;
-    std::vector<Ioss::ElementTopology*> m_deleteThese;
+    Ioss::ElementTopologyMap             m_registry;
+    std::vector<Ioss::ElementTopology *> m_deleteThese;
   };
 
   // ========================================================================
-  class ElementTopology {
+  class ElementTopology
+  {
   public:
-    
-    void alias(const std::string& base, const std::string& syn);
+    void alias(const std::string &base, const std::string &syn);
     bool is_alias(const std::string &my_alias) const;
 
     virtual ~ElementTopology();
 
-    const std::string &name() const {return name_;}
+    const std::string &name() const { return name_; }
 
     //: Return the Sierra master element name corresponding to this
     //: element topology.  Somewhat klugy coupling between IO subsystem
     //: and Sierra, but least klugy I could think of...
-    std::string master_element_name() const {return masterElementName_;}
+    std::string master_element_name() const { return masterElementName_; }
 
     //: Return basic shape...
     virtual ElementShape shape() const = 0;
-    
+
     //: Return whether the topology describes an "element". If it
     //: isn't an element, then it is a component of an element.  For
-    //example, a quadrilater Shell is an element, but a QuadFace is
-    //not.
+    // example, a quadrilater Shell is an element, but a QuadFace is
+    // not.
     //
     // Default implementation returns true if spatial_dimension() ==
     // parametric_dimension(), otherwise returns false;
     // "Structural" elements (shells, rods, trusses, particles) need
     // to override.
-    virtual bool is_element() const; 
-    virtual int spatial_dimension() const = 0;
-    virtual int parametric_dimension() const = 0;
-    virtual int order()     const = 0;
+    virtual bool is_element() const;
+    virtual int  spatial_dimension() const    = 0;
+    virtual int  parametric_dimension() const = 0;
+    virtual int  order() const                = 0;
 
     virtual bool edges_similar() const; // true if all edges have same topology
     virtual bool faces_similar() const; // true if all faces have same topology
 
     virtual int number_corner_nodes() const = 0;
-    virtual int number_nodes() const = 0;
-    virtual int number_edges() const = 0;
-    virtual int number_faces() const = 0;
-    int number_boundaries() const;
+    virtual int number_nodes() const        = 0;
+    virtual int number_edges() const        = 0;
+    virtual int number_faces() const        = 0;
+    int         number_boundaries() const;
 
     virtual int number_nodes_edge(int edge = 0) const = 0;
     virtual int number_nodes_face(int face = 0) const = 0;
     virtual int number_edges_face(int face = 0) const = 0;
 
     IntVector boundary_connectivity(int edge_number) const;
-    virtual IntVector edge_connectivity(int edge_number)     const = 0;
-    virtual IntVector face_connectivity(int face_number)     const = 0;
-    virtual IntVector element_connectivity()                 const = 0;
+    virtual IntVector edge_connectivity(int edge_number) const = 0;
+    virtual IntVector face_connectivity(int face_number) const = 0;
+    virtual IntVector element_connectivity() const             = 0;
 
     // These have default implementations in ElementTopology.
     // The defaults simply fill in the vector with 0..num.
@@ -119,29 +120,28 @@ namespace Ioss {
     // elements, 3d need to override.
     // For 'element_edge_connectivity', this works for all elements.
     virtual IntVector face_edge_connectivity(int face_number) const;
-    IntVector element_edge_connectivity()             const;
+    IntVector element_edge_connectivity() const;
 
-    ElementTopology* boundary_type(int face_number = 0) const;
-    virtual ElementTopology* face_type(int face_number = 0)     const = 0;
-    virtual ElementTopology* edge_type(int edge_number = 0)     const = 0;
+    ElementTopology *boundary_type(int face_number = 0) const;
+    virtual ElementTopology *face_type(int face_number = 0) const = 0;
+    virtual ElementTopology *edge_type(int edge_number = 0) const = 0;
 
-    static ElementTopology* factory(const std::string& type, bool ok_to_fail = false);
-    static ElementTopology* factory(unsigned int unique_id);
-    static unsigned int get_unique_id(const std::string& type);
+    static ElementTopology *factory(const std::string &type, bool ok_to_fail = false);
+    static ElementTopology *factory(unsigned int unique_id);
+    static unsigned int get_unique_id(const std::string &type);
     static int describe(NameList *names);
 
   protected:
-    ElementTopology(std::string  type, std::string  master_elem_name,
-		    bool delete_me=false);
+    ElementTopology(std::string type, std::string master_elem_name, bool delete_me = false);
 
   private:
-    ElementTopology(const ElementTopology&); // Do not implement...
-    ElementTopology& operator=(const ElementTopology&); // Do not implement...
+    ElementTopology(const ElementTopology &);            // Do not implement...
+    ElementTopology &operator=(const ElementTopology &); // Do not implement...
 
     const std::string name_;
     const std::string masterElementName_;
-    
-    static ETRegistry & registry();
+
+    static ETRegistry &registry();
   };
 }
 #endif

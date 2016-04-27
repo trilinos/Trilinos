@@ -197,7 +197,7 @@ class TpetraMultiVector : public Vector<Real> {
 
     /** \brief Returns \f$ \langle y,x \rangle \f$ where \f$y = \mbox{*this}\f$.
     */
-    Real dot( const V &x ) const {
+    virtual Real dot( const V &x ) const {
 
       TEUCHOS_TEST_FOR_EXCEPTION( dimension() != x.dimension(),
                                   std::invalid_argument,
@@ -221,7 +221,7 @@ class TpetraMultiVector : public Vector<Real> {
 
     /** \brief Clone to make a new (uninitialized) vector.
     */
-    VP clone() const {
+    virtual VP clone() const {
       using Teuchos::rcp; 
       size_t n = tpetra_vec_->getNumVectors();  
       return rcp( new TMV(rcp( new MV(tpetra_vec_->getMap(),n,false)) ));

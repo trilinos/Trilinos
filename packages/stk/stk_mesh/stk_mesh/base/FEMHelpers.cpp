@@ -232,7 +232,7 @@ Entity declare_element_side_using_graph(BulkData& bulkData, const stk::mesh::Ent
     }
     else
     {
-        stk::mesh::ElemElemGraph &graph = bulkData.get_graph();
+        stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
         graph.write_graph(std::cerr);
         stk::mesh::SideConnector sideConnector = graph.get_side_connector();
         sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);
@@ -330,40 +330,28 @@ Entity declare_element_edge(
 
 typedef std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ConnectivityAndOrdinal;
 
-class PermutationFilter
+
+void mark_if_negative_permutation(std::pair<bool, unsigned> &result, stk::topology sub_topology)
 {
-public:
-    PermutationFilter() {}
-
-    virtual ~PermutationFilter() {}
-    virtual bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
-                                stk::mesh::Entity nodes_of_sub_topology[],
-                                stk::topology sub_topology,
-                                unsigned ordinal,
-                                ConnectivityAndOrdinal &ordinalAndPermutation) const = 0;
-
-protected:
-    void mark_if_negative_permutation(std::pair<bool, unsigned> &result, stk::topology sub_topology) const
+    if (result.first && result.second >= sub_topology.num_positive_permutations())
     {
-        if (result.first && result.second >= sub_topology.num_positive_permutations())
-        {
-            result.first = false;
-        }
+        result.first = false;
     }
+}
 
-    void set_ordinal_and_permutation_if_equivalent(std::pair<bool, unsigned> &result,
-                                                   unsigned ordinal,
-                                                   ConnectivityAndOrdinal &ordinalAndPermutation) const
+void set_ordinal_and_permutation_if_equivalent(std::pair<bool, unsigned> &result,
+                                               unsigned ordinal,
+                                               ConnectivityAndOrdinal &ordinalAndPermutation)
+{
+    if (result.first == true)
     {
-        if (result.first == true)
-        {
-            ordinalAndPermutation.first = static_cast<stk::mesh::ConnectivityOrdinal>(ordinal);
-            ordinalAndPermutation.second = static_cast<stk::mesh::Permutation>(result.second);
-        }
+        ordinalAndPermutation.first = static_cast<stk::mesh::ConnectivityOrdinal>(ordinal);
+        ordinalAndPermutation.second = static_cast<stk::mesh::Permutation>(result.second);
     }
-};
+}
 
-class ShellPermutationFilter : public PermutationFilter
+
+class ShellPermutationFilter
 {
 public:
     ShellPermutationFilter(const stk::mesh::BulkData& mesh,
@@ -372,16 +360,16 @@ public:
     : m_mesh(mesh), m_entity(parent_entity), m_toRank(to_rank), m_filterForShell(false)
     {
         stk::topology elemTopology = m_mesh.bucket(m_entity).topology();
-        m_filterForShell = (elemTopology.is_shell() && (m_toRank != stk::topology::EDGE_RANK));
+        m_filterForShell = elemTopology.is_shell() && to_rank == mesh.mesh_meta_data().side_rank();
     }
 
-    virtual ~ShellPermutationFilter() {}
+    ~ShellPermutationFilter() {}
 
-    virtual bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
-                                             stk::mesh::Entity nodes_of_sub_topology[],
-                                             stk::topology sub_topology,
-                                             unsigned ordinal,
-                                             ConnectivityAndOrdinal &ordinalAndPermutation) const
+    bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
+                                     stk::mesh::Entity nodes_of_sub_topology[],
+                                     stk::topology sub_topology,
+                                     unsigned ordinal,
+                                     ConnectivityAndOrdinal &ordinalAndPermutation) const
     {
         std::pair<bool, unsigned> result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
 
@@ -401,17 +389,17 @@ private:
     bool m_filterForShell;
 };
 
-class ActivePermutationFilter : public PermutationFilter
+class ActivePermutationFilter
 {
 public:
     ActivePermutationFilter() {}
-    virtual ~ActivePermutationFilter() {}
+    ~ActivePermutationFilter() {}
 
-    virtual bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
-                                             stk::mesh::Entity nodes_of_sub_topology[],
-                                             stk::topology sub_topology,
-                                             unsigned ordinal,
-                                             ConnectivityAndOrdinal &ordinalAndPermutation) const
+    bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
+                                     stk::mesh::Entity nodes_of_sub_topology[],
+                                     stk::topology sub_topology,
+                                     unsigned ordinal,
+                                     ConnectivityAndOrdinal &ordinalAndPermutation) const
     {
         std::pair<bool, unsigned> result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
         mark_if_negative_permutation(result, sub_topology);
@@ -420,6 +408,7 @@ public:
     }
 };
 
+template<typename PermutationFilter>
 OrdinalAndPermutation
 get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
                                         stk::mesh::Entity parent_entity,
@@ -451,6 +440,9 @@ get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
         elemTopology.sub_topology_nodes(elemNodes, to_rank, i, nodes_of_sub_topology);
 
         pFilter.set_ordinal_and_permutation(nodes_of_sub_rank, nodes_of_sub_topology, sub_topology, i, ordinalAndPermutation);
+        if (ordinalAndPermutation.first != stk::mesh::INVALID_CONNECTIVITY_ORDINAL) {
+            break;
+        }
     }
 
     return ordinalAndPermutation;
@@ -474,42 +466,6 @@ get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh,
 {
     ActivePermutationFilter pFilter;
     return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
-}
-
-
-stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
-        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part)
-{
-    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = get_ordinal_and_permutation(mesh, elem, to_rank, sub_topology_nodes);
-
-    if ((ordinalAndPermutation.first  == stk::mesh::ConnectivityOrdinal::INVALID_CONNECTIVITY_ORDINAL) ||
-        (ordinalAndPermutation.second == stk::mesh::Permutation::INVALID_PERMUTATION))
-    {
-    	stk::mesh::Entity invalid;
-    	invalid = stk::mesh::Entity::InvalidEntity;
-    	return invalid;
-    }
-
-    stk::mesh::Entity side = mesh.get_entity(to_rank, global_sub_topology_id);
-    if (!mesh.is_valid(side))
-    {
-        side = mesh.declare_entity(to_rank, global_sub_topology_id, part);
-        for (unsigned i=0;i<sub_topology_nodes.size();++i)
-        {
-            mesh.declare_relation(side, sub_topology_nodes[i], i);
-        }
-    }
-    else {
-        const stk::mesh::Entity* sideNodes = mesh.begin_nodes(side);
-        unsigned numNodes = mesh.num_nodes(side);
-        ThrowRequireMsg(sub_topology_nodes.size() == numNodes, "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different number of nodes");
-        for(unsigned i=0; i<numNodes; ++i) {
-            ThrowRequireMsg(sub_topology_nodes[i] == sideNodes[i], "declare_element_to_sub_topology_with_nodes ERROR, side already exists with different node connectivity");
-        }
-    }
-
-    mesh.declare_relation(elem, side, ordinalAndPermutation.first, ordinalAndPermutation.second);
-    return side;
 }
 
 stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,

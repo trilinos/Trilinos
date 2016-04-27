@@ -52,7 +52,7 @@
 namespace Intrepid2 {
   
 
-    namespace FunctorArrayTools {
+  namespace FunctorArrayTools {
     template < typename outputFieldsViewType , typename inputFieldsViewType >
     struct F_cloneFields{
       outputFieldsViewType _outputFields;
@@ -82,7 +82,7 @@ namespace Intrepid2 {
             output(i, j) = input(i, j);
       }
     };
-    } //namespace
+  } //namespace
 
   template<typename SpT>
   template<typename outputFieldValueType, class ...outputFieldProperties,
