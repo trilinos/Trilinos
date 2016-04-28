@@ -203,6 +203,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
   // Metric: local sums on process
   metrics[next]->setName("object count");
   metrics[next]->setMetricValue("local sum", localNumObj);
+
   next++;
 
   if (numMetrics > 1){
@@ -219,6 +220,7 @@ template <typename scalar_t, typename lno_t, typename part_t>
       metrics[next]->setName("normed weight");
 
     metrics[next]->setMetricValue("local sum", total);
+
     next++;
 
     if (vwgtDim > 1){
@@ -234,6 +236,9 @@ template <typename scalar_t, typename lno_t, typename part_t>
 
         metrics[next]->setName(oss.str());
         metrics[next]->setMetricValue("local sum", total);
+
+        std::cout << "***** Logging ImbalanceMetric Data Index: " << next << "  Name:" << oss.str() << "   local sum: " << total << std::endl;
+
         next++;
       }
     }

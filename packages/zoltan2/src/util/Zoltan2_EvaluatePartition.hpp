@@ -141,7 +141,6 @@ public:
       \param p the parameter list
       \param soln  the solution
       \param graphModel the graph model
-
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
@@ -150,8 +149,7 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
       sharedConstructor(ia, p, problemComm, soln, graphModel);
@@ -164,7 +162,6 @@ public:
       \param problemComm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
-
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
@@ -174,8 +171,7 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       sharedConstructor(ia, p, problemComm, soln, graphModel);
     }
@@ -187,7 +183,6 @@ public:
       \param comm  the problem communicator
       \param soln  the solution
       \param graphModel the graph model
-
       The constructor does global communication to compute the metrics.
       The rest of the  methods are local.
    */
@@ -197,8 +192,7 @@ public:
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
 		    Teuchos::null):
-    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metrics_(),
-    metricsConst_(), graphMetrics_(), graphMetricsConst_()
+    numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
 	Teuchos::opaqueWrapper(comm);
@@ -292,7 +286,7 @@ public:
 	// if we have multiple weights (meaning array size if 2 or greater) than the weights begin on index 2
 	// if we have one weight 0 (option 2) then the weights begin on index 1
 	base_metric_array_type metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
-	int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 0 : 1;
+	int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 2 : 1;
 	int numberOfWeights = metrics.size() - weight0IndexStartsAtThisArrayIndex;
 	int useArayIndex = weight0IndexStartsAtThisArrayIndex + weightIndex;
 	if( metrics.size() < useArayIndex ) {
@@ -305,8 +299,8 @@ public:
    */
   scalar_t getMaxEdgeCut() const{
 	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
-	if( graphMetrics.size() != 1 ) {
-	    throw std::logic_error( "getMaxEdgeCut() was called for " + std::string(GRAPH_METRICS_TYPE_NAME) + " but this is data is weighted. Use getMaxWeightEdgeCut(int weightIndex) instead." );
+	if( graphMetrics.size() < 1 ) {
+	    throw std::logic_error( "getMaxEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
 	}
 	return graphMetrics[0]->getMetricValue("global maximum");
   }
@@ -315,8 +309,12 @@ public:
    */
   scalar_t getMaxWeightEdgeCut(int weightIndex) const{
 	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
-	if( graphMetrics.size() <= weightIndex ) {
-	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size()-1) + "." );
+	int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
+	if( graphMetrics.size() <= 1 ) {
+	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
+	}
+	else if( graphMetrics.size() < indexInArray ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
+	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
     return graphMetrics[weightIndex]->getMetricValue("global maximum");
   }
@@ -325,8 +323,8 @@ public:
    */
   scalar_t getTotalEdgeCut() const{
 	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
-	if( graphMetrics.size() != 1 ) {
-	    throw std::logic_error( "getTotalEdgeCut() was called for " + std::string(GRAPH_METRICS_TYPE_NAME) + " but this is data is weighted. Use getTotalWeightEdgeCut(int weightIndex) instead." );
+	if( graphMetrics.size() < 1 ) {
+	    throw std::logic_error( "getTotalEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
 	}
 	return graphMetrics[0]->getMetricValue("global sum");
   }
@@ -335,9 +333,12 @@ public:
    */
   scalar_t getTotalWeightEdgeCut(int weightIndex) const{
 	base_metric_array_type graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
-
-	if( graphMetrics.size() <= weightIndex ) {
-	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size()-1) + "." );
+	int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
+	if( graphMetrics.size() <= 1 ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
+	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
+	}
+	else if( graphMetrics.size() < indexInArray ) {
+	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
     return graphMetrics[weightIndex]->getMetricValue("global sum");
   }
@@ -465,7 +466,7 @@ public:
 
     if (graphModel == Teuchos::null) {
       try{
-	globalWeightedCutsByPart<Adapter>(env,
+    	  globalWeightedCutsByPart<Adapter>(env,
 					  problemComm, graph, partArray,
 					  numGlobalParts_, metricsBase_,
 					  globalSums);
@@ -473,7 +474,7 @@ public:
       Z2_FORWARD_EXCEPTIONS;
     } else {
       try{
-	globalWeightedCutsByPart<Adapter>(env,
+    	  globalWeightedCutsByPart<Adapter>(env,
 					  problemComm, graphModel, partArray,
 					  numGlobalParts_, metricsBase_,
 					  globalSums);

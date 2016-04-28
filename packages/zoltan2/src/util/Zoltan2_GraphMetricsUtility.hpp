@@ -93,8 +93,6 @@ template <typename Adapter>
     ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
-
-
   env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
   //////////////////////////////////////////////////////////
   // Initialize return values
@@ -103,8 +101,8 @@ template <typename Adapter>
 
   int ewgtDim = graph->getNumWeightsPerEdge();
 
-  int numMetrics = 1;                       // "cut count" or "weight 0"
-  if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
+  int numMetrics = 1;                   // "cut count"
+  if (ewgtDim) numMetrics += ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
@@ -132,6 +130,7 @@ template <typename Adapter>
 	  metrics[n] = rcp( newMetric); 				// create the new members
   }
   array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
+
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
@@ -235,23 +234,24 @@ template <typename Adapter>
   Array<gno_t> Indices;
   Array<part_t> Values;
 
-  if (!ewgtDim) {
-    for (lno_t i=0; i < localNumObj; i++) {
-      const gno_t globalRow = Ids[i];
-      size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
-      Indices.resize (NumEntries);
-      Values.resize (NumEntries);
-      adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
+  for (lno_t i=0; i < localNumObj; i++) {
+    const gno_t globalRow = Ids[i];
+    size_t NumEntries = adjsMatrix->getNumEntriesInGlobalRow (globalRow);
+    Indices.resize (NumEntries);
+    Values.resize (NumEntries);
+    adjsMatrix->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
 
-      for (size_t j=0; j < NumEntries; j++)
-	if (part[i] != Values[j])
-	  cut[part[i]]++;
-    }
+    for (size_t j=0; j < NumEntries; j++)
+      if (part[i] != Values[j])
+	cut[part[i]]++;
+  }
 
-  // This code assumes the solution has the part ordered the
-  // same way as the user input.  (Bug 5891 is resolved.)
-  } else {
-    scalar_t *wgt = localBuf; // weight 0
+  if (numMetrics > 1) {
+
+    scalar_t *wgt = localBuf + nparts; // weight 0
+
+    // This code assumes the solution has the part ordered the
+    // same way as the user input.  (Bug 5891 is resolved.)
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++) {
 	const gno_t globalRow = Ids[i];
@@ -292,8 +292,10 @@ template <typename Adapter>
   metrics[next]->setMetricValue("global maximum", max);
   metrics[next]->setMetricValue("global sum", sum);
 
-  if (ewgtDim){
-    scalar_t *wgt = sumBuf;        // weight 0
+  next++;
+
+  if (numMetrics > 1){
+    scalar_t *wgt = sumBuf + nparts;        // weight 0
 
     for (int edim=0; edim < ewgtDim; edim++){
       ArrayView<scalar_t> fromVec(wgt, nparts);
@@ -305,6 +307,7 @@ template <typename Adapter>
       metrics[next]->setName(oss.str());
       metrics[next]->setMetricValue("global maximum", max);
       metrics[next]->setMetricValue("global sum", sum);
+
       next++;
       wgt += nparts;       // individual weights
     }
