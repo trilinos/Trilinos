@@ -92,11 +92,49 @@ namespace MueLu {
 
     Teuchos::ParameterList nonSerialList,dummyList;
     MueLu::ExtractNonSerializableData(paramList, dummyList, nonSerialList);
-    MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
+    HierarchyUtils::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     mueLuFactory->SetupHierarchy(*H);
 
     return H;
+  }
+
+  /*!
+    @brief Helper function to reuse an existing MueLu preconditioner.
+    @ingroup MueLuAdapters
+
+    @param[in] inA Matrix
+    @param[in] Op  Existing MueLu preconditioner.
+  */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void ReuseXpetraPreconditioner(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+                                 Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& H) {
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
+                               "MueLu::ReuseXpetraPreconditioner: Hierarchy has no levels in it");
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
+                               "MueLu::ReuseXpetraPreconditioner: Hierarchy has no fine level operator");
+    RCP<Level> level0 = H->GetLevel(0);
+
+    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
+    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
+
+    if (!A0.is_null()) {
+      // If a user provided a "number of equations" argument in a parameter list
+      // during the initial setup, we must honor that settings and reuse it for
+      // all consequent setups.
+      A->SetFixedBlockSize(A0->GetFixedBlockSize());
+    }
+    level0->Set("A", A);
+
+    H->SetupRe();
   }
 
 } //namespace
