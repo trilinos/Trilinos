@@ -402,7 +402,7 @@ public:
     TestMesh(stk::ParallelMachine comm)
     :m_meta_data(), m_bulk_data(m_meta_data, comm)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io(get_generated_mesh_spec(m_bulk_data.parallel_size()), m_bulk_data, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io(get_generated_mesh_spec(m_bulk_data.parallel_size()), m_bulk_data);
         stk::mesh::create_edges(m_bulk_data);
         stk::mesh::create_faces(m_bulk_data);
     }

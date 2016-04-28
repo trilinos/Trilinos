@@ -8,9 +8,9 @@ namespace stk
 namespace unit_test_util
 {
 
-void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator)
+void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    stk::io::StkMeshIoBroker exodusFileReader;
     exodusFileReader.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
 
     exodusFileReader.set_bulk_data(bulkData);
@@ -19,9 +19,9 @@ void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::m
     exodusFileReader.populate_bulk_data();
 }
 
-void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator)
+void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData)
 {
-    stk::io::StkMeshIoBroker exodusFileReader(communicator);
+    stk::io::StkMeshIoBroker exodusFileReader;
 
     exodusFileReader.set_bulk_data(bulkData);
     exodusFileReader.add_mesh_database(meshSpec, stk::io::READ_MESH);
@@ -31,10 +31,9 @@ void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bu
 
 void write_mesh_using_stk_io(const std::string &filename,
                              stk::mesh::BulkData &bulkData,
-                             stk::ParallelMachine communicator,
                              stk::io::DatabasePurpose databasePurpose)
 {
-    stk::io::StkMeshIoBroker exodusFileWriter(communicator);
+    stk::io::StkMeshIoBroker exodusFileWriter;
 
     exodusFileWriter.set_bulk_data(bulkData);
     size_t output_file_index = exodusFileWriter.create_output_mesh(filename, databasePurpose);

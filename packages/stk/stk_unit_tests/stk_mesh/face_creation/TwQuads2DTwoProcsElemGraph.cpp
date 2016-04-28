@@ -56,8 +56,8 @@ void convert_quad_fixture_to_my_bulk_data_flavor(unsigned numX, unsigned numY, s
 
     std::ostringstream os;
     const std::string file_temp("testadfasdasdfas.exo");
-    stk::unit_test_util::write_mesh_using_stk_io(file_temp, fixture.m_bulk_data, bulkData.parallel());
-    stk::unit_test_util::fill_mesh_using_stk_io(file_temp, bulkData, bulkData.parallel());
+    stk::unit_test_util::write_mesh_using_stk_io(file_temp, fixture.m_bulk_data);
+    stk::unit_test_util::fill_mesh_using_stk_io(file_temp, bulkData);
 
     ThrowRequireMsg(fixture.m_bulk_data.parallel_size()<10, "Testing assumption violated.");
     os << file_temp << "." << fixture.m_bulk_data.parallel_size() << "." << fixture.m_bulk_data.parallel_rank();

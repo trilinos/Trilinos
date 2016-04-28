@@ -41,7 +41,7 @@ protected:
     void setup_mesh(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(meshSpecification, *bulkData);
     }
 
     void setup_mesh_with_cyclic_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)

@@ -117,7 +117,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
          bulkData.set_sorting_by_face();
 
          stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
          stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
          ElemGraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});

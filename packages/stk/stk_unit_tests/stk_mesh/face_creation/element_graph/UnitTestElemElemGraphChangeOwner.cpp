@@ -514,7 +514,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -614,7 +614,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
@@ -943,7 +943,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
         }
         stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after mesh-read");

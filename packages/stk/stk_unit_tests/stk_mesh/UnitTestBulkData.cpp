@@ -5928,7 +5928,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
         stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
 
         int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
@@ -6134,7 +6134,7 @@ TEST(ChangeEntityId, test_throw_on_shared_node)
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
 
         stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
 

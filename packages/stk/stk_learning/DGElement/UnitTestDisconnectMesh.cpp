@@ -50,7 +50,7 @@ TEST_F(DisconnectMesh, tet)
     stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
     disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
 
-    stk::unit_test_util::write_mesh_using_stk_io("mike_new.g", newBulkData, newBulkData.parallel());
+    stk::unit_test_util::write_mesh_using_stk_io("mike_new.g", newBulkData);
 }
 
 class TOSDTWD : public stk::unit_test_util::MeshFixture
@@ -73,7 +73,7 @@ TEST_F(TOSDTWD, disconnect_mesh)
         stk::mesh::MetaData newMetaData(get_meta().spatial_dimension());
         stk::mesh::BulkData newBulkData(newMetaData, get_bulk().parallel());
         disconnectMesh(get_meta(), get_bulk(), get_meta().universal_part(), newMetaData, newBulkData);
-        stk::unit_test_util::write_mesh_using_stk_io(mesh_name, newBulkData, newBulkData.parallel());
+        stk::unit_test_util::write_mesh_using_stk_io(mesh_name, newBulkData);
     }
 
     {

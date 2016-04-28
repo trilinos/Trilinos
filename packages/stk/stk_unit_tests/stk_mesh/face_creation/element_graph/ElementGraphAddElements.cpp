@@ -24,7 +24,7 @@ protected:
     {
         setup_empty_mesh(auraOption);
         create_elem_graph();
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk(), get_comm());
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", get_bulk());
         expect_graph_correct_after_moving_everything_to_proc0();
     }
 

@@ -183,7 +183,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
         ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
         stk::mesh::create_faces(bulkData);
 
@@ -314,7 +314,7 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
         ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
 
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 

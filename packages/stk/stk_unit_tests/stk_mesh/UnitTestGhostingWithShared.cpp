@@ -73,7 +73,7 @@ TEST(UnitTestGhosting, ThreeElemSendElemWithNonOwnedNodes)
     stk::mesh::MetaData meta(spatialDim);
     stk::unit_test_util::BulkDataTester bulk(meta, communicator);
     const std::string generatedMeshSpecification = "generated:1x1x3";
-    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, bulk, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, bulk);
     bulk.modification_begin();
     stk::mesh::Ghosting& custom_shared_ghosting = bulk.create_ghosting("custom_shared");
     bulk.modification_end();

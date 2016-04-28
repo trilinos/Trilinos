@@ -42,7 +42,7 @@ private:
 
     void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, stkMeshBulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpecification, stkMeshBulkData);
     }
 
 private:

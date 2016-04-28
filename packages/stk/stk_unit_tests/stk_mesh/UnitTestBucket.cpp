@@ -262,7 +262,7 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
         const unsigned spatialDim = 3;
         stk::mesh::MetaData meta(spatialDim, entity_rank_names);
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk);
 
         const unsigned num_nodes_on_one_hex = 8;
         stk::mesh::EntityVector nodes(num_nodes_on_one_hex);
@@ -329,7 +329,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_face_to_element)
     {
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk);
 
         unsigned face_node_ids[] = { 5, 6, 8, 7 };
         stk::mesh::EntityVector nodes(4);
@@ -402,7 +402,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
     {
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x1", bulk);
 
         unsigned edge_node_ids[] = { 5, 6 };
         stk::mesh::EntityVector nodes(2);

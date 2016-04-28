@@ -815,7 +815,7 @@ TEST(stkTopologyFunctions, check_permutation_consistency_parallel)
         stk::unit_test_util::BulkDataFaceSharingTester mesh(meta, MPI_COMM_WORLD);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
 
         unsigned elem_id = 0;
         unsigned local_side_id = 0;
