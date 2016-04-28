@@ -116,14 +116,14 @@ namespace Intrepid2 {
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
       ordinal_type tags[16]  = { 1, 0, 0, 1,
-                                     1, 1, 0, 1,
-                                     1, 2, 0, 1,
-                                     1, 3, 0, 1 };
-  
-
+                                 1, 1, 0, 1,
+                                 1, 2, 0, 1,
+                                 1, 3, 0, 1 };
+      
+      
       // when exec space is device, this wrapping relies on uvm.
       Kokkos::View<ordinal_type[16],SpT> tagView(tags);
-
+      
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
                               this->ordinalToTag_,
@@ -154,8 +154,8 @@ namespace Intrepid2 {
                                    this->getCardinality() );
 #endif
 
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
     typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
 
@@ -164,18 +164,16 @@ namespace Intrepid2 {
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
     switch (operatorType) {
-
-      case OPERATOR_VALUE: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-        break;
-      }
-
-      case OPERATOR_DIV: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_DIV> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
-        break;
-      }
+    case OPERATOR_VALUE: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+      break;
+    }
+    case OPERATOR_DIV: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_DIV> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
+      break;
+    }
     case OPERATOR_CURL: {
       INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
                                     ">>> ERROR (Basis_HDIV_QUAD_I1_FEM): CURL is invalid operator for HDIV Basis Functions");

@@ -125,8 +125,8 @@ namespace Intrepid2 {
       const inputPointViewType  _inputPoints;
 
       KOKKOS_INLINE_FUNCTION
-      Functor( /**/  outputValueViewType outputValues_,
-               /**/  inputPointViewType  inputPoints_ )
+      Functor( outputValueViewType outputValues_,
+               inputPointViewType  inputPoints_ )
         : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
 
       KOKKOS_INLINE_FUNCTION

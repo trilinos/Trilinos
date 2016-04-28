@@ -131,11 +131,11 @@ namespace Intrepid2 {
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
       ordinal_type tags[24]  = { 2, 0, 0, 1,
-                                     2, 1, 0, 1,
-                                     2, 2, 0, 1,
-                                     2, 3, 0, 1,
-                                     2, 4, 0, 1,
-                                     2, 5, 0, 1 };
+                                 2, 1, 0, 1,
+                                 2, 2, 0, 1,
+                                 2, 3, 0, 1,
+                                 2, 4, 0, 1,
+                                 2, 5, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm.
       Kokkos::View<ordinal_type[24],SpT> tagView(tags);

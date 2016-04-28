@@ -96,7 +96,7 @@ namespace Intrepid2 {
   
   */
   
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis_HCURL_QUAD_I1_FEM : public Basis<ExecSpaceType> {
   public:
 
@@ -122,7 +122,7 @@ namespace Intrepid2 {
       Functor( /**/ outputValueViewType outputValues_,
                /**/ inputPointViewType inputPoints_)
         : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
-
+      
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type pt) const {
         switch (opType) {
@@ -135,21 +135,21 @@ namespace Intrepid2 {
 
         case OPERATOR_CURL: {
           auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt );
-          const auto input  = Kokkos::subdynrankview( _inputValues,  pt, Kokkos::ALL() );
+          const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
           Serial<opType>::getValues( output, input );
           break;
         }
         default: {
-          INTREPID_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                   opType != OPERATOR_CURL,
-                                   ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
+          INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                    opType != OPERATOR_CURL,
+                                    ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
           break;
         }
         } //end switch
       }
-
+      
     };
-
+    
     /** \brief  Constructor.
      */
     Basis_HCURL_QUAD_I1_FEM();
@@ -186,6 +186,6 @@ namespace Intrepid2 {
   };
 }// namespace Intrepid2
 
-//#include "Intrepid2_HCURL_QUAD_I1_FEMDef.hpp"
+#include "Intrepid2_HCURL_QUAD_I1_FEMDef.hpp"
 
 #endif

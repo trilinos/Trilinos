@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid_HCURL_QUAD_I1_FEMDef.hpp
-    \brief  Definition file for default FEM basis functions of degree 1 for H(curl) functions on Qadrilateral cells.
+    \brief  Definition file for FEM basis functions of degree 1 for H(curl) functions on Qadrilateral cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim
 */
@@ -69,23 +69,20 @@ namespace Intrepid2 {
       const auto y = input(1);
 
       // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-      output(0, 0) = (1.0 - y)/4.0;
-      output(0, 1) =  0.0;
+      output(0, 0) =  (1.0 - y)/4.0;
+      output(0, 1) =   0.0;
           
-      output(1, 0) =  0.0;
-      output(1, 1) = (1.0 + x)/4.0;
+      output(1, 0) =   0.0;
+      output(1, 1) =  (1.0 + x)/4.0;
           
-      output(2, 0) =-(1.0 + y)/4.0;
-      output(2, 1) =  0.0;
+      output(2, 0) = -(1.0 + y)/4.0;
+      output(2, 1) =   0.0;
           
-      output(3, 0) =  0.0;
-      output(3, 1) =-(1.0 - x)/4.0;
+      output(3, 0) =   0.0;
+      output(3, 1) = -(1.0 - x)/4.0;
       break;
     }
     case OPERATOR_CURL: {
-      const auto x = input(0);
-      const auto y = input(1);
-
       // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
       output(0) = 0.25;
       output(1) = 0.25;
@@ -99,9 +96,8 @@ namespace Intrepid2 {
                                 ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C1_FEM::Serial::getValues) operator is not supported");
     }
     } //end switch
-
   }
-
+  
 
   template<typename SpT>
   Basis_HCURL_QUAD_I1_FEM<SpT>::
@@ -121,11 +117,11 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[16]  = { 1, 0, 0, 1,
-                                     1, 1, 0, 1,
-                                     1, 2, 0, 1,
-                                     1, 3, 0, 1 };
-
+      ordinal_type tags[16]  = { 1, 0, 0, 1,
+                                 1, 1, 0, 1,
+                                 1, 2, 0, 1,
+                                 1, 3, 0, 1 };
+      
       // when exec space is device, this wrapping relies on uvm.
       Kokkos::View<ordinal_type[16], SpT> tagView(tags);
 
@@ -140,7 +136,7 @@ namespace Intrepid2 {
                               posDfOrd);
     }
   }
-
+  
   
   template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
@@ -149,7 +145,7 @@ namespace Intrepid2 {
   Basis_HCURL_QUAD_I1_FEM<SpT>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HCURL_Args(outputValues,
                                     inputPoints,
@@ -158,15 +154,15 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
     
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
-    Kokkos::RangePolicy<SpT,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
   
     switch (operatorType) {
-
     case OPERATOR_VALUE: {
       typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_VALUE> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
@@ -231,7 +227,7 @@ namespace Intrepid2 {
     }
     }
   }
-
+  
   template<typename SpT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
