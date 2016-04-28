@@ -144,7 +144,7 @@ namespace MueLu {
 
     SmootherPrototype::IsSetup(true);
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics1) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

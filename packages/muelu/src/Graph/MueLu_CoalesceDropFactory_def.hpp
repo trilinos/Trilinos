@@ -190,7 +190,7 @@ namespace MueLu {
           graph->SetBoundaryNodeMap(boundaryNodes);
           numTotal = A->getNodeNumEntries();
 
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
             for (LO i = 0; i < boundaryNodes.size(); ++i)
@@ -198,7 +198,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
           Set(currentLevel, "DofsPerNode", 1);
@@ -261,7 +261,7 @@ namespace MueLu {
 
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, A->getRowMap(), A->getColMap(), "thresholded graph of A"));
           graph->SetBoundaryNodeMap(boundaryNodes);
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
             for (LO i = 0; i < boundaryNodes.size(); ++i)
@@ -269,7 +269,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
           Set(currentLevel, "Graph",       graph);
           Set(currentLevel, "DofsPerNode", 1);
@@ -378,7 +378,7 @@ namespace MueLu {
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
 
@@ -388,7 +388,7 @@ namespace MueLu {
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes
                                        << " agglomerated Dirichlet nodes" << std::endl;
           }
 
@@ -503,7 +503,7 @@ namespace MueLu {
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
 
@@ -513,7 +513,7 @@ namespace MueLu {
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes
                                        << " agglomerated Dirichlet nodes" << std::endl;
           }
 
@@ -545,7 +545,7 @@ namespace MueLu {
           graphType="unamalgamated";
           numTotal = A->getNodeNumEntries();
 
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
             for (LO i = 0; i < pointBoundaryNodes.size(); ++i)
@@ -553,7 +553,7 @@ namespace MueLu {
                 numLocalBoundaryNodes++;
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
           }
 
           Set(currentLevel, "DofsPerNode", blkSize);
@@ -728,7 +728,7 @@ namespace MueLu {
           RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
-          if (GetVerbLevel() & Statistics0) {
+          if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;
             GO numGlobalBoundaryNodes = 0;
 
@@ -738,7 +738,7 @@ namespace MueLu {
 
             RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
             MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-            GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
+            GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " agglomerated Dirichlet nodes"
                                        << " using threshold " << dirichletThreshold << std::endl;
           }
 
@@ -747,15 +747,15 @@ namespace MueLu {
         }
       }
 
-      if ((GetVerbLevel() & Statistics0) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
+      if ((GetVerbLevel() & Statistics1) && !(A->GetFixedBlockSize() > 1 && threshold != STS::zero())) {
           RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
           GO numGlobalTotal, numGlobalDropped;
           MueLu_sumAll(comm, numTotal,   numGlobalTotal);
           MueLu_sumAll(comm, numDropped, numGlobalDropped);
-          GetOStream(Statistics0) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+          GetOStream(Statistics1) << "Number of dropped entries in " << graphType << " matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
           if (numGlobalTotal != 0)
-            GetOStream(Statistics0) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
-          GetOStream(Statistics0) << std::endl;
+            GetOStream(Statistics1) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+          GetOStream(Statistics1) << std::endl;
       }
 
     } else {
@@ -783,13 +783,13 @@ namespace MueLu {
         blockdim = strMap->getFixedBlockSize();
         offset   = strMap->getOffset();
         oldView = A->SwitchToView(oldView);
-        GetOStream(Statistics0) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
-      } else GetOStream(Statistics0) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
+        GetOStream(Statistics1) << "CoalesceDropFactory::Build():" << " found blockdim=" << blockdim << " from strided maps. offset=" << offset << std::endl;
+      } else GetOStream(Statistics1) << "CoalesceDropFactory::Build(): no striding information available. Use blockdim=1 with offset=0" << std::endl;
 
       // 2) get row map for amalgamated matrix (graph of A)
       //    with same distribution over all procs as row map of A
       RCP<const Map> nodeMap = amalInfo->getNodeRowMap();
-      GetOStream(Statistics0) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+      GetOStream(Statistics1) << "CoalesceDropFactory: nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
 
       // 3) create graph of amalgamated matrix
       RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);
@@ -852,7 +852,7 @@ namespace MueLu {
       // Detect and record rows that correspond to Dirichlet boundary conditions
       graph->SetBoundaryNodeMap(amalgBoundaryNodes);
 
-      if (GetVerbLevel() & Statistics0) {
+      if (GetVerbLevel() & Statistics1) {
         GO numLocalBoundaryNodes  = 0;
         GO numGlobalBoundaryNodes = 0;
         for (LO i = 0; i < amalgBoundaryNodes.size(); ++i)
@@ -860,7 +860,7 @@ namespace MueLu {
             numLocalBoundaryNodes++;
         RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
         MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-        GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+        GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
       }
 
       // 6) store results in Level
