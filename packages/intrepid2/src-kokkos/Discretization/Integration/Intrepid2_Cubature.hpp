@@ -185,7 +185,7 @@ namespace Intrepid2 {
     }
 
     Cubature() = default;
-    virtual~Cubature() = default;
+    virtual ~Cubature() {}
 
   };
 

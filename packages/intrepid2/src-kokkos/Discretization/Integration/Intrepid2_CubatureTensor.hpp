@@ -164,7 +164,6 @@ namespace Intrepid2 {
       for (auto i=0;i<numCubatures_;++i) 
         cubatures_[i] = b.cubatures_[i];
     }
-    virtual~CubatureTensor() = default;
 
     /** \brief Constructor.
 
