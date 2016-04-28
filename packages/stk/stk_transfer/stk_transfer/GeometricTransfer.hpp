@@ -50,9 +50,6 @@
 #include <stk_transfer/TransferBase.hpp>
 #include <stk_search/SearchMethod.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
-
-
 namespace stk {
 namespace transfer {
 
@@ -260,30 +257,9 @@ template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::local_search()
 
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::apply(){
-
-  ParallelMachine comm = m_mesha->comm();
-  const unsigned my_rank = parallel_machine_rank(comm);
-  const unsigned num_procs = parallel_machine_size(comm);
-
-  //Execute the transfer
-  Kokkos::Impl::Timer timer;
-
   m_mesha->update_values();
   INTERPOLATE::apply(*m_meshb, *m_mesha, m_local_range_to_domain);
   m_meshb->update_values();
-
-
-  double find_time = timer.seconds();
-  // get min, max and sum over processes
-  double  minTime = 0.0, avgTime = 0.0, maxTime = 0.0;
-  stk::all_reduce_min(comm, &find_time, &minTime, 1);
-  stk::all_reduce_max(comm, &find_time, &maxTime, 1);
-  stk::all_reduce_sum(comm, &find_time, &avgTime, 1);
-  if(my_rank == 0){
-    std::cout << "Apply Times:" << std::endl << "   Min: " << minTime
-        << "   Max: " << maxTime << "   Avg: " << avgTime/num_procs << std::endl;
-  }
-
 }
 
 template <class INTERPOLATE> void GeometricTransfer<INTERPOLATE>::determine_entities_to_copy(

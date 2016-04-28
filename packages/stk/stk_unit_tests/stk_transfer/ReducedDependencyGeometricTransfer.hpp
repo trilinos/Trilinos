@@ -46,7 +46,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
-#include <stk_transfer/TransferBase.hpp>
+#include <unit_tests/ReducedDependencyTransferBase.hpp>
 #include <stk_search/SearchMethod.hpp>
 
 #include<impl/Kokkos_Timer.hpp>
