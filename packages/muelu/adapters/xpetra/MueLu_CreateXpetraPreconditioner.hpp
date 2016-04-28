@@ -28,10 +28,12 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op, const Teuchos::ParameterList& inParamList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) {
-    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>  Hierarchy;
-    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node>  HierarchyManager;
+#include "MueLu_UseShortNames.hpp"
+    std::string timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
 
-    Teuchos::ParameterList paramList = inParamList;
+    ParameterList paramList = inParamList;
 
     bool hasParamList = paramList.numParams();
 
@@ -40,9 +42,9 @@ namespace MueLu {
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
       paramList.remove(syntaxStr);
-      mueLuFactory = rcp(new MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList));
+      mueLuFactory = rcp(new MLParameterListInterpreter(paramList));
     } else {
-      mueLuFactory = rcp(new MueLu::ParameterListInterpreter  <Scalar,LocalOrdinal,GlobalOrdinal,Node>(paramList,op->getDomainMap()->getComm()));
+      mueLuFactory = rcp(new ParameterListInterpreter(paramList,op->getDomainMap()->getComm()));
     }
 
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
@@ -71,7 +73,7 @@ namespace MueLu {
         nPDE = paramList.get<int>("number of equations");
       }
 
-      nullspace = Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(op->getDomainMap(), nPDE);
+      nullspace = MultiVectorFactory::Build(op->getDomainMap(), nPDE);
       if (nPDE == 1) {
         nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
 
@@ -96,6 +98,21 @@ namespace MueLu {
 
     mueLuFactory->SetupHierarchy(*H);
 
+    tm->stop();
+    tm->incrementNumCalls();
+
+    if (H->GetVerbLevel() & Statistics0) {
+      const bool alwaysWriteLocal = true;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = timerName;
+      Teuchos::TimeMonitor::summarize(op->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                                      writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+    }
+
+    tm->reset();
+
     return H;
   }
 
@@ -109,6 +126,10 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReuseXpetraPreconditioner(const Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
                                  Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node>>& H) {
+    std::string timerName = "MueLu setup time";
+    RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
+    tm->start();
+
     typedef Scalar          SC;
     typedef LocalOrdinal    LO;
     typedef GlobalOrdinal   GO;
@@ -135,6 +156,21 @@ namespace MueLu {
     level0->Set("A", A);
 
     H->SetupRe();
+
+    tm->stop();
+    tm->incrementNumCalls();
+
+    if (H->GetVerbLevel() & Statistics0) {
+      const bool alwaysWriteLocal = true;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = timerName;
+      Teuchos::TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                                      writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+    }
+
+    tm->reset();
   }
 
 } //namespace
