@@ -67,7 +67,7 @@
 namespace Intrepid2 {
 
   namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \

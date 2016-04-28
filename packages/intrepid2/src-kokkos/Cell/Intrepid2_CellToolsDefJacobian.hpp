@@ -182,7 +182,7 @@ namespace Intrepid2 {
   setJacobianDet( /**/  Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,    
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    validateArguments_setJacobianDetArgs(jacobianDet, jacobian);
+    CellTools_setJacobianDetArgs(jacobianDet, jacobian);
 #endif
     RealSpaceTools<SpT>::det(jacobianDet, jacobian);
   }

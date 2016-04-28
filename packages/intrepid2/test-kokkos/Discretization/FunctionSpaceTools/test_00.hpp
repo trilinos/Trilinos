@@ -71,11 +71,10 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };                                                                  
-
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
     template<typename ValueType, typename DeviceSpaceType>
     int FunctionSpaceTools_Test00(const bool verbose) {
-      typedef ValueType value_type;
       
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -111,8 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef FunctionSpaceTools<DeviceSpaceType> fst;
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       
       int errorFlag = 0;
 

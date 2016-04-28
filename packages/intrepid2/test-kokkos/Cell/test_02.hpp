@@ -180,7 +180,7 @@ namespace Intrepid2 {
               ct::getReferenceSubcellVertices(refCellVertices, cellDim, 0, cell);
               
               *outStream << " Testing edge tangents (and normals for cellDim = 2) for " 
-                         <<  (cell).getName() << " cellDim = " << cellDim <<"\n";
+                         <<  cell.getName() << " cellDim = " << cellDim <<"\n";
                             
               // Array for physical cell vertices ( must have rank 3 for setJacobians)
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
@@ -237,7 +237,7 @@ namespace Intrepid2 {
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Edge tangent computation by CellTools failed for: \n"
-                        << "       Cell Topology = " << (cell).getName() << "\n"
+                        << "       Cell Topology = " << cell.getName() << "\n"
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "  Tangent coordinate = " << d << "\n"
@@ -254,7 +254,7 @@ namespace Intrepid2 {
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Edge Normal computation by CellTools failed for: \n"
-                        << "       Cell Topology = " << (cell).getName() << "\n"
+                        << "       Cell Topology = " << cell.getName() << "\n"
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "   Normal coordinate = " << 0 << "\n"
@@ -266,7 +266,7 @@ namespace Intrepid2 {
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
                         << " Edge Normal computation by CellTools failed for: \n"
-                        << "       Cell Topology = " << (cell).getName() << "\n"
+                        << "       Cell Topology = " << cell.getName() << "\n"
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "   Normal coordinate = " << 1  << "\n"

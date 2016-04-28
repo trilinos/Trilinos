@@ -73,9 +73,8 @@ namespace Intrepid2 {
   FunctionSpaceTools<SpT>::
   HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                       const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                      const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
-                      const char transpose ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, transpose);
+                      const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
   }
 
   // ------------------------------------------------------------------------------------
@@ -88,9 +87,8 @@ namespace Intrepid2 {
   FunctionSpaceTools<SpT>::
   HCURLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                        const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
-                       const char transpose ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, transpose);
+                       const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals ) {
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobianInverse, inputVals, 'T');
   }
 
   // ------------------------------------------------------------------------------------
@@ -105,9 +103,8 @@ namespace Intrepid2 {
   HCURLtransformCURL( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
-                      const char transpose ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobian, inputVals, transpose);
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobian, inputVals, 'N');
     ArrayTools<SpT>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
   }
 
@@ -123,9 +120,8 @@ namespace Intrepid2 {
   HDIVtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                       const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
-                      const char transpose ) {
-    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobian, inputVals, transpose);
+                      const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals ) {
+    ArrayTools<SpT>::matvecProductDataField(outputVals, jacobian, inputVals, 'N');
     ArrayTools<SpT>::scalarMultiplyDataField(outputVals, jacobianDet, outputVals, true);
   }
 
@@ -227,19 +223,19 @@ namespace Intrepid2 {
       break;
 
       // *** FieldField
-    case 32:
+    case 33:
       ArrayTools<SpT>::contractFieldFieldScalar( outputValues,
                                                  leftValues,
                                                  rightValues,
                                                  sumInto );
       break;
-    case 33:
+    case 34:
       ArrayTools<SpT>::contractFieldFieldVector( outputValues,
                                                  leftValues,
                                                  rightValues,
                                                  sumInto );
       break;
-    case 34:
+    case 35:
       ArrayTools<SpT>::contractFieldFieldTensor( outputValues,
                                                  leftValues,
                                                  rightValues,
@@ -297,18 +293,16 @@ namespace Intrepid2 {
            typename inputWeightValueType, class ...inputWeightProperties>
   void
   FunctionSpaceTools<SpT>::
-  computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
+  computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>    inputDet,
                       const Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...> inputWeights ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_EXCEPTION( (inputDet.rank() != 1), std::invalid_argument,
-                                  ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Input determinants container must have rank 1.");
-    
+    INTREPID2_TEST_FOR_EXCEPTION( inputDet.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (FunctionSpaceTools::computeCellMeasure): Input determinants container must have rank 2.");
 #endif
-
     typedef          Kokkos::DynRankView<outputValValueType,  outputValProperties...>         outputValViewType;
-    typedef          Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>           inputDetViewType;
-    typedef          Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...>        inputWeightViewType;
+    typedef          Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>          inputDetViewType;
+    typedef          Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...>       inputWeightViewType;
     typedef          FunctorFunctionSpaceTools::F_computeCellMeasure
       /**/           <outputValViewType,inputDetViewType,inputWeightViewType>                 FunctorType;
     typedef typename ExecSpace<typename inputDetViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
@@ -357,7 +351,7 @@ namespace Intrepid2 {
                                                                            inputJac.dimension(2));
     
     // compute normals
-    // CellTools<SpT>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
+    CellTools<SpT>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
 
     // compute lenghts of normals
     RealSpaceTools<SpT>::vectorNorm(outputVals, faceNormals, NORM_TWO);
@@ -397,7 +391,7 @@ namespace Intrepid2 {
                                                                             inputJac.dimension(2));
     
     // compute normals
-    //CellTools<SpT>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);
+    CellTools<SpT>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);
 
     // compute lenghts of tangents
     RealSpaceTools<SpT>::vectorNorm(outputVals, edgeTangents, NORM_TWO);

@@ -59,7 +59,7 @@
 
 #include "Intrepid2_ArrayTools.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
-//#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 #include "Kokkos_Core.hpp"
 
@@ -114,7 +114,7 @@ namespace Intrepid2 {
              typename inputValValueType,     class ...inputValProperties>
     static void 
     HGRADtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,outputValProperties...> outputVals,
-                         const Kokkos::DynRankView<inputValValueType, inputValProperties...>        inputVals );
+                         const Kokkos::DynRankView<inputValValueType, inputValProperties...>  inputVals );
 
     /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -159,8 +159,7 @@ namespace Intrepid2 {
     static void 
     HGRADtransformGRAD( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                         const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
-                        const char transpose = 'T' );
+                        const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -204,8 +203,7 @@ namespace Intrepid2 {
     static void 
     HCURLtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,      outputValProperties...>       outputVals,
                          const Kokkos::DynRankView<jacobianInverseValueType,jacobianInverseProperties...> jacobianInverse,
-                         const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals,
-                         const char transpose = 'T' );
+                         const Kokkos::DynRankView<inputValValueType,       inputValProperties...>        inputVals );
     
     /** \brief Transformation of a curl field in the H-curl space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -252,8 +250,7 @@ namespace Intrepid2 {
     HCURLtransformCURL( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
-                        const char transpose = 'T' );
+                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>
@@ -300,8 +297,7 @@ namespace Intrepid2 {
     HDIVtransformVALUE( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                         const Kokkos::DynRankView<jacobianValueType,   jacobianProperties...>    jacobian,
                         const Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...> jacobianDet,
-                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals,
-                        const char transpose = 'T' );
+                        const Kokkos::DynRankView<inputValValueType,   inputValProperties...>    inputVals );
 
     /** \brief Transformation of a divergence field in the H-div space, defined at points on a
         reference cell, stored in the user-provided container <var><b>inputVals</b></var>

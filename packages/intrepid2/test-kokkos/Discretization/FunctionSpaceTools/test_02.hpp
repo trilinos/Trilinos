@@ -67,17 +67,15 @@ namespace Intrepid2 {
 
   namespace Test {
 #define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
-    {                                                                   \
-      try {                                                             \
-        S ;                                                             \
-      }                                                                 \
-      catch (std::logic_error err) {                                    \
-        *outStream << "Expected Error ----------------------------------------------------------------\n"; \
-        *outStream << err.what() << '\n';                               \
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
-      };                                                                \
-    }
-
+    try {                                                               \
+      S ;                                                               \
+    }                                                                   \
+    catch (std::logic_error err) {                                      \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };                                                                  
+    
     template<typename ValueType, typename DeviceSpaceType>
     int FunctionSpaceTools_Test02(const bool verbose) {
       typedef ValueType value_type;

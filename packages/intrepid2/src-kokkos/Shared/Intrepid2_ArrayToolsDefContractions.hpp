@@ -72,9 +72,9 @@ namespace Intrepid2 {
       void operator()(const size_type iter) const {
         size_type cl, lbf, rbf;
         Util::unrollIndex( cl, lbf, rbf, 
-                _leftFields.dimension(0),
-                _leftFields.dimension(1),
-                iter );
+                           _leftFields.dimension(0),
+                           _leftFields.dimension(1),
+                           iter );
 
         auto result = Kokkos::subdynrankview( _outputFields,  cl, lbf, rbf );
 

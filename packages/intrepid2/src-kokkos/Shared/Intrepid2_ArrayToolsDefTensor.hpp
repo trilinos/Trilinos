@@ -693,41 +693,44 @@ namespace Intrepid2 {
                        _output.dimension(0), 
                        iter );
 
+        
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cell, field, point, Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cell,        point, Kokkos::ALL()));
 
-        auto lpoint = (_leftInput.dimension(1) == 1) ? size_type(0) : point;
+        auto lpoint = (_leftInput.dimension(1) == 1 ? size_type(0) : point);
         auto left   = ( leftRank == 4 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL(), Kokkos::ALL()) :
-                      ((leftRank == 3) ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
-                       Kokkos::subdynrankview(_leftInput, cell, lpoint)));
-
-        auto right  = (rightRank == 2 + size_type(_hasField)) ?
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
-                      ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) :
-                        /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL()));
-
+                        leftRank == 3 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
+                        /**/            Kokkos::subdynrankview(_leftInput, cell, lpoint));
+        
+        auto right  = ( rightRank == (2 + _hasField) ? ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
+                                                         /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
+                        /**/                           ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) : 
+                                                         /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL())) );
+        
         const size_type iend = result.dimension(0);
         const size_type jend = right.dimension(0);
-        switch (leftRank) {
-          case 4:
-            if (!_isTranspose)
-              for (size_type i=0; i<iend; ++i) {
-                result(i) = value_type(0);
-                for (size_type j=0; j<jend; ++j)
-                  result(i) += left(i, j) * right(j);
-            } else
+
+        switch (left.rank()) {
+          case 2:
+            if (_isTranspose) {
               for (size_type i=0; i<iend; ++i) {
                 result(i) = value_type(0);
                 for (size_type j=0; j<jend; ++j)
                   result(i) += left(j, i) * right(j);
+              }
+            } else {
+              for (size_type i=0; i<iend; ++i) {
+                result(i) = value_type(0);
+                for (size_type j=0; j<jend; ++j)
+                  result(i) += left(i, j) * right(j);
+              }
             }
             break;
-          case 3:  //matrix is diagonal
+          case 1:  //matrix is diagonal
             for (size_type i=0; i<iend; ++i)
                 result(i) = left(i) * right(i);
             break;
-          case 2:  //matrix is a scaled identity
+          case 0:  //matrix is a scaled identity
             for (size_type i=0; i<iend; ++i) {
                 result(i) = left() * right(i);
             }

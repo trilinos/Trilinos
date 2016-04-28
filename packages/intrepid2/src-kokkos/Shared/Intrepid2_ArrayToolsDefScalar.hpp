@@ -85,14 +85,12 @@ namespace Intrepid2 {
 
         auto result = ( _hasField ? Kokkos::subdynrankview(_output, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
                         /**/        Kokkos::subdynrankview(_output, cl,     pt, Kokkos::ALL(), Kokkos::ALL()));
-
-        const auto right = (outputRank == rightRank) ?
-                             ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
-                             ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
-
- 
+        
+        const auto right = ( outputRank == rightRank ? ( _hasField ? Kokkos::subdynrankview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                                                         /**/        Kokkos::subdynrankview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL()) ) : 
+                             /**/                      ( _hasField ? Kokkos::subdynrankview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
+                                                         /**/        Kokkos::subdynrankview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()) ) );
+                                                                
         const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subdynrankview(_leftInput, cl, 0) :
                             /**/                           Kokkos::subdynrankview(_leftInput, cl, pt);
 

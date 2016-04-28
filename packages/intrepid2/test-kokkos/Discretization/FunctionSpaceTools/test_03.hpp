@@ -41,322 +41,356 @@
 // @HEADER
 
 /** \file test_03.cpp
-\brief  Unit test for the FunctionSpaceTools class, testing H-div.
-\author Created by D. Ridzal, P. Bochev, and K. Peterson.
+    \brief  Unit test for the FunctionSpaceTools class, testing H-div.
+    \author Created by D. Ridzal, P. Bochev, K. Peterson and Kyungjoo Kim
 */
 
-#include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Intrepid2_FieldContainer.hpp"
-#include "Intrepid2_CellTools.hpp"
-#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
-#include "Intrepid2_DefaultCubatureFactory.hpp"
+#include "Intrepid2_config.h"
+
+#ifdef HAVE_INTREPID2_DEBUG
+#define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+#endif
+
+#include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
+#include "Intrepid2_Utils_ExtData.hpp"
+
+#include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
+
+#include "Intrepid2_DefaultCubatureFactory.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 
-using namespace std;
-using namespace Intrepid2;
+namespace Intrepid2 {
 
-int main(int argc, char *argv[]) {
+  namespace Test {
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    } catch (std::logic_error err) {                                    \
+      ++ncatch;                                                         \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    };
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- Kokkos::initialize();
-  // This little trick lets us print to std::cout only if
-  // a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+    template<typename ValueType, typename DeviceSpaceType>
+    int FunctionSpaceTools_Test03(const bool verbose) {
 
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
+      Teuchos::RCP<std::ostream> outStream;
+      Teuchos::oblackholestream bhs; // outputs nothing
 
-  *outStream \
-    << "===============================================================================\n" \
-    << "|                                                                             |\n" \
-    << "|                      Unit Test (FunctionSpaceTools)                         |\n" \
-    << "|                                                                             |\n" \
-    << "|     1) Basic operator transformations and integration in HDIV:              |\n" \
-    << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-    << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-    << "|                                                                             |\n" \
-    << "===============================================================================\n";
-  
+      if (verbose)
+        outStream = Teuchos::rcp(&std::cout, false);
+      else
+        outStream = Teuchos::rcp(&bhs, false);
 
-  int errorFlag = 0;
+      Teuchos::oblackholestream oldFormatState;
+      oldFormatState.copyfmt(std::cout);
 
-  typedef FunctionSpaceTools fst; 
+      typedef typename
+        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-  *outStream \
-  << "\n"
-  << "===============================================================================\n"\
-  << "| TEST 1: correctness of math operations                                      |\n"\
-  << "===============================================================================\n";
+      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+      
+      *outStream
+        << "===============================================================================\n"
+        << "|                                                                             |\n"
+        << "|                      Unit Test (FunctionSpaceTools)                         |\n"
+        << "|                                                                             |\n"
+        << "|     1) Basic operator transformations and integration in HDIV:              |\n"
+        << "|                                                                             |\n"
+        << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n"
+        << "|                      Denis Ridzal (dridzal@sandia.gov) or                   |\n"
+        << "|                      Kyungjoo Kim (kyukim@sandia.gov).                      |\n"
+        << "|                                                                             |\n"
+        << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+        << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
+        << "|                                                                             |\n"
+        << "===============================================================================\n";
 
-  outStream->precision(20);
+      typedef CellTools<DeviceSpaceType> ct;      
+      typedef FunctionSpaceTools<DeviceSpaceType> fst;      
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
-  try {
-    
-      shards::CellTopology cellType = shards::getCellTopologyData< shards::Hexahedron<> >();    // cell type: hex
+      int errorFlag = 0;
 
-      /* Related to cubature. */
-      DefaultCubatureFactory<double> cubFactory;                                                // create cubature factory
-      int cubDegree = 20;                                                                       // cubature degree
-      Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);           // create default cubature
-      int spaceDim = myCub->getDimension();                                                     // get spatial dimension 
-      int numCubPoints = myCub->getNumPoints();                                                 // get number of cubature points
+      *outStream
+        << "\n"
+        << "===============================================================================\n"
+        << "| TEST 1: correctness of math operations                                      |\n"
+        << "===============================================================================\n";
+      
+      outStream->precision(20);
+      
+      try {
+        DefaultCubatureFactory cub_factory;                            
 
-      /* Related to basis. */
-      Basis_HDIV_HEX_I1_FEM<double, FieldContainer<double> > hexBasis;                          // create H-div basis on a hex
-      int numFields = hexBasis.getCardinality();                                                // get basis cardinality
- 
-      /* Cell geometries and orientations. */
-      int numCells    = 4;
-      int numNodes    = 8;
-      int numCellData = numCells*numNodes*spaceDim;
-      int numSignData = numCells*numFields;
+        shards::CellTopology cell_topo = shards::getCellTopologyData< shards::Hexahedron<8> >();    
 
-      double hexnodes[] = {
-        // hex 0  -- affine
-        -1.0, -1.0, -1.0,
-        1.0, -1.0, -1.0,
-        1.0, 1.0, -1.0,
-        -1.0, 1.0, -1.0,
-        -1.0, -1.0, 1.0,
-        1.0, -1.0, 1.0,
-        1.0, 1.0, 1.0,
-        -1.0, 1.0, 1.0,
-        // hex 1  -- affine
-        -3.0, -3.0, 1.0,
-        6.0, 3.0, 1.0,
-        7.0, 8.0, 0.0,
-        -2.0, 2.0, 0.0,
-        -3.0, -3.0, 4.0,
-        6.0, 3.0, 4.0,
-        7.0, 8.0, 3.0,
-        -2.0, 2.0, 3.0,
-        // hex 2  -- affine
-        -3.0, -3.0, 0.0,
-        9.0, 3.0, 0.0,
-        15.0, 6.1, 0.0,
-        3.0, 0.1, 0.0,
-        9.0, 3.0, 0.1,
-        21.0, 9.0, 0.1,
-        27.0, 12.1, 0.1,
-        15.0, 6.1, 0.1,
-        // hex 3  -- nonaffine
-        -2.0, -2.0, 0.0,
-        2.0, -1.0, 0.0,
-        1.0, 6.0, 0.0,
-        -1.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-        1.0, 0.0, 1.0,
-        1.0, 1.0, 1.0,
-        0.0, 1.0, 1.0
-      };
+        const auto cub_degree = 20;                                                               
+        auto cub = cub_factory.create<DeviceSpaceType,ValueType,ValueType>(cell_topo, cub_degree); 
 
-      short facesigns[] = {
-        1, 1, 1, 1, 1, 1,
-        1, -1, 1, -1, 1, -1,
-        -1, -1, 1, 1, -1, 1,
-        -1, -1, 1, 1, -1, -1
-      };
+        const auto space_dim = cub->getDimension();                                              
+        const auto num_cub_points = cub->getNumPoints();                                          
 
-      /* Computational arrays. */
-      FieldContainer<double> cub_points(numCubPoints, spaceDim);
-      FieldContainer<double> cub_weights(numCubPoints);
-      FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
-      FieldContainer<short>  field_signs(numCells, numFields);
-      FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-      //FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_det(numCells, numCubPoints);
-      FieldContainer<double> weighted_measure(numCells, numCubPoints);
+        Basis_HDIV_HEX_I1_FEM<DeviceSpaceType> basis;                        
+        const auto num_fields = basis.getCardinality();                                       
+        
+        /* Cell geometries and orientations. */
+        const auto num_cells = 4;
+        const auto num_nodes = 8;
+        
+        const ValueType hexnodes[] = {
+          // hex 0  -- affine
+          -1.0, -1.0, -1.0,
+          1.0, -1.0, -1.0,
+          1.0, 1.0, -1.0,
+          -1.0, 1.0, -1.0,
+          -1.0, -1.0, 1.0,
+          1.0, -1.0, 1.0,
+          1.0, 1.0, 1.0,
+          -1.0, 1.0, 1.0,
+          // hex 1  -- affine
+          -3.0, -3.0, 1.0,
+          6.0, 3.0, 1.0,
+          7.0, 8.0, 0.0,
+          -2.0, 2.0, 0.0,
+          -3.0, -3.0, 4.0,
+          6.0, 3.0, 4.0,
+          7.0, 8.0, 3.0,
+          -2.0, 2.0, 3.0,
+          // hex 2  -- affine
+          -3.0, -3.0, 0.0,
+          9.0, 3.0, 0.0,
+          15.0, 6.1, 0.0,
+          3.0, 0.1, 0.0,
+          9.0, 3.0, 0.1,
+          21.0, 9.0, 0.1,
+          27.0, 12.1, 0.1,
+          15.0, 6.1, 0.1,
+          // hex 3  -- nonaffine
+          -2.0, -2.0, 0.0,
+          2.0, -1.0, 0.0,
+          1.0, 6.0, 0.0,
+          -1.0, 1.0, 0.0,
+          0.0, 0.0, 1.0,
+          1.0, 0.0, 1.0,
+          1.0, 1.0, 1.0,
+          0.0, 1.0, 1.0
+        };
+        
+        const ValueType facesigns[] = {
+          1, 1, 1, 1, 1, 1,
+          1, -1, 1, -1, 1, -1,
+          -1, -1, 1, 1, -1, 1,
+          -1, -1, 1, 1, -1, -1
+        };
+        
+        /* Computational arrays. */
+        DynRankView ConstructWithLabel( cub_points,  num_cub_points, space_dim);
+        DynRankView ConstructWithLabel( cub_weights, num_cub_points);
 
-      FieldContainer<double> div_of_basis_at_cub_points(numFields, numCubPoints);
-      FieldContainer<double> transformed_div_of_basis_at_cub_points(numCells, numFields, numCubPoints);
-      FieldContainer<double> weighted_transformed_div_of_basis_at_cub_points(numCells, numFields, numCubPoints);
-      FieldContainer<double> stiffness_matrices(numCells, numFields, numFields);
+        DynRankView ConstructWithLabel( cell_nodes,       num_cells, num_nodes, space_dim);
+        DynRankView ConstructWithLabel( field_signs,      num_cells, num_fields);
 
-      FieldContainer<double> value_of_basis_at_cub_points(numFields, numCubPoints, spaceDim);
-      FieldContainer<double> transformed_value_of_basis_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> weighted_transformed_value_of_basis_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> mass_matrices(numCells, numFields, numFields);
+        DynRankView ConstructWithLabel( jacobian,         num_cells, num_cub_points, space_dim, space_dim);
+        DynRankView ConstructWithLabel( jacobian_det,     num_cells, num_cub_points);
+        DynRankView ConstructWithLabel( weighted_measure, num_cells, num_cub_points);
+        
+        DynRankView ConstructWithLabel( div_of_basis_at_cub_points,                                 num_fields, num_cub_points);
+        DynRankView ConstructWithLabel( transformed_div_of_basis_at_cub_points,          num_cells, num_fields, num_cub_points);
+        DynRankView ConstructWithLabel( weighted_transformed_div_of_basis_at_cub_points, num_cells, num_fields, num_cub_points);
+        DynRankView ConstructWithLabel( stiffness_matrices,                              num_cells, num_fields, num_fields);
+        
+        DynRankView ConstructWithLabel( value_of_basis_at_cub_points,                                 num_fields, num_cub_points, space_dim);
+        DynRankView ConstructWithLabel( transformed_value_of_basis_at_cub_points,          num_cells, num_fields, num_cub_points, space_dim);
+        DynRankView ConstructWithLabel( weighted_transformed_value_of_basis_at_cub_points, num_cells, num_fields, num_cub_points, space_dim);
+        DynRankView ConstructWithLabel( mass_matrices,                                     num_cells, num_fields, num_fields);
 
-      /******************* START COMPUTATION ***********************/
+        /******************* START COMPUTATION ***********************/
 
-      // get cubature points and weights
-      myCub->getCubature(cub_points, cub_weights);
+        // get cubature points and weights
+        cub->getCubature(cub_points, cub_weights);
 
-      // fill cell vertex array
-      cell_nodes.setValues(hexnodes, numCellData);
+        const Kokkos::DynRankView<const ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> cell_nodes_host (&hexnodes[0],  num_cells, num_nodes, space_dim); 
+        const Kokkos::DynRankView<const ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> field_signs_host(&facesigns[0], num_cells, num_fields); 
+        
+        Kokkos::deep_copy( cell_nodes,  cell_nodes_host  );
+        Kokkos::deep_copy( field_signs, field_signs_host );
+        
+        // compute geometric cell information
+        ct::setJacobian(jacobian, cub_points, cell_nodes, cell_topo);
+        ct::setJacobianDet(jacobian_det, jacobian);
 
-      // set basis function signs, for each cell
-      field_signs.setValues(facesigns, numSignData);
+        // compute weighted measure
+        fst::computeCellMeasure(weighted_measure, jacobian_det, cub_weights);
 
-      // compute geometric cell information
-      CellTools<double>::setJacobian(jacobian, cub_points, cell_nodes, cellType);
-      //CellTools<double>::setJacobianInv(jacobian_inv, jacobian);
-      CellTools<double>::setJacobianDet(jacobian_det, jacobian);
+        // **Computing stiffness matrices:
+        basis.getValues(div_of_basis_at_cub_points, cub_points, OPERATOR_DIV);
+        
+        // transform divergences of basis functions
+        fst::HDIVtransformDIV(transformed_div_of_basis_at_cub_points,
+                              jacobian_det,
+                              div_of_basis_at_cub_points);
+        
+        // multiply with weighted measure
+        fst::multiplyMeasure(weighted_transformed_div_of_basis_at_cub_points,
+                             weighted_measure,
+                             transformed_div_of_basis_at_cub_points);
+        
+        // we can apply the field signs to the basis function arrays, or after the fact, see below
+        fst::applyFieldSigns(transformed_div_of_basis_at_cub_points, field_signs);
+        fst::applyFieldSigns(weighted_transformed_div_of_basis_at_cub_points, field_signs);
+        
+        // compute stiffness matrices
+        fst::integrate(stiffness_matrices,
+                       transformed_div_of_basis_at_cub_points,
+                       weighted_transformed_div_of_basis_at_cub_points);
+        
 
-      // compute weighted measure
-      fst::computeCellMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+        // **Computing mass matrices:
+        basis.getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
 
-      // Computing stiffness matrices:
-      // tabulate divergences of basis functions at (reference) cubature points
-      hexBasis.getValues(div_of_basis_at_cub_points, cub_points, OPERATOR_DIV);
+            
+        
+        // transform values of basis functions
+        fst::HDIVtransformVALUE(transformed_value_of_basis_at_cub_points,
+                                jacobian,
+                                jacobian_det,
+                                value_of_basis_at_cub_points);
 
-      // transform divergences of basis functions
-      fst::HDIVtransformDIV<double>(transformed_div_of_basis_at_cub_points,
-                                    jacobian_det,
-                                    div_of_basis_at_cub_points);
+        // multiply with weighted measure
+        fst::multiplyMeasure(weighted_transformed_value_of_basis_at_cub_points,
+                             weighted_measure,
+                             transformed_value_of_basis_at_cub_points);
+        
+        // compute mass matrices
+        fst::integrate(mass_matrices,
+                       transformed_value_of_basis_at_cub_points,
+                       weighted_transformed_value_of_basis_at_cub_points);
+        
+        // apply field signs
+        fst::applyLeftFieldSigns(mass_matrices, field_signs);
+        fst::applyRightFieldSigns(mass_matrices, field_signs);
+        
+        /*******************  STOP COMPUTATION ***********************/
+        
+        
+        /******************* START COMPARISON ***********************/
+        std::string basedir = "../testdata";
+        for (auto cid=0;cid<num_cells-1;++cid) {
+          std::stringstream namestream;
+          std::string filename;
+          namestream <<  basedir << "/mass_HDIV_HEX_I1_FEM" << "_" << "0" << cid+1 << ".dat";
+          namestream >> filename;
 
-      // multiply with weighted measure
-      fst::multiplyMeasure<double>(weighted_transformed_div_of_basis_at_cub_points,
-                                   weighted_measure,
-                                   transformed_div_of_basis_at_cub_points);
+          *outStream << "\nCell ID : " << cid << "  mass matrix comparing with " << filename << "\n\n";
+          
+          std::ifstream massfile(&filename[0]);
+          if (massfile.is_open()) {
+            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            errorFlag += compareToAnalytic(massfile, 
+                                           mass_matrix_cell, 
+                                           1e-10,
+                                           verbose);
+            massfile.close();
+          } else {
+            errorFlag = -1;
+            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                          "Failed to open a file" );
+          }
+          
+          namestream.clear();
+          namestream << basedir << "/stiff_HDIV_HEX_I1_FEM" << "_" << "0" << cid+1 << ".dat";
+          namestream >> filename;
 
-      // we can apply the field signs to the basis function arrays, or after the fact, see below
-      fst::applyFieldSigns<double>(transformed_div_of_basis_at_cub_points, field_signs);
-      fst::applyFieldSigns<double>(weighted_transformed_div_of_basis_at_cub_points, field_signs);
-
-      // compute stiffness matrices
-      fst::integrate<double>(stiffness_matrices,
-                             transformed_div_of_basis_at_cub_points,
-                             weighted_transformed_div_of_basis_at_cub_points,
-                             COMP_CPP);
-
-      // Computing mass matrices:
-      // tabulate values of basis functions at (reference) cubature points
-      hexBasis.getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
-
-      // transform values of basis functions
-      fst::HDIVtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
-                                      jacobian,
-                                      jacobian_det,
-                                      value_of_basis_at_cub_points);
-
-      // multiply with weighted measure
-      fst::multiplyMeasure<double>(weighted_transformed_value_of_basis_at_cub_points,
-                                   weighted_measure,
-                                   transformed_value_of_basis_at_cub_points);
-
-      // compute mass matrices
-      fst::integrate<double>(mass_matrices,
-                             transformed_value_of_basis_at_cub_points,
-                             weighted_transformed_value_of_basis_at_cub_points,
-                             COMP_CPP);
-
-      // apply field signs
-      fst::applyLeftFieldSigns<double>(mass_matrices, field_signs);
-      fst::applyRightFieldSigns<double>(mass_matrices, field_signs);
-
-      /*******************  STOP COMPUTATION ***********************/
-
-
-      /******************* START COMPARISON ***********************/
-      string basedir = "./testdata";
-      for (int cell_id = 0; cell_id < numCells-1; cell_id++) {
-
-        stringstream namestream;
-        string filename;
-        namestream <<  basedir << "/mass_HDIV_HEX_I1_FEM" << "_" << "0" << cell_id+1 << ".dat";
-        namestream >> filename;
-
-        ifstream massfile(&filename[0]);
-        if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-10, iprint) > 0)
-            errorFlag++;
-          massfile.close();
+          *outStream << "\nCell ID : " << cid << "  stiffness matrix comparing with " << filename << "\n\n";
+          
+          std::ifstream stifffile(&filename[0]);
+          if (stifffile.is_open()) {
+            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            errorFlag += compareToAnalytic(stifffile,
+                                           stiffness_matrix_cell,
+                                           1e-10,
+                                           verbose);
+            stifffile.close();
+          } else {
+            errorFlag = -1;
+            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                          "Failed to open a file" );
+          }
         }
-        else {
-          errorFlag = -1;
-          std::cout << "End Result: TEST FAILED\n";
-          return errorFlag;
-        }
 
-        namestream.clear();
-        namestream << basedir << "/stiff_HDIV_HEX_I1_FEM" << "_" << "0" << cell_id+1 << ".dat";
-        namestream >> filename;
+        for (auto cid=3;cid<num_cells;++cid) {
+          std::stringstream namestream;
+          std::string filename;
+          namestream <<  basedir << "/mass_fp_HDIV_HEX_I1_FEM" << "_" << "0" << cid+1 << ".dat";
+          namestream >> filename;
 
-        ifstream stifffile(&filename[0]);
-        if (stifffile.is_open())
-        {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-10, iprint) > 0)
-            errorFlag++;
-          stifffile.close();
-        }
-        else {
-          errorFlag = -1;
-          std::cout << "End Result: TEST FAILED\n";
-          return errorFlag;
-        }
+          *outStream << "\nCell ID : " << cid << "  mass matrix comparing with " << filename << "\n\n";
+          
+          std::ifstream massfile(&filename[0]);
+          if (massfile.is_open()) {
+            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            errorFlag += compareToAnalytic(massfile, 
+                                           mass_matrix_cell, 
+                                           1e-4, 
+                                           verbose,
+                                           INTREPID2_UTILS_SCALAR);
+            massfile.close();
+          } else {
+            errorFlag = -1;
+            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                          "Failed to open a file" );
+          }
+          
+          namestream.clear();
+          namestream << basedir << "/stiff_fp_HDIV_HEX_I1_FEM" << "_" << "0" << cid+1 << ".dat";
+          namestream >> filename;
+          
+          *outStream << "\nCell ID : " << cid << "  stiffness matrix comparing with " << filename << "\n\n";
 
+          std::ifstream stifffile(&filename[0]);
+          if (stifffile.is_open()) {
+            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            errorFlag += compareToAnalytic(stifffile,
+                                           stiffness_matrix_cell,
+                                           1e-4, 
+                                           verbose,
+                                           INTREPID2_UTILS_SCALAR);
+            stifffile.close();
+          } else {
+            errorFlag = -1;
+            INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error,
+                                          "Failed to open a file" );
+          }
+        }
+        /******************* STOP COMPARISON ***********************/
+
+        *outStream << "\n";
+      } catch (std::logic_error err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
       }
-      for (int cell_id = 3; cell_id < numCells; cell_id++) {
 
-        stringstream namestream;
-        string filename;
-        namestream <<  basedir << "/mass_fp_HDIV_HEX_I1_FEM" << "_" << "0" << cell_id+1 << ".dat";
-        namestream >> filename;
+      if (errorFlag != 0)
+        std::cout << "End Result: TEST FAILED\n";
+      else
+        std::cout << "End Result: TEST PASSED\n";
+      
+      // reset format state of std::cout
+      std::cout.copyfmt(oldFormatState);
 
-        ifstream massfile(&filename[0]);
-        if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, iprint, INTREPID2_UTILS_SCALAR) > 0)
-            errorFlag++;
-          massfile.close();
-        }
-        else {
-          errorFlag = -1;
-          std::cout << "End Result: TEST FAILED\n";
-          return errorFlag;
-        }
-
-        namestream.clear();
-        namestream << basedir << "/stiff_fp_HDIV_HEX_I1_FEM" << "_" << "0" << cell_id+1 << ".dat";
-        namestream >> filename;
-
-        ifstream stifffile(&filename[0]);
-        if (stifffile.is_open())
-        {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, iprint, INTREPID2_UTILS_SCALAR) > 0)
-            errorFlag++;
-          stifffile.close();
-        }
-        else {
-          errorFlag = -1;
-          std::cout << "End Result: TEST FAILED\n";
-          return errorFlag;
-        }
-
-      }
-      /******************* STOP COMPARISON ***********************/
-
-      *outStream << "\n";
-  }// try Basis_HDIV_HEX_I1
-  catch (std::logic_error err) {
-    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-    *outStream << err.what() << '\n';
-    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-    errorFlag = -1000;
-  };
-
-
-  if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
-  else
-    std::cout << "End Result: TEST PASSED\n";
-
-  // reset format state of std::cout
-  std::cout.copyfmt(oldFormatState);
- Kokkos::finalize();
-  return errorFlag;
+      return errorFlag;
+    }
+  }
 }
