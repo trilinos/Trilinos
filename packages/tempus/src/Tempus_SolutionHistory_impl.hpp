@@ -1,13 +1,14 @@
 #ifndef TEMPUS_SOLUTIONHISTORY_IMPL_HPP
 #define TEMPUS_SOLUTIONHISTORY_IMPL_HPP
 
+// Teuchos
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+// Tempus
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
-
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

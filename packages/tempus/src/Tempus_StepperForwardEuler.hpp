@@ -18,7 +18,7 @@ public:
   /// Constructor
   StepperForwardEuler(
     Teuchos::RCP<Teuchos::ParameterList>                pList_,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model  );
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_ );
 
   /// Destructor
   virtual ~StepperForwardEuler();
@@ -51,7 +51,7 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>                        pList;
+  Teuchos::RCP<Teuchos::ParameterList>               pList;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;

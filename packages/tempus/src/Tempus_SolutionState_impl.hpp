@@ -3,6 +3,10 @@
 
 #include "Tempus_SolutionState.hpp"
 
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::ParameterList;
+
 namespace Tempus {
 
 // SolutionState definitions:
@@ -13,11 +17,12 @@ SolutionState<Scalar>::SolutionState()
 }
 
 template<class Scalar>
-SolutionState(const RCP<SolutionStateMetaData<Scalar> > metaData_,
-              const RCP<Thyra::VectorBase<Scalar> >& x_,
-              const RCP<Thyra::VectorBase<Scalar> >& xdot_,
-              const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
-              const RCP<Tempus::StepperState<Scalar> >& stepperState_)
+SolutionState<Scalar>::SolutionState(
+  const RCP<SolutionStateMetaData<Scalar> > metaData_,
+  const RCP<Thyra::VectorBase<Scalar> >& x_,
+  const RCP<Thyra::VectorBase<Scalar> >& xdot_,
+  const RCP<Thyra::VectorBase<Scalar> >& xdotdot_,
+  const RCP<Tempus::StepperState<Scalar> >& stepperState_)
   : metaData     (metaData_),
     x            (x_),
     xdot         (xdot_),
@@ -53,7 +58,7 @@ SolutionState<Scalar>::SolutionState(
   metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar> (time_,
       dt_, iStep_, errorAbs_, errorRel_, order_, nFailures_,
       nConsecutiveFailures_, status_, output_, isAccepted_,
-      isRestartable_, isInterpolated_, accuracy_);
+      isRestartable_, isInterpolated_, accuracy_));
 }
 
 template<class Scalar>
@@ -68,13 +73,13 @@ SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
 template<class Scalar>
 RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 {
-  RCP<VectorBase<Scalar> > x_out;
+  RCP<Thyra::VectorBase<Scalar> > x_out;
   if (!Teuchos::is_null(x)) x_out = x->clone_v();
 
-  RCP<VectorBase<Scalar> > xdot_out;
+  RCP<Thyra::VectorBase<Scalar> > xdot_out;
   if (!Teuchos::is_null(xdot)) xdot_out = xdot->clone_v();
 
-  RCP<VectorBase<Scalar> > xdotdot_out;
+  RCP<Thyra::VectorBase<Scalar> > xdotdot_out;
   if (!Teuchos::is_null(xdotdot)) xdotdot_out = xdotdot->clone_v();
 
   RCP<StepperState<Scalar> > stepperState_out;
@@ -180,4 +185,4 @@ void SolutionState<Scalar>::describe(
 }
 
 } // namespace Tempus
-#endif TEMPUS_SOLUTIONSTATE_IMPL_HPP
+#endif // TEMPUS_SOLUTIONSTATE_IMPL_HPP

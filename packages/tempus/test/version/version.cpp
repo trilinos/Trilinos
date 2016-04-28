@@ -5,7 +5,7 @@ namespace tempus_test {
 
   TEUCHOS_UNIT_TEST(version, default)
   {
-    tempus::version();
+    Tempus::version();
   }
 
 }

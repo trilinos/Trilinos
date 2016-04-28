@@ -1,7 +1,7 @@
 #ifndef TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 
-#include "Tempus_SolutionStateMetaDataMetaData.hpp"
+#include "Tempus_SolutionStateMetaData.hpp"
 
 namespace Tempus {
 
@@ -39,7 +39,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const bool   isAccepted_,
   const bool   isInterpolated_,
   const bool   isRestartable_,
-  const Scalar accuracy_,
+  const Scalar accuracy_)
   :time          (time_),
    dt            (dt_),
    iStep         (iStep_),
@@ -71,7 +71,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    isAccepted    (ssmd_.isAccepted),
    isRestartable (ssmd_.isRestartable),
    isInterpolated(ssmd_.isInterpolated),
-   accuracy      (ssmd_.accuracy),
+   accuracy      (ssmd_.accuracy)
 {}
 
 
@@ -103,9 +103,9 @@ void SolutionStateMetaData<Scalar>::describe(
         << "isAccepted     = " << isAccepted    << std::endl
         << "isRestartable  = " << isRestartable << std::endl
         << "isInterpolated = " << isInterpolated << std::endl
-        << "accuracy       = " << accuracy << std::endl
+        << "accuracy       = " << accuracy << std::endl;
   }
 }
 
 } // namespace Tempus
-#endif TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
+#endif // TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
