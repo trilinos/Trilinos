@@ -307,17 +307,9 @@ panzer::ModelEvaluator<Scalar>::getNominalValues() const
     for(std::size_t p=0;p<parameters_.size();p++) {
       // setup nominal in arguments
       nomInArgs.set_p(p,parameters_[p]->initial_value);
-      if (!parameters_[p]->is_distributed) {
-        Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_x = Thyra::createMember(*tangent_space_[v_index]);
-        Thyra::assign(v_nom_x.ptr(),0.0);
-        nomInArgs.set_p(v_index+parameters_.size(),v_nom_x);
-        if (build_transient_support_) {
-          Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_xdot = Thyra::createMember(*tangent_space_[v_index]);
-          Thyra::assign(v_nom_xdot.ptr(),0.0);
-          nomInArgs.set_p(v_index+parameters_.size()+tangent_space_.size(),v_nom_xdot);
-        }
-        ++v_index;
-      }
+
+      // We explicitly do not set nominal values for tangent parameters
+      // as these are parameters that should be hidden from client code
     }
 
     nominalValues_ = nomInArgs;
