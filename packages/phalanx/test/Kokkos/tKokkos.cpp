@@ -341,10 +341,15 @@ namespace phalanx_test {
     static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
 		  "ERROR: Kokkos AMT only works for pthread execution space!");
 
-    policy_type policy;
+    const unsigned task_max_count = 2;
+    const unsigned task_max_size = sizeof(TaskDep<execution_space>);
+    //const unsigned task_max_size = 128;
+    std::cout << "sizeof = " << task_max_size << std::endl;
+    const unsigned task_max_dependence = 1;
+    policy_type policy(task_max_count,task_max_size,task_max_dependence);
     
-    auto f1 = policy.create(TaskDep<execution_space>(policy,2),1);
-    auto f2 = policy.create(TaskDep<execution_space>(policy,3));
+    auto f1 = policy.task_create(TaskDep<execution_space>(policy,2),1);
+    auto f2 = policy.task_create(TaskDep<execution_space>(policy,3));
     // f1 depends on f2
     policy.add_dependence(f1,f2);
     
@@ -385,7 +390,7 @@ namespace phalanx_test {
     typedef Kokkos::Experimental::TaskPolicy<Space> policy_type;
     
     const int work_size;
-    const Functor& functor;
+    const Functor functor;
 
     TaskWrap(const int ws,const Functor& f) : work_size(ws),functor(f) {}
     
@@ -419,7 +424,6 @@ namespace phalanx_test {
     Kokkos::deep_copy(rho,0.0);
 
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
-    //PHX::Device::fence();
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(T,4.0));
     PHX::Device::fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
@@ -434,18 +438,21 @@ namespace phalanx_test {
       for (int j=0; j< num_ip; j++)
 	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
 
-    out << "Starting taksing version" << std::endl;
+    out << "Starting tasking version" << std::endl;
 
     Kokkos::deep_copy(P,1.0);
     Kokkos::deep_copy(T,2.0);
     Kokkos::deep_copy(rho,0.0);
 
     // Now repeat above with task graph
-    policy_type policy;
+    const unsigned task_max_count = 3;
+    const unsigned task_max_size = std::max(sizeof(TaskDep<execution_space>),sizeof(InitializeView<double,execution_space>));
+    const unsigned task_max_dependence = 2;
+    policy_type policy(task_max_count,task_max_size,task_max_dependence);
 
-    auto f1 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
-    auto f2 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
-    auto f3 = policy.create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
+    auto f1 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
+    auto f2 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
+    auto f3 = policy.task_create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
     
     policy.add_dependence(f3,f1);
     policy.add_dependence(f3,f2);
@@ -593,18 +600,18 @@ namespace phalanx_test {
 	Kokkos::DynRankView<FadType,PHX::Device> f("f",10,4,deriv_dim_plus_one);
 	double tol = std::numeric_limits<double>::epsilon() * 100.0;
 	f(0,0) = FadType(2.0);
-	f(0,0).fastAccessDx(0) = 3.0; // 0 index is the value
-	TEST_FLOATING_EQUALITY(f(0,0).val(),2.0,tol); // equivalent to fastAccessDx(0)
+	f(0,0).fastAccessDx(0) = 3.0;
+	TEST_FLOATING_EQUALITY(f(0,0).val(),2.0,tol);
 	TEST_FLOATING_EQUALITY(f(0,0).fastAccessDx(0),3.0,tol);
 
 	f[0] = FadType(2.0);
-	f[0].fastAccessDx(0) = 3.0; // 0 index is the value
+	f[0].fastAccessDx(0) = 3.0;
 	TEST_FLOATING_EQUALITY(f[0].val(),2.0,tol);
 	TEST_FLOATING_EQUALITY(f[0].fastAccessDx(0),3.0,tol);
 
-	const int index = 40;
+	const int index = 39;
 	f[index] = FadType(4.0);
-	f[index].fastAccessDx(0) = 5.0; // 0 index is the value
+	f[index].fastAccessDx(0) = 5.0;
 	TEST_FLOATING_EQUALITY(f[index].val(),4.0,tol);
 	TEST_FLOATING_EQUALITY(f[index].fastAccessDx(0),5.0,tol);
       }

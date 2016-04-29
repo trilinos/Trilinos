@@ -117,14 +117,14 @@ evaluateFields(typename Traits::EvalData cell_data)
 template<typename EvalT, typename Traits>
 Kokkos::Experimental::Future<void,PHX::Device::execution_space>
 FEInterpolation<EvalT, Traits>::
-createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	   const std::size_t& num_adjacencies,
 	   typename Traits::EvalData cell_data)
 {
   std::vector<MyCell>::iterator cell_it = cell_data.begin;
   phi = cell_it->getBasisFunctions();
   grad_phi = cell_it->getBasisFunctionGradients();
-  return policy.create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(cell_data.num_cells,*this),num_adjacencies);
+  return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(cell_data.num_cells,*this),num_adjacencies);
 }
 #endif
 

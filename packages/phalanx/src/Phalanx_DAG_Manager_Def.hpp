@@ -80,9 +80,6 @@ DagManager(const std::string& evaluation_type_name) :
 #else
   allow_multiple_evaluators_for_same_field_(false)
 #endif
-#ifdef PHX_ENABLE_KOKKOS_AMT
-  ,policy_(4,1)
-#endif
 { }
 
 //=======================================================================
@@ -357,28 +354,38 @@ evaluateFieldsTaskParallel(const int& threads_per_task,
 {
   using execution_space = PHX::Device::execution_space;
   using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
-  
-  policy_ = policy_type(0,threads_per_task);
 
-  node_futures_.resize(nodes_.size());
+  const unsigned task_max_count = 100;
+  //const unsigned task_max_size = std::max(sizeof(TaskDep<execution_space>),sizeof());
+  const unsigned task_max_size = 1024;
+  const unsigned task_max_dependence = 5;
+  policy_type policy(task_max_count,
+		     task_max_size,
+		     task_max_dependence,
+		     threads_per_task
+		     );
+
+  // Issie in reusing vector. The assign doesn't like the change of policy.
+  //node_futures_.resize(nodes_.size());
+  std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
-    auto future = node.getNonConst()->createTask(policy_,adjacencies.size(),d);
+    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),d);
     node_futures_[topoSortEvalIndex[n]] = future;
 
     // Since this is registered in the order of the topological sort,
     // we know all dependent futures of a node are already
     // constructed.
     for (const auto& a : adjacencies)
-      policy_.add_dependence(future,node_futures_[a]);
+      policy.add_dependence(future,node_futures_[a]);
 
-    policy_.spawn(future);
+    policy.spawn(future);
   }
 
-  Kokkos::Experimental::wait(policy_);
+  Kokkos::Experimental::wait(policy);
 }
 #endif
 

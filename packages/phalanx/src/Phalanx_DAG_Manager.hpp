@@ -228,8 +228,7 @@ namespace PHX {
     bool allow_multiple_evaluators_for_same_field_;
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
-    Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space> policy_;
-    std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
+    //std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
 #endif
   };
   
