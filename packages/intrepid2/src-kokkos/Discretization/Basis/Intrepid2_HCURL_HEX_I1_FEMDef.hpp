@@ -53,13 +53,13 @@
 namespace Intrepid2 {
 
 
-  template<typename SpT>
+  template<typename SpT, typename OT, typename PT>
   template<EOperator opType>
   template<typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   KOKKOS_INLINE_FUNCTION
   void
-  Basis_HCURL_HEX_I1_FEM<SpT>::Serial<opType>::
+  Basis_HCURL_HEX_I1_FEM<SpT,OT,PT>::Serial<opType>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
 
@@ -183,9 +183,10 @@ namespace Intrepid2 {
 
   }
 
-  template<typename SpT>
-  Basis_HCURL_HEX_I1_FEM<SpT>::
-  Basis_HCURL_HEX_I1_FEM() {
+  template<typename SpT, typename OT, typename PT>
+  Basis_HCURL_HEX_I1_FEM<SpT,OT,PT>::
+  Basis_HCURL_HEX_I1_FEM() 
+    : impl_(this) {
     this->basisCardinality_  = 12;
     this->basisDegree_       = 1;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
@@ -230,11 +231,11 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename SpT, typename OT, typename PT>
   template<typename outputValueValueType, class ...outputValueProperties,
            typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HCURL_HEX_I1_FEM<SpT>::
+  Basis_HCURL_HEX_I1_FEM<SpT,OT,PT>::Internal::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
              const EOperator operatorType ) const {
@@ -242,8 +243,8 @@ namespace Intrepid2 {
     Intrepid2::getValues_HCURL_Args(outputValues,
                                     inputPoints,
                                     operatorType,
-                                    this->getBaseCellTopology(),
-                                    this->getCardinality() );
+                                    obj_->getBaseCellTopology(),
+                                    obj_->getCardinality() );
 #endif
   
     typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -324,20 +325,20 @@ namespace Intrepid2 {
 
 
   
-  template<typename ExecSpaceType>
+  template<typename SpT, typename OT, typename PT>
   template<typename dofCoordValueType, class ...dofCoordProperties>
   void
-  Basis_HCURL_HEX_I1_FEM<ExecSpaceType>::
+  Basis_HCURL_HEX_I1_FEM<SpT,OT,PT>::Internal::
   getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     // Verify rank of output array.
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_I1_FEM::getDofCoords) rank = 2 required for dofCoords array");
     // Verify 0th dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->basisCardinality_, std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_I1_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
     // Verify 1st dimension of output array.
-    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->basisCellTopology_.getDimension(), std::invalid_argument,
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
  

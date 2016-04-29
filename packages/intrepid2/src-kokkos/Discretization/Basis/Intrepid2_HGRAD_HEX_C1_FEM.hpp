@@ -201,7 +201,6 @@ namespace Intrepid2 {
       return *this;
     }
 
-
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
 
