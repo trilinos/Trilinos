@@ -40,22 +40,22 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_02.cpp
-\brief  Unit test for the RealSpaceTools class.
-\author Created by Kyungjoo Kim
+/** \file test_00.cpp
+    \brief  Unit test for the FunctionSpaceTools class
+    \author Created by Kyungjoo Kim
 */
 
 #include "Kokkos_Core.hpp"
 
-#include "test_02.hpp"
+#include "test_00.hpp"
 
 int main(int argc, char *argv[]) {
-
+  
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
-
-  const int r_val = Intrepid2::Test::ArrayTools_Test02<double,Kokkos::Cuda>(verbose);
   
+  const int r_val = Intrepid2::Test::FunctionSpaceTools_Test00<double, Kokkos::Cuda>(verbose);
+
   Kokkos::finalize();
   return r_val;
 }

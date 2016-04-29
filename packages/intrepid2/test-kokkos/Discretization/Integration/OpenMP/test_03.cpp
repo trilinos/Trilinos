@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::Integration_Test03<double, Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::Integration_Test03<double, Kokkos::OpenMP>(verbose);
 
   Kokkos::finalize();
   return r_val;

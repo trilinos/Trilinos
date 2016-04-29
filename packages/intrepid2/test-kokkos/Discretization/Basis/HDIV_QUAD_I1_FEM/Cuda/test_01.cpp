@@ -40,22 +40,23 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_02.cpp
-\brief  Unit test for the RealSpaceTools class.
-\author Created by Kyungjoo Kim
+/** \file test_01.cpp
+    \brief  Unit tests for the Intrepid2::Basis_HDIV_QUAD_I1_FEM class.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
 #include "Kokkos_Core.hpp"
 
-#include "test_02.hpp"
+#include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::ArrayTools_Test02<double,Kokkos::Cuda>(verbose);
-  
+  const int r_val = Intrepid2::Test::HDIV_QUAD_I1_FEM_Test01<double,Kokkos::Cuda>(verbose);
+
   Kokkos::finalize();
   return r_val;
 }
+

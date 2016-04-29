@@ -699,7 +699,6 @@ namespace Intrepid2 {
   template<typename SpT>  
   template<typename inoutOperatorValueType, class ...inoutOperatorProperties,
            typename fieldSignValueType,     class ...fieldSignProperties>
-  KOKKOS_INLINE_FUNCTION
   void
   FunctionSpaceTools<SpT>::  
   applyRightFieldSigns( /**/  Kokkos::DynRankView<inoutOperatorValueType,inoutOperatorProperties...> inoutOperator,
