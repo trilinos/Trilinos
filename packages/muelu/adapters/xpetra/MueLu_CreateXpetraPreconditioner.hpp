@@ -28,7 +28,13 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > op, const Teuchos::ParameterList& inParamList, Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) {
-#include "MueLu_UseShortNames.hpp"
+    typedef MueLu::HierarchyManager<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyManager;
+    typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
+    typedef MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarchy;
+    typedef MueLu::MLParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> MLParameterListInterpreter;
+    typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node> ParameterListInterpreter;
+    typedef Xpetra::MultiVectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVectorFactory;
+
     std::string timerName = "MueLu setup time";
     RCP<Teuchos::Time> tm = Teuchos::TimeMonitor::getNewTimer(timerName);
     tm->start();
