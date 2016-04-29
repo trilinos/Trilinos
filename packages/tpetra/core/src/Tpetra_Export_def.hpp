@@ -385,6 +385,16 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    // Call the base class' method.  It does all the work.
+    this->describeImpl (out, "Tpetra::Import", verbLevel);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Export<LocalOrdinal,GlobalOrdinal,Node>::
   print (std::ostream& os) const
   {

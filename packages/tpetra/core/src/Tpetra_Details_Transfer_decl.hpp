@@ -39,13 +39,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_TRANSFER_HPP
-#define TPETRA_DETAILS_TRANSFER_HPP
+#ifndef TPETRA_DETAILS_TRANSFER_DECL_HPP
+#define TPETRA_DETAILS_TRANSFER_DECL_HPP
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Tpetra_Map_decl.hpp>
+#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Map_decl.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Tpetra {
   //
@@ -123,9 +122,83 @@ public:
 
   //! The Distributor that this Export object uses to move data.
   virtual ::Tpetra::Distributor& getDistributor () const = 0;
+
+  /// \brief Describe this object in a human-readable way to the given
+  ///   output stream.
+  ///
+  /// You must call this method as a collective over all processes in
+  /// the communicator of the source and target Map of this object.
+  ///
+  /// \param out [out] Output stream to which to write.  Only Process
+  ///   0 in this object's communicator may write to the output
+  ///   stream.
+  ///
+  /// \param verbLevel [in] Verbosity level.  This also controls
+  ///   whether this method does any communication.  At verbosity
+  ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+  ///   behaves as a collective over the object's communicator.
+  ///
+  /// Teuchos::FancyOStream wraps std::ostream.  It adds features like
+  /// tab levels.  If you just want to wrap std::cout, try this:
+  /// \code
+  /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+  /// \endcode
+  virtual void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+              Teuchos::Describable::verbLevel_default) const;
+
+protected:
+  /// \brief Implementation of describe() for subclasses
+  ///   (Tpetra::Import and Tpetra::Export).
+  ///
+  /// \param out [out] Output stream to which to write.  Only Process
+  ///   0 in this object's communicator may write to the output stream.
+  ///
+  /// \param className [in] Name of the subclass of Transfer calling
+  ///   this method.
+  ///
+  /// \param verbLevel [in] Verbosity level.  This also controls
+  ///   whether this method does any communication.  At verbosity
+  ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+  ///   behaves as a collective over the object's communicator.
+  void
+  describeImpl (Teuchos::FancyOStream& out,
+                const std::string& className,
+                const Teuchos::EVerbosityLevel verbLevel =
+                  Teuchos::Describable::verbLevel_default) const;
+
+private:
+  /// \brief Print "global" (not necessarily just on Process 0)
+  ///   information for describe().
+  ///
+  /// This is an implementation detail of describe().
+  ///
+  /// \param out [out] The output stream argument given to describe().
+  void
+  globalDescribe (Teuchos::FancyOStream& out,
+                  const Teuchos::EVerbosityLevel vl) const;
+
+  /// \brief Print the calling process' verbose describe() information
+  ///   to the given output string.
+  ///
+  /// This is an implementation detail of describe().
+  std::string
+  localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
 };
 
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_TRANSFER_HPP
+// Explicit instantiation macro.
+// Only invoke this when in the Tpetra::Details namespace.
+// Most users do not need to use this.
+//
+// LO: The local ordinal type.
+// GO: The global ordinal type.
+// NODE: The Kokkos Node type.
+#define TPETRA_DETAILS_TRANSFER_INSTANT(LO, GO, NODE) \
+  \
+  template class Transfer< LO , GO , NODE >;
+
+#endif // TPETRA_DETAILS_TRANSFER_DECL_HPP
