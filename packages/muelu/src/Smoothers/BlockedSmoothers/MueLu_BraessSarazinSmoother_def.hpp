@@ -59,7 +59,6 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -182,17 +181,10 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    A00_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(0,0));
-    A01_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(0,1));
-    A10_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(1,0));
-    A11_ = MueLu::Utilities<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Crs2Op(bA->getMatrix(1,1));
-
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    A00_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    A01_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    A10_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    if (!A11_.is_null())
-      A11_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    A00_ = bA->getMatrix(0,0);
+    A01_ = bA->getMatrix(0,1);
+    A10_ = bA->getMatrix(1,0);
+    A11_ = bA->getMatrix(1,1);
 
     const ParameterList& pL = Factory::GetParameterList();
     SC omega = pL.get<SC>("Damping factor");

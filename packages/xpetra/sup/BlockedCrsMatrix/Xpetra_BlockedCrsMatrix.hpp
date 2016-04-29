@@ -840,7 +840,13 @@ namespace Xpetra {
     virtual size_t Cols() const                                       { return domainmaps_->NumMaps(); }
 
     /// return block (r,c)
-    Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       { return blocks_[r*Cols()+c]; }
+    Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       {
+      // transfer strided/blocked map information
+      if (blocks_[r*Cols()+c] != Teuchos::null &&
+          blocks_[r*Cols()+c]->IsView("stridedMaps") == false)
+        blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));
+      return blocks_[r*Cols()+c];
+    }
 
     /// set matrix block
     //void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {

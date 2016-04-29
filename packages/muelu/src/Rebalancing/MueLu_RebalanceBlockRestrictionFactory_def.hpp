@@ -141,9 +141,8 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
     rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
 
     // extract matrix block
-    Teuchos::RCP<CrsMatrix> Rmii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);
-    Teuchos::RCP<CrsMatrixWrap> Rwii = Teuchos::rcp(new CrsMatrixWrap(Rmii));
-    Teuchos::RCP<Matrix> Rii = Teuchos::rcp_dynamic_cast<Matrix>(Rwii);
+    Teuchos::RCP<Matrix> Rii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);
+    //Teuchos::RCP<CrsMatrixWrap> Rwii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Rmii);
 
     Teuchos::RCP<Matrix> rebRii;
     if(rebalanceImporter != Teuchos::null) {
@@ -323,9 +322,8 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
 
   Teuchos::RCP<BlockedCrsMatrix> bRebR = Teuchos::rcp(new BlockedCrsMatrix(rangeMapExtractor,domainMapExtractor,10));
   for(size_t i = 0; i<subBlockRRangeMaps.size(); i++) {
-    Teuchos::RCP<const CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebR[i]);
-    Teuchos::RCP<CrsMatrix> crsMatii = crsOpii->getCrsMatrix();
-    bRebR->setMatrix(i,i,crsMatii);
+    Teuchos::RCP<CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(subBlockRebR[i]);
+    bRebR->setMatrix(i,i,crsOpii);
   }
 
   bRebR->fillComplete();

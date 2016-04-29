@@ -293,8 +293,9 @@ namespace MueLu {
       for (size_t j = 0; j < subBlockPRangeMaps.size(); j++)
         if (i == j) {
           RCP<CrsMatrixWrap> crsOpii  = rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
-          RCP<CrsMatrix>     crsMatii = crsOpii->getCrsMatrix();
-          P->setMatrix(i, i, crsMatii);
+          TEUCHOS_TEST_FOR_EXCEPTION(crsOpii == Teuchos::null, Xpetra::Exceptions::BadCast,
+                                     "Block [" << i << ","<< j << "] must be of type CrsMatrixWrap.");
+          P->setMatrix(i, i, crsOpii);
         } else {
           P->setMatrix(i, j, Teuchos::null);
         }
