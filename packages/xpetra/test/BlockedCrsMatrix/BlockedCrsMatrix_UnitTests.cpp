@@ -92,8 +92,6 @@
 #include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_IO.hpp>
 
-//#include <MueLu_Utilities.hpp> //TODO: Xpetra tests should not use MueLu
-
 namespace XpetraBlockMatrixTests {
 
 bool testMpi = true;

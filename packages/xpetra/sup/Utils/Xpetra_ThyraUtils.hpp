@@ -65,6 +65,8 @@
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
+#include "Xpetra_Matrix.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 #include <Thyra_VectorSpaceBase.hpp>
 #include <Thyra_ProductVectorSpaceBase.hpp>
@@ -627,11 +629,13 @@ public:
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = mat->getMatrix(0,0);
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = mat->getMatrix(0,0);
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
+    TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
     bool bTpetra = false;
 #ifdef HAVE_XPETRA_TPETRA
-    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
+    Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tpetraMat = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock_wrap->getCrsMatrix());
     if(tpetraMat!=Teuchos::null) bTpetra = true;
 #endif
 
@@ -647,8 +651,12 @@ public:
 
     for (int r=0; r<nRows; ++r) {
       for (int c=0; c<nCols; ++c) {
+        Teuchos::RCP<Matrix> xpmat = mat->getMatrix(r,c);
+        Teuchos::RCP<CrsMatrixWrap> xpwrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(xpmat);
+        TEUCHOS_TEST_FOR_EXCEPT(xpwrap.is_null() == true);
+
         Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock =
-            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(mat->getMatrix(r,c));
+            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(xpwrap->getCrsMatrix());
         std::stringstream label; label << "A" << r << c;
         blockMat->setBlock(r,c,thBlock);
       }
@@ -1469,7 +1477,7 @@ public:
         TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(rgXpetraMap));
         return rgXpetraMap;
 #else
-        throw Xpetra::Exceptions::RuntimeError("Problem AAA. Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
+        throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
 #endif
       }
 #endif
@@ -1720,7 +1728,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(ret));
       return ret;
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem BBB. Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1770,7 +1778,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraCrsMat));
       return xTpetraCrsMat;
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem CCC. Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -1982,7 +1990,7 @@ public:
       thyraOp = Thyra::createConstLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem EEE. Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
 #endif
     }
 #endif
@@ -2027,7 +2035,7 @@ public:
       thyraOp = Thyra::createLinearOp(tpOperator);
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thyraOp));
 #else
-      throw Xpetra::Exceptions::RuntimeError("Problem FFF. Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
+      throw Xpetra::Exceptions::RuntimeError("Add TPETRA_INST_INT_LONG_LONG:BOOL=ON in your configuration.");
 #endif
     }
 #endif

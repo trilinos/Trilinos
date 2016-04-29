@@ -322,7 +322,6 @@ public:
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
     typedef Xpetra::MapExtractorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorFactory;
     typedef Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>  MatrixUtils;
-    typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
 
     size_t numRows  = rangeMapExtractor->NumMaps();
     size_t numCols  = domainMapExtractor->NumMaps();
@@ -420,7 +419,7 @@ public:
       thyColMapExtractor    = MapExtractorFactory::Build(fullThyColumnMap,thyColMapExtractorMaps,true);
     }
     // create submatrices
-    std::vector<Teuchos::RCP<CrsMatrix> > subMatrices(numRows*numCols, Teuchos::null);
+    std::vector<Teuchos::RCP<Matrix> > subMatrices(numRows*numCols, Teuchos::null);
 
     for (size_t r = 0; r < numRows; r++) {
       for (size_t c = 0; c < numCols; c++) {
@@ -428,9 +427,9 @@ public:
         // make sure that the submatrices are defined using the right row maps (either Thyra or xpetra style)
         // Note: we're reserving a little bit too much memory for the submatrices, but should be still reasonable
         if(bThyraMode == true)
-          subMatrices[r*numCols+c] = CrsMatrixFactory::Build (thyRangeMapExtractor->getMap(r,true),input.getNodeMaxNumRowEntries());
+          subMatrices[r*numCols+c] = MatrixFactory::Build (thyRangeMapExtractor->getMap(r,true),input.getNodeMaxNumRowEntries());
         else
-          subMatrices[r*numCols+c] = CrsMatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
+          subMatrices[r*numCols+c] = MatrixFactory::Build (rangeMapExtractor->getMap(r),input.getNodeMaxNumRowEntries());
       }
     }
     // loop over all rows of input matrix
