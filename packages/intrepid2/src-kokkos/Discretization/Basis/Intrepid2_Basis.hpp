@@ -99,6 +99,10 @@ namespace Intrepid2 {
     typedef Kokkos::View<ordinal_type** ,ExecSpaceType> ordinal_type_array_2d;
     typedef Kokkos::View<ordinal_type***,ExecSpaceType> ordinal_type_array_3d;
 
+    typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
+//    typedef Kokkos::View<ordinal_type** , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_2d;
+//    typedef Kokkos::View<ordinal_type***, Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_3d;
+
   protected:
 
     /** \brief  Cardinality of the basis, i.e., the number of basis functions/degrees-of-freedom
@@ -219,8 +223,9 @@ namespace Intrepid2 {
     Basis() = default;
     virtual~Basis() = default;
 
-    typedef Kokkos::DynRankView<outputValueType,ExecSpaceType> outputViewType;
-    typedef Kokkos::DynRankView<pointValueType,ExecSpaceType>  pointViewType;
+    // receives input arguements
+    typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
+    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
 
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -317,7 +322,7 @@ namespace Intrepid2 {
 
         \return Base cell topology
     */
-    const shards::CellTopology
+    shards::CellTopology
     getBaseCellTopology() const {
       return basisCellTopology_;
     }
@@ -389,7 +394,7 @@ namespace Intrepid2 {
         \li     element [2] = tag field 2  ->  ordinal of the specified DoF relative to the subcell
         \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
     */
-    const ordinal_type_array_1d
+    const ordinal_type_array_stride_1d
     getDofTag( const ordinal_type dofOrd ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.dimension(0)), std::out_of_range,

@@ -67,20 +67,19 @@ public:
      globalIndexer_(indexer) {}
 
   GatherSolution_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                        const Teuchos::ParameterList& p) {}
+                        const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
-                             PHX::FieldManager<TRAITS>& vm) {}
+                             PHX::FieldManager<TRAITS>& vm);
 
-  void preEvaluate(typename TRAITS::PreEvalData d) {}
+  void preEvaluate(typename TRAITS::PreEvalData d);
 
-  void evaluateFields(typename TRAITS::EvalData d) {}
+  void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new GatherSolution_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,pl)); }
 
 private:
-
   typedef typename panzer::Traits::Hessian EvalT;
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
 
@@ -93,16 +92,16 @@ private:
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
+  bool disableSensitivities_;     // This disables sensitivities absolutely
+  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+  bool applySensitivities_;       // This is a local variable that is used by evaluateFields
+                                  // to turn on/off a certain set of sensitivities
   std::string globalDataKey_; // what global data does this fill?
+  int gatherSeedIndex_; // what gather seed in the workset to use
+                        // if less than zero then use alpha or beta
+                        // as appropriate
 
   Teuchos::RCP<Epetra_Vector> x_;
-
-  // Fields for storing tangent components dx/dp of solution vector x
-  // These are not actually used by the residual specialization of this evaluator,
-  // even if they are supplied, but it is useful to declare them as dependencies anyway
-  // when saving the tangent components to the output file
-  bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_Epetra();
 };

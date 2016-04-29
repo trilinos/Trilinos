@@ -259,8 +259,6 @@ namespace Intrepid2 {
         cubatureData_(),
         impl_(this) {}
 
-    virtual~CubatureDirect() = default;
-
     CubatureDirect& operator=(const CubatureDirect &b) {
       if (this != &b) {
         Cubature<ExecSpaceType,pointValueType,weightValueType>::operator= (b);

@@ -81,9 +81,7 @@ void get_selected_entities( const Selector & selector ,
                             const BucketVector & input_buckets ,
                             std::vector< Entity> & entities );
 
-
-
-
+unsigned get_num_entities(const stk::mesh::BulkData &bulk);
 
 /** \} */
 

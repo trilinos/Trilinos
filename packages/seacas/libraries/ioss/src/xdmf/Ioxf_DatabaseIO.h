@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,44 +34,43 @@
 #ifndef IOSS_Ioxf_DatabaseIO_h
 #define IOSS_Ioxf_DatabaseIO_h
 
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_Field.h>
 #include <Ioss_DBUsage.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_EntityType.h>
+#include <Ioss_Field.h>
+#include <Ioss_FileInfo.h>
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
-#include <Ioss_EntityType.h>
-#include <Ioss_FileInfo.h>
 
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <algorithm>
-#include <sstream>
 #include <XdmfArray.h>
 #include <XdmfHDF.h>
-#include <xdmf/Ioxf_Internals.h>
-#include <libxml/xmlmemory.h>
+#include <algorithm>
 #include <libxml/parser.h>
-
+#include <libxml/xmlmemory.h>
+#include <map>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <xdmf/Ioxf_Internals.h>
 
 namespace Ioss {
-   class GroupingEntity;
-   class Region;
-   class EntityBlock;
-   class NodeBlock;
-   class SideBlock;
-   class ElementBlock;
-   class NodeSet;
-   class SideSet;
-   class CommSet;
+  class GroupingEntity;
+  class Region;
+  class EntityBlock;
+  class NodeBlock;
+  class SideBlock;
+  class ElementBlock;
+  class NodeSet;
+  class SideSet;
+  class CommSet;
 }
 
 namespace Ioxf {
   struct CommunicationMetaData;
 
   // Used for variable name index mapping
-  typedef std::map<std::string, int, std::less<std::string> > VariableNameMap;
+  typedef std::map<std::string, int, std::less<std::string>> VariableNameMap;
   typedef VariableNameMap::value_type VNMValuePair;
 
   // Used to store reduction variables
@@ -79,7 +78,7 @@ namespace Ioxf {
 
   // Use to store element block info for XML
   typedef std::vector<std::ostringstream *> XmlContainer;
-  typedef std::map<std::string, int, std::less<std::string> > IndexNameMap;
+  typedef std::map<std::string, int, std::less<std::string>> IndexNameMap;
   typedef IndexNameMap::value_type BINMValuePair;
 
   // Used for persistent entity IDs
@@ -87,17 +86,16 @@ namespace Ioxf {
   // 'E' element block, 'N' nodeset, 'S' sideset, 'C' commset, 'B' nodeblock.
   // The 'int' is the entity id.
   // The set is used for output databases to ensure that there are no id collisions.
-  typedef std::set<std::pair<char, int> > EntityIdSet;
+  typedef std::set<std::pair<char, int>> EntityIdSet;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {
   public:
-    DatabaseIO(Ioss::Region *region, const std::string& filename,
-	       Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
-	       const Ioss::PropertyManager &properties_x);
+    DatabaseIO(Ioss::Region *region, const std::string &filename, Ioss::DatabaseUsage db_usage,
+               MPI_Comm communicator, const Ioss::PropertyManager &properties_x);
     ~DatabaseIO();
-    DatabaseIO(const DatabaseIO& from) =delete;
-    DatabaseIO& operator=(const DatabaseIO& from) =delete;
+    DatabaseIO(const DatabaseIO &from) = delete;
+    DatabaseIO &operator=(const DatabaseIO &from) = delete;
 
     static void finalize();
 
@@ -111,7 +109,7 @@ namespace Ioxf {
     void WriteMetaXdmfElementBlock(const std::vector<Ioxf::Block> &blocks);
     void WriteXmlFile(int niterations);
     void WriteHdfDataset(const std::string &FinalName, XdmfArray *ScalarArray, int lineno) const;
-    std::string decode_proc_filename(const std::string &filename,  int processor);
+    std::string decode_proc_filename(const std::string &filename, int processor);
     void MergeXmlFiles();
 
     // Check capabilities of input/output database...  Returns an
@@ -119,7 +117,9 @@ namespace Ioxf {
     // together. If "return_value & Ioss::EntityType" is set, then the
     // database supports that type (e.g. return_value & Ioss::FACESET)
     unsigned entity_field_support() const
-       {return Ioss::REGION | Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK;}
+    {
+      return Ioss::REGION | Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK;
+    }
 
     /*!
      * Determine the local position of the node with the global id
@@ -127,79 +127,83 @@ namespace Ioxf {
      * does not exist in the map; otherwise, it must exist and will
      * throw an exception if not found.
      */
-    int64_t    node_global_to_local(int64_t global, bool must_exist) const
-    {return nodeMap.global_to_local(global, must_exist);}
-    
+    int64_t node_global_to_local(int64_t global, bool must_exist) const
+    {
+      return nodeMap.global_to_local(global, must_exist);
+    }
+
     int64_t element_global_to_local(int64_t global) const
-    {return elemMap.global_to_local(global);}
+    {
+      return elemMap.global_to_local(global);
+    }
 
     bool begin(Ioss::State state);
-    bool   end(Ioss::State state);
+    bool end(Ioss::State state);
 
     bool begin_state(Ioss::Region *region, int state, double time);
-    bool   end_state(Ioss::Region *region, int state, double time);
+    bool end_state(Ioss::Region *region, int state, double time);
 
-    std::string title()               const     {return databaseTitle;}
-    int    spatial_dimension()   const     {return spatialDimension;}
-    int    node_count()          const     {return nodeCount;}
-    int    side_count()          const     {return 0;}
-    int    element_count()       const     {return elementCount;}
-    int    node_block_count()    const     {return nodeBlockCount;}
-    int    element_block_count() const     {return elementBlockCount;}
-    int    sideset_count()       const     {return sidesetCount;}
-    int    nodeset_count()       const     {return nodesetCount;}
-    int    maximum_symbol_length() const {return 32;}
+    std::string title() const { return databaseTitle; }
+    int         spatial_dimension() const { return spatialDimension; }
+    int         node_count() const { return nodeCount; }
+    int         side_count() const { return 0; }
+    int         element_count() const { return elementCount; }
+    int         node_block_count() const { return nodeBlockCount; }
+    int         element_block_count() const { return elementBlockCount; }
+    int         sideset_count() const { return sidesetCount; }
+    int         nodeset_count() const { return nodesetCount; }
+    int         maximum_symbol_length() const { return 32; }
 
   private:
-    int64_t get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+    int64_t get_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t get_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
 
-    int64_t put_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::EdgeBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::FaceBlock* nb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::SideBlock* fb, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::EdgeSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::FaceSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::ElementSet* ns, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::SideSet* fs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
-    int64_t put_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
-			   void *data, size_t data_size) const;
+    int64_t put_field_internal(const Ioss::Region *reg, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::NodeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::EdgeBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::FaceBlock *nb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::ElementBlock *eb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::SideBlock *fb, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::NodeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::EdgeSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::FaceSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::ElementSet *ns, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
+    int64_t put_field_internal(const Ioss::CommSet *cs, const Ioss::Field &field, void *data,
+                               size_t data_size) const;
 
     virtual void openDatabase() const {}
 
@@ -207,106 +211,96 @@ namespace Ioxf {
 
     void put_qa();
     void put_info();
-    int read_nodal_coordinates();
-    void read_elements(const Ioss::ElementBlock& block);
+    int  read_nodal_coordinates();
+    void read_elements(const Ioss::ElementBlock &block);
 
     // Metadata-related functions.
     void read_meta_data();
     void read_communication_metadata();
 
     // Should be made more generic again so can rejoin with write_element_transient field
-    void write_nodal_transient_field(const char *type, const Ioss::Field& field,
-				     const Ioss::NodeBlock *ge,
-				     int count, void *data) const;
+    void write_nodal_transient_field(const char *type, const Ioss::Field &field,
+                                     const Ioss::NodeBlock *ge, int count, void *data) const;
     // Should be made more generic again so can rejoin with write_nodal_transient field
-    void write_entity_transient_field(const char *type, const Ioss::Field& field,
-				      const Ioss::GroupingEntity *ge,
-				      int count, void *data) const;
+    void write_entity_transient_field(const char *type, const Ioss::Field &field,
+                                      const Ioss::GroupingEntity *ge, int count, void *data) const;
     void write_meta_data();
     void gather_communication_metadata(Ioxf::CommunicationMetaData *meta);
     void write_results_metadata();
 
-    int  get_xml_stream(const std::string &block_name) const;
+    int get_xml_stream(const std::string &block_name) const;
 
     void generate_var_xmltable(const char *type);
     void generate_element_var_xmltable();
     void generate_nodeset_var_xmltable();
     void generate_sideset_var_xmltable();
 
-    int  gather_names(const char *type, const Ioss::GroupingEntity *ge,
-		      int index, bool reduction);
+    int gather_names(const char *type, const Ioss::GroupingEntity *ge, int index, bool reduction);
 
     // Read related metadata and store it in the region...
     void read_region();
     void get_step_times();
     void get_nodeblocks() const;
     void get_elemblocks() const;
-    void get_sidesets()   const;
-    void get_nodesets()   const;
-    void get_commsets()   const;
+    void get_sidesets() const;
+    void get_nodesets() const;
+    void get_commsets() const;
 
     // ID Mapping functions.
-    const Ioss::Map& get_node_map()            const;
-    const Ioss::Map& get_element_map()         const;
+    const Ioss::Map &get_node_map() const;
+    const Ioss::Map &get_element_map() const;
 
     // Internal data handling
 
-    int handle_node_ids(int* ids, int num_to_get);
-    int handle_element_ids(const Ioss::ElementBlock *eb, int* ids, int num_to_get);
+    int handle_node_ids(int *ids, int num_to_get);
+    int handle_element_ids(const Ioss::ElementBlock *eb, int *ids, int num_to_get);
 
-    int add_results_fields(char const *type, Ioss::GroupingEntity *entity,
-			   int count, int id=0) const;
-    Ioss::Field get_next_field(char** names, int *index, int num_names,
-			       int count, int* optional_truth_table) const;
-    int get_side_connectivity(const Ioss::EntityBlock* fb, int id, int side_count,
-			      int *fconnect,
-			      size_t data_size) const;
-    int get_side_distributions(const Ioss::EntityBlock* fb, int id,
-			       int side_count, 
-			       double *fconnect, size_t data_size) const;
+    int add_results_fields(char const *type, Ioss::GroupingEntity *entity, int count,
+                           int id = 0) const;
+    Ioss::Field get_next_field(char **names, int *index, int num_names, int count,
+                               int *optional_truth_table) const;
+    int get_side_connectivity(const Ioss::EntityBlock *fb, int id, int side_count, int *fconnect,
+                              size_t data_size) const;
+    int get_side_distributions(const Ioss::EntityBlock *fb, int id, int side_count,
+                               double *fconnect, size_t data_size) const;
 
     void add_region_fields() const;
-    void store_reduction_field(const char *type,
-			       const Ioss::Field& field,
-			       const Ioss::GroupingEntity *ge,
-			       void *data) const;
+    void store_reduction_field(const char *type, const Ioss::Field &field,
+                               const Ioss::GroupingEntity *ge, void *data) const;
 
-    void get_reduction_field(const char *type,
-			     const Ioss::Field& field,
-			     const Ioss::GroupingEntity *ge,
-			     int count, void *variables) const;
+    void get_reduction_field(const char *type, const Ioss::Field &field,
+                             const Ioss::GroupingEntity *ge, int count, void *variables) const;
     void write_reduction_fields() const;
     void read_reduction_fields() const;
-
 
     // Handle special output time requests -- primarily restart (cycle, keep, overwrite)
     // Given the global region step, return the step on the database...
     int get_database_step(int global_step) const;
 
     // xdmf variables
-    Ioss::FileInfo hdfname;
-    Ioss::FileInfo xmlname;
-    XdmfHDF    *Hdf;
-    std::ostringstream *MainXML;
-    XmlContainer BlockGridXmls;
-    XmlContainer BlockParameterXmls;
-    XmlContainer BlockXmls;
-    XmlContainer BlockElementVarXmls;
-    XmlContainer BlockExtraAttributeXmls;
-    XmlContainer BlockNodeVarXmls;
-    XmlContainer BlockFinishXmls;
+    Ioss::FileInfo       hdfname;
+    Ioss::FileInfo       xmlname;
+    XdmfHDF *            Hdf;
+    std::ostringstream * MainXML;
+    XmlContainer         BlockGridXmls;
+    XmlContainer         BlockParameterXmls;
+    XmlContainer         BlockXmls;
+    XmlContainer         BlockElementVarXmls;
+    XmlContainer         BlockExtraAttributeXmls;
+    XmlContainer         BlockNodeVarXmls;
+    XmlContainer         BlockFinishXmls;
     mutable IndexNameMap BlockIndexNames;
-    IndexNameMap SideSetIndexNames;
-    IndexNameMap NodeSetIndexNames;
-    int NumOfIterations;
+    IndexNameMap         SideSetIndexNames;
+    IndexNameMap         NodeSetIndexNames;
+    int                  NumOfIterations;
 
     // Private member data...
     mutable EntityIdSet ids_;
 
     std::string databaseTitle;
-    int spatialDimension;
-    int nodeCount;
-    int elementCount;
+    int         spatialDimension;
+    int         nodeCount;
+    int         elementCount;
 
     int nodeBlockCount;
     int elementBlockCount;
@@ -318,8 +312,8 @@ namespace Ioxf {
     int *nodeCmapNodeCnts;
     int *elemCmapIds;
     int *elemCmapElemCnts;
-    int commsetNodeCount;
-    int commsetElemCount;
+    int  commsetNodeCount;
+    int  commsetElemCount;
 
     int *elementTruthTable;
     int *nodesetTruthTable;
@@ -346,13 +340,13 @@ namespace Ioxf {
     // 'elementMap' would be 'displ_x', 'displ_y' and 'displ_z'.  All
     // names are converted to lowercase.
 
-    VariableNameMap nodalVariables;
-    VariableNameMap elementVariables;
-    VariableNameMap elementAttributes;
-    VariableNameMap nodesetVariables;
-    VariableNameMap sidesetVariables;
-    VariableNameMap globalVariables;
-    mutable ValueContainer  globalValues;
+    VariableNameMap        nodalVariables;
+    VariableNameMap        elementVariables;
+    VariableNameMap        elementAttributes;
+    VariableNameMap        nodesetVariables;
+    VariableNameMap        sidesetVariables;
+    VariableNameMap        globalVariables;
+    mutable ValueContainer globalValues;
 
     mutable bool fileExists; // False if file has never been opened/created
   };

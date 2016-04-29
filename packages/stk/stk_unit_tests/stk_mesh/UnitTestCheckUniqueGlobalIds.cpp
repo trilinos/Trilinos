@@ -5,7 +5,7 @@
 #include "../../stk_mesh/stk_mesh/base/GetEntities.hpp"
 #include "../../stk_util/stk_util/parallel/ParallelReduce.hpp"
 #include "../../stk_mesh/stk_mesh/base/FEMHelpers.hpp"
-#include "../../stk_mesh/stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp"
+#include "../../stk_mesh/stk_mesh/base/MeshDiagnostics.hpp"
 
 namespace
 {

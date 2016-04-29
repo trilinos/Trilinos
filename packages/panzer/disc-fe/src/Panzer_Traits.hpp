@@ -88,7 +88,8 @@ namespace panzer {
     typedef PANZER_FADTYPE FadType;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-    typedef Sacado::Fad::SFad<FadType,1> HessianType;
+    // typedef Sacado::Fad::SFad<FadType,1> HessianType;
+    typedef Sacado::Fad::DFad<Sacado::Fad::SFad<RealType,1> > HessianType;
 #endif
     
     // ******************************************************************

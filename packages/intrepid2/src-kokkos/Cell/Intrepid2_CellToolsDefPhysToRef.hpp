@@ -1,4 +1,4 @@
-1;2c// @HEADER
+// @HEADER
 // ************************************************************************
 //
 //                           Intrepid2 Package
@@ -62,368 +62,120 @@ namespace Intrepid2 {
   //                      Reference-to-physical frame mapping and its inverse                   //          
   //                                                                                            //          
   //============================================================================================//   
-  
 
-  template<class Scalar>
-  template<class ArrayRefPoint, class ArrayPhysPoint, class ArrayCell>
-  void CellTools<Scalar>::mapToReferenceFrame(ArrayRefPoint        &        refPoints,
-                                              const ArrayPhysPoint &        physPoints,
-                                              const ArrayCell      &        cellWorkset,
-                                              const shards::CellTopology &  cellTopo,
-                                              const int &                   whichCell)
-  {
-    INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, physPoints, cellWorkset, cellTopo, whichCell) );
-  
-    index_type spaceDim  = (index_type)cellTopo.getDimension();
-    index_type numPoints;
-    index_type numCells;
+  template<typename SpT>
+  template<typename refPointValueType,    class ...refPointProperties,
+           typename physPointValueType,   class ...physPointProperties,
+           typename worksetCellValueType, class ...worksetCellProperties>
+  void
+  CellTools<SpT>::
+  mapToReferenceFrame( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                       const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                       const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                       const shards::CellTopology cellTopo ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
+#endif  
+    typedef RealSpaceTools<SpT> rst;
+    typedef Kokkos::DynRankView<refPointValueType,refPointProperties...> refPointViewType;
+    typedef Kokkos::DynRankView<refPointValueType,SpT> refPointViewSpType;
 
-    // Define initial guesses to be  the Cell centers of the reference cell topology
-    FieldContainer<Scalar> cellCenter(spaceDim);
-    switch( cellTopo.getKey() ){
-      // Standard Base topologies (number of cellWorkset = number of vertices)
-    case shards::Line<2>::key:
-      cellCenter(0) = 0.0;    break;
+    const auto spaceDim  = cellTopo.getDimension();
+    refPointViewSpType 
+      cellCenter("CellTools::mapToReferenceFrame::cellCenter", spaceDim), 
+      cellVertex("CellTools::mapToReferenceFrame::cellCenter", spaceDim);
+    getReferenceCellCenter(cellCenter, cellVertex, cellTopo);
 
-    case shards::Triangle<3>::key:
-    case shards::Triangle<6>::key:    
-      cellCenter(0) = 1./3.;    cellCenter(1) = 1./3.;  break;
-      
-    case shards::Quadrilateral<4>::key:
-    case shards::Quadrilateral<9>::key:
-      cellCenter(0) = 0.0;      cellCenter(1) = 0.0;    break;
-      
-    case shards::Tetrahedron<4>::key:
-    case shards::Tetrahedron<10>::key:
-    case shards::Tetrahedron<11>::key:
-      cellCenter(0) = 1./6.;    cellCenter(1) =  1./6.;    cellCenter(2) =  1./6.;  break;
-      
-    case shards::Hexahedron<8>::key:
-    case shards::Hexahedron<20>::key:
-    case shards::Hexahedron<27>::key:
-      cellCenter(0) = 0.0;      cellCenter(1) =  0.0;       cellCenter(2) =  0.0;   break;
-
-    case shards::Wedge<6>::key:
-    case shards::Wedge<15>::key:
-    case shards::Wedge<18>::key:
-      cellCenter(0) = 1./3.;    cellCenter(1) =  1./3.;     cellCenter(2) = 0.0;    break;
-
-    case shards::Pyramid<5>::key:
-    case shards::Pyramid<13>::key:
-      cellCenter(0) = 0.;       cellCenter(1) = 0.;         cellCenter(2) = 0.25;    break;
-
-      // These extended topologies are not used for mapping purposes
-    case shards::Quadrilateral<8>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): Cell topology not supported. ");
-      break;
-
-      // Base and Extended Line, Beam and Shell topologies  
-    case shards::Line<3>::key:
-    case shards::Beam<2>::key:
-    case shards::Beam<3>::key:
-    case shards::ShellLine<2>::key:
-    case shards::ShellLine<3>::key:
-    case shards::ShellTriangle<3>::key:
-    case shards::ShellTriangle<6>::key:
-    case shards::ShellQuadrilateral<4>::key:
-    case shards::ShellQuadrilateral<8>::key:
-    case shards::ShellQuadrilateral<9>::key:
-      INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): Cell topology not supported. ");
-      break;
-    default:
-      INTREPID2_TEST_FOR_EXCEPTION( (true), std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::mapToReferenceFrame): Cell topology not supported.");        
-    }// switch key 
-  
-    // Resize initial guess depending on the rank of the physical points array
-    FieldContainer<Scalar> initGuess;
-  
     // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) initial guess.
-    if(whichCell == -1){
-      numPoints = static_cast<index_type>(physPoints.dimension(1));
-      numCells = static_cast<index_type>(cellWorkset.dimension(0));
-      initGuess.resize(numCells, numPoints, spaceDim);
-      // Set initial guess:
-      for(index_type c = 0; c < numCells; c++){
-        for(index_type p = 0; p < numPoints; p++){
-          for(index_type d = 0; d < spaceDim; d++){
-            initGuess(c, p, d) = cellCenter(d);
-          }// d
-        }// p
-      }// c
-    }
-    // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) initial guess.
-    else {
-      numPoints = static_cast<index_type>(physPoints.dimension(0));
-      initGuess.resize(numPoints, spaceDim);
-      // Set initial guess:
-      for(index_type p = 0; p < numPoints; p++){
-        for(index_type d = 0; d < spaceDim; d++){
-          initGuess(p, d) = cellCenter(d);
-        }// d
-      }// p
-    }
-    // Call method with initial guess
-    mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell);  
-
+    const auto numCells = worksetCell.dimension(0);
+    const auto numPoints = physPoints.dimension(1);
+    
+    refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
+    rst::clone(initGuess, cellCenter);
+    
+    mapToReferenceFrameInitGuess(refPoints, initGuess, physPoints, worksetCell, cellTopo);  
   }
   
-  
-  template<class Scalar>
-  template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
-  void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
-                                                       const ArrayInitGuess &        initGuess,
-                                                       const ArrayPhysPoint &        physPoints,
-                                                       const ArrayCell      &        cellWorkset,
-                                                       const Teuchos::RCP<Basis<Scalar, FieldContainer<Scalar> > > HGRAD_Basis,
-                                                       const int &                   whichCell)
-  {
-    ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
-    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
-    // INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
-    index_type spaceDim  = (index_type)HGRAD_Basis->cellTopology().getDimension();
-    index_type numPoints;
-    index_type numCells=0;
-  
+
+  template<typename SpT>
+  template<typename refPointValueType,    class ...refPointProperties,
+           typename initGuessValueType,   class ...initGuessProperties,
+           typename physPointValueType,   class ...physPointProperties,
+           typename worksetCellValueType, class ...worksetCellProperties,
+           typename HGradBasisPtrType>
+  void
+  CellTools<SpT>::
+  mapToReferenceFrameInitGuess( /**/  Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
+                                const Kokkos::DynRankView<initGuessValueType,initGuessProperties...>     initGuess,
+                                const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
+                                const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
+                                const HGradBasisPtrType basis ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    CellTools_mapToReferenceFrameInitGuessArgs(refPoints, initGuess, physPoints, worksetCell, 
+                                               basis->getBaseCellTopology());
+#endif
+    const auto cellTopo = basis->getBaseCellTopology();
+    const auto spaceDim = cellTopo.getDimension();
+
+    // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. 
+    // Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
+    const auto numCells = worksetCell.dimension(0);
+    const auto numPoints = physPoints.dimension(1);
+
+    typedef RealSpaceTools<SpT> rst;
+    const auto tol = Parameters::Tolerence;
+
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    FieldContainer<Scalar> xOld;
-    FieldContainer<Scalar> xTem;  
-    FieldContainer<Scalar> jacobian;
-    FieldContainer<Scalar> jacobInv;
-    FieldContainer<Scalar> error; 
-    FieldContainer<Scalar> cellCenter(spaceDim);
-  
-    // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
-    if(whichCell == -1){
-      numPoints = static_cast<index_type>(physPoints.dimension(1));
-      numCells = static_cast<index_type>(cellWorkset.dimension(0));
-      xOld.resize(numCells, numPoints, spaceDim);
-      xTem.resize(numCells, numPoints, spaceDim);  
-      jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
-      jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
-      error.resize(numCells,numPoints); 
-      // Set initial guess to xOld
-      for(index_type c = 0; c < numCells; c++){
-        for(index_type p = 0; p < numPoints; p++){
-          for(index_type d = 0; d < spaceDim; d++){
-            xOld(c, p, d) = initGuessWrap(c, p, d);
-          }// d
-        }// p
-      }// c
-    }
-    // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
-    else {
-      numPoints = static_cast<index_type>(physPoints.dimension(0));
-      xOld.resize(numPoints, spaceDim);
-      xTem.resize(numPoints, spaceDim);  
-      jacobian.resize(numPoints, spaceDim, spaceDim);
-      jacobInv.resize(numPoints, spaceDim, spaceDim);
-      error.resize(numPoints); 
-      // Set initial guess to xOld
-      for(index_type p = 0; p < numPoints; p++){
-        for(index_type d = 0; d < spaceDim; d++){
-          xOld(p, d) = initGuessWrap(p, d);
-        }// d
-      }// p
-    }
-  
+    typedef Kokkos::DynRankView<initGuessValueType,SpT> xViewType;
+    xViewType 
+      xOld("CellTools::mapToReferenceFrameInitGuess::xOld", numCells, numPoints, spaceDim),
+      xTmp("CellTools::mapToReferenceFrameInitGuess::xTmp", numCells, numPoints, spaceDim);
+
+    // Set initial guess to xOld; we can do soft copy with initGuess but leave it not touched 
+    // user may want to keep the same init guess
+    Kokkos::deep_copy(xOld, initGuess);
+    
+    typedef Kokkos::DynRankView<physPointValueType,SpT> jacobianViewType;
+    jacobianViewType
+      jacobian   ("CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim),
+      jacobianInv("CellTools::mapToReferenceFrameInitGuess::jacobian", numCells, numPoints, spaceDim, spaceDim);
+    
+    typedef Kokkos::DynRankView<initGuessValueType,SpT> errorViewType;
+    errorViewType 
+      errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints),
+      errorCellwise ("CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells);
+
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-    for(int iter = 0; iter < INTREPID2_MAX_NEWTON; ++iter) {
+    for (auto iter=0;iter<Parameters::MaxNewton;++iter) {
     
       // Jacobians at the old iterates and their inverses. 
-      setJacobian(jacobian, xOld, cellWorkset, HGRAD_Basis, whichCell);
-      setJacobianInv(jacobInv, jacobian);
+      setJacobian(jacobian, xOld, worksetCell, basis);
+      setJacobianInv(jacobianInv, jacobian);
+
       // The Newton step.
-      mapToPhysicalFrame( xTem, xOld, cellWorkset, HGRAD_Basis->cellTopology(), whichCell );      // xTem <- F(xOld)
-      RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
-      RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
-      RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
+      mapToPhysicalFrame(xTmp, xOld, worksetCell, basis); // xTmp <- F(xOld)
+      rst::subtract(xTmp, physPoints, xTmp);              // xTmp <- physPoints - F(xOld)
+      rst::matvec(refPoints, jacobianInv, xTmp);          // refPoints <- DF^{-1}( physPoints - F(xOld) )
+      rst::add(refPoints, xOld);                          // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
 
       // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
-      RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
-      RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
+      rst::subtract(xTmp, xOld, refPoints);
+      rst::vectorNorm(errorPointwise, xTmp, NORM_TWO);
 
       // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-      Scalar totalError;
-      if(whichCell == -1) {
-        FieldContainer<Scalar> cellWiseError(numCells);
-        // error(C,P) -> cellWiseError(P)
-
-        RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
-        totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
-      }
-      //Average L2 error for a single set of physical points: error is rank-1 (P) array
-      else{
-
-        totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
-        totalError = totalError;
-      }
+      rst::vectorNorm(errorCellwise, errorPointwise, NORM_ONE);
+      const auto errorTotal = rst::Serial::vectorNorm(errorCellwise, NORM_ONE);
     
       // Stopping criterion:
-      if (totalError < INTREPID_TOL) {
+      if (errorTotal < tol) 
         break;
-      } 
-      else if ( iter > INTREPID2_MAX_NEWTON) {
-        INTREPID2_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
-                           << INTREPID2_MAX_NEWTON  << " iterations\n" );
-        break;
-      }
 
       // initialize next Newton step
       //    xOld = refPoints;
-      int refPointsRank=getrank(refPoints);
-      if (refPointsRank==3){
-        for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
-          for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
-            for(index_type k=0;k<static_cast<index_type>(refPoints.dimension(2));k++){
-              xOld(i,j,k) = refPointsWrap(i,j,k);
-            }
-          }
-        }
-      }else if(refPointsRank==2){
-        for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
-          for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
-            xOld(i,j) = refPointsWrap(i,j);
-          }
-        }
-
-      }
-
-
-
-    } // for(iter)
-  }
-
-
-  template<class Scalar>
-  template<class ArrayRefPoint, class ArrayInitGuess, class ArrayPhysPoint, class ArrayCell>
-  void CellTools<Scalar>::mapToReferenceFrameInitGuess(ArrayRefPoint        &        refPoints,
-                                                       const ArrayInitGuess &        initGuess,
-                                                       const ArrayPhysPoint &        physPoints,
-                                                       const ArrayCell      &        cellWorkset,
-                                                       const shards::CellTopology &  cellTopo,
-                                                       const int &                   whichCell)
-  {
-    ArrayWrapper<Scalar,ArrayInitGuess, Rank<ArrayInitGuess >::value, true>initGuessWrap(initGuess);
-    ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsWrap(refPoints);
-    INTREPID2_VALIDATE( validateArguments_mapToReferenceFrame(refPoints, initGuess, physPoints, cellWorkset, cellTopo, whichCell) );
-    index_type spaceDim  = (index_type)cellTopo.getDimension();
-    index_type numPoints;
-    index_type numCells=0;
-  
-    // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    FieldContainer<Scalar> xOld;
-    FieldContainer<Scalar> xTem;  
-    FieldContainer<Scalar> jacobian;
-    FieldContainer<Scalar> jacobInv;
-    FieldContainer<Scalar> error; 
-    FieldContainer<Scalar> cellCenter(spaceDim);
-  
-    // Default: map (C,P,D) array of physical pt. sets to (C,P,D) array. Requires (C,P,D) temp arrays and (C,P,D,D) Jacobians.
-    if(whichCell == -1){
-      numPoints = static_cast<index_type>(physPoints.dimension(1));
-      numCells = static_cast<index_type>(cellWorkset.dimension(0));
-      xOld.resize(numCells, numPoints, spaceDim);
-      xTem.resize(numCells, numPoints, spaceDim);  
-      jacobian.resize(numCells,numPoints, spaceDim, spaceDim);
-      jacobInv.resize(numCells,numPoints, spaceDim, spaceDim);
-      error.resize(numCells,numPoints); 
-      // Set initial guess to xOld
-      for(index_type c = 0; c < numCells; c++){
-        for(index_type p = 0; p < numPoints; p++){
-          for(index_type d = 0; d < spaceDim; d++){
-            xOld(c, p, d) = initGuessWrap(c, p, d);
-          }// d
-        }// p
-      }// c
+      Kokkos::deep_copy(xOld, refPoints);
     }
-    // Custom: map (P,D) array of physical pts. to (P,D) array. Requires (P,D) temp arrays and (P,D,D) Jacobians.
-    else {
-      numPoints = static_cast<index_type>(physPoints.dimension(0));
-      xOld.resize(numPoints, spaceDim);
-      xTem.resize(numPoints, spaceDim);  
-      jacobian.resize(numPoints, spaceDim, spaceDim);
-      jacobInv.resize(numPoints, spaceDim, spaceDim);
-      error.resize(numPoints); 
-      // Set initial guess to xOld
-      for(index_type p = 0; p < numPoints; p++){
-        for(index_type d = 0; d < spaceDim; d++){
-          xOld(p, d) = initGuessWrap(p, d);
-        }// d
-      }// p
-    }
-  
-    // Newton method to solve the equation F(refPoints) - physPoints = 0:
-    // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-    for(int iter = 0; iter < INTREPID2_MAX_NEWTON; ++iter) {
-    
-      // Jacobians at the old iterates and their inverses. 
-      setJacobian(jacobian, xOld, cellWorkset, cellTopo, whichCell);
-      setJacobianInv(jacobInv, jacobian);
-      // The Newton step.
-      mapToPhysicalFrame( xTem, xOld, cellWorkset, cellTopo, whichCell );      // xTem <- F(xOld)
-      RealSpaceTools<Scalar>::subtract( xTem, physPoints, xTem );        // xTem <- physPoints - F(xOld)
-      RealSpaceTools<Scalar>::matvec( refPoints, jacobInv, xTem);        // refPoints <- DF^{-1}( physPoints - F(xOld) )
-      RealSpaceTools<Scalar>::add( refPoints, xOld );                    // refPoints <- DF^{-1}( physPoints - F(xOld) ) + xOld
-
-      // l2 error (Euclidean distance) between old and new iterates: |xOld - xNew|
-      RealSpaceTools<Scalar>::subtract( xTem, xOld, refPoints );
-      RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
-
-      // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-      Scalar totalError;
-      if(whichCell == -1) {
-        FieldContainer<Scalar> cellWiseError(numCells);
-        // error(C,P) -> cellWiseError(P)
-
-        RealSpaceTools<Scalar>::vectorNorm( cellWiseError, error, NORM_ONE );
-        totalError = RealSpaceTools<Scalar>::vectorNorm( cellWiseError, NORM_ONE );
-      }
-      //Average L2 error for a single set of physical points: error is rank-1 (P) array
-      else{
-
-        totalError = RealSpaceTools<Scalar>::vectorNorm( error, NORM_ONE ); 
-        totalError = totalError;
-      }
-    
-      // Stopping criterion:
-      if (totalError < INTREPID_TOL) {
-        break;
-      } 
-      else if ( iter > INTREPID2_MAX_NEWTON) {
-        INTREPID2_VALIDATE(std::cout << " Intrepid2::CellTools::mapToReferenceFrameInitGuess failed to converge to desired tolerance within " 
-                           << INTREPID2_MAX_NEWTON  << " iterations\n" );
-        break;
-      }
-
-      // initialize next Newton step
-      //    xOld = refPoints;
-      int refPointsRank=getrank(refPoints);
-      if (refPointsRank==3){
-        for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
-          for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
-            for(index_type k=0;k<static_cast<index_type>(refPoints.dimension(2));k++){
-              xOld(i,j,k) = refPointsWrap(i,j,k);
-            }
-          }
-        }
-      }else if(refPointsRank==2){
-        for(index_type i=0;i<static_cast<index_type>(refPoints.dimension(0));i++){
-          for(index_type j=0;j<static_cast<index_type>(refPoints.dimension(1));j++){
-            xOld(i,j) = refPointsWrap(i,j);
-          }
-        }
-
-      }
-
-
-
-    } // for(iter)
   }
-
 
 }
 

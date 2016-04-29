@@ -128,6 +128,12 @@ namespace Intrepid2 {
       
     };
 
+    template<typename outputValueType, class ...outputProperties,
+             typename inputValueType,  class ...inputProperties>
+    static void
+    clone( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+           const Kokkos::DynRankView<inputValueType,inputProperties...>   input );
+
     /** \brief Computes absolute value of an array.
 
         \param outArray   [out]  - output array

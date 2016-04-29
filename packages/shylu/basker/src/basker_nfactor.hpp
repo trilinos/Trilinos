@@ -73,14 +73,19 @@ namespace BaskerNS
 
     gn = A.ncol;
     gm = A.nrow;
+    BASKER_MATRIX ATEMP;
 
+    //Kokkos::Impl::Timer tza;
     if(Options.btf == BASKER_TRUE)
       {
 	//JDB: We can change this for the new inteface
 	gn = A.ncol;
 	gm = A.nrow;
+	ATEMP = A;
 	A = BTF_A; 
       }
+    //printf("Switch time: %f \n", tza.seconds());
+
    
 
     //Spit into Domain and Sep
@@ -318,6 +323,13 @@ namespace BaskerNS
 
       }//end btf call
 
+    Kokkos::Impl::Timer tzback;
+     if(Options.btf == BASKER_TRUE)
+      {
+	A = ATEMP;
+      }
+     //printf("Switch back: %f \n",
+     //	    tzback.seconds());
     
     return 0;
   }//end factor_notoken()

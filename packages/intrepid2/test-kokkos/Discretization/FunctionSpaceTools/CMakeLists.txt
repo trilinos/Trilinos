@@ -8,9 +8,9 @@ IF(Kokkos_ENABLE_OpenMP)
   ADD_SUBDIRECTORY(OpenMP)
 ENDIF()
 
-#IF(Kokkos_ENABLE_Cuda)
-#  ADD_SUBDIRECTORY(Cuda)
-#ENDIF()
+IF(Kokkos_ENABLE_Cuda)
+  ADD_SUBDIRECTORY(Cuda)
+ENDIF()
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(FunctionSpaceToolsTestDataCopy

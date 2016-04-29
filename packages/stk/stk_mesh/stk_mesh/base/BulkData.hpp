@@ -66,6 +66,7 @@
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include <stk_mesh/base/ModificationNotifier.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
+#include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_mesh/baseImpl/elementGraph/MeshDiagnosticObserver.hpp>
@@ -78,6 +79,7 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class FaceCreator; } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
+namespace stk { namespace mesh { class ElemElemGraphUpdater; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
@@ -104,8 +106,13 @@ void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<cons
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector& boundary_mesh_parts);
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             ElemElemGraph& elementGraph,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                             const stk::mesh::PartVector& parts_for_creating_side,
+                             const stk::mesh::PartVector& boundary_mesh_parts);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
 
@@ -134,7 +141,7 @@ class BulkData {
 
 public:
   enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum entitySharing { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
+  enum entitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
 
   enum AutomaticAuraOption {
       NO_AUTO_AURA,
@@ -272,7 +279,7 @@ public:
    *  enough communication that it will be most efficient to batch up all
    *  desired changes so that it can be called only once.
    */
-  void change_entity_owner( const EntityProcVec & arg_change)
+  virtual void change_entity_owner( const EntityProcVec & arg_change)
   {
       notifier.notify_elements_about_to_move_procs(arg_change);
       m_meshModification.change_entity_owner(arg_change);
@@ -745,10 +752,14 @@ public:
 
   void register_observer(stk::mesh::ModificationObserver *observer);
 
-  virtual void initialize_graph() {}
-  virtual stk::mesh::ElemElemGraph& get_graph() { ThrowRequireWithSierraHelpMsg(false); stk::mesh::ElemElemGraph *graph = nullptr; return *graph;}
+  void initialize_face_adjacent_element_graph();
+  stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
+  unsigned get_mesh_diagnostic_error_count() const ;
+  void throw_on_mesh_diagnostic_error();
+
+  size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
 
 protected: //functions
 
@@ -819,6 +830,7 @@ protected: //functions
   inline void set_state(Entity entity, EntityState entity_state);
   void update_deleted_entities_container();
   std::pair<Entity, bool> internal_create_entity(EntityKey key, size_t preferred_offset = 0); // Mod Mark
+  std::pair<Entity, bool> internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset = 0);
 
 
   /** \brief  Declare a collection of relations by simply iterating
@@ -911,7 +923,7 @@ protected: //functions
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
   virtual void fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
-  void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(stk::mesh::EntityVector& shared_new);
+  virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_node_rank(stk::mesh::EntityVector& shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
@@ -1072,6 +1084,7 @@ protected: //functions
   stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 
   void set_modification_summary_proc_id(int proc_id) { m_modSummary.set_proc_id(proc_id); }
+  virtual void notify_finished_mod_end();
 
 private: //functions
 
@@ -1276,7 +1289,6 @@ private:
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
-  friend class ::stk::mesh::ElemElemGraph;
   friend class ::stk::mesh::FaceCreator;
   friend class ::stk::mesh::EntityLess;
   friend class ::stk::io::StkMeshIoBroker;
@@ -1290,8 +1302,13 @@ private:
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-  friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-          const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector* boundary_mesh_parts);
+  friend bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                                        ElemElemGraph& elementGraph,
+                                        const stk::mesh::EntityVector& killedElements,
+                                        stk::mesh::Part& active,
+                                        stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector,
+                                        const stk::mesh::PartVector& parts_for_creating_side,
+                                        const stk::mesh::PartVector* boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
   void pack_owned_verify(CommAll & all);
@@ -1352,13 +1369,14 @@ private:
 
 public: // data
   mutable bool m_check_invalid_rels; // TODO REMOVE
+  ModificationNotifier notifier;
 
 protected: //data
   static const uint16_t orphaned_node_marking;
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  std::vector<int> m_mark_entity; //indexed by Entity
+  std::vector<entitySharing> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
@@ -1407,12 +1425,13 @@ private: // data
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
-  ModificationNotifier notifier;
   std::string m_lastModificationDescription;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   //stk::ModificationSummary m_modSummary;
   stk::mesh::MeshDiagnosticObserver m_meshDiagnosticObserver;
+  stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
+  stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
 };
 
 void dump_mesh_info(const stk::mesh::BulkData& mesh, std::ostream&out, EntityVector ev);

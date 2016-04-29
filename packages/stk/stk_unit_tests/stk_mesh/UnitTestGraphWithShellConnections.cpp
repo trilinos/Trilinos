@@ -150,16 +150,16 @@ private:
     {
         if(procRank == 0)
         {
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Hex2, stk::mesh::impl::ParallelInfo(1, 0, 34, stk::topology::HEX_8, true));
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex2, stk::mesh::impl::ParallelInfo(1, 0, 34, stk::topology::HEX_8, true));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Hex2, stk::mesh::impl::ParallelInfo(1, 0, 34, stk::topology::HEX_8));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex2, stk::mesh::impl::ParallelInfo(1, 0, 34, stk::topology::HEX_8));
         }
     }
     void setup_parallel_graph_for_proc_1()
     {
         if(procRank == 1)
         {
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8, true));
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Shell1, stk::mesh::impl::ParallelInfo(0, 0, 21, stk::topology::SHELL_QUAD_4, true));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Shell1, stk::mesh::impl::ParallelInfo(0, 0, 21, stk::topology::SHELL_QUAD_4));
         }
     }
 };
@@ -206,24 +206,24 @@ private:
     {
         if(procRank == 0)
         {
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Shell1, stk::mesh::impl::ParallelInfo(1, 0, 20, stk::topology::SHELL_QUAD_4, true));
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Hex2, stk::mesh::impl::ParallelInfo(2, 0, 34, stk::topology::HEX_8, true));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Shell1, stk::mesh::impl::ParallelInfo(1, 0, 20, stk::topology::SHELL_QUAD_4));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex0Hex2, stk::mesh::impl::ParallelInfo(2, 0, 34, stk::topology::HEX_8));
         }
     }
     void setup_parallel_graph_for_proc_1()
     {
         if(procRank == 1)
         {
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8, true));
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex2, stk::mesh::impl::ParallelInfo(2, 0, 34, stk::topology::HEX_8, true));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeShell1Hex2, stk::mesh::impl::ParallelInfo(2, 0, 34, stk::topology::HEX_8));
         }
     }
     void setup_parallel_graph_for_proc_2()
     {
         if(procRank == 2)
         {
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8, true));
-            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Shell1, stk::mesh::impl::ParallelInfo(1, 0, 21, stk::topology::SHELL_QUAD_4, true));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Hex0, stk::mesh::impl::ParallelInfo(0, 0, 10, stk::topology::HEX_8));
+            parGraphInfo.insert_parallel_info_for_graph_edge(graphEdgeHex2Shell1, stk::mesh::impl::ParallelInfo(1, 0, 21, stk::topology::SHELL_QUAD_4));
         }
     }
 };

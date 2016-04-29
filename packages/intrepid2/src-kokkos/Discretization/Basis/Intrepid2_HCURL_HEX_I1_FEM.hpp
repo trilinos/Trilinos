@@ -112,10 +112,10 @@ namespace Intrepid2 {
   
   */
   
-  template<typename ExecSpaceType>
+  template<typename ExecSpaceType = void>
   class Basis_HCURL_HEX_I1_FEM : public Basis<ExecSpaceType> {
   public:
-
+    
     template<EOperator opType>
     struct Serial {
       template<typename outputValueValueType, class ...outputValueProperties,
@@ -123,7 +123,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       static void
       getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints);
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints );
     };
 
     template<typename outputValueViewType,
@@ -134,10 +134,10 @@ namespace Intrepid2 {
       const inputPointViewType  _inputPoints;
 
       KOKKOS_INLINE_FUNCTION
-      Functor( /**/ ouputValueViewType outputValues_,
-               /**/ inputPointViewType inputPoints_)
+      Functor( outputValueViewType outputValues_,
+               inputPointViewType  inputPoints_ )
         : _outputValues(outputValues_), _inputPoints(inputPoints_) {}
-
+      
       KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type pt) const {
         switch (opType) {
@@ -149,9 +149,9 @@ namespace Intrepid2 {
           break;
         }
         default: {
-          INTREPID_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                   opType != OPERATOR_CURL,
-                                   ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
+          INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                    opType != OPERATOR_CURL,
+                                    ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_CI_FEM::Serial::getVAlues) operator is not supported");
           break;
         }
         } //end switch

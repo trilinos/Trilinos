@@ -155,6 +155,11 @@ namespace BaskerNS
     //int t_init_solve_rhs(Int kid, Entry *x , Entry *b);
 
     BASKER_INLINE
+    void t_reset_BTF_factor(Int kid);
+    void t_reset_ND_factor(Int kid);
+
+
+    BASKER_INLINE
     void t_init_factor(Int kid);
 
 

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
+/** \file test_02.cpp
 \brief  Unit test for the RealSpaceTools class.
 \author Created by Kyungjoo Kim
 */

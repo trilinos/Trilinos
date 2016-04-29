@@ -72,7 +72,7 @@
 namespace Intrepid2 {
 
   namespace Test {
-#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
@@ -142,20 +142,20 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
         *outStream << "-> Line testing\n\n";
         {
-          INTREPID2_TEST_ERROR_EXPECTED( CubatureLineType(-1), nthrow, ncatch );
-          INTREPID2_TEST_ERROR_EXPECTED( CubatureLineType(Parameters::MaxCubatureDegreeEdge+1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureLineType(-1) );
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureLineType(Parameters::MaxCubatureDegreeEdge+1) );
         }
 
         *outStream << "-> Triangle testing\n\n";
         // {
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(-1), nthrow, ncatch );
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(Parameters::MaxCubatureDegreeTri+1), nthrow, ncatch );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(-1) );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(Parameters::MaxCubatureDegreeTri+1) );
         // }
 
         *outStream << "-> Tetrahedron testing\n\n";
         // {
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(-1), nthrow, ncatch );
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(Parameters::MaxCubatureDegreeTet+1), nthrow, ncatch );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(-1) );
+        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(Parameters::MaxCubatureDegreeTet+1) );
         // }
 #endif
         if (nthrow != ncatch) {

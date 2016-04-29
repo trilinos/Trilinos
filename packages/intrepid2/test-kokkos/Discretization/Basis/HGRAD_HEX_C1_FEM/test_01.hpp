@@ -59,7 +59,7 @@ namespace Intrepid2 {
 
   namespace Test {
 
-#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
@@ -150,76 +150,76 @@ namespace Intrepid2 {
           // exception #1: CURL cannot be applied to scalar functions in 3D
           // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
           DynRankView tmpvals = DynRankView(work.data(), numFields, numPoints, spaceDim);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(tmpvals, hexNodes, OPERATOR_CURL), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(tmpvals, hexNodes, OPERATOR_CURL) );
         }
         {
           // exception #2: DIV cannot be applied to scalar functions in 3D
           // resize vals to rank-2 container with dimensions (num. basis functions, num. points)
           DynRankView tmpvals = DynRankView(work.data(), numFields, numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(tmpvals, hexNodes, OPERATOR_DIV), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(tmpvals, hexNodes, OPERATOR_DIV) );
         }
 
         // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0), nthrow, ncatch );
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1), nthrow, ncatch );
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1), nthrow, ncatch );
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(8),         nthrow, ncatch );
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1),        nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(8)         );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1)        );
         }
 
         // Exceptions 8-18 test exception handling with incorrectly dimensioned input/output arrays
         {
           // exception #8: input points array must be of rank-2
           DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #9 dimension 1 in the input point array must equal space dimension of the cell
           DynRankView ConstructWithLabel(badPoints, 4, 2);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #10 output values must be of rank-2 for OPERATOR_VALUE
           DynRankView ConstructWithLabel(badVals, 4, 3, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
         }
         {
           // exception #11 output values must be of rank-3 for OPERATOR_GRAD
           DynRankView ConstructWithLabel(badVals, 4, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
 
           // exception #12 output values must be of rank-3 for OPERATOR_D1
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D1) );
 
           // exception #13 output values must be of rank-3 for OPERATOR_D2
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2) );
         }
         {
           // exception #14 incorrect 0th dimension of output array (must equal number of basis functions)
           DynRankView ConstructWithLabel(badVals, numFields + 1, numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
         }
         {
           // exception #15 incorrect 1st dimension of output array (must equal number of points)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
         }
         {
           // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 4);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
         }
         {
           // exception #17: incorrect 2nd dimension of output array (must equal D2 cardinality in 3D)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 40);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2) );
         }
         {
           // exception #18: incorrect 2nd dimension of output array (must equal D3 cardinality in 3D)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 50);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D3), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D3) );
         }
 #endif
         if (nthrow != ncatch) {
@@ -666,15 +666,15 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
         {
           DynRankView ConstructWithLabel(badVals, 1,2,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals) );
         }
         {
           DynRankView ConstructWithLabel(badVals, 3,2);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals) );
         }
         {
           DynRankView ConstructWithLabel(badVals, 8,2);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofCoords(badVals) );
         }
 #endif
         if (nthrow != ncatch) {

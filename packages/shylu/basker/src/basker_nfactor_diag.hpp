@@ -135,14 +135,14 @@ namespace BaskerNS
 
 
       Int chunk_start = thread_start(kid);
-      printf("test: %d %d \n", kid, thread_start(kid));
+      //printf("test: %d %d \n", kid, thread_start(kid));
       if(chunk_start != BASKER_MAX_IDX)
 	{
 	  Int chunk_size  = basker->btf_schedule(kid+1) - 
 	    chunk_start;
       
-	  printf("Chunk start: %d size: %d \n", 
-		 chunk_start, chunk_size);
+	  // printf("Chunk start: %d size: %d \n", 
+	  //	 chunk_start, chunk_size);
 	  basker->t_nfactor_diag(kid, chunk_start,
 				 chunk_size);
 
@@ -319,23 +319,23 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
 	//if(k < 3)
 	  {
-	printf("\n------------K=%d-------------\n", k);
+	    //printf("\n------------K=%d-------------\n", k);
 	BASKER_ASSERT(top == ws_size, "nfactor dig, top");
 	for( i = 0; i < ws_size; ++i)
 	  {
-	    if(X[i] != 0)
+	    if(X(i) != 0)
 	      {
-		printf("x(i) error: %d \n", i);
+		printf("x(i) error: %d  %e k: %d \n", i , X(i), k);
 	      }
             if(ws[i] != 0)
               {
-                printf("ws(i) error: %d \n", i);
+                printf("ws(i) error: %d K: %d \n", i, k);
               }
 	    BASKER_ASSERT(X[i] == 0, "X!=0");
 	    BASKER_ASSERT(ws[i] == 0, "ws!=0");
 	  }
 	  }
-	  #endif
+	 #endif
 
 	value = 0.0;
 	pivot = 0.0;
@@ -396,8 +396,11 @@ namespace BaskerNS
 	xnnz = ws_size - top;
 
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 40)
+	  {
 	printf("xnnz: %d ws_size: %d top: %d \n", 
 	       xnnz, ws_size, top);
+	  }
         #endif
              
 	//add custom local_solve
@@ -441,8 +444,8 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
 	//if(k < 3)
 	  {
-	    printf("pivot: %g maxindex: %d \n",
-		   pivot, maxindex);
+	    printf("pivot: %g maxindex: %d k: %d \n",
+		   pivot, maxindex, k);
 	  }
 	  #endif
 	
@@ -455,10 +458,10 @@ namespace BaskerNS
 	    }
 	
 	  #ifdef BASKER_DEBUG_NFACTOR_DEBUG
-	  //if(k < 3)
+	  if(k < 45)
 	    {
-	      printf("pivot: %g maxindex: %d \n",
-		     pivot, maxindex);
+	      printf("pivot: %g maxindex: %d K:%d \n",
+		     pivot, maxindex, k);
 	    }
 	  #endif
   
@@ -592,7 +595,11 @@ namespace BaskerNS
 	      t = gperm(j+L.srow);
             
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
-              printf("j: %d t: %d \n", j, t);
+	      if(k < 45)
+		{
+		  printf("j: %d t: %d k: %d\n", 
+			 j, t, k);
+		}
               #endif            
 
             
@@ -644,6 +651,10 @@ namespace BaskerNS
                       ++lnnz;
 
                     }
+		  else
+		    {
+		      BASKER_ASSERT(0==1, "T not be selected\n");
+		    }
                 }//end if() not 0
               
               //Note: move x[j] inside of if() not 0..
@@ -651,13 +662,14 @@ namespace BaskerNS
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
               printf("Zeroing element: %d \n", j);
               #endif
-
+	      
 	      #ifdef BASKER_2DL
 	      //X[j-brow] = 0;
 	      X(j) = 0;
 	      #else
               X[j] = 0;
 	      #endif
+	      
             }//end if(x[i] != 0)
 
           //Fill in last element of U

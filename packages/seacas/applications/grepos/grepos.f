@@ -99,6 +99,7 @@ C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
       LOGICAL RENEL, DELEL, DELNP
 
       INTEGER CMPSIZ, IOWS
+      integer goff, noff, eoff, moff, soff
 
       DIMENSION A(1)
       INTEGER IA(1)

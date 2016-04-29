@@ -28,7 +28,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ElasticitySIMPOperatorsCopy
     SOURCE_FILES
-      input.xml stochastic.xml plotdensity.m plotstate.m
+      input.xml stochastic.xml plotdensity.m plotstate.m plotnodaldensity.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

@@ -691,6 +691,18 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Tangent>,panzer::Assem
   */
 }
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+addResidualResponsesToInArgs(Overloader<typename TraitsT::Hessian>,panzer::AssemblyEngineInArgs & input_args) const
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
+  TEUCHOS_ASSERT(false);
+}
+#endif
+
 template <typename TraitsT>
 template <typename EvalT> 
 void ResponseLibrary<TraitsT>::

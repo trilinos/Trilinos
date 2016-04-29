@@ -6,7 +6,7 @@
 #include "../FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_unit_test_utils/SideSharingUsingGraph.hpp>
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
+#include <stk_mesh/base/MeshDiagnostics.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 namespace
 {

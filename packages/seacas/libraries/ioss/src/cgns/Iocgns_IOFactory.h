@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,29 +33,28 @@
 #ifndef IOSS_Iocgns_IOFactory_h
 #define IOSS_Iocgns_IOFactory_h
 
-#include <Ioss_DBUsage.h>               // for DatabaseUsage
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <string>                       // for string
-#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_DatabaseIO.h" // for DatabaseIO
 #include <Ioss_CodeTypes.h>
+#include <Ioss_DBUsage.h>   // for DatabaseUsage
+#include <Ioss_IOFactory.h> // for IOFactory
+#include <string>           // for string
 
-namespace Ioss { class PropertyManager; }
+namespace Ioss {
+  class PropertyManager;
+}
 
 namespace Iocgns {
 
   class IOFactory : public Ioss::IOFactory
-    {
-    public:
-      static const IOFactory* factory();
-      static void finalize();
+  {
+  public:
+    static const IOFactory *factory();
+    static void             finalize();
 
-    private:
-      IOFactory();
-      Ioss::DatabaseIO* make_IO(const std::string& filename,
-				Ioss::DatabaseUsage db_usage,
-				MPI_Comm communicator,
-				const Ioss::PropertyManager &properties) const;
-
-    };
+  private:
+    IOFactory();
+    Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                              MPI_Comm communicator, const Ioss::PropertyManager &properties) const;
+  };
 }
 #endif // IOSS_Iocgns_IOFactory_h

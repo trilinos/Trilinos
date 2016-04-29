@@ -789,12 +789,12 @@ inline EntityState BulkData::state(Entity entity) const
 
 inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
 {
-    m_mark_entity[entity.local_offset()] = static_cast<int>(sharedType);
+    m_mark_entity[entity.local_offset()] = sharedType;
 }
 
 inline BulkData::entitySharing BulkData::internal_is_entity_marked(Entity entity) const
 {
-    return static_cast<entitySharing>(m_mark_entity[entity.local_offset()]);
+    return m_mark_entity[entity.local_offset()];
 }
 
 inline bool BulkData::internal_add_node_sharing_called() const

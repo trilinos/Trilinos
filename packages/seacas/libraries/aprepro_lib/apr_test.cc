@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
       // Aprepro::parsing_results()
       std::fstream infile(argv[ai]);
       if (!infile.good()) {
-	std::cerr << "APREPRO: Could not open file: " << argv[ai] << std::endl;
+	std::cerr << "APREPRO: Could not open file: " << argv[ai] << '\n';
 	return 0;
       }
 
@@ -108,8 +108,11 @@ int main(int argc, char *argv[])
       readfile = true;
     }
   }
-
-  if (readfile) return 0;
+  if (readfile) {
+    std::cout << "Aprepro: There were " << aprepro.get_error_count()
+	      << " errors detected during parsing.\n";
+    return 0;
+  }
     
   // Read and parse a string's worth of data at a time.
   // Cannot use looping/ifs/... with this method.
@@ -144,7 +147,7 @@ int main(int argc, char *argv[])
           
           std::cout << curr_history.original << " was substituted with " <<
                        curr_history.substitution << " at index " <<
-                       curr_history.index << std::endl;
+                       curr_history.index << '\n';
         }
 
         aprepro.clear_history();
@@ -155,4 +158,7 @@ int main(int argc, char *argv[])
 
     line.clear();
   }
+  std::cout << "Aprepro: There were " << aprepro.get_error_count()
+	    << " errors detected during parsing.\n";
+  
 }

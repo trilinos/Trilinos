@@ -385,6 +385,17 @@ public:
     return parameters_[index]->initial_value;
   }
 
+  /** Compute second (x) derivative of the response in the direction <code>delta_x</code>.
+    *
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2gDx2 Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2gDx2(int respIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const;
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
@@ -637,6 +648,29 @@ addResponse(const std::string & responseName,
       if(resp->supportsDerivative())
          resp->setDerivative(resp->buildEpetraDerivative());
    }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+   // handle panzer::Traits::Hessian (do a quick safety check, response is null or appropriate for jacobian)
+   Teuchos::RCP<panzer::ResponseBase> respHesBase = responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName);
+   std::cout << "******************************************************" << std::endl;
+   std::cout << "\nTHYRA IS DOING IT: " << respHesBase << std::endl;
+   std::cout << "******************************************************" << std::endl;
+   if(respHesBase!=Teuchos::null) {
+      typedef panzer::Traits::Hessian RespEvalT;
+
+      // check that the response supports interactions with the model evaluator
+      Teuchos::RCP<panzer::ResponseMESupportBase<RespEvalT> > resp =
+          Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<RespEvalT> >(respHesBase);
+      TEUCHOS_TEST_FOR_EXCEPTION(resp==Teuchos::null,std::logic_error,
+                                 "panzer::ModelEvaluator::addResponse: Response with name \"" << responseName <<
+                                 "\" resulted in bad cast to panzer::ResponseMESupportBase<Hessian>, the type "
+                                 "of the response is incompatible!");
+
+      // setup the vector (register response as epetra)
+      if(resp->supportsDerivative())
+         resp->setDerivative(resp->buildDerivative());
+   }
+#endif
 
    respObject->name = responseName;
    respObject->wkst_desc = wkst_desc;

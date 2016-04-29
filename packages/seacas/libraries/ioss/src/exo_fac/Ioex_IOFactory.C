@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,40 +30,43 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <exo_fac/Ioex_IOFactory.h>    // for Ioex IOFactory
+#include <exo_fac/Ioex_IOFactory.h> // for Ioex IOFactory
 
-#include <exo_fpp/Iofx_DatabaseIO.h>   // for Iofx DatabaseIO
+#include <exo_fpp/Iofx_DatabaseIO.h> // for Iofx DatabaseIO
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
-#include <exo_par/Iopx_DatabaseIO.h>    // for Iopx DatabaseIO
+#include <exo_par/Iopx_DatabaseIO.h> // for Iopx DatabaseIO
 #endif
 #include <tokenize.h>
 
-#include <stddef.h>                     // for nullptr
-#include <string>                       // for string
+#include <cstddef> // for nullptr
+#include <string>  // for string
 
-#include "Ioss_CodeTypes.h"             // for MPI_Comm
-#include "Ioss_DBUsage.h"               // for DatabaseUsage
-#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_CodeTypes.h" // for MPI_Comm
+#include "Ioss_DBUsage.h"   // for DatabaseUsage
+#include "Ioss_IOFactory.h" // for IOFactory
 
-namespace Ioss { class DatabaseIO; }
+namespace Ioss {
+  class DatabaseIO;
+}
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &props, Ioss::DatabaseUsage db_usage);
-  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &props, Ioss::DatabaseUsage db_usage);
+  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &props,
+                                           Ioss::DatabaseUsage db_usage);
+  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &props,
+                                  Ioss::DatabaseUsage db_usage);
 }
 #endif
 
 namespace Ioex {
 
-  const IOFactory* IOFactory::factory()
+  const IOFactory *IOFactory::factory()
   {
     static IOFactory registerThis;
     return &registerThis;
   }
 
-  IOFactory::IOFactory()
-    : Ioss::IOFactory("exodus")
+  IOFactory::IOFactory() : Ioss::IOFactory("exodus")
   {
     Ioss::IOFactory::alias("exodus", "exodusii");
     Ioss::IOFactory::alias("exodus", "exodusII");
@@ -74,10 +77,9 @@ namespace Ioex {
 #endif
   }
 
-  Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
-				       Ioss::DatabaseUsage db_usage,
-				       MPI_Comm communicator,
-				       const Ioss::PropertyManager &properties) const
+  Ioss::DatabaseIO *IOFactory::make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
+                                       MPI_Comm                     communicator,
+                                       const Ioss::PropertyManager &properties) const
   {
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
     // The "exodus" and "parallel_exodus" databases can both be accessed
@@ -116,17 +118,19 @@ namespace Ioex {
 #endif
       return new Iofx::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
-}
+} // namespace Ioex
 
 #if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
-  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties, Ioss::DatabaseUsage db_usage)
+  std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
+                                           Ioss::DatabaseUsage db_usage)
   {
     std::string decomp_method;
     std::string decomp_property;
     if (db_usage == Ioss::READ_MODEL) {
       decomp_property = "MODEL_DECOMPOSITION_METHOD";
-    } else if (db_usage == Ioss::READ_RESTART) {
+    }
+    else if (db_usage == Ioss::READ_RESTART) {
       decomp_property = "RESTART_DECOMPOSITION_METHOD";
     }
 
@@ -145,102 +149,108 @@ namespace {
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies a decomposition method.
     Ioss::ParallelUtils util(comm);
-    std::string env_props;
+    std::string         env_props;
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
-      for (size_t i=0; i < prop_val.size(); i++) {
+      for (size_t i = 0; i < prop_val.size(); i++) {
         std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
         if (property.size() != 2) {
           std::ostringstream errmsg;
-          errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment variable\n"
-              << "       Found '" << prop_val[i] << "' which is not of the correct PROPERTY=VALUE form";
+          errmsg << "ERROR: Invalid property specification found in IOSS_PROPERTIES environment "
+                    "variable\n"
+                 << "       Found '" << prop_val[i]
+                 << "' which is not of the correct PROPERTY=VALUE form";
           IOSS_ERROR(errmsg);
         }
         std::string prop = Ioss::Utils::uppercase(property[0]);
         if (prop == decomp_property) {
           std::string value = property[1];
-          decomp_method = Ioss::Utils::uppercase(value);
-	  break;
+          decomp_method     = Ioss::Utils::uppercase(value);
+          break;
         }
-	else if (prop == "DECOMPOSITION_METHOD") {
+        else if (prop == "DECOMPOSITION_METHOD") {
           std::string value = property[1];
-          decomp_method = Ioss::Utils::uppercase(value);
-	  break;
+          decomp_method     = Ioss::Utils::uppercase(value);
+          break;
         }
       }
     }
     return decomp_method;
   }
 
-  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties, Ioss::DatabaseUsage db_usage)
+  bool check_composition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
+                                  Ioss::DatabaseUsage db_usage)
   {
     // Check environment variable IOSS_PROPERTIES. If it exists, parse
     // the contents and see if it specifies the use of a single file for output...
 
-    bool compose = false;
+    bool        compose          = false;
     std::string compose_property = "COMPOSE_INVALID";
     if (db_usage == Ioss::WRITE_RESULTS) {
       compose_property = "COMPOSE_RESULTS";
-    } else if (db_usage == Ioss::WRITE_RESTART) {
+    }
+    else if (db_usage == Ioss::WRITE_RESTART) {
       compose_property = "COMPOSE_RESTART";
     }
 
     if (properties.exists(compose_property)) {
       if (properties.get(compose_property).get_type() == Ioss::Property::INTEGER) {
-	compose = properties.get(compose_property).get_int() == 1;
-      } else {
-	std::string yesno = Ioss::Utils::uppercase(properties.get(compose_property).get_string());
-	if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
+        compose = properties.get(compose_property).get_int() == 1;
+      }
+      else {
+        std::string yesno = Ioss::Utils::uppercase(properties.get(compose_property).get_string());
+        if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
           compose = true;
         }
         else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
           compose = false;
         }
-	else {
+        else {
           std::ostringstream errmsg;
           errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
-		 << "       for " << compose_property << ". Found '" << yesno
-		 << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+                 << "       for " << compose_property << ". Found '" << yesno
+                 << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
           IOSS_ERROR(errmsg);
-	}
+        }
       }
       return compose;
     }
 
     Ioss::ParallelUtils util(comm);
-    std::string env_props;
+    std::string         env_props;
     if (util.get_environment("IOSS_PROPERTIES", env_props, true)) {
       // env_props string should be of the form
       // "PROP1=VALUE1:PROP2=VALUE2:..."
       std::vector<std::string> prop_val = Ioss::tokenize(env_props, ":");
 
-      for (size_t i=0; i < prop_val.size(); i++) {
+      for (size_t i = 0; i < prop_val.size(); i++) {
         std::vector<std::string> property = Ioss::tokenize(prop_val[i], "=");
-        std::string prop = Ioss::Utils::uppercase(property[0]);
+        std::string              prop     = Ioss::Utils::uppercase(property[0]);
         if (prop == compose_property) {
-	  if (property.size() != 2) {
-	    // Backwards compatibility -- if property exists with no value, enable
-	    compose = true;
-	  } else {
-	    std::string value = property[1];
-	    std::string up_value = Ioss::Utils::uppercase(value);
-	    if (up_value == "TRUE" || up_value == "YES" || up_value == "ON") {
-	      compose = true;
-	    }
-	    else if (up_value == "FALSE" || up_value == "NO" || up_value == "OFF") {
-	      compose = false;
-	    }
-	    else {
-	      std::ostringstream errmsg;
-	      errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
-		     << "       for " << compose_property << ". Found '" << up_value
-		     << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
-	      IOSS_ERROR(errmsg);
-	    }
-	  }
+          if (property.size() != 2) {
+            // Backwards compatibility -- if property exists with no value, enable
+            compose = true;
+          }
+          else {
+            std::string value    = property[1];
+            std::string up_value = Ioss::Utils::uppercase(value);
+            if (up_value == "TRUE" || up_value == "YES" || up_value == "ON") {
+              compose = true;
+            }
+            else if (up_value == "FALSE" || up_value == "NO" || up_value == "OFF") {
+              compose = false;
+            }
+            else {
+              std::ostringstream errmsg;
+              errmsg << "ERROR: Unrecognized value found IOSS_PROPERTIES environment variable\n"
+                     << "       for " << compose_property << ". Found '" << up_value
+                     << "' which is not one of TRUE|FALSE|YES|NO|ON|OFF";
+              IOSS_ERROR(errmsg);
+            }
+          }
           break;
         }
       }

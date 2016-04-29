@@ -1497,7 +1497,7 @@ namespace stk {
         }
         else
         {
-            bulk_data().initialize_graph();
+            bulk_data().initialize_face_adjacent_element_graph();
             process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
             bulk_data().modification_end_after_node_sharing_resolution();
         }

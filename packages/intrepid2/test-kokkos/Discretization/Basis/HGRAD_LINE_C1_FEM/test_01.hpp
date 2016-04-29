@@ -60,7 +60,7 @@ namespace Intrepid2 {
 
   namespace Test {
 
-#define INTREPID2_TEST_ERROR_EXPECTED( S, nthrow, ncatch )              \
+#define INTREPID2_TEST_ERROR_EXPECTED( S )              \
     try {                                                               \
       ++nthrow;                                                         \
       S ;                                                               \
@@ -150,66 +150,66 @@ namespace Intrepid2 {
         // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0), nthrow, ncatch );  // #1
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1), nthrow, ncatch );  // #2
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0), nthrow, ncatch );  // #3
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5),         nthrow, ncatch );  // #4
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1),        nthrow, ncatch );  // #5
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0) );  // #1
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(2,0,0) );  // #1
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(1,1,1) );  // #2
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofOrdinal(0,4,0) );  // #3
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(5)         );  // #4
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getDofTag(-1)        );  // #5
         }
 
         // Exceptions 6-17 test exception handling with incorrectly dimensioned input/output arrays
         {
           // exception #6: input points array must be of rank-2
           DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #7 dimension 1 in the input point array must equal space dimension of the cell
           DynRankView ConstructWithLabel(badPoints, 4, 2);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #8 output values must be of rank-2 for OPERATOR_VALUE
           DynRankView ConstructWithLabel(badVals, 4, 3, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
         }
         {
           // exception #9 output values must be of rank-3 for OPERATOR_GRAD
           DynRankView ConstructWithLabel(badVals, 4, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD) );
 
           // exception #10 output values must be of rank-3 for OPERATOR_DIV
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_DIV), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_DIV) );
 
           // exception #11 output values must be of rank-3 for OPERATOR_CURL
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_CURL), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_CURL) );
 
           // exception #12 output values must be of rank-3 for OPERATOR_D2
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2) );
         }
         {
           // exception #13 incorrect 1st dimension of output array (must equal number of basis functions)
           DynRankView ConstructWithLabel(badVals, numFields + 1, numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
         }
         {
           // exception #14 incorrect 0th dimension of output array (must equal number of points)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
         }
         {
           // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 2);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD) );
         }
         {
           // exception #16: incorrect 2nd dimension of output array (must equal D2 cardinality in 1D)
           DynRankView ConstructWithLabel(badVals, numFields, numPoints, 40);
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D2) );
 
           // exception #17: incorrect 2nd dimension of output array (must equal D3 cardinality in 1D)
-          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D3), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_D3) );
         }
 #endif
         // Check if number of thrown exceptions matches the one we expect

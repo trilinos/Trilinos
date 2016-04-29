@@ -12,6 +12,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
+#include <stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -23,76 +24,31 @@ namespace stk { namespace mesh {
 namespace impl
 {
 
-void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
-                                                            stk::mesh::EntityVector& local_id_to_element_entity,
-                                                            std::vector<stk::topology>& element_topologies)
+unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
 {
-    const stk::mesh::BucketVector& elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    size_t local_id = 0;
-    for(size_t i=0; i<elemBuckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *elemBuckets[i];
-        for(size_t j=0; j<bucket.size(); ++j)
-        {
-            local_id_to_element_entity[local_id] = bucket[j];
-            element_topologies[local_id] = bucket.topology();
-            bulkData.set_local_id(bucket[j], local_id);
-            local_id++;
-        }
-    }
+    if(bulkData.mesh_meta_data().entity_rank_count() < stk::topology::ELEM_RANK)
+        return 0;
+    else
+        return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 }
 
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData,
-                                                             stk::mesh::EntityVector& local_id_to_element_entity,
-                                                             std::vector<impl::LocalId>& entity_to_local_id,
+void fill_topologies(stk::mesh::BulkData& bulkData,
+                                                             stk::mesh::impl::ElementLocalIdMapper & localMapper,
                                                              std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    size_t local_id = 0;
-    for(size_t i=0; i<elemBuckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *elemBuckets[i];
-        for(size_t j=0; j<bucket.size(); ++j)
-        {
-            local_id_to_element_entity[local_id] = bucket[j];
-            element_topologies[local_id] = bucket.topology();
-            entity_to_local_id[bucket[j].local_offset()] = local_id;
-            local_id++;
-        }
-    }
+    for(const stk::mesh::Bucket* bucket : elemBuckets)
+        for(stk::mesh::Entity element : *bucket)
+            element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
 }
 
-
-
-ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
-{
-    stk::mesh::EntityVector elements_to_communicate;
-
-    for(const stk::mesh::Entity &element : element_list )
-    {
-        const stk::mesh::Entity* nodes = bulkData.begin_nodes(element);
-        int numNodes = bulkData.num_nodes(element);
-
-        for(int i=0; i<numNodes; ++i)
-        {
-            stk::mesh::Entity node = nodes[i];
-
-            if(bulkData.bucket(node).shared())
-            {
-                elements_to_communicate.push_back(element);
-                break;
-            }
-        }
-    }
-
-    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
-}
-
-
-ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate)
+ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,
+                                                           const stk::mesh::EntityVector &elements_to_communicate)
 {
     ElemSideToProcAndFaceId elem_side_comm;
-
+    stk::mesh::EntityVector side_nodes;
+    std::vector<stk::mesh::EntityKey> keys;
+    std::vector<int> sharing_procs;
     for(size_t i=0;i<elements_to_communicate.size();++i)
     {
         stk::mesh::Entity elem = elements_to_communicate[i];
@@ -100,13 +56,12 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
         unsigned num_sides = elem_top.num_sides();
         for(unsigned side=0;side<num_sides;++side)
         {
-            stk::mesh::EntityVector side_nodes = get_element_side_nodes_from_topology(bulkData, elem, side);
-            std::vector<stk::mesh::EntityKey> keys(side_nodes.size());
+            fill_element_side_nodes_from_topology(bulkData, elem, side, side_nodes);
+            keys.resize(side_nodes.size());
             for(size_t j=0;j<keys.size();++j)
             {
                 keys[j] = bulkData.entity_key(side_nodes[j]);
             }
-            std::vector<int> sharing_procs;
             bulkData.shared_procs_intersection(keys, sharing_procs);
             for (int proc: sharing_procs) {
                 elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
@@ -116,14 +71,13 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
     return elem_side_comm;
 }
 
-stk::mesh::EntityVector get_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index)
+void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, unsigned side_index, stk::mesh::EntityVector& localElemSideNodes)
 {
     stk::topology localElemTopology = bulkData.bucket(element).topology();
     const stk::mesh::Entity* localElemNodes = bulkData.begin_nodes(element);
     unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
-    stk::mesh::EntityVector localElemSideNodes(num_nodes_this_side);
+    localElemSideNodes.resize(num_nodes_this_side);
     localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
-    return localElemSideNodes;
 }
 
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
@@ -176,38 +130,6 @@ std::vector<GraphEdgeProc> communicate_killed_entities(stk::ParallelMachine comm
 int get_element_side_multiplier()
 {
     return 1000;
-}
-
-stk::mesh::EntityId get_side_id_for_remotely_connected_element(stk::mesh::EntityId local_element_id,
-        stk::mesh::EntityId local_side_id, stk::mesh::EntityId remote_element_id,
-        stk::mesh::EntityId remote_side_id, size_t& id_counter)
-{
-    stk::mesh::EntityId side_global_id = 0;
-    if(local_element_id < remote_element_id)
-    {
-        side_global_id = local_side_id;
-        id_counter++;
-    }
-    else
-    {
-        side_global_id = remote_side_id;
-    }
-
-    return side_global_id;
-}
-
-stk::mesh::Permutation get_permutation_for_new_side(const ParallelInfo& parallel_edge_info, stk::mesh::EntityId local_element_id, stk::mesh::EntityId remote_element_id)
-{
-    stk::mesh::Permutation perm;
-    if(local_element_id < remote_element_id)
-    {
-        perm = static_cast<stk::mesh::Permutation>(0);
-    }
-    else
-    {
-        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-    }
-    return perm;
 }
 
 bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank, stk::mesh::EntityId id)
@@ -347,7 +269,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
 
 void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const ParallelInfo& parallel_edge_info,
         stk::mesh::Entity local_element, int side_id, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
-        std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts)
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::impl::ParallelSelectedInfo &remoteActiveSelector, const stk::mesh::PartVector *boundary_mesh_parts)
 {
     stk::mesh::EntityId side_global_id = parallel_edge_info.m_chosen_side_id;
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
@@ -357,7 +279,7 @@ void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const Paralle
     int other_proc = parallel_edge_info.get_proc_rank_of_neighbor();
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
-    if(parallel_edge_info.is_in_body_to_be_skinned())
+    if(remoteActiveSelector[-remote_id])
     {
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }
@@ -416,7 +338,8 @@ stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::me
 
     // connect side to nodes
     stk::topology side_top = bulkData.bucket(element).topology().side_topology(side_ordinal);
-    stk::mesh::EntityVector side_nodes = get_element_side_nodes_from_topology(bulkData, element, side_ordinal);
+    stk::mesh::EntityVector side_nodes;
+    fill_element_side_nodes_from_topology(bulkData, element, side_ordinal, side_nodes);
     stk::mesh::EntityVector permuted_side_nodes(side_top.num_nodes());
     side_top.permutation_nodes(side_nodes, side_permutation, permuted_side_nodes.begin());
     for(size_t i=0;i<permuted_side_nodes.size();++i)
@@ -441,8 +364,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         int remote_side_index    = iter->get_remote_element_side_index();
         int sharing_proc       = iter->get_remote_processor_rank();
         stk::mesh::EntityId chosenId = iter->m_chosenSideId;
-        const bool isInPart = iter->is_in_body_to_be_skinned();
-        const bool isAir    = iter->is_considered_air();
 
         size_t numNodes= iter->m_sharedNodes.size();
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
@@ -456,8 +377,6 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<int>(local_side_index);
         comm.send_buffer(sharing_proc).pack<int>(remote_side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
-        comm.send_buffer(sharing_proc).pack<bool>(isInPart);
-        comm.send_buffer(sharing_proc).pack<bool>(isAir);
         comm.send_buffer(sharing_proc).pack<stk::topology>(bulkData.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)
@@ -479,7 +398,7 @@ void add_exposed_sides(LocalId elementId, size_t maxSidesThisElement,
     for(size_t j = 0; j < graph.get_num_edges_for_element(elementId); ++j)
     {
         const stk::mesh::GraphEdge & graphEdge = graph.get_edge_for_element(elementId, j);
-        int sideId = graphEdge.side1;
+        int sideId = graphEdge.side1();
         elemSides[sideId] = sideId;
     }
 

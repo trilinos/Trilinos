@@ -130,6 +130,7 @@ namespace BaskerNS
     Int srow, scol;
     Int erow, ecol;
     Int ncol, nrow, nnz;
+    Int mnnz; //malloc nnz
     
     INT_1DARRAY   col_ptr;
     INT_1DARRAY   row_idx;
@@ -167,6 +168,7 @@ namespace BaskerNS
     //Used for end
     INT_1DARRAY pend;
     void init_pend();
+    void clear_pend();
     
 
   };//end class BaskerMatrix

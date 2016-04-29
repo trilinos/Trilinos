@@ -45,6 +45,8 @@ public:
 
     void run_game_of_life(int numSteps);
 
+    void write_mesh();
+
     //test functions
     inline unsigned get_num_elems_on_proc() const;
 
@@ -115,6 +117,7 @@ private:
     virtual void deactivate_element(stk::mesh::Entity elem) = 0;
 
     void write_output_step();
+    void put_all_nodes_in_nodeset();
 };
 
 inline unsigned GameofLife::get_num_elems_on_proc() const

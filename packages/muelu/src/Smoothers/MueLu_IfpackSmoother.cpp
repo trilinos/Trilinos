@@ -253,7 +253,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == -1.0, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics1) << description() << std::endl;
   }
 
   template <class Node>

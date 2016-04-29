@@ -17,6 +17,7 @@
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommBuffer
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "BucketTester.hpp"  // for BucketTester
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 namespace stk { namespace mesh { class Part; } }
 
@@ -261,7 +262,7 @@ void add_side_to_shared_entities(stk::mesh::Entity side, std::vector<stk::mesh::
 stk::mesh::Entity create_side_and_add_to_shared_entity_list(stk::mesh::Entity element, stk::mesh::EntityRank side_rank, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
         stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id, stk::mesh::Part& root_topo_part)
 {
-    stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), side_rank, root_topo_part);
+    stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulkData, element, nodes, shared_entity_other_proc.global_key.id(), side_rank, root_topo_part);
     ThrowRequireWithSierraHelpMsg(bulkData.is_valid(side));
     add_side_to_shared_entities(side, shared_entities_this_proc, shared_entity_other_proc, other_proc_id);
     return side;

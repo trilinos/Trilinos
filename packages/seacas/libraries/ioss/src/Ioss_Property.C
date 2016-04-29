@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,134 +32,138 @@
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_Property.h>
 #include <Ioss_Utils.h>
-#include <stddef.h>
 #include <ostream>
+#include <stddef.h>
 #include <string>
 
 namespace {
   std::string type_string(Ioss::Property::BasicType type)
   {
     switch (type) {
-    case Ioss::Property::INVALID:
-      return std::string("invalid");
-    case Ioss::Property::REAL:
-      return std::string("real");
-    case Ioss::Property::INTEGER:
-      return std::string("integer");
-    case Ioss::Property::POINTER:
-      return std::string("pointer");
-    case Ioss::Property::STRING:
-      return std::string("string");
-    default:
-      return std::string("internal error");
+    case Ioss::Property::INVALID: return std::string("invalid");
+    case Ioss::Property::REAL: return std::string("real");
+    case Ioss::Property::INTEGER: return std::string("integer");
+    case Ioss::Property::POINTER: return std::string("pointer");
+    case Ioss::Property::STRING: return std::string("string");
+    default: return std::string("internal error");
     }
   }
-  
+
   void error_message(const Ioss::Property &property, const std::string &requested_type)
   {
     std::ostringstream errmsg;
     errmsg << "ERROR: For property named '" << property.get_name()
-	   << "', code requested value of type '" << requested_type
-	   << "', but property type is '" << type_string(property.get_type())
-	   << "'. Types must match\n";
+           << "', code requested value of type '" << requested_type << "', but property type is '"
+           << type_string(property.get_type()) << "'. Types must match\n";
     IOSS_ERROR(errmsg);
   }
+} // namespace
+
+Ioss::Property::Property()
+    : name_(""), type_(INVALID), storage_(UNKNOWN_VAR_TYPE), isImplicit_(false)
+{
+  data_.pval = nullptr;
 }
 
-Ioss::Property::Property() :
-  name_(""), type_(INVALID), storage_(UNKNOWN_VAR_TYPE), isImplicit_(false)
-{ data_.pval = nullptr; }
+Ioss::Property::Property(std::string name, const BasicType type, const VariableType storage,
+                         void *data, bool is_it_implicit)
+    : name_(std::move(name)), type_(type), storage_(storage), isImplicit_(is_it_implicit)
+{
+  data_.pval = data;
+}
 
-Ioss::Property::Property(std::string name,
-			 const BasicType type,
-			 const VariableType storage,
-			 void *data, bool is_it_implicit) :
-  name_(std::move(name)), type_(type), storage_(storage), isImplicit_(is_it_implicit)
-{ data_.pval = data; }
+Ioss::Property::Property(std::string name, int value, bool is_it_implicit)
+    : name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
+{
+  data_.ival = value;
+}
 
-Ioss::Property::Property(std::string name, int value,
-			     bool is_it_implicit) :
-  name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
-{ data_.ival = value; }
+Ioss::Property::Property(std::string name, int64_t value, bool is_it_implicit)
+    : name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
+{
+  data_.ival = value;
+}
 
-Ioss::Property::Property(std::string name, int64_t  value,
-			     bool is_it_implicit) :
-  name_(std::move(name)), type_(INTEGER), storage_(SCALAR), isImplicit_(is_it_implicit)
-{ data_.ival = value; }
+Ioss::Property::Property(std::string name, double value, bool is_it_implicit)
+    : name_(std::move(name)), type_(REAL), storage_(SCALAR), isImplicit_(is_it_implicit)
+{
+  data_.rval = value;
+}
 
-Ioss::Property::Property(std::string name, double   value,
-			     bool is_it_implicit) :
-  name_(std::move(name)), type_(REAL), storage_(SCALAR), isImplicit_(is_it_implicit)
-{ data_.rval = value; }
+Ioss::Property::Property(std::string name, const std::string &value, bool is_it_implicit)
+    : name_(std::move(name)), type_(STRING), storage_(SCALAR), isImplicit_(is_it_implicit)
+{
+  data_.sval = new std::string(value);
+}
 
-Ioss::Property::Property(std::string name, const std::string &value,
-			     bool is_it_implicit) :
-  name_(std::move(name)), type_(STRING), storage_(SCALAR), isImplicit_(is_it_implicit)
-{ data_.sval = new std::string(value); }
-
-Ioss::Property::Property(std::string name, void *value,
-			 bool is_it_implicit) :
-  name_(std::move(name)), type_(POINTER), storage_(SCALAR), isImplicit_(is_it_implicit)
-{ data_.pval = value; }
+Ioss::Property::Property(std::string name, void *value, bool is_it_implicit)
+    : name_(std::move(name)), type_(POINTER), storage_(SCALAR), isImplicit_(is_it_implicit)
+{
+  data_.pval = value;
+}
 
 // To set implicit property
-Ioss::Property::Property(const Ioss::GroupingEntity* ge,
-			     std::string name, const BasicType type) :
-  name_(std::move(name)), type_(type), storage_(SCALAR), isImplicit_(true)
-{ data_.ge = ge; }
-
-Ioss::Property::Property(const Ioss::Property& from)
+Ioss::Property::Property(const Ioss::GroupingEntity *ge, std::string name, const BasicType type)
+    : name_(std::move(name)), type_(type), storage_(SCALAR), isImplicit_(true)
 {
-  name_ = from.name_;
-  type_ = from.type_;
-  storage_ = from.storage_;
+  data_.ge = ge;
+}
+
+Ioss::Property::Property(const Ioss::Property &from)
+{
+  name_       = from.name_;
+  type_       = from.type_;
+  storage_    = from.storage_;
   isImplicit_ = from.isImplicit_;
   if (!isImplicit_ && type_ == STRING) {
     data_.sval = new std::string(*(from.data_.sval));
-  } else {
+  }
+  else {
     data_ = from.data_;
-}
+  }
 }
 
 Ioss::Property::~Property()
-{ if (!isImplicit_ && type_ == STRING) { delete data_.sval; 
-}}
+{
+  if (!isImplicit_ && type_ == STRING) {
+    delete data_.sval;
+  }
+}
 
-
-std::string Ioss::Property::get_string()  const
+std::string Ioss::Property::get_string() const
 {
   std::string value;
-  bool valid = get_value(&value);
+  bool        valid = get_value(&value);
   if (!valid) {
     error_message(*this, "string");
   }
   return value;
 }
 
-int64_t Ioss::Property::get_int()     const
+int64_t Ioss::Property::get_int() const
 {
   int64_t value;
-  bool valid = get_value(&value);
+  bool    valid = get_value(&value);
   if (!valid) {
     error_message(*this, "int");
   }
   return value;
 }
 
-double   Ioss::Property::get_real()    const
+double Ioss::Property::get_real() const
 {
   double value;
-  bool valid = get_value(&value);
+  bool   valid = get_value(&value);
   if (!valid) {
     error_message(*this, "real");
   }
   return value;
 }
 
-void*  Ioss::Property::get_pointer() const
+void *Ioss::Property::get_pointer() const
 {
-  void* value = nullptr;
-  bool valid = get_value(value);
+  void *value = nullptr;
+  bool  valid = get_value(value);
   if (!valid) {
     error_message(*this, "pointer");
   }
@@ -174,10 +178,11 @@ bool Ioss::Property::get_value(int64_t *value) const
   }
   if (is_explicit()) {
     *value = data_.ival;
-  } else {
-    const Ioss::GroupingEntity* ge = data_.ge;
-    const Ioss::Property implicit = ge->get_implicit_property(name_);
-    valid_request = implicit.get_value(value);
+  }
+  else {
+    const Ioss::GroupingEntity *ge       = data_.ge;
+    const Ioss::Property        implicit = ge->get_implicit_property(name_);
+    valid_request                        = implicit.get_value(value);
   }
   return valid_request;
 }
@@ -190,14 +195,14 @@ bool Ioss::Property::get_value(double *value) const
   }
   if (is_explicit()) {
     *value = data_.rval;
-  } else {
-    const Ioss::GroupingEntity* ge = data_.ge;
-    const Ioss::Property implicit = ge->get_implicit_property(name_);
-    valid_request = implicit.get_value(value);
+  }
+  else {
+    const Ioss::GroupingEntity *ge       = data_.ge;
+    const Ioss::Property        implicit = ge->get_implicit_property(name_);
+    valid_request                        = implicit.get_value(value);
   }
   return valid_request;
 }
-
 
 bool Ioss::Property::get_value(std::string *value) const
 {
@@ -207,15 +212,16 @@ bool Ioss::Property::get_value(std::string *value) const
   }
   if (is_explicit()) {
     *value = *(data_.sval);
-  } else {
-    const Ioss::GroupingEntity* ge = data_.ge;
-    const Ioss::Property implicit = ge->get_implicit_property(name_);
-    valid_request = implicit.get_value(value);
+  }
+  else {
+    const Ioss::GroupingEntity *ge       = data_.ge;
+    const Ioss::Property        implicit = ge->get_implicit_property(name_);
+    valid_request                        = implicit.get_value(value);
   }
   return valid_request;
 }
 
-bool Ioss::Property::get_value(void*&   value) const
+bool Ioss::Property::get_value(void *&value) const
 {
   bool valid_request = false;
   if (type_ == POINTER) {
@@ -223,10 +229,11 @@ bool Ioss::Property::get_value(void*&   value) const
   }
   if (is_explicit()) {
     value = data_.pval;
-  } else {
-    const Ioss::GroupingEntity* ge = data_.ge;
-    const Ioss::Property implicit = ge->get_implicit_property(name_);
-    valid_request = implicit.get_value(value);
+  }
+  else {
+    const Ioss::GroupingEntity *ge       = data_.ge;
+    const Ioss::Property        implicit = ge->get_implicit_property(name_);
+    valid_request                        = implicit.get_value(value);
   }
   return valid_request;
 }

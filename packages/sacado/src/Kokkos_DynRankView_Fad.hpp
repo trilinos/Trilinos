@@ -69,14 +69,15 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
                            , const size_t N7 )
   {
     return
-      (   (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0 && N0 == 0) ? 0
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0) ? 0
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0) ? 1
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0) ? 2
-      : ( (N6 == 0 && N5 && N4 == 0) ? 3
-      : ( (N6 == 0 && N5 == 0) ? 4
-      : ( (N6 == 0) ? 5
-      : 6 ) ) ) ) ) ) );
+      (   (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0 && N0 == 0) ? 0
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0) ? 0
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0) ? 1
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0) ? 2
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0) ? 3
+      : ( (N7 == 0 && N6 == 0 && N5 == 0) ? 4
+      : ( (N7 == 0 && N6 == 0) ? 5
+      : ( (N7 == 0) ? 6
+      : 7 ) ) ) ) ) ) ) );
   }
 
   // Compute the rank of the view from the nonzero layout arguments.
@@ -147,5 +148,7 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 }
 
 #endif
+
+#include "Kokkos_DynRankView.hpp"
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

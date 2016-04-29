@@ -183,8 +183,8 @@ namespace Intrepid2 {
 
   }
 
-  template<typename ExecSpaceType>
-  Basis_HCURL_HEX_I1_FEM<ExecSpaceType>::
+  template<typename SpT>
+  Basis_HCURL_HEX_I1_FEM<SpT>::
   Basis_HCURL_HEX_I1_FEM() {
     this->basisCardinality_  = 12;
     this->basisDegree_       = 1;
@@ -201,21 +201,21 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-      const ordinal_type tags[]  = { 1, 0, 0, 1,
-                                     1, 1, 0, 1,
-                                     1, 2, 0, 1,
-                                     1, 3, 0, 1,
-                                     1, 4, 0, 1,
-                                     1, 5, 0, 1,
-                                     1, 6, 0, 1,
-                                     1, 7, 0, 1,
-                                     1, 8, 0, 1,
-                                     1, 9, 0, 1,
-                                     1, 10, 0, 1,
-                                     1, 11, 0, 1 };
+      ordinal_type tags[48]  = { 1, 0, 0, 1,
+                                 1, 1, 0, 1,
+                                 1, 2, 0, 1,
+                                 1, 3, 0, 1,
+                                 1, 4, 0, 1,
+                                 1, 5, 0, 1,
+                                 1, 6, 0, 1,
+                                 1, 7, 0, 1,
+                                 1, 8, 0, 1,
+                                 1, 9, 0, 1,
+                                 1, 10, 0, 1,
+                                 1, 11, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type*,ExecSpaceType> tagView(tags, 32);
+      Kokkos::View<ordinal_type[48],SpT> tagView(tags);
       
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -230,16 +230,14 @@ namespace Intrepid2 {
   }
 
 
-  template<typename ExecSpaceType>
+  template<typename SpT>
   template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties,
-           typename scratchValueType,     class ...scratchProperties>
+           typename inputPointValueType,  class ...inputPointProperties>
   void
-  Basis_HCURL_HEX_I1_FEM<ExecSpaceType>::
+  Basis_HCURL_HEX_I1_FEM<SpT>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const Kokkos::DynRankView<scratchValueType,    scratchProperties...>     scratch,
-             const EOperator operatorType = OPERATOR_VALUE ) const {
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     Intrepid2::getValues_HCURL_Args(outputValues,
                                     inputPoints,
@@ -248,8 +246,9 @@ namespace Intrepid2 {
                                     this->getCardinality() );
 #endif
   
-    typedef Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValueViewType;
-    typedef Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPointViewType;
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     // Number of evaluation points = dim 0 of inputPoints
     const auto loopSize = inputPoints.dimension(0);
@@ -262,7 +261,7 @@ namespace Intrepid2 {
       break;
     }      
     case OPERATOR_CURL: {
-      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_VALUE> FunctorType;
+      typedef Functor<outputValueViewType, inputPointViewType, OPERATOR_CURL> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
     }

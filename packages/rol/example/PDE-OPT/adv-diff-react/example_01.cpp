@@ -68,6 +68,23 @@
 
 typedef double RealT;
 
+// Used for elementwise is-greather-than?
+template<class Real>
+class IsGreaterThan : public ROL::Elementwise::UnaryFunction<Real> {
+private:
+  Real num_;
+public:
+  IsGreaterThan(const Real &num) : num_(num) {}
+  Real apply(const Real &x) const {
+    if (x > num_) {
+      return static_cast<Real>(1);
+    }
+    else {
+      return static_cast<Real>(0);
+    }
+  }
+}; // class IsGreaterThan
+
 int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -99,17 +116,23 @@ int main(int argc, char *argv[]) {
     /*** Initialize main data structure. ***/
     Teuchos::RCP<PoissonData<RealT> > data = Teuchos::rcp(new PoissonData<RealT>(comm, parlist, outStream));
 
+    // Get random weights parameter.
+    RealT fnzw = parlist->sublist("Problem").get("Fraction of nonzero weights", 0.5);
+    fnzw = 1.0 - 2.0*fnzw;
+
     /*** Build vectors and dress them up as ROL vectors. ***/
     Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
     Teuchos::RCP<Tpetra::MultiVector<> > u_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > w_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > z_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > c_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_c, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > du_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > dz_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     // Set all values to 1 in u, z and c.
     u_rcp->putScalar(1.0);
+    w_rcp->randomize();
     z_rcp->putScalar(1.0);
     c_rcp->putScalar(1.0);
     // Randomize d vectors.
@@ -117,6 +140,7 @@ int main(int argc, char *argv[]) {
     dz_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
     Teuchos::RCP<ROL::Vector<RealT> > up = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > wp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(w_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(z_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > cp = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(c_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dup = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
@@ -126,8 +150,9 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
+    wp->applyUnary(IsGreaterThan<RealT>(fnzw));
     Teuchos::RCP<Objective_PDEOPT_Poisson<RealT> > obj =
-      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, parlist));
+      Teuchos::rcp(new Objective_PDEOPT_Poisson<RealT>(data, w_rcp, parlist));
     Teuchos::RCP<EqualityConstraint_PDEOPT_Poisson<RealT> > con =
       Teuchos::rcp(new EqualityConstraint_PDEOPT_Poisson<RealT>(data, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced =

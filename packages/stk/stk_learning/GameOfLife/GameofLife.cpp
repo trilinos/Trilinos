@@ -20,6 +20,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
+#include "stk_unit_test_utils/ioUtils.hpp"
 /*
  * GameofLife
  */
@@ -49,6 +50,41 @@ void GameofLife::run_game_of_life(int numSteps)
         //std::cerr << time << std::endl;
         run_step_of_game_of_life();
     }
+}
+
+void GameofLife::put_all_nodes_in_nodeset()
+{
+    stk::mesh::EntityVector nodes;
+    stk::mesh::get_entities(m_bulkData, stk::topology::NODE_RANK, nodes);
+    stk::mesh::Part& nodeset1Part = m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
+    stk::io::put_io_part_attribute(nodeset1Part);
+    for(stk::mesh::Entity node : nodes)
+        m_bulkData.change_entity_parts(node, stk::mesh::PartVector {&nodeset1Part});
+}
+
+void GameofLife::write_mesh()
+{
+
+    m_bulkData.modification_begin();
+
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
+    for(stk::mesh::Entity element : elements)
+    {
+        if ( *stk::mesh::field_data(m_lifeField, element) != 1)
+        {
+            stk::mesh::EntityVector nodes(m_bulkData.begin_nodes(element), m_bulkData.end_nodes(element));
+            m_bulkData.destroy_entity(element);
+            for(unsigned j=0; j<nodes.size(); j++)
+                m_bulkData.destroy_entity(nodes[j]);
+        }
+    }
+
+    put_all_nodes_in_nodeset();
+
+    m_bulkData.modification_end();
+
+    stk::unit_test_util::write_mesh_using_stk_io("pic.g", m_bulkData, m_bulkData.parallel());
 }
 
 //protected

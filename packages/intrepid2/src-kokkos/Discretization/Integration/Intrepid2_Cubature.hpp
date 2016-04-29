@@ -122,8 +122,8 @@ namespace Intrepid2 {
   class Cubature {
   public:
 
-    typedef Kokkos::DynRankView<pointValueType,ExecSpaceType>   pointViewType;
-    typedef Kokkos::DynRankView<weightValueType,ExecSpaceType>  weightViewType;
+    typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>   pointViewType;
+    typedef Kokkos::DynRankView<weightValueType,Kokkos::LayoutStride,ExecSpaceType>  weightViewType;
 
     /** \brief Returns cubature points and weights
         (return arrays must be pre-sized/pre-allocated).
@@ -185,7 +185,7 @@ namespace Intrepid2 {
     }
 
     Cubature() = default;
-    virtual~Cubature() = default;
+    virtual ~Cubature() {}
 
   };
 

@@ -50,6 +50,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_unit_test_utils/MeshFixture.hpp>
 
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 
@@ -925,7 +926,109 @@ TEST(stkTopologyFunctions, permutation_consistency_check_2d)
     }
 }
 
+class SuperTopologies : public stk::unit_test_util::MeshFixture
+{
+protected:
+    SuperTopologies()
+    {
+    }
 
+    void run_test()
+    {
+        stk::topology super8 = stk::create_superelement_topology(8);
+        stk::topology superface4 = stk::create_superface_topology(4);
+        create_mesh(super8, superface4);
+        expect_entity_has_topology(stk::topology::ELEM_RANK, elemIDsPerProc[0], super8);
+        expect_entity_has_topology(stk::topology::ELEM_RANK, elemIDsPerProc[1], super8);
+        expect_entity_has_topology(stk::topology::FACE_RANK, sharedFaceId, superface4);
+        expect_elem_to_face_connections(superface4, 0);
+        expect_elem_to_face_connections(superface4, 1);
+    }
+
+    void expect_entity_has_topology(stk::mesh::EntityRank rank, stk::mesh::EntityId id, stk::topology topo)
+    {
+        stk::mesh::Entity entity = get_bulk().get_entity(rank, id);
+        EXPECT_EQ(topo, get_bulk().bucket(entity).topology());
+        EXPECT_EQ(topo.num_nodes(), get_bulk().num_nodes(entity));
+    }
+
+    void expect_elem_to_face_connections(stk::topology superface4, int elemIndex)
+    {
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemIDsPerProc[elemIndex]);
+        unsigned numFaces = get_bulk().num_faces(elem);
+        EXPECT_EQ(1u, numFaces);
+        const stk::mesh::Entity face = *get_bulk().begin_faces(elem);
+        EXPECT_EQ(superface4, get_bulk().bucket(face).topology());
+        EXPECT_EQ(superface4.num_nodes(), get_bulk().num_nodes(face));
+        const stk::mesh::ConnectivityOrdinal elemSide = *get_bulk().begin_face_ordinals(elem);
+        EXPECT_EQ(faceOrdinalPerProc[elemIndex], elemSide);
+        const stk::mesh::Permutation perm = *get_bulk().begin_face_permutations(elem);
+        EXPECT_EQ(permPerProc[elemIndex], perm);
+    }
+    void create_mesh(stk::topology super8, stk::topology superface4)
+    {
+        setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+        int procId = get_bulk().parallel_rank();
+        stk::mesh::PartVector parts = {&get_meta().declare_part_with_topology("super8part",super8)};
+        stk::mesh::PartVector faceParts = {&get_meta().declare_part_with_topology("superface4part",superface4)};
+
+        get_bulk().modification_begin();
+        stk::mesh::declare_element(get_bulk(), parts, elemIDsPerProc[procId], nodeIDsPerProc[procId]);
+        add_shared_nodes();
+        create_faces(superface4, faceParts);
+        get_bulk().modification_end();
+    }
+
+    void create_faces(stk::topology superface4, const stk::mesh::PartVector& parts)
+    {
+        stk::mesh::Entity face = get_bulk().declare_entity(stk::topology::FACE_RANK, sharedFaceId, parts);
+        for(unsigned i=0; i<sharedNodeIds.size(); ++i) {
+            stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, sharedNodeIds[i]);
+            get_bulk().declare_relation(face, node, i);
+        }
+        int procId = get_bulk().parallel_rank();
+
+        stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemIDsPerProc[procId]);
+        get_bulk().declare_relation(elem, face, faceOrdinalPerProc[procId], permPerProc[procId]);
+    }
+
+    void add_shared_nodes()
+    {
+        int otherProc = 1-get_bulk().parallel_rank();
+        for(stk::mesh::EntityId nodeId : sharedNodeIds) {
+            stk::mesh::Entity node = get_bulk().get_entity(stk::topology::NODE_RANK, nodeId);
+            get_bulk().add_node_sharing(node, otherProc);
+        }
+
+    }
+
+    static const int numProcs = 2;
+    const stk::mesh::EntityId elemIDsPerProc[numProcs] = {1, 2};
+    const stk::mesh::EntityIdVector nodeIDsPerProc[numProcs] = { {1, 2, 3, 4, 5, 6, 7, 8}, {5, 6, 7, 8, 9, 10, 11, 12} };
+    const stk::mesh::EntityIdVector sharedNodeIds = {5, 6, 7, 8};
+    const stk::mesh::EntityId sharedFaceId = 1;
+    const stk::mesh::ConnectivityOrdinal faceOrdinalPerProc[numProcs] = {stk::mesh::ConnectivityOrdinal(4), stk::mesh::ConnectivityOrdinal(5)};
+    const stk::mesh::Permutation permPerProc[numProcs] = {stk::mesh::Permutation(0), stk::mesh::Permutation(4)};
+};
+
+TEST_F(SuperTopologies, twoElemsTwoProcs)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == numProcs) {
+        run_test();
+    }
+}
+
+TEST_F(SuperTopologies, twoElemsTwoProcsElemGraph)
+{
+    if (stk::parallel_machine_size(MPI_COMM_WORLD) == numProcs) {
+        stk::topology super8 = stk::create_superelement_topology(8);
+        stk::topology superface4 = stk::create_superface_topology(4);
+        create_mesh(super8, superface4);
+        stk::mesh::ElemElemGraph elemGraph(get_bulk());
+        EXPECT_EQ(0u, elemGraph.num_edges());
+        EXPECT_EQ(0u, elemGraph.num_parallel_edges());
+    }
+}
 
 }
 
