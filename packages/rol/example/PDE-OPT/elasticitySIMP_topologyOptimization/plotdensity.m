@@ -1,9 +1,8 @@
-data_obj = importdata('density.txt', ' ', 2);  %% we need to skip the first two lines
+function plotdensity(filename, xsize, ysize)
+
+data_obj = importdata(filename, ' ', 2);  %% we need to skip the first two lines
 density = data_obj.data;
 nodes = load('nodes.txt');
-
-xsize = round(sqrt(size(density, 1)));
-ysize = xsize;
 
 density = reshape(density, xsize, ysize);
 
@@ -35,9 +34,11 @@ ylim([0,ymax])
 colorbar
 %view(2)
 axis('equal','tight');
-colormap('bone')
+colormap(flipud(bone))
 
-figure
-imagesc(density.^3);
-colorbar
-colormap('bone')
+%figure
+%imagesc(density.^3);
+%colorbar
+%colormap('bone')
+
+end

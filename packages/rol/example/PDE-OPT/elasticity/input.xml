@@ -3,9 +3,12 @@
   <ParameterList name="Problem">
     <Parameter name="Penalty parameter" type="double"  value="1e-8" />
   </ParameterList>
+
+  <ParameterList name="PDE FEM">
+    <Parameter name="Order of FE Discretization" type="int" value="1" />
+  </ParameterList>
   
   <ParameterList name="Elasticity">
-    <Parameter name="Order of FE discretization"  type="int"     value="1"    />
     <Parameter name="Plane Strain"       type="bool"    value="false"/>
     <Parameter name="Young's Modulus"          type="double"  value="1.0"  />
     <Parameter name="Poisson Ratio"          type="double"  value="0.3"  />

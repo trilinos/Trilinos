@@ -69,6 +69,7 @@
 #include <algorithm>
 
 #include "data.hpp"
+#include "filter.hpp"
 #include "objective.hpp"
 #include "constraint.hpp"
 #include "volume_constraint.hpp"
@@ -110,6 +111,9 @@ int main(int argc, char *argv[]) {
     /*** Initialize main data structure. ***/
     Teuchos::RCP<ElasticitySIMPOperators<RealT> > data
       = Teuchos::rcp(new ElasticitySIMPOperators<RealT>(comm, parlist, outStream));
+    /*** Initialize density filter. ***/
+    Teuchos::RCP<DensityFilter<RealT> > filter
+      = Teuchos::rcp(new DensityFilter<RealT>(comm, parlist, outStream));
     /*** Build vectors and dress them up as ROL vectors. ***/
     Teuchos::RCP<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
     Teuchos::RCP<const Tpetra::Map<> > vecmap_z = data->getCellMap();
@@ -133,12 +137,14 @@ int main(int argc, char *argv[]) {
     RealT one(1), two(2);
     (*vscale_rcp)[0] = one/std::pow(W*H*(one-volFrac),two);
     // Set Scaling vector for density
-    bool useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
-    Teuchos::RCP<Tpetra::MultiVector<> > cellMeasures = data->getCellAreas();
+    bool  useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
+    RealT densityScaling = parlist->sublist("Problem").get<RealT>("Density Scaling");
+    Teuchos::RCP<Tpetra::MultiVector<> > scaleVec = createTpetraVector(vecmap_z);
+    scaleVec->putScalar(densityScaling);
     if ( !useZscale ) {
-      cellMeasures->putScalar(one);
+      scaleVec->putScalar(one);
     }
-    Teuchos::RCP<const Tpetra::Vector<> > zscale_rcp = cellMeasures->getVector(0);
+    Teuchos::RCP<const Tpetra::Vector<> > zscale_rcp = scaleVec->getVector(0);
 
    //test     
    /*data->updateMaterialDensity (z_rcp);
@@ -182,9 +188,9 @@ int main(int argc, char *argv[]) {
 
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj
-       = Teuchos::rcp(new Objective_PDEOPT_ElasticitySIMP<RealT>(data, parlist));
+       = Teuchos::rcp(new Objective_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
     Teuchos::RCP<ROL::EqualityConstraint_SimOpt<RealT> > con
-       = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, parlist));
+       = Teuchos::rcp(new EqualityConstraint_PDEOPT_ElasticitySIMP<RealT>(data, filter, parlist));
     Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
        = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj, con, up, dwp));
     Teuchos::RCP<ROL::EqualityConstraint<RealT> > volcon
@@ -194,8 +200,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > lop = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(lo_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > hip = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(hi_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > lop = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(lo_rcp, zscale_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > hip = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(hi_rcp, zscale_rcp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
 
     /*** Check functional interface. ***/
@@ -227,6 +233,20 @@ int main(int argc, char *argv[]) {
     //ROL::Algorithm<RealT> algo("Moreau-Yosida Penalty",*parlist,false);
     //algo.run(*zp,*vc_lamp,MYpen,*volcon,*bnd,true,*outStream);
 
+    // new filter, for testing
+    /*parlist->sublist("Density Filter").set("Enable", true);
+    Teuchos::RCP<DensityFilter<RealT> > testfilter
+      = Teuchos::rcp(new DensityFilter<RealT>(comm, parlist, outStream));
+    Teuchos::RCP<Tpetra::MultiVector<> > z_filtered_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(*z_rcp, Teuchos::Copy));
+    testfilter->apply(z_filtered_rcp, z_rcp);
+    Teuchos::RCP<Tpetra::MultiVector<> > cm_rcp = data->getCellAreas();
+    Teuchos::RCP<Tpetra::MultiVector<> > icm_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(*cm_rcp, Teuchos::Copy));
+    Teuchos::RCP<Tpetra::MultiVector<> > zf_scaled_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(*z_rcp, Teuchos::Copy));
+    icm_rcp->reciprocal(*cm_rcp);
+    zf_scaled_rcp->elementWiseMultiply(1.0, *(icm_rcp->getVector(0)), *z_filtered_rcp, 0.0);
+    data->outputTpetraVector(zf_scaled_rcp, "density_filtered_scaled.txt");
+    data->outputTpetraVector(z_filtered_rcp, "density_filtered.txt");*/
+    
     data->outputTpetraVector(z_rcp, "density.txt");
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(zscale_rcp, "weights.txt");
