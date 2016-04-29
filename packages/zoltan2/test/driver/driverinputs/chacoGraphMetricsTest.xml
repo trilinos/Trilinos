@@ -64,8 +64,8 @@
 	  <Parameter name="upper" type="double" value="39.0"/>
 	</ParameterList>
 	<ParameterList name="global maximum">
-	  <Parameter name="lower" type="double" value="23.0"/>
-	  <Parameter name="upper" type="double" value="23.0"/>
+	  <Parameter name="lower" type="double" value="20.5"/>
+	  <Parameter name="upper" type="double" value="20.5"/>
 	</ParameterList>
       </ParameterList>
     </ParameterList>
