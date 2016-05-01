@@ -1074,7 +1074,7 @@ namespace Tpetra {
     //! Accessors for the Teuchos::Comm and Kokkos Node objects.
     //@{
 
-    //! Get this Map's Comm object.
+    //! Get this Map's communicator, as a Teuchos::Comm.
     Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
 
     //! Get this Map's Node object.
@@ -1084,14 +1084,34 @@ namespace Tpetra {
     //! Implementation of \c Teuchos::Describable
     //@{
 
-    //! Return a simple one-line description of this object.
+    //! Return a one-line description of this object.
     std::string description () const;
 
-    //! Print this object with the given verbosity level to the given Teuchos::FancyOStream.
+    /// \brief Describe this object in a human-readable way to the
+    ///   given output stream.
+    ///
+    /// You must call this method as a collective over all processes
+    /// in this object's communicator.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   may behave as a collective over the object's communicator.
+    ///
+    /// Teuchos::FancyOStream wraps std::ostream.  It adds features
+    /// like tab levels.  If you just want to wrap std::cout, try
+    /// this:
+    /// \code
+    /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+    /// \endcode
     void
     describe (Teuchos::FancyOStream &out,
-              const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+              const Teuchos::EVerbosityLevel verbLevel =
+                Teuchos::Describable::verbLevel_default) const;
     //@}
     //! Advanced methods
     //@{
