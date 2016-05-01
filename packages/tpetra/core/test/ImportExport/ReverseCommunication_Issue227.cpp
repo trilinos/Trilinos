@@ -68,6 +68,7 @@ TEUCHOS_STATIC_SETUP()
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, NT ) {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using std::endl;
 
   typedef Tpetra::Map<LO, GO, NT> Tpetra_Map;
   typedef Tpetra::Import<LO, GO, NT> Tpetra_Import;
@@ -106,8 +107,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
     rcp(new Tpetra_Map(INVALID, overlap_gids(), 0, comm, node));
 
   // create import and export objects
+
   Tpetra_Import importer(nonoverlap_map, overlap_map);
+  out << "Import:" << endl;
+  {
+    Teuchos::OSTab tab1 (out);
+    importer.describe (out, Teuchos::VERB_EXTREME);
+  }
   Tpetra_Export exporter(overlap_map, nonoverlap_map);
+  out << "Export:" << endl;
+  {
+    Teuchos::OSTab tab1 (out);
+    exporter.describe (out, Teuchos::VERB_EXTREME);
+  }
 
   // create vectors
   Tpetra_Vector nonoverlap_vector(nonoverlap_map);
