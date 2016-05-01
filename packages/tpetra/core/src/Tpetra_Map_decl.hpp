@@ -1192,6 +1192,13 @@ namespace Tpetra {
     template<class OutMapType, class InMapType>
     friend struct Details::MapCloner;
 
+    /// \brief Print the calling process' verbose describe()
+    ///   information to the returned string.
+    ///
+    /// This is an implementation detail of describe().
+    std::string
+    localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
+
     /// \brief Create this Map's Directory, if it hasn't been created already.
     ///
     /// This method must be called collectively over all processes in

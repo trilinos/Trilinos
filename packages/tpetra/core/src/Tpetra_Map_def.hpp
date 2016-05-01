@@ -49,6 +49,7 @@
 
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Details_FixedHashTable.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
 #include <stdexcept>
@@ -1416,92 +1417,126 @@ namespace Tpetra {
     return os.str ();
   }
 
+  /// \brief Print the calling process' verbose describe() information
+  ///   to the given output string.
+  ///
+  /// This is an implementation detail of describe().
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  localDescribeToString (const Teuchos::EVerbosityLevel vl) const
+  {
+    typedef LocalOrdinal LO;
+    using std::endl;
+
+    // This preserves current behavior of Map.
+    if (vl < Teuchos::VERB_HIGH) {
+      return std::string ();
+    }
+    auto outStringP = Teuchos::rcp (new std::ostringstream ());
+    Teuchos::RCP<Teuchos::FancyOStream> outp =
+      Teuchos::getFancyOStream (outStringP);
+    Teuchos::FancyOStream& out = *outp;
+
+    auto comm = this->getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+    out << "Process " << myRank << " of " << numProcs << ":" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    const LO numEnt = static_cast<LO> (this->getNodeNumElements ());
+    out << "My number of entries: " << numEnt << endl
+        << "My minimum global index: " << this->getMinGlobalIndex () << endl
+        << "My maximum global index: " << this->getMaxGlobalIndex () << endl;
+
+    if (vl == Teuchos::VERB_EXTREME) {
+      out << "My global indices: [";
+      const LO minLclInd = this->getMinLocalIndex ();
+      for (LO k = 0; k < numEnt; ++k) {
+        out << minLclInd + this->getGlobalElement (k);
+        if (k + 1 < numEnt) {
+          out << ", ";
+        }
+      }
+      out << "]" << endl;
+    }
+
+    out.flush (); // make sure the ostringstream got everything
+    return outStringP->str ();
+  }
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
-    using std::endl;
-    using std::setw;
-    using Teuchos::ArrayView;
-    using Teuchos::as;
-    using Teuchos::OSTab;
-    using Teuchos::toString;
     using Teuchos::TypeNameTraits;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
-    using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
-    using Teuchos::VERB_EXTREME;
-    typedef typename ArrayView<const GlobalOrdinal>::size_type size_type;
-
-    const size_t nME = getNodeNumElements ();
-    ArrayView<const GlobalOrdinal> myEntries = getNodeElementList ();
-    const int myRank = comm_->getRank ();
-    const int numProcs = comm_->getSize ();
-
-    const Teuchos::EVerbosityLevel vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-
-    size_t width = 1;
-    for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
-      ++width;
-    }
-    width = std::max<size_t> (width, as<size_t> (12)) + 2;
-
-    // By convention, describe() always begins with a tab before printing.
-    OSTab tab0 (out);
+    using std::endl;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
     if (vl == VERB_NONE) {
-      // do nothing
+      return; // don't print anything
     }
-    else if (vl == VERB_LOW) {
-      if (myRank == 0) {
-        out << "Tpetra::Map:" << endl;
-        OSTab tab1 (out);
-        out << "LocalOrdinalType: " << TypeNameTraits<LocalOrdinal>::name () << endl
-            << "GlobalOrdinalType: " << TypeNameTraits<GlobalOrdinal>::name () << endl
-            << "NodeType: " << TypeNameTraits<Node>::name () << endl;
-        if (this->getObjectLabel () != "") {
-          out << "Label: \"" << this->getObjectLabel () << "\"" << endl;
-        }
-        out << "Global number of entries: " << getGlobalNumElements () << endl
-            << "Minimum global index: " << getMinAllGlobalIndex () << endl
-            << "Maximum global index: " << getMaxAllGlobalIndex () << endl
-            << "Index base: " << getIndexBase () << endl
-            << "Number of processes: " << getComm ()->getSize () << endl
-            << "Uniform: " << (isUniform () ? "true" : "false") << endl
-            << "Contiguous: " << (isContiguous () ? "true" : "false") << endl
-            << "Distributed: " << (isDistributed () ? "true" : "false") << endl;
+    // If this Map's Comm is null, then the Map does not participate
+    // in collective operations with the other processes.  In that
+    // case, it is not even legal to call this method.  The reasonable
+    // thing to do in that case is nothing.
+    auto comm = this->getComm ();
+    if (comm.is_null ()) {
+      return;
+    }
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
+    // Only Process 0 should touch the output stream, but this method
+    // in general may need to do communication.  Thus, we may need to
+    // preserve the current tab level across multiple "if (myRank ==
+    // 0) { ... }" inner scopes.  This is why we sometimes create
+    // OSTab instances by pointer, instead of by value.  We only need
+    // to create them by pointer if the tab level must persist through
+    // multiple inner scopes.
+    Teuchos::RCP<Teuchos::OSTab> tab0, tab1;
+
+    if (myRank == 0) {
+      // At every verbosity level but VERB_NONE, Process 0 prints.
+      // By convention, describe() always begins with a tab before
+      // printing.
+      tab0 = Teuchos::rcp (new Teuchos::OSTab (out));
+      out << "\"Tpetra::Map\":" << endl;
+      tab1 = Teuchos::rcp (new Teuchos::OSTab (out));
+      {
+        out << "Template parameters:" << endl;
+        Teuchos::OSTab tab2 (out);
+        out << "LocalOrdinal: " << TypeNameTraits<LO>::name () << endl
+            << "GlobalOrdinal: " << TypeNameTraits<GO>::name () << endl
+            << "Node: " << TypeNameTraits<Node>::name () << endl;
       }
+      const std::string label = this->getObjectLabel ();
+      if (label != "") {
+        out << "Label: \"" << label << "\"" << endl;
+      }
+      out << "Global number of entries: " << getGlobalNumElements () << endl
+          << "Minimum global index: " << getMinAllGlobalIndex () << endl
+          << "Maximum global index: " << getMaxAllGlobalIndex () << endl
+          << "Index base: " << getIndexBase () << endl
+          << "Number of processes: " << numProcs << endl
+          << "Uniform: " << (isUniform () ? "true" : "false") << endl
+          << "Contiguous: " << (isContiguous () ? "true" : "false") << endl
+          << "Distributed: " << (isDistributed () ? "true" : "false") << endl;
     }
 
-    if (vl >= VERB_HIGH) { // HIGH or EXTREME
-      for (int p = 0; p < numProcs; ++p) {
-        if (myRank == p) {
-          out << "Process " << myRank << ":" << endl;
-          OSTab tab1 (out);
-          out << "My number of entries: " << nME << endl
-              << "My minimum global index: " << getMinGlobalIndex () << endl
-              << "My maximum global index: " << getMaxGlobalIndex () << endl;
-          if (vl == VERB_EXTREME) {
-            out << "My global indices: [";
-            for (size_type k = 0; k < myEntries.size (); ++k) {
-              out << myEntries[k];
-              if (k + 1 < myEntries.size ()) {
-                out << ", ";
-              }
-            }
-            out << "]" << endl;
-          }
-          std::flush (out);
-        }
-        // Do a few global ops to give I/O a chance to complete
-        comm_->barrier ();
-        comm_->barrier ();
-        comm_->barrier ();
-      }
+    // This is collective over the Map's communicator.
+    if (vl >= VERB_HIGH) { // VERB_HIGH or VERB_EXTREME
+      const std::string lclStr = this->localDescribeToString (vl);
+      Tpetra::Details::gathervPrint (out, lclStr, *comm);
     }
   }
 
