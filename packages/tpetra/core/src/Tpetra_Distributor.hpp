@@ -752,17 +752,38 @@ namespace Tpetra {
       bytes_recvd = lastRoundBytesRecv_;
     }
 
-
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
 
-    //! A simple one-line description of this object.
+    //! Return a one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an \c FancyOStream.
-    void describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+    /// \brief Describe this object in a human-readable way to the
+    ///   given output stream.
+    ///
+    /// You must call this method as a collective over all processes
+    /// in this object's communicator.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   behaves as a collective over the object's communicator.
+    ///
+    /// Teuchos::FancyOStream wraps std::ostream.  It adds features
+    /// like tab levels.  If you just want to wrap std::cout, try
+    /// this:
+    /// \code
+    /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+    /// \endcode
+    void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel =
+                Teuchos::Describable::verbLevel_default) const;
     //@}
 
   private:
@@ -1019,6 +1040,13 @@ namespace Tpetra {
     //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
 
+
+    /// \brief Print the calling process' verbose describe()
+    ///   information to the given output string.
+    ///
+    /// This is an implementation detail of describe().
+    std::string
+    localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
   }; // class Distributor
 
 

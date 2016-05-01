@@ -148,6 +148,10 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -243,6 +247,10 @@ namespace {
       }
     }
 #endif
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -303,6 +311,10 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   1);
       }
     }
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -355,6 +367,10 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   1);
       }
     }
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -413,6 +429,10 @@ namespace {
         TEST_EQUALITY_CONST(lenTo[i],   3);
       }
     }
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -476,6 +496,10 @@ namespace {
       }
     }
 #endif
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
@@ -512,6 +536,10 @@ namespace {
     }
     Distributor distributor(comm);
     numRemoteIDs = distributor.createFromSends(exportImageIDs);
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     TEST_EQUALITY(numRemoteIDs, as<size_t>(numImages));
     // generate global random data set: each image sends 1 packet to each image
     // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
@@ -608,6 +636,10 @@ namespace {
     TEST_THROW( numRemoteIDs = distributor.createFromSends(exportImageIDs), std::runtime_error );
 #else
     numRemoteIDs = distributor.createFromSends(exportImageIDs);
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     TEST_EQUALITY(numRemoteIDs, as<size_t>(2*numImages));
     // generate global random data set: each image sends 2 packets to each image
     // we need 2*numImages*numImages "unique" values (we don't want redundant data allowing false positives)
@@ -736,6 +768,10 @@ namespace {
     Array<int> exportImageIDs;
     Array<Ordinal> exportGIDs;
     distributor.createFromRecvs<Ordinal>(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
+
+    // Make sure that Distributor output doesn't cause a hang.
+    distributor.describe (out, Teuchos::VERB_EXTREME);
+
     TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case
     Array<Ordinal> expectedGIDs;
     for (int i=0; i < length; ++i) {
