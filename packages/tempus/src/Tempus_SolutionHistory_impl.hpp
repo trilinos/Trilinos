@@ -16,13 +16,13 @@ using Teuchos::ParameterList;
 
 namespace {
 
-  static std::string Invalid_name      = "Invalid";
-  static std::string KeepNewest_name   = "Keep Newest";
-  static std::string Undo_name         = "Undo";
-  static std::string Static_name       = "Static";
-  static std::string Unlimited_name    = "Unlimited";
-  static std::string Selection_name    = "History Policy";
-  static std::string Selection_default = KeepNewest_name;
+  static std::string Invalid_name    = "Invalid";
+  static std::string KeepNewest_name = "Keep Newest";
+  static std::string Undo_name       = "Undo";
+  static std::string Static_name     = "Static";
+  static std::string Unlimited_name  = "Unlimited";
+  static std::string Storage_name    = "Storage Type";
+  static std::string Storage_default = KeepNewest_name;
 
   static std::string StorageLimit_name    = "Storage Limit";
   static int         StorageLimit_default = 1;
@@ -45,7 +45,7 @@ namespace {
             Tempus::HISTORY_POLICY_UNDO,
             Tempus::HISTORY_POLICY_STATIC,
             Tempus::HISTORY_POLICY_UNLIMITED),
-          Selection_name));
+          Storage_name));
 
 } // namespace
 
@@ -346,7 +346,7 @@ void SolutionHistory<Scalar>::setParameterList(
   //setInterpolator(interpolator);
 
   HistoryPolicy policy_ = PolicyValidator->getIntegralValue(
-      *pList, Selection_name, Selection_default);
+      *pList, Storage_name, Storage_default);
 
   if (policy_ != HISTORY_POLICY_INVALID)
     historyPolicy = policy_;
@@ -368,7 +368,7 @@ RCP<const ParameterList> SolutionHistory<Scalar>::getValidParameters() const
     RCP<ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
-    pl->set(Selection_name, Selection_default,
+    pl->set(Storage_name, Storage_default,
       "History Policy sets the memory storage.  "
       "'Keep Newest' - will retain the single newest solution state.  "
       "'Undo' - will retain two solution states in order to do a single undo.  "

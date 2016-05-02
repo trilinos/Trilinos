@@ -14,34 +14,34 @@ using Teuchos::ParameterList;
 
 namespace {
 
-  static std::string timeMin_name    = "Minimum simulation time";
+  static std::string timeMin_name    = "Minimum Simulation Time";
   static double      timeMin_default = 0.0;
 
-  static std::string timeMax_name    = "Maximum simulation time";
-  static double      timeMax_default = 100.0;
+  static std::string timeMax_name    = "Maximum Simulation Time";
+  static double      timeMax_default = std::numeric_limits<double>::max();
 
-  static std::string dtMin_name    = "Minimum time step";
-  static double      dtMin_default = 0.0;
+  static std::string dtMin_name    = "Minimum Time Step";
+  static double      dtMin_default = std::numeric_limits<double>::epsilon();
 
-  static std::string dtMax_name    = "Maximum time step";
-  static double      dtMax_default = 100.0;
+  static std::string dtMax_name    = "Maximum Time Step";
+  static double      dtMax_default = std::numeric_limits<double>::max();
 
-  static std::string iStepMin_name    = "Minimum time step index";
+  static std::string iStepMin_name    = "Minimum Time Step Index";
   static int         iStepMin_default = 0;
 
-  static std::string iStepMax_name    = "Maximum time step index";
-  static int         iStepMax_default = 100;
+  static std::string iStepMax_name    = "Maximum Time Step Index";
+  static int         iStepMax_default = std::numeric_limits<int>::max();
 
-  static std::string errorMaxAbs_name    = "Maximum absolute error";
+  static std::string errorMaxAbs_name    = "Maximum Absolute Error";
   static double      errorMaxAbs_default = 1.0e-08;
 
-  static std::string errorMaxRel_name    = "Maximum relative error";
-  static double      errorMaxRel_default = 1.0;
+  static std::string errorMaxRel_name    = "Maximum Relative Error";
+  static double      errorMaxRel_default = 1.0e-08;
 
-  static std::string orderMin_name    = "Minimum time integration order";
+  static std::string orderMin_name    = "Minimum Time Integration Order";
   static int         orderMin_default = 1;
 
-  static std::string orderMax_name    = "Maximum time integration order";
+  static std::string orderMax_name    = "Maximum Time Integration Order";
   static int         orderMax_default = 4;
 
   static std::string Constant_name    = "Constant";
@@ -74,11 +74,11 @@ namespace {
   static int         outputIndexInterval_default = 100;
 
   static std::string nFailuresMax_name    =
-    "Maximum number of Stepper failures";
+    "Maximum Number of Stepper Failures";
   static int         nFailuresMax_default = 10.0;
   static std::string nConsecutiveFailuresMax_name    =
-    "Maximum number of consecutive Stepper failures";
-  static int         nConsecutiveFailuresMax_default = 5.0;
+    "Maximum Number of Consecutive Stepper Failures";
+  static int         nConsecutiveFailuresMax_default = 5;
 
 } // namespace
 

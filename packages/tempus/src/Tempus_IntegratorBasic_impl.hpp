@@ -8,25 +8,27 @@
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
-
 
 namespace {
 
   static std::string SolutionHistory_name     = "Solution History";
   static std::string TimeStepControl_name     = "Time Step Control";
 
-  static std::string initTime_name         = "Initial Time";
-  static double      initTime_default      = 0.0;
-  static std::string initTimeStep_name     = "Initial Time Step";
-  static double      initTimeStep_default  = 0.0;
-  static std::string initTimeIndex_name    = "Initial Time Index";
-  static int         initTimeIndex_default = 0;
-  static std::string initOrder_name        = "Initial Order";
-  static int         initOrder_default     = 1;
+  static std::string initTime_name          = "Initial Time";
+  static double      initTime_default       = 0.0;
+  static std::string initTimeIndex_name     = "Initial Time Index";
+  static int         initTimeIndex_default  = 0;
+  static std::string initTimeStep_name      = "Initial Time Step";
+  static double      initTimeStep_default   = std::numeric_limits<double>::epsilon();
+  static std::string initOrder_name         = "Initial Order";
+  static int         initOrder_default      = 1;
+  static std::string finalTime_name         = "Final Time";
+  static double      finalTime_default      = std::numeric_limits<double>::max();
+  static std::string finalTimeIndex_name    = "Final Time Index";
+  static int         finalTimeIndex_default = std::numeric_limits<int>::max();
 
 } // namespace
 
@@ -35,11 +37,9 @@ namespace Tempus {
 
 template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
-  RCP<ParameterList>                     pList_,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const RCP<Thyra::VectorBase<Scalar> >& x,
-  const RCP<Thyra::VectorBase<Scalar> >& xdot,
-  const RCP<Thyra::VectorBase<Scalar> >& xdotdot)
+  RCP<ParameterList>                              pList_,
+  const RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver)
 {
   // Create TimeStepControl before ParameterList so we can check
   // ParameterList ranges.
@@ -57,8 +57,8 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<SolutionStateMetaData<Scalar> > md =
                                    rcp(new SolutionStateMetaData<Scalar> ());
   md->time = pList->get<double>(initTime_name, initTime_default);
-  md->dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
   md->iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  md->dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
   md->order = pList->get<int>(initOrder_name, initOrder_default);
 
   // Create Stepper
@@ -67,7 +67,11 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList> s_pl = Teuchos::sublist(pList, s);
   stepper = sf->createStepper(s, s_pl, model);
 
-  // Create current solution state
+  // Create initial condition solution state
+  RCP<Thyra::VectorBase<Scalar> > x    = model->getNominalValues()->get_x();
+  RCP<Thyra::VectorBase<Scalar> > xdot = model->getNominalValues()->get_x_dot();
+  RCP<Thyra::VectorBase<Scalar> > xdotdot = model->getNominalValues()->get_x_dot_dot();
+  //RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
   RCP<SolutionState<Scalar> > currentState =
     rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
                                   stepper->getStepperState()));
@@ -171,14 +175,23 @@ void IntegratorBasic<Scalar>::setParameterList(
 
   Teuchos::readVerboseObjectSublist(&*pList,this);
 
-  Scalar time = pList->get<double>(initTime_name, initTime_default);
+  Scalar initTime = pList->get<double>(initTime_name, initTime_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (time < timeStepControl->timeMin || time > timeStepControl->timeMax ),
+    (initTime<timeStepControl->timeMin || initTime>timeStepControl->timeMax),
     std::out_of_range,
-    "Error - Time is out of range.\n"
+    "Error - Initial time is out of range.\n"
     << "    [timeMin, timeMax] = [" << timeStepControl->timeMin << ", "
                                     << timeStepControl->timeMax << "]\n"
-    << "    time = " << time << "\n");
+    << "    initTime = " << initTime << "\n");
+
+  int iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (iStep < timeStepControl->iStepMin || iStep > timeStepControl->iStepMax),
+    std::out_of_range,
+    "Error - Initial time index is out of range.\n"
+    << "    [iStepMin, iStepMax] = [" << timeStepControl->iStepMin << ", "
+                                      << timeStepControl->iStepMax << "]\n"
+    << "    iStep = " << iStep << "\n");
 
   Scalar dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -187,28 +200,38 @@ void IntegratorBasic<Scalar>::setParameterList(
   TEUCHOS_TEST_FOR_EXCEPTION(
     (dt < timeStepControl->dtMin || dt > timeStepControl->dtMax ),
     std::out_of_range,
-    "Error - Time step is out of range.\n"
+    "Error - Initial time step is out of range.\n"
     << "    [dtMin, dtMax] = [" << timeStepControl->dtMin << ", "
                                 << timeStepControl->dtMax << "]\n"
     << "    dt = " << dt << "\n");
-
-  int iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (iStep < timeStepControl->iStepMin || iStep > timeStepControl->iStepMax),
-    std::out_of_range,
-    "Error - Time step is out of range.\n"
-    << "    [iStepMin, iStepMax] = [" << timeStepControl->iStepMin << ", "
-                                      << timeStepControl->iStepMax << "]\n"
-    << "    iStep = " << iStep << "\n");
 
   int order = pList->get<int>(initOrder_name, initOrder_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
     (order < timeStepControl->orderMin || order > timeStepControl->orderMax),
     std::out_of_range,
-    "Error - Time step is out of range.\n"
+    "Error - Initial order is out of range.\n"
     << "    [orderMin, orderMax] = [" << timeStepControl->orderMin << ", "
                                       << timeStepControl->orderMax << "]\n"
     << "    order = " << order << "\n");
+
+  Scalar finalTime = pList->get<double>(finalTime_name, finalTime_default);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (finalTime<timeStepControl->timeMin || finalTime>timeStepControl->timeMax),
+    std::out_of_range,
+    "Error - Final time is out of range.\n"
+    << "    [timeMin, timeMax] = [" << timeStepControl->timeMin << ", "
+                                    << timeStepControl->timeMax << "]\n"
+    << "    finalTime = " << finalTime << "\n");
+
+  int fiStep = pList->get<int>(finalTimeIndex_name, finalTimeIndex_default);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (fiStep < timeStepControl->iStepMin || fiStep > timeStepControl->iStepMax),
+    std::out_of_range,
+    "Error - Final time index is out of range.\n"
+    << "    [iStepMin, iStepMax] = [" << timeStepControl->iStepMin << ", "
+                                      << timeStepControl->iStepMax << "]\n"
+    << "    iStep = " << fiStep << "\n");
+
 }
 
 
@@ -226,18 +249,31 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
     tmp << "Initial time.  Required to be in range ["
         << timeStepControl->timeMin << ", "<< timeStepControl->timeMax << "].";
     pl->set(initTime_name, initTime_default, tmp.str());
-    tmp.clear();
-    tmp << "Initial time step.  Required to be positive and in range ["
-        << timeStepControl->dtMin << ", "<< timeStepControl->dtMax << "].";
-    pl->set(initTimeStep_name, initTimeStep_default, tmp.str());
+
     tmp.clear();
     tmp << "Initial time index.  Required to be range ["
         << timeStepControl->iStepMin << ", "<< timeStepControl->iStepMax <<"].";
     pl->set(initTimeIndex_name, initTimeIndex_default, tmp.str());
+
+    tmp.clear();
+    tmp << "Initial time step.  Required to be positive and in range ["
+        << timeStepControl->dtMin << ", "<< timeStepControl->dtMax << "].";
+    pl->set(initTimeStep_name, initTimeStep_default, tmp.str());
+
     tmp.clear();
     tmp << "Initial order.  Required to be range ["
         << timeStepControl->orderMin << ", "<< timeStepControl->orderMax <<"].";
     pl->set(initOrder_name, initOrder_default, tmp.str());
+
+    tmp.clear();
+    tmp << "Final time.  Required to be in range ["
+        << timeStepControl->timeMin << ", "<< timeStepControl->timeMax << "].";
+    pl->set(finalTime_name, finalTime_default, tmp.str());
+
+    tmp.clear();
+    tmp << "Final time index.  Required to be range ["
+        << timeStepControl->iStepMin << ", "<< timeStepControl->iStepMax <<"].";
+    pl->set(finalTimeIndex_name, finalTimeIndex_default, tmp.str());
 
     pl->set( getStepperName(), getStepperDefault(),
       "'Stepper' sets the Stepper.\n"

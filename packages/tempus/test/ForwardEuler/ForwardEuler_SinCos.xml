@@ -1,0 +1,61 @@
+<ParameterList name="ForwardEuler_SinCos">
+
+  <ParameterList name="SinCosModel">
+    <Parameter name="Implicit model formulation" type="bool" value="false"/>
+    <Parameter name="Accept model parameters"    type="bool" value="false"/>
+    <Parameter name="Provide nominal values"     type="bool" value="true"/>
+    <Parameter name="Coeff a" type="double" value="0.0"/>
+    <Parameter name="Coeff f" type="double" value="1.0"/>
+    <Parameter name="Coeff L" type="double" value="1.0"/>
+    <Parameter name="IC x_0"  type="double" value="0.0"/>
+    <Parameter name="IC x_1"  type="double" value="1.0"/>
+    <Parameter name="IC t_0"  type="double" value="0.0"/>
+  </ParameterList>
+
+  <ParameterList name="Tempus">
+
+    <ParameterList name="Integrator">
+      <Parameter name="Initial Time"       type="double" value="0.0"/>
+      <Parameter name="Initial Time Index" type="int"    value="0"/>
+      <Parameter name="Initial Time Step"  type="double" value="0.1"/>
+      <Parameter name="Initial Order"      type="int"    value="1"/>
+      <Parameter name="Final Time"         type="double" value="1.0"/>
+      <Parameter name="Final Time Index"   type="int"    value="1000"/>
+
+      <ParameterList name="Solution History">
+        <Parameter name="Storage Type"  type="string" value="Keep Newest"/>
+        <Parameter name="Storage Limit" type="int"    value="1"/>
+      </ParameterList>
+
+      <ParameterList name="Time Step Control">
+        <Parameter name="Minimum Simulation Time" type="double" value="0.0"/>
+        <Parameter name="Maximum Simulation Time" type="double" value="1.0"/>
+        <Parameter name="Minimum Time Step"       type="double" value="0.001"/>
+        <Parameter name="Maximum Time Step"       type="double" value="0.1"/>
+        <Parameter name="Minimum Time Step Index" type="int"    value="0"/>
+        <Parameter name="Maximum Time Step Index" type="int"    value="1000"/>
+        <Parameter name="Maximum Absolute Error"  type="double" value="1.0e-8"/>
+        <Parameter name="Maximum Relative Error"  type="double" value="1.0e-8"/>
+        <Parameter name="Minimum Time Integration Order" type="int" value="1"/>
+        <Parameter name="Maximum Time Integration Order" type="int" value="1"/>
+        <Parameter name="Step Type"             type="string" value="Constant"/>
+        <Parameter name="Constant Time Step Size" type="double" value="0.1"/>
+        <Parameter name="Output Time List"        type="string" value=""/>
+        <Parameter name="Output Index List"       type="string" value=""/>
+        <Parameter name="Output Time Interval"    type="double" value="100.0"/>
+        <Parameter name="Output Index Interval"   type="int"    value="1"/>
+        <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
+        <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Stepper">
+    </ParameterList>
+
+  </ParameterList>
+
+  <ParameterList name="VerboseObject">
+    <Parameter name="Verbosity Level" type="string" value="high"/>
+  </ParameterList>
+
+</ParameterList>

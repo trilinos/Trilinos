@@ -7,6 +7,7 @@
 #include "Teuchos_ParameterList.hpp"
 // Tempus
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_NonlinearSolverBase.hpp"
 // Tempus
 #include "Tempus_Integrator.hpp"
 #include "Tempus_Stepper.hpp"
@@ -28,11 +29,10 @@ public:
   /** \brief Constructor with ParameterList, models, initial conditions
    *  and optional solvers. */
   IntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>                pList_,
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     x,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     xdot=Teuchos::null,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> >&     xdotdot=Teuchos::null );
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >&
+      solver=Teuchos::null);
 
   /// Destructor
   virtual ~IntegratorBasic() {}

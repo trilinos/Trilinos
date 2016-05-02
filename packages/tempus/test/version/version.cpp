@@ -1,7 +1,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include "Tempus_Version.hpp"
 
-namespace tempus_test {
+namespace Tempus_Test {
 
   TEUCHOS_UNIT_TEST(version, default)
   {
