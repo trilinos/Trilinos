@@ -139,17 +139,17 @@ namespace Intrepid2 {
 
       this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
       Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
-
-      // dofCoords on host and create its mirror view to device
-      Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace> 
-        dofCoords(basisCardinality_,basisCellTopology_.getDimension()); 
-      
-      dofCoords(0,0) = -1.0;
-      dofCoords(1,0) =  1.0;
-
-      this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
-      Kokkos::deep_copy(this->dofCoords_, dofCoords);
     }
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace> 
+      dofCoords(basisCardinality_,basisCellTopology_.getDimension()); 
+    
+    dofCoords(0,0) = -1.0;
+    dofCoords(1,0) =  1.0;
+    
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 
 
