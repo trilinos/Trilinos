@@ -2186,6 +2186,43 @@ namespace Tpetra {
     //! @name Misc. implementation details
     //@{
 
+    /// \brief Implementation of description() for this class, and its
+    ///   subclass Vector.
+    ///
+    /// \param className [in] Name of the class calling this method:
+    ///   Either "Tpetra::MultiVector" or "Tpetra::Vector" (no quotes
+    ///   in the string, in either case).
+    std::string
+    descriptionImpl (const std::string& className) const;
+
+    /// \brief Print the calling process' verbose describe()
+    ///   information to the returned string.
+    ///
+    /// This is an implementation detail of describe().
+    ///
+    /// \param vl [in] Verbosity level with which to print.
+    std::string
+    localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
+
+    /// \brief Implementation of describe() for this class, and its
+    ///   subclass Vector.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param className [in] Name of the class calling this method.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   behaves as a collective over the object's communicator.
+    void
+    describeImpl (Teuchos::FancyOStream& out,
+                  const std::string& className,
+                  const Teuchos::EVerbosityLevel verbLevel =
+                    Teuchos::Describable::verbLevel_default) const;
+
     // Return true if and only if VectorIndex is a valid column index.
     bool vectorIndexOutOfRange (const size_t VectorIndex) const;
 

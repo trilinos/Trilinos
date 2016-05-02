@@ -53,6 +53,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_MultiVectorDistObjectKernels.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
@@ -4301,20 +4302,208 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   std::string
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  descriptionImpl (const std::string& className) const
+  {
+    using Teuchos::TypeNameTraits;
+
+    std::ostringstream out;
+    out << "\"" << className << "\": {";
+    out << "Template parameters: {Scalar: " << TypeNameTraits<Scalar>::name ()
+        << ", LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name ()
+        << ", GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name ()
+        << ", Node" << Node::name ()
+        << "}, ";
+    if (this->getObjectLabel () != "") {
+      out << "Label: \"" << this->getObjectLabel () << "\", ";
+    }
+    out << ", numRows: " << this->getGlobalLength ();
+    if (className != "Tpetra::Vector") {
+      out << ", numCols: " << this->getNumVectors ()
+          << ", isConstantStride: " << this->isConstantStride ();
+    }
+    if (this->isConstantStride ()) {
+      out << ", columnStride: " << this->getStride ();
+    }
+    out << "}";
+
+    return out.str ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  std::string
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   description () const
   {
+    return this->descriptionImpl ("Tpetra::MultiVector");
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  std::string
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  localDescribeToString (const Teuchos::EVerbosityLevel vl) const
+  {
+    typedef LocalOrdinal LO;
     using std::endl;
-    std::ostringstream oss;
-    oss << Teuchos::typeName (*this) << " {"
-        << "label: \"" << this->getObjectLabel () << "\""
-        << ", numRows: " << getGlobalLength ()
-        << ", numCols: " << getNumVectors ()
-        << ", isConstantStride: " << isConstantStride ();
-    if (isConstantStride ()) {
-      oss << ", columnStride: " << getStride ();
+
+    if (vl <= Teuchos::VERB_LOW) {
+      return std::string ();
     }
-    oss << "}";
-    return oss.str();
+    auto map = this->getMap ();
+    if (map.is_null ()) {
+      return std::string ();
+    }
+    auto outStringP = Teuchos::rcp (new std::ostringstream ());
+    auto outp = Teuchos::getFancyOStream (outStringP);
+    Teuchos::FancyOStream& out = *outp;
+    auto comm = map->getComm ();
+    const int myRank = comm->getRank ();
+    const int numProcs = comm->getSize ();
+
+    out << "Process " << myRank << " of " << numProcs << ":" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    // VERB_MEDIUM and higher prints getLocalLength()
+    const LO lclNumRows = static_cast<LO> (this->getLocalLength ());
+    out << "Local number of rows: " << lclNumRows << endl;
+
+    if (vl > Teuchos::VERB_MEDIUM) {
+      // VERB_HIGH and higher prints isConstantStride() and getStride().
+      // The first is only relevant if the Vector has multiple columns.
+      if (this->getNumVectors () != static_cast<size_t> (1)) {
+        out << "isConstantStride: " << this->isConstantStride () << endl;
+      }
+      if (this->isConstantStride ()) {
+        out << "Column stride: " << this->getStride () << endl;
+      }
+
+      if (vl > Teuchos::VERB_HIGH && lclNumRows > 0) {
+        // VERB_EXTREME prints values.  Get a host View of the
+        // Vector's local data, so we can print it.  (Don't assume
+        // that we can access device data directly in host code.)
+        auto X_dual = this->getDualView ();
+        typename dual_view_type::t_host X_host;
+        if (X_dual.template need_sync<Kokkos::HostSpace> ()) {
+          // Device memory has the latest version.  Don't actually
+          // sync to host; that changes the Vector's state, and may
+          // change future computations (that use the data's current
+          // place to decide where to compute).  Instead, create a
+          // temporary host copy and print that.
+          auto X_dev = this->template getLocalView<device_type> ();
+          auto X_host_copy = Kokkos::create_mirror_view (X_dev);
+          Kokkos::deep_copy (X_host_copy, X_dev);
+          X_host = X_host_copy;
+        }
+        else {
+          // Either host and device are in sync, or host has the
+          // latest version of the Vector's data.  Thus, we can use
+          // the host version directly.
+          X_host = this->template getLocalView<Kokkos::HostSpace> ();
+        }
+        // The square braces [] and their contents are in Matlab
+        // format, so users may copy and paste directly into Matlab.
+        out << "Values: " << endl
+            << "[";
+        const LO numCols = static_cast<LO> (this->getNumVectors ());
+        if (numCols == 1) {
+          for (LO i = 0; i < lclNumRows; ++i) {
+            out << X_host(i,0);
+            if (i + 1 < lclNumRows) {
+              out << "; ";
+            }
+          }
+        }
+        else {
+          for (LO i = 0; i < lclNumRows; ++i) {
+            for (LO j = 0; j < numCols; ++j) {
+              out << X_host(i,j);
+              if (j + 1 < numCols) {
+                out << ", ";
+              }
+            }
+            if (i + 1 < lclNumRows) {
+              out << "; ";
+            }
+          }
+        }
+        out << "]" << endl;
+      }
+    }
+
+    out.flush (); // make sure the ostringstream got everything
+    return outStringP->str ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  describeImpl (Teuchos::FancyOStream& out,
+                const std::string& className,
+                const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using Teuchos::TypeNameTraits;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    using std::endl;
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+
+    if (vl == VERB_NONE) {
+      return; // don't print anything
+    }
+    // If this Vector's Comm is null, then the Vector does not
+    // participate in collective operations with the other processes.
+    // In that case, it is not even legal to call this method.  The
+    // reasonable thing to do in that case is nothing.
+    auto map = this->getMap ();
+    if (map.is_null ()) {
+      return;
+    }
+    auto comm = map->getComm ();
+    if (comm.is_null ()) {
+      return;
+    }
+
+    const int myRank = comm->getRank ();
+
+    // Only Process 0 should touch the output stream, but this method
+    // in general may need to do communication.  Thus, we may need to
+    // preserve the current tab level across multiple "if (myRank ==
+    // 0) { ... }" inner scopes.  This is why we sometimes create
+    // OSTab instances by pointer, instead of by value.  We only need
+    // to create them by pointer if the tab level must persist through
+    // multiple inner scopes.
+    Teuchos::RCP<Teuchos::OSTab> tab0, tab1;
+
+    // VERB_LOW and higher prints the equivalent of description().
+    if (myRank == 0) {
+      tab0 = Teuchos::rcp (new Teuchos::OSTab (out));
+      out << "\"" << className << "\":" << endl;
+      tab1 = Teuchos::rcp (new Teuchos::OSTab (out));
+      {
+        out << "Template parameters:" << endl;
+        Teuchos::OSTab tab2 (out);
+        out << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
+            << "LocalOrdinal: " << TypeNameTraits<LocalOrdinal>::name () << endl
+            << "GlobalOrdinal: " << TypeNameTraits<GlobalOrdinal>::name () << endl
+            << "Node: " << Node::name () << endl;
+      }
+      if (this->getObjectLabel () != "") {
+        out << "Label: \"" << this->getObjectLabel () << "\", ";
+      }
+      out << "Global number of rows: " << this->getGlobalLength () << endl;
+      if (className != "Tpetra::Vector") {
+        out << "Number of columns: " << this->getNumVectors () << endl;
+      }
+      // getStride() may differ on different processes, so it (and
+      // isConstantStride()) properly belong to per-process data.
+    }
+
+    // This is collective over the Map's communicator.
+    if (vl > VERB_LOW) { // VERB_MEDIUM, VERB_HIGH, or VERB_EXTREME
+      const std::string lclStr = this->localDescribeToString (vl);
+      Tpetra::Details::gathervPrint (out, lclStr, *comm);
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -4323,94 +4512,7 @@ namespace Tpetra {
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-    using Teuchos::VERB_DEFAULT;
-    using Teuchos::VERB_NONE;
-    using Teuchos::VERB_LOW;
-    using Teuchos::VERB_MEDIUM;
-    using Teuchos::VERB_HIGH;
-    using Teuchos::VERB_EXTREME;
-    using std::endl;
-    using std::setw;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-
-    // Set default verbosity if applicable.
-    const Teuchos::EVerbosityLevel vl =
-      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
-
-    RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-
-    if (vl != VERB_NONE) {
-      // Don't set the tab level unless we're printing something.
-      Teuchos::OSTab tab0 (out);
-
-      if (myImageID == 0) { // >= VERB_LOW prints description()
-        out << "Tpetra::MultiVector:" << endl;
-        Teuchos::OSTab tab1 (out);
-        out << "Template parameters:" << endl;
-        {
-          Teuchos::OSTab tab2 (out);
-          out << "Scalar: " << Teuchos::TypeNameTraits<Scalar>::name () << endl
-              << "LocalOrdinal: " << Teuchos::TypeNameTraits<LocalOrdinal>::name () << endl
-              << "GlobalOrdinal: " << Teuchos::TypeNameTraits<GlobalOrdinal>::name () << endl
-              << "Node: " << Teuchos::TypeNameTraits<Node>::name () << endl;
-        }
-        out << "label: \"" << this->getObjectLabel () << "\"" << endl
-            << "numRows: " << getGlobalLength () << endl
-            << "numCols: " << getNumVectors () << endl
-            << "isConstantStride: " << isConstantStride () << endl;
-        if (isConstantStride ()) {
-          out << "columnStride: " << getStride () << endl;
-        }
-      }
-      for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-        if (myImageID == imageCtr) {
-          if (vl != VERB_LOW) {
-            // At verbosity > VERB_LOW, each process prints something.
-            out << "Process " << myImageID << ":" << endl;
-            Teuchos::OSTab tab2 (out);
-
-            // >= VERB_MEDIUM: print the local vector length.
-            out << "localNumRows: " << getLocalLength() << endl
-                << "isConstantStride: " << isConstantStride () << endl;
-            if (vl != VERB_MEDIUM) {
-              // >= VERB_HIGH: print isConstantStride() and getStride()
-              if (isConstantStride()) {
-                out << "columnStride: " << getStride() << endl;
-              }
-              if (vl == VERB_EXTREME) {
-                // VERB_EXTREME: print all the values in the multivector.
-                out << "values: " << endl;
-                // FIXME (mfh 18 May 2016) It's rude to sync to host here.
-                const_cast<MV*> (this)->template sync<Kokkos::HostSpace> ();
-                auto X = this->template getLocalView<Kokkos::HostSpace> ();
-                out << "[";
-                for (size_t i = 0; i < getLocalLength (); ++i) {
-                  for (size_t j = 0; j < getNumVectors (); ++j) {
-                    const size_t col = isConstantStride () ? j : whichVectors_[j];
-                    out << X(i,col);
-                    if (j + 1 < getNumVectors ()) {
-                      out << ", ";
-                    }
-                  } // for each column
-                  if (i + 1 < getLocalLength ()) {
-                    out << "; ";
-                  }
-                } // for each row
-                out << "]" << endl;
-              } // if vl == VERB_EXTREME
-            } // if (vl != VERB_MEDIUM)
-            else { // vl == VERB_LOW
-              out << endl;
-            }
-          } // if vl != VERB_LOW
-        } // if it is my process' turn to print
-        comm->barrier ();
-      } // for each process in the communicator
-    } // if vl != VERB_NONE
+    this->describeImpl (out, "Tpetra::MultiVector", verbLevel);
   }
 
 #if TPETRA_USE_KOKKOS_DISTOBJECT
