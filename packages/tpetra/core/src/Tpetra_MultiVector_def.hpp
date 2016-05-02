@@ -2306,12 +2306,14 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::deep_copy;
     using Kokkos::subview;
-    typedef typename dual_view_type::t_dev::device_type DMS;
-    typedef typename dual_view_type::t_host::device_type HMS;
+    typedef typename device_type::memory_space DMS;
+    typedef Kokkos::HostSpace HMS;
 
+    // We need this cast for cases like Scalar = std::complex<T> but
+    // impl_scalar_type = Kokkos::complex<T>.
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    const size_t lclNumRows = getLocalLength ();
-    const size_t numVecs = getNumVectors ();
+    const size_t lclNumRows = this->getLocalLength ();
+    const size_t numVecs = this->getNumVectors ();
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
@@ -2322,17 +2324,10 @@ namespace Tpetra {
     const bool useHostVersion = this->template need_sync<device_type> ();
 
     if (! useHostVersion) { // last modified in device memory
-      // Type of the device memory View of the MultiVector's data.
-      typedef typename dual_view_type::t_dev mv_view_type;
-      // Type of a View of a single column of the MultiVector's data.
-      typedef Kokkos::View<impl_scalar_type*,
-        typename mv_view_type::array_layout, DMS> vec_view_type;
-
       this->template modify<DMS> (); // we are about to modify on the device
-      mv_view_type X =
-        subview (this->template getLocalView<DMS> (), rowRng, ALL ());
+      auto X = subview (this->template getLocalView<DMS> (), rowRng, ALL ());
       if (numVecs == 1) {
-        vec_view_type X_0 = subview (X, ALL (), static_cast<size_t> (0));
+        auto X_0 = subview (X, ALL (), static_cast<size_t> (0));
         deep_copy (X_0, theAlpha);
       }
       else if (isConstantStride ()) {
@@ -2341,22 +2336,16 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
-          vec_view_type X_k = subview (X, ALL (), col);
+          auto X_k = subview (X, ALL (), col);
           deep_copy (X_k, theAlpha);
         }
       }
     }
     else { // last modified in host memory, so modify data there.
-      typedef typename dual_view_type::t_host mv_view_type;
-      typedef Kokkos::View<impl_scalar_type*,
-        typename mv_view_type::array_layout, HMS> vec_view_type;
-
       this->template modify<HMS> (); // we are about to modify on the host
-      mv_view_type X =
-        subview (this->template getLocalView<HMS> (), rowRng, ALL ());
+      auto X = subview (this->template getLocalView<HMS> (), rowRng, ALL ());
       if (numVecs == 1) {
-        vec_view_type X_0 =
-          subview (X, ALL (), static_cast<size_t> (0));
+        auto X_0 = subview (X, ALL (), static_cast<size_t> (0));
         deep_copy (X_0, theAlpha);
       }
       else if (isConstantStride ()) {
@@ -2365,7 +2354,7 @@ namespace Tpetra {
       else {
         for (size_t k = 0; k < numVecs; ++k) {
           const size_t col = whichVectors_[k];
-          vec_view_type X_k = subview (X, ALL (), col);
+          auto X_k = subview (X, ALL (), col);
           deep_copy (X_k, theAlpha);
         }
       }
