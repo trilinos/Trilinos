@@ -119,6 +119,10 @@ namespace Intrepid2 {
       
       try{
 #ifdef HAVE_INTREPID2_DEBUG
+        typedef FunctionSpaceTools<DeviceSpaceType> fst;
+        typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+        #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+
         DynRankView ConstructWithLabel( a_2, 2 );
         DynRankView ConstructWithLabel( a_2_2, 2, 2 );
         DynRankView ConstructWithLabel( a_2_3, 2, 3 );
