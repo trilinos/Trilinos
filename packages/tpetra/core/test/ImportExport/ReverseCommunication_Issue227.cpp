@@ -49,6 +49,7 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Distributor.hpp"
 
 bool testReverse = true;
 
@@ -75,10 +76,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
   typedef Tpetra::Export<LO, GO, NT> Tpetra_Export;
   typedef Tpetra::Vector<double,LO,GO,NT> Tpetra_Vector;
 
-  const Tpetra::global_size_t INVALID =
-    Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank ();
+
+  // Unfortunately, Teuchos::FancyOStream does not permit operator=.
+  // Thus, we can't replace it, even temporarily, in the current
+  // scope.  However, we can use a different output stream for
+  // debugging output.  This lets us print to (e.g.,) stderr, so that
+  // we can actually see output if MPI aborts in the middle.
+  auto newOutP = myRank == 0 ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::getFancyOStream (Teuchos::rcp (new Teuchos::oblackholestream ()));
+
+  auto& newOut = *newOutP;
+  // out = newOut;
+
+  newOut << "Test Tpetra::Export with reverse communication on Tpetra::Vector" << endl;
+  Teuchos::OSTab tab0 (newOut);
+
+  const Tpetra::global_size_t INVALID =
+    Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid ();
   RCP<NT> node = Tpetra::TestingUtilities::getNode<NT>();
 
   // This test requires exactly 2 processors
@@ -101,6 +119,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
       nonoverlap_gids[i] = 4+i;
     overlap_gids = nonoverlap_gids;
   }
+
+  newOut << "Create Maps" << endl;
+
   RCP<const Tpetra_Map> nonoverlap_map =
     rcp(new Tpetra_Map(INVALID, nonoverlap_gids(), 0, comm, node));
   RCP<const Tpetra_Map> overlap_map =
@@ -108,34 +129,67 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportExport, ReverseCommunication, LO, GO, N
 
   // create import and export objects
 
-  Tpetra_Import importer(nonoverlap_map, overlap_map);
-  out << "Import:" << endl;
-  {
-    Teuchos::OSTab tab1 (out);
-    importer.describe (out, Teuchos::VERB_EXTREME);
-  }
-  Tpetra_Export exporter(overlap_map, nonoverlap_map);
-  out << "Export:" << endl;
-  {
-    Teuchos::OSTab tab1 (out);
-    exporter.describe (out, Teuchos::VERB_EXTREME);
+  RCP<Tpetra_Import> importer;
+  if (! testReverse) {
+    newOut << "Create Import object" << endl;
+    importer = rcp (new Tpetra_Import (nonoverlap_map, overlap_map));
+    newOut << "Import:" << endl;
+    {
+      importer->describe (newOut, Teuchos::VERB_EXTREME);
+    }
   }
 
-  // create vectors
+  RCP<Tpetra_Export> exporter;
+  if (testReverse) {
+    newOut << "Create Export object" << endl;
+    exporter = rcp (new Tpetra_Export (overlap_map, nonoverlap_map));
+    // Pre-create the reverse Distributor, so we can print it.
+    auto revDist = exporter->getDistributor ().getReverse ();
+    TEST_ASSERT( ! revDist.is_null () );
+    newOut << "Export:" << endl;
+    {
+      exporter->describe (newOut, Teuchos::VERB_EXTREME);
+    }
+  }
+
+  // create and fill vectors
+
+  newOut << "Create and fill Vectors" << endl;
   Tpetra_Vector nonoverlap_vector(nonoverlap_map);
   Tpetra_Vector overlap_vector(overlap_map);
   nonoverlap_vector.putScalar(1.0);
   overlap_vector.putScalar(0.0);
 
-  if (testReverse)
-    overlap_vector.doImport(nonoverlap_vector, exporter, Tpetra::REPLACE);
-  else
-    overlap_vector.doImport(nonoverlap_vector, importer, Tpetra::REPLACE);
+  if (testReverse) {
+    newOut << "Test Export with reverse mode" << endl;
+    overlap_vector.doImport(nonoverlap_vector, *exporter, Tpetra::REPLACE);
+  }
+  else {
+    newOut << "Test Import with forward mode" << endl;
+    overlap_vector.doImport(nonoverlap_vector, *importer, Tpetra::REPLACE);
+  }
 
+  newOut << "Check results" << endl;
   if (proc == 0) {
     Teuchos::ArrayRCP<const double> overlap_entries = overlap_vector.getData();
     for (int i=4; i<8; ++i)
       TEST_EQUALITY( overlap_entries[i], 1.0 );
+  }
+
+  // Make sure all processes succeeded.
+
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using Teuchos::outArg;
+
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess) {
+    newOut << "Test PASSED on all processes" << endl;
+  } else {
+    newOut << "Test FAILED on one or more processes" << endl;
+    success = false;
   }
 }
 
