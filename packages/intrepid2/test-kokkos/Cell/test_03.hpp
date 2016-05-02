@@ -171,7 +171,7 @@ namespace Intrepid2 {
           quadFaceCubature.getCubature(paramQuadFacePoints, paramQuadFaceWeights);
 
           // Loop over admissible topologies
-          for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) {
+          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
             const auto cell = standardBaseTopologies[topoOrd];
 
             // skip cells not supported
@@ -194,8 +194,8 @@ namespace Intrepid2 {
 
               // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology
-              for (auto v=0;v<vCount;++v)
-                for (auto d=0;d<cellDim;++d) {
+              for (size_type v=0;v<vCount;++v)
+                for (size_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<double>::random()/8.0;
                   physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
                 }
@@ -213,7 +213,7 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(quadSidePointNormals,    1, numQuadFaceCubPoints, cellDim);
 
               // Loop over faces:
-              for (auto faceOrd=0;faceOrd<cell.getSideCount();++faceOrd) {
+              for (size_type faceOrd=0;faceOrd<cell.getSideCount();++faceOrd) {
 
                 // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
                 // cells with extended topologies we will add their faces as well.
@@ -308,7 +308,7 @@ namespace Intrepid2 {
                     DynRankView ConstructWithLabel(tanY, 3);
                     DynRankView ConstructWithLabel(faceNormal, 3);
 
-                    for (auto d=0;d<cellDim;++d) {
+                    for (size_type d=0;d<cellDim;++d) {
                       tanX(d) = ( physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,1) )  +
                                   physCellVertices(0, v1ord, d)*( 1.0 - paramQuadFacePoints(pt,1) ) +
                                   physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,1) ) +
@@ -323,7 +323,7 @@ namespace Intrepid2 {
                     rst::vecprod(faceNormal, tanX, tanY);
 
                     // Compare direct normal with d-component of the face/side normal by CellTools
-                    for (auto d=0;d<cellDim;++d) {
+                    for (size_type d=0;d<cellDim;++d) {
 
                       // face normal method
                       if( std::abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > tol ) {

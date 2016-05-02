@@ -163,7 +163,7 @@ namespace Intrepid2 {
           edgeCubature.getCubature(paramEdgePoints, paramEdgeWeights);
           
           // Loop over admissible topologies 
-          for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) {
+          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
             const auto cell = standardBaseTopologies[topoOrd];
 
             // skip cells not supported
@@ -187,8 +187,8 @@ namespace Intrepid2 {
               
               // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
-              for (auto v=0;v<vCount;++v) 
-                for (auto d=0;d<cellDim;++d) {
+              for (size_type v=0;v<vCount;++v) 
+                for (size_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<ValueType>::random()/8.0;
                   physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
                 }
@@ -202,7 +202,7 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(edgePointNormals,    1, numCubPoints, cellDim);        
               
               // Loop over edges:
-              for (auto edgeOrd=0;edgeOrd<cell.getEdgeCount();++edgeOrd) {
+              for (size_type edgeOrd=0;edgeOrd<cell.getEdgeCount();++edgeOrd) {
                 /* 
                  * Compute tangents on the specified physical edge using CellTools:
                  *    1. Map points from edge parametrization domain to ref. edge with specified ordinal
@@ -228,7 +228,7 @@ namespace Intrepid2 {
                   // Temp storage for directly computed edge tangents
                   DynRankView ConstructWithLabel(edgeBenchmarkTangents, 3);
                   
-                  for (auto d=0;d<cellDim;++d) {
+                  for (size_type d=0;d<cellDim;++d) {
                     edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
                     
                     // Compare with d-component of edge tangent by CellTools

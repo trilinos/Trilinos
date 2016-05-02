@@ -158,7 +158,7 @@ namespace Intrepid2 {
                                        Parameters::MaxIntegrationPoints);
         
         // compute integrals
-        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+        for (size_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           CubatureLineType lineCub(cubDeg);
           for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) 
             testInt(cubDeg, polyDeg) = computeIntegralOfMonomial<ValueType>(lineCub,
@@ -177,7 +177,7 @@ namespace Intrepid2 {
         }
 
         // perform comparison
-        for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
+        for (size_type cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
           for (auto polyDeg=0;polyDeg<=cubDeg;++polyDeg) {
             const auto abstol  = ( analyticInt(polyDeg,0) == 0 ? tol : std::fabs(tol*analyticInt(polyDeg,0)) );
             const auto absdiff = std::fabs(analyticInt(polyDeg,0) - testInt(cubDeg,polyDeg));

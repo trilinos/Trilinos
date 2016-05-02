@@ -239,7 +239,7 @@ namespace Intrepid2 {
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         const auto dofTagSize = allTags.dimension(0);
-        for (auto i=0;i<dofTagSize;++i) {
+        for (size_type i=0;i<dofTagSize;++i) {
           const auto bfOrd  = lineBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
           const auto myTag = lineBasis.getDofTag(bfOrd);
@@ -322,9 +322,9 @@ namespace Intrepid2 {
         lineNodes(3,0) =   0.5;
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
-        const auto numFields = lineBasis.getCardinality();
-        const auto numPoints = lineNodes.dimension(0);
-        const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = lineBasis.getCardinality();
+        const ordinal_type numPoints = lineNodes.dimension(0);
+        const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
         const auto workSize  = numFields*numPoints*spaceDim;
         DynRankView ConstructWithLabel(work, workSize);
@@ -333,8 +333,8 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints);
           lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
-          for (auto i=0;i<numFields;++i)
-            for (auto j=0;j<numPoints;++j)
+          for (ordinal_type i=0;i<numFields;++i)
+            for (ordinal_type j=0;j<numPoints;++j)
               if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -392,9 +392,9 @@ namespace Intrepid2 {
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
 
             lineBasis.getValues(vals, lineNodes, op);
-            for (auto i1=0;i1<numFields;++i1)
-              for (auto i2=0;i2<numPoints;++i2)
-                for (auto i3=0;i3<DkCardin;++i3)
+            for (ordinal_type i1=0;i1<numFields;++i1)
+              for (ordinal_type i2=0;i2<numPoints;++i2)
+                for (ordinal_type i3=0;i3<DkCardin;++i3)
                   if (std::abs(vals(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

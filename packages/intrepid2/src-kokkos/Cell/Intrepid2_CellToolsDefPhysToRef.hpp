@@ -77,7 +77,6 @@ namespace Intrepid2 {
     CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
 #endif  
     typedef RealSpaceTools<SpT> rst;
-    typedef Kokkos::DynRankView<refPointValueType,refPointProperties...> refPointViewType;
     typedef Kokkos::DynRankView<refPointValueType,SpT> refPointViewSpType;
 
     const auto spaceDim  = cellTopo.getDimension();
@@ -147,7 +146,7 @@ namespace Intrepid2 {
 
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
-    for (auto iter=0;iter<Parameters::MaxNewton;++iter) {
+    for (size_type iter=0;iter<Parameters::MaxNewton;++iter) {
     
       // Jacobians at the old iterates and their inverses. 
       setJacobian(jacobian, xOld, worksetCell, basis);

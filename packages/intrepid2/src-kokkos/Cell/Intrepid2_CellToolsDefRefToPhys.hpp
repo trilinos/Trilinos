@@ -93,9 +93,9 @@ namespace Intrepid2 {
         const auto dim = phys.dimension(0);
         const auto cardinality = val.dimension(0);
 
-        for (auto i=0;i<dim;++i) {
+        for (size_type i=0;i<dim;++i) {
           phys(i) = 0;
-          for (auto bf=0;bf<cardinality;++bf)
+          for (size_type bf=0;bf<cardinality;++bf)
             phys(i) += dofs(bf, i)*val(bf);
         }
       }
@@ -141,7 +141,7 @@ namespace Intrepid2 {
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
       vals = physPointViewSpType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
-      for (auto cell=0;cell<numCells;++cell)
+      for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
                          OPERATOR_VALUE);
@@ -215,21 +215,21 @@ namespace Intrepid2 {
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
     case 2: {
-      for (auto pt=0;pt<numPts;++pt) {
+      for (size_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
         const auto v = paramPoints(pt, 1);
 
         // map_dim(u,v) = c_0(dim) + c_1(dim)*u + c_2(dim)*v because both Quad and Tri ref faces are affine!
-        for (auto i=0;i<cellDim;++i)
+        for (size_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u +
                                                                      subcellMap(subcellOrd, i, 2)*v );
       }
       break;
     }
     case 1: {
-      for (auto pt=0;pt<numPts;++pt) {
+      for (size_type pt=0;pt<numPts;++pt) {
         const auto u = paramPoints(pt, 0);
-        for (auto i=0;i<cellDim;++i)
+        for (size_type i=0;i<cellDim;++i)
           refSubcellPoints(pt, i) = subcellMap(subcellOrd, i, 0) + ( subcellMap(subcellOrd, i, 1)*u );
       }
       break;

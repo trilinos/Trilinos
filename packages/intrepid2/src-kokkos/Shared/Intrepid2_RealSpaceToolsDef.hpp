@@ -243,8 +243,8 @@ namespace Intrepid2 {
                     /**/            Kokkos::subdynrankview(_output,             Kokkos::ALL(), Kokkos::ALL()));
         const auto iend = _input.dimension(0);
         const auto jend = _input.dimension(1);
-        for (auto i=0;i<iend;++i)
-          for (auto j=0;j<jend;++j)
+        for (size_type i=0;i<iend;++i)
+          for (size_type j=0;j<jend;++j)
             out(i,j) = _input(i,j);
       }
     };
@@ -282,7 +282,7 @@ namespace Intrepid2 {
 
     size_type loopSize = 1;
     const auto rankDiff = output.rank() - input.rank();
-    for (auto i=0;i<rankDiff;++i)
+    for (size_type i=0;i<rankDiff;++i)
       loopSize *= output.dimension(i);
 
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
@@ -308,10 +308,10 @@ namespace Intrepid2 {
         const auto lend = _inArray.dimension(3);
         const auto mend = _inArray.dimension(4);
 
-        for (size_t j=0;j<jend;++j)
-          for (size_t k=0;k<kend;++k)
-            for (size_t l=0;l<lend;++l)
-              for (size_t m=0;m<mend;++m)
+        for (size_type j=0;j<jend;++j)
+          for (size_type k=0;k<kend;++k)
+            for (size_type l=0;l<lend;++l)
+              for (size_type m=0;m<mend;++m)
                 _absArray(i,j,k,l,m) = Util::abs(_inArray(i,j,k,l,m));
       }
     };
@@ -1153,7 +1153,7 @@ namespace Intrepid2 {
 
     size_type loopSize = 1;
     const auto r = matVecs.rank() - 1;
-    for (auto i=0;i<r;++i) 
+    for (size_type i=0;i<r;++i) 
       loopSize *= matVecs.dimension(i);
 
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

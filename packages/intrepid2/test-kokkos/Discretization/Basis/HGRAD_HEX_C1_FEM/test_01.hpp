@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::G_HEX_C1_FEM class.
+/** \file test_01.hpp
+    \brief  Unit tests for the Intrepid2::HGRAD_HEX_C1_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson and Kyungjoo Kim
 */
 #include "Intrepid2_config.h"
@@ -77,7 +77,7 @@ namespace Intrepid2 {
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
 
-      if (verbose)
+      if (1)//(verbose)
         outStream = Teuchos::rcp(&std::cout, false);
       else
         outStream = Teuchos::rcp(&bhs,       false);
@@ -248,7 +248,7 @@ namespace Intrepid2 {
 
         // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
         const auto dofTagSize = allTags.dimension(0);
-        for (auto i=0;i<dofTagSize;++i) {
+        for (size_type i=0;i<dofTagSize;++i) {
           const auto bfOrd = hexBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
 
           const auto myTag = hexBasis.getDofTag(bfOrd);
@@ -552,7 +552,7 @@ namespace Intrepid2 {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints);
           hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
           for (auto i=0;i<numFields;++i)
-            for (auto j=0;j<numPoints;++j)
+            for (size_type j=0;j<numPoints;++j)
               if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -576,8 +576,8 @@ namespace Intrepid2 {
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
             hexBasis.getValues(vals, hexNodes, op);
             for (auto i=0;i<numFields;++i)
-              for (auto j=0;j<numPoints;++j)
-                for (auto k=0;k<spaceDim;++k)
+              for (size_type j=0;j<numPoints;++j)
+                for (size_type k=0;k<spaceDim;++k)
                   if (std::abs(vals(i,j,k) - basisGrads[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -597,7 +597,7 @@ namespace Intrepid2 {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
           hexBasis.getValues(vals, hexNodes, OPERATOR_D2);
           for (auto i=0;i<numFields;++i)
-            for (auto j=0;j<numPoints;++j)
+            for (size_type j=0;j<numPoints;++j)
               for (auto k=0;k<D2Cardin;++k)
                 if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
                   errorFlag++;
@@ -630,7 +630,7 @@ namespace Intrepid2 {
 
             hexBasis.getValues(vals, hexNodes, op);
             for (auto i1=0;i1<numFields;++i1)
-              for (auto i2=0;i2<numPoints;++i2)
+              for (size_type i2=0;i2<numPoints;++i2)
                 for (auto i3=0;i3<DkCardin;++i3)
                   if (std::abs(vals(i1,i2,i3)) > tol) {
                     errorFlag++;

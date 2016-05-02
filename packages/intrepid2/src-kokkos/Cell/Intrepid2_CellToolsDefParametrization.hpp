@@ -144,7 +144,7 @@ namespace Intrepid2 {
     
     // Select subcell parametrization according to its parent cell type
     const auto pcd = parentCell.getDimension(); // parent cell dim
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim < 1 || subcellDim > (pcd-1), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim < 1 || subcellDim > static_cast<ordinal_type>(pcd-1), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::getSubcellParametrization): Parametrizations defined in a range between 1 and (dim-1)");
     
     switch (parentCell.getKey() ) {
@@ -223,7 +223,7 @@ namespace Intrepid2 {
     const auto pcd   = parentCell.getDimension();   
     const auto coeff = (subcellDim == 1) ? 2 : 3;
 
-    INTREPID2_TEST_FOR_EXCEPTION( subcellDim < 1 || subcellDim > (pcd-1), std::invalid_argument, 
+    INTREPID2_TEST_FOR_EXCEPTION( subcellDim < 1 || subcellDim > static_cast<ordinal_type>(pcd-1), std::invalid_argument, 
                                   ">>> ERROR (Intrepid2::CellTools::setSubcellParametrization): Parametrizations defined in a range between 1 and (dim-1)");
 
 
@@ -239,7 +239,7 @@ namespace Intrepid2 {
 
     if (subcellDim == 1) {
       // Edge parametrizations of 2D and 3D cells (shell lines and beams are 2D cells with edges)
-      for (auto subcellOrd=0;subcellOrd<sc;++subcellOrd) {
+      for (size_type subcellOrd=0;subcellOrd<sc;++subcellOrd) {
         // vertexK[0] = x_k; vertexK[1] = y_k; vertexK[2] = z_k; z_k = 0 for 2D cells
         // Note that ShellLine and Beam are 2D cells!
         const auto v0ord = parentCell.getNodeMap(subcellDim, subcellOrd, 0);
@@ -267,7 +267,7 @@ namespace Intrepid2 {
       // Face parametrizations of 3D cells: (shell Tri and Quad are 3D cells with faces)
       // A 3D cell can have both Tri and Quad faces, but because they are affine images of the
       // parametrization domain, 3 coefficients are enough to store them in both cases.
-      for (auto subcellOrd=0;subcellOrd<sc;++subcellOrd) {
+      for (size_type subcellOrd=0;subcellOrd<sc;++subcellOrd) {
         
         switch (parentCell.getKey(subcellDim,subcellOrd)) {
           

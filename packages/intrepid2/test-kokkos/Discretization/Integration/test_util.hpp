@@ -83,7 +83,7 @@ namespace Intrepid2 {
       const ordinal_type polydeg[3] = { xDeg, yDeg, zDeg };
 
       const auto dim = p.dimension(0);
-      for (auto i=0;i<dim;++i) 
+      for (size_type i=0;i<dim;++i) 
         r_val *= std::pow(p(i),polydeg[i]);
       
       return r_val;

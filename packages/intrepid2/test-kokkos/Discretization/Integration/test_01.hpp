@@ -266,7 +266,7 @@ namespace Intrepid2 {
 
         *outStream << "-> Line testing\n\n";
         {
-          for (auto deg=0;deg<=Parameters::MaxCubatureDegreeEdge;++deg) {
+          for (size_type deg=0;deg<=Parameters::MaxCubatureDegreeEdge;++deg) {
             CubatureLineType cub(deg);
             cub.getCubature(cubPoints, cubWeights);
             const auto npts = cub.getNumPoints();
@@ -299,8 +299,8 @@ namespace Intrepid2 {
 
         *outStream << "-> Quad testing\n\n";
         {
-          for (auto y_deg=0;y_deg<=Parameters::MaxCubatureDegreeEdge;++y_deg)
-            for (auto x_deg=0;x_deg<=Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          for (size_type y_deg=0;y_deg<=Parameters::MaxCubatureDegreeEdge;++y_deg)
+            for (size_type x_deg=0;x_deg<=Parameters::MaxCubatureDegreeEdge;++x_deg) {
               const auto x_line = CubatureLineType(x_deg);
               const auto y_line = CubatureLineType(y_deg);
               CubatureTensorType cub( x_line, y_line );
@@ -339,9 +339,9 @@ namespace Intrepid2 {
         *outStream << "-> Hexahedron testing\n\n";
         {
           // when hex is tested with max cubature degree edge, it exceeds max integration points 1001
-          for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
-            for (auto y_deg=0;y_deg<Parameters::MaxCubatureDegreeEdge;++y_deg)
-              for (auto x_deg=0;x_deg<Parameters::MaxCubatureDegreeEdge;++x_deg) {
+          for (size_type z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
+            for (size_type y_deg=0;y_deg<Parameters::MaxCubatureDegreeEdge;++y_deg)
+              for (size_type x_deg=0;x_deg<Parameters::MaxCubatureDegreeEdge;++x_deg) {
                 const auto x_line = CubatureLineType(x_deg);
                 const auto y_line = CubatureLineType(y_deg);
                 const auto z_line = CubatureLineType(z_deg);

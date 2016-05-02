@@ -188,8 +188,8 @@ namespace Intrepid2 {
       const auto jend = output.dimension(1);
       const auto iend = output.dimension(0);
 
-      for (auto j=0;j<jend;++j)
-        for (auto i=0;i<iend;++i)
+      for (size_type j=0;j<jend;++j)
+        for (size_type i=0;i<iend;++i)
           output(i, j) = 0.0;
       break;
     }

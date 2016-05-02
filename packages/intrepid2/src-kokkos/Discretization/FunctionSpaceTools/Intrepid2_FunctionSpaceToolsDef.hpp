@@ -633,8 +633,8 @@ namespace Intrepid2 {
         const auto nlbf = _inoutOperator.dimension(1);
         const auto nrbf = _inoutOperator.dimension(2);
 
-        for (auto lbf=0;lbf<nlbf;++lbf)
-          for (auto rbf=0;rbf<nrbf;++rbf)
+        for (size_type lbf=0;lbf<nlbf;++lbf)
+          for (size_type rbf=0;rbf<nrbf;++rbf)
             _inoutOperator(cell, lbf, rbf) *= _fieldSigns(cell, lbf);
       }
     };
@@ -689,8 +689,8 @@ namespace Intrepid2 {
         const auto nlbf = _inoutOperator.dimension(1);
         const auto nrbf = _inoutOperator.dimension(2);
 
-        for (auto lbf=0;lbf<nlbf;++lbf)
-          for (auto rbf=0;rbf<nrbf;++rbf)
+        for (size_type lbf=0;lbf<nlbf;++lbf)
+          for (size_type rbf=0;rbf<nrbf;++rbf)
             _inoutOperator(cell, lbf, rbf) *= _fieldSigns(cell, rbf);
       }
     };
@@ -747,10 +747,10 @@ namespace Intrepid2 {
         const auto iend = _inoutFunction.dimension(3);
         const auto jend = _inoutFunction.dimension(4);
 
-        for (auto bf=0;bf<nbfs;++bf) 
-          for (auto pt=0;pt<npts;++pt)
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
+        for (size_type bf=0;bf<nbfs;++bf) 
+          for (size_type pt=0;pt<npts;++pt)
+            for (size_type i=0;i<iend;++i) 
+              for (size_type j=0;j<jend;++j) 
                 _inoutFunction(cell, bf, pt, i, j) *= _fieldSigns(cell, bf);
       }
     };
@@ -813,10 +813,10 @@ namespace Intrepid2 {
         const auto iend = _inputFields.dimension(3);
         const auto jend = _inputFields.dimension(4);
         
-        for (auto bf=0;bf<nbfs;++bf) 
-          for (auto pt=0;pt<npts;++pt)
-            for (auto i=0;i<iend;++i) 
-              for (auto j=0;j<jend;++j) 
+        for (size_type bf=0;bf<nbfs;++bf) 
+          for (size_type pt=0;pt<npts;++pt)
+            for (size_type i=0;i<iend;++i) 
+              for (size_type j=0;j<jend;++j) 
                 _outputPointVals(cell, pt, i, j) += _inputCoeffs(cell, bf) * _inputFields(cell, bf, pt, i, j);
       }
     };
@@ -845,7 +845,7 @@ namespace Intrepid2 {
                                   ">>> ERROR (FunctionSpaceTools::evaluate): First dimensions (number of fields) of the coefficient and fields input containers must agree!");
     INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(0) != inputFields.dimension(0), std::invalid_argument,
                                   ">>> ERROR (FunctionSpaceTools::evaluate): Zeroth dimensions (number of cells) of the input fields container and the output values container must agree!");
-    for (auto i=1;i<outputPointVals.rank();++i) 
+    for (size_type i=1;i<outputPointVals.rank();++i) 
       INTREPID2_TEST_FOR_EXCEPTION( outputPointVals.dimension(i) != inputFields.dimension(i+1), std::invalid_argument, 
                                     ">>> ERROR (FunctionSpaceTools::evaluate): outputPointVals dimension(i) does not match to inputFields dimension(i+1).");
 #endif

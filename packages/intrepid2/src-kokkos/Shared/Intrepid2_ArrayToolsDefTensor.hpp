@@ -702,7 +702,7 @@ namespace Intrepid2 {
                         leftRank == 3 ? Kokkos::subdynrankview(_leftInput, cell, lpoint, Kokkos::ALL()) :
                         /**/            Kokkos::subdynrankview(_leftInput, cell, lpoint));
         
-        auto right  = ( rightRank == (2 + _hasField) ? ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
+        auto right  = ( rightRank == static_cast<size_type>(2 + _hasField) ? ( _hasField ? Kokkos::subdynrankview(_rightInput,       field, point, Kokkos::ALL()) :
                                                          /**/        Kokkos::subdynrankview(_rightInput,              point, Kokkos::ALL())) :
                         /**/                           ( _hasField ? Kokkos::subdynrankview(_rightInput, cell, field, point, Kokkos::ALL()) : 
                                                          /**/        Kokkos::subdynrankview(_rightInput, cell,        point, Kokkos::ALL())) );

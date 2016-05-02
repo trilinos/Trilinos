@@ -109,9 +109,6 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";
 
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      
       int errorFlag = 0;
 
       *outStream                                \

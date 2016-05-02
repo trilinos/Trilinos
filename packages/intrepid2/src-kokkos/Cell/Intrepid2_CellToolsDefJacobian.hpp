@@ -94,10 +94,10 @@ namespace Intrepid2 {
         const auto dim = jac.dimension(0); // dim0 and dim1 should match
         const auto cardinality = grad.dimension(0);
 
-        for (auto i=0;i<dim;++i)
-          for (auto j=0;j<dim;++j) {
+        for (size_type i=0;i<dim;++i)
+          for (size_type j=0;j<dim;++j) {
             jac(i, j) = 0;
-            for (auto bf=0;bf<cardinality;++bf) 
+            for (size_type bf=0;bf<cardinality;++bf) 
               jac(i, j) += dofs(bf, i)*grad(bf, j);
           } 
       }
@@ -144,7 +144,7 @@ namespace Intrepid2 {
     case 3: { 
       // For CVFEM
       grads = jacobianViewSpType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
-      for (auto cell=0;cell<numCells;++cell) 
+      for (size_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
                          OPERATOR_GRAD);

@@ -159,9 +159,9 @@ namespace Intrepid2 {
     const auto vertexCount = cell.getVertexCount();
     const auto dim = cell.getDimension();
 
-    for (auto i=0;i<dim;++i) {
+    for (size_type i=0;i<dim;++i) {
       cellCenter(i) = 0;
-      for (auto vertOrd=0;vertOrd<vertexCount;++vertOrd) {
+      for (size_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
         getReferenceVertex(cellVertex, cell, vertOrd); 
         cellCenter(i) += cellVertex(i);
       }
@@ -307,7 +307,7 @@ namespace Intrepid2 {
 
     // let's copy;
     const auto dim = cell.getDimension();
-    for (auto i=0;i<dim;++i) 
+    for (size_type i=0;i<dim;++i) 
       cellNode(i) = ref(nodeOrd, i);
   }
 
@@ -344,7 +344,7 @@ namespace Intrepid2 {
     const auto subcNodeCount = parentCell.getNodeCount(subcellDim, subcellOrd);
     
     // Loop over subcell cellWorkset
-    for (auto subcNodeOrd=0;subcNodeOrd<subcNodeCount;++subcNodeOrd) {      
+    for (size_type subcNodeOrd=0;subcNodeOrd<subcNodeCount;++subcNodeOrd) {      
       // Get the node number relative to the parent reference cell
       const auto cellNodeOrd = parentCell.getNodeMap(subcellDim, subcellOrd, subcNodeOrd);
 
@@ -383,7 +383,7 @@ namespace Intrepid2 {
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
     const auto dim = parentCell.getDimension();
-    for (auto i=0;i<dim;++i)
+    for (size_type i=0;i<dim;++i)
       refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
   }
 
@@ -426,7 +426,7 @@ namespace Intrepid2 {
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
     const auto dim = parentCell.getDimension();
-    for (auto i=0;i<dim;++i) {
+    for (size_type i=0;i<dim;++i) {
       refFaceTanU(i) = faceMap(faceOrd, i, 1);
       refFaceTanV(i) = faceMap(faceOrd, i, 2);
     }

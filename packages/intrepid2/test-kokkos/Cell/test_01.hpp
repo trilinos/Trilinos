@@ -116,7 +116,7 @@ namespace Intrepid2 {
       DynRankView ConstructWithLabel(mappedParamNodesMax, maxNodeCount, cellDim);
       
       // Loop over subcells of the specified dimension
-      for(auto subcOrd=0;subcOrd<subcCount;++subcOrd) {
+      for(size_type subcOrd=0;subcOrd<subcCount;++subcOrd) {
         const auto subcVertexCount = parentCell.getVertexCount(subcDim, subcOrd);
         const auto subcNodeCount = parentCell.getNodeCount(subcDim, subcOrd);
 
@@ -169,8 +169,8 @@ namespace Intrepid2 {
         }
         
         // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
-        for (auto subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
-          for (auto i=0;i<cellDim;++i)
+        for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
+          for (size_type i=0;i<cellDim;++i)
             if (std::abs(mappedParamNodes(subcVertOrd, i) - refSubcellNodes(subcVertOrd, i)) > tol) {
               ++errorFlag; 
               *outStreamPtr 
@@ -268,7 +268,7 @@ namespace Intrepid2 {
             const auto subcDim = 1;
           
             // Loop over the cell topologies
-            for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) 
+            for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
               // Test only 2D and 3D topologies that have reference cells, e.g., exclude Line, Pentagon, etc.
               if ( allTopologies[topoOrd].getDimension() > 1 && 
                    ct::hasReferenceCell(allTopologies[topoOrd]) ) {
@@ -293,7 +293,7 @@ namespace Intrepid2 {
             const auto subcDim = 2;
           
             // Loop over the cell topologies
-            for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) 
+            for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) 
               // Test only 3D topologies that have reference cells
               if ( allTopologies[topoOrd].getDimension() > 2 && 
                    ct::hasReferenceCell(allTopologies[topoOrd]) ) {

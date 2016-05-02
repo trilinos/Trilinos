@@ -999,8 +999,6 @@ namespace Intrepid2 {
                         const Kokkos::DynRankView<refPointValueType,refPointProperties...>       refPoints,
                         const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                         const shards::CellTopology cellTopo ) {
-      typedef Kokkos::DynRankView<physPointValueType,physPointProperties...> physPointViewType;
-      typedef Kokkos::DynRankView<refPointValueType,refPointProperties...>   refPointViewType;
       mapToPhysicalFrame(physPoints, 
                          refPoints, 
                          worksetCell, 

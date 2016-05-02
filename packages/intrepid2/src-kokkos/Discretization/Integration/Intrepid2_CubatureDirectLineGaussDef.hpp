@@ -54,7 +54,7 @@ namespace Intrepid2 {
     : CubatureDirect<SpT>(degree, 1) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 || 
-                                  degree > Parameters::MaxCubatureDegreeEdge, std::out_of_range,
+                                  degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreeEdge), std::out_of_range,
                                   ">>> ERROR (CubatureDirectLineGauss): No cubature rule implemented for the desired polynomial degree.");
 
     typedef Kokkos::DynRankView<const PT,Kokkos::LayoutRight,Kokkos::HostSpace> pointViewHostType;

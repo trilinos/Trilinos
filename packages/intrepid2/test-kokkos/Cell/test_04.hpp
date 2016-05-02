@@ -177,7 +177,7 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(initGuessMax, numCells, Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
 
           // Loop over cell topologies, make cell workset for each one by perturbing the worksetCell & test methods
-          for (auto topoOrd=0;topoOrd<topoSize;++topoOrd) {
+          for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
             const auto cell = standardBaseTopologies[topoOrd];
             
             if (!ct::hasReferenceCell(cell))
@@ -210,8 +210,8 @@ namespace Intrepid2 {
             // 2.3  Create randomly perturbed version of the reference cell and save in the cell workset array
             for (auto cellOrd=0;cellOrd<numCells;++cellOrd) {
               // Move vertices +/-0.125 along their axes. Gives nondegenerate cells for base and extended topologies 
-              for (auto nodeOrd=0;nodeOrd<numNodes;++nodeOrd) 
-                for(auto d=0;d<cellDim;++d) {
+              for (size_type nodeOrd=0;nodeOrd<numNodes;++nodeOrd) 
+                for(size_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<double>::random()/16.0;
                   worksetCell(cellOrd, nodeOrd, d) = refCellNodes(nodeOrd, d) + delta;
                 } 
@@ -250,7 +250,7 @@ namespace Intrepid2 {
             // Points in controlPoints should match the originals in cubPoints up to a tolerance
             for (auto cellOrd=0;cellOrd<numCells;++cellOrd) 
               for (auto pt=0;pt<cubNumPoints;++pt) 
-                for (auto d=0;d<cellDim;++d) 
+                for (size_type d=0;d<cellDim;++d) 
                   if( std::abs( controlPoints(cellOrd, pt, d) - cubPoints(pt, d) ) > tol ) {
                     errorFlag++;
                     *outStream
