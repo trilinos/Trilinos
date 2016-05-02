@@ -501,6 +501,10 @@ namespace Tpetra {
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
     }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (reverseDistributor_.is_null (), std::logic_error, "The reverse "
+       "Distributor is null after createReverseDistributor returned.  "
+       "Please report this bug to the Tpetra developers.");
     return reverseDistributor_;
   }
 
@@ -565,9 +569,18 @@ namespace Tpetra {
 
     reverseDistributor_->useDistinctTags_ = useDistinctTags_;
 
-    // Note: technically, I am my reverse distributor's reverse distributor, but
-    //       we will not set this up, as it gives us an opportunity to test
-    //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
+    // I am my reverse Distributor's reverse Distributor.
+    // Thus, it would be legit to do the following:
+    //
+    // reverseDistributor_->reverseDistributor_ = Teuchos::rcp (this, false);
+    //
+    // (Note use of a "weak reference" to avoid a circular RCP
+    // dependency.)  The only issue is that if users hold on to the
+    // reverse Distributor but let go of the forward one, this
+    // reference won't be valid anymore.  However, the reverse
+    // Distributor is really an implementation detail of Distributor
+    // and not meant to be used directly, so we don't need to do this.
+    reverseDistributor_->reverseDistributor_ = Teuchos::null;
   }
 
 
