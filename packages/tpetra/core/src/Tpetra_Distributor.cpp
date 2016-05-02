@@ -791,6 +791,15 @@ namespace Tpetra {
       const std::string lclStr = this->localDescribeToString (vl);
       Tpetra::Details::gathervPrint (out, lclStr, *comm_);
     }
+
+    out << "Reverse Distributor:";
+    if (reverseDistributor_.is_null ()) {
+      out << " null" << endl;
+    }
+    else {
+      out << endl;
+      reverseDistributor_->describe (out, vl);
+    }
   }
 
   void
