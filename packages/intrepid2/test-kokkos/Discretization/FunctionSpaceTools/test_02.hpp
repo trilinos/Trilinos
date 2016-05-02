@@ -222,11 +222,16 @@ namespace Intrepid2 {
         // get cubature points and weights
         cub->getCubature(cub_points, cub_weights);
 
-        const Kokkos::DynRankView<const ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> cell_nodes_host (&hexnodes[0],  num_cells, num_nodes, space_dim);
-        const Kokkos::DynRankView<const ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> field_signs_host(&edgesigns[0], num_cells, num_fields);
+        const Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> cell_nodes_host (const_cast<ValueType*>(&hexnodes[0]),  num_cells, num_nodes, space_dim);
+        const Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> field_signs_host(const_cast<ValueType*>(&edgesigns[0]), num_cells, num_fields);
 
-        Kokkos::deep_copy( cell_nodes,  cell_nodes_host  );
-        Kokkos::deep_copy( field_signs, field_signs_host );
+        auto cell_nodes_device  = create_mirror_view(typename DeviceSpaceType::memory_space(), cell_nodes_host);
+        auto field_signs_device = create_mirror_view(typename DeviceSpaceType::memory_space(), field_signs_host);
+        Kokkos::deep_copy(cell_nodes_device, cell_nodes_host);
+        Kokkos::deep_copy(field_signs_device, field_signs_host);
+
+        Kokkos::deep_copy( cell_nodes , cell_nodes_device ); 
+        Kokkos::deep_copy( field_signs , field_signs_device ); 
 
         // compute geometric cell information
         ct::setJacobian(jacobian, cub_points, cell_nodes, cell_topo);
@@ -280,6 +285,7 @@ namespace Intrepid2 {
         // apply field signs (after the fact, as a post-processing step)
         fst::applyLeftFieldSigns(mass_matrices, field_signs);
         fst::applyRightFieldSigns(mass_matrices, field_signs);
+        DeviceSpaceType::fence();
 
         /*******************  STOP COMPUTATION ***********************/
 
