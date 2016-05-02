@@ -177,18 +177,26 @@ namespace Intrepid2 {
                                  0, 2, 0, 1,
                                  0, 3, 0, 1 };
 
-      // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type[16],SpT> tagView(tags);
+      // host tags
+      ordinal_type_array_1d_host tagView(&tags[0], 16);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      this->setOrdinalTagData(this->tagToOrdinal_,
-                              this->ordinalToTag_,
+      ordinal_type_array_2d_host ordinalToTag;
+      ordinal_type_array_3d_host tagToOrdinal;
+      this->setOrdinalTagData(tagToOrdinal,
+                              ordinalToTag,
                               tagView,
                               this->basisCardinality_,
                               tagSize,
                               posScDim,
                               posScOrd,
                               posDfOrd);
+
+      this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
+      Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
+
+      this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
+      Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
 
       // dofCoords on host and create its mirror view to device
       Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>

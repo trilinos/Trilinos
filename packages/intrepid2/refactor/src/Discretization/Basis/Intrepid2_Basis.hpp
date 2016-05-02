@@ -95,13 +95,23 @@ namespace Intrepid2 {
     typedef Kokkos::View<EBasis,ExecSpaceType> ebasis_view_type;
     typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordiantes_view_type;
 
+    // ** tag interface 
+    //  - tag information is constructed on host 
+    //  - data is uploaded to devices
+    
+    // host array 
+    typedef Kokkos::View<ordinal_type*  ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_1d_host;
+    typedef Kokkos::View<ordinal_type** ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_2d_host;
+    typedef Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_3d_host;
+
+    // device array
     typedef Kokkos::View<ordinal_type*  ,ExecSpaceType> ordinal_type_array_1d;
     typedef Kokkos::View<ordinal_type** ,ExecSpaceType> ordinal_type_array_2d;
     typedef Kokkos::View<ordinal_type***,ExecSpaceType> ordinal_type_array_3d;
 
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
-//    typedef Kokkos::View<ordinal_type** , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_2d;
-//    typedef Kokkos::View<ordinal_type***, Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_3d;
+    // typedef Kokkos::View<ordinal_type** , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_2d;
+    // typedef Kokkos::View<ordinal_type***, Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_3d;
 
   protected:
 
@@ -167,16 +177,16 @@ namespace Intrepid2 {
       \param  posScOrd         [in]   - position in the tag, counting from 0, of the subcell ordinal
       \param  posDfOrd         [in]   - position in the tag, counting from 0, of DoF ordinal relative to the subcell
     */
-    void setOrdinalTagData( /**/  ordinal_type_array_3d &tagToOrdinal,
-                            /**/  ordinal_type_array_2d &ordinalToTag,
-                            const ordinal_type_array_1d  tags,
-                            const ordinal_type           basisCard,
-                            const ordinal_type           tagSize,
-                            const ordinal_type           posScDim,
-                            const ordinal_type           posScOrd,
-                            const ordinal_type           posDfOrd ) {
+    void setOrdinalTagData( /**/  ordinal_type_array_3d_host &tagToOrdinal,
+                            /**/  ordinal_type_array_2d_host &ordinalToTag,
+                            const ordinal_type_array_1d_host  tags,
+                            const ordinal_type                basisCard,
+                            const ordinal_type                tagSize,
+                            const ordinal_type                posScDim,
+                            const ordinal_type                posScOrd,
+                            const ordinal_type                posDfOrd ) {
       // Create ordinalToTag
-      ordinalToTag = ordinal_type_array_2d("ordinalToTag", basisCard, 4);
+      ordinalToTag = ordinal_type_array_2d_host("ordinalToTag", basisCard, 4);
 
       // Initialize with -1
       Kokkos::deep_copy( ordinalToTag, -1 );
@@ -206,7 +216,7 @@ namespace Intrepid2 {
       ++maxDfOrd;
 
       // Create tagToOrdinal
-      tagToOrdinal = ordinal_type_array_3d("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
+      tagToOrdinal = ordinal_type_array_3d_host("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
 
       // Initialize with -1
       Kokkos::deep_copy( tagToOrdinal, -1 );
@@ -216,6 +226,7 @@ namespace Intrepid2 {
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
     }
 
+    // dof coords
     Kokkos::DynRankView<pointValueType,ExecSpaceType> dofCoords_;
 
   public:
