@@ -595,7 +595,7 @@ namespace BaskerNS
     
     solve_interface(x,b);
 
-    if(Options.verbose == BASKER_TRUe)
+    if(Options.verbose == BASKER_TRUE)
       {
 	printf("Basker Solve Done \n");
       }
