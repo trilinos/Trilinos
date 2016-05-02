@@ -43,79 +43,58 @@
 /** \file   Intrepid_CubatureDirectTetDefault.hpp
     \brief  Header file for the Intrepid2::CubatureDirectTetDefault class.
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP
-#define INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP
+#ifndef __INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP__
+#define __INTREPID2_CUBATURE_DIRECT_TET_DEFAULT_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"
-#include "Teuchos_Assert.hpp"
-
-/** \def   INTREPID2_CUBATURE_TET_DEFAULT_MAX
-  \brief The maximum degree of the polynomial that can be integrated exactly by
-         a direct tetrahedron rule of the default type.
-*/
-// srkenno@sandia.gov 6/21/10:
-// see below comment for the enum
-#define INTREPID2_CUBATURE_TET_DEFAULT_MAX 20
-
 
 namespace Intrepid2 {
 
-/** \class Intrepid2::CubatureDirectTetDefault
-    \brief Defines direct integration rules on a tetrahedron.
-*/
-template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
-class CubatureDirectTetDefault : public Intrepid2::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
+  /** \class Intrepid2::CubatureDirectTetDefault
+      \brief Defines direct integration rules on a tetrahedron.
+  */
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureDirectTetDefault
+    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
   public:
-  // srkenno@sandia.gov 6/21/10:
-  // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
-  enum {INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM = INTREPID2_CUBATURE_TET_DEFAULT_MAX};
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureData       CubatureData;
+
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+
   private:
 
-  /** \brief Complete set of data defining default cubature rules on a tetrahedron.
-  */
-  static const CubatureTemplate cubature_data_[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
+    // static data initialize upto 21
+    static constexpr int cubatureDataStaticSize=21;
 
-  /** \brief Names of templates for frequently used direct cubature rules.
-  */
-  static const char *cubature_name_;
-
+    /** \brief Complete set of data defining default cubature rules on a triangle.
+     */
+    static const CubatureDataStatic cubatureDataStatic_[cubatureDataStaticSize]; // initialized once
 
   public:
 
-  ~CubatureDirectTetDefault() {}
+    /** \brief Constructor.
 
-  /** \brief Constructor.
+        \param degree           [in]     - The degree of polynomials that are integrated
+        exactly by this cubature rule. Default: 0.
+    */
+    CubatureDirectTetDefault(const int degree = 0);
 
-      \param degree           [in]     - The degree of polynomials that are integrated
-                                         exactly by this cubature rule. Default: 0.
-  */
-  CubatureDirectTetDefault(const int degree = 0);
-
-  /** \brief Returns cubature name.
-  */
-  const char* getName() const;
-
-  /** \brief Exposes cubature data.
-  */
-  const CubatureTemplate * exposeCubatureData() const;
-
-  /** \brief Returns maximum cubature accuracy.
-  */
-  int getMaxAccuracy() const;
-
-  /** \brief Exposes cubature data, accessible without construction.
-  */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1];
-
-}; // end class CubatureDirect 
-
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureDirectTetDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID2_CUBATURE_TET_DEFAULT_MAX_ENUM+1] {
-  return cubature_data_;
-}
+    /** \brief Returns cubature name.
+     */
+    virtual
+    const char* 
+    getName() const {
+      return "CubatureDirectTetDefault";
+    }
+  }; 
 
 } // end namespace Intrepid2
 

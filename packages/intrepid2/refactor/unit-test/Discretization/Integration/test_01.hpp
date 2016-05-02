@@ -124,8 +124,10 @@ namespace Intrepid2 {
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
-      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      typedef CubatureTensor<DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
+      typedef CubatureDirectLineGauss <DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureDirectTriDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
+      typedef CubatureDirectTetDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
+      typedef CubatureTensor          <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
 
       const auto tol = 100.0 * Parameters::Tolerence;
 
@@ -147,16 +149,16 @@ namespace Intrepid2 {
         }
 
         *outStream << "-> Triangle testing\n\n";
-        // {
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(-1) );
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTriDefault<DeviceSpaceType> triCub(Parameters::MaxCubatureDegreeTri+1) );
-        // }
+        {
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureTriType triCub(-1) );
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureTriType triCub(Parameters::MaxCubatureDegreeTri+1) );
+        }
 
         *outStream << "-> Tetrahedron testing\n\n";
-        // {
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(-1) );
-        //   INTREPID2_TEST_ERROR_EXPECTED( CubatureDirectTetDefault<DeviceSpaceType> tetCub(Parameters::MaxCubatureDegreeTet+1) );
-        // }
+        {
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureTetType tetCub(-1) );
+          INTREPID2_TEST_ERROR_EXPECTED( CubatureTetType tetCub(Parameters::MaxCubatureDegreeTet+1) );
+        }
 #endif
         if (nthrow != ncatch) {
           errorFlag++;
@@ -188,23 +190,22 @@ namespace Intrepid2 {
         }
 
         *outStream << "-> Triangle testing\n\n";
-        // {
-        //   CubatureDirectTriDefault<DeviceSpaceType> triCub(17);
-        //   INTREPID2_TEST_FOR_EXCEPTION( triCub.getNumPoints() != 61, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): triangle cubature reports a wrong number of points.");
-        //   INTREPID2_TEST_FOR_EXCEPTION( triCub.getDimension() != 2, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): triangle cubature reports a wrong dimension.");
-        // }
+        {
+          CubatureTriType triCub(17);
+          INTREPID2_TEST_FOR_EXCEPTION( triCub.getNumPoints() != 61, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): triangle cubature reports a wrong number of points.");
+          INTREPID2_TEST_FOR_EXCEPTION( triCub.getDimension() != 2, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): triangle cubature reports a wrong dimension.");
+        }
 
         *outStream << "-> Tetrahedron testing\n\n";
-        // {
-        //   CubatureDirectTetDefault<DeviceSpaceType> tetCub(17);
-        //   INTREPID2_TEST_FOR_EXCEPTION( tetCub.getNumPoints() != 495, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong number of points.");
-        //   INTREPID2_TEST_FOR_EXCEPTION( tetCub.getDimension() != 3, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong dimension.");
-        // }
-
+        {
+          CubatureTetType tetCub(17);
+          INTREPID2_TEST_FOR_EXCEPTION( tetCub.getNumPoints() != 495, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong number of points.");
+          INTREPID2_TEST_FOR_EXCEPTION( tetCub.getDimension() != 3, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): tetrahedron cubature reports a wrong dimension.");
+        }
 
         *outStream << "-> Quad testing\n\n";
         {
@@ -234,20 +235,17 @@ namespace Intrepid2 {
         }
 
         *outStream << "-> Prism testing\n\n";
-        // {
-        //   typedef CubatureDirectTriGauss<DeviceSpaceType>  triCubatureType;
+        {
+          CubatureTensorType prismCub( CubatureTriType(4), CubatureLineType(3) );
 
-        //   CubatureTensor<triCubatureType,CubatureLineType>
-        //     prismCub( triCubatureType(4), CubatureLineType(3) );
+          INTREPID2_TEST_FOR_EXCEPTION( prismCub.getDimension() != 3, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): prism cubature must have 3 dimension.");
 
-        //   INTREPID2_TEST_FOR_EXCEPTION( prismCub.getDimension() != 3, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): prism cubature must have 3 dimension.");
-
-        //   ordinal_type accuracy[Parameters::MaxDimension];
-        //   hexCub.getAccuracy( accuracy );
-        //   INTREPID2_TEST_FOR_EXCEPTION( accuracy[0] != 4 || accuracy[1] != 3, std::logic_error,
-        //                                 ">>> ERROR (Integration::Test01): prism cubature reports wrong accuracy.");
-        // }
+          ordinal_type accuracy[Parameters::MaxDimension];
+          prismCub.getAccuracy( accuracy );
+          INTREPID2_TEST_FOR_EXCEPTION( accuracy[0] != 4 || accuracy[1] != 3, std::logic_error,
+                                        ">>> ERROR (Integration::Test01): prism cubature reports wrong accuracy.");
+        }
 
       } catch (std::logic_error err) {
         *outStream << err.what() << "\n";
@@ -283,19 +281,22 @@ namespace Intrepid2 {
         }
 
         *outStream << "-> Triangle testing\n\n";
-        // {
-        //   shards::CellTopology tri(shards::getCellTopologyData< shards::Triangle<> >());
-        //   for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTri;++deg) {
-        //     const auto testVol = computeRefVolume(tri, deg);
-        //     const auto refVol  = 0.5;
-        //     if (std::abs(testVol - refVol) > tol) {
-        //       *outStream << std::setw(30) << "Triangle volume --> " << std::setw(10) << std::scientific << testVol <<
-        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
-        //       ++errorFlag;
-        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        //     }
-        //   }
-        // }
+        {
+          for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTri;++deg) {
+            CubatureTriType cub(deg);
+            cub.getCubature(cubPoints, cubWeights);
+            const auto npts = cub.getNumPoints();
+
+            const auto testVol = computeRefVolume(npts, cubWeights);
+            const auto refVol  = 0.5;
+            if (std::abs(testVol - refVol) > tol) {
+              *outStream << std::setw(30) << "Triangle volume --> " << std::setw(10) << std::scientific << testVol <<
+                std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+              ++errorFlag;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            }
+          }
+        }
 
         *outStream << "-> Quad testing\n\n";
         {
@@ -319,23 +320,27 @@ namespace Intrepid2 {
               }
             }
         }
-
+        
         *outStream << "-> Tetrahedron testing\n\n";
-        //  {
-        //   shards::CellTopology tet(shards::getCellTopologyData< shards::Tetrahedron<> >());
-        //   for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTet;++deg) {
-        //     const auto testVol = computeRefVolume(tet, deg);
-        //     const auto refVol  = 1.0/6.0;
-        //     if (std::abs(testVol - refVol) > tol) {
-        //       *outStream << std::setw(30) << "Tetrahedron volume --> " << std::setw(10) << std::scientific << testVol <<
-        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
-
-        //       ++errorFlag;
-        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        //     }
-        //   }
-        // }
-
+        {
+          for (auto deg=0;deg<=Parameters::MaxCubatureDegreeTet;++deg) {
+            CubatureTetType cub(deg);
+            
+            cub.getCubature(cubPoints, cubWeights);
+            const auto npts = cub.getNumPoints();
+            
+            const auto testVol = computeRefVolume(npts, cubWeights);
+            const auto refVol  = 1.0/6.0;
+            if (std::abs(testVol - refVol) > tol) {
+              *outStream << std::setw(30) << "Tetrahedron volume --> " << std::setw(10) << std::scientific << testVol <<
+                std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+              
+              ++errorFlag;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            }
+          }
+        }
+        
         *outStream << "-> Hexahedron testing\n\n";
         {
           // when hex is tested with max cubature degree edge, it exceeds max integration points 1001
@@ -363,21 +368,27 @@ namespace Intrepid2 {
         }
 
         *outStream << "-> Prism testing\n\n";
-        // {
-        //   shards::CellTopology wedge(shards::getCellTopologyData< shards::Wedge<> >());
-        //   for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
-        //     for (auto xy_deg=0;xy_deg<Parameters::MaxCubatureDegreeTri;++xy_deg) {
-        //       const auto testVol = computeRefVolume(wedge, deg);
-        //       const auto refVol  = 1.0;
-        //       if (std::abs(testVol - refVol) > tol) {
-        //         *outStream << std::setw(30) << "Wedge volume --> " << std::setw(10) << std::scientific << testVol <<
-        //           std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
-        //         ++errorFlag;
-        //         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        //       }
-        //     }
-        // }
-
+        {
+          for (auto z_deg=0;z_deg<Parameters::MaxCubatureDegreeEdge;++z_deg)
+            for (auto xy_deg=0;xy_deg<Parameters::MaxCubatureDegreeTri;++xy_deg) {
+              const auto xy_tri = CubatureTriType(xy_deg);
+              const auto z_line = CubatureLineType(z_deg);
+              CubatureTensorType cub( xy_tri, z_line );
+              
+              cub.getCubature(cubPoints, cubWeights);
+              const auto npts = cub.getNumPoints();
+              
+              const auto testVol = computeRefVolume(npts, cubWeights);
+              const auto refVol  = 1.0;
+              if (std::abs(testVol - refVol) > tol) {
+                *outStream << std::setw(30) << "Wedge volume --> " << std::setw(10) << std::scientific << testVol <<
+                  std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+                ++errorFlag;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              }
+            }
+        }
+        
         *outStream << "-> Pyramid testing\n\n";
         // {
         //   shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
