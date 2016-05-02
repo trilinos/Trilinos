@@ -69,6 +69,7 @@ dimension_scalar(const view_type& view) {
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
+#include "Sacado_Traits.hpp"
 #include "impl/KokkosExp_ViewMapping.hpp"
 
 #define SACADO_SUPPORT_RANK_8 0
