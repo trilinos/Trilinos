@@ -43,21 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SUBBLOCKAFACTORY_FWD_HPP
-#define MUELU_SUBBLOCKAFACTORY_FWD_HPP
+#ifndef MUELU_REORDERBLOCKAFACTORY_FWD_HPP
+#define MUELU_REORDERBLOCKAFACTORY_FWD_HPP
 
 
 
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SubBlockAFactory;
+  class ReorderBlockAFactory;
 }
 
-#ifndef MUELU_SUBBLOCKAFACTORY_SHORT
-#define MUELU_SUBBLOCKAFACTORY_SHORT
+#ifndef MUELU_REORDERBLOCKAFACTORY_SHORT
+#define MUELU_REORDERBLOCKAFACTORY_SHORT
 #endif
 
 
 
-#endif // MUELU_SUBBLOCKAFACTORY_FWD_HPP
+#endif // MUELU_REORDERBLOCKAFACTORY_FWD_HPP

@@ -62,6 +62,7 @@ RebalanceBlockAcFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceBlockInterpolationFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceBlockRestrictionFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceTransferFactory
+ReorderBlockAFactory
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
@@ -77,7 +78,7 @@ SmootherFactory
 SmootherPrototype
 SolverBase
 SteepestDescentSolver
-SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+SubBlockAFactory
 TekoSmoother - #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 TentativePFactory
 TentativePFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
