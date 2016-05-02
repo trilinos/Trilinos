@@ -247,6 +247,22 @@ namespace Intrepid2 {
                               posScDim,
                               posScOrd,
                               posDfOrd);
+
+      // dofCoords on host and create its mirror view to device
+      Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+        dofCoords(basisCardinality_,basisCellTopology_.getDimension());
+
+      dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;
+      dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0; dofCoords(1,2) = -1.0;
+      dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0; dofCoords(2,2) = -1.0;
+      dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0; dofCoords(3,2) = -1.0;
+      dofCoords(4,0) = -1.0;   dofCoords(4,1) = -1.0; dofCoords(4,2) =  1.0;
+      dofCoords(5,0) =  1.0;   dofCoords(5,1) = -1.0; dofCoords(5,2) =  1.0;
+      dofCoords(6,0) =  1.0;   dofCoords(6,1) =  1.0; dofCoords(6,2) =  1.0;
+      dofCoords(7,0) = -1.0;   dofCoords(7,1) =  1.0; dofCoords(7,2) =  1.0;
+      
+      this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+      Kokkos::deep_copy(this->dofCoords_, dofCoords);
     }
   }
 
@@ -342,15 +358,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-
-    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;
-    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0; dofCoords(1,2) = -1.0;
-    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0; dofCoords(2,2) = -1.0;
-    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0; dofCoords(3,2) = -1.0;
-    dofCoords(4,0) = -1.0;   dofCoords(4,1) = -1.0; dofCoords(4,2) =  1.0;
-    dofCoords(5,0) =  1.0;   dofCoords(5,1) = -1.0; dofCoords(5,2) =  1.0;
-    dofCoords(6,0) =  1.0;   dofCoords(6,1) =  1.0; dofCoords(6,2) =  1.0;
-    dofCoords(7,0) = -1.0;   dofCoords(7,1) =  1.0; dofCoords(7,2) =  1.0;
+    Kokkos::deep_copy(dofCoords, this->dofCoords_);
   }
 
 }// namespace Intrepid2

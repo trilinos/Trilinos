@@ -216,7 +216,7 @@ namespace Intrepid2 {
         tagToOrdinal(tags(i*tagSize), tags(i*tagSize+1), tags(i*tagSize+2)) = i;
     }
 
-
+    Kokkos::DynRankView<pointValueType,ExecSpaceType> dofCoords_;
 
   public:
 
