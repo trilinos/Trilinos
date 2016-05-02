@@ -1340,6 +1340,8 @@ struct ReduceMaxFunctor{
   void join (volatile value_type& dst,const volatile value_type& src) const {
     if (dst < src) { dst = src;}
   }
+
+
   KOKKOS_INLINE_FUNCTION
   void init (value_type& dst) const
   {

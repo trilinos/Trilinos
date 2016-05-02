@@ -15,7 +15,7 @@ typedef double wt;
 
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
-    crsMat_t crsmat, crsMat_t crsmat2, int algorithm);
+    crsMat_t crsmat, crsMat_t crsmat2, int algorithm, int repeat = 1);
 template <typename v1>
 struct compare{
   v1 f,s;
@@ -106,14 +106,14 @@ int main (int argc, char ** argv){
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+        std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
         return 0;
       }
     }
     else {
       cmdline[ CMD_ERROR ] = 1 ;
       std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
 
       return 0;
     }
@@ -121,18 +121,18 @@ int main (int argc, char ** argv){
 
   if (a_mtx_bin_file == NULL){
     std::cerr << "Provide a mtx binary file" << std::endl ;
-    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+    std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
     return 0;
   }
   if (cmdline[ CMD_MM_MODE ] == 1 || cmdline[ CMD_MM_MODE ] == 2){
     if (r_mtx_bin_file == NULL){
       std::cerr << "Provide a r mtx binary file rmtx rmatrix_file" << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
       return 0;
     }
     if (p_mtx_bin_file == NULL){
       std::cerr << "Provide a p mtx binary file pmtx rmatrix_file" << std::endl ;
-      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
+      std::cerr << "OPTIONS\n\tthreads [numThreads]\n\topenmp [numThreads]\n\tcuda\n\tcuda-dev[DeviceIndex]\n\t[[a|r|p]mtx][binary_mtx_file]\n\talgorithm[KK|MKL|CUSPARSE|CUSP]\n\t[mmmode][0|1|2]: 0:AxA 1:R(AP) 2:(RA)P" << std::endl;
       return 0;
     }
   }
@@ -297,6 +297,7 @@ int main (int argc, char ** argv){
 
         graph_t static_graph (columns_view, rowmap_view);
         crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+
         delete [] xadj;
         delete [] adj;
         delete [] ew;
@@ -357,6 +358,11 @@ int main (int argc, char ** argv){
     delete [] adj;
     delete [] ew;
 
+
+    std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
+    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], 1);
+    std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
+
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
       run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ]);
@@ -387,6 +393,16 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+
+        /*
+        char *file = "AP.mtx";
+        KokkosKernels::Experimental::Graph::Utils::write_graph_bin(
+            m, (idx) crsmat.graph.entries.dimension_0(),
+            ( const idx *)crsmat.graph.row_map.ptr_on_device(),
+            ( const idx *)crsmat.graph.entries.ptr_on_device(),
+            ( const wt *)crsmat.values.ptr_on_device(),
+            ( const char *)file);
+            */
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -410,9 +426,13 @@ int main (int argc, char ** argv){
 
         graph_t static_graph (columns_view, rowmap_view);
         crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
+
+
         delete [] xadj;
         delete [] adj;
         delete [] ew;
+
+        //cmdline[ CMD_SPGEMM_ALGO ] = 1;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
       }
 
@@ -498,7 +518,6 @@ int main (int argc, char ** argv){
         crsMat_t crsmat2("CrsMatrix2", ncols, values_view, static_graph);
         crsmat = crsmat2;
 
-        std::cout << "MULTIPLYING (RA)*P" << std::endl;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
         rowmap_view = row_map_view_t ("rowmap_view", m+1);
         columns_view = cols_view_t ("colsmap_view", nnzA);
@@ -719,7 +738,8 @@ int main (int argc, char ** argv){
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
     crsMat_t crsMat, crsMat_t crsMat2,
-    int algorithm){
+    int algorithm, int repeat ){
+
 
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
   typedef typename crsMat_t::StaticCrsGraphType::row_map_type::non_const_type lno_view_t;
@@ -763,74 +783,77 @@ crsMat_t run_experiment(
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
     break;
   }
-  Kokkos::Impl::Timer timer1;
-  KokkosKernels::Experimental::Graph::spgemm_symbolic (
-      &kh,
-      m,
-      n,
-      k,
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
-      TRANPOSEFIRST,
-      crsMat2.graph.row_map,
-      crsMat2.graph.entries,
-      TRANPOSESECOND,
-      row_mapC,
-      entriesC
-  );
 
-  Kokkos::fence();
-  double symbolic_time = timer1.seconds();
-  std::cout << "symbolic_time:" << symbolic_time << std::endl;
-  Kokkos::Impl::Timer timer2;
-  KokkosKernels::Experimental::Graph::spgemm_numeric(
-      &kh,
-      m,
-      n,
-      k,
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
-      crsMat.values,
-      TRANPOSEFIRST,
+  for (int i = 0; i < repeat; ++i){
+    Kokkos::Impl::Timer timer1;
+    KokkosKernels::Experimental::Graph::spgemm_symbolic (
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        TRANPOSEFIRST,
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        TRANPOSESECOND,
+        row_mapC,
+        entriesC
+    );
 
-      crsMat2.graph.row_map,
-      crsMat2.graph.entries,
-      crsMat2.values,
-      TRANPOSESECOND,
-      row_mapC,
-      entriesC,
-      valuesC
-  );
-  Kokkos::fence();
-  double numeric_time = timer2.seconds();
+    Kokkos::fence();
+    double symbolic_time = timer1.seconds();
+    std::cout << "symbolic_time:" << symbolic_time << std::endl;
+    Kokkos::Impl::Timer timer2;
+    KokkosKernels::Experimental::Graph::spgemm_numeric(
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        crsMat.values,
+        TRANPOSEFIRST,
 
-  Kokkos::Impl::Timer timer3;
-  KokkosKernels::Experimental::Graph::spgemm_apply(
-      &kh,
-      m,
-      n,
-      k,
-      crsMat.graph.row_map,
-      crsMat.graph.entries,
-      crsMat.values,
-      TRANPOSEFIRST,
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        crsMat2.values,
+        TRANPOSESECOND,
+        row_mapC,
+        entriesC,
+        valuesC
+    );
+    Kokkos::fence();
+    double numeric_time = timer2.seconds();
 
-      crsMat2.graph.row_map,
-      crsMat2.graph.entries,
-      crsMat2.values,
-      TRANPOSESECOND,
-      row_mapC,
-      entriesC,
-      valuesC
-  );
-  Kokkos::fence();
-  double apply_time = timer3.seconds();
+    Kokkos::Impl::Timer timer3;
+    KokkosKernels::Experimental::Graph::spgemm_apply(
+        &kh,
+        m,
+        n,
+        k,
+        crsMat.graph.row_map,
+        crsMat.graph.entries,
+        crsMat.values,
+        TRANPOSEFIRST,
 
-  std::cout
-      << "mm_time:" << numeric_time + symbolic_time + apply_time
-      << " symbolic_time:" << symbolic_time
-      << " numeric:" << numeric_time
-      << " apply:" << apply_time << std::endl;
+        crsMat2.graph.row_map,
+        crsMat2.graph.entries,
+        crsMat2.values,
+        TRANPOSESECOND,
+        row_mapC,
+        entriesC,
+        valuesC
+    );
+    Kokkos::fence();
+    double apply_time = timer3.seconds();
+
+    std::cout
+    << "mm_time:" << numeric_time + symbolic_time + apply_time
+    << " symbolic_time:" << symbolic_time
+    << " numeric:" << numeric_time
+    << " apply:" << apply_time << std::endl;
+  }
 
   std::cout << "row_mapC:" << row_mapC.dimension_0() << std::endl;
   std::cout << "entriesC:" << entriesC.dimension_0() << std::endl;

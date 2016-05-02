@@ -99,7 +99,7 @@ void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, id
 }
 
 template <typename idx, typename wt>
-void write_graph_bin(idx nv, idx ne,idx *xadj, idx *adj, wt *ew, char *filename){
+void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *ew,const  char *filename){
   std::ofstream myFile (filename, std::ios::out | std::ios::binary);
   myFile.write((char *) &nv, sizeof(idx));
   myFile.write((char *) &ne, sizeof(idx));
