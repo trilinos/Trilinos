@@ -606,6 +606,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 #ifdef HAVE_SACADO_KOKKOSCONTAINERS
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device )
+{
+  typedef typename ApplyDynRankView<double,Layout,Device>::type DoubleViewType;
+  typedef typename ApplyDynRankView<FadType,Layout,Device>::type FadViewType;
+  typedef typename FadViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type fad_size = global_fad_size;
+
+  // Create views
+  DoubleViewType v1("view", num_rows);
+  FadViewType v2("view", num_rows, fad_size+1);
+
+  // Check dimension scalar works
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v1), 0, out, success);
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+#else
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), 0, out, success);
+#endif
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankMultiply, FadType, Layout, Device )
 {
   typedef typename ApplyDynRankView<FadType,Layout,Device>::type ViewType;
@@ -654,7 +677,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 }
 
 #else
-
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankMultiply, FadType, Layout, Device ) {}
 
@@ -1030,6 +1054,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, MultiplyMixed, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Rank8, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankDimensionScalar, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankMultiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Subview, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, ShmemSize, F, L, D )

@@ -35,4 +35,13 @@ bool read_file_create_faces_check_face_elem_connectivity_stk(std::string filenam
 
 bool read_file_check_face_elem_connectivity_stk(std::string filename, const std::set<unsigned>& counts);
 
+namespace stk
+{
+namespace unit_test_util
+{
+stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
+                        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part);
+}
+}
+
 #endif // FACETESTINGUTILS_HPP_

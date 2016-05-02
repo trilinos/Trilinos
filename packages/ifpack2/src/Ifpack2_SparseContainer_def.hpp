@@ -476,17 +476,22 @@ template<class MatrixType, class InverseType>
 std::string SparseContainer<MatrixType,InverseType>::description() const
 {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << "\"Ifpack2::SparseContainer\": {";
   if (isInitialized()) {
     if (isComputed()) {
-      oss << "{status = initialized, computed";
+      oss << "status = initialized, computed";
     }
     else {
-      oss << "{status = initialized, not computed";
+      oss << "status = initialized, not computed";
     }
   }
   else {
-    oss << "{status = not initialized, not computed";
+    oss << "status = not initialized, not computed";
+  }
+  if (Inverse_ != Teuchos::null) {
+    oss << ", \"Inverse\": {";
+    oss << Inverse_->description();
+    oss << "}";
   }
 
   oss << "}";
@@ -592,13 +597,23 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 
 // For ETI
 #include "Ifpack2_ILUT.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
 // more specific than RowMatrix.
 
-#define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
-                                           Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >;
-
+#ifdef HAVE_IFPACK2_AMESOS2
+#  define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >; \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > >;
+#else
+#  define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >;
+#endif
 #endif // IFPACK2_SPARSECONTAINER_HPP

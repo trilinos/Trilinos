@@ -366,9 +366,12 @@ EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 
 // Pierson tests
 EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
-EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*stk::expreval::s_pi))/2);
-EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
-EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*s_pi))/2);
+EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*s_pi/1.0))/2);
+
+EXPREVAL_DEFINE_TEST(k5, haversine_pulse(x, 0.0, 1.0), std::pow(std::sin(s_pi*x),2)   );
+EXPREVAL_DEFINE_TEST(k6,  cycloidal_ramp(x, 0.0, 1.0), x-1/(s_two_pi)*sin(s_two_pi*x) );
 
 #undef EXPREVAL_DEFINE_TEST1
 
@@ -410,9 +413,6 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(test_one_value("sin(pow(2,2))", sin(4)));
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(100))))",sin(sin(sin(sin(100.0))))));
   EXPECT_TRUE(test_one_value("sin(sin(sin(sin(pow(2,2)))))",sin(sin(sin(sin(4.0))))));
-
-
-
 
 #ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
@@ -551,6 +551,8 @@ UnitTestEvaluator::testEvaluator()
   EXPECT_TRUE(EXPREVAL_TEST(k2));
   EXPECT_TRUE(EXPREVAL_TEST(k3));
   EXPECT_TRUE(EXPREVAL_TEST(k4));
+  EXPECT_TRUE(EXPREVAL_TEST(k5));
+  EXPECT_TRUE(EXPREVAL_TEST(k6));
 
 #undef EXPREVAL_TEST
 }

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,49 +30,46 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <Ioss_CodeTypes.h> // for IntVector
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_EdgeBlock.h>
 #include <Ioss_ElementTopology.h>
 #include <Ioss_Property.h>
-#include <stddef.h>
+#include <cstddef>
 #include <string>
 
 #include "Ioss_EntityBlock.h"
 #include "Ioss_PropertyManager.h"
 
 namespace Ioss {
-class Field;
-}  // namespace Ioss
+  class Field;
+} // namespace Ioss
 
-Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database,
-			   const std::string& my_name,
-			   const std::string& edge_type,
-			   int64_t number_edges)
-  : Ioss::EntityBlock(io_database, my_name, edge_type, number_edges)
+Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
+                           const std::string &edge_type, int64_t number_edges)
+    : Ioss::EntityBlock(io_database, my_name, edge_type, number_edges)
 {
-  if (topology()->master_element_name() != edge_type &&
-      topology()->name() != edge_type) {
+  if (topology()->master_element_name() != edge_type && topology()->name() != edge_type) {
     // Maintain original edge type on output database if possible.
     properties.add(Ioss::Property("original_edge_type", edge_type));
   }
-
 }
 
 Ioss::EdgeBlock::~EdgeBlock() = default;
 
-Ioss::Property Ioss::EdgeBlock::get_implicit_property(const std::string& my_name) const
+Ioss::Property Ioss::EdgeBlock::get_implicit_property(const std::string &my_name) const
 {
   return Ioss::EntityBlock::get_implicit_property(my_name);
 }
 
-int64_t Ioss::EdgeBlock::internal_get_field_data(const Ioss::Field& field,
-				      void *data, size_t data_size) const
+int64_t Ioss::EdgeBlock::internal_get_field_data(const Ioss::Field &field, void *data,
+                                                 size_t data_size) const
 {
   return get_database()->get_field(this, field, data, data_size);
 }
 
-int64_t Ioss::EdgeBlock::internal_put_field_data(const Ioss::Field& field,
-				      void *data, size_t data_size) const
+int64_t Ioss::EdgeBlock::internal_put_field_data(const Ioss::Field &field, void *data,
+                                                 size_t data_size) const
 {
   return get_database()->put_field(this, field, data, data_size);
 }

@@ -513,14 +513,19 @@ namespace Tpetra {
 
     virtual void
     doTransferNew (const SrcDistObject& src,
-                   CombineMode CM,
-                   size_t numSameIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
-                   const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
-                   Distributor &distor,
-                   ReverseOption revOp);
+                   const CombineMode CM,
+                   const size_t numSameIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& permuteToLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& permuteFromLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& remoteLIDs,
+                   const Kokkos::DualView<const local_ordinal_type*,
+                     device_type>& exportLIDs,
+                   Distributor& distor,
+                   const ReverseOption revOp,
+                   const bool commOnHost);
 
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
@@ -540,7 +545,19 @@ namespace Tpetra {
     virtual bool
     checkSizes (const SrcDistObject& source) = 0;
 
-    /// \brief Whether lass (???) implements old or new interface
+    /// \brief Whether the subclass implements the "old" or "new"
+    ///   (Kokkos-friendly) interface.
+    ///
+    /// The "old" interface consists of copyAndPermute,
+    /// packAndPrepare, and unpackAndCombine.  The "new" interface
+    /// consists of copyAndPermuteNew, packAndPrepareNew, and
+    /// unpackAndCombineNew.  The new interface is preferred because
+    /// it facilitates thread parallelization using Kokkos data
+    /// structures.
+    ///
+    /// At some point, we will remove the old interface, and rename
+    /// the "new" interface (by removing "New" from the methods'
+    /// names), so that it becomes the only interface.
     virtual bool useNewInterface () { return false; }
 
     /// \brief Perform copies and permutations that are local to this process.
@@ -568,9 +585,9 @@ namespace Tpetra {
     {}
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
-                       size_t numSameIDs,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteToLIDs,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &permuteFromLIDs)
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
     {}
 
     /// \brief Perform any packing or preparation required for communication.
@@ -603,16 +620,19 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     Distributor &distor)
     {}
+
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
-                       const Kokkos::View<const local_ordinal_type*, execution_space> &exportLIDs,
-                       Kokkos::View<packet_type*, execution_space> &exports,
-                       const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       Kokkos::DualView<packet_type*, device_type>& exports,
+                       const Kokkos::DualView<size_t*, device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
-                       Distributor &distor)
+                       Distributor& distor)
     {}
 
-    /// \brief Perform any unpacking and combining after communication.
+    /// \brief Perform any unpacking and combining after communication
+    ///   (old version that uses Teuchos memory management classes to
+    ///   hold data).
     ///
     /// \param importLIDs [in] List of the entries (as LIDs in the
     ///   destination object) we received from other images.
@@ -642,14 +662,38 @@ namespace Tpetra {
                       CombineMode CM)
     {}
 
+    /// \brief Perform any unpacking and combining after communication
+    ///   (new version that uses Kokkos data structures to hold data).
+    ///
+    /// The \c imports input argument controls whether this method
+    /// should unpack on host or unpack on device.
+    ///
+    /// \param importLIDs [in] List of the entries (as LIDs in the
+    ///   destination object) we received from other images.
+    ///
+    /// \param imports [in] Buffer containing data we received.
+    ///
+    /// \param numPacketsPerLID [in] If constantNumPackets is zero,
+    ///   then numPacketsPerLID[i] contains the number of packets
+    ///   imported for importLIDs[i].
+    ///
+    /// \param constantNumPackets [in] If nonzero, then
+    ///   numPacketsPerLID is constant (same value in all entries) and
+    ///   constantNumPackets is that value.  If zero, then
+    ///   numPacketsPerLID[i] is the number of packets imported for
+    ///   importLIDs[i].
+    ///
+    /// \param distor [in] The Distributor object we are using.
+    ///
+    /// \param CM [in] The combine mode to use when combining the
+    ///   imported entries with existing entries.
     virtual void
-    unpackAndCombineNew (
-      const Kokkos::View<const local_ordinal_type*, execution_space> &importLIDs,
-      const Kokkos::View<const packet_type*, execution_space> &imports,
-      const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
-      size_t constantNumPackets,
-      Distributor &distor,
-      CombineMode CM)
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                         const Kokkos::DualView<const packet_type*, device_type>& imports,
+                         const Kokkos::DualView<const size_t*, device_type>& numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode CM)
     {}
     //@}
 
@@ -680,6 +724,10 @@ namespace Tpetra {
 
     /// \brief Hook for releasing views.
     ///
+    /// \note This is no longer called (and is therefore no longer
+    ///   needed) for subclasses for which useNewInterface() returns
+    ///   \c true.
+    ///
     /// doTransfer() calls this on both the source and destination
     /// objects, once it no longer needs to access that object's data.
     /// By default, this method does nothing.  Implementations may use
@@ -700,10 +748,18 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::View<packet_type*, execution_space> imports_;
-    typename decltype (imports_)::HostMirror host_imports_;
+    Kokkos::DualView<packet_type*, execution_space> imports_;
 
-  protected:
+    /// \brief Reallocate imports_ if needed.
+    ///
+    /// This unfortunately must be declared protected, for the same
+    /// reason that imports_ is declared protected.
+    ///
+    /// \param newSize [in] New size of imports_.
+    /// \param debug [in] Whether to print (copious) debug output to stderr.
+    void
+    reallocImportsIfNeeded (const size_t newSize, const bool debug = false);
+
     /// \brief Number of packets to receive for each receive operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -715,20 +771,17 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in
     /// the multivector.)
     ///
-    /// Unfortunately, I had to declare these protected, because
-    /// CrsMatrix uses them at one point.  Please, nobody else use
-    /// them.
-    Kokkos::View<size_t*, execution_space> numImportPacketsPerLID_;
-    typename Kokkos::View<size_t*, execution_space>::HostMirror host_numImportPacketsPerLID_;
+    /// Unfortunately, I had to declare this protected, because
+    /// CrsMatrix uses it at one point.  Please, nobody else use it.
+    Kokkos::DualView<size_t*, execution_space> numImportPacketsPerLID_;
 
-  private:
-    //! Buffer from which packed data are exported (sent to other processes).
-    Kokkos::View<packet_type*, execution_space> exports_;
+    /// \brief Buffer from which packed data are exported (sent to
+    ///   other processes).
+    ///
+    /// Unfortunately, I had to declare this protected, because
+    /// CrsMatrix uses it at one point.  Please, nobody else use it.
+    Kokkos::DualView<packet_type*, device_type> exports_;
 
-  protected:
-    Teuchos::Array<packet_type> exports_old_;
-
-  protected:
     /// \brief Number of packets to send for each send operation.
     ///
     /// This array is used in Distributor::doPosts() (and
@@ -740,11 +793,9 @@ namespace Tpetra {
     /// argument of packAndPrepare() to the number of columns in the
     /// multivector.)
     ///
-    /// Unfortunately, I had to declare these protected, because
-    /// CrsMatrix uses them at one point.  Please, nobody else use
-    /// them.
-    Kokkos::View<size_t*, execution_space> numExportPacketsPerLID_;
-    typename Kokkos::View<size_t*, execution_space> host_numExportPacketsPerLID_;
+    /// Unfortunately, I had to declare this protected, because
+    /// CrsMatrix uses them at one point.  Please, nobody else use it.
+    Kokkos::DualView<size_t*, execution_space> numExportPacketsPerLID_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:

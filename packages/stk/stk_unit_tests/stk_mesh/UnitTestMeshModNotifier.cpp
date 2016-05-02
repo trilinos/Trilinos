@@ -145,7 +145,7 @@ TEST(MeshModNotifier, testGlobalEvents)
             notifier.notify_local_entity_comm_info_changed(stk::topology::NODE_RANK);
             notifier.notify_local_buckets_changed(stk::topology::NODE_RANK);
         }
-        notifier.notify_finished_modification_end();
+        notifier.notify_finished_modification_end(comm);
 
         EXPECT_EQ(1u, listener.get_global_entity_comm_info_changed(stk::topology::NODE_RANK));
         EXPECT_EQ(1u, listener.get_global_buckets_changed(stk::topology::NODE_RANK));

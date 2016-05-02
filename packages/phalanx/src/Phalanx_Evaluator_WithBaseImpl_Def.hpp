@@ -183,7 +183,7 @@ PHX::EvaluatorWithBaseImpl<Traits>::dependentFields() const
 template<typename Traits>
 Kokkos::Experimental::Future<void,PHX::Device::execution_space>
 PHX::EvaluatorWithBaseImpl<Traits>::
-createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& ,
+createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& ,
 	   const std::size_t& ,
 	   typename Traits::EvalData )
 {

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,10 +33,12 @@
 #ifndef IOSS_Iotr_Offset_h
 #define IOSS_Iotr_Offset_h
 
-#include <Ioss_Transform.h>             // for Transform, Factory
-#include <string>                       // for string
-#include "Ioss_VariableType.h"          // for VariableType
-namespace Ioss { class Field; }
+#include <Ioss_Transform.h> // for Transform, Factory
+#include <string>           // for string
+#include <transform/Iotr_Offset.h>
+namespace Ioss {
+  class Field;
+}
 
 namespace Ioss {
 }
@@ -44,34 +46,35 @@ namespace Ioss {
 namespace Iotr {
 
   class Offset_Factory : public Factory
-    {
-    public:
-      static const Offset_Factory* factory();
-    private:
-      Offset_Factory();
-      Ioss::Transform* make(const std::string& /*unused*/ /*unused*/) const;
-    };
+  {
+  public:
+    static const Offset_Factory *factory();
 
-  class Offset: public Ioss::Transform
-    {
-      friend class Offset_Factory;
+  private:
+    Offset_Factory();
+    Ioss::Transform *make(const std::string & /*unused*/ /*unused*/) const;
+  };
 
-    public:
-      const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
-      int output_count(int in) const;
+  class Offset : public Ioss::Transform
+  {
+    friend class Offset_Factory;
 
-      void set_property(const std::string &name, int value);
-      void set_property(const std::string &name, double value);
+  public:
+    const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;
+    int output_count(int in) const;
 
-    protected:
-      Offset();
+    void set_property(const std::string &name, int value);
+    void set_property(const std::string &name, double value);
 
-      bool internal_execute(const Ioss::Field &field, void *data);
+  protected:
+    Offset();
 
-    private:
-      int    intOffset;
-      double realOffset;
-    };
+    bool internal_execute(const Ioss::Field &field, void *data);
+
+  private:
+    int    intOffset;
+    double realOffset;
+  };
 }
 
 #endif // IOSS_Iotr_Offset_h

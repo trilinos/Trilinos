@@ -164,7 +164,7 @@ namespace MueLu {
   void Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::print(Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const {
     MUELU_DESCRIBE;
 
-    if (verbLevel & Statistics0)
+    if (verbLevel & Statistics1)
       out0 << "Global number of aggregates: " << GetNumGlobalAggregates() << std::endl;
   }
 

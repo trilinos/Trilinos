@@ -3552,7 +3552,7 @@ void yyFlexLexer::yyensure_buffer_stack(void)
 /* %if-c++-only */
 void yyFlexLexer::LexerError( yyconst char msg[] )
 {
-    	std::cerr << msg << std::endl;
+    	std::cerr << msg << '\n';
 	exit( YY_EXIT_FAILURE );
 }
 /* %endif */
@@ -4037,7 +4037,7 @@ namespace SEAMS {
 #endif
 int SEAMSFlexLexer::yylex()
 {
-    std::cerr << "in ExampleFlexLexer::yylex() !" << std::endl;
+    std::cerr << "in ExampleFlexLexer::yylex() !" << '\n';
     return 0;
 }
 

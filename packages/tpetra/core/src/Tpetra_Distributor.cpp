@@ -39,9 +39,9 @@
 // @HEADER
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
 
 namespace Tpetra {
   namespace Details {
@@ -669,97 +669,127 @@ namespace Tpetra {
     return out.str ();
   }
 
+  std::string
+  Distributor::
+  localDescribeToString (const Teuchos::EVerbosityLevel vl) const
+  {
+    using Teuchos::toString;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    using std::endl;
+
+    // This preserves current behavior of Distributor.
+    if (vl <= Teuchos::VERB_LOW || comm_.is_null ()) {
+      return std::string ();
+    }
+
+    auto outStringP = Teuchos::rcp (new std::ostringstream ());
+    auto outp = Teuchos::getFancyOStream (outStringP); // returns RCP
+    Teuchos::FancyOStream& out = *outp;
+
+    const int myRank = comm_->getRank ();
+    const int numProcs = comm_->getSize ();
+    out << "Process " << myRank << " of " << numProcs << ":" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    out << "selfMessage: " << hasSelfMessage () << endl;
+    out << "numSends: " << getNumSends () << endl;
+    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      out << "imagesTo: " << toString (imagesTo_) << endl;
+      out << "lengthsTo: " << toString (lengthsTo_) << endl;
+      out << "maxSendLength: " << getMaxSendLength () << endl;
+    }
+    if (vl == VERB_EXTREME) {
+      out << "startsTo: " << toString (startsTo_) << endl;
+      out << "indicesTo: " << toString (indicesTo_) << endl;
+    }
+    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      out << "numReceives: " << getNumReceives () << endl;
+      out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
+      out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
+      out << "startsFrom: " << toString (startsFrom_) << endl;
+      out << "imagesFrom: " << toString (imagesFrom_) << endl;
+    }
+
+    out.flush (); // make sure the ostringstream got everything
+    return outStringP->str ();
+  }
+
   void
-  Distributor::describe (Teuchos::FancyOStream &out,
-                         const Teuchos::EVerbosityLevel verbLevel) const
+  Distributor::
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
-    using std::setw;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    const int myImageID = comm_->getRank();
-    const int numImages = comm_->getSize();
-    Teuchos::OSTab tab (out);
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
     if (vl == VERB_NONE) {
+      return; // don't print anything
+    }
+    // If this Distributor's Comm is null, then the the calling
+    // process does not participate in Distributor-related collective
+    // operations with the other processes.  In that case, it is not
+    // even legal to call this method.  The reasonable thing to do in
+    // that case is nothing.
+    if (comm_.is_null ()) {
       return;
-    } else {
-      if (myImageID == 0) {
-        // VERB_LOW and higher prints description() (on Proc 0 only).
-        // We quote the class name because it contains colons:
-        // quoting makes the output valid YAML.
-        out << "\"Tpetra::Distributor\":" << endl;
-        Teuchos::OSTab tab2 (out);
-        const std::string label = this->getObjectLabel ();
-        if (label != "") {
-          out << "Label: " << label << endl;
-        }
-        out << "How initialized: "
-            << Details::DistributorHowInitializedEnumToString (howInitialized_)
-            << endl << "Parameters: " << endl;
-        {
-          Teuchos::OSTab tab3 (out);
-          out << "\"Send type\": "
-              << DistributorSendTypeEnumToString (sendType_) << endl
-              << "\"Barrier between receives and sends\": "
-              << (barrierBetween_ ? "true" : "false") << endl;
-          out << "\"Use distinct tags\": "
-              << (useDistinctTags_ ? "true" : "false") << endl;
-          out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
-          out << "\"Enable MPI CUDA RDMA support\": " <<
-            (enable_cuda_rdma_ ? "true" : "false") << endl;
-        }
+    }
+    const int myRank = comm_->getRank ();
+    const int numProcs = comm_->getSize ();
+
+    // Only Process 0 should touch the output stream, but this method
+    // in general may need to do communication.  Thus, we may need to
+    // preserve the current tab level across multiple "if (myRank ==
+    // 0) { ... }" inner scopes.  This is why we sometimes create
+    // OSTab instances by pointer, instead of by value.  We only need
+    // to create them by pointer if the tab level must persist through
+    // multiple inner scopes.
+    Teuchos::RCP<Teuchos::OSTab> tab0, tab1;
+
+    if (myRank == 0) {
+      // At every verbosity level but VERB_NONE, Process 0 prints.
+      // By convention, describe() always begins with a tab before
+      // printing.
+      tab0 = Teuchos::rcp (new Teuchos::OSTab (out));
+      // We quote the class name because it contains colons.
+      // This makes the output valid YAML.
+      out << "\"Tpetra::Distributor\":" << endl;
+      tab1 = Teuchos::rcp (new Teuchos::OSTab (out));
+
+      const std::string label = this->getObjectLabel ();
+      if (label != "") {
+        out << "Label: " << label << endl;
       }
-      if (vl == VERB_LOW) {
-        return;
-      } else {
+      out << "Number of processes: " << numProcs << endl
+          << "How initialized: "
+          << Details::DistributorHowInitializedEnumToString (howInitialized_)
+          << endl;
+      {
+        out << "Parameters: " << endl;
         Teuchos::OSTab tab2 (out);
-        // vl > VERB_LOW lets each image print its data.  We assume
-        // that all images can print to the given output stream, and
-        // execute barriers to make it more likely that the output
-        // will be in the right order.
-        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-          if (myImageID == imageCtr) {
-            if (myImageID == 0) {
-              out << "Number of processes: " << numImages << endl;
-            }
-            out << "Process: " << myImageID << endl;
-            Teuchos::OSTab tab3 (out);
-            out << "selfMessage: " << hasSelfMessage () << endl;
-            out << "numSends: " << getNumSends () << endl;
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << "imagesTo: " << toString (imagesTo_) << endl;
-              out << "lengthsTo: " << toString (lengthsTo_) << endl;
-              out << "maxSendLength: " << getMaxSendLength () << endl;
-            }
-            if (vl == VERB_EXTREME) {
-              out << "startsTo: " << toString (startsTo_) << endl;
-              out << "indicesTo: " << toString (indicesTo_) << endl;
-            }
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << "numReceives: " << getNumReceives () << endl;
-              out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
-              out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
-              out << "startsFrom: " << toString (startsFrom_) << endl;
-              out << "imagesFrom: " << toString (imagesFrom_) << endl;
-            }
-            // Last output is a flush; it leaves a space and also
-            // helps synchronize output.
-            out << std::flush;
-          } // if it's my image's turn to print
-          // Execute barriers to give output time to synchronize.
-          // One barrier generally isn't enough.
-          comm_->barrier();
-          comm_->barrier();
-          comm_->barrier();
-        } // for each image
+        out << "\"Send type\": "
+            << DistributorSendTypeEnumToString (sendType_) << endl
+            << "\"Barrier between receives and sends\": "
+            << (barrierBetween_ ? "true" : "false") << endl
+            << "\"Use distinct tags\": "
+            << (useDistinctTags_ ? "true" : "false") << endl
+            << "\"Enable MPI CUDA RDMA support\": "
+            << (enable_cuda_rdma_ ? "true" : "false") << endl
+            << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
       }
+    } // if myRank == 0
+
+    // This is collective over the Map's communicator.
+    if (vl > VERB_LOW) {
+      const std::string lclStr = this->localDescribeToString (vl);
+      Tpetra::Details::gathervPrint (out, lclStr, *comm_);
     }
   }
 

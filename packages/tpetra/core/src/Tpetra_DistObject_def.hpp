@@ -52,6 +52,54 @@
 
 #include "Tpetra_Distributor.hpp"
 
+namespace { // (anonymous)
+
+  // Get a Teuchos::ArrayView which views the host Kokkos::View of the
+  // input 1-D Kokkos::DualView.
+  template<class DualViewType>
+  Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
+  getArrayViewFromDualView (const DualViewType& x)
+  {
+    static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
+                   "The input DualView must have rank 1.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+       "input Kokkos::DualView was most recently modified on device, but this "
+       "function needs the host view of the data to be the most recently "
+       "modified.");
+
+    auto x_host = x.template view<Kokkos::HostSpace> ();
+    typedef typename DualViewType::t_dev::value_type value_type;
+    return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
+                                           x_host.dimension_0 ());
+  }
+
+  template<class T, class DT>
+  Kokkos::DualView<T*, DT>
+  getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
+                                const char label[],
+                                const bool leaveOnHost)
+  {
+    using Kokkos::MemoryUnmanaged;
+    typedef typename DT::memory_space DMS;
+    typedef Kokkos::HostSpace HMS;
+
+    const size_t len = static_cast<size_t> (x_av.size ());
+    Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
+    Kokkos::DualView<T*, DT> x_out (label, len);
+    if (leaveOnHost) {
+      x_out.template modify<HMS> ();
+      Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
+    }
+    else {
+      x_out.template modify<DMS> ();
+      Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
+    }
+    return x_out;
+  }
+
+} // namespace (anonymous)
+
 namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -187,9 +235,11 @@ namespace Tpetra {
           if (myRank == p) {
             out << "Process " << myRank << ":" << endl;
             Teuchos::OSTab tab2 (out);
-            out << "Export buffer size (in packets): " << exports_.size ()
+            out << "Export buffer size (in packets): "
+                << exports_.dimension_0 ()
                 << endl
-                << "Import buffer size (in packets): " << imports_.size ()
+                << "Import buffer size (in packets): "
+                << imports_.dimension_0 ()
                 << endl;
           }
           if (! comm.is_null ()) {
@@ -390,14 +440,74 @@ namespace Tpetra {
               const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
               const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
               const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
-              Distributor &distor,
+              Distributor& distor,
               ReverseOption revOp)
   {
-    if (this->useNewInterface()) {
-      doTransferNew(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+    typedef LocalOrdinal LO;
+    typedef device_type DT;
+
+    if (this->useNewInterface ()) {
+      const bool commOnHost = false;
+
+      // Convert arguments to Kokkos::DualView.  This currently
+      // involves deep copy, either to host or to device (depending on
+      // commOnHost).  At some point, we need to change the interface
+      // of doTransfer so it takes DualView (or just View) rather than
+      // Teuchos::ArrayView, so that we won't need this deep copy.
+      //
+      // We don't need to sync the arguments.  commOnHost determines
+      // where the most recent version lives.
+      Kokkos::DualView<LO*, DT> permuteToLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (permuteToLIDs_,
+                                              "permuteToLIDs",
+                                              commOnHost);
+      Kokkos::DualView<LO*, DT> permuteFromLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (permuteFromLIDs_,
+                                              "permuteFromLIDs",
+                                              commOnHost);
+      // No need to sync this.  packAndPrepareNew will use it to
+      // determine where to pack (in host or device memory).
+      Kokkos::DualView<LO*, DT> remoteLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (remoteLIDs_,
+                                              "remoteLIDs",
+                                              commOnHost);
+      Kokkos::DualView<LO*, DT> exportLIDs =
+        getDualViewCopyFromArrayView<LO, DT> (exportLIDs_,
+                                              "exportLIDs",
+                                              commOnHost);
+
+      doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
+                     remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
-      doTransferOld(src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_, remoteLIDs_, exportLIDs_, distor, revOp);
+      doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
+                     remoteLIDs_, exportLIDs_, distor, revOp);
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  reallocImportsIfNeeded (const size_t newSize, const bool debug)
+  {
+    if (static_cast<size_t> (imports_.dimension_0 ()) != newSize) {
+      if (debug) {
+        std::ostringstream os;
+        os << "*** Realloc imports_ from " << imports_.dimension_0 () << " to "
+           << newSize << std::endl;
+        std::cerr << os.str ();
+      }
+      // FIXME (mfh 28 Mar 2016, 25 Apr 2016) Fences around (UVM)
+      // allocations are for #227 debugging, but shouldn't be needed
+      // once #227 is fixed.
+      execution_space::fence ();
+      imports_ = decltype (imports_) ("imports", newSize);
+      execution_space::fence ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (imports_.dimension_0 ()) != newSize,
+         std::logic_error, "DualView reallocation failed: "
+         "imports_.dimension_0() = " << imports_.dimension_0 ()
+         << " != " << newSize << ".");
     }
   }
 
@@ -494,16 +604,17 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
+        // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+        // facilitate #227 debugging, but we shouldn't need them.
+        execution_space::fence ();
         numExportPacketsPerLID_ =
           decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
                                               exportLIDs.size ());
-        host_numExportPacketsPerLID_ =
-          Kokkos::create_mirror_view (numExportPacketsPerLID_);
+        execution_space::fence ();
         numImportPacketsPerLID_ =
           decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
                                               remoteLIDs.size ());
-        host_numImportPacketsPerLID_ =
-          Kokkos::create_mirror_view (numImportPacketsPerLID_);
+        execution_space::fence ();
       }
 
       {
@@ -515,9 +626,32 @@ namespace Tpetra {
         // an output argument).  If there are, constantNumPackets will
         // come back nonzero.  Otherwise, the source will fill the
         // numExportPacketsPerLID_ array.
-        Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
-        packAndPrepare (src, exportLIDs, exports_old_, numExportPacketsPerLID,
+        numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+        Teuchos::ArrayView<size_t> numExportPacketsPerLID =
+          getArrayViewFromDualView (numExportPacketsPerLID_);
+
+        // FIXME (mfh 26 Apr 2016) For backwards compatibility, use
+        // the old packAndPrepare interface that takes and resizes the
+        // exports buffer as a Teuchos::Array<packet_type>.  Then,
+        // copy out that buffer into the host version of exports_.
+
+        Teuchos::Array<packet_type> exportsOld;
+        packAndPrepare (src, exportLIDs, exportsOld, numExportPacketsPerLID,
                         constantNumPackets, distor);
+        const size_t exportsLen = static_cast<size_t> (exportsOld.size ());
+        if (static_cast<size_t> (exports_.dimension_0 ()) != exportsLen) {
+          // FIXME (mfh 26 Apr 2016) Fences around (UVM) allocations
+          // facilitate #227 debugging, but we shouldn't need them.
+          execution_space::fence ();
+          exports_ = decltype (exports_) ("exports", exportsLen);
+          execution_space::fence ();
+        }
+        Kokkos::View<const packet_type*, Kokkos::HostSpace,
+          Kokkos::MemoryUnmanaged> exportsOldK (exportsOld.getRawPtr (),
+                                                exportsLen);
+        exports_.template modify<Kokkos::HostSpace> ();
+        Kokkos::deep_copy (exports_.template view<Kokkos::HostSpace> (),
+                           exportsOldK);
       }
     }
 
@@ -537,37 +671,14 @@ namespace Tpetra {
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-
         if (debug) {
           std::ostringstream os;
-          os << "*** doTransferOld: Const # packets: imports_.size() = "
-             << imports_.size () << ", rbufLen = " << rbufLen << std::endl;
+          os << "*** doTransferOld: Const # packets: imports_.dimension_0() = "
+             << imports_.dimension_0 () << ", rbufLen = " << rbufLen
+             << std::endl;
           std::cerr << os.str ();
         }
-
-        if (static_cast<size_t> (imports_.size ()) != rbufLen ||
-            host_imports_.size () != imports_.size ()) {
-
-          if (debug) {
-            std::ostringstream os;
-            os << "*** doTransferOld: realloc imports_ from " <<
-              imports_.size () << " to " << rbufLen << std::endl;
-            std::cerr << os.str ();
-          }
-          execution_space::fence ();
-          Kokkos::realloc (imports_, rbufLen);
-          execution_space::fence ();
-
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (static_cast<size_t> (imports_.size ()) != rbufLen, std::logic_error,
-             "Kokkos::realloc failed: imports_.size() = " << imports_.size () <<
-             " != " << rbufLen << ".");
-
-          // This is doTransferOld, so we need the host version of
-          // imports_.  We'll wrap its data in a Teuchos::ArrayView
-          // and use the backwards compatibility interface.
-          host_imports_ = Kokkos::create_mirror_view (imports_);
-        }
+        reallocImportsIfNeeded (rbufLen, debug);
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -593,56 +704,58 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
-            distor.doReversePostsAndWaits (numExportPacketsPerLID.getConst (),
-                                           1,
+            // First communicate the number of packets per LID to receive.
+
+            // Make sure that host has the latest version, since we're
+            // using the version on host.  If host has the latest
+            // version already, syncing to host does nothing.
+            numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
+              getArrayViewFromDualView (numExportPacketsPerLID_);
+
+            // numImportPacketsPerLID_ is the output array here, so
+            // mark it as modified.  It's strictly output, so we don't
+            // have to sync from device.
+            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+              getArrayViewFromDualView (numImportPacketsPerLID_);
+            distor.doReversePostsAndWaits (numExportPacketsPerLID, 1,
                                            numImportPacketsPerLID);
             size_t totalImportPackets = 0;
             for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
               totalImportPackets += numImportPacketsPerLID[i];
             }
 
-            if (debug) {
-              std::ostringstream os;
-              os << "*** doTransferOld: imports_.size() = "
-                 << imports_.size () << ", totalImportPackets = "
-                 << totalImportPackets << std::endl;
-              std::cerr << os.str ();
-            }
+            reallocImportsIfNeeded (totalImportPackets, debug);
 
-            if (static_cast<size_t> (imports_.size ()) != totalImportPackets ||
-                host_imports_.size () != imports_.size ()) {
-              if (debug) {
-                std::ostringstream os;
-                os << "*** doTransferOld: realloc imports_ from " <<
-                  imports_.size () << " to " << totalImportPackets << std::endl;
-                std::cerr << os.str ();
-              }
-              execution_space::fence ();
-              Kokkos::realloc (imports_, totalImportPackets);
-              execution_space::fence ();
-              TEUCHOS_TEST_FOR_EXCEPTION
-                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
-                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
-                 << imports_.size () << " != " << totalImportPackets << ".");
-
-              // This is doTransferOld, so we need the host version of
-              // imports_.  We'll wrap its data in a Teuchos::ArrayView
-              // and use the backwards compatibility interface.
-              host_imports_ = Kokkos::create_mirror_view (imports_);
-            }
-            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
-                                                         host_imports_.dimension_0 ());
-            distor.doReversePostsAndWaits (exports_old_().getConst(),
+            // We don't need to sync imports_, because it is only for
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
+            imports_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<packet_type> hostImports =
+              getArrayViewFromDualView (imports_);
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doReversePostsAndWaits (hostExports,
                                            numExportPacketsPerLID,
                                            hostImports,
                                            numImportPacketsPerLID);
           }
           else {
-            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
-                                                         host_imports_.dimension_0 ());
-            distor.doReversePostsAndWaits (exports_old_ ().getConst (),
+            // We don't need to sync imports_, because it is only for
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
+            imports_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<packet_type> hostImports =
+              getArrayViewFromDualView (imports_);
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doReversePostsAndWaits (hostExports,
                                            constantNumPackets,
                                            hostImports);
           }
@@ -652,55 +765,58 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            Teuchos::ArrayView<size_t> numExportPacketsPerLID (host_numExportPacketsPerLID_.ptr_on_device (), host_numExportPacketsPerLID_.dimension_0 ());
-            Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
-            distor.doPostsAndWaits (numExportPacketsPerLID.getConst (), 1,
+            // First communicate the number of packets per LID to receive.
+
+            // Make sure that host has the latest version, since we're
+            // using the version on host.  If host has the latest
+            // version already, syncing to host does nothing.
+            numExportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const size_t> numExportPacketsPerLID =
+              getArrayViewFromDualView (numExportPacketsPerLID_);
+
+            // numImportPacketsPerLID_ is the output array here, so
+            // mark it as modified.  It's strictly output, so we don't
+            // have to sync from device.
+            //numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+            numImportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+              getArrayViewFromDualView (numImportPacketsPerLID_);
+            distor.doPostsAndWaits (numExportPacketsPerLID, 1,
                                     numImportPacketsPerLID);
             size_t totalImportPackets = 0;
             for (Array_size_type i = 0; i < numImportPacketsPerLID.size (); ++i) {
               totalImportPackets += numImportPacketsPerLID[i];
             }
 
-            if (debug) {
-              std::ostringstream os;
-              os << "*** doTransferOld: imports_.size() = "
-                 << imports_.size () << ", totalImportPackets = "
-                 << totalImportPackets << std::endl;
-              std::cerr << os.str ();
-            }
+            reallocImportsIfNeeded (totalImportPackets, debug);
 
-            if (static_cast<size_t> (imports_.size ()) != totalImportPackets ||
-                host_imports_.size () != imports_.size ()) {
-              if (debug) {
-                std::ostringstream os;
-                os << "*** doTransferOld: realloc imports_ from " <<
-                  imports_.size () << " to " << totalImportPackets << std::endl;
-                std::cerr << os.str ();
-              }
-              execution_space::fence ();
-              Kokkos::realloc (imports_, totalImportPackets);
-              execution_space::fence ();
-              TEUCHOS_TEST_FOR_EXCEPTION
-                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
-                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
-                 << imports_.size () << " != " << totalImportPackets << ".");
-
-              // This is doTransferOld, so we need the host version of
-              // imports_.  We'll wrap its data in a Teuchos::ArrayView
-              // and use the backwards compatibility interface.
-              host_imports_ = Kokkos::create_mirror_view (imports_);
-            }
-            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
-                                                         host_imports_.dimension_0 ());
-            distor.doPostsAndWaits (exports_old_().getConst(),
+            // We don't need to sync imports_, because it is only for
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
+            imports_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<packet_type> hostImports =
+              getArrayViewFromDualView (imports_);
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doPostsAndWaits (hostExports,
                                     numExportPacketsPerLID,
                                     hostImports,
                                     numImportPacketsPerLID);
           }
           else {
-            Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
-                                                         host_imports_.dimension_0 ());
-            distor.doPostsAndWaits (exports_old_ ().getConst (),
+            // We don't need to sync imports_, because it is only for
+            // output here.  Similarly, we don't need to mark exports_
+            // as modified, since it is read only here. This legacy
+            // version of doTransfer only uses host arrays.
+            imports_.template modify<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<packet_type> hostImports =
+              getArrayViewFromDualView (imports_);
+            exports_.template sync<Kokkos::HostSpace> ();
+            Teuchos::ArrayView<const packet_type> hostExports =
+              getArrayViewFromDualView (exports_);
+            distor.doPostsAndWaits (hostExports,
                                     constantNumPackets,
                                     hostImports);
           }
@@ -709,9 +825,22 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-          Teuchos::ArrayView<size_t> numImportPacketsPerLID (host_numImportPacketsPerLID_.ptr_on_device (), host_numImportPacketsPerLID_.dimension_0 ());
-          Teuchos::ArrayView<packet_type> hostImports (host_imports_.ptr_on_device (),
-                                                       host_imports_.dimension_0 ());
+
+          // We don't need to sync imports_, because it is only for
+          // output here.  This legacy version of doTransfer only uses
+          // host arrays.
+          imports_.template modify<Kokkos::HostSpace> ();
+          Teuchos::ArrayView<packet_type> hostImports =
+            getArrayViewFromDualView (imports_);
+          // NOTE (mfh 25 Apr 2016) unpackAndCombine doesn't actually
+          // change its numImportPacketsPerLID argument, so we don't
+          // have to mark it modified here.
+          numImportPacketsPerLID_.template sync<Kokkos::HostSpace> ();
+          // FIXME (mfh 25 Apr 2016) unpackAndCombine doesn't actually
+          // change its numImportPacketsPerLID argument, so we should
+          // be able to use a const Teuchos::ArrayView here.
+          Teuchos::ArrayView<size_t> numImportPacketsPerLID =
+            getArrayViewFromDualView (numImportPacketsPerLID_);
           unpackAndCombine (remoteLIDs, hostImports, numImportPacketsPerLID,
                             constantNumPackets, distor, CM);
         }
@@ -725,65 +854,41 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   doTransferNew (const SrcDistObject& src,
-                 CombineMode CM,
-                 size_t numSameIDs,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
-                 const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
-                 Distributor &distor,
-                 ReverseOption revOp)
+                 const CombineMode CM,
+                 const size_t numSameIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& permuteToLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& permuteFromLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& remoteLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   device_type>& exportLIDs,
+                 Distributor& distor,
+                 const ReverseOption revOp,
+                 const bool commOnHost)
   {
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
+    typedef LocalOrdinal LO;
+    typedef typename Kokkos::DualView<LO*,
+      device_type>::t_dev::memory_space dev_memory_space;
+    typedef typename Kokkos::DualView<LO*,
+      device_type>::t_host::memory_space host_memory_space;
     const bool debug = false;
 
     if (debug) {
       std::ostringstream os;
-      os << ">>> DistObject::doTransferNew: remoteLIDs_.size() = "
-         << remoteLIDs_.size () << std::endl;
+      os << ">>> DistObject::doTransferNew: remoteLIDs.size() = "
+         << remoteLIDs.dimension_0 () << std::endl;
       std::cerr << os.str ();
     }
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-    // Convert arguments to Kokkos::View's (involves deep copy to device)
-    //
-    // FIXME (mfh 17 Feb 2014) getKokkosViewDeepCopy _always_ does a
-    // deep copy.  It has to, since it returns a managed Kokkos::View,
-    // but the input Teuchos::ArrayView is unmanaged.  One way to fix
-    // this would be to change the interface by replacing the
-    // Teuchos::ArrayView inputs with Kokkos::View inputs.  This is
-    // the approach taken by Kokkos::DistObjectKA.  Some points:
-    //
-    //   1. It's perfectly OK to change the interface of doTransfer.
-    //      It should take Kokkos::View by default, and convert to
-    //      Teuchos::Array{RCP,View} if needed internally.
-    //   2. Recall that Teuchos::ArrayView is an unmanaged view.
-    //   3. If DistObject ever gets a nonblocking interface, that
-    //      interface should take managed views.
-    typedef Kokkos::View<const LocalOrdinal*, execution_space> lo_const_view_type;
-    lo_const_view_type permuteToLIDs =
-      getKokkosViewDeepCopy<execution_space> (permuteToLIDs_);
-    lo_const_view_type permuteFromLIDs =
-      getKokkosViewDeepCopy<execution_space> (permuteFromLIDs_);
-    lo_const_view_type remoteLIDs =
-      getKokkosViewDeepCopy<execution_space> (remoteLIDs_);
-
-    if (debug) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (permuteFromLIDs.size ()) !=
-         static_cast<size_t> (permuteFromLIDs_.size ()), std::logic_error,
-         "permuteFromLIDs.size() = " << permuteFromLIDs.size () <<
-         " != permuteFromLIDs_.size() = " << permuteFromLIDs_.size () << ".");
-    }
-
-    lo_const_view_type exportLIDs =
-      getKokkosViewDeepCopy<execution_space> (exportLIDs_);
 
     if (debug) {
       std::cerr << ">>> 1. checkSizes" << std::endl;
@@ -796,76 +901,20 @@ namespace Tpetra {
       "source object.  This probably means that they do not have the same "
       "dimensions.  For example, MultiVectors must have the same number of "
       "rows and columns.");
-    KokkosClassic::ReadWriteOption rwo = KokkosClassic::ReadWrite;
-    if (CM == INSERT || CM == REPLACE) {
-      const size_t numIDsToWrite = numSameIDs +
-        static_cast<size_t> (permuteToLIDs.size ()) +
-        static_cast<size_t> (remoteLIDs.size ());
-      if (numIDsToWrite == this->getMap ()->getNodeNumElements ()) {
-        // We're overwriting all of our local data in the destination
-        // object, so a write-only view suffices.
-        //
-        // FIXME (mfh 10 Apr 2012) This doesn't make sense for a
-        // CrsMatrix with a dynamic graph.  INSERT mode could mean
-        // that we're adding new entries to the object, but we don't
-        // want to get rid of the old ones.
-        rwo = KokkosClassic::WriteOnly;
-      }
-    }
+
+    // NOTE (mfh 26 Apr 2016) Chris Baker's implementation understood
+    // that if CM == INSERT || CM == REPLACE, the target object could
+    // be write only.  We don't optimize for that here.
 
     if (debug) {
-      std::cerr << ">>> 2. createViews" << std::endl;
+      std::cerr << ">>> 2. copyAndPermuteNew" << std::endl;
     }
 
-    // FIXME (mfh 17 Feb 2014) We're assuming that MPI can read device
-    // memory (that's even pre-UVM), so there is no need to create
-    // host views of the source object's data.
-
-    // Tell the source to create a read-only view of its data.  On a
-    // discrete accelerator such as a GPU, this brings EVERYTHING from
-    // device memory to host memory.
-    //
-    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
-    // rather, local LIDs to send) and packet counts, createViews()
-    // could create a "sparse view" that only brings in the necessary
-    // data from device to host memory.
-    const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
-    if (srcDistObj != NULL) {
-      srcDistObj->createViews ();
-    }
-
-    // FIXME (mfh 17 Feb 2014) We're assuming that MPI can read device
-    // memory (that's even pre-UVM), so there is no need to create
-    // host views of the target object's data.
-
-    // Tell the target to create a view of its data.  Depending on
-    // rwo, this could be a write-only view or a read-and-write view.
-    // On a discrete accelerator such as a GPU, a write-only view only
-    // requires a transfer from host to device memory.  A
-    // read-and-write view requires a two-way transfer.  This has the
-    // same problem as createViews(): it transfers EVERYTHING, not
-    // just the necessary data.
-    //
-    // FIXME (mfh 23 Mar 2012) By passing in the list of GIDs (or
-    // rather, local LIDs into which to receive) and packet counts,
-    // createViewsNonConst() could create a "sparse view" that only
-    // transfers the necessary data.
-    this->createViewsNonConst (rwo);
-
-    if (debug) {
-      std::cerr << ">>> 3. copyAndPermuteNew" << std::endl;
-    }
-
-    if (numSameIDs + permuteToLIDs.size()) {
+    if (numSameIDs + permuteToLIDs.dimension_0 () != 0) {
+      // There is at least one GID to copy or permute.
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
       Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-      // FIXME (mfh 17 Feb 2014) Nobody implements DistObject
-      // subclasses but Tpetra developers anyway, so don't bother with
-      // this "new" business.  Just write the interface you want.
-
-      // There is at least one GID to copy or permute.
       copyAndPermuteNew (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
     }
 
@@ -886,24 +935,34 @@ namespace Tpetra {
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
         if (debug) {
-          std::cerr << ">>> 4. Allocate num{Ex,Im}portPacketsPerLID" << std::endl;
+          std::cerr << ">>> 3. Allocate num{Ex,Im}portPacketsPerLID" << std::endl;
         }
 
-        // FIXME (mfh 17 Feb 2014) Don't "realloc" unless you really
-        // need to.  That will avoid a bit of time for reinitializing
-        // the Views' data.
-        execution_space::fence ();
-        Kokkos::realloc (numExportPacketsPerLID_, exportLIDs.size ());
-        execution_space::fence ();
-        host_numExportPacketsPerLID_ = Kokkos::create_mirror_view (numExportPacketsPerLID_);
-        execution_space::fence ();
-        Kokkos::realloc (numImportPacketsPerLID_, remoteLIDs.size ());
-        execution_space::fence ();
-        host_numImportPacketsPerLID_ = Kokkos::create_mirror_view (numImportPacketsPerLID_);
+        // Don't "realloc" unless you really need to.  That will avoid
+        // a bit of time for reinitializing the Views' data.
+
+        if (numExportPacketsPerLID_.dimension_0 () != exportLIDs.dimension_0 ()) {
+          // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+          // facilitate #227 debugging, but shouldn't be needed.
+          execution_space::fence ();
+          numExportPacketsPerLID_ =
+            decltype (numExportPacketsPerLID_) ("numExportPacketsPerLID",
+                                                exportLIDs.dimension_0 ());
+          execution_space::fence ();
+        }
+        if (numImportPacketsPerLID_.dimension_0 () != remoteLIDs.dimension_0 ()) {
+          // FIXME (mfh 25 Apr 2016) Fences around (UVM) allocations
+          // facilitate #227 debugging, but shouldn't be needed.
+          execution_space::fence ();
+          numImportPacketsPerLID_ =
+            decltype (numImportPacketsPerLID_) ("numImportPacketsPerLID",
+                                                remoteLIDs.dimension_0 ());
+          execution_space::fence ();
+        }
       }
 
       if (debug) {
-        std::cerr << ">>> 5. packAndPrepareNew" << std::endl;
+        std::cerr << ">>> 4. packAndPrepareNew" << std::endl;
       }
 
       {
@@ -915,109 +974,46 @@ namespace Tpetra {
           std::ostringstream os;
           const int myRank = this->getMap ()->getComm ()->getRank ();
           os << ">>> (Proc " << myRank << ") 5.0. Before packAndPrepareNew, "
-            "exports_.size()=" << exports_.size () << std::endl;
+            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
           std::cerr << os.str ();
         }
-        // Ask the source to pack data.  Also ask it whether there are a
-        // constant number of packets per element (constantNumPackets is
-        // an output argument).  If there are, constantNumPackets will
-        // come back nonzero.  Otherwise, the source will fill the
-        // numExportPacketsPerLID_ array.
+        // Ask the source to pack data.  Also ask it whether there are
+        // a constant number of packets per element
+        // (constantNumPackets is an output argument).  If there are,
+        // constantNumPackets will come back nonzero.  Otherwise, the
+        // source will fill the numExportPacketsPerLID_ array.
         packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
                            constantNumPackets, distor);
         if (debug) {
           std::ostringstream os;
           const int myRank = this->getMap ()->getComm ()->getRank ();
           os << ">>> (Proc " << myRank << ") 5.0. After packAndPrepareNew, "
-            "exports_.size()=" << exports_.size () << std::endl;
+            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
           std::cerr << os.str ();
         }
       }
-    }
-
-    if (debug) {
-      std::cerr << ">>> 6. releaseViews" << std::endl;
-    }
-
-    // FIXME (mfh 17 Feb 2014) See comments above; there is no need to
-    // create host views of the source object's data.
-
-    // We don't need the source's data anymore, so it can let go of
-    // its views.  On an accelerator device with a separate memory
-    // space (like a GPU), this frees host memory, since device memory
-    // has the "master" version of the data.
-    if (srcDistObj != NULL) {
-      srcDistObj->releaseViews ();
     }
 
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
       if (constantNumPackets != 0) {
         if (debug) {
-          std::cerr << ">>> 7. Realloc imports_" << std::endl;
+          std::cerr << ">>> 6. Realloc imports_" << std::endl;
         }
-
         // There are a constant number of packets per element.  We
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
-        const size_t rbufLen = remoteLIDs.size() * constantNumPackets;
-
-        if (debug) {
-          std::ostringstream os;
-          os << "*** doTransferNew: imports_.size() = " << imports_.size ()
-             << ", rbufLen = " << rbufLen << " = " << remoteLIDs.size ()
-             << " * " << constantNumPackets << std::endl;
-          std::cerr << os.str ();
-        }
-
-        if (static_cast<size_t> (imports_.dimension_0 ()) != rbufLen) {
-          if (debug) {
-            std::ostringstream os;
-            os << "*** doTransferNew: realloc imports_ from " <<
-              imports_.size () << " to " << rbufLen << std::endl;
-            std::cerr << os.str ();
-          }
-          // FIXME (mfh 28 Mar 2016) This helps fix #227.
-          execution_space::fence ();
-          Kokkos::realloc (imports_, rbufLen);
-          execution_space::fence ();
-          TEUCHOS_TEST_FOR_EXCEPTION
-            (static_cast<size_t> (imports_.size ()) != rbufLen,
-             std::logic_error, "Kokkos::realloc failed: imports_.size() = "
-             << imports_.size () << " != " << rbufLen << ".");
-
-          // This is doTransferNew, so we don't need to allocate the
-          // host version of imports_.
-        }
+        const size_t rbufLen = remoteLIDs.dimension_0 () * constantNumPackets;
+        reallocImportsIfNeeded (rbufLen, debug);
       }
-
-      // FIXME (mfh 17 Feb 2014) Why do we need mirror views?
-      // Furthermore, if we do need to do this, we should only do it
-      // _once_, since the arrays are constant (they come from the
-      // Import / Export object, which is constant).
-
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (host_numExportPacketsPerLID_.dimension_0 () !=
-         numExportPacketsPerLID_.dimension_0 (), std::logic_error, "Tpetra::"
-         "DistObject::doTransferNew: host_numExportPacketsPerLID_.dimension_0()"
-         " = " << host_numExportPacketsPerLID_.dimension_0 () << " != "
-         "numExportPacketsPerLID_.dimension_0() = " <<
-         numExportPacketsPerLID_.dimension_0() << ".  Please report this bug "
-         "to the Tpetra developers.");
-
-      // FIXME (mfh 28 Mar 2016) This helps fix #227.
-      execution_space::fence ();
-
-      if (debug) {
-        std::cerr << ">>> 8. Copy numExportPacketsPerLID to host" << std::endl;
-      }
-
-      // Copy numExportPacketsPerLID to host
-      Kokkos::deep_copy (host_numExportPacketsPerLID_, numExportPacketsPerLID_);
 
       // Do we need to do communication (via doPostsAndWaits)?
       bool needCommunication = true;
+
+      // This may be NULL.  It will be used below.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+
       if (revOp == DoReverse && ! isDistributed ()) {
         needCommunication = false;
       }
@@ -1042,13 +1038,9 @@ namespace Tpetra {
       // device memory (which doesn't even require UVM).
 
       if (needCommunication) {
-        if (debug) {
-          std::cerr << ">>> 9. Communicate" << std::endl;
-        }
-
         if (revOp == DoReverse) {
           if (debug) {
-            std::cerr << ">>> 9.0. Reverse mode" << std::endl;
+            std::cerr << ">>> 7.0. Reverse mode" << std::endl;
           }
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -1056,79 +1048,98 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             if (debug) {
-              std::cerr << ">>> 9.1. Variable # packets / LID: first comm" << std::endl;
+              std::cerr << ">>> 7.1. Variable # packets / LID: first comm"
+                        << std::endl;
             }
-            distor.doReversePostsAndWaits (create_const_view (host_numExportPacketsPerLID_),
+            numExportPacketsPerLID_.template sync<host_memory_space> ();
+            numImportPacketsPerLID_.template sync<host_memory_space> ();
+            distor.doReversePostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<host_memory_space> ()),
                                            1,
-                                           host_numImportPacketsPerLID_);
+                                           numImportPacketsPerLID_.template view<host_memory_space> ());
             size_t totalImportPackets = 0;
             // FIXME (mfh 17 Feb 2014) This would be a good place for
             // a Kokkos reduction.  numImportPacketsPerLID_ has as
             // many entries as the number of LIDs on the calling
             // process.
-            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID_[i];
-            }
+            {
+              typedef decltype (numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host host_view_type;
+              typedef typename host_view_type::const_type const_host_view_type;
 
-            if (debug) {
-              std::cerr << ">>> 9.2. Realloc" << std::endl;
-            }
-
-            if (debug) {
-              std::ostringstream os;
-              os << "*** doTransferNew: imports_.size() = "
-                 << imports_.size () << ", totalImportPackets = "
-                 << totalImportPackets << std::endl;
-              std::cerr << os.str ();
-            }
-
-            if (static_cast<size_t> (imports_.size ()) != totalImportPackets) {
-              if (debug) {
-                std::ostringstream os;
-                os << "*** doTransferNew: realloc imports_ from " <<
-                  imports_.size () << " to " << totalImportPackets << std::endl;
-                std::cerr << os.str ();
+              const_host_view_type host_numImportPacketsPerLID =
+                numImportPacketsPerLID_.template view<host_memory_space> ();
+              const view_size_type numLids = host_numImportPacketsPerLID.size ();
+              for (view_size_type i = 0; i < numLids; ++i) {
+                totalImportPackets += host_numImportPacketsPerLID[i];
               }
-
-              execution_space::fence ();
-              Kokkos::realloc (imports_, totalImportPackets);
-              execution_space::fence ();
-              TEUCHOS_TEST_FOR_EXCEPTION
-                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
-                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
-                 << imports_.size () << " != " << totalImportPackets << ".");
-
-              // This is doTransferNew, so we don't need to allocate the
-              // host version of imports_.
             }
 
             if (debug) {
-              std::cerr << ">>> 9.3. Second comm" << std::endl;
+              std::cerr << ">>> 7.2. Realloc" << std::endl;
             }
 
-            distor.doReversePostsAndWaits (create_const_view (exports_),
-                                           getArrayView (host_numExportPacketsPerLID_),
-                                           imports_,
-                                           getArrayView (host_numImportPacketsPerLID_));
+            reallocImportsIfNeeded (totalImportPackets, debug);
+
+            if (debug) {
+              std::cerr << ">>> 7.3. Second comm" << std::endl;
+            }
+
+            if (commOnHost) {
+              numExportPacketsPerLID_.template sync<host_memory_space> ();
+              numImportPacketsPerLID_.template sync<host_memory_space> ();
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<host_memory_space> ();
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                             getArrayViewFromDualView (numExportPacketsPerLID_),
+                                             imports_.template view<host_memory_space> (),
+                                             getArrayViewFromDualView (numImportPacketsPerLID_));
+            }
+            else {
+              // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
+              // can take numExportPacketsPerLID and
+              // numImportPacketsPerLID as View or DualView, rather
+              // than as Teuchos::ArrayView, then we can use their
+              // device versions.  For now, we'll use their host
+              // versions.
+              numExportPacketsPerLID_.template sync<host_memory_space> ();
+              numImportPacketsPerLID_.template sync<host_memory_space> ();
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<dev_memory_space> ();
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                             getArrayViewFromDualView (numExportPacketsPerLID_),
+                                             imports_.template view<dev_memory_space> (),
+                                             getArrayViewFromDualView (numImportPacketsPerLID_));
+            }
           }
           else {
             if (debug) {
               const int myRank = this->getMap ()->getComm ()->getRank ();
-
               std::ostringstream os;
-              os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
-                " exports_.size()=" << exports_.size () << ", imports_.size()="
-                 << imports_.size () << std::endl;
+              os << ">>> (Proc " << myRank << "): 7.1. Const # packets per "
+                "LID: exports_.dimension_0() = " << exports_.dimension_0 ()
+                 << ", imports_.dimension_0() = " << imports_.dimension_0 ()
+                 << std::endl;
               std::cerr << os.str ();
             }
-            distor.doReversePostsAndWaits (create_const_view (exports_),
-                                           constantNumPackets,
-                                           imports_);
+            if (commOnHost) {
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<host_memory_space> ();
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                             constantNumPackets,
+                                             imports_.template view<host_memory_space> ());
+            }
+            else { // pack on device
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<dev_memory_space> ();
+              distor.doReversePostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                             constantNumPackets,
+                                             imports_.template view<dev_memory_space> ());
+            }
           }
         }
         else { // revOp == DoForward
           if (debug) {
-            std::cerr << ">>> 9.0. Forward mode" << std::endl;
+            std::cerr << ">>> 7.0. Forward mode" << std::endl;
           }
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -1136,94 +1147,111 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
             if (debug) {
-              std::cerr << ">>> 9.1. Variable # packets / LID: first comm" << std::endl;
+              std::cerr << ">>> 7.1. Variable # packets / LID: first comm" << std::endl;
             }
 
-            distor.doPostsAndWaits (create_const_view (host_numExportPacketsPerLID_), 1,
-                                    host_numImportPacketsPerLID_);
+            numExportPacketsPerLID_.template sync<host_memory_space> ();
+            numImportPacketsPerLID_.template sync<host_memory_space> ();
+            distor.doPostsAndWaits (create_const_view (numExportPacketsPerLID_.template view<host_memory_space> ()), 1,
+                                    numImportPacketsPerLID_.template view<host_memory_space> ());
             size_t totalImportPackets = 0;
-            // FIXME (mfh 17 Feb 2014) This would be a good place for
-            // a Kokkos reduction.  numImportPacketsPerLID_ has as
-            // many entries as the number of LIDs on the calling
-            // process.
-            for (view_size_type i = 0; i < numImportPacketsPerLID_.size(); ++i) {
-              totalImportPackets += host_numImportPacketsPerLID_[i];
-            }
+            {
+              typedef decltype (numImportPacketsPerLID_) dual_view_type;
+              typedef typename dual_view_type::t_host host_view_type;
+              typedef typename host_view_type::const_type const_host_view_type;
+              const_host_view_type host_numImportPacketsPerLID =
+                numImportPacketsPerLID_.template view<host_memory_space> ();
 
-            if (debug) {
-              std::cerr << ">>> 9.2. Realloc" << std::endl;
-            }
-
-            if (debug) {
-              std::ostringstream os;
-              os << "*** doTransferNew: imports_.size() = "
-                 << imports_.size () << ", totalImportPackets = "
-                 << totalImportPackets << std::endl;
-              std::cerr << os.str ();
-            }
-
-            if (static_cast<size_t> (imports_.size ()) != totalImportPackets) {
-              if (debug) {
-                std::ostringstream os;
-                os << "*** doTransferNew: realloc imports_ from " <<
-                  imports_.size () << " to " << totalImportPackets << std::endl;
-                std::cerr << os.str ();
+              // FIXME (mfh 17 Feb 2014) This would be a good place for
+              // a Kokkos reduction.  numImportPacketsPerLID_ has as
+              // many entries as the number of LIDs on the calling
+              // process.
+              const view_size_type numLids = host_numImportPacketsPerLID.size ();
+              for (view_size_type i = 0; i < numLids; ++i) {
+                totalImportPackets += host_numImportPacketsPerLID[i];
               }
-              execution_space::fence ();
-              Kokkos::realloc (imports_, totalImportPackets);
-              execution_space::fence ();
-              TEUCHOS_TEST_FOR_EXCEPTION
-                (static_cast<size_t> (imports_.size ()) != totalImportPackets,
-                 std::logic_error, "Kokkos::realloc failed: imports_.size() = "
-                 << imports_.size () << " != " << totalImportPackets << ".");
-
-              // This is doTransferNew, so we don't need to allocate
-              // the host version of imports_.
             }
 
             if (debug) {
-              std::cerr << ">>> 9.3. Second comm" << std::endl;
+              std::cerr << ">>> 7.2. Realloc" << std::endl;
             }
-            distor.doPostsAndWaits (create_const_view (exports_),
-                                    getArrayView (host_numExportPacketsPerLID_),
-                                    imports_,
-                                    getArrayView (host_numImportPacketsPerLID_));
+
+            reallocImportsIfNeeded (totalImportPackets, debug);
+
+            if (debug) {
+              std::cerr << ">>> 7.3. Second comm" << std::endl;
+            }
+
+            if (commOnHost) {
+              numExportPacketsPerLID_.template sync<host_memory_space> ();
+              numImportPacketsPerLID_.template sync<host_memory_space> ();
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<host_memory_space> ();
+              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                      getArrayViewFromDualView (numExportPacketsPerLID_),
+                                      imports_.template view<host_memory_space> (),
+                                      getArrayViewFromDualView (numImportPacketsPerLID_));
+            }
+            else { // pack on device
+              // FIXME (mfh 25 Apr 2016) Once doReversePostsAndWaits
+              // can take numExportPacketsPerLID and
+              // numImportPacketsPerLID as a View or DualView, rather
+              // than as a Teuchos::ArrayView, then we can use their
+              // device version.  For now, we'll use the host version.
+              numExportPacketsPerLID_.template sync<host_memory_space> ();
+              numImportPacketsPerLID_.template sync<host_memory_space> ();
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<dev_memory_space> ();
+              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                      getArrayViewFromDualView (numExportPacketsPerLID_),
+                                      imports_.template view<dev_memory_space> (),
+                                      getArrayViewFromDualView (numImportPacketsPerLID_));
+            }
           }
           else {
             if (debug) {
               const int myRank = this->getMap ()->getComm ()->getRank ();
               std::ostringstream os;
-              os << ">>> (Proc " << myRank << "): 9.1. Const # packets per LID:"
-                " exports_.size()=" << exports_.size () << ", imports_.size()="
-                 << imports_.size () << std::endl;
+              os << ">>> (Proc " << myRank << "): 7.1. Const # packets per "
+                "LID: exports_.dimension_0()=" << exports_.dimension_0 ()
+                 << ", imports_.dimension_0() = " << imports_.dimension_0 ()
+                 << std::endl;
               std::cerr << os.str ();
             }
-            distor.doPostsAndWaits (create_const_view (exports_),
-                                    constantNumPackets,
-                                    imports_);
+
+            if (commOnHost) {
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<host_memory_space> ();
+              distor.doPostsAndWaits (create_const_view (exports_.template view<host_memory_space> ()),
+                                      constantNumPackets,
+                                      imports_.template view<host_memory_space> ());
+            }
+            else { // pack on device
+              // imports_ is for output only, so we don't need to sync it.
+              imports_.template modify<dev_memory_space> ();
+              distor.doPostsAndWaits (create_const_view (exports_.template view<dev_memory_space> ()),
+                                      constantNumPackets,
+                                      imports_.template view<dev_memory_space> ());
+            }
           }
         }
 
         if (debug) {
-          std::cerr << ">>> 10. Copy numImportPacketsPerLID to device" << std::endl;
-        }
-
-        // FIXME (mfh 17 Feb 2014) This array should just live on the
-        // device and stay there.  There is no need for a host view,
-        // as long as unpackAndCombine(new) knows what to do with a
-        // device view.
-        //
-        // Copy numImportPacketsPerLID to device
-        Kokkos::deep_copy (numImportPacketsPerLID_, host_numImportPacketsPerLID_);
-
-        if (debug) {
-          std::cerr << ">>> 11. unpackAndCombineNew" << std::endl;
+          std::cerr << ">>> 8. unpackAndCombineNew" << std::endl;
         }
 
         {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+          // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
+          // input DualViews, but they DO need to be most recently
+          // updated in the same memory space.
+          //
+          // FIXME (mfh 26 Apr 2016) Check that all input DualViews
+          // were most recently updated in the same memory space, and
+          // sync them to the same place (based on commOnHost) if not.
           unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
                                constantNumPackets, distor, CM);
         }
@@ -1231,17 +1259,7 @@ namespace Tpetra {
     } // if (CM != ZERO)
 
     if (debug) {
-      std::cerr << ">>> 12. releaseViews" << std::endl;
-    }
-
-    // FIXME (mfh 17 Dec(??? probably Feb) 2014) We don't have to call
-    // releaseViews() on the destination object any more, since MPI
-    // knows how to read device memory.
-
-    this->releaseViews ();
-
-    if (debug) {
-      std::cerr << ">>> 13. Done with doTransferNew" << std::endl;
+      std::cerr << ">>> 9. Done with doTransferNew" << std::endl;
     }
   }
 

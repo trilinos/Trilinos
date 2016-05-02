@@ -2940,7 +2940,7 @@ namespace Experimental {
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   supportsRowViews() const
   {
-    return true;
+    return false;
   }
 
 
@@ -2979,8 +2979,8 @@ namespace Experimental {
                    Teuchos::ArrayView<const Scalar> &values) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getGlobalRowView: "
-      "This class doesn't support global matrix indexing.");
+      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: "
+      "This class doesn't support local matrix indexing.");
 
   }
 

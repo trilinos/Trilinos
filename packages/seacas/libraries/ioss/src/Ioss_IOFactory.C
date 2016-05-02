@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,41 +30,41 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "Ioss_DBUsage.h" // for DatabaseUsage
 #include <Ioss_IOFactory.h>
-#include <Ioss_Utils.h>                 // for IOSS_ERROR
-#include <stddef.h>                     // for nullptr
-#include <map>                          // for _Rb_tree_iterator, etc
-#include <ostream>                      // for operator<<, basic_ostream, etc
-#include <string>                       // for char_traits, string, etc
-#include <utility>                      // for pair
-#include "Ioss_DBUsage.h"               // for DatabaseUsage
-namespace Ioss { class DatabaseIO; }
-namespace Ioss { class PropertyManager; }
-
+#include <Ioss_Utils.h> // for IOSS_ERROR
+#include <map>          // for _Rb_tree_iterator, etc
+#include <ostream>      // for operator<<, basic_ostream, etc
+#include <stddef.h>     // for nullptr
+#include <string>       // for char_traits, string, etc
+#include <utility>      // for pair
+namespace Ioss {
+  class DatabaseIO;
+}
+namespace Ioss {
+  class PropertyManager;
+}
 
 namespace Ioss {
   typedef IOFactoryMap::value_type IOFactoryValuePair;
-}  // namespace Ioss
+} // namespace Ioss
 
-
-Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
-					  const std::string& filename,
-					  Ioss::DatabaseUsage db_usage,
-					  MPI_Comm communicator,
-					  const Ioss::PropertyManager &properties)
+Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::string &filename,
+                                          Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
+                                          const Ioss::PropertyManager &properties)
 {
-  Ioss::DatabaseIO *db = nullptr;
-  auto iter = registry()->find(type);
+  Ioss::DatabaseIO *db   = nullptr;
+  auto              iter = registry()->find(type);
   if (iter == registry()->end()) {
     if (registry()->empty()) {
       std::ostringstream errmsg;
       errmsg << "ERROR: No database types have been registered.\n"
-	     << "       Was Ioss::Init::Initializer() called?\n\n";
+             << "       Was Ioss::Init::Initializer() called?\n\n";
       IOSS_ERROR(errmsg);
-    } else {
+    }
+    else {
       std::ostringstream errmsg;
-      errmsg << "ERROR: The database type '" << type
-	     << "' is not supported.\n";
+      errmsg << "ERROR: The database type '" << type << "' is not supported.\n";
       NameList db_types;
       describe(&db_types);
       errmsg << "\nSupported database types:\n\t";
@@ -74,16 +74,17 @@ Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
       errmsg << "\n\n";
       IOSS_ERROR(errmsg);
     }
-  } else {
-    Ioss::IOFactory* factory = (*iter).second;
-    db = factory->make_IO(filename, db_usage, communicator, properties);
+  }
+  else {
+    Ioss::IOFactory *factory = (*iter).second;
+    db                       = factory->make_IO(filename, db_usage, communicator, properties);
   }
   return db;
 }
 
 int Ioss::IOFactory::describe(NameList *names)
 {
-  int count = 0;
+  int                                count = 0;
   Ioss::IOFactoryMap::const_iterator I;
   for (I = registry()->begin(); I != registry()->end(); ++I) {
     names->push_back((*I).first);
@@ -92,23 +93,21 @@ int Ioss::IOFactory::describe(NameList *names)
   return count;
 }
 
-Ioss::IOFactory::IOFactory(const std::string& type)
+Ioss::IOFactory::IOFactory(const std::string &type)
 {
   registry()->insert(IOFactoryValuePair(type, this));
 }
 
-void Ioss::IOFactory::alias(const std::string& base, const std::string& syn)
+void Ioss::IOFactory::alias(const std::string &base, const std::string &syn)
 {
-  Ioss::IOFactory* factory = (*registry()->find(base)).second;
+  Ioss::IOFactory *factory = (*registry()->find(base)).second;
   registry()->insert(IOFactoryValuePair(syn, factory));
 }
 
-Ioss::IOFactoryMap* Ioss::IOFactory::registry()
+Ioss::IOFactoryMap *Ioss::IOFactory::registry()
 {
   static IOFactoryMap registry_;
   return &registry_;
 }
 
-void Ioss::IOFactory::clean()
-{
-}
+void Ioss::IOFactory::clean() {}

@@ -166,7 +166,7 @@ namespace {
         Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
 
-    for (size_t i = 0; i < NumMyElements; i++) {
+    for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
        if (MyGlobalElements[i] == 0) {
          A->insertGlobalValues(MyGlobalElements[i],
                                Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),

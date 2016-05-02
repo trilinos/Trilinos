@@ -96,16 +96,19 @@
 // Anyway, that's my story and I'm sticking to it. Good luck.
 //
 
+#include <iostream>
+#include "Teuchos_ConfigDefs.hpp"
+#include "Ifpack2_ConfigDefs.hpp"
 
 // Teuchos
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #else
@@ -119,7 +122,6 @@
 #include "Tpetra_Map.hpp"
 
 // Ifpack2
-#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_BlockRelaxation_def.hpp"
@@ -131,10 +133,6 @@
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 
-// C++ stuff
-#include <iostream>
-
-
 int
 main (int argc, char *argv[])
 {
@@ -145,10 +143,9 @@ main (int argc, char *argv[])
     Tpetra::DefaultPlatform::getDefaultPlatform ();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
 
-  // Fancy ostream, just in case
-  Teuchos::RCP<Teuchos::FancyOStream> out =
+  Teuchos::RCP<Teuchos::FancyOStream> fos =
     Teuchos::fancyOStream (Teuchos::rcpFromRef (std::cout));
-  out->setOutputToRootOnly (0);
+  //out->setOutputToRootOnly (0);
 
   // General stuff
   typedef Tpetra::Vector<>::scalar_type ST;
@@ -157,16 +154,16 @@ main (int argc, char *argv[])
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   // Matrix stuff
-  typedef Tpetra::Map<LO,GO,Node> MAP;
-  typedef Tpetra::CrsMatrix<ST,LO,GO,Node> CRS;
-  typedef Tpetra::RowMatrix<ST,LO,GO,Node> ROW;
-  typedef Tpetra::Vector<ST,LO,GO,Node> VEC;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Tpetra::CrsMatrix<ST,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<ST,LO,GO,Node> row_matrix_type;
+  typedef Tpetra::Vector<ST,LO,GO,Node> vector_type;
 
   // Ifpack2 stuff
   typedef Ifpack2::Preconditioner< ST, LO, GO, Node > PrecType;
-  typedef Ifpack2::DenseContainer< ROW, ST > ContainerType;
-  typedef Ifpack2::BlockRelaxation< ROW, ContainerType > BlockRelax;
-  typedef Ifpack2::AdditiveSchwarz< ROW > TheSchwarz;
+  typedef Ifpack2::DenseContainer< row_matrix_type, ST > ContainerType;
+  typedef Ifpack2::BlockRelaxation< row_matrix_type, ContainerType > BlockRelax;
+  typedef Ifpack2::AdditiveSchwarz< row_matrix_type > TheSchwarz;
 
   // using stuff
   using Teuchos::Array;
@@ -198,7 +195,7 @@ main (int argc, char *argv[])
   // The first numNodeRowsF local elements in the map will be the
   // local rows of F. The remaining local elements will be local rows
   // of B.
-  RCP< const MAP > myMap = rcp( new MAP( Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+  RCP< const map_type > myMap = rcp( new map_type( Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                                          numNodeRowsTotal,
                                          0,
                                          comm ) );
@@ -208,7 +205,7 @@ main (int argc, char *argv[])
   ArrayView<const GO> myGIDs = myMap->getNodeElementList();
 
   // Create a CrsMatrix using the map
-  RCP< CRS > A = rcp(new CRS(myMap,4));
+  RCP< crs_matrix_type > A = rcp(new crs_matrix_type(myMap,4));
 
   LO bLID;
 
@@ -335,8 +332,8 @@ main (int argc, char *argv[])
 
 
   // Define RHS / Initial Guess
-  VEC X( myMap , true );
-  VEC B( myMap , false );
+  vector_type X( myMap , true );
+  vector_type B( myMap , false );
   B.putScalar((ST) 2.0);
 
   //
@@ -364,17 +361,9 @@ main (int argc, char *argv[])
   // entries... I think we'll all be ok.
 
   // Compare data
+  bool successFlag=false;
   for (size_t ii = 0; ii < numNodeRowsTotal; ++ii){
-    if ( Answer[ii] - ComputedSol[ii] > 1e-14 ){
-      *out << "The test failed... Sad face.\n";
-      return -1;
-    }
+    TEUCHOS_TEST_EQUALITY(Answer[ii] - ComputedSol[ii] < 1e-14, true, *fos, successFlag);
   }
 
-
-  // Success!
-  *out << "The test succeeded!\n";
-  return 0;
-
-
-}//int main
+}

@@ -21,7 +21,7 @@ protected:
 
     void test_elem_elem_graph_for_face_connection_info()
     {
-        stk::mesh::ElemElemGraph egraph(get_bulk(), get_meta().universal_part());
+        stk::mesh::ElemElemGraph egraph(get_bulk());
         test_sides_using_graph(egraph);
     }
 

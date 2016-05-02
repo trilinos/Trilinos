@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
 #include <vector>
 
 namespace stk {
@@ -14,7 +15,7 @@ namespace mesh {
 
 class SkinMeshUtil {
 public:
-    SkinMeshUtil(const ElemElemGraph& elemElemGraph,
+    SkinMeshUtil(ElemElemGraph& elemElemGraph,
                  const stk::mesh::PartVector& skinParts,
                  const stk::mesh::Selector& inputSkinSelector,
                  const stk::mesh::Selector* inputAirSelector = nullptr);
@@ -38,7 +39,8 @@ private:
 
     bool is_element_selected_and_can_have_side(const stk::mesh::Selector& selector, stk::mesh::Entity otherElement);
 
-    std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId, int numElemSides);
+    std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId,
+                                                      int numElemSides);
 
     std::vector<int> get_sides_for_skinning(const stk::mesh::Selector& skinSelector,
                                             const stk::mesh::Bucket& bucket,
@@ -56,9 +58,11 @@ private:
                                            std::vector<bool> &isConnectedToRemoteElementInBodyToSkin,
                                            std::vector<bool> &isOnlyConnectedRemotely);
 
-    const stk::mesh::ElemElemGraph& eeGraph;
+    stk::mesh::ElemElemGraph& eeGraph;
     const stk::mesh::Selector& skinSelector;
+    stk::mesh::impl::ParallelSelectedInfo remoteSkinSelector;
     const stk::mesh::Selector* airSelector;
+    stk::mesh::impl::ParallelSelectedInfo remoteAirSelector;
 };
 
 }

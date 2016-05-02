@@ -120,7 +120,7 @@ namespace PHX {
 	@param d - user defined data object defined by the EvalData typedef in the traits class.
     */ 
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
 	       typename Traits::EvalData d) = 0;
 #endif

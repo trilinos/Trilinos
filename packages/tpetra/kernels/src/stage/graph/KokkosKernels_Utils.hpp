@@ -85,6 +85,7 @@ void get_suggested_vector_team_size(
 }
 
 
+
 template <typename idx_array_type,
           typename idx_edge_array_type,
           typename idx_out_edge_array_type,
@@ -1313,6 +1314,116 @@ void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename vie
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
+
+template<typename view_type>
+struct ReduceMaxFunctor{
+
+  view_type view_to_reduce;
+  typedef typename view_type::non_const_value_type value_type;
+  value_type min_val;
+  ReduceMaxFunctor(
+      view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
+          min_val(){
+#ifdef __CUDA_ARCH__
+    min_val = -CUDART_INF;
+#else
+    min_val = strtod ("-Inf", (char ** ) NULL );
+#endif
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, value_type &max_reduction) const {
+    value_type val = view_to_reduce(i);
+    if (max_reduction < val) { max_reduction = val;}
+
+  }
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile value_type& dst,const volatile value_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (value_type& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating -point Inf and NaN. Trilinos does , however;
+    // see Kokkos :: ArithTraits in the Tpetra package.
+    dst = min_val;
+  }
+
+};
+
+template <typename view_type , typename MyExecSpace>
+void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &max_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
+}
+
+
+template<typename view_type1, typename view_type2>
+struct IsEqualFunctor{
+  view_type1 view1;
+  view_type2 view2;
+
+  IsEqualFunctor(view_type1 view1_, view_type2 view2_): view1(view1_), view2(view2_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, int &is_equal) const {
+    if (view1(i) != view2(i)) {
+      std::cout << "i:" << i << "view1:" << view1(i) << " view2:" <<  view2(i) << std::endl;
+      is_equal = 0;}
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile int& dst,const volatile int& src) const {
+    dst = dst & src;
+  }
+  KOKKOS_INLINE_FUNCTION
+  void init (int& dst) const
+  {
+    dst = 1;
+  }
+
+};
+template <typename view_type1, typename view_type2, typename MyExecSpace>
+bool isSame(size_t num_elements, view_type1 view1, view_type2 view2){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  int issame = 1;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), IsEqualFunctor<view_type1, view_type2>(view1, view2), issame);
+  MyExecSpace::fence();
+  return issame;
+}
+
+
+template <typename a_view_t, typename b_view_t, typename size_type>
+struct MaxHeap{
+
+  a_view_t heap_keys;
+  b_view_t heap_values;
+  size_type max_size;
+  size_type current_size;
+
+  MaxHeap (
+      a_view_t heap_keys_,
+      b_view_t heap_values_,
+      size_type max_size_): heap_keys(heap_keys_), heap_values(heap_values_), max_size(max_size_), current_size(0){}
+
+  KOKKOS_INLINE_FUNCTION
+  void insert(typename a_view_t::value_type &key, typename b_view_t::value_type &val){
+    for (size_type i = 0; i < current_size; ++i){
+      if (key == heap_keys(i)){
+        heap_values(i) = heap_values(i) & val;
+        return;
+      }
+    }
+    heap_keys(current_size) = key;
+    heap_values(current_size++) = val;
+  }
+
+
+};
+
 }
 }
 }

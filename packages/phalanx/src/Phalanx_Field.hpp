@@ -47,6 +47,7 @@
 
 #include <iostream>
 #include <string>
+#include "Phalanx_config.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 

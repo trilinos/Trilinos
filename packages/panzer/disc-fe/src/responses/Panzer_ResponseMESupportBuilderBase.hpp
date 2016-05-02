@@ -37,12 +37,19 @@ public:
     */
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildDerivativeFactory() const = 0;
 
-  /** Using a panzer::Jacobian evaluation type build the REFB for this
+  /** Using a panzer::Tangent evaluation type build the REFB for this
     * response.
     */
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const {
     return Teuchos::null;
   }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  /** Using a panzer::Tangent evaluation type build the REFB for this
+    * response.
+    */
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const = 0;
+#endif
 
   /** Satisfy the required interface for the builder used in the "addResponse" function
     * in the ResponseLibrary.
@@ -63,6 +70,12 @@ inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuild
 template < >
 inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuilderBase::build<panzer::Traits::Tangent>() const
 { return buildTangentFactory(); }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template < >
+inline Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> ResponseMESupportBuilderBase::build<panzer::Traits::Hessian>() const
+{ return buildHessianFactory(); }
+#endif
 
 }
 

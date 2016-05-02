@@ -18,12 +18,12 @@
 #include <map>
 #include <string>
 #include <stk_mesh/baseImpl/EquivalentEntityBlocks.hpp>
-#include <stk_mesh/baseImpl/elementGraph/MeshDiagnostics.hpp>
+#include <stk_mesh/base/MeshDiagnostics.hpp>
 
 namespace
 {
 
-struct split_element_info
+struct SplitElementInfo
 {
     stk::mesh::EntityId localElementId;
     stk::mesh::EntityId remoteElementId;
@@ -34,7 +34,7 @@ struct TestCase
 {
     std::string filename;
     int maxNumProcs;
-    std::vector<split_element_info> expected_split_elements;
+    std::vector<std::vector<SplitElementInfo>> expectedSplitElementsPerProc;
 };
 
 typedef std::vector<TestCase> TestCaseData;
@@ -42,11 +42,27 @@ typedef std::vector<TestCase> TestCaseData;
 const TestCaseData badDecomps =
 {
   /* filename, #procs,      {local element id, remoted element id, remote proc} */
-    {"Aef.e",     2,        { {3u, 2u, 1}, {2u, 3u, 0} }},
-    {"ef.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0} }},
-    {"AefB.e",    3,        { {}, {2u, 3u, 2}, {3u, 2u, 1} }},
-    {"AP.e",      2,        { {1u, 2u, 1}, {2u, 1u, 0}} }
+    {"Aef.e",     2,        { {{3u, 2u, 1}}, {{2u, 3u, 0}} }},
+    {"ef.e",      2,        { {{1u, 2u, 1}}, {{2u, 1u, 0}} }},
+    {"AefB.e",    3,        { {}, {{2u, 3u, 2}}, {{3u, 2u, 1}} }},
+    {"AP.e",      2,        { {{1u, 2u, 1}}, {{2u, 1u, 0}} }}
 };
+
+void expect_split_coincidents(const stk::mesh::BulkData &bulkData,
+                              const std::vector<std::vector<SplitElementInfo>> &expectedSplitElementsPerProc,
+                              const stk::mesh::SplitCoincidentInfo &splitCoincidentElements)
+{
+    const std::vector<SplitElementInfo> &expectedSplits = expectedSplitElementsPerProc[bulkData.parallel_rank()];
+    ASSERT_EQ(expectedSplits.size(), splitCoincidentElements.size());
+    auto foundSplitCoincident = splitCoincidentElements.begin();
+    for(size_t i = 0; i < expectedSplits.size(); i++)
+    {
+        EXPECT_EQ(expectedSplits[i].localElementId,  foundSplitCoincident->first);
+        EXPECT_EQ(expectedSplits[i].remoteElementId, foundSplitCoincident->second[0].first);
+        EXPECT_EQ(expectedSplits[i].neighboringProc, foundSplitCoincident->second[0].second);
+        foundSplitCoincident++;
+    }
+}
 
 class MeshChecker : public ::testing::Test
 {
@@ -63,26 +79,15 @@ public:
                 EXPECT_THROW(test_one_case(testCase, auraOption), std::logic_error);
     }
 
-    void test_one_case(const TestCase &testCase,
-                       stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void test_one_case(const TestCase &testCase, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
         stk::mesh::BulkData bulkData(metaData, get_comm(), auraOption);
         SideTestUtil::read_and_decompose_mesh(testCase.filename, bulkData);
 
-        std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
+        stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
 
-        for(const auto& item : splitCoincidentElements)
-        {
-            stk::mesh::EntityId localElementId = item.first;
-            stk::mesh::EntityId remoteElementId = item.second.first;
-            int neighboringProc = item.second.second;
-
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].localElementId, localElementId);
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].remoteElementId, remoteElementId);
-            EXPECT_EQ(testCase.expected_split_elements[bulkData.parallel_rank()].neighboringProc, neighboringProc);
-        }
-
+        expect_split_coincidents(bulkData, testCase.expectedSplitElementsPerProc, splitCoincidentElements);
         stk::mesh::throw_if_any_proc_has_false(bulkData.parallel(), splitCoincidentElements.empty());
     }
 
@@ -101,5 +106,31 @@ TEST_F(MeshChecker, diagnose_bad_meshes)
     run_all_test_cases(badDecomps, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+TEST(MeshCheckerIncremental, createSplitCoincident)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData metaData;
+        stk::mesh::BulkData bulkData(metaData, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+        SideTestUtil::read_and_decompose_mesh("Ae.e", bulkData);
+
+        stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
+        ASSERT_EQ(0u, splitCoincidentElements.size());
+
+        bulkData.modification_begin();
+        if(bulkData.parallel_rank() == 0)
+        {
+            stk::mesh::Part *block2 = metaData.get_part("block_2");
+            stk::mesh::declare_element(bulkData, *block2, 3, {5, 6, 7, 8});
+        }
+        bulkData.modification_end();
+
+        splitCoincidentElements = stk::mesh::get_split_coincident_elements(bulkData);
+
+        std::vector<std::vector<SplitElementInfo>> expectedSplitElementsPerProc = { {{3u, 2u, 1}}, {{2u, 3u, 0}} };
+        expect_split_coincidents(bulkData, expectedSplitElementsPerProc, splitCoincidentElements);
+    }
+}
 
 }

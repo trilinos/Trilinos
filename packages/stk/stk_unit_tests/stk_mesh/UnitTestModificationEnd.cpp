@@ -63,6 +63,7 @@
 #include <stk_mesh/base/Comm.hpp>
 
 #include "stk_mesh/base/CreateEdges.hpp"
+#include "stk_mesh/base/CreateFaces.hpp"
 #include "stk_mesh/base/SkinMesh.hpp"
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include <stk_unit_test_utils/BulkDataTester.hpp>
@@ -751,7 +752,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
         size_t numEdgesTotal = 2;
         EXPECT_EQ(numEdgesTotal, globalCounts[stk::topology::EDGE_RANK]);
 
-        stkMeshBulkData.my_modification_end_for_entity_creation(stk::topology::EDGE_RANK);
+        stkMeshBulkData.my_modification_end_for_entity_creation({stk::topology::EDGE_RANK});
 
         checkItAllForThisGhostedCase(stkMeshBulkData);
     }
@@ -862,5 +863,104 @@ TEST(BulkDataModificationEnd, DISABLED_create_edges_with_min_map)
     }
 }
 
+
+void build_one_hex_on_p0(stk::unit_test_util::BulkDataTester& bulkData, const stk::mesh::MetaData& metaData)
+{
+    bulkData.modification_begin();
+    if (bulkData.parallel_rank() == 0) {
+        stk::mesh::Part& elem_part = metaData.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEX_8));
+        const int elemID = 1;
+        stk::mesh::EntityIdVector nodeIDs = { 1, 2, 3, 4, 5, 6, 7, 8 };
+        stk::mesh::declare_element(bulkData, elem_part, elemID, nodeIDs);
+    }
+    bulkData.modification_end();
+}
+
+void ghost_one_hex_to_p1(stk::unit_test_util::BulkDataTester & bulkData)
+{
+    // Ghost element and downward entities to other proc
+    std::vector< std::pair<stk::mesh::Entity, int> > addGhost;
+    if (bulkData.parallel_rank() == 0) {
+        stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+        addGhost.push_back(std::make_pair(elem1, 1));
+    }
+    bulkData.modification_begin();
+    stk::mesh::Ghosting &ghosting = bulkData.create_ghosting("custom ghosting 1");
+    bulkData.change_ghosting(ghosting, addGhost);
+    bulkData.modification_end();
+}
+
+// DISABLED because automatic promotion of ghosted to shared is not working
+// properly in pure STK apps.  This will throw with mesh consistency errors
+// in debug.  Adding the manual add_node_sharing() calls fixes node sharing
+// but leaves edges and faces unshared.
+//
+TEST(ModEndForEntityCreation, DISABLED_promotion_of_ghosted_to_shared)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int numProcs = -1;
+    MPI_Comm_size(communicator, &numProcs);
+
+    if (numProcs != 2) return;
+
+    const int spatialDim = 3;
+    stk::mesh::MetaData metaData(spatialDim);
+    stk::unit_test_util::BulkDataTester bulkData(metaData, communicator, stk::mesh::BulkData::NO_AUTO_AURA);
+    const int p_rank = bulkData.parallel_rank();
+
+    build_one_hex_on_p0(bulkData, metaData);
+
+    stk::mesh::create_edges(bulkData);
+    stk::mesh::create_faces(bulkData);
+
+    ghost_one_hex_to_p1(bulkData);
+
+    std::vector<unsigned> localCounts;
+    const Selector universalPart = Selector(metaData.universal_part());
+    stk::mesh::count_entities(universalPart, bulkData, localCounts);
+
+    // Count all entities on each proc
+    EXPECT_EQ( 8u, localCounts[stk::topology::NODE_RANK]);
+    EXPECT_EQ(12u, localCounts[stk::topology::EDGE_RANK]);
+    EXPECT_EQ( 6u, localCounts[stk::topology::FACE_RANK]);
+    EXPECT_EQ( 1u, localCounts[stk::topology::ELEM_RANK]);
+
+    stk::mesh::Part& elem_part = metaData.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::HEX_8));
+    bulkData.modification_begin();
+    if (p_rank == 1) {
+        stk::mesh::EntityIdVector nodeIDs = {5, 6, 7, 8, 9, 10, 11, 12};
+        stk::mesh::declare_element(bulkData, elem_part, 2, nodeIDs);
+
+        // Rather not have to manually call this.  This will make nodes shared
+        // but will leave edges and faces not shared.
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5)), 0);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6)), 0);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7)), 0);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8)), 0);
+    }
+    if (p_rank == 0) {
+        // Rather not have to manually call this.  This will make nodes shared
+        // but will leave edges and faces not shared.
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 5)), 1);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 6)), 1);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 7)), 1);
+        //bulkData.add_node_sharing(bulkData.get_entity(stk::mesh::EntityKey(stk::topology::NODE_RANK, 8)), 1);
+    }
+
+    std::vector<stk::mesh::EntityRank> entityRanksToConsider;
+    for (stk::mesh::EntityRank rank = stk::mesh::EntityRank::BEGIN_RANK; rank <= stk::mesh::EntityRank::ELEM_RANK; ++rank) {
+       entityRanksToConsider.push_back(rank);
+    }
+    bulkData.my_modification_end_for_entity_creation(entityRanksToConsider);
+
+    const Selector sharedPart = Selector(metaData.globally_shared_part());
+    stk::mesh::count_entities(sharedPart, bulkData, localCounts);
+
+    // Count shared entities on each proc
+    EXPECT_EQ( 4u, localCounts[stk::topology::NODE_RANK]);
+    EXPECT_EQ( 4u, localCounts[stk::topology::EDGE_RANK]);
+    EXPECT_EQ( 1u, localCounts[stk::topology::FACE_RANK]);
+    EXPECT_EQ( 0u, localCounts[stk::topology::ELEM_RANK]);
+}
 
 } } } // namespace stk mesh unit_test

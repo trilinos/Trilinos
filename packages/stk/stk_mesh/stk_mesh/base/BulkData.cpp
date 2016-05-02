@@ -76,6 +76,7 @@
 #include "stk_util/diag/StringUtil.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
+#include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 
 
@@ -432,6 +433,22 @@ void BulkData::find_and_delete_internal_faces(stk::mesh::EntityRank entityRank, 
 
 /////////////////////////////////////// End functions for create edges
 
+void check_size_of_types()
+{
+    const size_t sizeof_entity_in_bytes = sizeof(Entity);
+#ifdef STK_32BIT_ENTITY
+    ThrowRequireMsg(4 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 4, is instead "<<sizeof_entity_in_bytes);
+#else
+    ThrowRequireMsg(8 == sizeof_entity_in_bytes, "sizeof(Entity) expected to be 8, is instead "<<sizeof_entity_in_bytes);
+#endif
+
+    const size_t sizeof_connectivityordinal_in_bytes = sizeof(ConnectivityOrdinal);
+#ifdef STK_16BIT_CONNECTIVITY_ORDINAL
+    ThrowRequireMsg(2 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 2, is instead "<<sizeof_connectivityordinal_in_bytes);
+#else
+    ThrowRequireMsg(4 == sizeof_connectivityordinal_in_bytes, "sizeof(ConnectivityOrdinal) expected to be 4, is instead "<<sizeof_connectivityordinal_in_bytes);
+#endif
+}
 //----------------------------------------------------------------------
 enum {ELEM_DEATH_CHILDMASK1 = 1};
 
@@ -507,9 +524,12 @@ BulkData::BulkData( MetaData & mesh_meta_data
   //shared part should reside in m_ghost_parts[0]
   internal_create_ghosting( "shared_aura" );
 
+  check_size_of_types();
+
   register_observer(&m_meshDiagnosticObserver);
 
-  //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+//  m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
+//  m_meshDiagnosticObserver.enable_rule(stk::mesh::SOLO_SIDES);
 
 #ifndef NDEBUG
   //m_meshDiagnosticObserver.enable_rule(stk::mesh::RULE_3);
@@ -539,6 +559,9 @@ BulkData::~BulkData()
   }
 
   mesh_meta_data().set_mesh_bulk_data(NULL);
+
+  delete m_elemElemGraph;
+  delete m_elemElemGraphUpdater;
 }
 
 void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
@@ -830,7 +853,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
   EntityKey key( ent_rank , ent_id );
 
-  std::pair< Entity , bool > result = internal_create_entity( key );
+  std::pair< Entity , bool > result = internal_get_or_create_entity_with_notification( key );
 
   Entity declared_entity = result.first;
 
@@ -854,8 +877,6 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
   }
 
   m_check_invalid_rels = true;
-
-  notifier.notify_entity_added(declared_entity);
 
   return declared_entity ;
 }
@@ -1134,6 +1155,14 @@ std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t p
         notifier.notify_local_entities_created_or_deleted(key.rank());
         notifier.notify_local_buckets_changed(key.rank());
     }
+
+    return entityBoolPair;
+}
+
+std::pair<Entity, bool> BulkData::internal_get_or_create_entity_with_notification(EntityKey key, size_t preferred_offset)
+{
+    std::pair<Entity, bool> entityBoolPair = internal_create_entity(key, preferred_offset);
+    notifier.notify_entity_added(entityBoolPair.first);
     return entityBoolPair;
 }
 
@@ -1144,7 +1173,7 @@ void BulkData::addMeshEntities(stk::topology::rank_t rank, const std::vector<stk
     {
         EntityKey key(rank, new_ids[i]);
         require_good_rank_and_id(key.rank(), key.id());
-        std::pair<Entity, bool> result = internal_create_entity(key);
+        std::pair<Entity, bool> result = internal_get_or_create_entity_with_notification(key);
 
         ThrowErrorMsgIf( ! result.second,
                 "Generated id " << key.id() << " of rank " << key.rank() <<
@@ -1271,18 +1300,29 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 
 void BulkData::comm_shared_procs(EntityKey key, std::vector<int> & procs ) const
 {
-  fill_sorted_procs(internal_entity_comm_map_shared(key), procs);
+    procs.clear();
+    const EntityComm* entityComm = m_entity_comm_map.entity_comm(key);
+    if (entityComm != nullptr && !entityComm->comm_map.empty()) {
+       const EntityCommInfoVector& comm_map = entityComm->comm_map;
+       for(const EntityCommInfo& commInfo : comm_map) {
+           if (commInfo.ghost_id == BulkData::SHARED) {
+               procs.push_back(commInfo.proc);
+           }
+           else {
+               break;
+           }
+       }
+    }
 }
 
 void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, std::vector<int> & procs ) const
 {
-
   procs.clear();
   int num = keys.size();
   std::vector<int> procs_tmp;
+  std::vector<int> result;
   for (int i = 0; i < num; ++i)
   {
-
     comm_shared_procs(keys[i], procs_tmp);
 
     if (i == 0)
@@ -1290,7 +1330,7 @@ void BulkData::shared_procs_intersection(const std::vector<EntityKey> & keys, st
     else
     {
       // subsequent loops keep the intersection
-      std::vector<int> result;
+      result.clear();
       std::back_insert_iterator<std::vector<int> > result_itr(result);
       std::set_intersection(procs.begin(),
                             procs.end(),
@@ -2810,8 +2850,9 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
 
     {
         for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ; i != unique_list_of_send_closure.rend() ; ++i) {
-            if ( ! this->owned_closure(*i) ) {
-                ThrowRequireMsg( internal_destroy_entity( *i ), "Failed to destroy entity " << identifier(*i) );
+            stk::mesh::Entity entity = *i;
+            if ( ! this->owned_closure(entity) ) {
+                ThrowRequireMsg( internal_destroy_entity( entity ), "Failed to destroy entity " << identifier(entity) );
             }
         }
     }
@@ -3191,7 +3232,7 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
             m_ghost_reuse_map.erase(f_itr);
           }
 
-          std::pair<Entity ,bool> result = internal_create_entity( key, use_this_offset );
+          std::pair<Entity ,bool> result = internal_get_or_create_entity_with_notification( key, use_this_offset );
 
           Entity entity = result.first;
           const bool created   = result.second ;
@@ -3709,7 +3750,7 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::EDGE_RANK, shared_new);
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::FACE_RANK, shared_new);
 
-    std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
+    std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
 }
 
 
@@ -4075,9 +4116,6 @@ void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::Ent
   {
       std::vector<Entity> shared_modified;
 
-      // Update the parallel index and
-      // output shared and modified entities.
-      //internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
       internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(rank, shared_modified);
 
       // ------------------------------------------------------------
@@ -4098,7 +4136,7 @@ void BulkData::internal_resolve_parallel_create(const std::vector<stk::mesh::Ent
 
       add_comm_list_entries_for_entities( shared_modified );
   }
-  std::fill(m_mark_entity.begin(), m_mark_entity.end(), static_cast<int>(BulkData::NOT_MARKED));
+  std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
 }
 
 
@@ -4189,6 +4227,11 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   }
 }
 
+void BulkData::notify_finished_mod_end()
+{
+    notifier.notify_finished_modification_end(parallel());
+}
+
 void BulkData::internal_modification_end_for_change_ghosting()
 {
     internal_resolve_send_ghost_membership();
@@ -4205,7 +4248,7 @@ void BulkData::internal_modification_end_for_change_ghosting()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
 }
 
 bool BulkData::internal_modification_end_for_change_parts()
@@ -4232,7 +4275,7 @@ bool BulkData::internal_modification_end_for_change_parts()
     internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
     return true;
 }
 
@@ -4583,7 +4626,7 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
 
     update_deleted_entities_container();
 
-    notifier.notify_finished_modification_end();
+    notify_finished_mod_end();
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,
@@ -4634,59 +4677,37 @@ void BulkData::resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(Ent
 bool BulkData::internal_modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt )
 {
   // The two states are MODIFIABLE and SYNCHRONiZED
-  if ( this->in_synchronized_state() ) { return false ; }
+  if (in_synchronized_state()) { return false; }
 
   ThrowAssertMsg(impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
 
-  for (size_t rank_idx=0 ; rank_idx < entity_rank_vector.size() ; ++rank_idx) {
-      EntityRank entity_rank = entity_rank_vector[rank_idx];
-      if (parallel_size() > 1)
-      {
-          std::vector<Entity> shared_modified ;
+  if (parallel_size() > 1) {
+      internal_resolve_parallel_create(entity_rank_vector);
+      internal_resolve_shared_membership();
 
-          // Update the parallel index and
-          // output shared and modified entities.
-          internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
-
-          // ------------------------------------------------------------
-          // Claim ownership on all shared_modified entities that I own
-          // and which were not created in this modification cycle. All
-          // sharing procs will need to be informed of this claim.
-
-          resolve_ownership_of_modified_entities( shared_modified );
-
-          // ------------------------------------------------------------
-          // Update shared created entities.
-          // - Revise ownership to selected processor
-          // - Update sharing.
-          // - Work backward so the 'in_owned_closure' function
-          //   can evaluate related higher ranking entities.
-
-          move_entities_to_proper_part_ownership( shared_modified );
-
-          add_comm_list_entries_for_entities( shared_modified );
-
-          internal_resolve_shared_membership();
-
-          if(is_automatic_aura_on())
-          {
-              bool connectFacesToPreexistingGhosts = true;
+      if (is_automatic_aura_on()) {
+          bool connectFacesToPreexistingGhosts = true;
+          for (size_t rank_idx=0; rank_idx < entity_rank_vector.size(); ++rank_idx) {
+              EntityRank entity_rank = entity_rank_vector[rank_idx];
               resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part(), connectFacesToPreexistingGhosts);
           }
+      }
 
-          m_modSummary.write_summary(m_meshModification.synchronized_count());
-          check_mesh_consistency();
-      }
-      else {
-          std::vector<Entity> shared_modified ;
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
+      check_mesh_consistency();
+  }
+  else {
+      std::vector<Entity> shared_modified;
+      for (size_t rank_idx=0; rank_idx < entity_rank_vector.size(); ++rank_idx) {
+          EntityRank entity_rank = entity_rank_vector[rank_idx];
           internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank( entity_rank, shared_modified );
-          m_modSummary.write_summary(m_meshModification.synchronized_count());
       }
+      m_modSummary.write_summary(m_meshModification.synchronized_count());
   }
 
-  this->internal_finish_modification_end(opt);
+  internal_finish_modification_end(opt);
 
-  return true ;
+  return true;
 }
 
 
@@ -6420,7 +6441,7 @@ void printConnectivityOfRank(BulkData& M, Entity entity, stk::topology::rank_t c
             error_log<<"{"<<M.identifier(connectedEntities[i])<<",topo="<<M.bucket(connectedEntities[i]).topology()
                   <<",owned="<<M.bucket(connectedEntities[i]).owned()<<",shared="<<M.bucket(connectedEntities[i]).shared()
                   <<",in_aura="<<M.bucket(connectedEntities[i]).in_aura()
-                  <<",custom-recv-ghost="<<M.in_receive_custom_ghost(M.entity_key(entity))
+                  <<",custom-recv-ghost="<<M.in_receive_custom_ghost(M.entity_key(connectedEntities[i]))
                   <<"}";
         }
         else {
@@ -7208,6 +7229,32 @@ void BulkData::sort_entities(const stk::mesh::EntitySorterBase& sorter)
 void BulkData::enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag)
 {
     m_meshDiagnosticObserver.enable_rule(flag);
+}
+
+unsigned BulkData::get_mesh_diagnostic_error_count() const
+{
+    return m_meshDiagnosticObserver.get_number_of_errors();
+}
+
+void BulkData::throw_on_mesh_diagnostic_error()
+{
+    m_meshDiagnosticObserver.throw_if_errors_exist();
+}
+
+void BulkData::initialize_face_adjacent_element_graph()
+{
+    if (m_elemElemGraph == nullptr)
+    {
+        m_elemElemGraph = new ElemElemGraph(*this);
+        m_elemElemGraphUpdater = new ElemElemGraphUpdater(*this,*m_elemElemGraph);
+        register_observer(m_elemElemGraphUpdater);
+    }
+}
+
+stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph()
+{
+    ThrowRequireMsg(m_elemElemGraph != nullptr, "Error, Please call initialize_face_adjacent_element_graph before calling get_face_adjacent_element_graph!");
+    return *m_elemElemGraph;
 }
 
 #ifdef SIERRA_MIGRATION

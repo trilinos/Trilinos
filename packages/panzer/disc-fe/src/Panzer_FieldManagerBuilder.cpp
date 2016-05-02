@@ -255,6 +255,11 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           std::vector<PHX::index_size_type> derivative_dimensions;
           derivative_dimensions.push_back(gid_count);
           fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
+          #ifdef Panzer_BUILD_HESSIAN_SUPPORT
+            fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+          #endif
+          
           derivative_dimensions[0] = 1;
           if (user_data.isType<int>("Tangent Dimension"))
             derivative_dimensions[0] = user_data.get<int>("Tangent Dimension");
@@ -392,7 +397,17 @@ setKokkosExtendedDataTypeDimensions(const std::string & eblock,
     derivative_dimensions.push_back(globalIndexer.getElementBlockGIDCount(eblock));
 
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+
   }
+
+  #ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  {
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(globalIndexer.getElementBlockGIDCount(eblock));
+
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
+  }
+  #endif
 
   {
     std::vector<PHX::index_size_type> derivative_dimensions;

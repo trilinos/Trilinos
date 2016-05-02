@@ -66,6 +66,8 @@ APPEND_SET(HEADERS
   Phalanx_KokkosViewFactoryFunctor.hpp
   Phalanx_MDField_Def.hpp
   Phalanx_MDField.hpp
+  Phalanx_MDField_DynRank_Def.hpp
+  Phalanx_MDField_DynRank.hpp
   Phalanx_MDField_TypeTraits.hpp
   Phalanx_MDFieldToKokkos.hpp
   Phalanx_Print_Utilities.hpp

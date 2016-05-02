@@ -64,8 +64,8 @@ postRegistrationSetup(typename Traits::SetupData d,
   using namespace PHX;
   this->utils.setFieldData(constant,vm);
 
-  for (PHX::index_size_type i = 0; i < constant.dimension_0(); ++i)
-    for (PHX::index_size_type j = 0; j < constant.dimension_1(); ++j)
+  for (int i = 0; i < constant.extent_int(0); ++i)
+    for (int j = 0; j < constant.extent_int(1); ++j)
       constant(i,j) = value;
 }
 

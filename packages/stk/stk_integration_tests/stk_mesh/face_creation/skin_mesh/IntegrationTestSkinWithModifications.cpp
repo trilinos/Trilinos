@@ -45,7 +45,7 @@ protected:
 
         thingsToSkin = get_meta().universal_part();
 
-        elemGraph = new stk::mesh::ElemElemGraph(get_bulk(), get_things_to_skin());
+        elemGraph = new stk::mesh::ElemElemGraph(get_bulk());
         elemGraphUpdater = new stk::mesh::ElemElemGraphUpdater(get_bulk(), *elemGraph);
         get_bulk().register_observer(elemGraphUpdater);
     }

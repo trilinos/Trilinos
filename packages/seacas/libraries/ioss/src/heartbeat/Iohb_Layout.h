@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -35,43 +35,43 @@
 
 #include <iostream>
 #include <sstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Iohb {
   class Layout
-    {
-    public:
-      Layout(bool show_labels, int precision, std::string separator, int field_width);
-      Layout(const Layout&) =delete;
-      Layout& operator=(const Layout&) =delete;
+  {
+  public:
+    Layout(bool show_labels, int precision, std::string separator, int field_width);
+    Layout(const Layout &) = delete;
+    Layout &operator=(const Layout &) = delete;
 
-      ~Layout();
+    ~Layout();
 
-      friend std::ostream& operator<<(std::ostream& /*o*/, Layout& /*lo*/);
+    friend std::ostream &operator<<(std::ostream & /*o*/, Layout & /*lo*/);
 
-      void add_literal(const std::string& label);
-      void add_legend(const std::string& label);
-      void add(const std::string& name, double value);
-      void add(const std::string& name, int value);
-      void add(const std::string& name, long value);
-      void add(const std::string& name, const std::string &value);
+    void add_literal(const std::string &label);
+    void add_legend(const std::string &label);
+    void add(const std::string &name, double value);
+    void add(const std::string &name, int value);
+    void add(const std::string &name, long value);
+    void add(const std::string &name, const std::string &value);
 
-      void add(const std::string& name, std::vector<double> &value);
-      void add(const std::string& name, std::vector<int> &value);
-      void add(const std::string& name, std::vector<long> &value);
-      void add(const std::string& name, std::vector<std::string> &value);
+    void add(const std::string &name, std::vector<double> &value);
+    void add(const std::string &name, std::vector<int> &value);
+    void add(const std::string &name, std::vector<long> &value);
+    void add(const std::string &name, std::vector<std::string> &value);
 
-    private:
-      std::ostringstream layout_;
-      std::string separator_;
+  private:
+    std::ostringstream layout_;
+    std::string        separator_;
 
-      int precision_;
-      int count_; // Number of fields on current line...
-      int fieldWidth_; 
-      bool showLabels;
-      bool legendStarted;
-    };
+    int  precision_;
+    int  count_; // Number of fields on current line...
+    int  fieldWidth_;
+    bool showLabels;
+    bool legendStarted;
+  };
 }
 
 #endif // IOSS_Iohb_Layout_h

@@ -1283,10 +1283,25 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
 #include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Ifpack2_BandedContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
 // more specific than RowMatrix.
+
+#ifdef HAVE_IFPACK2_AMESOS2
+#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer<       \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > > >;
+#else
+#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) /* */
+#endif
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
   template \
@@ -1312,7 +1327,8 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
     Tpetra::RowMatrix<S, LO, GO, N>, \
     Ifpack2::BandedContainer<        \
       Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >;
+      S > >; \
+  IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N)
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

@@ -148,7 +148,7 @@ namespace MueLu {
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
         }
-        GetOStream(Statistics0) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
+        GetOStream(Statistics1) << "Prolongator damping factor = " << dampingFactor/lambdaMax << " (" << dampingFactor << " / " << lambdaMax << ")" << std::endl;
       }
 
       {

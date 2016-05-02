@@ -2,23 +2,23 @@
  * Copyright (c) 2014, Sandia Corporation.
  * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  * the U.S. Government retains certain rights in this software.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,13 +30,13 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
-#include <stdio.h>
-#include "structs.h"
 #include "defs.h"
 #include "smalloc.h"
+#include "structs.h"
+#include <stdio.h>
 
 /* Lanczos iteration with FULL orthogonalization.
    Works in standard (version 1) or inverse operator (version 2) mode. */
@@ -90,379 +90,375 @@
    need to orthogonalize out a given mode periodically. But we want to be
    extra robust numericlly. */
 
-void 
-lanczos_FO (
-    struct vtx_data **A,		/* graph data structure */
-    int n,			/* number of rows/colums in matrix */
-    int d,			/* problem dimension = # evecs to find */
-    double **y,			/* columns of y are eigenvectors of A  */
-    double *lambda,		/* ritz approximation to eigenvals of A */
-    double *bound,		/* on ritz pair approximations to eig pairs of A */
-    double eigtol,		/* tolerance on eigenvectors */
-    double *vwsqrt,		/* square root of vertex weights */
-    double maxdeg,               /* maximum degree of graph */
-    int version		/* 1 = standard mode, 2 = inverse operator mode */
-)
+void lanczos_FO(struct vtx_data **A,      /* graph data structure */
+                int               n,      /* number of rows/colums in matrix */
+                int               d,      /* problem dimension = # evecs to find */
+                double **         y,      /* columns of y are eigenvectors of A  */
+                double *          lambda, /* ritz approximation to eigenvals of A */
+                double *          bound,  /* on ritz pair approximations to eig pairs of A */
+                double            eigtol, /* tolerance on eigenvectors */
+                double *          vwsqrt, /* square root of vertex weights */
+                double            maxdeg, /* maximum degree of graph */
+                int               version /* 1 = standard mode, 2 = inverse operator mode */
+                )
 
 {
-    extern FILE *Output_File;	/* output file or NULL */
-    extern int DEBUG_EVECS;	/* print debugging output? */
-    extern int DEBUG_TRACE;	/* trace main execution path */
-    extern int WARNING_EVECS;	/* print warning messages? */
-    extern int LANCZOS_MAXITNS;         /* maximum Lanczos iterations allowed */
-    extern double BISECTION_SAFETY;	/* safety factor for bisection algorithm */
-    extern double SRESTOL;		/* resid tol for T evec comp */
-    extern double DOUBLE_MAX;	/* Warning on inaccurate computation of evec of T */
-    extern double splarax_time;	/* time matvecs */
-    extern double orthog_time;	/* time orthogonalization work */
-    extern double tevec_time;	/* time tridiagonal eigvec work */
-    extern double evec_time;	/* time to generate eigenvectors */
-    extern double ql_time;      /* time tridiagonal eigval work */
-    extern double blas_time;	/* time for blas (not assembly coded) */
-    extern double init_time;	/* time for allocating memory, etc. */
-    extern double scan_time;	/* time for scanning bounds list */
-    extern double debug_time;	/* time for debug computations and output */
-    int       i, j;		/* indicies */
-    int       maxj;		/* maximum number of Lanczos iterations */
-    double   *u, *r;		/* Lanczos vectors */
-    double   *Aq;		/* sparse matrix-vector product vector */
-    double   *alpha, *beta;	/* the Lanczos scalars from each step */
-    double   *ritz;		/* copy of alpha for tqli */
-    double   *workj;		/* work vector (eg. for tqli) */
-    double   *workn;		/* work vector (eg. for checkeig) */
-    double   *s;		/* eigenvector of T */
-    double  **q;		/* columns of q = Lanczos basis vectors */
-    double   *bj;		/* beta(j)*(last element of evecs of T) */
-    double    bis_safety;	/* real safety factor for bisection algorithm */
-    double    Sres;		/* how well Tevec calculated eigvecs */
-    double    Sres_max;		/* Maximum value of Sres */
-    int       inc_bis_safety;	/* need to increase bisection safety */
-    double   *Ares;		/* how well Lanczos calculated each eigpair */
-    double   *inv_lambda;	/* eigenvalues of inverse operator */
-    int      *index;		/* the Ritz index of an eigenpair */
-    struct orthlink *orthlist  = NULL;	/* vectors to orthogonalize against in Lanczos */
-    struct orthlink *orthlist2 = NULL;	/* vectors to orthogonalize against in Symmlq */
-    struct orthlink *temp;	/* for expanding orthogonalization list */
-    double   *ritzvec=NULL;	/* ritz vector for current iteration */
-    double   *zeros=NULL;	/* vector of all zeros */
-    double   *ones=NULL;	/* vector of all ones */
-    struct scanlink *scanlist;	/* list of fields for min ritz vals */
-    struct scanlink *curlnk;	/* for traversing the scanlist */
-    double    bji_tol;		/* tol on bji estimate of A e-residual */
-    int       converged;	/* has the iteration converged? */
-    double    time;		/* current clock time */
-    double    shift, rtol;		/* symmlq input */
-    long      precon, goodb, nout;	/* symmlq input */
-    long      checka, intlim;	/* symmlq input */
-    double    anorm, acond;	/* symmlq output */
-    double    rnorm, ynorm;	/* symmlq output */
-    long      istop, itn;	/* symmlq output */
-    double    macheps;		/* machine precision calculated by symmlq */
-    double    normxlim;		/* a stopping criteria for symmlq */
-    long      itnmin;		/* enforce minimum number of iterations */
-    int       symmlqitns=0;	/* # symmlq itns */
-    double   *wv1=NULL, *wv2=NULL, *wv3=NULL;	/* Symmlq work space */
-    double   *wv4=NULL, *wv5=NULL, *wv6=NULL;	/* Symmlq work space */
-    long      long_n;		/* long int copy of n for symmlq */
-    int       ritzval_flag = 0;	/* status flag for ql() */
-    double    Anorm;            /* Norm estimate of the Laplacian matrix */
-    int       left, right;      /* ranges on the search for ritzvals */
-    int       memory_ok;        /* TRUE as long as don't run out of memory */
+  extern FILE *    Output_File;         /* output file or NULL */
+  extern int       DEBUG_EVECS;         /* print debugging output? */
+  extern int       DEBUG_TRACE;         /* trace main execution path */
+  extern int       WARNING_EVECS;       /* print warning messages? */
+  extern int       LANCZOS_MAXITNS;     /* maximum Lanczos iterations allowed */
+  extern double    BISECTION_SAFETY;    /* safety factor for bisection algorithm */
+  extern double    SRESTOL;             /* resid tol for T evec comp */
+  extern double    DOUBLE_MAX;          /* Warning on inaccurate computation of evec of T */
+  extern double    splarax_time;        /* time matvecs */
+  extern double    orthog_time;         /* time orthogonalization work */
+  extern double    tevec_time;          /* time tridiagonal eigvec work */
+  extern double    evec_time;           /* time to generate eigenvectors */
+  extern double    ql_time;             /* time tridiagonal eigval work */
+  extern double    blas_time;           /* time for blas (not assembly coded) */
+  extern double    init_time;           /* time for allocating memory, etc. */
+  extern double    scan_time;           /* time for scanning bounds list */
+  extern double    debug_time;          /* time for debug computations and output */
+  int              i, j;                /* indicies */
+  int              maxj;                /* maximum number of Lanczos iterations */
+  double *         u, *r;               /* Lanczos vectors */
+  double *         Aq;                  /* sparse matrix-vector product vector */
+  double *         alpha, *beta;        /* the Lanczos scalars from each step */
+  double *         ritz;                /* copy of alpha for tqli */
+  double *         workj;               /* work vector (eg. for tqli) */
+  double *         workn;               /* work vector (eg. for checkeig) */
+  double *         s;                   /* eigenvector of T */
+  double **        q;                   /* columns of q = Lanczos basis vectors */
+  double *         bj;                  /* beta(j)*(last element of evecs of T) */
+  double           bis_safety;          /* real safety factor for bisection algorithm */
+  double           Sres;                /* how well Tevec calculated eigvecs */
+  double           Sres_max;            /* Maximum value of Sres */
+  int              inc_bis_safety;      /* need to increase bisection safety */
+  double *         Ares;                /* how well Lanczos calculated each eigpair */
+  double *         inv_lambda;          /* eigenvalues of inverse operator */
+  int *            index;               /* the Ritz index of an eigenpair */
+  struct orthlink *orthlist  = NULL;    /* vectors to orthogonalize against in Lanczos */
+  struct orthlink *orthlist2 = NULL;    /* vectors to orthogonalize against in Symmlq */
+  struct orthlink *temp;                /* for expanding orthogonalization list */
+  double *         ritzvec = NULL;      /* ritz vector for current iteration */
+  double *         zeros   = NULL;      /* vector of all zeros */
+  double *         ones    = NULL;      /* vector of all ones */
+  struct scanlink *scanlist;            /* list of fields for min ritz vals */
+  struct scanlink *curlnk;              /* for traversing the scanlist */
+  double           bji_tol;             /* tol on bji estimate of A e-residual */
+  int              converged;           /* has the iteration converged? */
+  double           time;                /* current clock time */
+  double           shift, rtol;         /* symmlq input */
+  long             precon, goodb, nout; /* symmlq input */
+  long             checka, intlim;      /* symmlq input */
+  double           anorm, acond;        /* symmlq output */
+  double           rnorm, ynorm;        /* symmlq output */
+  long             istop, itn;          /* symmlq output */
+  double           macheps;             /* machine precision calculated by symmlq */
+  double           normxlim;            /* a stopping criteria for symmlq */
+  long             itnmin;              /* enforce minimum number of iterations */
+  int              symmlqitns = 0;      /* # symmlq itns */
+  double *         wv1 = NULL, *wv2 = NULL, *wv3 = NULL; /* Symmlq work space */
+  double *         wv4 = NULL, *wv5 = NULL, *wv6 = NULL; /* Symmlq work space */
+  long             long_n;                               /* long int copy of n for symmlq */
+  int              ritzval_flag = 0;                     /* status flag for ql() */
+  double           Anorm;                                /* Norm estimate of the Laplacian matrix */
+  int              left, right;                          /* ranges on the search for ritzvals */
+  int              memory_ok; /* TRUE as long as don't run out of memory */
 
-    double   *mkvec();		/* allocates space for a vector */
-    double   *mkvec_ret();      /* mkvec() which returns error code */
-    double    dot();		/* standard dot product routine */
-    struct orthlink *makeorthlnk();	/* make space for entry in orthog. set */
-    double    ch_norm();		/* vector norm */
-    double    Tevec();		/* calc evec of T by linear recurrence */
-    struct scanlink *mkscanlist();	/* make scan list for min ritz vecs */
-    double    lanc_seconds();	/* current clock timer */
-    int       symmlq_(), get_ritzvals();
-    void      setvec(), vecscale(), update(), vecran(), strout();
-    void      splarax(), scanmin(), scanmax(), frvec(), orthogonalize();
-    void      orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
+  double *         mkvec();        /* allocates space for a vector */
+  double *         mkvec_ret();    /* mkvec() which returns error code */
+  double           dot();          /* standard dot product routine */
+  struct orthlink *makeorthlnk();  /* make space for entry in orthog. set */
+  double           ch_norm();      /* vector norm */
+  double           Tevec();        /* calc evec of T by linear recurrence */
+  struct scanlink *mkscanlist();   /* make scan list for min ritz vecs */
+  double           lanc_seconds(); /* current clock timer */
+  int              symmlq_(), get_ritzvals();
+  void             setvec(), vecscale(), update(), vecran(), strout();
+  void             splarax(), scanmin(), scanmax(), frvec(), orthogonalize();
+  void             orthog1(), orthogvec(), bail(), warnings(), mkeigvecs();
 
-    if (DEBUG_TRACE > 0) {
-        printf("<Entering lanczos_FO>\n");
-    }
+  if (DEBUG_TRACE > 0) {
+    printf("<Entering lanczos_FO>\n");
+  }
 
-    if (DEBUG_EVECS > 0) {
-	if (version == 1) {
-    	    printf("Full orthogonalization Lanczos, matrix size = %d\n", n);
-	}
-	else {
-    	    printf("Full orthogonalization Lanczos, inverted operator, matrix size = %d\n", n);
-	}
-    }
-
-    /* Initialize time. */
-    time = lanc_seconds();
-
-    if (n < d + 1) {
-	bail("ERROR: System too small for number of eigenvalues requested.",1);
-	/* d+1 since don't use zero eigenvalue pair */
-    }
-
-    /* Allocate Lanczos space. */
-    maxj = LANCZOS_MAXITNS;
-    u = mkvec(1, n);
-    r = mkvec(1, n);
-    Aq = mkvec(1, n);
-    ritzvec = mkvec(1, n);
-    zeros = mkvec(1, n);
-    setvec(zeros, 1, n, 0.0);
-    workn = mkvec(1, n);
-    Ares = mkvec(1, d);
-    inv_lambda = mkvec(1, d);
-    index = smalloc((d + 1) * sizeof(int));
-    alpha = mkvec(1, maxj);
-    beta = mkvec(1, maxj + 1);
-    ritz = mkvec(1, maxj);
-    s = mkvec(1, maxj);
-    bj = mkvec(1, maxj);
-    workj = mkvec(1, maxj + 1);
-    q = smalloc((maxj + 1) * sizeof(double *));
-    scanlist = mkscanlist(d);
-
-    if (version == 2) {
-        /* Allocate Symmlq space all in one chunk. */
-        wv1 = smalloc(6 * (n + 1) * sizeof(double));
-        wv2 = &wv1[(n + 1)];
-        wv3 = &wv1[2 * (n + 1)];
-        wv4 = &wv1[3 * (n + 1)];
-        wv5 = &wv1[4 * (n + 1)];
-        wv6 = &wv1[5 * (n + 1)];
-
-        /* Set invariant symmlq parameters */
-        precon = FALSE;		/* FALSE until we figure out a good way */
-        goodb = FALSE;		/* should be FALSE for this application */
-        checka = FALSE;		/* if don't know by now, too bad */
-        intlim = n;			/* set to enforce a maximum number of Symmlq itns */
-        itnmin = 0;			/* set to enforce a minimum number of Symmlq itns */
-        shift = 0.0;		/* since just solving rather than doing RQI */
-        symmlqitns = 0;		/* total number of Symmlq iterations */
-        nout = 0;			/* Effectively disabled - see notes in symmlq.f */
-        rtol = 1.0e-5;		/* requested residual tolerance */
-        normxlim = DOUBLE_MAX;	/* Effectively disables ||x|| termination criterion */
-        long_n = n;			/* copy to long for linting */
-    }
-
-    /* Initialize. */
-    vecran(r, 1, n);
-    if (vwsqrt == NULL) {
-	/* whack one's direction from initial vector */
-	orthog1(r, 1, n);
-
-	/* list the ones direction for later use in Symmlq */
-	if (version == 2) {
-	    orthlist2 = makeorthlnk();
-	    ones = mkvec(1, n);
-	    setvec(ones, 1, n, 1.0);
-	    orthlist2->vec = ones;
-	    orthlist2->pntr = NULL;
-	}
+  if (DEBUG_EVECS > 0) {
+    if (version == 1) {
+      printf("Full orthogonalization Lanczos, matrix size = %d\n", n);
     }
     else {
-	/* whack vwsqrt direction from initial vector */
-	orthogvec(r, 1, n, vwsqrt);
-
-	if (version == 2) {
-	    /* list the vwsqrt direction for later use in Symmlq */
-	    orthlist2 = makeorthlnk();
-	    orthlist2->vec = vwsqrt;
-	    orthlist2->pntr = NULL;
-	}
+      printf("Full orthogonalization Lanczos, inverted operator, matrix size = %d\n", n);
     }
-    beta[1] = ch_norm(r, 1, n);
-    q[0] = zeros;
-    bji_tol = eigtol;
-    orthlist = NULL;
-    Sres_max = 0.0;
-    Anorm = 2 * maxdeg;                         /* Gershgorin estimate for ||A|| */
-    bis_safety = BISECTION_SAFETY;
-    inc_bis_safety = FALSE;
-    init_time += lanc_seconds() - time;
+  }
 
-    /* Main Lanczos loop. */
-    j = 1;
-    converged = FALSE;
-    memory_ok = TRUE;
-    while ((j <= maxj) && (converged == FALSE) && memory_ok) {
-	time = lanc_seconds();
+  /* Initialize time. */
+  time = lanc_seconds();
 
-	/* Allocate next Lanczos vector. If fail, back up one step and compute approx. eigvec. */
-	q[j] = mkvec_ret(1, n);
-        if (q[j] == NULL) {
-	    memory_ok = FALSE;
-  	    if (DEBUG_EVECS > 0 || WARNING_EVECS > 0) {
-                strout("WARNING: Lanczos out of memory; computing best approximation available.\n");
-            }
-	    if (j <= 2) {
-	        bail("ERROR: Sorry, can't salvage Lanczos.",1); 
-  	        /* ... save yourselves, men.  */
-	    }
-            j--;
-	}
+  if (n < d + 1) {
+    bail("ERROR: System too small for number of eigenvalues requested.", 1);
+    /* d+1 since don't use zero eigenvalue pair */
+  }
 
-	vecscale(q[j], 1, n, 1.0 / beta[j], r);
-	blas_time += lanc_seconds() - time;
-	time = lanc_seconds();
-	if (version == 1) {
-            splarax(Aq, A, n, q[j], vwsqrt, workn);
-	}
-	else {
-	    symmlq_(&long_n, &(q[j][1]), &wv1[1], &wv2[1], &wv3[1], &wv4[1], &Aq[1], &wv5[1],
-		&wv6[1], &checka, &goodb, &precon, &shift, &nout,
-		&intlim, &rtol, &istop, &itn, &anorm, &acond,
-		&rnorm, &ynorm, (double *) A, vwsqrt, (double *) orthlist2,
-		&macheps, &normxlim, &itnmin);
-	    symmlqitns += itn;
-	    if (DEBUG_EVECS > 2) {
-	        printf("Symmlq report:      rtol %g\n", rtol);
-	        printf("  system norm %g, solution norm %g\n", anorm, ynorm);
-	        printf("  system condition %g, residual %g\n", acond, rnorm);
-	        printf("  termination condition %2ld, iterations %3ld\n", istop, itn);
-	    }
-	}
-	splarax_time += lanc_seconds() - time;
-	time = lanc_seconds();
-	update(u, 1, n, Aq, -beta[j], q[j - 1]);
-	alpha[j] = dot(u, 1, n, q[j]);
-	update(r, 1, n, u, -alpha[j], q[j]);
-	blas_time += lanc_seconds() - time;
-	time = lanc_seconds();
-	if (vwsqrt == NULL) {
-	    orthog1(r, 1, n);
-	}
-	else {
-	    orthogvec(r, 1, n, vwsqrt);
-	}
-	orthogonalize(r, n, orthlist);
-	temp = orthlist;
-	orthlist = makeorthlnk();
-	orthlist->vec = q[j];
-	orthlist->pntr = temp;
-	beta[j + 1] = ch_norm(r, 1, n);
-	orthog_time += lanc_seconds() - time;
+  /* Allocate Lanczos space. */
+  maxj    = LANCZOS_MAXITNS;
+  u       = mkvec(1, n);
+  r       = mkvec(1, n);
+  Aq      = mkvec(1, n);
+  ritzvec = mkvec(1, n);
+  zeros   = mkvec(1, n);
+  setvec(zeros, 1, n, 0.0);
+  workn      = mkvec(1, n);
+  Ares       = mkvec(1, d);
+  inv_lambda = mkvec(1, d);
+  index      = smalloc((d + 1) * sizeof(int));
+  alpha      = mkvec(1, maxj);
+  beta       = mkvec(1, maxj + 1);
+  ritz       = mkvec(1, maxj);
+  s          = mkvec(1, maxj);
+  bj         = mkvec(1, maxj);
+  workj      = mkvec(1, maxj + 1);
+  q          = smalloc((maxj + 1) * sizeof(double *));
+  scanlist   = mkscanlist(d);
 
-	time = lanc_seconds();
-	left = j/2;
-	right = j - left + 1;
-	if (inc_bis_safety) {
-	    bis_safety *= 10;
-	    inc_bis_safety = FALSE;
-	}
-	ritzval_flag = get_ritzvals(alpha, beta+1, j, Anorm, workj+1, 
-                                    ritz, d, left, right, eigtol, bis_safety);
-        /* ... have to off-set beta and workj since full orthogonalization
-               indexes these from 1 to maxj+1 whereas selective orthog.
-               indexes them from 0 to maxj */ 
+  if (version == 2) {
+    /* Allocate Symmlq space all in one chunk. */
+    wv1 = smalloc(6 * (n + 1) * sizeof(double));
+    wv2 = &wv1[(n + 1)];
+    wv3 = &wv1[2 * (n + 1)];
+    wv4 = &wv1[3 * (n + 1)];
+    wv5 = &wv1[4 * (n + 1)];
+    wv6 = &wv1[5 * (n + 1)];
 
-	if (ritzval_flag != 0) {
-            bail("ERROR: Both Sturm bisection and QL failed.",1);
-	    /* ... give up. */
- 	}
-        ql_time += lanc_seconds() - time;
+    /* Set invariant symmlq parameters */
+    precon     = FALSE;      /* FALSE until we figure out a good way */
+    goodb      = FALSE;      /* should be FALSE for this application */
+    checka     = FALSE;      /* if don't know by now, too bad */
+    intlim     = n;          /* set to enforce a maximum number of Symmlq itns */
+    itnmin     = 0;          /* set to enforce a minimum number of Symmlq itns */
+    shift      = 0.0;        /* since just solving rather than doing RQI */
+    symmlqitns = 0;          /* total number of Symmlq iterations */
+    nout       = 0;          /* Effectively disabled - see notes in symmlq.f */
+    rtol       = 1.0e-5;     /* requested residual tolerance */
+    normxlim   = DOUBLE_MAX; /* Effectively disables ||x|| termination criterion */
+    long_n     = n;          /* copy to long for linting */
+  }
 
-	/* Convergence check using Paige bji estimates. */
-	time = lanc_seconds();
-	for (i = 1; i <= j; i++) {
-	    Sres = Tevec(alpha, beta, j, ritz[i], s);
-	    if (Sres > Sres_max) {
-		Sres_max = Sres;
-	    }
-	    if (Sres > SRESTOL) {
-		inc_bis_safety = TRUE;
-	    }
-	    bj[i] = s[j] * beta[j + 1];
-	}
-	tevec_time += lanc_seconds() - time;
+  /* Initialize. */
+  vecran(r, 1, n);
+  if (vwsqrt == NULL) {
+    /* whack one's direction from initial vector */
+    orthog1(r, 1, n);
 
-
-	time = lanc_seconds();
-	if (version == 1) {
-	    scanmin(ritz, 1, j, &scanlist);
-	}
-	else {
-	    scanmax(ritz, 1, j, &scanlist);
-	}
-	converged = TRUE;
-	if (j < d)
-	    converged = FALSE;
-	else {
-	    curlnk = scanlist;
-	    while (curlnk != NULL) {
-		if (bj[curlnk->indx] > bji_tol) {
-		    converged = FALSE;
-		}
-		curlnk = curlnk->pntr;
-	    }
-	}
-	scan_time += lanc_seconds() - time;
-	j++;
-    }
-    j--;
-
-    /* Collect eigenvalue and bound information. */
-    time = lanc_seconds();
-    mkeigvecs(scanlist,lambda,bound,index,bj,d,&Sres_max,alpha,beta+1,j,s,y,n,q);
-    evec_time += lanc_seconds() - time;
-
-    /* Analyze computation for and report additional problems */
-    time = lanc_seconds();
-    if (DEBUG_EVECS>0 && version == 2) {
-	printf("\nTotal Symmlq iterations %3d\n", symmlqitns);
-    }
+    /* list the ones direction for later use in Symmlq */
     if (version == 2) {
-        for (i = 1; i <= d; i++) {
-	    lambda[i] = 1.0/lambda[i];
-	}
+      orthlist2 = makeorthlnk();
+      ones      = mkvec(1, n);
+      setvec(ones, 1, n, 1.0);
+      orthlist2->vec  = ones;
+      orthlist2->pntr = NULL;
     }
-    warnings(workn, A, y, n, lambda, vwsqrt, Ares, bound, index,
-             d, j, maxj, Sres_max, eigtol, u, Anorm, Output_File);
-    debug_time += lanc_seconds() - time;
+  }
+  else {
+    /* whack vwsqrt direction from initial vector */
+    orthogvec(r, 1, n, vwsqrt);
 
-    /* Free any memory allocated in this routine. */
-    time = lanc_seconds();
-    frvec(u, 1);
-    frvec(r, 1);
-    frvec(Aq, 1);
-    frvec(ritzvec, 1);
-    frvec(zeros, 1);
-    if (vwsqrt == NULL && version == 2) {
-	frvec(ones, 1);
-    }
-    frvec(workn, 1);
-    frvec(Ares, 1);
-    frvec(inv_lambda, 1);
-    sfree(index);
-    frvec(alpha, 1);
-    frvec(beta, 1);
-    frvec(ritz, 1);
-    frvec(s, 1);
-    frvec(bj, 1);
-    frvec(workj, 1);
     if (version == 2) {
-	frvec(wv1, 0);
+      /* list the vwsqrt direction for later use in Symmlq */
+      orthlist2       = makeorthlnk();
+      orthlist2->vec  = vwsqrt;
+      orthlist2->pntr = NULL;
     }
-    while (scanlist != NULL) {
-	curlnk = scanlist->pntr;
-	sfree(scanlist);
-	scanlist = curlnk;
+  }
+  beta[1]        = ch_norm(r, 1, n);
+  q[0]           = zeros;
+  bji_tol        = eigtol;
+  orthlist       = NULL;
+  Sres_max       = 0.0;
+  Anorm          = 2 * maxdeg; /* Gershgorin estimate for ||A|| */
+  bis_safety     = BISECTION_SAFETY;
+  inc_bis_safety = FALSE;
+  init_time += lanc_seconds() - time;
+
+  /* Main Lanczos loop. */
+  j         = 1;
+  converged = FALSE;
+  memory_ok = TRUE;
+  while ((j <= maxj) && (converged == FALSE) && memory_ok) {
+    time = lanc_seconds();
+
+    /* Allocate next Lanczos vector. If fail, back up one step and compute approx. eigvec. */
+    q[j] = mkvec_ret(1, n);
+    if (q[j] == NULL) {
+      memory_ok = FALSE;
+      if (DEBUG_EVECS > 0 || WARNING_EVECS > 0) {
+        strout("WARNING: Lanczos out of memory; computing best approximation available.\n");
+      }
+      if (j <= 2) {
+        bail("ERROR: Sorry, can't salvage Lanczos.", 1);
+        /* ... save yourselves, men.  */
+      }
+      j--;
     }
+
+    vecscale(q[j], 1, n, 1.0 / beta[j], r);
+    blas_time += lanc_seconds() - time;
+    time = lanc_seconds();
+    if (version == 1) {
+      splarax(Aq, A, n, q[j], vwsqrt, workn);
+    }
+    else {
+      symmlq_(&long_n, &(q[j][1]), &wv1[1], &wv2[1], &wv3[1], &wv4[1], &Aq[1], &wv5[1], &wv6[1],
+              &checka, &goodb, &precon, &shift, &nout, &intlim, &rtol, &istop, &itn, &anorm, &acond,
+              &rnorm, &ynorm, (double *)A, vwsqrt, (double *)orthlist2, &macheps, &normxlim,
+              &itnmin);
+      symmlqitns += itn;
+      if (DEBUG_EVECS > 2) {
+        printf("Symmlq report:      rtol %g\n", rtol);
+        printf("  system norm %g, solution norm %g\n", anorm, ynorm);
+        printf("  system condition %g, residual %g\n", acond, rnorm);
+        printf("  termination condition %2ld, iterations %3ld\n", istop, itn);
+      }
+    }
+    splarax_time += lanc_seconds() - time;
+    time = lanc_seconds();
+    update(u, 1, n, Aq, -beta[j], q[j - 1]);
+    alpha[j] = dot(u, 1, n, q[j]);
+    update(r, 1, n, u, -alpha[j], q[j]);
+    blas_time += lanc_seconds() - time;
+    time = lanc_seconds();
+    if (vwsqrt == NULL) {
+      orthog1(r, 1, n);
+    }
+    else {
+      orthogvec(r, 1, n, vwsqrt);
+    }
+    orthogonalize(r, n, orthlist);
+    temp           = orthlist;
+    orthlist       = makeorthlnk();
+    orthlist->vec  = q[j];
+    orthlist->pntr = temp;
+    beta[j + 1]    = ch_norm(r, 1, n);
+    orthog_time += lanc_seconds() - time;
+
+    time  = lanc_seconds();
+    left  = j / 2;
+    right = j - left + 1;
+    if (inc_bis_safety) {
+      bis_safety *= 10;
+      inc_bis_safety = FALSE;
+    }
+    ritzval_flag = get_ritzvals(alpha, beta + 1, j, Anorm, workj + 1, ritz, d, left, right, eigtol,
+                                bis_safety);
+    /* ... have to off-set beta and workj since full orthogonalization
+           indexes these from 1 to maxj+1 whereas selective orthog.
+           indexes them from 0 to maxj */
+
+    if (ritzval_flag != 0) {
+      bail("ERROR: Both Sturm bisection and QL failed.", 1);
+      /* ... give up. */
+    }
+    ql_time += lanc_seconds() - time;
+
+    /* Convergence check using Paige bji estimates. */
+    time = lanc_seconds();
     for (i = 1; i <= j; i++) {
-	frvec(q[i], 1);
+      Sres = Tevec(alpha, beta, j, ritz[i], s);
+      if (Sres > Sres_max) {
+        Sres_max = Sres;
+      }
+      if (Sres > SRESTOL) {
+        inc_bis_safety = TRUE;
+      }
+      bj[i] = s[j] * beta[j + 1];
     }
-    while (orthlist != NULL) {
-	temp = orthlist->pntr;
-	sfree(orthlist);
-	orthlist = temp;
+    tevec_time += lanc_seconds() - time;
+
+    time = lanc_seconds();
+    if (version == 1) {
+      scanmin(ritz, 1, j, &scanlist);
     }
-    while (version == 2 && orthlist2 != NULL) {
-	temp = orthlist2->pntr;
-	sfree(orthlist2);
-	orthlist2 = temp;
+    else {
+      scanmax(ritz, 1, j, &scanlist);
     }
-    sfree(q);
-    init_time += lanc_seconds() - time;
+    converged = TRUE;
+    if (j < d)
+      converged = FALSE;
+    else {
+      curlnk = scanlist;
+      while (curlnk != NULL) {
+        if (bj[curlnk->indx] > bji_tol) {
+          converged = FALSE;
+        }
+        curlnk = curlnk->pntr;
+      }
+    }
+    scan_time += lanc_seconds() - time;
+    j++;
+  }
+  j--;
+
+  /* Collect eigenvalue and bound information. */
+  time = lanc_seconds();
+  mkeigvecs(scanlist, lambda, bound, index, bj, d, &Sres_max, alpha, beta + 1, j, s, y, n, q);
+  evec_time += lanc_seconds() - time;
+
+  /* Analyze computation for and report additional problems */
+  time = lanc_seconds();
+  if (DEBUG_EVECS > 0 && version == 2) {
+    printf("\nTotal Symmlq iterations %3d\n", symmlqitns);
+  }
+  if (version == 2) {
+    for (i = 1; i <= d; i++) {
+      lambda[i] = 1.0 / lambda[i];
+    }
+  }
+  warnings(workn, A, y, n, lambda, vwsqrt, Ares, bound, index, d, j, maxj, Sres_max, eigtol, u,
+           Anorm, Output_File);
+  debug_time += lanc_seconds() - time;
+
+  /* Free any memory allocated in this routine. */
+  time = lanc_seconds();
+  frvec(u, 1);
+  frvec(r, 1);
+  frvec(Aq, 1);
+  frvec(ritzvec, 1);
+  frvec(zeros, 1);
+  if (vwsqrt == NULL && version == 2) {
+    frvec(ones, 1);
+  }
+  frvec(workn, 1);
+  frvec(Ares, 1);
+  frvec(inv_lambda, 1);
+  sfree(index);
+  frvec(alpha, 1);
+  frvec(beta, 1);
+  frvec(ritz, 1);
+  frvec(s, 1);
+  frvec(bj, 1);
+  frvec(workj, 1);
+  if (version == 2) {
+    frvec(wv1, 0);
+  }
+  while (scanlist != NULL) {
+    curlnk = scanlist->pntr;
+    sfree(scanlist);
+    scanlist = curlnk;
+  }
+  for (i = 1; i <= j; i++) {
+    frvec(q[i], 1);
+  }
+  while (orthlist != NULL) {
+    temp = orthlist->pntr;
+    sfree(orthlist);
+    orthlist = temp;
+  }
+  while (version == 2 && orthlist2 != NULL) {
+    temp = orthlist2->pntr;
+    sfree(orthlist2);
+    orthlist2 = temp;
+  }
+  sfree(q);
+  init_time += lanc_seconds() - time;
 }

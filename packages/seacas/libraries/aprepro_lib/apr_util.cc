@@ -143,10 +143,10 @@ namespace SEAMS {
               " is immutable and cannot be modified", true, false);
   }
 
-  void undefined_warning (const SEAMS::Aprepro &apr, const std::string &var)
+  void undefined_error (const SEAMS::Aprepro &apr, const std::string &var)
   {
     if (!apr.inIfdefGetvar) {
-      apr.warning("Undefined variable '" + var + "'");
+      apr.error("Undefined variable '" + var + "'");
     } else {
       apr.inIfdefGetvar = false;
     }

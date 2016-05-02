@@ -60,6 +60,32 @@
 #include "Kokkos_Blas1_MV.hpp"
 #include "Kokkos_Random.hpp"
 
+namespace { // (anonymous)
+  template<class T, class DT>
+  Kokkos::DualView<T*, DT>
+  getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
+                                const char label[],
+                                const bool leaveOnHost)
+  {
+    using Kokkos::MemoryUnmanaged;
+    typedef typename DT::memory_space DMS;
+    typedef Kokkos::HostSpace HMS;
+
+    const size_t len = static_cast<size_t> (x_av.size ());
+    Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
+    Kokkos::DualView<T*, DT> x_out (label, len);
+    if (leaveOnHost) {
+      x_out.template modify<HMS> ();
+      Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
+    }
+    else {
+      x_out.template modify<DMS> ();
+      Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
+    }
+    return x_out;
+  }
+} // namespace (anonymous)
+
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
   // FIXME (mfh 04 Sep 2015) Just a stub for now!
@@ -735,31 +761,44 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   copyAndPermuteNew (const SrcDistObject& sourceObj,
-                     size_t numSameIDs,
-                     const Kokkos::View<const LocalOrdinal*, execution_space>& permuteToLIDs,
-                     const Kokkos::View<const LocalOrdinal*, execution_space>& permuteFromLIDs)
+                     const size_t numSameIDs,
+                     const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::ArrayView;
-    using Teuchos::RCP;
-    using Kokkos::Compat::getKokkosViewDeepCopy;
-    using Kokkos::subview;
-    typedef Kokkos::DualView<impl_scalar_type*,
-      typename dual_view_type::array_layout,
-      execution_space> col_dual_view_type;
+    using KokkosRefactor::Details::permute_array_multi_column;
+    using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
+    using Kokkos::Compat::create_const_view;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    typedef typename dual_view_type::t_host::memory_space HMS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    //typedef typename ArrayView<const LocalOrdinal>::size_type size_type; // unused
-    const char tfecfFuncName[] = "copyAndPermute";
+    const char tfecfFuncName[] = "copyAndPermuteNew: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
-      ": permuteToLIDs and permuteFromLIDs must have the same size."
-      << std::endl << "permuteToLIDs.size() = " << permuteToLIDs.size ()
-      << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
+      permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
+      std::runtime_error, "permuteToLIDs.dimension_0() = "
+      << permuteToLIDs.dimension_0 () << " != permuteFromLIDs.dimension_0() = "
+      << permuteFromLIDs.dimension_0 () << ".");
 
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
     const size_t numCols = this->getNumVectors ();
+
+    // The input sourceObj controls whether we copy on host or device.
+    // This is because this method is not allowed to modify sourceObj,
+    // so it may not sync sourceObj; it must use the most recently
+    // updated version (host or device) of sourceObj's data.
+    dual_view_type srcDualView = sourceMV.getDualView ();
+    const bool copyOnHost =
+      srcDualView.modified_host () > srcDualView.modified_device ();
+    dual_view_type tgtDualView = this->getDualView ();
+    if (copyOnHost) {
+      tgtDualView.template sync<HMS> ();
+      tgtDualView.template modify<HMS> ();
+    }
+    else {
+      tgtDualView.template sync<DMS> ();
+      tgtDualView.template modify<DMS> ();
+    }
 
     // TODO (mfh 15 Sep 2013) When we replace
     // KokkosClassic::MultiVector with a Kokkos::View, there are two
@@ -775,24 +814,40 @@ namespace Tpetra {
 
     // Copy rows [0, numSameIDs-1] of the local multivectors.
     //
-    // For GPU Nodes: All of this happens using device pointers; this
-    // does not require host views of either source or destination.
-    //
     // Note (ETP 2 Jul 2014)  We need to always copy one column at a
     // time, even when both multivectors are constant-stride, since
     // deep_copy between strided subviews with more than one column
     // doesn't currently work.
+
     if (numSameIDs > 0) {
       const std::pair<size_t, size_t> rows (0, numSameIDs);
-      for (size_t j = 0; j < numCols; ++j) {
-        const size_t dstCol = isConstantStride () ? j : whichVectors_[j];
-        const size_t srcCol =
-          sourceMV.isConstantStride () ? j : sourceMV.whichVectors_[j];
-        col_dual_view_type dst_j =
-          subview (view_, rows, dstCol);
-        col_dual_view_type src_j =
-          subview (sourceMV.view_, rows, srcCol);
-        Kokkos::deep_copy (dst_j, src_j); // Copy src_j into dst_j
+      if (copyOnHost) {
+        auto tgt_h = tgtDualView.template view<HMS> ();
+        auto src_h = create_const_view (srcDualView.template view<HMS> ());
+
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
+          const size_t srcCol =
+            sourceMV.isConstantStride () ? j : sourceMV.whichVectors_[j];
+
+          auto tgt_j = Kokkos::subview (tgt_h, rows, tgtCol);
+          auto src_j = Kokkos::subview (src_h, rows, srcCol);
+          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+        }
+      }
+      else { // copy on device
+        auto tgt_d = tgtDualView.template view<DMS> ();
+        auto src_d = create_const_view (srcDualView.template view<DMS> ());
+
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
+          const size_t srcCol =
+            sourceMV.isConstantStride () ? j : sourceMV.whichVectors_[j];
+
+          auto tgt_j = Kokkos::subview (tgt_d, rows, tgtCol);
+          auto src_j = Kokkos::subview (src_d, rows, srcCol);
+          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+        }
       }
     }
 
@@ -806,26 +861,138 @@ namespace Tpetra {
     // (such as ADD).
 
     // If there are no permutations, we are done
-    if (permuteFromLIDs.size() == 0 || permuteToLIDs.size() == 0)
+    if (permuteFromLIDs.dimension_0 () == 0 ||
+        permuteToLIDs.dimension_0 () == 0) {
       return;
-
-    if (this->isConstantStride ()) {
-      KokkosRefactor::Details::permute_array_multi_column(
-        getKokkosView(),
-        sourceMV.getKokkosView(),
-        permuteToLIDs,
-        permuteFromLIDs,
-        numCols);
     }
-    else {
-      KokkosRefactor::Details::permute_array_multi_column_variable_stride(
-        getKokkosView(),
-        sourceMV.getKokkosView(),
-        permuteToLIDs,
-        permuteFromLIDs,
-        getKokkosViewDeepCopy<execution_space> (whichVectors_ ()),
-        getKokkosViewDeepCopy<execution_space> (sourceMV.whichVectors_ ()),
-        numCols);
+
+    // This gets around const-ness of the DualView input.  In
+    // particular, it gives us freedom to sync them where we need
+    // them.
+    Kokkos::DualView<const LocalOrdinal*, device_type> permuteToLIDs_nc =
+      permuteToLIDs;
+    Kokkos::DualView<const LocalOrdinal*, device_type> permuteFromLIDs_nc =
+      permuteFromLIDs;
+
+    // We could in theory optimize for the case where exactly one of
+    // them is constant stride, but we don't currently do that.
+    const bool nonConstStride =
+      ! this->isConstantStride () || ! sourceMV.isConstantStride ();
+
+    // We only need the "which vectors" arrays if either the source or
+    // target MV is not constant stride.  Since we only have one
+    // kernel that must do double-duty, we have to create a "which
+    // vectors" array for the MV that _is_ constant stride.
+    Kokkos::DualView<const size_t*, device_type> srcWhichVecs;
+    Kokkos::DualView<const size_t*, device_type> tgtWhichVecs;
+    if (nonConstStride) {
+      if (this->whichVectors_.size () == 0) {
+        Kokkos::DualView<size_t*, device_type> tmpTgt ("tgtWhichVecs", numCols);
+        tmpTgt.template modify<HMS> ();
+        for (size_t j = 0; j < numCols; ++j) {
+          tmpTgt.h_view(j) = j;
+        }
+        if (! copyOnHost) {
+          tmpTgt.template sync<DMS> ();
+        }
+        tgtWhichVecs = tmpTgt;
+      }
+      else {
+        Teuchos::ArrayView<const size_t> tgtWhichVecsT = this->whichVectors_ ();
+        tgtWhichVecs =
+          getDualViewCopyFromArrayView<size_t, device_type> (tgtWhichVecsT,
+                                                             "tgtWhichVecs",
+                                                             copyOnHost);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (tgtWhichVecs.dimension_0 ()) !=
+         this->getNumVectors (),
+         std::logic_error, "tgtWhichVecs.dimension_0() = " <<
+         tgtWhichVecs.dimension_0 () << " != this->getNumVectors() = " <<
+         this->getNumVectors () << ".");
+
+      if (sourceMV.whichVectors_.size () == 0) {
+        Kokkos::DualView<size_t*, device_type> tmpSrc ("srcWhichVecs", numCols);
+        tmpSrc.template modify<HMS> ();
+        for (size_t j = 0; j < numCols; ++j) {
+          tmpSrc.h_view(j) = j;
+        }
+        if (! copyOnHost) {
+          tmpSrc.template sync<DMS> ();
+        }
+        srcWhichVecs = tmpSrc;
+      }
+      else {
+        Teuchos::ArrayView<const size_t> srcWhichVecsT =
+          sourceMV.whichVectors_ ();
+        srcWhichVecs =
+          getDualViewCopyFromArrayView<size_t, device_type> (srcWhichVecsT,
+                                                             "srcWhichVecs",
+                                                             copyOnHost);
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (srcWhichVecs.dimension_0 ()) !=
+         sourceMV.getNumVectors (), std::logic_error,
+         "srcWhichVecs.dimension_0() = " << srcWhichVecs.dimension_0 ()
+         << " != sourceMV.getNumVectors() = " << sourceMV.getNumVectors ()
+         << ".");
+    }
+
+    if (copyOnHost) {
+      auto tgt_h = tgtDualView.template view<HMS> ();
+      auto src_h = create_const_view (srcDualView.template view<HMS> ());
+      permuteToLIDs_nc.template sync<HMS> ();
+      auto permuteToLIDs_h =
+        create_const_view (permuteToLIDs_nc.template view<HMS> ());
+      permuteFromLIDs_nc.template sync<HMS> ();
+      auto permuteFromLIDs_h =
+        create_const_view (permuteFromLIDs_nc.template view<HMS> ());
+
+      if (nonConstStride) {
+        // No need to sync first, because copyOnHost argument to
+        // getDualViewCopyFromArrayView puts them in the right place.
+        auto tgtWhichVecs_h =
+          create_const_view (tgtWhichVecs.template view<HMS> ());
+        auto srcWhichVecs_h =
+          create_const_view (srcWhichVecs.template view<HMS> ());
+        permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                    permuteToLIDs_h,
+                                                    permuteFromLIDs_h,
+                                                    tgtWhichVecs_h,
+                                                    srcWhichVecs_h, numCols);
+      }
+      else {
+        permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                    permuteFromLIDs_h, numCols);
+      }
+    }
+    else { // copy on device
+      auto tgt_d = tgtDualView.template view<DMS> ();
+      auto src_d = create_const_view (srcDualView.template view<DMS> ());
+      permuteToLIDs_nc.template sync<DMS> ();
+      auto permuteToLIDs_d =
+        create_const_view (permuteToLIDs_nc.template view<DMS> ());
+      permuteFromLIDs_nc.template sync<DMS> ();
+      auto permuteFromLIDs_d =
+        create_const_view (permuteFromLIDs_nc.template view<DMS> ());
+
+      if (nonConstStride) {
+        // No need to sync first, because copyOnHost argument to
+        // getDualViewCopyFromArrayView puts them in the right place.
+        auto tgtWhichVecs_d =
+          create_const_view (tgtWhichVecs.template view<DMS> ());
+        auto srcWhichVecs_d =
+          create_const_view (srcWhichVecs.template view<DMS> ());
+        permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                    permuteToLIDs_d,
+                                                    permuteFromLIDs_d,
+                                                    tgtWhichVecs_d,
+                                                    srcWhichVecs_d, numCols);
+      }
+      else {
+        permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                    permuteFromLIDs_d, numCols);
+      }
     }
   }
 
@@ -833,29 +1000,64 @@ namespace Tpetra {
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   packAndPrepareNew (const SrcDistObject& sourceObj,
-                     const Kokkos::View<const local_ordinal_type*, execution_space> &exportLIDs,
-                     Kokkos::View<impl_scalar_type*, execution_space> &exports,
-                     const Kokkos::View<size_t*, execution_space> &numExportPacketsPerLID,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type> &exportLIDs,
+                     Kokkos::DualView<impl_scalar_type*, device_type>& exports,
+                     const Kokkos::DualView<size_t*, device_type>& /* numExportPacketsPerLID */,
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
+    using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    //typedef Array<size_t>::size_type size_type; // unused
+    typedef impl_scalar_type IST;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::memory_space
+      host_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
+      dev_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::execution_space
+      host_execution_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::execution_space
+      dev_execution_space;
 
     const bool debug = false;
     if (debug) {
       std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
     }
-
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
 
-    // We don't need numExportPacketsPerLID; forestall "unused
-    // variable" compile warnings.
-    (void) numExportPacketsPerLID;
+    // mfh 12 Apr 2016: packAndPrepareNew decides where to pack based
+    // on the memory space in which exportLIDs was last modified.
+    // (DistObject::doTransferNew decides this currently.)
+    //
+    // We unfortunately can't change the source object sourceMV.
+    // Thus, we can't sync it to the memory space where we want to
+    // pack communication buffers.  As a result, for example, if
+    // exportLIDs wants us to pack on host, but sourceMV was last
+    // modified on device, we have to allocate a temporary host
+    // version and copy back to host before we can pack.  Similarly,
+    // if exportLIDs wants us to pack on device, but sourceMV was last
+    // modified on host, we have to allocate a temporary device
+    // version and copy back to device before we can pack.
+    const bool packOnHost =
+      exportLIDs.modified_host () > exportLIDs.modified_device ();
+    auto src_dual = sourceMV.getDualView ();
+    auto src_dev = src_dual.template view<dev_memory_space> ();
+    auto src_host = src_dual.template view<host_memory_space> ();
+    if (packOnHost) {
+      if (src_dual.modified_device () > src_dual.modified_host ()) {
+        // Allocate a new host mirror.  We'll use it for packing below.
+        src_host = typename decltype (src_dual)::t_host ("MV::DualView::h_view", src_dual.dimension_0 (), src_dual.dimension_1 ());
+        Kokkos::deep_copy (src_host, src_dev);
+      }
+    }
+    else { // pack on device
+      if (src_dual.modified_host () > src_dual.modified_device ()) {
+        // Allocate a new "device mirror."  We'll use it for packing below.
+        src_dev = typename decltype (src_dual)::t_dev ("MV::DualView::d_view", src_dual.dimension_0 (), src_dual.dimension_1 ());
+        Kokkos::deep_copy (src_dev, src_host);
+      }
+    }
 
     const size_t numCols = sourceMV.getNumVectors ();
 
@@ -866,7 +1068,7 @@ namespace Tpetra {
 
     // If we have no exports, there is nothing to do.  Make sure this
     // goes _after_ setting constantNumPackets correctly.
-    if (exportLIDs.size () == 0) {
+    if (exportLIDs.dimension_0 () == 0) {
       if (debug) {
         std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
       }
@@ -892,20 +1094,31 @@ namespace Tpetra {
       std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
     }
 
-    const size_t numExportLIDs = exportLIDs.size ();
+    const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
-    if (static_cast<size_t> (exports.size ()) != newExportsSize) {
+    if (static_cast<size_t> (exports.dimension_0 ()) != newExportsSize) {
       if (debug) {
         std::ostringstream os;
         const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "$$$ MV::packAndPrepareNew (Proc " << myRank << ") realloc "
-          "exports from " << exports.size () << " to " << newExportsSize
+          "exports from " << exports.dimension_0 () << " to " << newExportsSize
            << std::endl;
         std::cerr << os.str ();
       }
+      // Resize 'exports' to fit.
       execution_space::fence ();
-      Kokkos::realloc (exports, newExportsSize);
+      exports = Kokkos::DualView<impl_scalar_type*, device_type> ("exports", newExportsSize);
       execution_space::fence ();
+    }
+
+    // Mark 'exports' here, since we might resize it above.  Resizing
+    // currently requires calling the constructor, which clears out
+    // the 'modified' flags.
+    if (packOnHost) {
+      exports.template modify<host_memory_space> ();
+    }
+    else {
+      exports.template modify<dev_memory_space> ();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -922,47 +1135,80 @@ namespace Tpetra {
       // "nonconstant stride constructor" as a special case, and makes
       // them constant stride (by making whichVectors_ have length 0).
       if (sourceMV.isConstantStride ()) {
+        using KokkosRefactor::Details::pack_array_single_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_single_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          0);
+        if (packOnHost) {
+          pack_array_single_column (exports.template view<host_memory_space> (),
+                                    create_const_view (src_host),
+                                    exportLIDs.template view<host_memory_space> (),
+                                    0);
+        }
+        else { // pack on device
+          pack_array_single_column (exports.template view<dev_memory_space> (),
+                                    create_const_view (src_dev),
+                                    exportLIDs.template view<dev_memory_space> (),
+                                    0);
+        }
       }
       else {
+        using KokkosRefactor::Details::pack_array_single_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_single_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          sourceMV.whichVectors_[0]);
+        if (packOnHost) {
+          pack_array_single_column (exports.template view<host_memory_space> (),
+                                    create_const_view (src_host),
+                                    exportLIDs.template view<host_memory_space> (),
+                                    sourceMV.whichVectors_[0]);
+        }
+        else { // pack on device
+          pack_array_single_column (exports.template view<dev_memory_space> (),
+                                    create_const_view (src_dev),
+                                    exportLIDs.template view<dev_memory_space> (),
+                                    sourceMV.whichVectors_[0]);
+        }
       }
     }
     else { // the source MultiVector has multiple columns
       if (sourceMV.isConstantStride ()) {
+        using KokkosRefactor::Details::pack_array_multi_column;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_multi_column(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          numCols);
+        if (packOnHost) {
+          pack_array_multi_column (exports.template view<host_memory_space> (),
+                                   create_const_view (src_host),
+                                   exportLIDs.template view<host_memory_space> (),
+                                   numCols);
+        }
+        else { // pack on device
+          pack_array_multi_column (exports.template view<dev_memory_space> (),
+                                   create_const_view (src_dev),
+                                   exportLIDs.template view<dev_memory_space> (),
+                                   numCols);
+        }
       }
       else {
+        using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
         if (debug) {
           std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
         }
-        KokkosRefactor::Details::pack_array_multi_column_variable_stride(
-          exports,
-          sourceMV.getKokkosView (),
-          exportLIDs,
-          getKokkosViewDeepCopy<execution_space> (sourceMV.whichVectors_ ()),
-          numCols);
+        if (packOnHost) {
+          pack_array_multi_column_variable_stride (exports.template view<host_memory_space> (),
+                                                   create_const_view (src_host),
+                                                   exportLIDs.template view<host_memory_space> (),
+                                                   getKokkosViewDeepCopy<host_execution_space> (sourceMV.whichVectors_ ()),
+                                                   numCols);
+        }
+        else { // pack on device
+          pack_array_multi_column_variable_stride (exports.template view<dev_memory_space> (),
+                                                   create_const_view (src_dev),
+                                                   exportLIDs.template view<dev_memory_space> (),
+                                                   getKokkosViewDeepCopy<dev_execution_space> (sourceMV.whichVectors_ ()),
+                                                   numCols);
+        }
       }
     }
 
@@ -975,45 +1221,39 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackAndCombineNew (const Kokkos::View<const local_ordinal_type*, execution_space> &importLIDs,
-                       const Kokkos::View<const impl_scalar_type*, execution_space> &imports,
-                       const Kokkos::View<size_t*, execution_space> &numPacketsPerLID,
-                       size_t constantNumPackets,
-                       Distributor & /* distor */,
-                       CombineMode CM)
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                       const Kokkos::DualView<const impl_scalar_type*, device_type>& imports,
+                       const Kokkos::DualView<const size_t*, device_type>& /* numPacketsPerLID */,
+                       const size_t constantNumPackets,
+                       Distributor& /* distor */,
+                       const CombineMode CM)
   {
-    using Teuchos::ArrayView;
+    using KokkosRefactor::Details::unpack_array_multi_column;
+    using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
-    const char tfecfFuncName[] = "unpackAndCombine";
+    typedef impl_scalar_type IST;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_host::memory_space
+      host_memory_space;
+    typedef typename Kokkos::DualView<IST*, device_type>::t_dev::memory_space
+      dev_memory_space;
+    const char tfecfFuncName[] = "unpackAndCombineNew: ";
+    const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
     // If we have no imports, there is nothing to do
-    if (importLIDs.size () == 0) {
+    if (importLIDs.dimension_0 () == 0) {
       return;
     }
 
-    // We don't need numPacketsPerLID; forestall "unused variable"
-    // compile warnings.
-    (void) numPacketsPerLID;
-
-    /* The layout in the export for MultiVectors is as follows:
-       imports = { all of the data from row exportLIDs.front() ;
-                   ....
-                   all of the data from row exportLIDs.back() }
-      This doesn't have the best locality, but is necessary because
-      the data for a Packet (all data associated with an LID) is
-      required to be contiguous. */
-
     const size_t numVecs = getNumVectors ();
-
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (imports.size()) != getNumVectors()*importLIDs.size(),
+      static_cast<size_t> (imports.dimension_0 ()) !=
+      numVecs * importLIDs.dimension_0 (),
       std::runtime_error,
-      ": 'imports' buffer size must be consistent with the amount of data to "
-      "be sent.  " << std::endl << "imports.size() = " << imports.size()
-      << " != getNumVectors()*importLIDs.size() = " << getNumVectors() << "*"
-      << importLIDs.size() << " = " << getNumVectors() * importLIDs.size()
-      << ".");
+      "imports.dimension_0() = " << imports.dimension_0 ()
+      << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
+      << " * " << importLIDs.dimension_0 () << " = "
+      << numVecs * importLIDs.dimension_0 () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       constantNumPackets == static_cast<size_t> (0), std::runtime_error,
@@ -1024,67 +1264,153 @@ namespace Tpetra {
       std::runtime_error, ": constantNumPackets must equal numVecs.");
 #endif // HAVE_TPETRA_DEBUG
 
-    if (numVecs > 0 && importLIDs.size () > 0) {
+    // mfh 12 Apr 2016: Decide where to unpack based on the memory
+    // space in which the imports buffer was last modified.
+    // DistObject::doTransferNew gets to decide this.  We currently
+    // require importLIDs to match (its most recent version must be in
+    // the same memory space as imports' most recent version).
+    const bool unpackOnHost =
+      imports.modified_host () > imports.modified_device ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (unpackOnHost && importLIDs.modified_host () < importLIDs.modified_device (),
+       std::logic_error, "The 'imports' buffer was last modified on host, "
+       "but importLIDs was last modified on device." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! unpackOnHost && importLIDs.modified_host () > importLIDs.modified_device (),
+       std::logic_error, "The 'imports' buffer was last modified on device, "
+       "but importLIDs was last modified on host." << suffix);
 
+    auto X_dual = this->getDualView ();
+    // We have to sync before modifying, because this method may read
+    // as well as write (depending on the CombineMode).  This matters
+    // because copyAndPermute may have modified *this in the other
+    // memory space.
+    if (unpackOnHost) {
+      X_dual.template sync<host_memory_space> ();
+      X_dual.template modify<host_memory_space> ();
+    }
+    else { // unpack on device
+      X_dual.template sync<dev_memory_space> ();
+      X_dual.template modify<dev_memory_space> ();
+    }
+    auto X_d = X_dual.template view<dev_memory_space> ();
+    auto X_h = X_dual.template view<host_memory_space> ();
+    auto imports_d = imports.template view<dev_memory_space> ();
+    auto imports_h = imports.template view<host_memory_space> ();
+    auto importLIDs_d = importLIDs.template view<dev_memory_space> ();
+    auto importLIDs_h = importLIDs.template view<host_memory_space> ();
+
+    Kokkos::DualView<size_t*, device_type> whichVecs;
+    if (! isConstantStride ()) {
+      Kokkos::View<const size_t*, host_memory_space,
+        Kokkos::MemoryUnmanaged> whichVecsIn (whichVectors_.getRawPtr (),
+                                              numVecs);
+      whichVecs = Kokkos::DualView<size_t*, device_type> ("whichVecs", numVecs);
+      if (unpackOnHost) {
+        whichVecs.template modify<host_memory_space> ();
+        Kokkos::deep_copy (whichVecs.template view<host_memory_space> (), whichVecsIn);
+      }
+      else {
+        whichVecs.template modify<dev_memory_space> ();
+        Kokkos::deep_copy (whichVecs.template view<dev_memory_space> (), whichVecsIn);
+      }
+    }
+    auto whichVecs_d = whichVecs.template view<dev_memory_space> ();
+    auto whichVecs_h = whichVecs.template view<host_memory_space> ();
+
+    /* The layout in the export for MultiVectors is as follows:
+       imports = { all of the data from row exportLIDs.front() ;
+                   ....
+                   all of the data from row exportLIDs.back() }
+      This doesn't have the best locality, but is necessary because
+      the data for a Packet (all data associated with an LID) is
+      required to be contiguous. */
+
+    if (numVecs > 0 && importLIDs.dimension_0 () > 0) {
       // NOTE (mfh 10 Mar 2012, 24 Mar 2014) If you want to implement
       // custom combine modes, start editing here.  Also, if you trust
       // inlining, it would be nice to condense this code by using a
       // binary function object f in the pack functors.
       if (CM == INSERT || CM == REPLACE) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::InsertOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::InsertOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs);
+          }
         }
-        else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::InsertOp(),
-            numVecs);
+        else { // not constant stride
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else if (CM == ADD) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::AddOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::AddOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op, numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op, numVecs);
+          }
         }
-        else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::AddOp(),
-            numVecs);
+        else { // not constant stride
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else if (CM == ABSMAX) {
-        if (isConstantStride()) {
-          KokkosRefactor::Details::unpack_array_multi_column(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            KokkosRefactor::Details::AbsMaxOp(),
-            numVecs);
+        const auto op = KokkosRefactor::Details::AbsMaxOp ();
+
+        if (isConstantStride ()) {
+          if (unpackOnHost) {
+            unpack_array_multi_column (X_h, imports_h, importLIDs_h, op,
+                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column (X_d, imports_d, importLIDs_d, op,
+                                       numVecs);
+          }
         }
         else {
-          KokkosRefactor::Details::unpack_array_multi_column_variable_stride(
-            getKokkosView(),
-            imports,
-            importLIDs,
-            getKokkosViewDeepCopy<execution_space>(whichVectors_ ()),
-            KokkosRefactor::Details::AbsMaxOp(),
-            numVecs);
+          if (unpackOnHost) {
+            unpack_array_multi_column_variable_stride (X_h, imports_h,
+                                                       importLIDs_h,
+                                                       whichVecs_h, op,
+                                                       numVecs);
+          }
+          else { // unpack on device
+            unpack_array_multi_column_variable_stride (X_d, imports_d,
+                                                       importLIDs_d,
+                                                       whichVecs_d, op,
+                                                       numVecs);
+          }
         }
       }
       else {

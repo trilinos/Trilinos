@@ -137,7 +137,8 @@ The relavant defines for SEACAS are listed below:
  -D Netcdf_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib 
  -D TPL_Netcdf_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
  -D TPL_Netcdf_Enables_Netcdf4:BOOL=ON  (if built with hdf5 libraries which give netcdf-4 capability)
- -D SEACASExodus_ENABLE_MPI:BOOL=OFF|ON (ON if parallel; OFF if serial)
+ -D TPL_Netcdf_Enables_PNetcdf:BOOL=ON  (if built with parallel-netcdf which gives parallel I/O capability)
+ -D TPL_Netcdf_PARALLEL:BOOL=OFF|ON (ON if netcdf has parallel enabled; OFF if serial )
  -D TPL_ENABLE_Matio:BOOL=ON  (set to OFF if not available)
  -D Matio_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib
  -D TPL_Matio_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include

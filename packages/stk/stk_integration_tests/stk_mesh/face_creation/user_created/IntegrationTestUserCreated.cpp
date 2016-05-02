@@ -67,6 +67,9 @@ const SideTestUtil::TestCaseData userCreatedFaceTestCases = {
     {"ALRA_doubleKissing.e", 2, 2, {{1, 1}, {1, 2}, {2, 0}, {2, 3}}},
 
     {"TDg.e", 2, 2, {{1, 1}, {2, 1}}}, // Tet adjacent to degenerate quad
+    {"TLg.e",     2,        1,    {{1, 1}}},
+    {"TRg.e",     2,        1,    {{2, 1}}},
+
     {"ZDZ.e", 2, 1, {{1, 5}, {2, 4}}}, // degenerate Hex adjacent to degenerate Hex
 
     // Started passing on March 4th
@@ -103,6 +106,14 @@ const SideTestUtil::TestCaseData userCreatedFaceTestCases = {
     {"AReLA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
     {"AReRA.e",   3,        2,    {{1, 5}, {3, 0}, {3, 1}, {2, 4}}},
     {"basic.e", 4, 2, {{3,3}, {4,3}, {5,1}, {6,1}}}, // Ticket 13009 - Get this working. 2D example.
+
+    {"2D_AL.e",     1,       1,     {{1, 0}}},
+    {"2D_ALA.e",    2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_ALB.e",    2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_ALRA.e",   2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_ALRB.e",   2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_ADA.e",    2,       1,     {{1, 0}, {2, 2}}},
+    {"2D_ADB.e",    2,       1,     {{1, 0}, {2, 2}}},
 };
 
 const SideTestUtil::TestCaseData failingUserCreatedFaceTestCases = {
@@ -118,7 +129,6 @@ const SideTestUtil::TestCaseData failingUserCreatedFaceTestCases = {
 //    {"ALeDfRB.e", 4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
 //    {"AeDfA.e",   4,        2,    {{1, 5}, {3, 0}, {3, 1}, {4, 0}, {4, 1}, {2, 4}}},
 //    {"ALJ.e",     3,        1,    {{1, 5}, {2, 4}, {3, 4}}},
-
 };
 
 class UserCreatedSidesTester : public SideTestUtil::SideCreationTester
@@ -146,7 +156,7 @@ protected:
         catch(...)
         {
             allOk = false;
-            std::cerr << "Reading " << testCase.filename << " failed.\n";
+            std::cout << "Reading " << testCase.filename << " failed.\n";
         }
 
         int numericAllOk = allOk;

@@ -48,6 +48,7 @@
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include <stk_unit_test_utils/ioUtils.hpp>
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
@@ -287,7 +288,7 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
         edge_nodes[FIRST_NODE]  = nodes[FIRST_NODE];
         edge_nodes[SECOND_NODE] = nodes[SECOND_NODE];
 
-        entities[stk::topology::EDGE_RANK] = stk::mesh::declare_element_to_sub_topology_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
+        entities[stk::topology::EDGE_RANK] = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
                 edge_nodes, id, stk::topology::EDGE_RANK, meta.get_topology_root_part(stk::topology::LINE_2));
 
         const unsigned num_nodes_on_face = 4;
@@ -297,7 +298,7 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
         face_nodes[THIRD_NODE]  = nodes[FOURTH_NODE];
         face_nodes[FOURTH_NODE] = nodes[THIRD_NODE];
 
-        entities[stk::topology::FACE_RANK] = stk::mesh::declare_element_to_sub_topology_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
+        entities[stk::topology::FACE_RANK] = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulk, entities[stk::topology::ELEM_RANK],
                 face_nodes, id, stk::topology::FACE_RANK, meta.get_topology_root_part(stk::topology::QUAD_4));
 
         bulk.modification_end();
@@ -339,7 +340,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_face_to_element)
 
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
         bulk.modification_begin();
-        stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(bulk, elem, nodes, 1, stk::topology::FACE_RANK,
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulk, elem, nodes, 1, stk::topology::FACE_RANK,
                 meta.get_topology_root_part(stk::topology::QUAD_4_2D));
         bulk.modification_end();
 
@@ -412,7 +413,7 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
 
         stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
         bulk.modification_begin();
-        stk::mesh::Entity edge = stk::mesh::declare_element_to_sub_topology_with_nodes(bulk, elem, nodes, 1, stk::topology::EDGE_RANK,
+        stk::mesh::Entity edge = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(bulk, elem, nodes, 1, stk::topology::EDGE_RANK,
                 meta.get_topology_root_part(stk::topology::LINE_2_1D));
         bulk.modification_end();
 

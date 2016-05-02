@@ -362,10 +362,14 @@ void HexGameofLifeMesh::declare_first_slice_element_node_ids(stk::mesh::EntityId
     V.resize(8);
     unsigned rowOffset = index/m_width;
     unsigned totalOffset = offset+rowOffset+index;
-    V = {totalOffset+1, totalOffset+2, totalOffset+m_nodesPerSlice+2,
-         totalOffset+m_nodesPerSlice+1, totalOffset+1+m_nodeWidth,
-         totalOffset+2+m_nodeWidth, totalOffset+m_nodesPerSlice+2+m_nodeWidth,
-         totalOffset+m_nodesPerSlice+1+m_nodeWidth};
+    V = {totalOffset+1+m_nodeWidth,
+         totalOffset+2+m_nodeWidth,
+         totalOffset+m_nodesPerSlice+2+m_nodeWidth,
+         totalOffset+m_nodesPerSlice+1+m_nodeWidth,
+         totalOffset+1,
+         totalOffset+2,
+         totalOffset+m_nodesPerSlice+2,
+         totalOffset+m_nodesPerSlice+1};
 }
 void HexGameofLifeMesh::declare_remaining_element_node_ids(stk::mesh::EntityIdVector& newer,
                                                         stk::mesh::EntityIdVector& older,

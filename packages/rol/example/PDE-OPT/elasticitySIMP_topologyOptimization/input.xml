@@ -1,8 +1,13 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Penalty parameter"          type="double" value="0e-8"  />
-    <Parameter name="Use Scaled Density Vectors" type="bool"   value="false" />
+    <Parameter name="Use Scaled Density Vectors" type="bool"    value="false" />
+    <Parameter name="Density Scaling"            type="double"  value="1.0" />
+  </ParameterList>
+
+  <ParameterList name="Density Filter">
+    <Parameter name="Length Scale" type="double" value="0.1"  />
+    <Parameter name="Enable"       type="bool"   value="true" />
   </ParameterList>
 
   <ParameterList name="PDE FEM">
@@ -42,8 +47,8 @@
     <Parameter name="Height"         type="double" value="1.0" />
     <Parameter name="X0"             type="double" value="0.0" />
     <Parameter name="Y0"             type="double" value="0.0" />
-    <Parameter name="NX"             type="int"    value="16"  />
-    <Parameter name="NY"             type="int"    value="10"  />
+    <Parameter name="NX"             type="int"    value="32"  />
+    <Parameter name="NY"             type="int"    value="20"  />
     <Parameter name="Partition type" type="int"    value="1"   />
   </ParameterList>
 
@@ -187,7 +192,7 @@
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <Parameter name="Print Intermediate Optimization History" type="bool"   value="false"        />
       <Parameter name="Subproblem Step Type"                    type="string" value="Trust Region" />
-      <Parameter name="Subproblem Iteration Limit"              type="int"    value="50"         />
+      <Parameter name="Subproblem Iteration Limit"              type="int"    value="80"         />
     </ParameterList>
 
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->

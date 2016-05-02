@@ -42,17 +42,35 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
+#include "Kokkos_Core.hpp"
+#include "Kokkos_Macros.hpp"
+
+// Some definition that should exist whether the specializations exist or not
+
+namespace Kokkos {
+
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad { static const bool value = false; };
+
+// Template function for extracting sacado dimension
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+}
+
 // Make sure the user really wants these View specializations
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
-#include "Kokkos_Core.hpp"
-#include <Kokkos_Macros.hpp>
-#include <Sacado_ConfigDefs.h>
-
-#include <impl/KokkosExp_ViewMapping.hpp>
+#include "Sacado_Traits.hpp"
+#include "impl/KokkosExp_ViewMapping.hpp"
 
 #define SACADO_SUPPORT_RANK_8 0
 
@@ -154,10 +172,6 @@ void deep_copy( const View<DT,DP...> & dst ,
     typename View<ST,SP...>::array_type( src ) );
 }
 
-// Whether a given type is a view with Sacado FAD scalar type
-template <typename view_type>
-struct is_view_fad { static const bool value = false; };
-
 template <typename T, typename ... P>
 struct is_view_fad< View<T,P...> > {
   typedef View<T,P...> view_type;
@@ -165,13 +179,6 @@ struct is_view_fad< View<T,P...> > {
     std::is_same< typename view_type::specialize,
                   Experimental::Impl::ViewSpecializeSacadoFad >::value;
 };
-
-template <typename view_type>
-KOKKOS_INLINE_FUNCTION
-constexpr unsigned
-dimension_scalar(const view_type& view) {
-  return 0;
-}
 
 template <typename T, typename ... P>
 KOKKOS_INLINE_FUNCTION

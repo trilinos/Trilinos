@@ -2,6 +2,7 @@
 #include "KokkosKernels_GraphHelpers.hpp"
 #include "Kokkos_Sparse_MV.hpp"
 #include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "KokkosKernels_Utils.hpp"
 #include <iostream>
 
 #define MAXVAL 1
@@ -94,6 +95,7 @@ void run_experiment(
 
 
 
+  /*
   kh.destroy_gs_handle();
   kh.create_gs_handle(KokkosKernels::Experimental::Graph::GS_PERMUTED);
 
@@ -181,6 +183,7 @@ void run_experiment(
       << "\n\tPRECOND_APPLY_TIME_PER_ITER [" << cg_result.precond_time / (cg_result.iteration  + 1) << "]"
       << "\n\tSOLVE_TIME                  [" << solve_time<< "]"
       << std::endl ;
+  */
 }
 
 
@@ -197,6 +200,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_COUNT };
 
 int main (int argc, char ** argv){
+
 
   int cmdline[ CMD_COUNT ] ;
   char *mtx_bin_file = NULL;
@@ -262,16 +266,32 @@ int main (int argc, char ** argv){
 
       KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
       Kokkos::Threads::print_configuration(std::cout);
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Threads> crsMat_t;
-      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+
+      typedef Kokkos::Threads myExecSpace;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+      typedef typename crsMat_t::StaticCrsGraphType graph_t;
+      typedef typename graph_t::row_map_type::non_const_type row_map_view_t;
+      typedef typename graph_t::entries_type::non_const_type   cols_view_t;
+      typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+      row_map_view_t rowmap_view("rowmap_view", nv+1);
+      cols_view_t columns_view("colsmap_view", ne);
+      values_view_t values_view("values_view", ne);
+
+      KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+
+      graph_t static_graph (columns_view, rowmap_view);
+      crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
       delete [] xadj;
       delete [] adj;
       delete [] ew;
 
+      run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      run_experiment<Kokkos::Threads, crsMat_t>(crsmat);
-
-      Kokkos::Threads::finalize();
+      myExecSpace::finalize();
     }
 
 #endif
@@ -291,15 +311,35 @@ int main (int argc, char ** argv){
       Kokkos::OpenMP::print_configuration(std::cout);
 
       KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::OpenMP> crsMat_t;
-      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+
+
+      typedef Kokkos::OpenMP myExecSpace;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+      typedef typename crsMat_t::StaticCrsGraphType graph_t;
+      typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+      typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+      typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+      row_map_view_t rowmap_view("rowmap_view", nv+1);
+      cols_view_t columns_view("colsmap_view", ne);
+      values_view_t values_view("values_view", ne);
+
+      KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(ne, ew, values_view);
+      KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(ne, adj, columns_view);
+      KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(nv+1, xadj, rowmap_view);
+
+      graph_t static_graph (columns_view, rowmap_view);
+      crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+
+      //crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
       delete [] xadj;
       delete [] adj;
       delete [] ew;
 
-      run_experiment<Kokkos::OpenMP, crsMat_t>(crsmat);
+      run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      Kokkos::OpenMP::finalize();
+      myExecSpace::finalize();
     }
 
 #endif
@@ -313,20 +353,58 @@ int main (int argc, char ** argv){
       Kokkos::Cuda::print_configuration(std::cout);
 
       KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&nv, &ne, &xadj, &adj, &ew, mtx_bin_file);
-      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda> crsMat_t;
-      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
+
+
+      typedef Kokkos::Cuda myExecSpace;
+      typedef typename KokkosSparse::CrsMatrix<wt, idx, myExecSpace, void, idx > crsMat_t;
+
+      typedef typename crsMat_t::StaticCrsGraphType graph_t;
+      typedef typename crsMat_t::row_map_type::non_const_type row_map_view_t;
+      typedef typename crsMat_t::index_type::non_const_type   cols_view_t;
+      typedef typename crsMat_t::values_type::non_const_type values_view_t;
+
+      row_map_view_t rowmap_view("rowmap_view", nv+1);
+      cols_view_t columns_view("colsmap_view", ne);
+      values_view_t values_view("values_view", ne);
+
+
+      {
+        typename row_map_view_t::rowmap_view hr = Kokkos::create_mirror_view (rowmap_view);
+        typename cols_view_t::rowmap_view hc = Kokkos::create_mirror_view (columns_view);
+        typename values_view_t::rowmap_view hv = Kokkos::create_mirror_view (values_view);
+
+        for (idx i = 0; i <= nv; ++i){
+          hr(i) = xadj[i];
+        }
+
+        for (idx i = 0; i < ne; ++i){
+          hc(i) = adj[i];
+          hv(i) = ew[i];
+        }
+        Kokkos::deep_copy (rowmap_view , hr);
+        Kokkos::deep_copy (columns_view , hc);
+        Kokkos::deep_copy (values_view , hv);
+
+
+      }
+      graph_t static_graph (columns_view, rowmap_view);
+      crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
+
+//      typedef typename KokkosSparse::CrsMatrix<wt, idx, Kokkos::Cuda> crsMat_t;
+//      crsMat_t crsmat("CrsMatrix", nv, nv, ne, ew, xadj, adj);
       delete [] xadj;
       delete [] adj;
       delete [] ew;
 
 
-      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat);
+      run_experiment<myExecSpace, crsMat_t>(crsmat);
 
-      Kokkos::Cuda::finalize();
+      myExecSpace::finalize();
       Kokkos::HostSpace::execution_space::finalize();
     }
 
 #endif
+
 
 
   return 0;
