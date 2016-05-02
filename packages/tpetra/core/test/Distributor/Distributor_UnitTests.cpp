@@ -170,16 +170,23 @@ namespace {
     // each node i sends to node i+1
     // for the last node, this results in an invalid node id, which should throw an exception on
     // every node
-    size_t numImports = 0; (void)numImports;
+    size_t numImports = 0;
+
     // create from sends with bad node IDs
     {
       Distributor distributor(comm);
       TEST_THROW( numImports = distributor.createFromSends( tuple<int>(myImageID+1)), std::runtime_error );
     }
+    // Printing numImports prevents a compiler warning (set but unused).
+    out << "numImports result: " << numImports << std::endl;
+
     {
       Distributor distributor(comm);
       TEST_THROW( numImports = distributor.createFromSends( tuple<int>(0,myImageID+1,0)), std::runtime_error );
     }
+    // Printing numImports prevents a compiler warning (set but unused).
+    out << "numImports result: " << numImports << std::endl;
+
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
