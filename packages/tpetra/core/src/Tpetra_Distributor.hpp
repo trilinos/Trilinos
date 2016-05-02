@@ -808,16 +808,23 @@ namespace Tpetra {
     //! Whether to print copious debug output to stderr on all processes.
     bool debug_;
 
-    //! Whether to use RDMA for MPI communication between CUDA GPUs.
-    /*!
-     * This is only relevant if Tpetra was configured to support the new
-     * experimental DistObject and Distributor implementation using
-     * Kokkos::View.  The default for this parameter is determined by the
-     * configuration parameter Tpetra_ENABLE_MPI_CUDA_RDMA, which is off
-     * by default.  Thus regardless of how Tpetra was configured, you can
-     * turn this on/off at run-time by setting the parameter list option
-     * "Enable MPI CUDA RDMA support" to true.
-     */
+    /// \brief Whether to assume that MPI can read from and write to
+    ///   CUDA device memory.
+    ///
+    /// Recent MPI implementations know how to read from and write to
+    /// CUDA device memory.  This has nothing to do with CUDA UVM; it
+    /// uses a different mechanism.  However, if you have an old MPI
+    /// implementation that isn't CUDA-aware, you might need to
+    /// disable this option.  Otherwise, your application will
+    /// segfault or otherwise behave incorrectly, when your MPI
+    /// implementation attempts to access device memory in a
+    /// not-CUDA-aware way.
+    ///
+    /// CMake configuration parameter Tpetra_ENABLE_MPI_CUDA_RDMA,
+    /// which is OFF by default, determines the default value of this
+    /// parameter.  Regardless of how Tpetra was configured, you can
+    /// turn this on or off at run time by setting the ParameterList
+    /// option "Enable MPI CUDA RDMA support" to true.
     bool enable_cuda_rdma_;
 
     //@}
@@ -2933,9 +2940,9 @@ namespace Tpetra {
       typename imports_view::HostMirror host_imports =
         Kokkos::create_mirror_view(imports);
       Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numPackets,
-                      host_imports);
+      doReversePostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
+                              numPackets,
+                              host_imports);
       Kokkos::deep_copy (imports, host_imports);
       return;
     }
@@ -2966,10 +2973,10 @@ namespace Tpetra {
       typename imports_view::HostMirror host_imports =
         Kokkos::create_mirror_view(imports);
       Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numExportPacketsPerLID,
-                      host_imports,
-                      numImportPacketsPerLID);
+      doReversePostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
+                              numExportPacketsPerLID,
+                              host_imports,
+                              numImportPacketsPerLID);
       Kokkos::deep_copy (imports, host_imports);
       return;
     }
