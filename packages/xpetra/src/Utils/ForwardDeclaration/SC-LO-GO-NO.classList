@@ -9,6 +9,7 @@ MatrixFactory
 MultiVector
 MultiVectorFactory
 Operator
+ReorderedBlockedCrsMatrix
 TpetraCrsMatrix
 TpetraMultiVector
 #TpetraVbrMatrix
