@@ -108,12 +108,6 @@ namespace Tpetra {
     const bool barrierBetween_default = false;
     // Default value of the "Use distinct tags" parameter.
     const bool useDistinctTags_default = true;
-    // Default value of the "Enable MPI CUDA RDMA support"
-#ifdef TPETRA_ENABLE_MPI_CUDA_RDMA
-    const bool enable_cuda_rdma_default = true;
-#else
-    const bool enable_cuda_rdma_default = false;
-#endif
   } // namespace (anonymous)
 
   int Distributor::getTag (const int pathTag) const {
@@ -179,7 +173,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -199,7 +192,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -219,7 +211,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -240,7 +231,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -260,7 +250,6 @@ namespace Tpetra {
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
-    , enable_cuda_rdma_ (distributor.enable_cuda_rdma_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
     , imagesTo_ (distributor.imagesTo_)
@@ -323,7 +312,6 @@ namespace Tpetra {
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
-    std::swap (enable_cuda_rdma_, rhs.enable_cuda_rdma_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
     std::swap (imagesTo_, rhs.imagesTo_);
@@ -392,7 +380,22 @@ namespace Tpetra {
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
     const bool debug = plist->get<bool> ("Debug");
-    const bool enable_cuda_rdma = plist->get<bool> ("Enable MPI CUDA RDMA support");
+    {
+      // mfh 03 May 2016: We keep this option only for backwards
+      // compatibility, but it must always be true.  See discussion of
+      // Github Issue #227.
+      const bool enable_cuda_rdma =
+        plist->get<bool> ("Enable MPI CUDA RDMA support");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
+         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
+         "support\" = false.  This is no longer valid.  You don't need to "
+         "specify this option any more; Tpetra assumes it is always true.  "
+         "This is a very light assumption on the MPI implementation, and in "
+         "fact does not actually involve hardware or system RDMA support.  "
+         "Tpetra just assumes that the MPI implementation can tell whether a "
+         "pointer points to host memory or CUDA device memory.");
+    }
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
@@ -412,7 +415,6 @@ namespace Tpetra {
     barrierBetween_ = barrierBetween;
     useDistinctTags_ = useDistinctTags;
     debug_ = debug;
-    enable_cuda_rdma_ = enable_cuda_rdma;
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -431,7 +433,6 @@ namespace Tpetra {
     const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
-    const bool enable_cuda_rdma = enable_cuda_rdma_default;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -450,13 +451,16 @@ namespace Tpetra {
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
     plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-                "MPI message tags for different code paths.");
+                "MPI message tags for different code paths.  Highly recommended"
+                " to avoid message collisions.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
-    plist->set ("Enable MPI CUDA RDMA support", enable_cuda_rdma,
-                "Whether to enable RDMA support for MPI communication between "
-                "CUDA GPUs.  Only enable this if you know for sure your MPI "
-                "library supports it.");
+    plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
+                "tell whether a pointer points to host memory or CUDA device "
+                "memory.  You don't need to specify this option any more; "
+                "Tpetra assumes it is always true.  This is a very light "
+                "assumption on the MPI implementation, and in fact does not "
+                "actually involve hardware or system RDMA support.");
 
     // mfh 24 Dec 2015: Tpetra no longer inherits from
     // Teuchos::VerboseObject, so it doesn't need the "VerboseObject"
@@ -517,7 +521,6 @@ namespace Tpetra {
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
     reverseDistributor_->debug_ = debug_;
-    reverseDistributor_->enable_cuda_rdma_ = enable_cuda_rdma_;
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
@@ -676,8 +679,6 @@ namespace Tpetra {
         << ", Use distinct tags: "
         << (useDistinctTags_ ? "true" : "false")
         << ", Debug: " << (debug_ ? "true" : "false")
-        << ", Enable MPI CUDA RDMA support: "
-        << (enable_cuda_rdma_ ? "true" : "false")
         << "}}";
     return out.str ();
   }
@@ -793,8 +794,6 @@ namespace Tpetra {
             << (barrierBetween_ ? "true" : "false") << endl
             << "\"Use distinct tags\": "
             << (useDistinctTags_ ? "true" : "false") << endl
-            << "\"Enable MPI CUDA RDMA support\": "
-            << (enable_cuda_rdma_ ? "true" : "false") << endl
             << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
       }
     } // if myRank == 0

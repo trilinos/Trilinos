@@ -180,13 +180,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_MPI_CUDA_RDMA
-  TPETRA_ENABLE_MPI_CUDA_RDMA
-  "Assume that the MPI implementation knows how to read from and write to CUDA device memory.  This has nothing to do with CUDA UVM; it uses a different mechanism.  If you have an old MPI implementation that isn't CUDA-aware, you will need to disable this option.  Otherwise, your application will segfault or otherwise behave incorrectly, when your MPI implementation attempts to access device memory in a not-CUDA-aware way.  We do NOT recommend using CUDA with this option OFF, because performance will degrade."
-  ON
-  )
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Timings
   HAVE_TPETRA_MMM_TIMINGS
   "Enable the timings for the MMM kernels"
