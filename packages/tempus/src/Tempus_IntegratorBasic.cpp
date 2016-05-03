@@ -10,11 +10,9 @@ template class IntegratorBasic<double>;
 
 template Teuchos::RCP<IntegratorBasic<double> >
 IntegratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                parameterList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<double> >& model,
-  const Teuchos::RCP<Thyra::VectorBase<double> >&     x,
-  const Teuchos::RCP<Thyra::VectorBase<double> >&     xdot=Teuchos::null,
-  const Teuchos::RCP<Thyra::VectorBase<double> >&     xdotdot=Teuchos::null);
+  Teuchos::RCP<Teuchos::ParameterList>                     parameterList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<double> >&      model,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<double> >& solver);
 
 } // namespace Tempus
 

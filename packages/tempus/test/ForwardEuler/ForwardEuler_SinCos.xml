@@ -1,5 +1,4 @@
 <ParameterList name="ForwardEuler_SinCos">
-
   <ParameterList name="SinCosModel">
     <Parameter name="Implicit model formulation" type="bool" value="false"/>
     <Parameter name="Accept model parameters"    type="bool" value="false"/>
@@ -11,9 +10,7 @@
     <Parameter name="IC x_1"  type="double" value="1.0"/>
     <Parameter name="IC t_0"  type="double" value="0.0"/>
   </ParameterList>
-
   <ParameterList name="Tempus">
-
     <ParameterList name="Integrator">
       <Parameter name="Initial Time"       type="double" value="0.0"/>
       <Parameter name="Initial Time Index" type="int"    value="0"/>
@@ -21,12 +18,10 @@
       <Parameter name="Initial Order"      type="int"    value="1"/>
       <Parameter name="Final Time"         type="double" value="1.0"/>
       <Parameter name="Final Time Index"   type="int"    value="1000"/>
-
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Keep Newest"/>
         <Parameter name="Storage Limit" type="int"    value="1"/>
       </ParameterList>
-
       <ParameterList name="Time Step Control">
         <Parameter name="Minimum Simulation Time" type="double" value="0.0"/>
         <Parameter name="Maximum Simulation Time" type="double" value="1.0"/>
@@ -48,14 +43,10 @@
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       </ParameterList>
     </ParameterList>
-
     <ParameterList name="Stepper">
     </ParameterList>
-
   </ParameterList>
-
   <ParameterList name="VerboseObject">
     <Parameter name="Verbosity Level" type="string" value="high"/>
   </ParameterList>
-
 </ParameterList>

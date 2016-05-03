@@ -68,10 +68,10 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   stepper = sf->createStepper(s, s_pl, model);
 
   // Create initial condition solution state
-  RCP<Thyra::VectorBase<Scalar> > x    = model->getNominalValues()->get_x();
-  RCP<Thyra::VectorBase<Scalar> > xdot = model->getNominalValues()->get_x_dot();
-  RCP<Thyra::VectorBase<Scalar> > xdotdot = model->getNominalValues()->get_x_dot_dot();
-  //RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
+  RCP<Thyra::VectorBase<Scalar> > x    = model->getNominalValues().get_x()->clone_v();
+  RCP<Thyra::VectorBase<Scalar> > xdot = model->getNominalValues().get_x_dot()->clone_v();
+  RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
+  //RCP<Thyra::VectorBase<Scalar> > xdotdot = model->getNominalValues().get_x_dot_dot()->clone_v();
   RCP<SolutionState<Scalar> > currentState =
     rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
                                   stepper->getStepperState()));

@@ -7,3 +7,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ForwardEuler_CopyFiles
+  DEST_FILES ForwardEuler_SinCos.xml
+  EXEDEPS ForwardEuler
+  )

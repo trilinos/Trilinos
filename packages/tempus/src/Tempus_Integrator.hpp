@@ -44,9 +44,6 @@ public:
   /// Destructor
   virtual ~Integrator();
 
-  //! Unique name for this integrator.
-  virtual std::string name() const = 0;
-
   /// \name Basic integrator methods
   //@{
     /// Advance the solution to time, and return true if successful.

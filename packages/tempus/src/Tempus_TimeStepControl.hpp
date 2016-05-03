@@ -33,28 +33,43 @@ class TimeStepControl
 {
 public:
 
-  /// Destructor
-  virtual ~TimeStepControl() {};
-
   /** \brief Default constructor. */
   TimeStepControl();
 
-  /** \brief. */
+  /** \brief Construct from ParameterList */
   TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null);
 
-  /** \brief. */
-  // This is a copy constructor
+  /// This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc_);
 
-  /** \brief. .*/
-  virtual void getNextTimeStep(Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData,
-    bool stepperStatus, bool integratorStatus) const;
+  /// Destructor
+  virtual ~TimeStepControl() {};
 
-  /** \brief. .*/
+  /** \brief Determine the time step size.*/
+  virtual void getNextTimeStep(Teuchos::RCP<SolutionStateMetaData<Scalar> >
+    metaData, bool stepperStatus, bool integratorStatus) const;
+
+  /** \brief Check if time is within minimum and maximum time. */
   virtual bool timeInRange(const Scalar time) const;
 
-  /** \brief. .*/
+  /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
+
+  /// \name Overridden from Teuchos::ParameterListAcceptor
+  //@{
+    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+  //@}
+
+  /// \name Overridden from Teuchos::Describable
+  //@{
+    virtual std::string description() const;
+    virtual void describe(Teuchos::FancyOStream          &out,
+                          const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
 
   Scalar timeMin;         ///< Minimum simulation time
@@ -78,23 +93,6 @@ public:
   unsigned int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
 
   Teuchos::RCP<Teuchos::ParameterList> pList;
-
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  //@}
-
-  /// \name Overridden from Teuchos::Describable
-  //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream          &out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
-  //@}
-
 };
 } // namespace Tempus
 #endif // TEMPUS_TIMESTEPCONTROL_HPP

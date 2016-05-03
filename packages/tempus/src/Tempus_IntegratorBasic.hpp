@@ -26,24 +26,19 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /** \brief Constructor with ParameterList, models, initial conditions
-   *  and optional solvers. */
+  /** \brief Constructor with ParameterList, model and optional solvers. */
   IntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >&
-      solver=Teuchos::null);
+    Teuchos::RCP<Teuchos::ParameterList>                     pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver);
 
   /// Destructor
   virtual ~IntegratorBasic() {}
 
-  //! Unique name for this integrator.
-  virtual std::string name() const = 0;
-
   /// \name Basic integrator methods
   //@{
     /// Advance the solution to time, and return true if successful.
-    virtual bool advanceTime(const Scalar time) = 0;
+    virtual bool advanceTime(const Scalar time);
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -87,4 +82,19 @@ protected:
 
 };
 } // namespace Tempus
+
+
+/// Non-member constructor
+//template<class Scalar>
+//Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > intBasic(
+//  Teuchos::RCP<Teuchos::ParameterList>                pList,
+//  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+//  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver)
+//{
+//  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+//    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, solver));
+//  return(integrator);
+//}
+
+
 #endif // TEMPUS_INTEGRATORBASIC_HPP

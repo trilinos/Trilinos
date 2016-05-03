@@ -102,29 +102,29 @@ class SinCosModel
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
-  RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
-  RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_f_space() const;
   ModelEvaluatorBase::InArgs<double> getNominalValues() const;
-  RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const;
-  RCP<Thyra::LinearOpBase<double> > create_W_op() const;
-  RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > create_W() const;
+  Teuchos::RCP<Thyra::LinearOpBase<double> > create_W_op() const;
+  Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > get_W_factory() const;
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
 
-  RCP<const Thyra::VectorSpaceBase<double> > get_p_space(int l) const;
-  RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_p_space(int l) const;
+  Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
 
   //@}
 
   /** \name Public functions overridden from ParameterListAcceptor. */
   //@{
-  void setParameterList(RCP<ParameterList> const& paramList);
-  RCP<const ParameterList> getValidParameters() const;
+  void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
 private:
 
-  void setupInOutArgs() const;
+  void setupInOutArgs_() const;
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
@@ -135,41 +135,45 @@ private:
     ) const;
   //@}
 
-  void calculateCoeffFromIC();
+  void calculateCoeffFromIC_();
 
 private:
-  int dim;         ///< Number of state unknowns (2)
-  int Np;          ///< Number of parameter vectors (1)
-  int np;          ///< Number of parameters in this vector (2)
-  int Ng;          ///< Number of observation functions (1)
-  int ng;          ///< Number of elements in this observation function (1)
-  bool isImplicit; ///< false => xdot = f(x,t)   W = beta*df/dx; true =>  F(xdot,x,t) = 0 W = alpha*dF/dxdot + beta*dF/dx
-  bool haveIC;     ///< false => no nominal values are provided (default=true)
-  bool acceptModelParams; ///< Changes inArgs to require parameters
-  mutable bool isInitialized;
-  mutable ModelEvaluatorBase::InArgs<double>  inArgs;
-  mutable ModelEvaluatorBase::OutArgs<double> outArgs;
-  mutable ModelEvaluatorBase::InArgs<double>  nominalValues;
-  RCP<const Thyra::VectorSpaceBase<double> >  x_space;
-  RCP<const Thyra::VectorSpaceBase<double> >  f_space;
-  RCP<const Thyra::VectorSpaceBase<double> >  p_space;
-  RCP<const Thyra::VectorSpaceBase<double> >  g_space;
+  int dim_;         ///< Number of state unknowns (2)
+  int Np_;          ///< Number of parameter vectors (1)
+  int np_;          ///< Number of parameters in this vector (2)
+  int Ng_;          ///< Number of observation functions (1)
+  int ng_;          ///< Number of elements in this observation function (1)
+  bool isImplicit_; ///< false => xdot = f(x,t)   W = beta*df/dx; true =>  F(xdot,x,t) = 0 W = alpha*dF/dxdot + beta*dF/dx
+  bool haveIC_;     ///< false => no nominal values are provided (default=true)
+  bool acceptModelParams_; ///< Changes inArgs to require parameters
+  mutable bool isInitialized_;
+  mutable ModelEvaluatorBase::InArgs<double>  inArgs_;
+  mutable ModelEvaluatorBase::OutArgs<double> outArgs_;
+  mutable ModelEvaluatorBase::InArgs<double>  nominalValues_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > x_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > f_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > g_space_;
 
   // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
   //                            x_1(t) = b*f*cos(f*t+phi)
-  double a_;    ///< Model parameter
-  double f_;    ///< Model parameter
-  double L_;    ///< Model parameter
-  double phi_;  ///< Parameter determined from the IC
-  double b_;    ///< Parameter determined from the IC
-  double t0_ic; ///< Time value where the initial condition is specified
-  double x0_ic; ///< Initial condition for x0
-  double x1_ic; ///< Initial condition for x1
+  double a_;     ///< Model parameter
+  double f_;     ///< Model parameter
+  double L_;     ///< Model parameter
+  double phi_;   ///< Parameter determined from the IC
+  double b_;     ///< Parameter determined from the IC
+  double t0_ic_; ///< Time value where the initial condition is specified
+  double x0_ic_; ///< Initial condition for x0
+  double x1_ic_; ///< Initial condition for x1
 };
 
 
-// Non-member constructor
-RCP<SinCosModel> sinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList);
+/// Non-member constructor
+//Teuchos::RCP<SinCosModel> sineCosineModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
+//{
+//  Teuchos::RCP<SinCosModel> model = rcp(new SinCosModel(pList_));
+//  return(model);
+//}
 
 
 } // namespace Tempus_Test
