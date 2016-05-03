@@ -67,8 +67,8 @@
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 
-//#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-//#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
 //#include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
 
@@ -123,7 +123,7 @@ namespace Intrepid2 {
       case shards::Beam<2>::key:
       case shards::Beam<3>::key:
 
-        // case shards::Triangle<3>::key:
+      case shards::Triangle<3>::key:
         // case shards::Triangle<4>::key:
         // case shards::Triangle<6>::key:
         // case shards::ShellTriangle<3>::key:
@@ -136,7 +136,7 @@ namespace Intrepid2 {
         //case shards::ShellQuadrilateral<8>::key:
         //case shards::ShellQuadrilateral<9>::key:
 
-        // case shards::Tetrahedron<4>::key:
+      case shards::Tetrahedron<4>::key:
         // case shards::Tetrahedron<8>::key:
         // case shards::Tetrahedron<10>::key:
         // case shards::Tetrahedron<11>::key:
@@ -167,9 +167,9 @@ namespace Intrepid2 {
 
       switch (cellTopo.getKey()) {
       case shards::Line<2>::key:          r_val = Teuchos::rcp(new Basis_HGRAD_LINE_C1_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<3>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<4>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C1_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<4>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_TET_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Hexahedron<8>::key:    r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Wedge<6>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;

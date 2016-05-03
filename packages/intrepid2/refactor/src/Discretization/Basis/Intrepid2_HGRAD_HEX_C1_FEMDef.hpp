@@ -239,10 +239,10 @@ namespace Intrepid2 {
       ordinal_type_array_1d_host tagView(&tags[0], 32);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-      ordinal_type_array_2d_host ordinalToTag;
-      ordinal_type_array_3d_host tagToOrdinal;
-      this->setOrdinalTagData(tagToOrdinal,
-                              ordinalToTag,
+      //ordinal_type_array_2d_host ordinalToTag;
+      //ordinal_type_array_3d_host tagToOrdinal;
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
                               tagView,
                               this->basisCardinality_,
                               tagSize,
@@ -250,16 +250,16 @@ namespace Intrepid2 {
                               posScOrd,
                               posDfOrd);
 
-      this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
-      Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
+      //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
+      //Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
 
-      this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
-      Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
+      //this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
+      //Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
     }
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords(basisCardinality_,basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
     
     dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0; dofCoords(0,2) = -1.0;
     dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0; dofCoords(1,2) = -1.0;
@@ -366,7 +366,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_HEX_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-    Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
   }
 
 }// namespace Intrepid2

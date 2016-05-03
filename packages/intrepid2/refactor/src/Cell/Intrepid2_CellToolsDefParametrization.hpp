@@ -67,11 +67,11 @@ namespace Intrepid2 {
   void
   CellTools<SpT>::
   setSubcellParametrization() {
-    // { 
-    //   const auto tet = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-    //   setSubcellParametrization( subcellParamData_.tetFaces,   2, tet );
-    //   setSubcellParametrization( subcellParamData_.tetEdges,   1, tet );
-    // }
+    { 
+      const auto tet = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >());
+      setSubcellParametrization( subcellParamData_.tetFaces,   2, tet );
+      setSubcellParametrization( subcellParamData_.tetEdges,   1, tet );
+    }
     {
       const auto hex = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());
       setSubcellParametrization( subcellParamData_.hexFaces,   2, hex );
@@ -87,10 +87,10 @@ namespace Intrepid2 {
     //   setSubcellParametrization( subcellParamData_.wedgeFaces, 2, wedge );
     //   setSubcellParametrization( subcellParamData_.wedgeEdges, 1, wedge );
     // }
-    // {
-    //   const auto tri = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >());
-    //   setSubcellParametrization( subcellParamData_.triEdges,   1, tri );
-    // }
+    {
+      const auto tri = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >());
+      setSubcellParametrization( subcellParamData_.triEdges,   1, tri );
+    }
     {
       const auto quad = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >());
       setSubcellParametrization( subcellParamData_.quadEdges,  1, quad );

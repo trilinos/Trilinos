@@ -137,7 +137,7 @@ int main (int argc, char ** argv){
     }
   }
 
-  idx m = 0, nnzA = 0, n = 0;
+  idx m = 0, nnzA = 0;
   idx *xadj, *adj;
   wt *ew;
 #if defined( KOKKOS_HAVE_PTHREAD )
@@ -159,7 +159,7 @@ int main (int argc, char ** argv){
     }
 
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
-    idx nv = n = m;
+    idx nv = m;
     idx ne = nnzA;
     Kokkos::Threads::print_configuration(std::cout);
 
@@ -194,7 +194,7 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
@@ -221,7 +221,7 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -250,7 +250,7 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 2){
       {
         std::cout << "MULTIPLYING R*A" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -277,7 +277,7 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
@@ -331,7 +331,7 @@ int main (int argc, char ** argv){
     Kokkos::OpenMP::print_configuration(std::cout);
 
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
-    idx nv = n = m;
+    idx nv = m;
     idx ne = nnzA;
 
 
@@ -369,7 +369,7 @@ int main (int argc, char ** argv){
     }else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
@@ -406,7 +406,7 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -440,7 +440,7 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 2){
       {
         std::cout << "MULTIPLYING R*A" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -467,7 +467,7 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
@@ -496,7 +496,7 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 3){
       {
         std::cout << "MULTIPLYING R*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -561,7 +561,7 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::print_configuration(std::cout);
 
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
-    idx nv = n = m;
+    idx nv = m;
     idx ne = nnzA;
 
     typedef Kokkos::Cuda myExecSpace;
@@ -578,15 +578,15 @@ int main (int argc, char ** argv){
 
 
     {
-      typename row_map_view_t::rowmap_view hr = Kokkos::create_mirror_view (rowmap_view);
-      typename cols_view_t::rowmap_view hc = Kokkos::create_mirror_view (columns_view);
-      typename values_view_t::rowmap_view hv = Kokkos::create_mirror_view (values_view);
+      typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+      typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+      typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
       for (idx i = 0; i <= nv; ++i){
         hr(i) = xadj[i];
       }
 
-      for (idx i = 0; i < ne; ++i){
+      for (idx i = 0; i < nnzA; ++i){
         hc(i) = adj[i];
         hv(i) = ew[i];
       }
@@ -600,7 +600,7 @@ int main (int argc, char ** argv){
     crsMat_t crsmat("CrsMatrix", nv, values_view, static_graph);
 
 
-    n = m;
+    //n = m;
 
 
     if (cmdline[ CMD_MM_MODE ] == 0){
@@ -611,7 +611,7 @@ int main (int argc, char ** argv){
 
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
@@ -620,9 +620,24 @@ int main (int argc, char ** argv){
         cols_view_t columns_view("colsmap_view", nnzA);
         values_view_t values_view("values_view", nnzA);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        {
+
+          typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+          typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+          typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+          for (idx i = 0; i <= m; ++i){
+            hr(i) = xadj[i];
+          }
+
+          for (idx i = 0; i < nnzA; ++i){
+            hc(i) = adj[i];
+            hv(i) = ew[i];
+          }
+          Kokkos::deep_copy (rowmap_view , hr);
+          Kokkos::deep_copy (columns_view , hc);
+          Kokkos::deep_copy (values_view , hv);
+        }
 
         idx ncols = 0;
         KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
@@ -637,7 +652,7 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -646,9 +661,24 @@ int main (int argc, char ** argv){
         cols_view_t columns_view("colsmap_view", nnzA);
         values_view_t values_view("values_view", nnzA);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+        {
+
+          typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+          typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+          typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+          for (idx i = 0; i <= m; ++i){
+            hr(i) = xadj[i];
+          }
+
+          for (idx i = 0; i < nnzA; ++i){
+            hc(i) = adj[i];
+            hv(i) = ew[i];
+          }
+          Kokkos::deep_copy (rowmap_view , hr);
+          Kokkos::deep_copy (columns_view , hc);
+          Kokkos::deep_copy (values_view , hv);
+        }
 
 
         idx ncols = 0;
@@ -666,7 +696,7 @@ int main (int argc, char ** argv){
     else if (cmdline[ CMD_MM_MODE ] == 2){
       {
         std::cout << "MULTIPLYING R*A" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, r_mtx_bin_file);
@@ -675,9 +705,30 @@ int main (int argc, char ** argv){
         cols_view_t columns_view("colsmap_view", nnzA);
         values_view_t values_view("values_view", nnzA);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+
+        {
+
+          typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+          typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+          typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+
+          for (idx i = 0; i <= m; ++i){
+            hr(i) = xadj[i];
+          }
+
+          for (idx i = 0; i < nnzA; ++i){
+            hc(i) = adj[i];
+            hv(i) = ew[i];
+          }
+          Kokkos::deep_copy (rowmap_view , hr);
+          Kokkos::deep_copy (columns_view , hc);
+          Kokkos::deep_copy (values_view , hv);
+        }
+
+        //KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        //KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        //KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
 
         idx ncols = 0;
         KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
@@ -693,18 +744,41 @@ int main (int argc, char ** argv){
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
-        idx m = 0, nnzA = 0, n = 0;
+        idx m = 0, nnzA = 0;
         idx *xadj, *adj;
         wt *ew;
         KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, p_mtx_bin_file);
+        std::cout << 1 << std::endl;
 
         row_map_view_t rowmap_view("rowmap_view", m+1);
         cols_view_t columns_view("colsmap_view", nnzA);
         values_view_t values_view("values_view", nnzA);
 
-        KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
-        KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
+
+        {
+
+          typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+          typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+          typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
+          std::cout << 2 << std::endl;
+          for (idx i = 0; i <= m; ++i){
+            hr(i) = xadj[i];
+          }
+          std::cout << 3 << std::endl;
+          for (idx i = 0; i < nnzA; ++i){
+            hc(i) = adj[i];
+            hv(i) = ew[i];
+          }
+          std::cout << 4 << std::endl;
+          Kokkos::deep_copy (rowmap_view , hr);
+          Kokkos::deep_copy (columns_view , hc);
+          Kokkos::deep_copy (values_view , hv);
+          std::cout << 5 << std::endl;
+        }
+
+        //KokkosKernels::Experimental::Util::copy_vector<wt * , values_view_t, myExecSpace>(nnzA, ew, values_view);
+        //KokkosKernels::Experimental::Util::copy_vector<idx * , cols_view_t, myExecSpace>(nnzA, adj, columns_view);
+        //KokkosKernels::Experimental::Util::copy_vector<idx * , row_map_view_t, myExecSpace>(m+1, xadj, rowmap_view);
 
         idx ncols = 0;
         KokkosKernels::Experimental::Util::view_reduce_max<cols_view_t, myExecSpace>(nnzA, columns_view, ncols);
@@ -801,7 +875,7 @@ crsMat_t run_experiment(
         entriesC
     );
 
-    Kokkos::fence();
+    ExecSpace::fence();
     double symbolic_time = timer1.seconds();
     std::cout << "symbolic_time:" << symbolic_time << std::endl;
     Kokkos::Impl::Timer timer2;
@@ -823,7 +897,7 @@ crsMat_t run_experiment(
         entriesC,
         valuesC
     );
-    Kokkos::fence();
+    ExecSpace::fence();
     double numeric_time = timer2.seconds();
 
     Kokkos::Impl::Timer timer3;
@@ -845,7 +919,7 @@ crsMat_t run_experiment(
         entriesC,
         valuesC
     );
-    Kokkos::fence();
+    ExecSpace::fence();
     double apply_time = timer3.seconds();
 
     std::cout
@@ -860,14 +934,19 @@ crsMat_t run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-
+  if (0)
   {
-    for (int i = 0; i < row_mapC.dimension_0() - 1; ++i){
-      auto subentries = Kokkos::subview(entriesC, Kokkos::make_pair(row_mapC(i), row_mapC(i + 1)));
+    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
+    Kokkos::deep_copy ( hr, row_mapC);
+    for (int i = 0; i < hr.dimension_0() - 1; ++i){
+      auto subentries = Kokkos::subview(entriesC, Kokkos::make_pair(hr(i), hr(i + 1)));
       Kokkos::sort(subentries);
       //KokkosKernels::Experimental::Util::print_1Dview(subentries);
     }
   }
+
+  std::cout << "DONE" << std::endl;
+
 
 
   typename crsMat_t::StaticCrsGraphType static_graph (entriesC, row_mapC);

@@ -39,7 +39,7 @@ namespace Impl{
     typedef typename in_nonzero_index_view_type::device_type device2;
 
     typedef typename KernelHandle::row_lno_t idx;
-    typedef in_row_index_view_type idx_array_type;
+    typedef typename in_row_index_view_type::non_const_type idx_array_type;
 
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -53,12 +53,12 @@ namespace Impl{
 
     if (Kokkos::Impl::is_same<idx, int>::value){
       row_mapC = idx_array_type("rowMapC", m + 1);
-      idx *a_xadj = row_mapA.ptr_on_device();
-      idx *b_xadj = row_mapB.ptr_on_device();
+      const idx *a_xadj = row_mapA.ptr_on_device();
+      const idx *b_xadj = row_mapB.ptr_on_device();
       idx *c_xadj = row_mapC.ptr_on_device();
 
-      idx *a_adj = entriesA.ptr_on_device();
-      idx *b_adj = entriesB.ptr_on_device();
+      const idx *a_adj = entriesA.ptr_on_device();
+      const idx *b_adj = entriesB.ptr_on_device();
       handle->create_cuSPARSE_Handle(transposeA, transposeB);
       typename KernelHandle::SPGEMMcuSparseHandleType *h = handle->get_cuSparseHandle();
 

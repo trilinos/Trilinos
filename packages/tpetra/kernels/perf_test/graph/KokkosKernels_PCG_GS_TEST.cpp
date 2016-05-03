@@ -369,9 +369,9 @@ int main (int argc, char ** argv){
 
 
       {
-        typename row_map_view_t::rowmap_view hr = Kokkos::create_mirror_view (rowmap_view);
-        typename cols_view_t::rowmap_view hc = Kokkos::create_mirror_view (columns_view);
-        typename values_view_t::rowmap_view hv = Kokkos::create_mirror_view (values_view);
+        typename row_map_view_t::HostMirror hr = Kokkos::create_mirror_view (rowmap_view);
+        typename cols_view_t::HostMirror hc = Kokkos::create_mirror_view (columns_view);
+        typename values_view_t::HostMirror hv = Kokkos::create_mirror_view (values_view);
 
         for (idx i = 0; i <= nv; ++i){
           hr(i) = xadj[i];
