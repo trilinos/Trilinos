@@ -60,32 +60,6 @@
 #include "Kokkos_Blas1_MV.hpp"
 #include "Kokkos_Random.hpp"
 
-namespace { // (anonymous)
-  template<class T, class DT>
-  Kokkos::DualView<T*, DT>
-  getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
-                                const char label[],
-                                const bool leaveOnHost)
-  {
-    using Kokkos::MemoryUnmanaged;
-    typedef typename DT::memory_space DMS;
-    typedef Kokkos::HostSpace HMS;
-
-    const size_t len = static_cast<size_t> (x_av.size ());
-    Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
-    Kokkos::DualView<T*, DT> x_out (label, len);
-    if (leaveOnHost) {
-      x_out.template modify<HMS> ();
-      Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
-    }
-    else {
-      x_out.template modify<DMS> ();
-      Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
-    }
-    return x_out;
-  }
-} // namespace (anonymous)
-
 #ifdef HAVE_TPETRA_INST_FLOAT128
 namespace Kokkos {
   // FIXME (mfh 04 Sep 2015) Just a stub for now!
@@ -765,6 +739,7 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
+    using Tpetra::Details::getDualViewCopyFromArrayView;
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;

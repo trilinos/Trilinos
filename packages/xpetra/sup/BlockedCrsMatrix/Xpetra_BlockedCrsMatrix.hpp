@@ -64,6 +64,8 @@
 #include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 #ifdef HAVE_XPETRA_THYRA
 #include <Thyra_ProductVectorSpaceBase.hpp>
@@ -83,13 +85,10 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar /*= Matrix<>::scalar_type*/,
-            class LocalOrdinal =
-              typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,  // = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal, // = typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node>          // = typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -127,7 +126,7 @@ namespace Xpetra {
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
 
       // Default view
       CreateDefaultView();
@@ -214,10 +213,12 @@ namespace Xpetra {
             Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
             Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                 Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(op);
-            blocks_.push_back(xop);
+            Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> > xwrap =
+                Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xop));
+            blocks_.push_back(xwrap);
           } else {
             // add empty block
-            blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
+            blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
           }
         }
       }
@@ -401,7 +402,7 @@ namespace Xpetra {
     void fillComplete(const RCP<ParameterList>& params = null) {
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
-          Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
+          Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
 
           if (Ablock != Teuchos::null && !Ablock->isFillComplete())
             Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
@@ -703,7 +704,7 @@ namespace Xpetra {
 
           for (size_t col = 0; col < Cols(); col++) {
             RCP<const MultiVector> Xblock = domainmaps_->ExtractVector(refX, col, bDomainThyraMode_);
-            RCP<CrsMatrix>         Ablock = getMatrix(row, col);
+            RCP<Matrix>            Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
               continue;
@@ -722,7 +723,7 @@ namespace Xpetra {
 
           for (size_t row = 0; row<Rows(); row++) {
             RCP<const MultiVector> Xblock = rangemaps_->ExtractVector(refX, row, bRangeThyraMode_);
-            RCP<CrsMatrix>         Ablock = getMatrix(row, col);
+            RCP<Matrix>            Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
               continue;
@@ -839,10 +840,17 @@ namespace Xpetra {
     virtual size_t Cols() const                                       { return domainmaps_->NumMaps(); }
 
     /// return block (r,c)
-    Teuchos::RCP<CrsMatrix> getMatrix(size_t r, size_t c) const       { return blocks_[r*Cols()+c]; }
+    Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       {
+      // transfer strided/blocked map information
+      if (blocks_[r*Cols()+c] != Teuchos::null &&
+          blocks_[r*Cols()+c]->IsView("stridedMaps") == false)
+        blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));
+      return blocks_[r*Cols()+c];
+    }
 
     /// set matrix block
-    void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {
+    //void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {
+    void setMatrix(size_t r, size_t c, Teuchos::RCP<Matrix> mat) {
       // TODO: if filled -> return error
 
       TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
@@ -855,7 +863,7 @@ namespace Xpetra {
     /// merge BlockedCrsMatrix blocks in a CrsMatrix
     // NOTE: This is a rather expensive operation, since all blocks are copied
     // into a new big CrsMatrix
-    Teuchos::RCP<CrsMatrix> Merge() const {
+    Teuchos::RCP<Matrix> Merge() const {
       using Teuchos::RCP;
       using Teuchos::rcp_dynamic_cast;
       Scalar one = ScalarTraits<SC>::one();
@@ -863,7 +871,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ || bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: only implemented for Xpetra-style numbering. If you need the merge routine for Thyra-style numbering, report this to the Xpetra developers." );
 
-      RCP<CrsMatrix> sparse = CrsMatrixFactory::Build(fullrowmap_, 33);
+      RCP<Matrix> sparse = MatrixFactory::Build(fullrowmap_, 33);
 
       for (size_t i = 0; i < blocks_.size(); i++)
         if (blocks_[i] != Teuchos::null)
@@ -913,7 +921,7 @@ namespace Xpetra {
      * This routine is private and used only by Merge. Since the blocks in BlockedCrsMatrix are seperated,
      * this routine works for merging a BlockedCrsMatrix.
      */
-    void Add(const CrsMatrix& A, const Scalar scalarA, CrsMatrix& B, const Scalar scalarB) const {
+    void Add(const Matrix& A, const Scalar scalarA, Matrix& B, const Scalar scalarB) const {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Xpetra::Exceptions::RuntimeError,
                                  "Matrix A is not completed");
       using Teuchos::Array;
@@ -927,19 +935,25 @@ namespace Xpetra {
       if (scalarA == zero)
         return;
 
-      size_t maxNumEntries = A.getNodeMaxNumRowEntries();
+      Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
+      Teuchos::RCP<const CrsMatrixWrap> rcpAwrap = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(rcpA);
+      TEUCHOS_TEST_FOR_EXCEPTION(rcpAwrap == Teuchos::null, Xpetra::Exceptions::BadCast,
+                                       "BlockedCrsMatrix::Add: matrix A must be of type CrsMatrixWrap.");
+      Teuchos::RCP<const CrsMatrix> crsA = rcpAwrap->getCrsMatrix();
+
+      size_t maxNumEntries = crsA->getNodeMaxNumRowEntries();
 
       size_t    numEntries;
       Array<GO> inds(maxNumEntries);
       Array<SC> vals(maxNumEntries);
 
-      RCP<const Map> rowMap = A.getRowMap();
-      RCP<const Map> colMap = A.getColMap();
+      RCP<const Map> rowMap = crsA->getRowMap();
+      RCP<const Map> colMap = crsA->getColMap();
 
-      ArrayView<const GO> rowGIDs = A.getRowMap()->getNodeElementList();
-      for (size_t i = 0; i < A.getNodeNumRows(); i++) {
+      ArrayView<const GO> rowGIDs = crsA->getRowMap()->getNodeElementList();
+      for (size_t i = 0; i < crsA->getNodeNumRows(); i++) {
         GO row = rowGIDs[i];
-        A.getGlobalRowCopy(row, inds(), vals(), numEntries);
+        crsA->getGlobalRowCopy(row, inds(), vals(), numEntries);
 
         if (scalarA != one)
           for (size_t j = 0; j < numEntries; ++j)
@@ -968,7 +982,8 @@ namespace Xpetra {
     Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
     //Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
-    std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
+    //std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
+    std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
 #endif

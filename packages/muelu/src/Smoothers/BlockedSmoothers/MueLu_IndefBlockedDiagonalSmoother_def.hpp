@@ -158,26 +158,19 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    Teuchos::RCP<CrsMatrix> A00 = bA->getMatrix(0, 0);
-    Teuchos::RCP<CrsMatrix> A01 = bA->getMatrix(0, 1);
-    Teuchos::RCP<CrsMatrix> A10 = bA->getMatrix(1, 0);
-    Teuchos::RCP<CrsMatrix> A11 = bA->getMatrix(1, 1);
+    Teuchos::RCP<Matrix> A00 = bA->getMatrix(0, 0);
+    Teuchos::RCP<Matrix> A01 = bA->getMatrix(0, 1);
+    Teuchos::RCP<Matrix> A10 = bA->getMatrix(1, 0);
+    Teuchos::RCP<Matrix> A11 = bA->getMatrix(1, 1);
 
-    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp(new CrsMatrixWrap(A00));
-    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp(new CrsMatrixWrap(A01));
-    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp(new CrsMatrixWrap(A10));
-    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp(new CrsMatrixWrap(A11));
+    // TODO simplify this
+    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A00);
+    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A01);
+    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A10);
+    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A11);
 
-    F_ = Teuchos::rcp_dynamic_cast<Matrix>(Op00);
-    //G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
-    //D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
-    Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
-
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    //G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    //D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    F_ = A00;
+    Z_ = A11;
 
     /*const ParameterList & pL = Factory::GetParameterList();
     bool bSIMPLEC = pL.get<bool>("UseSIMPLEC");

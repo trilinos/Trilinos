@@ -175,15 +175,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_DistObject
   TPETRA_ENABLE_KOKKOS_DISTOBJECT
-  "Use experimental Kokkos::View for DistObject methods, enabling efficient communication for GPU node types."
+  "Experimental option to access alternate DistObject interface, DistObjectKA."
   OFF
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MPI_CUDA_RDMA
   TPETRA_ENABLE_MPI_CUDA_RDMA
-  "Enable RDMA support for MPI communication between CUDA GPUs.  Only turn this on if you know for sure your MPI library supports it.  Requires also enabling Tpetra_ENABLE_Kokkos_DistObject."
-  OFF
+  "Assume that the MPI implementation knows how to read from and write to CUDA device memory.  This has nothing to do with CUDA UVM; it uses a different mechanism.  If you have an old MPI implementation that isn't CUDA-aware, you will need to disable this option.  Otherwise, your application will segfault or otherwise behave incorrectly, when your MPI implementation attempts to access device memory in a not-CUDA-aware way.  We do NOT recommend using CUDA with this option OFF, because performance will degrade."
+  ON
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

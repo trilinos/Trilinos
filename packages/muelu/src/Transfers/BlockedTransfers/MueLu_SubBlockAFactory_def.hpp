@@ -57,8 +57,6 @@
 #include "MueLu_SubBlockAFactory_decl.hpp"
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
@@ -102,7 +100,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(row > A->Rows(), Exceptions::RuntimeError, "row [" << row << "] > A.Rows() [" << A->Rows() << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(col > A->Cols(), Exceptions::RuntimeError, "col [" << col << "] > A.Cols() [" << A->Cols() << "].");
 
-    RCP<CrsMatrixWrap> Op = Teuchos::rcp(new CrsMatrixWrap(A->getMatrix(row, col)));
+    RCP<Matrix> Op = A->getMatrix(row, col);
 
     // strided maps for range and domain map of sub matrix
     RCP<const StridedMap> srangeMap  = Teuchos::null;
@@ -174,13 +172,14 @@ namespace MueLu {
         << "\n  range  map fixed block size = " << srangeMap ->getFixedBlockSize() << ", strided block id = " << srangeMap ->getStridedBlockId()
         << "\n  domain map fixed block size = " << sdomainMap->getFixedBlockSize() << ", strided block id = " << sdomainMap->getStridedBlockId() << std::endl;
 
+    // TODO do we really need that? we moved the code to getMatrix...
     if (Op->IsView("stridedMaps") == true)
       Op->RemoveView("stridedMaps");
     Op->CreateView("stridedMaps", srangeMap, sdomainMap);
 
     TEUCHOS_TEST_FOR_EXCEPTION(Op->IsView("stridedMaps") == false, Exceptions::RuntimeError, "Failed to set \"stridedMaps\" view.");
 
-    currentLevel.Set("A", rcp_dynamic_cast<Matrix>(Op), this);
+    currentLevel.Set("A", Op, this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

@@ -66,30 +66,6 @@
 // for CrsGraph instantiates them.
 #include "Tpetra_CrsGraph_def.hpp"
 
-namespace { // (anonymous)
-
-  // Get a Teuchos::ArrayView which views the host Kokkos::View of the
-  // input 1-D Kokkos::DualView.
-  template<class DualViewType>
-  Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
-  getArrayViewFromDualView (const DualViewType& x)
-  {
-    static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
-                   "The input DualView must have rank 1.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
-       "input Kokkos::DualView was most recently modified on device, but this "
-       "function needs the host view of the data to be the most recently "
-       "modified.");
-
-    auto x_host = x.template view<Kokkos::HostSpace> ();
-    typedef typename DualViewType::t_dev::value_type value_type;
-    return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                           x_host.dimension_0 ());
-  }
-
-} // namespace (anonymous)
-
 namespace Tpetra {
   //
   // Users must never rely on anything in the Details namespace.
@@ -6568,6 +6544,7 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
+    using Tpetra::Details::getArrayViewFromDualView;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
     using Teuchos::ParameterList;

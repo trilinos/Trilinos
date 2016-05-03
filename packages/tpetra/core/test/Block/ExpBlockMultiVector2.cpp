@@ -298,12 +298,12 @@ namespace {
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
           // version of Y.  We will sync back to device below.
-          MT frobNorm = 0.0;
+          MT frobNorm2 = 0.0;
           for (LO i = 0; i < blockSize; ++i) {
-            frobNorm += KAT::abs (prototypeY(i) - Y_cur(i));
+            frobNorm2 += KAT::abs (prototypeY(i) - Y_cur(i));
           }
-          out << "frobNorm = " << frobNorm << endl;
-          TEST_ASSERT( frobNorm <= maxVecNorm );
+          out << "frobNorm = " << frobNorm2 << endl;
+          TEST_ASSERT( frobNorm2 <= maxVecNorm );
           if (! success) {
             out << "Retuning early due to FAILURE." << endl;
             return;
@@ -333,12 +333,12 @@ namespace {
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
           // version of Y.  We will sync back to device below.
-          MT frobNorm = 0.0;
+          MT frobNorm2 = 0.0;
           for (LO i = 0; i < blockSize; ++i) {
-            frobNorm += KAT::abs (prototypeY(i) - Y_cur(i));
+            frobNorm2 += KAT::abs (prototypeY(i) - Y_cur(i));
           }
-          out << "frobNorm = " << frobNorm << endl;
-          TEST_ASSERT( frobNorm <= maxVecNorm );
+          out << "frobNorm = " << frobNorm2 << endl;
+          TEST_ASSERT( frobNorm2 <= maxVecNorm );
           if (! success) {
             out << "Retuning early due to FAILURE." << endl;
             return;

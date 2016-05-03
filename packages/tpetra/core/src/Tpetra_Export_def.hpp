@@ -391,7 +391,7 @@ namespace Tpetra {
             const Teuchos::EVerbosityLevel verbLevel) const
   {
     // Call the base class' method.  It does all the work.
-    this->describeImpl (out, "Tpetra::Import", verbLevel);
+    this->describeImpl (out, "Tpetra::Export", verbLevel);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

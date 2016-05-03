@@ -59,7 +59,6 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -169,26 +168,10 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    Teuchos::RCP<CrsMatrix> A00 = bA->getMatrix(0, 0);
-    Teuchos::RCP<CrsMatrix> A01 = bA->getMatrix(0, 1);
-    Teuchos::RCP<CrsMatrix> A10 = bA->getMatrix(1, 0);
-    Teuchos::RCP<CrsMatrix> A11 = bA->getMatrix(1, 1);
-
-    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp(new CrsMatrixWrap(A00));
-    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp(new CrsMatrixWrap(A01));
-    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp(new CrsMatrixWrap(A10));
-    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp(new CrsMatrixWrap(A11));
-
-    F_ = Teuchos::rcp_dynamic_cast<Matrix>(Op00);
-    G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
-    D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
-    Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
-
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    F_ = bA->getMatrix(0, 0);
+    G_ = bA->getMatrix(0, 1);
+    D_ = bA->getMatrix(1, 0);
+    Z_ = bA->getMatrix(1, 1);
 
     // Set the Smoother
     // carefully switch to the SubFactoryManagers (defined by the users)

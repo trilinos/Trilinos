@@ -52,54 +52,6 @@
 
 #include "Tpetra_Distributor.hpp"
 
-namespace { // (anonymous)
-
-  // Get a Teuchos::ArrayView which views the host Kokkos::View of the
-  // input 1-D Kokkos::DualView.
-  template<class DualViewType>
-  Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
-  getArrayViewFromDualView (const DualViewType& x)
-  {
-    static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
-                   "The input DualView must have rank 1.");
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
-       "input Kokkos::DualView was most recently modified on device, but this "
-       "function needs the host view of the data to be the most recently "
-       "modified.");
-
-    auto x_host = x.template view<Kokkos::HostSpace> ();
-    typedef typename DualViewType::t_dev::value_type value_type;
-    return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
-                                           x_host.dimension_0 ());
-  }
-
-  template<class T, class DT>
-  Kokkos::DualView<T*, DT>
-  getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
-                                const char label[],
-                                const bool leaveOnHost)
-  {
-    using Kokkos::MemoryUnmanaged;
-    typedef typename DT::memory_space DMS;
-    typedef Kokkos::HostSpace HMS;
-
-    const size_t len = static_cast<size_t> (x_av.size ());
-    Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
-    Kokkos::DualView<T*, DT> x_out (label, len);
-    if (leaveOnHost) {
-      x_out.template modify<HMS> ();
-      Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
-    }
-    else {
-      x_out.template modify<DMS> ();
-      Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
-    }
-    return x_out;
-  }
-
-} // namespace (anonymous)
-
 namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -443,6 +395,7 @@ namespace Tpetra {
               Distributor& distor,
               ReverseOption revOp)
   {
+    using Tpetra::Details::getDualViewCopyFromArrayView;
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
@@ -524,6 +477,7 @@ namespace Tpetra {
               Distributor &distor,
               ReverseOption revOp)
   {
+    using Tpetra::Details::getArrayViewFromDualView;
     const bool debug = false;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -868,6 +822,7 @@ namespace Tpetra {
                  const ReverseOption revOp,
                  const bool commOnHost)
   {
+    using Tpetra::Details::getArrayViewFromDualView;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;

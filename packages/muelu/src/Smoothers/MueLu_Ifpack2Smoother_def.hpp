@@ -219,8 +219,7 @@ namespace MueLu {
           TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
                                      "Matrix A must be of type BlockedCrsMatrix.");
 
-          RCP<CrsMatrix> mergedMat = bA2->Merge();
-          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+          merged2Mat = bA2->Merge();
 
           // Add Dirichlet rows to the list of seeds
           ArrayRCP<const bool> boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);

@@ -152,9 +152,9 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
     rebalanceImporter = coarseLevel.Get<Teuchos::RCP<const Import> >("Importer", (*it)->GetFactory("Importer").get());
 
     // extract diagonal matrix block
-    Teuchos::RCP<CrsMatrix> Pmii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);
-    Teuchos::RCP<CrsMatrixWrap> Pwii = Teuchos::rcp(new CrsMatrixWrap(Pmii));
-    Teuchos::RCP<Matrix> Pii = Teuchos::rcp_dynamic_cast<Matrix>(Pwii);
+    Teuchos::RCP<Matrix> Pii = bOriginalTransferOp->getMatrix(curBlockId, curBlockId);
+    Teuchos::RCP<CrsMatrixWrap> Pwii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Pii);
+    TEUCHOS_TEST_FOR_EXCEPTION(Pwii == Teuchos::null,Xpetra::Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: block " << curBlockId << " is not of type CrsMatrixWrap. We need an underlying CsrMatrix to replace domain map and importer!");
 
     // rebalance P11
     if(rebalanceImporter != Teuchos::null) {
@@ -177,7 +177,7 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
       {
         SubFactoryMonitor subM(*this, "Rebalancing prolongator  -- fast map replacement", coarseLevel);
         newImporter = ImportFactory::Build(rebalanceImporter->getTargetMap(), Pii->getColMap());
-        Pmii->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
+        Pwii->getCrsMatrix()->replaceDomainMapAndImporter(rebalanceImporter->getTargetMap(), newImporter);
       }
 
       RCP<ParameterList> params = rcp(new ParameterList());
@@ -321,9 +321,9 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
   Teuchos::RCP<BlockedCrsMatrix> bRebP = Teuchos::rcp(new BlockedCrsMatrix(rangeMapExtractor,domainMapExtractor,10));
   for(size_t i = 0; i<subBlockPRangeMaps.size(); i++) {
-     Teuchos::RCP<const CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebP[i]);
-     Teuchos::RCP<CrsMatrix> crsMatii = crsOpii->getCrsMatrix();
-     bRebP->setMatrix(i,i,crsMatii);
+     Teuchos::RCP<CrsMatrixWrap> crsOpii = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(subBlockRebP[i]);
+     TEUCHOS_TEST_FOR_EXCEPTION(crsOpii == Teuchos::null,Xpetra::Exceptions::BadCast, "MueLu::RebalanceBlockTransferFactory::Build: block P" << i << " is not of type CrsMatrixWrap.");
+     bRebP->setMatrix(i,i,crsOpii);
    }
   bRebP->fillComplete();
 

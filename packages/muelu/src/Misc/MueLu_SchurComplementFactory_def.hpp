@@ -99,17 +99,10 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(bA.is_null(), Exceptions::BadCast,
                                "MueLu::SchurComplementFactory::Build: input matrix A is not of type BlockedCrsMatrix!");
 
-    RCP<Matrix> A00 = Utilities::Crs2Op(bA->getMatrix(0,0));
-    RCP<Matrix> A01 = Utilities::Crs2Op(bA->getMatrix(0,1));
-    RCP<Matrix> A10 = Utilities::Crs2Op(bA->getMatrix(1,0));
-    RCP<Matrix> A11 = Utilities::Crs2Op(bA->getMatrix(1,1));
-
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    A00->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    A01->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    A10->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    if (!A11.is_null())
-      A11->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    RCP<Matrix> A00 = bA->getMatrix(0,0);
+    RCP<Matrix> A01 = bA->getMatrix(0,1);
+    RCP<Matrix> A10 = bA->getMatrix(1,0);
+    RCP<Matrix> A11 = bA->getMatrix(1,1);
 
     const ParameterList& pL = GetParameterList();
     SC omega = pL.get<Scalar>("omega");
