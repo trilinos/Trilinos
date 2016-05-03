@@ -57,6 +57,7 @@
 #include "Xpetra_StridedMap.hpp"
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
+#include "Xpetra_MapExtractorFactory.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
