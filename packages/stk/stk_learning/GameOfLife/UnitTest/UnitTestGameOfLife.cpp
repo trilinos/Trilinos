@@ -1280,7 +1280,34 @@ void create_nodeset_for_colored_pixels(stk::mesh::BulkData & bulk, SimpleColored
     bulk.modification_end();
 }
 
-TEST(TOSDTWD, mesh_from_png)
+TEST(TOSDTWD, quad_mesh_from_png)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (1 == numProcs)
+    {
+        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        SimpleColoredPng image(fileName);
+        unsigned width = image.get_image_width();
+        unsigned height = image.get_image_height();
+
+        QuadGameofLifeMesh FieldMesh(comm, width, height);
+        FieldGameofLife FieldGame(FieldMesh, "junk");
+
+        stk::mesh::EntityIdVector elemIds;
+        image.fill_id_vector_with_active_pixels(elemIds);
+        FieldGame.activate_these_ids(elemIds);
+
+        stk::mesh::BulkData &bulk = FieldMesh.bulk_data();
+        create_nodeset_for_colored_pixels(bulk, image, RED);
+        create_nodeset_for_colored_pixels(bulk, image, GREEN);
+        create_nodeset_for_colored_pixels(bulk, image, BLUE);
+
+        FieldGame.write_mesh();
+    }
+}
+
+TEST(TOSDTWD, hex_mesh_from_png)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
