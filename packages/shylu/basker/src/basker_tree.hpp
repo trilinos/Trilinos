@@ -1375,7 +1375,7 @@ namespace BaskerNS
 	//    order_match_array(1));
 
         
-        //printf("match_flag\n");
+        printf("match_flag\n");
 	permute_row(A,order_match_array);
 	sort_matrix(A);
       }
@@ -1386,23 +1386,26 @@ namespace BaskerNS
 	//     order_btf_array(0),
 	//    order_btf_array(1));
 
-        //printf("btf_flag\n");
+        printf("btf_flag\n");
 	permute_col(A,order_btf_array);
 	permute_row(A,order_btf_array);
 	sort_matrix(A);
+        printf("Done with btf perm\n");
 	permute_col(A,order_blk_amd_array);
 	permute_row(A,order_blk_amd_array);
 	sort_matrix(A);
+        printf("Done with amd perm\n");
 
 	//printMTX("A_AMD_OTHER.mtx", A);
 
 	break_into_parts2(A, btf_nblks, btf_tabs);
+        printf("Done with break into parts\n");
       }
     //ND order
     if(nd_flag == BASKER_TRUE)
       {
 
-        //printf("nd_flag \n");
+        printf("nd_flag \n");
 
 	if(btf_tabs_offset != 0)
 	  {
@@ -1434,7 +1437,7 @@ namespace BaskerNS
     if(amd_flag == BASKER_TRUE)
       {
 	
-        //printf("amd flag \n");
+        printf("amd flag \n");
 
 	if(btf_tabs_offset != 0)
 	  {
@@ -1469,7 +1472,8 @@ namespace BaskerNS
     //Find submatices view shapes
 	
 
-	printMTX("A_BTF.mtx", BTF_A);
+        printf("btf tabs\n");
+	//printMTX("A_BTF.mtx", BTF_A);
        
 
     clean_2d();
