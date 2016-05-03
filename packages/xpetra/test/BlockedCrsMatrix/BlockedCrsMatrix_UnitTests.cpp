@@ -91,6 +91,8 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_IO.hpp>
+#include <Xpetra_BlockReorderManager.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 
 namespace XpetraBlockMatrixTests {
 
@@ -224,6 +226,768 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, SplitMatrix, M, MA, Scalar,
   res->update(-STS::one(),*exp,STS::one());
   TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
   TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOp, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 4;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  GO goNumRows = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,noBlocks-2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(bop->Rows(),4);
+  TEST_EQUALITY(bop->Cols(),4);
+  TEST_EQUALITY(bop->getRangeMap()->getGlobalNumElements(),goNumRows);
+  TEST_EQUALITY(bop->getDomainMap()->getGlobalNumElements(),goNumRows);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 9);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 19);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 20);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getGlobalNumElements(),comm->getSize() * 10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getNodeNumElements(),10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getNodeNumElements(),20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getMinGlobalIndex(),comm->getRank() * 40 + 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 9);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getMinGlobalIndex(),comm->getRank() * 40 + 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 19);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getMinGlobalIndex(),comm->getRank() * 40 + 20);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getGlobalNumElements(),comm->getSize() * 10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getNodeNumElements(),10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getNodeNumElements(),20);
+
+  TEST_EQUALITY(bop->getMatrix(0,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(0,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(1,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  //TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(2,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  //TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(3,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 4);
+  //TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 40);
+
+  TEST_EQUALITY(bop->getMatrix(2,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 10);
+  TEST_EQUALITY(bop->getMatrix(2,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 19);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 19);
+  TEST_EQUALITY(bop->getMatrix(2,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 40 + 10);
+  TEST_EQUALITY(bop->getMatrix(2,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 19);
+
+  TEST_EQUALITY(bop->getMatrix(0,0)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(2,2)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(2,3)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(1,0)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(3,1)->isFillComplete(),true);
+
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getThyraMode(),false);
+  TEST_EQUALITY(bop->getDomainMapExtractor()->getThyraMode(),false);
+
+  TEST_THROW(bop->getRangeMap(0,true), Xpetra::Exceptions::RuntimeError);
+
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(2)->getMinAllGlobalIndex(),10);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(2)->getMaxAllGlobalIndex(),(comm->getSize() - 1) * 40 + 19);
+
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMinGlobalIndex(),comm->getRank() * 40 + 20);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMinAllGlobalIndex(),20);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOpThyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 4;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  GO goNumRows = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,noBlocks-2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(bop->Rows(),4);
+  TEST_EQUALITY(bop->Cols(),4);
+  TEST_EQUALITY(bop->getRangeMap()->getGlobalNumElements(),goNumRows);
+  TEST_EQUALITY(bop->getDomainMap()->getGlobalNumElements(),goNumRows);
+  // Thyra GIDs
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 20);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 20 + 19);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getGlobalNumElements(),comm->getSize() * 10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getRowMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getRowMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getNodeNumElements(),10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getRowMap()->getNodeNumElements(),20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getMinGlobalIndex(),comm->getRank() * 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getMinGlobalIndex(),comm->getRank() * 20);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 20 + 19);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getGlobalNumElements(),comm->getSize() * 10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(bop->getMatrix(0,0)->getColMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(1,1)->getColMap()->getNodeNumElements(),5);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getColMap()->getNodeNumElements(),10);
+  TEST_EQUALITY(bop->getMatrix(3,3)->getColMap()->getNodeNumElements(),20);
+
+  TEST_EQUALITY(bop->getMatrix(0,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(0,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(0,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(0,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(1,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  //TEST_EQUALITY(bop->getMatrix(1,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(2,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  //TEST_EQUALITY(bop->getMatrix(2,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMinGlobalIndex(),0); // TODO
+  TEST_EQUALITY(bop->getMatrix(3,0)->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  //TEST_EQUALITY(bop->getMatrix(3,0)->getColMap()->getMaxGlobalIndex(),comm->getRank() * 5);
+
+  TEST_EQUALITY(bop->getMatrix(2,1)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 10);
+  TEST_EQUALITY(bop->getMatrix(2,1)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 10);
+  TEST_EQUALITY(bop->getMatrix(2,2)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getMatrix(2,3)->getRowMap()->getMinGlobalIndex(),comm->getRank() * 10);
+  TEST_EQUALITY(bop->getMatrix(2,3)->getRowMap()->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+
+  TEST_EQUALITY(bop->getMatrix(0,0)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(2,2)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(2,3)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(1,0)->isFillComplete(),true);
+  TEST_EQUALITY(bop->getMatrix(3,1)->isFillComplete(),true);
+
+  // check Xpetra replacement maps
+  TEST_EQUALITY(bop->getRangeMap(0,false)->getMinGlobalIndex(),comm->getRank() * 5 + 0);
+  TEST_EQUALITY(bop->getRangeMap(0,false)->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getRangeMap(1,false)->getMinGlobalIndex(),comm->getSize() * 5 + comm->getRank() * 5);
+  TEST_EQUALITY(bop->getRangeMap(1,false)->getMaxGlobalIndex(),comm->getSize() * 5 + comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getRangeMap(2,false)->getMinGlobalIndex(),comm->getSize() * 10 + comm->getRank() * 10);
+  TEST_EQUALITY(bop->getRangeMap(2,false)->getMaxGlobalIndex(),comm->getSize() * 10 + comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getRangeMap(3,false)->getMinGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20);
+  TEST_EQUALITY(bop->getRangeMap(3,false)->getMaxGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20 + 19);
+
+  // check Thyra maps
+  TEST_EQUALITY(bop->getRangeMap(0)->getMinGlobalIndex(),comm->getRank() * 5 + 0);
+  TEST_EQUALITY(bop->getRangeMap(0)->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getRangeMap(1)->getMinGlobalIndex(),comm->getRank() * 5 + 0);
+  TEST_EQUALITY(bop->getRangeMap(1)->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(bop->getRangeMap(2)->getMinGlobalIndex(),comm->getRank() * 10 + 0);
+  TEST_EQUALITY(bop->getRangeMap(2)->getMaxGlobalIndex(),comm->getRank() * 10 + 9);
+  TEST_EQUALITY(bop->getRangeMap(3)->getMinGlobalIndex(),comm->getRank() * 20 + 0);
+  TEST_EQUALITY(bop->getRangeMap(3)->getMaxGlobalIndex(),comm->getRank() * 20 + 19);
+
+  TEST_EQUALITY(bop->getRangeMap(0)->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(bop->getRangeMap(0)->getMaxAllGlobalIndex(),comm->getSize() * 5 - 1);
+  TEST_EQUALITY(bop->getRangeMap(1)->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(bop->getRangeMap(1)->getMaxAllGlobalIndex(),comm->getSize() * 5 - 1);
+  TEST_EQUALITY(bop->getRangeMap(2)->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(bop->getRangeMap(2)->getMaxAllGlobalIndex(),comm->getSize() * 10 - 1);
+  TEST_EQUALITY(bop->getRangeMap(3)->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(bop->getRangeMap(3)->getMaxAllGlobalIndex(),comm->getSize() * 20 - 1);
+
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getThyraMode(),true);
+  TEST_EQUALITY(bop->getDomainMapExtractor()->getThyraMode(),true);
+
+  // check Xpetra replacement submaps
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMinGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMaxGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20 + 19);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMinAllGlobalIndex(),comm->getSize() * 20);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(3,false)->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperator, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 0 [ [1 2] 3] ] 4 [ 5 6 7] ]");
+  std::cout << brm->toString() << std::endl;
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  GO goNumRows = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,noBlocks-2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMap()->getGlobalNumElements(),goNumRows);
+  TEST_EQUALITY(brop->getDomainMap()->getGlobalNumElements(),goNumRows);
+
+  // block 00
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop00 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop->getMatrix(0,0));
+
+  GO goNumRows00 = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(brop00->Rows(),2);
+  TEST_EQUALITY(brop00->Cols(),2);
+  TEST_EQUALITY(brop00->getRangeMap()->getGlobalNumElements(),goNumRows00);
+  TEST_EQUALITY(brop00->getDomainMap()->getGlobalNumElements(),goNumRows00);
+
+  // block 11
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop11 = brop->getMatrix(1,1);
+
+  GO goNumRows11 = Teuchos::as<GO>(40 * comm->getSize());
+  TEST_EQUALITY(brop11->getRangeMap()->getGlobalNumElements(),goNumRows11);
+  TEST_EQUALITY(brop11->getDomainMap()->getGlobalNumElements(),goNumRows11);
+  TEST_EQUALITY(brop11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 40);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 79);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop11test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop11);
+  TEST_EQUALITY(brop11test,Teuchos::null);
+
+  // block 22
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop22 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop->getMatrix(2,2));
+
+  GO goNumRows22 = Teuchos::as<GO>(560 * comm->getSize());
+
+  TEST_EQUALITY(brop22->Rows(),3);
+  TEST_EQUALITY(brop22->Cols(),3);
+  TEST_EQUALITY(brop22->getRangeMap()->getGlobalNumElements(),goNumRows22);
+  TEST_EQUALITY(brop22->getDomainMap()->getGlobalNumElements(),goNumRows22);
+  TEST_EQUALITY(brop22->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 80);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 639);
+  TEST_EQUALITY(brop22->getMatrix(0,0)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 80);
+  TEST_EQUALITY(brop22->getMatrix(0,0)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 159);
+  TEST_EQUALITY(brop22->getMatrix(1,1)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 160);
+  TEST_EQUALITY(brop22->getMatrix(1,1)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 319);
+  TEST_EQUALITY(brop22->getMatrix(2,2)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 320);
+  TEST_EQUALITY(brop22->getMatrix(2,2)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 639);
+
+  // block 00_11
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop00_11 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop00->getMatrix(1,1));
+
+  GO goNumRows00_11 = Teuchos::as<GO>(35 * comm->getSize());
+
+  TEST_EQUALITY(brop00_11->Rows(),2);
+  TEST_EQUALITY(brop00_11->Cols(),2);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getGlobalNumElements(),goNumRows00_11);
+  TEST_EQUALITY(brop00_11->getDomainMap()->getGlobalNumElements(),goNumRows00_11);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 5);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getGlobalNumElements(),15 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getDomainMap()->getGlobalNumElements(),15 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 5);
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 19);
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getGlobalNumElements(),20 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getDomainMap()->getGlobalNumElements(),20 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 20);
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+
+  // block 01
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop01 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop->getMatrix(0,1));
+
+  TEST_EQUALITY(brop01->Rows(),2);
+  TEST_EQUALITY(brop01->Cols(),1);
+  TEST_EQUALITY(brop01->getRangeMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop01->getDomainMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop01->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 0);
+  TEST_EQUALITY(brop01->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+  TEST_EQUALITY(brop01->getDomainMap()->getMinGlobalIndex(),comm->getRank() * 640 + 40);
+  TEST_EQUALITY(brop01->getDomainMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 79);
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperator2, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 4 3 1 7 ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),4);
+  TEST_EQUALITY(brop->Cols(),4);
+  TEST_EQUALITY(brop->getRangeMap()->getGlobalNumElements(),comm->getSize() * 385);
+  TEST_EQUALITY(brop->getDomainMap()->getGlobalNumElements(),comm->getSize() * 385);
+
+  // block 00
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop00 = brop->getMatrix(0,0);
+
+  TEST_EQUALITY(brop00->getRangeMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop00->getDomainMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop00->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 40);
+  TEST_EQUALITY(brop00->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 79);
+
+  // block 11
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop11 = brop->getMatrix(1,1);
+
+  TEST_EQUALITY(brop11->getRangeMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(brop11->getDomainMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(brop11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 20);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop11test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop11);
+  TEST_EQUALITY(brop11test,Teuchos::null);
+
+  // block 22
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop22 = brop->getMatrix(2,2);
+
+  TEST_EQUALITY(brop22->getRangeMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(brop22->getDomainMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(brop22->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 5);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 9);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop22test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop22);
+  TEST_EQUALITY(brop22test,Teuchos::null);
+
+  // block 33
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop33 = brop->getMatrix(3,3);
+
+  TEST_EQUALITY(brop33->getRangeMap()->getGlobalNumElements(),comm->getSize() * 320);
+  TEST_EQUALITY(brop33->getDomainMap()->getGlobalNumElements(),comm->getSize() * 320);
+  TEST_EQUALITY(brop33->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 320);
+  TEST_EQUALITY(brop33->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 639);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop33test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop33);
+  TEST_EQUALITY(brop33test,Teuchos::null);
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorThyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> ReorderedBlockedCrsMatrix;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 0 [ [1 2] 3] ] 4 [ 5 6 7] ]");
+  std::cout << brm->toString() << std::endl;
+
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  GO goNumRows = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,noBlocks-2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMap()->getGlobalNumElements(),goNumRows);
+  TEST_EQUALITY(brop->getDomainMap()->getGlobalNumElements(),goNumRows);
+
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  // block 00
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop00 =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(brop->getMatrix(0,0));
+
+  GO goNumRows00 = Teuchos::as<GO>(Teuchos::ScalarTraits<GO>::pow(2,2)) * 10 * comm->getSize();
+
+  TEST_EQUALITY(brop00->Rows(),2);
+  TEST_EQUALITY(brop00->Cols(),2);
+  TEST_EQUALITY(brop00->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop00->getDomainMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop00->getRangeMap()->getGlobalNumElements(),goNumRows00);
+  TEST_EQUALITY(brop00->getDomainMap()->getGlobalNumElements(),goNumRows00);
+  TEST_EQUALITY(brop00->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 5 + 0);
+  TEST_EQUALITY(brop00->getRangeMap()->getMaxGlobalIndex(),comm->getSize() * 20 + comm->getRank() * 20 + 19);
+  TEST_EQUALITY(brop00->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop00->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+  // Thyra maps (these might have duplicate GID entries!)
+  TEST_EQUALITY(brop00->getRangeMap(0,true)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(brop00->getRangeMap(0,true)->getMaxAllGlobalIndex(), comm->getSize()*5 - 1);
+  TEST_EQUALITY(brop00->getRangeMap(1,true)->getGlobalNumElements(), comm->getSize() * 35);
+  TEST_EQUALITY(brop00->getRangeMap(1,true)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(brop00->getRangeMap(1,true)->getMaxAllGlobalIndex(), comm->getSize() * 20 - 1);
+  // Xpetra maps
+  TEST_EQUALITY(brop00->getRangeMap(0,false)->getMinAllGlobalIndex(), 0);
+  TEST_EQUALITY(brop00->getRangeMap(0,false)->getMaxAllGlobalIndex(), comm->getSize()*5 - 1);
+  TEST_EQUALITY(brop00->getRangeMap(1,false)->getGlobalNumElements(), comm->getSize() * 35);
+  TEST_EQUALITY(brop00->getRangeMap(1,false)->getMinAllGlobalIndex(), comm->getSize()*5);
+  TEST_EQUALITY(brop00->getRangeMap(1,false)->getMaxAllGlobalIndex(), comm->getSize()*5 + comm->getSize() * 35 - 1);
+
+
+  // block 11
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop11 = brop->getMatrix(1,1);
+
+  // Thyra GIDs for the matrix
+  GO goNumRows11 = Teuchos::as<GO>(40 * comm->getSize());
+  TEST_EQUALITY(brop11->getRangeMap()->getGlobalNumElements(),goNumRows11);
+  TEST_EQUALITY(brop11->getDomainMap()->getGlobalNumElements(),goNumRows11);
+  TEST_EQUALITY(brop11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 40 + 0);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
+  TEST_EQUALITY(brop11->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop->getRangeMap(1,false)->getMinAllGlobalIndex(),comm->getSize() * 40);
+  TEST_EQUALITY(brop->getRangeMap(1,false)->getMaxAllGlobalIndex(),2 * comm->getSize() * 40 - 1);
+
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop11test =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(brop11);
+  TEST_EQUALITY(brop11test,Teuchos::null);
+
+  // block 22
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop22 =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(brop->getMatrix(2,2));
+
+  GO goNumRows22 = Teuchos::as<GO>(560 * comm->getSize());
+
+  TEST_EQUALITY(brop22->Rows(),3);
+  TEST_EQUALITY(brop22->Cols(),3);
+  TEST_EQUALITY(brop22->getRangeMap()->getGlobalNumElements(),goNumRows22);
+  TEST_EQUALITY(brop22->getDomainMap()->getGlobalNumElements(),goNumRows22);
+  // Xpetra replacement GIDs
+  TEST_EQUALITY(brop22->getRangeMap()->getMinAllGlobalIndex(),comm->getSize() * 80);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 80 + comm->getSize() * 560 - 1);
+  TEST_EQUALITY(brop22->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 80 + comm->getSize() * 80);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxGlobalIndex(),comm->getSize() * 80 + comm->getSize() * 240 + comm->getRank() * 320 + 319);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop22->getRangeMap(0,false)->getMinGlobalIndex(),comm->getSize() * 80 + comm->getRank() * 80);
+  TEST_EQUALITY(brop22->getRangeMap(0,false)->getMaxGlobalIndex(),comm->getSize() * 80 + comm->getRank() * 80 + 79);
+  TEST_EQUALITY(brop22->getRangeMap(1,false)->getMinGlobalIndex(),comm->getSize() * 160 + comm->getRank() * 160);
+  TEST_EQUALITY(brop22->getRangeMap(1,false)->getMaxGlobalIndex(),comm->getSize() * 160 + comm->getRank() * 160 + 159);
+  TEST_EQUALITY(brop22->getRangeMap(2,false)->getMinGlobalIndex(),comm->getSize() * 320 + comm->getRank() * 320);
+  TEST_EQUALITY(brop22->getRangeMap(2,false)->getMaxGlobalIndex(),comm->getSize() * 320 + comm->getRank() * 320 + 319);
+
+  // block 00_11
+  /*Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop00_11 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop00->getMatrix(1,1));
+
+  GO goNumRows00_11 = Teuchos::as<GO>(35 * comm->getSize());
+
+  TEST_EQUALITY(brop00_11->Rows(),2);
+  TEST_EQUALITY(brop00_11->Cols(),2);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getGlobalNumElements(),goNumRows00_11);
+  TEST_EQUALITY(brop00_11->getDomainMap()->getGlobalNumElements(),goNumRows00_11);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 5);
+  TEST_EQUALITY(brop00_11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getGlobalNumElements(),15 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getDomainMap()->getGlobalNumElements(),15 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 5);
+  TEST_EQUALITY(brop00_11->getMatrix(0,0)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 19);
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getGlobalNumElements(),20 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getDomainMap()->getGlobalNumElements(),20 * comm->getSize());
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 640 + 20);
+  TEST_EQUALITY(brop00_11->getMatrix(1,1)->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 640 + 39);
+*/
+  // block 01
+  Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop01 =
+      Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(brop->getMatrix(0,1));
+
+  // Xpetra like maps
+  TEST_EQUALITY(brop01->Rows(),2);
+  TEST_EQUALITY(brop01->Cols(),1);
+  TEST_EQUALITY(brop01->getRangeMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop01->getDomainMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop01->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 5 + 0);
+  TEST_EQUALITY(brop01->getRangeMap()->getMaxGlobalIndex(),comm->getSize() * 5 + comm->getSize() * 15 + comm->getRank() * 20 + 19);
+  TEST_EQUALITY(brop01->getDomainMap()->getMinGlobalIndex(),comm->getSize() * 40 + comm->getRank() * 40);
+  TEST_EQUALITY(brop01->getDomainMap()->getMaxGlobalIndex(),comm->getSize() * 40 + comm->getRank() * 40 + 39);
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperator2Thyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 4 3 1 7 ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),4);
+  TEST_EQUALITY(brop->Cols(),4);
+  TEST_EQUALITY(brop->getRangeMap()->getGlobalNumElements(),comm->getSize() * 385);
+  TEST_EQUALITY(brop->getDomainMap()->getGlobalNumElements(),comm->getSize() * 385);
+
+  // block 00
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop00 = brop->getMatrix(0,0);
+
+  TEST_EQUALITY(brop00->getRangeMap()->getGlobalNumElements(),comm->getSize() * 40);
+  TEST_EQUALITY(brop00->getDomainMap()->getGlobalNumElements(),comm->getSize() * 40);
+  // Thyra GIDs
+  TEST_EQUALITY(brop00->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 40);
+  TEST_EQUALITY(brop00->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 40 + 39);
+  TEST_EQUALITY(brop00->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop00->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 40 - 1);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop->getDomainMap(0,false)->getMinGlobalIndex(), comm->getSize() * 40 + comm->getRank() * 40);
+  TEST_EQUALITY(brop->getDomainMap(0,false)->getMaxGlobalIndex(), comm->getSize() * 40 + comm->getRank() * 40 + 39);
+
+  // block 11
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop11 = brop->getMatrix(1,1);
+
+  TEST_EQUALITY(brop11->getRangeMap()->getGlobalNumElements(),comm->getSize() * 20);
+  TEST_EQUALITY(brop11->getDomainMap()->getGlobalNumElements(),comm->getSize() * 20);
+  // Thyra GIDs
+  TEST_EQUALITY(brop11->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 20);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 20 + 19);
+  TEST_EQUALITY(brop11->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop11->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 20 - 1);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop->getDomainMap(1,false)->getMinGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20);
+  TEST_EQUALITY(brop->getDomainMap(1,false)->getMaxGlobalIndex(), comm->getSize() * 20 + comm->getRank() * 20 + 19);
+
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop11test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop11);
+  TEST_EQUALITY(brop11test,Teuchos::null);
+
+  // block 22
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop22 = brop->getMatrix(2,2);
+
+  TEST_EQUALITY(brop22->getRangeMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(brop22->getDomainMap()->getGlobalNumElements(),comm->getSize() * 5);
+  TEST_EQUALITY(brop22->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 5);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 5 + 4);
+  TEST_EQUALITY(brop22->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop22->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 5 - 1);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop->getDomainMap(2,false)->getMinGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5);
+  TEST_EQUALITY(brop->getDomainMap(2,false)->getMaxGlobalIndex(), comm->getSize() * 5 + comm->getRank() * 5 + 4);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop22test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop22);
+  TEST_EQUALITY(brop22test,Teuchos::null);
+
+  // block 33
+  Teuchos::RCP<const Xpetra::Matrix<Scalar,LO,GO,Node> > brop33 = brop->getMatrix(3,3);
+
+  TEST_EQUALITY(brop33->getRangeMap()->getGlobalNumElements(),comm->getSize() * 320);
+  TEST_EQUALITY(brop33->getDomainMap()->getGlobalNumElements(),comm->getSize() * 320);
+  TEST_EQUALITY(brop33->getRangeMap()->getMinGlobalIndex(),comm->getRank() * 320);
+  TEST_EQUALITY(brop33->getRangeMap()->getMaxGlobalIndex(),comm->getRank() * 320 + 319);
+  TEST_EQUALITY(brop33->getRangeMap()->getMinAllGlobalIndex(),0);
+  TEST_EQUALITY(brop33->getRangeMap()->getMaxAllGlobalIndex(),comm->getSize() * 320 - 1);
+  // Xpetra GIDs
+  TEST_EQUALITY(brop->getDomainMap(3,false)->getMinGlobalIndex(), comm->getSize() * 320 + comm->getRank() * 320);
+  TEST_EQUALITY(brop->getDomainMap(3,false)->getMaxGlobalIndex(), comm->getSize() * 320 + comm->getRank() * 320 + 319);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop33test =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop33);
+  TEST_EQUALITY(brop33test,Teuchos::null);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 [ 2 3 4 ] 5 ] [6 7] ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  ones->putScalar(STS::one());
+  rnd->randomize();
+
+  bop->apply(*ones, *exp);
+  brop->apply(*ones, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+
+  bop->apply(*rnd, *exp);
+  brop->apply(*rnd, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 6 3 2 ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(brop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(brop->getRangeMap(), true);
+  ones->putScalar(STS::one());
+
+  brop->apply(*ones, *res);
+
+  TEST_EQUALITY(res->norm1(), STS::magnitude(Teuchos::as<Scalar>(comm->getSize()) * Teuchos::as<Scalar>(1230)));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApplyThyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 [ 2 3 4 ] 5 ] [6 7] ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> exp  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> rnd  = VectorFactoryClass::Build(bop->getRangeMap(), true);
+  ones->putScalar(STS::one());
+  rnd->randomize();
+
+  bop->apply(*ones, *exp);
+  brop->apply(*ones, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 1e-16, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 1e-16, out, success);
+
+  bop->apply(*rnd, *exp);
+  brop->apply(*rnd, *res);
+  res->update(-STS::one(),*exp,STS::one());
+  TEUCHOS_TEST_COMPARE(res->norm2(), <, 5e-14, out, success);
+  TEUCHOS_TEST_COMPARE(res->normInf(), <, 5e-14, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReorderBlockOperatorApply2Thyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 6 3 2 ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<VectorClass> ones = VectorFactoryClass::Build(brop->getRangeMap(), true);
+  Teuchos::RCP<VectorClass> res  = VectorFactoryClass::Build(brop->getRangeMap(), true);
+  ones->putScalar(STS::one());
+
+  brop->apply(*ones, *res);
+
+  TEST_EQUALITY(res->norm1(), STS::magnitude(Teuchos::as<Scalar>(comm->getSize()) * Teuchos::as<Scalar>(1230)));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, ReadWriteBlockedMatrix, M, MA, Scalar, LO, GO, Node )
@@ -795,6 +1559,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
 
 #define XP_MATRIX_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, SplitMatrix, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOp, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, CreateBlockedDiagonalOpThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperator, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperator2, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperator2Thyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply2, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApplyThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply2Thyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, Apply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
