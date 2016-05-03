@@ -96,13 +96,14 @@ namespace Intrepid2 {
     typedef Kokkos::View<ECoordinates,ExecSpaceType> ecoordiantes_view_type;
 
     // ** tag interface 
-    //  - tag information is constructed on host 
-    //  - data is uploaded to devices
-    
+    //  - tag interface is not decorated with Kokkos inline so it should be allocated on hostspace
+
     // host array 
     typedef Kokkos::View<ordinal_type*  ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_1d_host;
     typedef Kokkos::View<ordinal_type** ,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_2d_host;
     typedef Kokkos::View<ordinal_type***,typename ExecSpaceType::array_layout,Kokkos::HostSpace> ordinal_type_array_3d_host;
+
+    typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, Kokkos::HostSpace> ordinal_type_array_stride_1d_host;
 
     // device array
     typedef Kokkos::View<ordinal_type*  ,ExecSpaceType> ordinal_type_array_1d;
@@ -110,8 +111,6 @@ namespace Intrepid2 {
     typedef Kokkos::View<ordinal_type***,ExecSpaceType> ordinal_type_array_3d;
 
     typedef Kokkos::View<ordinal_type*  , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_1d;
-    // typedef Kokkos::View<ordinal_type** , Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_2d;
-    // typedef Kokkos::View<ordinal_type***, Kokkos::LayoutStride, ExecSpaceType> ordinal_type_array_stride_3d;
 
   protected:
 
@@ -151,7 +150,7 @@ namespace Intrepid2 {
         \li     ordinalToTag_[DodOrd][2] = ordinal of the specified DoF relative to the subcell
         \li     ordinalToTag_[DofOrd][3] = total number of DoFs associated with the subcell
     */
-    ordinal_type_array_2d ordinalToTag_;
+    ordinal_type_array_2d_host ordinalToTag_;
 
     /** \brief  DoF tag to ordinal lookup table.
 
@@ -164,7 +163,7 @@ namespace Intrepid2 {
 
         \li     tagToOrdinal_[subcDim][subcOrd][subcDofOrd] = Degree-of-freedom ordinal
     */
-    ordinal_type_array_3d tagToOrdinal_;
+    ordinal_type_array_3d_host tagToOrdinal_;
 
     /** \brief  Fills <var>ordinalToTag_</var> and <var>tagToOrdinal_</var> by basis-specific tag data
 
@@ -389,7 +388,7 @@ namespace Intrepid2 {
     }
 
     /** \brief DoF tag to ordinal data structure */
-    const ordinal_type_array_3d
+    const ordinal_type_array_3d_host
     getAllDofOrdinal() const {
       return tagToOrdinal_;
     }
@@ -405,7 +404,7 @@ namespace Intrepid2 {
         \li     element [2] = tag field 2  ->  ordinal of the specified DoF relative to the subcell
         \li     element [3] = tag field 3  ->  total number of DoFs associated with the subcell
     */
-    const ordinal_type_array_stride_1d
+    const ordinal_type_array_stride_1d_host
     getDofTag( const ordinal_type dofOrd ) const {
 #ifdef HAVE_INTREPID2_DEBUG
       INTREPID2_TEST_FOR_EXCEPTION( dofOrd < 0 || dofOrd >= static_cast<ordinal_type>(ordinalToTag_.dimension(0)), std::out_of_range,
@@ -423,7 +422,7 @@ namespace Intrepid2 {
         \li     element [DofOrd][2] = tag field 2 for the DoF with the specified ordinal
         \li     element [DofOrd][3] = tag field 3 for the DoF with the specified ordinal
     */
-    const ordinal_type_array_2d
+    const ordinal_type_array_2d_host
     getAllDofTags() const {
       return ordinalToTag_;
     }

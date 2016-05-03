@@ -123,10 +123,10 @@ namespace Intrepid2 {
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host and sent to devices
-      ordinal_type_array_2d_host ordinalToTag;
-      ordinal_type_array_3d_host tagToOrdinal;
-      this->setOrdinalTagData(tagToOrdinal,
-                              ordinalToTag,
+      //ordinal_type_array_2d_host ordinalToTag;
+      //ordinal_type_array_3d_host tagToOrdinal;
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
                               tagView,
                               this->basisCardinality_,
                               tagSize,
@@ -134,11 +134,11 @@ namespace Intrepid2 {
                               posScOrd,
                               posDfOrd);
       
-      this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
-      Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
+      //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
+      //Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
 
-      this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
-      Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
+      //this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
+      //Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
     }
 
     // dofCoords on host and create its mirror view to device
