@@ -60,8 +60,8 @@
 #include "Intrepid2_CubatureTensor.hpp"
 
 //#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
-//#include "Intrepid2_CubatureDirectTriDefault.hpp"
-//#include "Intrepid2_CubatureDirectTetDefault.hpp"
+#include "Intrepid2_CubatureDirectTriDefault.hpp"
+#include "Intrepid2_CubatureDirectTetDefault.hpp"
 //#include "Intrepid2_CubatureTensorPyr.hpp"
 
 #include "Teuchos_oblackholestream.hpp"

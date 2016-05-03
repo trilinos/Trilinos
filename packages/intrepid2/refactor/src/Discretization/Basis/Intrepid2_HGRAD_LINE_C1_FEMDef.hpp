@@ -143,7 +143,7 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace> 
-      dofCoords(basisCardinality_,basisCellTopology_.getDimension()); 
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension()); 
     
     dofCoords(0,0) = -1.0;
     dofCoords(1,0) =  1.0;
@@ -230,7 +230,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-    Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
   }
 
 }

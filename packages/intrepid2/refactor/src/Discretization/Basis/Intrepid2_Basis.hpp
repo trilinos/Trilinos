@@ -176,16 +176,19 @@ namespace Intrepid2 {
       \param  posScOrd         [in]   - position in the tag, counting from 0, of the subcell ordinal
       \param  posDfOrd         [in]   - position in the tag, counting from 0, of DoF ordinal relative to the subcell
     */
-    void setOrdinalTagData( /**/  ordinal_type_array_3d_host &tagToOrdinal,
-                            /**/  ordinal_type_array_2d_host &ordinalToTag,
-                            const ordinal_type_array_1d_host  tags,
-                            const ordinal_type                basisCard,
-                            const ordinal_type                tagSize,
-                            const ordinal_type                posScDim,
-                            const ordinal_type                posScOrd,
-                            const ordinal_type                posDfOrd ) {
+    template<typename OrdinalTypeView3D, 
+             typename OrdinalTypeView2D,
+             typename OrdinalTypeView1D>
+    void setOrdinalTagData( /**/  OrdinalTypeView3D &tagToOrdinal,
+                            /**/  OrdinalTypeView2D &ordinalToTag,
+                            const OrdinalTypeView1D  tags,
+                            const ordinal_type       basisCard,
+                            const ordinal_type       tagSize,
+                            const ordinal_type       posScDim,
+                            const ordinal_type       posScOrd,
+                            const ordinal_type       posDfOrd ) {
       // Create ordinalToTag
-      ordinalToTag = ordinal_type_array_2d_host("ordinalToTag", basisCard, 4);
+      ordinalToTag = OrdinalTypeView2D("ordinalToTag", basisCard, 4);
 
       // Initialize with -1
       Kokkos::deep_copy( ordinalToTag, -1 );
@@ -215,7 +218,7 @@ namespace Intrepid2 {
       ++maxDfOrd;
 
       // Create tagToOrdinal
-      tagToOrdinal = ordinal_type_array_3d_host("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
+      tagToOrdinal = OrdinalTypeView3D("tagToOrdinal", maxScDim, maxScOrd, maxDfOrd);
 
       // Initialize with -1
       Kokkos::deep_copy( tagToOrdinal, -1 );

@@ -93,6 +93,9 @@ namespace Intrepid2 {
            typename pointValueType = double>
   class Basis_HGRAD_HEX_C1_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
     template<EOperator opType>
     struct Serial {

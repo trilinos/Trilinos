@@ -82,6 +82,9 @@ namespace Intrepid2 {
   class Basis_HGRAD_LINE_C1_FEM
     : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
     // this is specialized for each operator type
     template<EOperator opType>

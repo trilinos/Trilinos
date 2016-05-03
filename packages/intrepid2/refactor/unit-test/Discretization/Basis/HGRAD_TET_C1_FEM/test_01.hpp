@@ -138,70 +138,70 @@ namespace Intrepid2 {
 
         {
           // exception #1: CURL cannot be applied to scalar functions
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, tetNodes, OPERATOR_CURL), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, tetNodes, OPERATOR_CURL) );
           // exception #2: DIV cannot be applied to scalar functions
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, tetNodes, OPERATOR_DIV), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, tetNodes, OPERATOR_DIV) );
         }
         // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
         // getDofTag() to access invalid array elements thereby causing bounds check exception
         {
           // exception #3
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(3,0,0), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(3,0,0) );
           // exception #4
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(1,1,1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(1,1,1) );
           // exception #5
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(0,4,0), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(0,4,0) );
           // exception #6
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(5), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(5) );
           // exception #7
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(-1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(-1) );
         }
         // Exceptions 8-18 test exception handling with incorrectly dimensioned input/output arrays
         {
           // exception #8: input points array must be of rank-2
           DynRankView ConstructWithLabel( badPoints1, 4, 5, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, badPoints1, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
         }
         {
           // exception #9 dimension 1 in the input point array must equal space dimension of the cell
           DynRankView ConstructWithLabel( badPoints2, 4, spaceDim - 1);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, badPoints2, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals, badPoints2, OPERATOR_VALUE) );
         }
         {
           // exception #10 output values must be of rank-2 for OPERATOR_VALUE
           DynRankView ConstructWithLabel( badVals1, 4, 3, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals1, tetNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals1, tetNodes, OPERATOR_VALUE) );
         }
         {
           // exception #11 output values must be of rank-3 for OPERATOR_GRAD
           DynRankView ConstructWithLabel( badVals2, 4, 3);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_GRAD) );
           // exception #12 output values must be of rank-3 for OPERATOR_D1
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_D1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_D1) );
           // exception #13 output values must be of rank-3 for OPERATOR_D2
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2, tetNodes, OPERATOR_D2) );
         }
         {
           // exception #14 incorrect 0th dimension of output array (must equal number of basis functions)
           DynRankView ConstructWithLabel( badVals3, numFields + 1, numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals3, tetNodes, OPERATOR_VALUE), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals3, tetNodes, OPERATOR_VALUE) );
         }
         {
           // exception #15 incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel( badVals4, numFields,, numPoints + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4, tetNodes, OPERATOR_VALUE), nthrow, ncatch );
+          DynRankView ConstructWithLabel( badVals4, numFields, numPoints + 1);
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4, tetNodes, OPERATOR_VALUE) );
         }
         {
           // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
           DynRankView ConstructWithLabel( badVals5, numFields, numPoints, spaceDim + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals5, tetNodes, OPERATOR_GRAD), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals5, tetNodes, OPERATOR_GRAD) );
         }
         {
           // exception #17: incorrect 2nd dimension of output array (must equal D2 cardinality in 2D)
           DynRankView ConstructWithLabel( badVals6, numFields, numPoints, 1);
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals6, tetNodes, OPERATOR_D1), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals6, tetNodes, OPERATOR_D1) );
           // exception #18: incorrect 2nd dimension of output array (must equal D3 cardinality in 2D)
-          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals6, tetNodes, OPERATOR_D2), nthrow, ncatch );
+          INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals6, tetNodes, OPERATOR_D2) );
         }
 #endif
         if (nthrow != ncatch) {
@@ -319,18 +319,18 @@ namespace Intrepid2 {
         tetNodesHost(6,0) =  0.5;  tetNodesHost(6,1) =  0.0;  tetNodesHost(6,2) =  0.5;  
         tetNodesHost(7,0) =  0.0;  tetNodesHost(7,1) =  0.5;  tetNodesHost(7,2) =  0.5;  
 
-        const auto tetNodes = Kokkos::create_mirror_view(DeviceSpaceType::memory_space(), tetNodesHost);
+        const auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
 
         // Dimensions for the output arrays:
-        const auto numFields = triBasis.getCardinality();
-        const auto numPoints = triNodes.dimension(0);
-        const auto spaceDim  = triBasis.getBaseCellTopology().getDimension();
+        const auto numFields = tetBasis.getCardinality();
+        const auto numPoints = tetNodes.dimension(0);
+        const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
           DynRankView vals = DynRankView("vals", numFields, numPoints);
           tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
-          auto vals_host = Kokkos::create_mirror_view(HostSpaceType::memory_space(), vals);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i) {
             for (auto j=0;j<numPoints;++j) {
@@ -353,7 +353,7 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView("vals", numFields, numPoints, spaceDim);
           tetBasis.getValues(vals, tetNodes, OPERATOR_GRAD);
-          auto vals_host = Kokkos::create_mirror_view(HostSpaceType::memory_space(), vals);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i) {
             for (auto j=0;j<numPoints;++j) {
@@ -378,7 +378,7 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView("vals", numFields, numPoints, spaceDim);
           tetBasis.getValues(vals, tetNodes, OPERATOR_D1);
-          auto vals_host = Kokkos::create_mirror_view(HostSpaceType::memory_space(), vals);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
           Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i) {
             for (auto j=0;j<numPoints;++j) {
@@ -417,7 +417,7 @@ namespace Intrepid2 {
             DynRankView vals("vals", numFields, numPoints, DkCardin);
 
             tetBasis.getValues(vals, tetNodes, op);
-            auto vals_host = Kokkos::create_mirror_view(HostSpaceType(), vals);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
             Kokkos::deep_copy(vals_host, vals);
             for (auto i1=0;i1<numFields; i1++)
               for (auto i2=0;i2<numPoints; i2++)
@@ -479,8 +479,12 @@ namespace Intrepid2 {
        tetBasis.getDofCoords(cvals);
        tetBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
-       auto bvals_host = Kokkos::create_mirror_view(HostSpaceType::memory_space(), bvals);
+       auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
+       Kokkos::deep_copy(cvals_host, cvals);
+
+       auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
        Kokkos::deep_copy(bvals_host, bvals);
+
        for (auto i=0;i<numFields;++i) {
          for (auto j=0;j<numFields;++j) {
            const ValueType expected_value = (i == j);
