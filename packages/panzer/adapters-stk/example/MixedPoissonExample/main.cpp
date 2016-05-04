@@ -114,338 +114,341 @@ int main(int argc,char * argv[])
 
    PHX::InitializeKokkosDevice();
 
-   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-   RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
-   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-   out.setOutputToRootOnly(0);
-   out.setShowProcRank(true);
-
-   // Build command line processor
-   ////////////////////////////////////////////////////
-
-   bool useTpetra = false;
-   int x_elements=10,y_elements=10,z_elements=10;
-   Teuchos::CommandLineProcessor clp;
-   clp.setOption("use-tpetra","use-epetra",&useTpetra);
-   clp.setOption("x-elements",&x_elements);
-   clp.setOption("y-elements",&y_elements);
-   clp.setOption("z-elements",&z_elements);
-
-   // parse commandline argument
-   TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
-
-   // variable declarations
-   ////////////////////////////////////////////////////
-
-   // factory definitions
-   Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
-     Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
-   Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
-
-   panzer_stk_classic::CubeTetMeshFactory mesh_factory;
-
-   // other declarations
-   const std::size_t workset_size = 2*2;
-
-   // construction of uncommitted (no elements) mesh 
-   ////////////////////////////////////////////////////////
-
-   // set mesh factory parameters
-   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-   pl->set("X Blocks",1);
-   pl->set("Y Blocks",1);
-   pl->set("Z Blocks",1);
-   pl->set("X Elements",x_elements);
-   pl->set("Y Elements",y_elements);
-   pl->set("Z Elements",z_elements);
-   mesh_factory.setParameterList(pl);
-
-   RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
-
-   // construct input physics and physics block
-   ////////////////////////////////////////////////////////
-
-   Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
-   std::vector<panzer::BC> bcs;
-   std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
    {
-      bool build_transient_support = false;
-
-      testInitialization(ipb, bcs);
-      
-      const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0_0"));
-
-      // GobalData sets ostream and parameter interface to physics
-      Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
-
-      // Can be overridden by the equation set
-      int default_integration_order = 1;
-      
-      // the physics block nows how to build and register evaluator with the field manager
-      RCP<panzer::PhysicsBlock> pb 
-	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0_0",
-				       default_integration_order, 
-				       volume_cell_data,
-				       eqset_factory,
-				       gd,
-				       build_transient_support));
-
-      // we can have more than one physics block, one per element block
-      physicsBlocks.push_back(pb);
-   }
-
-   // finish building mesh, set required field variables and mesh bulk data
-   ////////////////////////////////////////////////////////////////////////
-
-   {
-      RCP<panzer::PhysicsBlock> pb = physicsBlocks[0]; // we are assuming only one physics block
-
-      const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
-
-      // insert all fields into a set
-      std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
-      fieldNames.insert(blockFields.begin(),blockFields.end());
-
-      // build string for modifiying vectors
-      std::vector<std::string> dimenStr(3);
-      dimenStr[0] = "X"; dimenStr[1] = "Y"; dimenStr[2] = "Z";
-
-      // add basis to DOF manager: block specific
-      std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr;
-      for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
-         Teuchos::RCP<const panzer::PureBasis> basis = fieldItr->second;
-         if(basis->getElementSpace()==panzer::PureBasis::HGRAD)
-            mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
-         else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
-            for(int i=0;i<basis->dimension();i++) 
-               mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
-         }
-         else if(basis->getElementSpace()==panzer::PureBasis::HDIV) {
-            for(int i=0;i<basis->dimension();i++) 
-               mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
-         }
-      }
-
-      mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
-   }
-
-   // build DOF Manager and linear object factory
-   /////////////////////////////////////////////////////////////
- 
-   RCP<panzer::UniqueGlobalIndexerBase> dofManager;
-   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-
-   // build the connection manager 
-   if(!useTpetra) {
-     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
-
-     panzer::DOFManagerFactory<int,int> globalIndexerFactory;
-     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
-           = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-     dofManager = dofManager_int;
-
-     // construct some linear algebra object, build object to pass to evaluators
-     linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager_int));
-   }
-   else {
-     const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
-
-     panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
-     RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
-           = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-     dofManager = dofManager_long;
-
-     // construct some linear algebra object, build object to pass to evaluators
-     linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
-   }
-
-   // build worksets
-   ////////////////////////////////////////////////////////
-
-   Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
-      = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
-   Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-      = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
-   wkstContainer->setGlobalIndexer(dofManager);
-
-   // Setup STK response library for writing out the solution fields
-   ////////////////////////////////////////////////////////////////////////
-   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 
-      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
-
-   {
-      // get a vector of all the element blocks 
-      std::vector<std::string> eBlocks;
-      mesh->getElementBlockNames(eBlocks);
-      
-      panzer_stk_classic::RespFactorySolnWriter_Builder builder;
-      builder.mesh = mesh;
-      stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
-   }
-
-   // Setup response library for checking the error in this manufactered solution
-   ////////////////////////////////////////////////////////////////////////
-
-   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
-      = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
-
-   {
-     std::vector<std::string> eBlocks;
-     mesh->getElementBlockNames(eBlocks);
-
-     panzer::FunctionalResponse_Builder<int,int> builder;
-     builder.comm = MPI_COMM_WORLD;
-     builder.cubatureDegree = 2;
-     builder.requiresCellIntegral = true;
-     builder.quadPointField = "PHI_ERROR";
-
-     errorResponseLibrary->addResponse("PHI L2 Error",eBlocks,builder);
-   }
-
-   // setup closure model
-   /////////////////////////////////////////////////////////////
- 
-   // Add in the application specific closure model factory
-   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
-   Example::ClosureModelFactory_TemplateBuilder cm_builder;
-   cm_factory.buildObjects(cm_builder);
-
-   Teuchos::ParameterList closure_models("Closure Models");
-   {
-      closure_models.sublist("solid").sublist("SOURCE").set<std::string>("Type","SINE SOURCE");
-        // SOURCE field is required by the MixedPoissonEquationSet
-
-     // required for error calculation
-     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Type","ERROR_CALC");
-     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field A","PHI");
-     closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field B","PHI_EXACT");
-
-     closure_models.sublist("solid").sublist("PHI_EXACT").set<std::string>("Type","PHI_EXACT");
-   }
-
-   Teuchos::ParameterList user_data("User Data"); // user data can be empty here
-
-   // setup field manager builder
-   /////////////////////////////////////////////////////////////
-
-   Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
-         Teuchos::rcp(new panzer::FieldManagerBuilder);
-   fmb->setWorksetContainer(wkstContainer);
-   fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
-   fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
-                             *linObjFactory,user_data);
-
-   // setup assembly engine
-   /////////////////////////////////////////////////////////////
-
-   // build assembly engine: The key piece that brings together everything and 
-   //                        drives and controls the assembly process. Just add
-   //                        matrices and vectors
-   panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
-   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
-   ae_tm.buildObjects(builder);
-
-   // Finalize construcition of STK writer response library
-   /////////////////////////////////////////////////////////////
-   {
-      user_data.set<int>("Workset Size",workset_size);
-      stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
-                                        cm_factory,
-                                        closure_models,
-                                        user_data);
-
-      user_data.set<int>("Workset Size",workset_size);
-      errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
-                                                    cm_factory,
-                                                    closure_models,
-                                                    user_data);
-   }
-
-   // assemble linear system
-   /////////////////////////////////////////////////////////////
-
-   // build linear algebra objects: Ghost is for parallel assembly, it contains
-   //                               local element contributions summed, the global IDs
-   //                               are not unique. The non-ghosted or "global"
-   //                               container will contain the sum over all processors
-   //                               of the ghosted objects. The global indices are unique.
-   RCP<panzer::LinearObjContainer> ghostCont = linObjFactory->buildGhostedLinearObjContainer();
-   RCP<panzer::LinearObjContainer> container = linObjFactory->buildLinearObjContainer();
-   linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X |
-                                             panzer::LinearObjContainer::F |
-                                             panzer::LinearObjContainer::Mat,*ghostCont);
-   linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
-                                      panzer::LinearObjContainer::F |
-                                      panzer::LinearObjContainer::Mat,*container);
-   ghostCont->initialize();
-   container->initialize();
-
-   // Actually evaluate
-   /////////////////////////////////////////////////////////////
-
-   panzer::AssemblyEngineInArgs input(ghostCont,container);
-   input.alpha = 0;
-   input.beta = 1;
-
-   // evaluate physics: This does both the Jacobian and residual at once
-   ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
-
-   // solve linear system
-   /////////////////////////////////////////////////////////////
-
-   if(useTpetra)
-      solveTpetraSystem(*container);
-   else
-      solveEpetraSystem(*container);
   
-   // output data (optional)
-   /////////////////////////////////////////////////////////////
-
-   // write out solution
-   if(true) {
-      // fill STK mesh objects
-      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
-      respInput.alpha = 0;
-      respInput.beta = 1;
-
-      stkIOResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
-      stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
-
-      // write to exodus
-      mesh->writeToExodus("output.exo");
+     Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+     RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+     Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+     Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+     out.setOutputToRootOnly(0);
+     out.setShowProcRank(true);
+  
+     // Build command line processor
+     ////////////////////////////////////////////////////
+  
+     bool useTpetra = false;
+     int x_elements=10,y_elements=10,z_elements=10;
+     Teuchos::CommandLineProcessor clp;
+     clp.setOption("use-tpetra","use-epetra",&useTpetra);
+     clp.setOption("x-elements",&x_elements);
+     clp.setOption("y-elements",&y_elements);
+     clp.setOption("z-elements",&z_elements);
+  
+     // parse commandline argument
+     TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
+  
+     // variable declarations
+     ////////////////////////////////////////////////////
+  
+     // factory definitions
+     Teuchos::RCP<Example::EquationSetFactory> eqset_factory = 
+       Teuchos::rcp(new Example::EquationSetFactory); // where poison equation is defined
+     Example::BCStrategyFactory bc_factory;    // where boundary conditions are defined 
+  
+     panzer_stk_classic::CubeTetMeshFactory mesh_factory;
+  
+     // other declarations
+     const std::size_t workset_size = 2*2;
+  
+     // construction of uncommitted (no elements) mesh 
+     ////////////////////////////////////////////////////////
+  
+     // set mesh factory parameters
+     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+     pl->set("X Blocks",1);
+     pl->set("Y Blocks",1);
+     pl->set("Z Blocks",1);
+     pl->set("X Elements",x_elements);
+     pl->set("Y Elements",y_elements);
+     pl->set("Z Elements",z_elements);
+     mesh_factory.setParameterList(pl);
+  
+     RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
+  
+     // construct input physics and physics block
+     ////////////////////////////////////////////////////////
+  
+     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
+     std::vector<panzer::BC> bcs;
+     std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
+     {
+        bool build_transient_support = false;
+  
+        testInitialization(ipb, bcs);
+        
+        const panzer::CellData volume_cell_data(workset_size, mesh->getCellTopology("eblock-0_0_0"));
+  
+        // GobalData sets ostream and parameter interface to physics
+        Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
+  
+        // Can be overridden by the equation set
+        int default_integration_order = 1;
+        
+        // the physics block nows how to build and register evaluator with the field manager
+        RCP<panzer::PhysicsBlock> pb 
+  	= rcp(new panzer::PhysicsBlock(ipb, "eblock-0_0_0",
+  				       default_integration_order, 
+  				       volume_cell_data,
+  				       eqset_factory,
+  				       gd,
+  				       build_transient_support));
+  
+        // we can have more than one physics block, one per element block
+        physicsBlocks.push_back(pb);
+     }
+  
+     // finish building mesh, set required field variables and mesh bulk data
+     ////////////////////////////////////////////////////////////////////////
+  
+     {
+        RCP<panzer::PhysicsBlock> pb = physicsBlocks[0]; // we are assuming only one physics block
+  
+        const std::vector<StrPureBasisPair> & blockFields = pb->getProvidedDOFs();
+  
+        // insert all fields into a set
+        std::set<StrPureBasisPair,StrPureBasisComp> fieldNames;
+        fieldNames.insert(blockFields.begin(),blockFields.end());
+  
+        // build string for modifiying vectors
+        std::vector<std::string> dimenStr(3);
+        dimenStr[0] = "X"; dimenStr[1] = "Y"; dimenStr[2] = "Z";
+  
+        // add basis to DOF manager: block specific
+        std::set<StrPureBasisPair,StrPureBasisComp>::const_iterator fieldItr;
+        for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
+           Teuchos::RCP<const panzer::PureBasis> basis = fieldItr->second;
+           if(basis->getElementSpace()==panzer::PureBasis::HGRAD)
+              mesh->addSolutionField(fieldItr->first,pb->elementBlockID());
+           else if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+              for(int i=0;i<basis->dimension();i++) 
+                 mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+           }
+           else if(basis->getElementSpace()==panzer::PureBasis::HDIV) {
+              for(int i=0;i<basis->dimension();i++) 
+                 mesh->addCellField(fieldItr->first+dimenStr[i],pb->elementBlockID());
+           }
+        }
+  
+        mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
+     }
+  
+     // build DOF Manager and linear object factory
+     /////////////////////////////////////////////////////////////
+   
+     RCP<panzer::UniqueGlobalIndexerBase> dofManager;
+     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
+  
+     // build the connection manager 
+     if(!useTpetra) {
+       const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+  
+       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
+       RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager_int
+             = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+       dofManager = dofManager_int;
+  
+       // construct some linear algebra object, build object to pass to evaluators
+       linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager_int));
+     }
+     else {
+       const Teuchos::RCP<panzer::ConnManager<int,panzer::Ordinal64> > conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<panzer::Ordinal64>(mesh));
+  
+       panzer::DOFManagerFactory<int,panzer::Ordinal64> globalIndexerFactory;
+       RCP<panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> > dofManager_long
+             = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+       dofManager = dofManager_long;
+  
+       // construct some linear algebra object, build object to pass to evaluators
+       linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,double,int,panzer::Ordinal64>(comm,dofManager_long));
+     }
+  
+     // build worksets
+     ////////////////////////////////////////////////////////
+  
+     Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory
+        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+     wkstContainer->setGlobalIndexer(dofManager);
+  
+     // Setup STK response library for writing out the solution fields
+     ////////////////////////////////////////////////////////////////////////
+     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > stkIOResponseLibrary 
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+  
+     {
+        // get a vector of all the element blocks 
+        std::vector<std::string> eBlocks;
+        mesh->getElementBlockNames(eBlocks);
+        
+        panzer_stk_classic::RespFactorySolnWriter_Builder builder;
+        builder.mesh = mesh;
+        stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
+     }
+  
+     // Setup response library for checking the error in this manufactered solution
+     ////////////////////////////////////////////////////////////////////////
+  
+     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
+        = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+  
+     {
+       std::vector<std::string> eBlocks;
+       mesh->getElementBlockNames(eBlocks);
+  
+       panzer::FunctionalResponse_Builder<int,int> builder;
+       builder.comm = MPI_COMM_WORLD;
+       builder.cubatureDegree = 2;
+       builder.requiresCellIntegral = true;
+       builder.quadPointField = "PHI_ERROR";
+  
+       errorResponseLibrary->addResponse("PHI L2 Error",eBlocks,builder);
+     }
+  
+     // setup closure model
+     /////////////////////////////////////////////////////////////
+   
+     // Add in the application specific closure model factory
+     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory; 
+     Example::ClosureModelFactory_TemplateBuilder cm_builder;
+     cm_factory.buildObjects(cm_builder);
+  
+     Teuchos::ParameterList closure_models("Closure Models");
+     {
+        closure_models.sublist("solid").sublist("SOURCE").set<std::string>("Type","SINE SOURCE");
+          // SOURCE field is required by the MixedPoissonEquationSet
+  
+       // required for error calculation
+       closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Type","ERROR_CALC");
+       closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field A","PHI");
+       closure_models.sublist("solid").sublist("PHI_ERROR").set<std::string>("Field B","PHI_EXACT");
+  
+       closure_models.sublist("solid").sublist("PHI_EXACT").set<std::string>("Type","PHI_EXACT");
+     }
+  
+     Teuchos::ParameterList user_data("User Data"); // user data can be empty here
+  
+     // setup field manager builder
+     /////////////////////////////////////////////////////////////
+  
+     Teuchos::RCP<panzer::FieldManagerBuilder> fmb = 
+           Teuchos::rcp(new panzer::FieldManagerBuilder);
+     fmb->setWorksetContainer(wkstContainer);
+     fmb->setupVolumeFieldManagers(physicsBlocks,cm_factory,closure_models,*linObjFactory,user_data);
+     fmb->setupBCFieldManagers(bcs,physicsBlocks,*eqset_factory,cm_factory,bc_factory,closure_models,
+                               *linObjFactory,user_data);
+  
+     // setup assembly engine
+     /////////////////////////////////////////////////////////////
+  
+     // build assembly engine: The key piece that brings together everything and 
+     //                        drives and controls the assembly process. Just add
+     //                        matrices and vectors
+     panzer::AssemblyEngine_TemplateManager<panzer::Traits> ae_tm;
+     panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
+     ae_tm.buildObjects(builder);
+  
+     // Finalize construcition of STK writer response library
+     /////////////////////////////////////////////////////////////
+     {
+        user_data.set<int>("Workset Size",workset_size);
+        stkIOResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                          cm_factory,
+                                          closure_models,
+                                          user_data);
+  
+        user_data.set<int>("Workset Size",workset_size);
+        errorResponseLibrary->buildResponseEvaluators(physicsBlocks,
+                                                      cm_factory,
+                                                      closure_models,
+                                                      user_data);
+     }
+  
+     // assemble linear system
+     /////////////////////////////////////////////////////////////
+  
+     // build linear algebra objects: Ghost is for parallel assembly, it contains
+     //                               local element contributions summed, the global IDs
+     //                               are not unique. The non-ghosted or "global"
+     //                               container will contain the sum over all processors
+     //                               of the ghosted objects. The global indices are unique.
+     RCP<panzer::LinearObjContainer> ghostCont = linObjFactory->buildGhostedLinearObjContainer();
+     RCP<panzer::LinearObjContainer> container = linObjFactory->buildLinearObjContainer();
+     linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X |
+                                               panzer::LinearObjContainer::F |
+                                               panzer::LinearObjContainer::Mat,*ghostCont);
+     linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
+                                        panzer::LinearObjContainer::F |
+                                        panzer::LinearObjContainer::Mat,*container);
+     ghostCont->initialize();
+     container->initialize();
+  
+     // Actually evaluate
+     /////////////////////////////////////////////////////////////
+  
+     panzer::AssemblyEngineInArgs input(ghostCont,container);
+     input.alpha = 0;
+     input.beta = 1;
+  
+     // evaluate physics: This does both the Jacobian and residual at once
+     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+  
+     // solve linear system
+     /////////////////////////////////////////////////////////////
+  
+     if(useTpetra)
+        solveTpetraSystem(*container);
+     else
+        solveEpetraSystem(*container);
+    
+     // output data (optional)
+     /////////////////////////////////////////////////////////////
+  
+     // write out solution
+     if(true) {
+        // fill STK mesh objects
+        panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+        respInput.alpha = 0;
+        respInput.beta = 1;
+  
+        stkIOResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+        stkIOResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+  
+        // write to exodus
+        mesh->writeToExodus("output.exo");
+     }
+  
+     // compute error norm
+     /////////////////////////////////////////////////////////////
+  
+     if(true) {
+        Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
+        lout.setOutputToRootOnly(0);
+  
+        panzer::AssemblyEngineInArgs respInput(ghostCont,container);
+        respInput.alpha = 0;
+        respInput.beta = 1;
+  
+        Teuchos::RCP<panzer::ResponseBase> resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("PHI L2 Error");
+        Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp_func = 
+               Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
+        Teuchos::RCP<Thyra::VectorBase<double> > respVec = Thyra::createMember(resp_func->getVectorSpace());
+        resp_func->setVector(respVec);
+  
+        errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
+        errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
+  
+        lout << "Error = " << sqrt(resp_func->value) << std::endl;
+     }
+  
+     // all done!
+     /////////////////////////////////////////////////////////////
+  
+     if(useTpetra)
+        std::cout << "ALL PASSED: Tpetra" << std::endl;
+     else
+        std::cout << "ALL PASSED: Epetra" << std::endl;
    }
-
-   // compute error norm
-   /////////////////////////////////////////////////////////////
-
-   if(true) {
-      Teuchos::FancyOStream lout(Teuchos::rcpFromRef(std::cout));
-      lout.setOutputToRootOnly(0);
-
-      panzer::AssemblyEngineInArgs respInput(ghostCont,container);
-      respInput.alpha = 0;
-      respInput.beta = 1;
-
-      Teuchos::RCP<panzer::ResponseBase> resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("PHI L2 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > resp_func = 
-             Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
-      Teuchos::RCP<Thyra::VectorBase<double> > respVec = Thyra::createMember(resp_func->getVectorSpace());
-      resp_func->setVector(respVec);
-
-      errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
-      errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
-
-      lout << "Error = " << sqrt(resp_func->value) << std::endl;
-   }
-
-   // all done!
-   /////////////////////////////////////////////////////////////
-
-   if(useTpetra)
-      std::cout << "ALL PASSED: Tpetra" << std::endl;
-   else
-      std::cout << "ALL PASSED: Epetra" << std::endl;
 
    PHX::FinalizeKokkosDevice();
 
