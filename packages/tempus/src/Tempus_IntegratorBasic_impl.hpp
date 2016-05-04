@@ -4,7 +4,6 @@
 // Teuchos
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 // Tempus
-#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_TimeStepControl.hpp"
 

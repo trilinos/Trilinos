@@ -23,8 +23,9 @@ cmake \
 -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/install/gnu4.8.2/mpich/bin/mpifort" \
 -D CMAKE_CXX_FLAGS:STRING="-g -Wall" \
 -D CMAKE_C_FLAGS:STRING="-g" \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
 -D CMAKE_Fortran_FLAGS:STRING="-g" \
--D CMAKE_EXE_LINKER_FLAGS="-Wl,-fuse-ld=gold" \
+-D CMAKE_EXE_LINKER_FLAGS="-Wl,-fuse-ld=gold -L/usr/lib -lgfortran" \
 -D Trilinos_ENABLE_CXX11:BOOL=ON \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \

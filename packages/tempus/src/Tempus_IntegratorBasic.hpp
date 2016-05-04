@@ -83,6 +83,7 @@ protected:
 };
 } // namespace Tempus
 
+#include "Tempus_IntegratorBasic_impl.hpp"
 
 /// Non-member constructor
 //template<class Scalar>
