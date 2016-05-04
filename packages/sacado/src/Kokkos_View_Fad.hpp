@@ -36,6 +36,9 @@
 
 #else
 
+#include "Sacado_ConfigDefs.h"
+#if defined(HAVE_SACADO_KOKKOSCORE)
+
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
 
@@ -59,7 +62,7 @@ dimension_scalar(const view_type& view) {
 
 // Make sure the user really wants these View specializations
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "Sacado_Traits.hpp"
 
@@ -1055,8 +1058,10 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif
+#endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif
+#endif // defined(HAVE_SACADO_KOKKOSCORE)
+
+#endif // !defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 #endif /* #ifndef KOKKOS_VIEW_FAD_HPP */
