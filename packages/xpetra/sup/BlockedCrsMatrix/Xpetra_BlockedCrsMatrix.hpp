@@ -740,20 +740,22 @@ namespace Xpetra {
     }
 
     //! \brief Returns the Map associated with the full domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
     RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getDomainMap(size_t i, bool bThyraMode = false) const    { return domainmaps_->getMap(i, bDomainThyraMode_); }
+    RCP<const Map > getDomainMap(size_t i) const    { return domainmaps_->getMap(i, bDomainThyraMode_); }
+
+    //! \brief Returns the Map associated with the i'th block domain of this operator.
+    RCP<const Map > getDomainMap(size_t i, bool bThyraMode) const    { return domainmaps_->getMap(i, bThyraMode); }
 
     //! Returns the Map associated with the full range of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
     RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
 
     //! Returns the Map associated with the i'th block range of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
+    RCP<const Map > getRangeMap(size_t i) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
+
+    //! Returns the Map associated with the i'th block range of this operator.
+    RCP<const Map > getRangeMap(size_t i, bool bThyraMode) const     { return rangemaps_->getMap(i, bThyraMode); }
 
     //! Returns map extractor class for range map
     RCP<const MapExtractor> getRangeMapExtractor() const { return rangemaps_; }
