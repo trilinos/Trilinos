@@ -50,7 +50,7 @@
 #include "Phalanx_MDField_Utilities.hpp"
 
 //#define PANZER_USE_FAST_SUM 1
-#define PANZER_USE_FAST_SUM 0
+#define PANZER_USE_FAST_SUM 1
 
 namespace panzer {
 
