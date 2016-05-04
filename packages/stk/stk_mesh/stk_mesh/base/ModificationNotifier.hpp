@@ -22,6 +22,13 @@ public:
         observers.push_back(observer);
     }
 
+    void unregister_observer(ModificationObserver *observer)
+    {
+        auto iter = std::find(observers.begin(), observers.end(), observer);
+        if(iter != observers.end())
+            observers.erase(iter);
+    }
+
     void notify_entity_added(stk::mesh::Entity entity)
     {
         for(ModificationObserver *observer : observers)

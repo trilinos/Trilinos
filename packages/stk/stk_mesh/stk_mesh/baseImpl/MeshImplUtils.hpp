@@ -77,6 +77,7 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               std::vector<EntityProc> & shared_change ,
                                               std::vector<EntityProc> & ghosted_change );
 
+stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys);
 
 void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,

@@ -3,9 +3,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include "BulkDataTester.hpp"
 
-namespace stk { namespace unit_test_util {
+namespace stk { namespace mesh {
 
 stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData)
 {
@@ -14,7 +13,7 @@ stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::B
 
     stk::mesh::EntityVector sidesThatNeedFixing;
     for(stk::mesh::Entity side : sides)
-        if(bulkData.state(side) == stk::mesh::Created || bulkData.state(side) == stk::mesh::Modified)
+        if(bulkData.state(side) == stk::mesh::Created)
         {
             unsigned num_nodes = bulkData.num_nodes(side);
             const stk::mesh::Entity* nodes = bulkData.begin_nodes(side);
@@ -54,65 +53,6 @@ stk::mesh::impl::ElementViaSidePair find_element_side_ord_for_side(const stk::me
     return stk::mesh::impl::ElementViaSidePair{stk::mesh::Entity(),0};
 }
 
-void resolve_parallel_side_connections(BulkDataElemGraphFaceSharingTester& bulkData, std::vector<stk::unit_test_util::SideSharingData>& sideSharingDataToSend,
-                                       std::vector<stk::unit_test_util::SideSharingData>& sideSharingDataReceived)
-{
-    std::vector<stk::mesh::impl::IdViaSidePair> idAndSides;
-
-    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(bulkData);
-
-    stk::unit_test_util::fill_sharing_data(bulkData, sharedSides, sideSharingDataToSend, idAndSides);
-
-    stk::CommSparse comm(bulkData.parallel());
-    stk::unit_test_util::allocate_and_send(comm, sideSharingDataToSend, idAndSides);
-    stk::unit_test_util::unpack_data(comm, bulkData.parallel_rank(), bulkData.parallel_size(), sideSharingDataReceived);
-    stk::mesh::EntityVector sideNodes;
-    for(stk::unit_test_util::SideSharingData &sideSharingData : sideSharingDataReceived)
-    {
-        stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
-        int sideOrdinal = sideSharingData.elementAndSide.side;
-        stk::topology side_topology = bulkData.bucket(element).topology().side_topology(sideOrdinal);
-        stk::mesh::Part& sidePart = bulkData.mesh_meta_data().get_topology_root_part(side_topology);
-        stk::mesh::EntityVector sideNodeEntities(sideSharingData.sideNodes.size());
-        for(size_t i=0; i<sideNodeEntities.size(); ++i) {
-            sideNodeEntities[i] = bulkData.get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
-        }
-
-        stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, element, sideOrdinal);
-        stk::mesh::EntityRank sideRank = bulkData.mesh_meta_data().side_rank();
-        if(!bulkData.is_valid(side))
-        {
-            stk::mesh::impl::fill_element_side_nodes_from_topology(bulkData, element, sideOrdinal, sideNodes);
-
-            // MANOJ: communicate keys instead of ids, and this will be better.
-
-            stk::mesh::EntityVector localNodesOrderedByNeighbor(sideSharingData.sideNodes.size());
-            for(size_t i=0;i<localNodesOrderedByNeighbor.size();++i)
-                localNodesOrderedByNeighbor[i] = bulkData.get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
-
-            std::pair<bool,unsigned> result = bulkData.bucket(element).topology().side_topology(sideOrdinal).equivalent(sideNodes, localNodesOrderedByNeighbor);
-            ThrowRequireWithSierraHelpMsg(result.first);
-            stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
-
-            side = stk::mesh::impl::connect_side_to_element(bulkData, element, sideSharingData.chosenSideId,
-                                                            static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal), perm, stk::mesh::PartVector{&sidePart});
-        }
-        else
-        {
-            if (bulkData.parallel_rank() != sideSharingData.owningProc)
-            {
-                bulkData.my_internal_change_entity_key(bulkData.entity_key(side), stk::mesh::EntityKey(sideRank, sideSharingData.chosenSideId), side);
-                std::vector<stk::mesh::EntityKey> nodeKeys(sideSharingData.sideNodes.size());
-                for(size_t i=0;i<sideSharingData.sideNodes.size();++i)
-                    nodeKeys[i] = stk::mesh::EntityKey(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
-
-                bulkData.change_connectivity_for_edge_or_face(side, nodeKeys);
-            }
-        }
-        sideSharingData.side = side;
-    }
-}
-
 stk::mesh::impl::ElementViaSidePair get_element_and_side_ordinal(const stk::mesh::BulkData& bulkData, stk::mesh::Entity side)
 {
     unsigned num_elements = bulkData.num_elements(side);
@@ -120,14 +60,29 @@ stk::mesh::impl::ElementViaSidePair get_element_and_side_ordinal(const stk::mesh
     return find_element_side_ord_for_side(bulkData, num_elements, elements, side);
 }
 
-void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector& sidesThatNeedFixing, std::vector<SideSharingData>& sideSharingDataThisProc, std::vector<stk::mesh::impl::IdViaSidePair>& idAndSides)
+const unsigned * get_first_part_after_owned_and_shared(const stk::mesh::PartOrdinal sharedOrd, const unsigned *start, const unsigned *end)
+{
+    const unsigned skipUniversalAndOwned = 2;
+    start += skipUniversalAndOwned;
+    if(start < end && *start == sharedOrd)
+        start++;
+    return start;
+}
+
+void fill_part_ordinals_besides_owned_and_shared(const stk::mesh::Bucket &bucket, const stk::mesh::PartOrdinal sharedOrd, stk::mesh::OrdinalVector &partOrdinals)
+{
+    std::pair<const unsigned *, const unsigned *> partOrdinalRange = bucket.superset_part_ordinals();
+    const unsigned *start = get_first_part_after_owned_and_shared(sharedOrd, partOrdinalRange.first, partOrdinalRange.second);
+    partOrdinals.assign(start, partOrdinalRange.second);
+}
+
+void fill_sharing_data(stk::mesh::BulkData& bulkData, stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector& sidesThatNeedFixing, std::vector<SideSharingData>& sideSharingDataThisProc, std::vector<stk::mesh::impl::IdViaSidePair>& idAndSides)
 {
     // Element 1, side 5: face 15
     // Element 2, side 3: face 23
     // Are these faces the same? Yes: delete face 23, then connect face 15 to element 2 with negative permutation
 
-    stk::mesh::ElemElemGraph graph(bulkData);
-
+    const stk::mesh::PartOrdinal sharedOrd = bulkData.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal();
     for(size_t i=0;i<sidesThatNeedFixing.size();++i)
     {
         stk::mesh::impl::ElementViaSidePair elementAndSide = get_element_and_side_ordinal(bulkData, sidesThatNeedFixing[i]);
@@ -151,6 +106,8 @@ void fill_sharing_data(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVec
                     localTemp.sideNodes[j] = bulkData.identifier(nodes[j]);
                 }
 
+                fill_part_ordinals_besides_owned_and_shared(bulkData.bucket(sidesThatNeedFixing[i]), sharedOrd, localTemp.partOrdinals);
+
                 sideSharingDataThisProc.push_back(localTemp);
 
                 stk::mesh::EntityId localId = -edge.elem2();
@@ -172,6 +129,10 @@ void pack_data(stk::CommSparse& comm, const std::vector<SideSharingData>& sideSh
         for(stk::mesh::EntityId nodeId : sideSharingDataThisProc[i].sideNodes) {
             comm.send_buffer(other_proc).pack<stk::mesh::EntityId>(nodeId);
         }
+        comm.send_buffer(other_proc).pack<size_t>(sideSharingDataThisProc[i].partOrdinals.size());
+        for(stk::mesh::PartOrdinal partOrd : sideSharingDataThisProc[i].partOrdinals) {
+            comm.send_buffer(other_proc).pack<stk::mesh::PartOrdinal>(partOrd);
+        }
     }
 }
 
@@ -181,6 +142,17 @@ void allocate_and_send(stk::CommSparse& comm, const std::vector<SideSharingData>
     comm.allocate_buffers();
     pack_data(comm, sideSharingDataThisProc, idAndSides);
     comm.communicate();
+}
+
+template <typename T>
+void unpack_vector(CommBuffer &buffer, std::vector<T> &vec)
+{
+    size_t size;
+    buffer.unpack<size_t>(size);
+    vec.resize(size);
+    for(unsigned j=0; j<size; ++j) {
+        buffer.unpack<T>(vec[j]);
+    }
 }
 
 void unpack_data(stk::CommSparse& comm, int my_proc_id, int num_procs, std::vector<SideSharingData>& sideSharingDataThisProc)
@@ -199,12 +171,8 @@ void unpack_data(stk::CommSparse& comm, int my_proc_id, int num_procs, std::vect
             localTemp.owningProc = std::min(my_proc_id, i);;
             localTemp.sharingProc = i;
             localTemp.chosenSideId = chosenId;
-            size_t numNodes;
-            comm.recv_buffer(i).unpack<size_t>(numNodes);
-            localTemp.sideNodes.resize(numNodes);
-            for(unsigned j=0; j<numNodes; ++j) {
-                comm.recv_buffer(i).unpack<stk::mesh::EntityId>(localTemp.sideNodes[j]);
-            }
+            unpack_vector(comm.recv_buffer(i), localTemp.sideNodes);
+            unpack_vector(comm.recv_buffer(i), localTemp.partOrdinals);
 
             sideSharingDataThisProc.push_back(localTemp);
         }

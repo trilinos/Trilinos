@@ -460,6 +460,13 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
+stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+{
+    stk::mesh::EntityVector nodes(node_keys.size());
+    for (size_t i=0;i<nodes.size();++i)
+        nodes[i] = bulk.get_entity(node_keys[i]);
+    return nodes;
+}
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector )
 {

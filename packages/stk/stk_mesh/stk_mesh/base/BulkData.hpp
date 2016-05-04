@@ -96,7 +96,9 @@ namespace mesh {
 class SideConnector;
 class BulkData;
 struct PartStorage;
+struct SideSharingData;
 enum class FaceCreationBehavior;
+
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data_old(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -751,8 +753,10 @@ public:
   const std::string & get_last_modification_description() const { return m_lastModificationDescription; }
 
   void register_observer(stk::mesh::ModificationObserver *observer);
+  void unregister_observer(ModificationObserver *observer);
 
   void initialize_face_adjacent_element_graph();
+  void delete_face_adjacent_element_graph();
   stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
@@ -1085,6 +1089,12 @@ protected: //functions
 
   void set_modification_summary_proc_id(int proc_id) { m_modSummary.set_proc_id(proc_id); }
   virtual void notify_finished_mod_end();
+
+  void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
+  void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
+  void resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+                                         std::vector<SideSharingData>& sideSharingDataReceived);
+  void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 
 private: //functions
 

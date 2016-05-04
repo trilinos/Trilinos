@@ -34,6 +34,7 @@ protected:
         setup_empty_mesh(auraOption);
         stk::unit_test_util::read_from_serial_file_and_decompose("ARA.e", get_bulk(), "cyclic");
         stk::mesh::Part& skinnedPart = SideTestUtil::run_skin_mesh(get_bulk(), get_things_to_skin(get_bulk()));
+
         run_modification(skinnedPart);
         EXPECT_FALSE(stk::mesh::check_exposed_block_boundary_sides(get_bulk(), get_things_to_skin(get_bulk()), skinnedPart));
     }
@@ -66,7 +67,7 @@ protected:
 private:
     void add_extra_face_to_skin(stk::mesh::Part &skin)
     {
-        if(get_bulk().parallel_rank() == 1) {
+        if(get_bulk().parallel_rank() == 0) {
             stk::mesh::EntityVector notSkinFaces = get_faces(!skin);
             ASSERT_EQ(1u, notSkinFaces.size());
             get_bulk().change_entity_parts(notSkinFaces[0], {&skin});

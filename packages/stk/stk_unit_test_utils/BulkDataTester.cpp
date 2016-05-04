@@ -151,64 +151,6 @@ void BulkDataTester::check_sharing_comm_maps()
 
 ///////////////////////////
 
-unsigned BulkDataFaceSharingTester::get_index_of_side_in_element_bucket(stk::mesh::Entity element, stk::mesh::Entity side)
-{
-    unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
-    unsigned num_edges_or_faces = this->num_connectivity(element, this->entity_rank(side));
-    const stk::mesh::Entity* entities = this->begin(element, this->entity_rank(side));
-    for(unsigned j=0;j<num_edges_or_faces;++j)
-    {
-        if (entities[j]==side)
-        {
-            elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(j);
-            break;
-        }
-    }
-    return elements_edge_offset;
-}
-
-stk::mesh::Permutation BulkDataFaceSharingTester::get_permutation(stk::mesh::Entity element, const stk::mesh::EntityVector& nodes)
-{
-    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
-                  stk::mesh::get_ordinal_and_permutation(*this, element, mesh_meta_data().side_rank(), nodes);
-    return ordinalAndPermutation.second;
-}
-
-stk::mesh::EntityVector BulkDataFaceSharingTester::convert_keys_to_entities(const std::vector<stk::mesh::EntityKey>& node_keys)
-{
-    stk::mesh::EntityVector nodes(node_keys.size());
-    for (size_t i=0;i<nodes.size();++i)
-        nodes[i] = this->get_entity(node_keys[i]);
-    return nodes;
-}
-
-void BulkDataFaceSharingTester::change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys)
-{
-    stk::mesh::EntityVector nodes = convert_keys_to_entities(node_keys);
-
-    unsigned num_elems = this->num_elements(side);
-    const stk::mesh::Entity *elements = this->begin_elements(side);
-    for (unsigned i=0;i<num_elems;++i)
-    {
-        if(bucket(elements[i]).owned())
-        {
-            stk::mesh::unit_test::BucketTester& bucket_edge = static_cast<stk::mesh::unit_test::BucketTester&>(this->bucket(side));
-            bucket_edge.my_change_exisiting_connectivity(this->bucket_ordinal(side), &nodes[0]);
-
-            stk::mesh::Permutation new_permutation = get_permutation(elements[i], nodes);
-            ThrowRequireWithSierraHelpMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION);
-
-
-            unsigned edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
-            bucket_edge.my_change_exisiting_permutation_for_connected_element(this->bucket_ordinal(side), edges_element_offset, new_permutation);
-
-            unsigned elements_edge_offset = get_index_of_side_in_element_bucket(elements[i], side);
-            stk::mesh::unit_test::BucketTester& bucket_elem = static_cast<stk::mesh::unit_test::BucketTester&>(this->bucket(elements[i]));
-            bucket_elem.my_change_exisiting_permutation_for_connected_edge(this->bucket_ordinal(elements[i]), elements_edge_offset, new_permutation);
-        }
-    }
-}
-
 void BulkDataFaceSharingTester::change_entity_key_and_nodes(const std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides)
 {
     for(size_t i = 0, e = potentially_shared_sides.size(); i < e; ++i)
@@ -281,7 +223,7 @@ void BulkDataFaceSharingTester::connect_side_from_other_proc_to_local_elements(c
 
 void BulkDataFaceSharingTester::create_and_connect_shared_face_on_this_proc(const stk::mesh::shared_entity_type &shared_entity_other_proc, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id)
 {
-    stk::mesh::EntityVector nodes = convert_keys_to_entities(shared_entity_other_proc.nodes);
+    stk::mesh::EntityVector nodes = stk::mesh::impl::convert_keys_to_entities(*this, shared_entity_other_proc.nodes);
     stk::mesh::EntityVector elements = get_elements_connected_to_all_nodes(*this, nodes);
     connect_side_from_other_proc_to_local_elements(elements, nodes, shared_entity_other_proc, *this, shared_entities_this_proc, other_proc_id);
 }
@@ -295,38 +237,6 @@ void BulkDataFaceSharingTester::check_if_entity_from_other_proc_exists_on_this_p
         update_shared_entity_this_proc2(shared_entity_other_proc.global_key, shared_entities_this_proc[matching_index], proc_id, shared_entity_other_proc.nodes);
     else
         create_and_connect_shared_face_on_this_proc(shared_entity_other_proc, shared_entities_this_proc, proc_id);
-}
-
-///////////////////////////
-
-void BulkDataElemGraphFaceSharingTester::add_comm_map_for_sharing(const std::vector<stk::unit_test_util::SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities)
-{
-    for(const stk::unit_test_util::SideSharingData &sideSharingData : sidesSharingData)
-    {
-        shared_entities.push_back(sideSharingData.side);
-        my_entity_comm_map_insert(sideSharingData.side, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sideSharingData.sharingProc));
-    }
-}
-
-void BulkDataElemGraphFaceSharingTester::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities)
-{
-    std::vector<stk::unit_test_util::SideSharingData> sideSharingDataReceived;
-    std::vector<stk::unit_test_util::SideSharingData> sideSharingDataToSend;
-
-    stk::unit_test_util::resolve_parallel_side_connections(*this, sideSharingDataToSend, sideSharingDataReceived);
-
-    add_comm_map_for_sharing(sideSharingDataToSend, shared_entities);
-    add_comm_map_for_sharing(sideSharingDataReceived, shared_entities);
-
-    std::sort(shared_entities.begin(), shared_entities.end(), stk::mesh::EntityLess(*this));
-}
-
-void BulkDataElemGraphFaceSharingTester::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, stk::mesh::EntityVector& shared_new)
-{
-    if(rank == mesh_meta_data().side_rank())
-        use_elem_elem_graph_to_determine_shared_entities(shared_new);
-    else
-        BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(rank, shared_new);
 }
 
 } } // namespace stk unit_test_util

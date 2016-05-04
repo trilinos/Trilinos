@@ -1185,13 +1185,13 @@ namespace stk {
   namespace io {
 
     StkMeshIoBroker::StkMeshIoBroker()
-      : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDESET_FACE_CREATION_CURRENT)
+      : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
 
     StkMeshIoBroker::StkMeshIoBroker(stk::ParallelMachine comm, const stk::mesh::ConnectivityMap * connectivity_map)
-      : m_communicator(comm), m_connectivity_map(connectivity_map), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDESET_FACE_CREATION_CURRENT)
+      : m_communicator(comm), m_connectivity_map(connectivity_map), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -1494,6 +1494,8 @@ namespace stk {
             bulk_data().initialize_face_adjacent_element_graph();
             process_sidesets(*region,      bulk_data(), m_sideset_face_creation_behavior);
             bulk_data().modification_end_after_node_sharing_resolution();
+
+            bulk_data().delete_face_adjacent_element_graph();
         }
 
         // Not sure if this is needed anymore. Don't think it'll be called with a nested modification cycle

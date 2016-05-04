@@ -78,6 +78,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
+#include <stk_mesh/baseImpl/elementGraph/SideSharingUsingGraph.hpp>
 
 
 namespace stk {
@@ -921,9 +922,9 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
 
 void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key, Entity entity)
 {
-  m_entity_repo.update_entity_key(new_key, old_key, entity);
-  set_entity_key(entity, new_key);
-  m_bucket_repository.set_needs_to_be_sorted(this->bucket(entity), true);
+    m_entity_repo.update_entity_key(new_key, old_key, entity);
+    set_entity_key(entity, new_key);
+    m_bucket_repository.set_needs_to_be_sorted(this->bucket(entity), true);
 }
 
 //----------------------------------------------------------------------
@@ -1425,6 +1426,11 @@ void BulkData::allocate_field_data()
 void BulkData::register_observer(ModificationObserver *observer)
 {
     notifier.register_observer(observer);
+}
+
+void BulkData::unregister_observer(ModificationObserver *observer)
+{
+    notifier.unregister_observer(observer);
 }
 
 void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
@@ -3730,12 +3736,158 @@ void BulkData::extract_entity_from_shared_entity_type(const std::vector<shared_e
     }
 }
 
+stk::mesh::Permutation get_permutation(stk::mesh::BulkData &bulk, stk::mesh::Entity element, const stk::mesh::EntityVector& nodes)
+{
+    std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation =
+                  stk::mesh::get_ordinal_and_permutation(bulk, element, bulk.mesh_meta_data().side_rank(), nodes);
+    return ordinalAndPermutation.second;
+}
+
+unsigned get_index_of_side_in_element_bucket(stk::mesh::BulkData &bulk, stk::mesh::Entity element, stk::mesh::Entity side)
+{
+    unsigned elements_edge_offset = stk::mesh::INVALID_CONNECTIVITY_ORDINAL;
+    unsigned num_edges_or_faces = bulk.num_connectivity(element, bulk.entity_rank(side));
+    const stk::mesh::Entity* entities = bulk.begin(element, bulk.entity_rank(side));
+    for(unsigned j=0;j<num_edges_or_faces;++j)
+    {
+        if (entities[j]==side)
+        {
+            elements_edge_offset = static_cast<stk::mesh::ConnectivityOrdinal>(j);
+            break;
+        }
+    }
+    return elements_edge_offset;
+}
+
+void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys)
+{
+    stk::mesh::EntityVector nodes = impl::convert_keys_to_entities(*this, node_keys);
+
+    unsigned num_elems = this->num_elements(side);
+    const stk::mesh::Entity *elements = this->begin_elements(side);
+    for (unsigned i=0;i<num_elems;++i)
+    {
+        if(bucket(elements[i]).owned())
+        {
+            stk::mesh::Bucket& bucket_edge = bucket(side);
+            bucket_edge.change_existing_connectivity(bucket_ordinal(side), &nodes[0]);
+
+            stk::mesh::Permutation new_permutation = get_permutation(*this, elements[i], nodes);
+            ThrowRequireWithSierraHelpMsg(new_permutation!=stk::mesh::INVALID_PERMUTATION);
+
+            unsigned edges_element_offset = static_cast<stk::mesh::ConnectivityOrdinal>(i);
+            bucket_edge.change_existing_permutation_for_connected_element(bucket_ordinal(side), edges_element_offset, new_permutation);
+
+            unsigned elements_edge_offset = get_index_of_side_in_element_bucket(*this, elements[i], side);
+            stk::mesh::Bucket& bucket_elem = bucket(elements[i]);
+            bucket_elem.change_existing_permutation_for_connected_edge(bucket_ordinal(elements[i]), elements_edge_offset, new_permutation);
+        }
+    }
+}
+
+void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
+                                    const OrdinalVector& input_ordinals,
+                                    stk::mesh::PartVector& output_parts)
+{
+    output_parts.clear();
+    output_parts.reserve(input_ordinals.size());
+    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
+    {
+        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
+    }
+}
+
+void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
+                                                 std::vector<SideSharingData>& sideSharingDataReceived)
+{
+    std::vector<stk::mesh::impl::IdViaSidePair> idAndSides;
+
+    stk::mesh::EntityVector sharedSides = fill_shared_entities_that_need_fixing(*this);
+
+    fill_sharing_data(*this, *m_elemElemGraph, sharedSides, sideSharingDataToSend, idAndSides);
+
+    stk::CommSparse comm(parallel());
+    allocate_and_send(comm, sideSharingDataToSend, idAndSides);
+    unpack_data(comm, parallel_rank(), parallel_size(), sideSharingDataReceived);
+    stk::mesh::EntityVector sideNodes;
+    for(SideSharingData &sideSharingData : sideSharingDataReceived)
+    {
+        stk::mesh::Entity element = get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
+        int sideOrdinal = sideSharingData.elementAndSide.side;
+        stk::mesh::PartVector addParts;
+        convert_part_ordinals_to_parts(mesh_meta_data(), sideSharingData.partOrdinals, addParts);
+        stk::mesh::EntityVector sideNodeEntities(sideSharingData.sideNodes.size());
+        for(size_t i=0; i<sideNodeEntities.size(); ++i)
+            sideNodeEntities[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
+
+        stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(*this, element, sideOrdinal);
+        stk::mesh::EntityRank sideRank = mesh_meta_data().side_rank();
+        if(!is_valid(side))
+        {
+            stk::mesh::impl::fill_element_side_nodes_from_topology(*this, element, sideOrdinal, sideNodes);
+            stk::mesh::EntityVector localNodesOrderedByNeighbor(sideSharingData.sideNodes.size());
+            for(size_t i=0;i<localNodesOrderedByNeighbor.size();++i)
+                localNodesOrderedByNeighbor[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
+
+            std::pair<bool,unsigned> result = bucket(element).topology().side_topology(sideOrdinal).equivalent(sideNodes, localNodesOrderedByNeighbor);
+            ThrowRequireWithSierraHelpMsg(result.first);
+            stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
+
+            side = stk::mesh::impl::connect_side_to_element(*this, element, sideSharingData.chosenSideId,
+                                                            static_cast<stk::mesh::ConnectivityOrdinal>(sideOrdinal), perm, addParts);
+        }
+        else
+        {
+            if (parallel_rank() != sideSharingData.owningProc)
+            {
+                stk::mesh::EntityKey newKey(sideRank, sideSharingData.chosenSideId);
+                stk::mesh::EntityKey existingKey = entity_key(side);
+                internal_change_entity_key(existingKey, newKey, side);
+
+                std::vector<stk::mesh::EntityKey> nodeKeys(sideSharingData.sideNodes.size());
+                for(size_t i=0;i<sideSharingData.sideNodes.size();++i)
+                    nodeKeys[i] = stk::mesh::EntityKey(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
+
+                change_connectivity_for_edge_or_face(side, nodeKeys);
+            }
+        }
+        sideSharingData.side = side;
+    }
+}
+
+void BulkData::add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities)
+{
+    for(const SideSharingData &sideSharingData : sidesSharingData)
+    {
+        shared_entities.push_back(sideSharingData.side);
+        entity_comm_map_insert(sideSharingData.side, stk::mesh::EntityCommInfo(stk::mesh::BulkData::SHARED, sideSharingData.sharingProc));
+    }
+}
+
+void BulkData::use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities)
+{
+    std::vector<SideSharingData> sideSharingDataReceived;
+    std::vector<SideSharingData> sideSharingDataToSend;
+
+    resolve_parallel_side_connections(sideSharingDataToSend, sideSharingDataReceived);
+
+    add_comm_map_for_sharing(sideSharingDataToSend, shared_entities);
+    add_comm_map_for_sharing(sideSharingDataReceived, shared_entities);
+
+    std::sort(shared_entities.begin(), shared_entities.end(), stk::mesh::EntityLess(*this));
+}
+
 void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new)
 {
-    std::vector<shared_entity_type> potentially_shared_entities;
-    this->markEntitiesForResolvingSharingInfoUsingNodes(rank, potentially_shared_entities);
-    set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map( potentially_shared_entities );
-    this->extract_entity_from_shared_entity_type(potentially_shared_entities, shared_new);
+    if(m_elemElemGraph != nullptr &&  rank == mesh_meta_data().side_rank())
+        use_elem_elem_graph_to_determine_shared_entities(shared_new);
+    else
+    {
+        std::vector<shared_entity_type> potentially_shared_entities;
+        markEntitiesForResolvingSharingInfoUsingNodes(rank, potentially_shared_entities);
+        set_common_entity_key_and_fix_ordering_of_nodes_and_update_comm_map( potentially_shared_entities );
+        extract_entity_from_shared_entity_type(potentially_shared_entities, shared_new);
+    }
 }
 
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(
@@ -4917,16 +5069,6 @@ void filter_out_unneeded_induced_parts(stk::mesh::BulkData& bulkData, stk::mesh:
         {
             remove_parts.push_back(part);
         }
-    }
-}
-
-void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta, const OrdinalVector& input_ordinals, stk::mesh::PartVector& output_parts)
-{
-    output_parts.clear();
-    output_parts.reserve(input_ordinals.size());
-    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
-    {
-        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
     }
 }
 
@@ -7250,6 +7392,12 @@ void BulkData::initialize_face_adjacent_element_graph()
         m_elemElemGraphUpdater = new ElemElemGraphUpdater(*this,*m_elemElemGraph);
         register_observer(m_elemElemGraphUpdater);
     }
+}
+
+void BulkData::delete_face_adjacent_element_graph()
+{
+    unregister_observer(m_elemElemGraphUpdater);
+    delete m_elemElemGraph; m_elemElemGraph = nullptr;
 }
 
 stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph()

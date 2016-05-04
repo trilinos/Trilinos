@@ -3,7 +3,6 @@
 
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_unit_test_utils/SideSharingUsingGraph.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 class FaceCreatorFixture : public stk::unit_test_util::MeshFixture
@@ -12,10 +11,11 @@ protected:
 
     FaceCreatorFixture(unsigned spatial_dim = 3) : MeshFixture(spatial_dim) {}
 
-    virtual ~FaceCreatorFixture() {}
+    virtual ~FaceCreatorFixture() { }
 
     void test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary()
     {
+        get_bulk().initialize_face_adjacent_element_graph();
         each_proc_make_face_on_proc_boundary();
         test_that_num_sides_is_expected_value(1);
     }

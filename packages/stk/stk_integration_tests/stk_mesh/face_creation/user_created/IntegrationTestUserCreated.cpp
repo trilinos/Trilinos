@@ -147,7 +147,7 @@ protected:
                        stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         stk::mesh::MetaData metaData;
-        stk::unit_test_util::BulkDataElemGraphFaceSharingTester bulkData(metaData, communicator, auraOption);
+        stk::mesh::BulkData bulkData(metaData, communicator, auraOption);
         bool allOk = true;
         try
         {

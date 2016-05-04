@@ -72,9 +72,10 @@ protected:
 
     void setup_2x1_2d_mesh(stk::mesh::BulkData::AutomaticAuraOption aura_option)
     {
-        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), aura_option));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), aura_option));
         unsigned numX = 2, numY = 1;
         convert_quad_fixture_to_my_bulk_data_flavor(numX, numY, get_bulk());
+        get_bulk().initialize_face_adjacent_element_graph();
     }
 
     virtual stk::mesh::EntityVector get_nodes_of_face_for_this_proc()

@@ -5,7 +5,6 @@
 #include <stk_unit_test_utils/BulkDataTester.hpp>
 #include "../FaceCreatorFixture.hpp"
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include <stk_unit_test_utils/SideSharingUsingGraph.hpp>
 
 namespace
 {
@@ -15,7 +14,7 @@ class UnitTestFaceSharingUsingGraph : public FaceCreatorFixture
 protected:
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), auraOption));
     }
 
     virtual void test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face()
@@ -52,6 +51,7 @@ protected:
     void run(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         setup_mesh("generated:1x1x2", auraOption);
+        get_bulk().initialize_face_adjacent_element_graph();
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
 
         EXPECT_EQ(4u, stk::mesh::count_selected_entities(get_meta().globally_shared_part(), get_bulk().buckets(stk::topology::NODE_RANK)));
