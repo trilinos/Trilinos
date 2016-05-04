@@ -832,10 +832,12 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
     // Check if user has specified his own status tests
     if (params->isSublist ("User Status Tests")) {
       Teuchos::ParameterList userStatusTestsList = params->sublist("User Status Tests",true);
-      std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
-      Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
-      setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
-      taggedTests_ = testFactory->getTaggedTests();
+      if ( userStatusTestsList.numParams() > 0 ) {
+	std::string userCombo_string = params->get<std::string>("User Status Tests Combo Type", "SEQ");
+	Teuchos::RCP<StatusTestFactory<ScalarType,MV,OP> > testFactory = Teuchos::rcp(new StatusTestFactory<ScalarType,MV,OP>());
+	setUserConvStatusTest( testFactory->buildStatusTests(userStatusTestsList), testFactory->stringToComboType(userCombo_string) );
+	taggedTests_ = testFactory->getTaggedTests();
+      }
     }
   }
 
