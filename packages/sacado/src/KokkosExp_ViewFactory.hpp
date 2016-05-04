@@ -48,6 +48,7 @@
 
 #include "Sacado_Traits.hpp"
 #include "KokkosExp_View_Fad.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
 namespace Kokkos {
 
@@ -96,13 +97,40 @@ struct ViewFactory {
   static ResultView
   create_view(const ViewPack& ... views,
               const CtorProp& prop,
-              const Dims ... dims)
-    {
-      typename ResultView::array_layout layout(dims...);
-      layout.dimension[ unsigned(ResultView::rank) ] =
-        dimension_scalar(views...);
-      return ResultView(prop, layout);
-    }
+              const Dims ... dims) {
+    typename ResultView::array_layout layout(dims...);
+    const unsigned rank = computeRank(layout);
+    layout.dimension[rank] = dimension_scalar(views...);
+    return ResultView(prop, layout);
+  }
+
+  // Compute the view rank from the dimension arguments
+  // This allows the code to work for both static and dynamic-rank views
+  template <typename Layout>
+  static size_t
+  computeRank(const Layout& layout) {
+    return computeRank( layout.dimension[0], layout.dimension[1],
+                        layout.dimension[2], layout.dimension[3],
+                        layout.dimension[4], layout.dimension[5],
+                        layout.dimension[6], layout.dimension[7] );
+  }
+
+  // Compute the view rank from the dimension arguments
+  // This allows the code to work for both static and dynamic-rank views
+  static size_t
+  computeRank(
+    const size_t N0, const size_t N1, const size_t N2, const size_t N3,
+    const size_t N4, const size_t N5, const size_t N6, const size_t N7 ) {
+    return  ( (N7 == 0) ?
+            ( (N6 == 0) ?
+            ( (N5 == 0) ?
+            ( (N4 == 0) ?
+            ( (N3 == 0) ?
+            ( (N2 == 0) ?
+            ( (N1 == 0) ?
+            ( (N0 == 0) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
+  }
+
 };
 
 }
