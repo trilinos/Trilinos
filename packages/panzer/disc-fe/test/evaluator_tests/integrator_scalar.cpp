@@ -97,7 +97,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 4, dim = 2;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -221,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;
@@ -353,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 
   // build a dummy workset
   //////////////////////////////////////////////////////////
-  typedef Intrepid2::FieldContainer<double> FieldArray;
+  typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
   int numCells = 2, numVerts = 8, dim = 3;
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   // FieldArray & coords = workset->cell_vertex_coordinates;

@@ -48,7 +48,7 @@
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "PanzerCore_config.hpp"
 
@@ -65,7 +65,7 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {

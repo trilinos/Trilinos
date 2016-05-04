@@ -116,4 +116,6 @@ namespace panzer {
 
 } // namespace panzer
 
+#include "Panzer_PointValues2_impl.hpp"
+
 #endif

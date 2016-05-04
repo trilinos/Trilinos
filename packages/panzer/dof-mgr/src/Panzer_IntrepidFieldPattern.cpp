@@ -184,7 +184,7 @@ void Intrepid2FieldPattern::buildSubcellClosure(const shards::CellTopology & cel
 
 bool Intrepid2FieldPattern::supportsInterpolatoryCoordinates() const
 {
-   typedef Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > CoordsInterface;
+   typedef Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > CoordsInterface;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -202,9 +202,9 @@ bool Intrepid2FieldPattern::supportsInterpolatoryCoordinates() const
   *
   * \param[in,out] coords   Coordinates associated with this field type.
   */
-void Intrepid2FieldPattern::getInterpolatoryCoordinates(Intrepid2::FieldContainer<double> & coords) const
+void Intrepid2FieldPattern::getInterpolatoryCoordinates(Kokkos::DynRankView<double,PHX::Device> & coords) const
 {
-   typedef Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > CoordsInterface;
+   typedef Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > CoordsInterface;
 
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
@@ -216,7 +216,7 @@ void Intrepid2FieldPattern::getInterpolatoryCoordinates(Intrepid2::FieldContaine
          = rcp_dynamic_cast<CoordsInterface>(intrepidBasis_,throwOnFail);
 
    // resize coordinates
-   coords.resize(intrepidBasis_->getCardinality(),getDimension());
+   Kokkos::realloc(coords,intrepidBasis_->getCardinality(),getDimension());
    coordsInterface->getDofCoords(coords);
 }
 
@@ -225,19 +225,19 @@ void Intrepid2FieldPattern::getInterpolatoryCoordinates(Intrepid2::FieldContaine
   *
   * \param[in,out] coords   Coordinates associated with this field type.
   */
-void Intrepid2FieldPattern::getInterpolatoryCoordinates(const Intrepid2::FieldContainer<double> & cellVertices,
-                                                       Intrepid2::FieldContainer<double> & coords) const
+void Intrepid2FieldPattern::getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
+                                                       Kokkos::DynRankView<double,PHX::Device> & coords) const
 {
    TEUCHOS_ASSERT(cellVertices.rank()==3);
 
    int numCells = cellVertices.dimension(0);
 
    // grab the local coordinates
-   Intrepid2::FieldContainer<double> localCoords;
+   Kokkos::DynRankView<double,PHX::Device> localCoords;
    getInterpolatoryCoordinates(localCoords);
 
    // resize the coordinates field container
-   coords.resize(numCells,localCoords.dimension(0),getDimension());
+   Kokkos::realloc(coords,numCells,localCoords.dimension(0),getDimension());
 
    if(numCells>0) {
       // map to phsyical coordinates

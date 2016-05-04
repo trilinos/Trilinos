@@ -40,48 +40,35 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_DIRICHLET_RESIDUAL_EDGEBASIS_HPP
-#define PANZER_EVALUATOR_DIRICHLET_RESIDUAL_EDGEBASIS_HPP
-
-#include "Teuchos_RCP.hpp"
-
-#include "Phalanx_Evaluator_Macros.hpp"
+#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Sacado.hpp"
+#include "Panzer_ViewFactory.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_MDField.hpp"
 
-#include "PanzerDiscFE_config.hpp"
-#include "Panzer_PureBasis.hpp"
-#include "Panzer_Dimension.hpp"
-#include "Panzer_PointRule.hpp"
-#include "Panzer_PointValues2.hpp"
+namespace panzer_test {
 
-#include "Kokkos_DynRankView.hpp"
+  TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
+  {
+    using FadType = Sacado::Fad::DFad<double>;
+    const int derivative_dim_plus_one = 7;
+				  
+    // Test a DynRankView from a DynRankView
+    {
+      Kokkos::DynRankView<FadType,PHX::Device> a("a",10,4,13,derivative_dim_plus_one);
+      TEST_EQUALITY(Kokkos::dimension_scalar(a),derivative_dim_plus_one);
+      auto b = panzer::createDynRankView(a,"b",5,3,8);
+      TEST_EQUALITY(Kokkos::dimension_scalar(b),derivative_dim_plus_one);
+    }
 
-#include "Panzer_Evaluator_Macros.hpp"
+    // Test a DynRankView from a View
+    {
+      Kokkos::View<FadType*,PHX::Device> a("a",8,derivative_dim_plus_one);
+      TEST_EQUALITY(Kokkos::dimension_scalar(a),derivative_dim_plus_one);
+      auto b = panzer::createDynRankView(a,"b",5,3,8);
+      TEST_EQUALITY(Kokkos::dimension_scalar(b),derivative_dim_plus_one);
+    }
 
-namespace panzer {
-    
-/** Evaluates a Dirichlet BC residual corresponding to a field value
-  * at a set of points defined by a point rule. Note that this assumes
-  * a vector basis is used.
-  */
-PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
-  PHX::MDField<const ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
-                                                    // by orientation to ensure
-                                                    // parallel consistency
-
-  Teuchos::RCP<const panzer::PureBasis> basis; 
-  Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
-  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
-
-  PointValues2<ScalarT,PHX::MDField> pointValues;
-
-PANZER_EVALUATOR_CLASS_END
-
+  }
 }
-
-#endif

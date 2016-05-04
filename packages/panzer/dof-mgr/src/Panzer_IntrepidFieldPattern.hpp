@@ -47,8 +47,8 @@
 
 // Trilinos includes
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_FieldContainer.hpp"
-
+#include "Kokkos_DynRankView.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
@@ -58,7 +58,7 @@ namespace panzer {
   */
 class Intrepid2FieldPattern : public FieldPattern {
 public:
-   Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > & intrepidBasis)
+   Intrepid2FieldPattern(const Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > & intrepidBasis)
       : intrepidBasis_(intrepidBasis) {}
 
    virtual int getSubcellCount(int dim) const;
@@ -123,18 +123,18 @@ public:
      *
      * \param[in,out] coords   Coordinates associated with this field type.
      */
-   void getInterpolatoryCoordinates(Intrepid2::FieldContainer<double> & coords) const;
+   void getInterpolatoryCoordinates(Kokkos::DynRankView<double,PHX::Device> & coords) const;
 
    /** Get the local coordinates for this field.
      *
      * \param[in] cellVertices   Coordinates associated with this field type.
      * \param[in,out] coords   Coordinates associated with this field type.
      */
-   void getInterpolatoryCoordinates(const Intrepid2::FieldContainer<double> & cellVertices,
-                                    Intrepid2::FieldContainer<double> & coords) const;
+   void getInterpolatoryCoordinates(const Kokkos::DynRankView<double,PHX::Device> & cellVertices,
+                                    Kokkos::DynRankView<double,PHX::Device> & coords) const;
 
 protected:
-   Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > >
+   Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > >
       intrepidBasis_;
    std::vector<int> empty_;
 };

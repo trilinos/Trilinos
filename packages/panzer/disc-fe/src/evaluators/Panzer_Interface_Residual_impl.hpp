@@ -115,7 +115,7 @@ PHX_EVALUATE_FIELDS(InterfaceResidual,workset)
     }
   }
 
-  // const Intrepid2::FieldContainer<double> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
+  // const Kokkos::DynRankView<double,PHX::Device> & weighted_basis = this->wda(workset).bases[basis_index]->weighted_basis;
   const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basis_index];
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {

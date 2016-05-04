@@ -144,9 +144,9 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid2::FieldContainer<int> & data)
+                        Kokkos::DynRankView<int,PHX::Device> & data)
 {
-   data.resize(1,4);
+  data = Kokkos::DynRankView<int,PHX::Device>("data",1,4);
 
    const std::vector<short> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
@@ -160,9 +160,9 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 void fillFieldContainer(int fieldNum,const std::string & blockId,
                         const panzer::UniqueGlobalIndexer<short,int> & ugi,
-                        Intrepid2::FieldContainer<int> & data,std::size_t cols)
+                        Kokkos::DynRankView<int,PHX::Device> & data,std::size_t cols)
 {
-   data.resize(1,4,cols);
+  data = Kokkos::DynRankView<int,PHX::Device>("data",1,4,cols);
 
    const std::vector<short> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
@@ -178,7 +178,7 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 {
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -262,7 +262,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -340,7 +340,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 {
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -408,7 +408,7 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
 
-   typedef Intrepid2::FieldContainer<int> IntFieldContainer;
+   typedef Kokkos::DynRankView<int,PHX::Device> IntFieldContainer;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

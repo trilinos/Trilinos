@@ -53,21 +53,21 @@ template
 Teuchos::RCP<std::vector<panzer::Workset> > 
 panzer::buildWorksets(const panzer::PhysicsBlock & pb,
 		      const std::vector<std::size_t>& local_cell_ids,
-		      const Intrepid2::FieldContainer<double>& vertex_coordinates);
+		      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
 
 template
 Teuchos::RCP<std::vector<panzer::Workset> > 
 panzer::buildWorksets(const WorksetNeeds & needs,
                       const std::string & elementBlock,
 		      const std::vector<std::size_t>& local_cell_ids,
-		      const Intrepid2::FieldContainer<double>& vertex_coordinates);
+		      const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
-		       const Intrepid2::FieldContainer<double>& vertex_coordinates);
+		       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates);
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
@@ -75,7 +75,7 @@ panzer::buildBCWorkset(const WorksetNeeds& needs,
                        const std::string& elementBlock,
                        const std::vector<std::size_t>& local_cell_ids,
                        const std::vector<std::size_t>& local_side_ids,
-                       const Intrepid2::FieldContainer<double>& vertex_coordinates,
+                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates,
                        const bool populate_value_arrays);
 
 template
@@ -83,22 +83,22 @@ Teuchos::RCP<std::vector<panzer::Workset> >
 panzer::buildEdgeWorksets(const panzer::PhysicsBlock &,
 	  	          const std::vector<std::size_t>&,
 		          const std::vector<std::size_t>&,
-		          const Intrepid2::FieldContainer<double>&,
+		          const Kokkos::DynRankView<double,PHX::Device>&,
                           const panzer::PhysicsBlock &,
 		          const std::vector<std::size_t>&,
 		          const std::vector<std::size_t>&,
-		          const Intrepid2::FieldContainer<double>&);
+		          const Kokkos::DynRankView<double,PHX::Device>&);
 
 template
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
                        const std::vector<std::size_t>& local_cell_ids_a,
                        const std::vector<std::size_t>& local_side_ids_a,
-                       const Intrepid2::FieldContainer<double>& vertex_coordinates_a,
+                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates_a,
                        const panzer::PhysicsBlock& pb_b,
                        const std::vector<std::size_t>& local_cell_ids_b,
                        const std::vector<std::size_t>& local_side_ids_b,
-                       const Intrepid2::FieldContainer<double>& vertex_coordinates_b);
+                       const Kokkos::DynRankView<double,PHX::Device>& vertex_coordinates_b);
 
 #endif
 

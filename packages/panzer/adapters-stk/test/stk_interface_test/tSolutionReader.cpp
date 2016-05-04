@@ -62,7 +62,7 @@
 
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
 #include "Epetra_MpiComm.h"
@@ -75,7 +75,7 @@ using Teuchos::rcp_dynamic_cast;
 #ifdef PANZER_HAVE_FEI
 Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY);
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 const double tolerance = 1.0e-14;
 

@@ -82,7 +82,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid2::FieldContainer<double> FieldArray;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)

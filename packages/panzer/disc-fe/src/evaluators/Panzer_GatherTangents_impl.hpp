@@ -48,6 +48,7 @@
 
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -102,7 +103,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Intrepid2::FieldContainer<ScalarT>(gatherFieldTangents.dimension(0),gatherFieldTangents.dimension(1),gatherFieldTangents.dimension(2));
+  edgeTan = panzer::createDynRankView(gatherFieldTangents.get_kokkos_view(),"edgeTan",gatherFieldTangents.dimension(0),gatherFieldTangents.dimension(1),gatherFieldTangents.dimension(2));
 }
 
 // **********************************************************************
@@ -118,10 +119,10 @@ evaluateFields(typename Traits::EvalData workset)
     int cellDim = parentCell.getDimension();
     int numEdges = gatherFieldTangents.dimension(1);
 
-    refEdgeTan = Intrepid2::FieldContainer<ScalarT>(numEdges,cellDim);
+    refEdgeTan = panzer::createDynRankView(gatherFieldTangents.get_kokkos_view(),"refEdgeTan",numEdges,cellDim);
 
     for(int i=0;i<numEdges;i++) {
-      Intrepid2::FieldContainer<double> refEdgeTan_local(cellDim);
+      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
       Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++)

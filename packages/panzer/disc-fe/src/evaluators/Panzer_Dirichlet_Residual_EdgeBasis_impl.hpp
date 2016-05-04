@@ -50,6 +50,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Panzer_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -115,7 +116,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = Intrepid2::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  edgeTan = panzer::createDynRankView(residual.get_kokkos_view(),"edgeTan",dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -146,10 +147,10 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     int cellDim = parentCell.getDimension();
     int numEdges = dof.dimension(1);
 
-    refEdgeTan = Intrepid2::FieldContainer<ScalarT>(numEdges,cellDim);
+    refEdgeTan = panzer::createDynRankView(residual.get_kokkos_view(),"refEdgeTan",numEdges,cellDim);
 
     for(int i=0;i<numEdges;i++) {
-      Intrepid2::FieldContainer<double> refEdgeTan_local(cellDim);
+      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
       Intrepid2::CellTools<double>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 

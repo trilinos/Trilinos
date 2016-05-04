@@ -89,7 +89,7 @@ namespace panzer {
 std::string note = "***   NOTE: UNIT TEST BASED ON MARCH 2012  ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
