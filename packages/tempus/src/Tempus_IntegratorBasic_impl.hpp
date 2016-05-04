@@ -166,7 +166,7 @@ bool IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
 
 template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList_)
+  const RCP<ParameterList> & pList_)
 {
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
   pList_->validateParameters(*this->getValidParameters());

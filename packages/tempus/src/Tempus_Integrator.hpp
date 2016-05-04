@@ -52,11 +52,11 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   //@}
 
   /// \name Overridden from Teuchos::Describable

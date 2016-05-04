@@ -2,7 +2,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-//#include "Tempus_IntegratorBasic_impl.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
 
