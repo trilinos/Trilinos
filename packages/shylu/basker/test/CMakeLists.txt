@@ -1,4 +1,3 @@
-
 IF(Kokkos_ENABLE_OpenMP)
 
     TRIBITS_ADD_EXECUTABLE(
@@ -11,6 +10,12 @@ IF(Kokkos_ENABLE_OpenMP)
         basker_test_inc
 	NOEXEPREFIX
 	SOURCES basker_test_inc.cpp 
+     )
+
+     TRIBITS_ADD_EXECUTABLE(
+        amesos2_interface_test
+	NOEXEPREFIX
+	SOURCES amesos2_interface_test.cpp test_util.hpp
      )
          
      ##Single threaded test

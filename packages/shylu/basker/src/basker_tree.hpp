@@ -1386,7 +1386,8 @@ namespace BaskerNS
     //ND order
     if(nd_flag == BASKER_TRUE)
       {
-        printf("nd copy \n");
+	if(Options.verbose == BASKER_TRUE)
+	  printf("nd copy \n");
 
 	if(btf_tabs_offset != 0)
 	  {

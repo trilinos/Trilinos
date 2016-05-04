@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cmath>
 #include <cstdlib>
 #include <sys/time.h>
 
@@ -15,6 +16,11 @@ double myTime()
   gettimeofday(&t1,NULL);
   etime = t1.tv_sec*us + t1.tv_usec;
   return etime;
+}
+
+double totalTime(double start, double end)
+{
+  return (end-start)/1.0e6;
 }
 
 template <class Int, class Entry>
@@ -41,7 +47,7 @@ void readMatrix(std::string fname,
       inp_str >> nnz_; nnz = nnz_;
 
       //Check if need first alloc
-      if(((*col_ptr) != NULL) && (col_ptr[n_+1] < nnz_))
+      if(((*col_ptr) != NULL) && ((*col_ptr)[n_+1] < nnz_))
 	{
 	  delete [] (*col_ptr); (*col_ptr) = NULL;
 	  delete [] (*row_idx); (*row_idx) = NULL;
@@ -61,11 +67,11 @@ void readMatrix(std::string fname,
       while(nnz_ > 0)
 	{
 	  inp_str >> i_;
-	  (*row_idx)[innz] = i-1;
+	  (*row_idx)[innz] = i_-1;
 	  inp_str >> j_;
-	  (*col_ptr)[j] = (*col_ptr)[j]+1;
+	  (*col_ptr)[j_] = (*col_ptr)[j_]+1;
 	  inp_str >> v_;
-	  (*vals)[innz] = v_;
+	  (*val)[innz] = v_;
 	  
 	  innz++;
 	  nnz_--;
@@ -81,13 +87,13 @@ void readMatrix(std::string fname,
 
 template <class Int, class Entry>
 void readVector(std::string fname,
-	     Int &n, Entry **x)
+	         Int &n, Entry **x)
 {
   std::string s;
   Int n_ = 0;
   Int nv_= 0;
   Entry v_ = (Entry) 0.0;
-  ifstream inp_str;
+  std::ifstream inp_str;
   inp_str.open(fname, std::ios::in);
   
   if(inp_str.is_open())
@@ -124,7 +130,7 @@ void readVector(std::string fname,
 }//end readVector
 
 template <class Int, class Entry>
-Entry norm2(Int n, Entry x)
+Entry norm2(Int n, Entry x[])
 {
   double sum = 0;
   for(Int i = 0; i < n; i++)

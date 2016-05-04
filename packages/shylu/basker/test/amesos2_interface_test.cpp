@@ -29,7 +29,11 @@ int main(int argc, char* argv[])
   Int *col_ptr, *row_idx;
   Entry *val;
  
-  readMatrix(mname, m, n, nnz, &col_ptr, &row_idx, &val);
+  double rmatrix = myTime();
+  readMatrix<Int,Entry>(mname, m, n, nnz, 
+			&col_ptr, &row_idx, &val);
+  std::cout << "Read Matrix, Time: " 
+	    << totalTime(rmatrix,myTime()) << std::endl;
   
   //RHS
   Int vn, vm;
@@ -41,7 +45,7 @@ int main(int argc, char* argv[])
   if(argc == 4)
     {
       vname = std::string(argv[3]);
-      readVector(vname, vm, y);
+      readVector<Int,Entry>(vname, vm, &y);
     }
   else
     {
@@ -49,7 +53,12 @@ int main(int argc, char* argv[])
       y = new Entry[m]();
       for(Int i = 0; i < vm; i++)
 	{
-	  y[i] = (Entry) i;
+	  xhat[i] = (Entry) i;
+	}
+      multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
+      for(Int i = 0; i < vm; i++)
+	{
+	  xhat[i] = (Entry) 0.0;
 	}
     }
   
@@ -68,7 +77,7 @@ int main(int argc, char* argv[])
   //Start Basker
   {
     int result = 0;
-    BaskerNS::Basker<Int, Entry, Exe_Space> mybaker;
+    BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
     mybasker.Options.verbose            = BASKER_FALSE;
@@ -77,7 +86,7 @@ int main(int argc, char* argv[])
     mybasker.Options.transpose          = BASKER_FALSE;
     mybasker.Options.symmetric          = BASKER_FALSE;
     mybasker.Options.AtA                = BASKER_TRUE;
-    mybasker.Options.A_plu_At           = BASKER_TRUE;
+    mybasker.Options.A_plus_At          = BASKER_TRUE;
     mybasker.Options.matching           = BASKER_TRUE;
     mybasker.Options.matching_type      = BASKER_MATCHING_BN;
     mybasker.Options.btf                = BASKER_TRUE;
@@ -88,16 +97,38 @@ int main(int argc, char* argv[])
     //mybasker.Options.pivot_bias         = .001;
     //mybasker.Options.btf_prune_size      = 2;
 
-    std::cout << "Setting Threads:" << nthreads << std::endl;
+   
     mybasker.SetThreads(nthreads);
+    std::cout << "Setting Threads:" << nthreads << std::endl;
+    double stime = myTime();
     mybasker.Symbolic(m,n,nnz,col_ptr,row_idx,val);
+    std::cout << "Done with Symbolic, Time: " 
+	      << totalTime(stime, myTime()) << std::endl;
+    double ftime = myTime();
     mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
-    mybasker.DEBUG_PRINT();
+    std::cout << "Done with Factor, Time: "
+	      << totalTime(ftime, myTime()) << std::endl;
+    //mybasker.DEBUG_PRINT();
+    double ttime = myTime();
     mybasker.Solve(y,x);
+    std::cout << "Done with Solve, Time: "
+	      << totalTime(ftime, myTime()) << std::endl;
+
+    multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
+    
+    for(Int i = 0; i < n; i++)
+      {
+	std::cout << "x: " << x[i]
+		  << " xhat: " << xhat[i]
+		  << " y: " << y[i]
+		  << std::endl;
+      }
+
+    std::cout << "||X||: " << norm2<Int,Entry>(n,x)
+	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
+	      << std::endl;
     
     //mybasker.GetPerm()
-    
-    
     mybasker.Finalize();
   }
   
