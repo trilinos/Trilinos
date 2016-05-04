@@ -51,7 +51,7 @@
 #include "Xpetra_ConfigDefs.hpp"
 #include "Xpetra_Exceptions.hpp"
 
-#include "Xpetra_MatrixUtils.hpp"
+#include "Xpetra_MapUtils.hpp"
 
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
@@ -118,9 +118,9 @@ namespace Xpetra {
 
       // TODO: check thyra mode
       // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
-      Teuchos::RCP<const Map> rgMergedSubMaps = MatrixUtils::concatenateMaps(subMaps);
+      Teuchos::RCP<const Map> rgMergedSubMaps = MapUtils::concatenateMaps(subMaps);
       Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(rgMergedSubMaps, subMaps, false /*fullRangeMapExtractor->getThyraMode()*/));
-      Teuchos::RCP<const Map> doMergedSubMaps = MatrixUtils::concatenateMaps(subMaps);
+      Teuchos::RCP<const Map> doMergedSubMaps = MapUtils::concatenateMaps(subMaps);
       Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(doMergedSubMaps, subMaps, false /*fullDomainMapExtractor->getThyraMode()*/));
 
       // call constructor
@@ -164,7 +164,7 @@ namespace Xpetra {
           TEUCHOS_ASSERT(subMaps[i].is_null()==false);
         }
 
-        map = MatrixUtils::concatenateMaps(subMaps);
+        map = MapUtils::concatenateMaps(subMaps);
       }
       TEUCHOS_ASSERT(map.is_null()==false);
       return map;
@@ -334,6 +334,9 @@ namespace Xpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > mergeSubBlockMaps(Teuchos::RCP<const Xpetra::BlockReorderManager> brm, Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bmat) {
+    typedef Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node> MapUtils;
+
+    // TODO distinguish between range and domain map extractor! provide MapExtractor as parameter!
     RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > fullRangeMapExtractor = bmat->getRangeMapExtractor();
 
     // number of sub blocks
@@ -357,7 +360,7 @@ namespace Xpetra {
         TEUCHOS_ASSERT(subMaps[i].is_null()==false);
       }
 
-      map = Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(subMaps);
+      map = MapUtils::concatenateMaps(subMaps);
     }
     TEUCHOS_ASSERT(map.is_null()==false);
     return map;
@@ -388,7 +391,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
         rowSubMaps[i] = mergeSubBlockMaps(rowSubMgr,bmat);
         TEUCHOS_ASSERT(rowSubMaps[i].is_null()==false);
       }
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rgMergedSubMaps = Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(rowSubMaps);
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rgMergedSubMaps = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(rowSubMaps);
       rgMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rgMergedSubMaps, rowSubMaps, false /*fullRangeMapExtractor->getThyraMode()*/));
     } else {
       Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
@@ -408,7 +411,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
         colSubMaps[j] = mergeSubBlockMaps(colSubMgr,bmat);
         TEUCHOS_ASSERT(colSubMaps[j].is_null()==false);
       }
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > doMergedSubMaps = Xpetra::MatrixUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(colSubMaps);
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > doMergedSubMaps = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(colSubMaps);
       doMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(doMergedSubMaps, colSubMaps, false /*fullDomainMapExtractor->getThyraMode()*/));
     } else {
       Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
