@@ -290,15 +290,18 @@ namespace BaskerNS
     //===== Permute
     //printf("Permute RHS\n");
     //==== Need to make this into one global perm
+   
     if(match_flag == BASKER_TRUE)
       {
-	//printf("match order\n");
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("match order in\n");}
 	//printVec("match.txt", order_match_array, gn);
 	permute_inv(y,order_match_array, gn);
       }
     if(btf_flag == BASKER_TRUE)
       {
-	//printf("btf order\n");
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("btf order in\n");}
 	//printVec("btf.txt", order_btf_array, gn);
 	permute_inv(y,order_btf_array, gn);
         //printVec("btf_amd.txt", order_c_csym_array, gn);
@@ -307,7 +310,8 @@ namespace BaskerNS
       }
     if(nd_flag == BASKER_TRUE)
       {
-	//printf("ND order \n");
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("ND order in \n");}
 	//printVec("nd.txt", part_tree.permtab, gn);
 	for(Int i = 0; i < BTF_A.ncol; ++i)
 	  {
@@ -322,7 +326,8 @@ namespace BaskerNS
       }
     if(amd_flag == BASKER_TRUE)
       {
-	//printf("AMD order \n");
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("AMD order in \n");}
 	//printVec("amd.txt",order_csym_array, gn);
 	for(Int i = 0; i < BTF_A.ncol; ++i)
 	  {
@@ -336,41 +341,29 @@ namespace BaskerNS
 	permute_inv(y,temp_array, gn);
       }
 
+     permute_inv(y, gperm, gn);
 
     //printVec("perm.txt" , gperm, gn);
-    permute_inv(y, gperm, gn);
+    //permute_inv(y, gperm, gn);
     //printf("Before solve interface\n");
 
     solve_interface(x,y);
 
-    //printf("After solver interface\n");
+    /*
+    printf("After solver interface\n");
+    for(Int i = 0; i < gn ; i++)
+      {
+	printf("X(%d) %g \n",
+	       i, x(i));
+      }
+    */
 
     //Inverse perm
     //Note: don't need to inverse a row only perm
-    if(btf_flag == BASKER_TRUE)
-      {
-	//printf("btf order\n");
-	//printVec(order_btf_array, gn);
-	permute(x,order_btf_array, gn);
-      }
-    if(nd_flag == BASKER_TRUE)
-      {
-	//printf("ND order \n");
-	//printVec(part_tree.permtab, gn);
-	for(Int i = 0; i < BTF_A.ncol; ++i)
-	  {
-	    temp_array(i) = part_tree.permtab(i);
-	  }
-	for(Int i = BTF_A.ncol; i < gn; i++)
-	  {
-	    temp_array(i) = i;
-	  }
-	//permute(x,part_tree.permtab, gn);
-	permute(x,temp_array, gn);
-      }
     if(amd_flag == BASKER_TRUE)
       {
-	//printf("AMD order \n");
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("AMD order out \n");}
 	//printVec(order_csym_array, gn);
 	for(Int i = 0; i < BTF_A.ncol; ++i)
 	  {
@@ -387,6 +380,34 @@ namespace BaskerNS
 	permute(x,temp_array,gn);
       }
    
+
+    if(nd_flag == BASKER_TRUE)
+      {
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("ND order out \n");}
+	//printVec(part_tree.permtab, gn);
+	for(Int i = 0; i < BTF_A.ncol; ++i)
+	  {
+	    temp_array(i) = part_tree.permtab(i);
+	  }
+	for(Int i = BTF_A.ncol; i < gn; i++)
+	  {
+	    temp_array(i) = i;
+	  }
+	//permute(x,part_tree.permtab, gn);
+	//printVec(temp_array,gn);
+	permute(x,temp_array, gn);
+      }
+
+    if(btf_flag == BASKER_TRUE)
+      {
+	if(Options.verbose == BASKER_TRUE)
+	  {printf("btf order out\n");}
+	//printVec(order_btf_array, gn);
+	permute(x,order_blk_amd_array, gn);
+	permute(x,order_btf_array, gn);
+		
+      }
 
     //printf("done back perm\n");
 
@@ -459,7 +480,7 @@ namespace BaskerNS
 	   
 	    serial_solve(y,x);
 	    
-	    printf("After serial solve\n");
+	    //printf("After serial solve\n");
 	    //printf("i: %d x: %f y: %f \n", 0, x(0), y(0));
 	    //printf("i: %d x: %f y: %f \n", 24, x(24), y(24));
    

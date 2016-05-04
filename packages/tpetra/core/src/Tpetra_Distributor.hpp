@@ -807,26 +807,6 @@ namespace Tpetra {
 
     //! Whether to print copious debug output to stderr on all processes.
     bool debug_;
-
-    /// \brief Whether to assume that MPI can read from and write to
-    ///   CUDA device memory.
-    ///
-    /// Recent MPI implementations know how to read from and write to
-    /// CUDA device memory.  This has nothing to do with CUDA UVM; it
-    /// uses a different mechanism.  However, if you have an old MPI
-    /// implementation that isn't CUDA-aware, you might need to
-    /// disable this option.  Otherwise, your application will
-    /// segfault or otherwise behave incorrectly, when your MPI
-    /// implementation attempts to access device memory in a
-    /// not-CUDA-aware way.
-    ///
-    /// CMake configuration parameter Tpetra_ENABLE_MPI_CUDA_RDMA,
-    /// which is OFF by default, determines the default value of this
-    /// parameter.  Regardless of how Tpetra was configured, you can
-    /// turn this on or off at run time by setting the ParameterList
-    /// option "Enable MPI CUDA RDMA support" to true.
-    bool enable_cuda_rdma_;
-
     //@}
 
     /// \brief Whether I am supposed to send a message to myself.
@@ -2009,14 +1989,17 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doPostsAndWaits (const ExpView &exports,
+  doPostsAndWaits (const ExpView& exports,
                    size_t numPackets,
-                   const ImpView &imports)
+                   const ImpView& imports)
   {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
     using std::endl;
 
-    Teuchos::OSTab tab0 (out_);
+    RCP<Teuchos::OSTab> tab0, tab1;
     if (debug_) {
+      tab0 = rcp (new Teuchos::OSTab (out_));
       const int myRank = comm_->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank
@@ -2024,42 +2007,7 @@ namespace Tpetra {
          << "{sendType: " << DistributorSendTypeEnumToString (sendType_)
          << ", barrierBetween: " << barrierBetween_ << "}" << endl;
       *out_ << os.str ();
-    }
-    Teuchos::OSTab tab1 (out_);
-
-    // If the MPI library doesn't support RDMA for communication
-    // directly to or from the GPU's memory, we must transfer exports
-    // to the host, do the communication, then transfer imports back
-    // to the GPU.
-    //
-    // We need to do this here instead of doPosts() because the copy
-    // back to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use a
-    // memory space, rather than an execution space, as the first
-    // argument of VerifyExecutionCanAccessMemorySpace.
-    const bool can_access_from_host =
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace,
-      typename exports_view::memory_space >::value;
-    if (! enable_cuda_rdma_ && ! can_access_from_host) {
-      if (debug_) {
-        const int myRank = comm_->getRank ();
-        std::ostringstream os;
-        os << "Proc " << myRank
-           << ": Distributor::doPostsAndWaits: Call host version" << endl;
-        *out_ << os.str ();
-      }
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view (exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view (imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
-                       numPackets,
-                       host_imports);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
+      tab1 = rcp (new Teuchos::OSTab (out_));
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2089,33 +2037,11 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doPostsAndWaits (const ExpView &exports,
+  doPostsAndWaits (const ExpView& exports,
                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                   const ImpView &imports,
+                   const ImpView& imports,
                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numExportPacketsPerLID,
-                      host_imports,
-                      numImportPacketsPerLID);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       requests_.size () != 0, std::runtime_error,
       "Tpetra::Distributor::doPostsAndWaits(4 args): There are "
@@ -2922,31 +2848,10 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doReversePostsAndWaits (const ExpView &exports,
+  doReversePostsAndWaits (const ExpView& exports,
                           size_t numPackets,
-                          const ImpView &imports)
+                          const ImpView& imports)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doReversePostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
-                              numPackets,
-                              host_imports);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     doReversePosts (exports, numPackets, imports);
     doReverseWaits ();
   }
@@ -2954,33 +2859,11 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doReversePostsAndWaits (const ExpView &exports,
+  doReversePostsAndWaits (const ExpView& exports,
                           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
-                          const ImpView &imports,
+                          const ImpView& imports,
                           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doReversePostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
-                              numExportPacketsPerLID,
-                              host_imports,
-                              numImportPacketsPerLID);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
       "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
       << requests_.size() << " outstanding nonblocking messages pending.  It "

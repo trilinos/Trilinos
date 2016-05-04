@@ -5,11 +5,14 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <KokkosKernels_SortKeyValue.hpp>
 #include <iostream>
-
+#include <limits>
 #include <Kokkos_UnorderedMap.hpp>
 
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP
+
+
+#define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
 
 namespace KokkosKernels{
 
@@ -1323,12 +1326,7 @@ struct ReduceMaxFunctor{
   value_type min_val;
   ReduceMaxFunctor(
       view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
-          min_val(){
-#ifdef __CUDA_ARCH__
-    min_val = -CUDART_INF;
-#else
-    min_val = strtod ("-Inf", (char ** ) NULL );
-#endif
+          min_val(-std::numeric_limits<value_type>::max()){
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {

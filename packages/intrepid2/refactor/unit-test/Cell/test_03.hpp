@@ -55,6 +55,7 @@
 //#include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
+#include "Intrepid2_CubatureDirectTriDefault.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
 
 #include "Intrepid2_CellTools.hpp"
@@ -153,17 +154,17 @@ namespace Intrepid2 {
         {
           // Define cubature on the edge parametrization domain:
           const auto testAccuracy = 6;
-          CubatureDirectLineGauss<DeviceSpaceType> edgeCubature(testAccuracy);
-          //CubatureDirectTriangleGauss<DeviceSpaceType> triFaceCubature(testAccuracy);
-          CubatureTensor<DeviceSpaceType> quadFaceCubature( edgeCubature, edgeCubature );
+          CubatureDirectLineGauss<DeviceSpaceType,ValueType,ValueType> edgeCubature(testAccuracy);
+          CubatureDirectTriDefault<DeviceSpaceType,ValueType,ValueType> triFaceCubature(testAccuracy);
+          CubatureTensor<DeviceSpaceType,ValueType,ValueType> quadFaceCubature( edgeCubature, edgeCubature );
 
           const auto faceCubDim = 2;
-          //const auto numTriFaceCubPoints  = triFaceCubature.getNumPoints();
+          const auto numTriFaceCubPoints  = triFaceCubature.getNumPoints();
           const auto numQuadFaceCubPoints = quadFaceCubature.getNumPoints();
 
           // Allocate storage for cubature points and weights on face parameter domain and fill with points:
-          //DynRankView ConstructWithLabel(paramTriFacePoints,   numTriFaceCubPoints,  faceCubDim);
-          //DynRankView ConstructWithLabel(paramTriFaceWeights,  numTriFaceCubPoints);
+          DynRankView ConstructWithLabel(paramTriFacePoints,   numTriFaceCubPoints,  faceCubDim);
+          DynRankView ConstructWithLabel(paramTriFaceWeights,  numTriFaceCubPoints);
           DynRankView ConstructWithLabel(paramQuadFacePoints,  numQuadFaceCubPoints, faceCubDim);
           DynRankView ConstructWithLabel(paramQuadFaceWeights, numQuadFaceCubPoints);
 
@@ -202,87 +203,87 @@ namespace Intrepid2 {
 
               // Allocate storage for cub. points on a ref. face; Jacobians, phys. face normals and
               // benchmark normals.
-              //DynRankView ConstructWithLabel(refTriFacePoints, numTriFaceCubPoints, cellDim);
-              //DynRankView ConstructWithLabel(triFacePointsJacobians, 1, numTriFaceCubPoints, cellDim, cellDim);
-              //DynRankView ConstructWithLabel(triFacePointNormals, 1, numTriFaceCubPoints, cellDim);
-              //DynRankView ConstructWithLabel(triSidePointNormals, 1, numTriFaceCubPoints, cellDim);
+              DynRankView ConstructWithLabel(refTriFacePoints, numTriFaceCubPoints, cellDim);
+              DynRankView ConstructWithLabel(triFacePointsJacobians, 1, numTriFaceCubPoints, cellDim, cellDim);
+              DynRankView ConstructWithLabel(triFacePointNormals,    1, numTriFaceCubPoints, cellDim);
+              DynRankView ConstructWithLabel(triSidePointNormals,    1, numTriFaceCubPoints, cellDim);
 
               DynRankView ConstructWithLabel(refQuadFacePoints,          numQuadFaceCubPoints, cellDim);
               DynRankView ConstructWithLabel(quadFacePointsJacobians, 1, numQuadFaceCubPoints, cellDim, cellDim);
               DynRankView ConstructWithLabel(quadFacePointNormals,    1, numQuadFaceCubPoints, cellDim);
               DynRankView ConstructWithLabel(quadSidePointNormals,    1, numQuadFaceCubPoints, cellDim);
-
+              
               // Loop over faces:
               for (size_type faceOrd=0;faceOrd<cell.getSideCount();++faceOrd) {
-
+                
                 // This test presently includes only Triangle<3> and Quadrilateral<4> faces. Once we support
                 // cells with extended topologies we will add their faces as well.
                 switch ( cell.getCellTopologyData(2, faceOrd)->key ) {
-                  // case shards::Triangle<3>::key: {
-                  //   // Compute face normals using CellTools
-                  //   ct::mapToReferenceSubcell(refTriFacePoints, paramTriFacePoints, 2, faceOrd, cell);
-                  //   ct::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, cell);
-                  //   ct::getPhysicalFaceNormals(triFacePointNormals, triFacePointsJacobians, faceOrd, cell);
-                  //   ct::getPhysicalSideNormals(triSidePointNormals, triFacePointsJacobians, faceOrd, cell);
-
-                  //   /*
-                  //    * Compute face normals using direct linear parametrization of the face: the map from
-                  //    * standard 2-simplex to physical Triangle<3> face in 3D is
-                  //    * F(x,y) = V0 + (V1-V0)x + (V2-V0)*y
-                  //    * Face normal is vector product Tx X Ty where Tx = (V1-V0); Ty = (V2-V0)
-                  //    */
-                  //   const auto v0ord = cell.getNodeMap(2, faceOrd, 0);
-                  //   const auto v1ord = cell.getNodeMap(2, faceOrd, 1);
-                  //   const auto v2ord = cell.getNodeMap(2, faceOrd, 2);
-
-                  //   // Loop over face points: redundant for affine faces, but CellTools gives one vector
-                  //   // per point so need to check all points anyways.
-                  //   for (auto pt=0;pt<numTriFaceCubPoints;++pt) {
-                  //     DynRankView ConstructWithLabel(tanX, 3);
-                  //     DynRankView ConstructWithLabel(tanY, 3);
-                  //     DynRankView ConstructWithLabel(faceNormal, 3);
-                  //     for (auto d=0;d<cellDim;++d) {
-                  //       tanX(d) = physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d);
-                  //       tanY(d) = physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d);
-                  //     }
-
-                  //     rst::vecprod(faceNormal, tanX, tanY);
-
-                  //     // Compare direct normal with d-component of the face/side normal by CellTools
-                  //     for (auto d=0;d<cellDim;++d) {
-
-                  //       // face normal method
-                  //       if ( std::abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > tol ){
-                  //         errorFlag++;
-                  //         *outStream
-                  //           << std::setw(70) << "^^^^----FAILURE!" << "\n"
-                  //           << " Face normal computation by CellTools failed for: \n"
-                  //           << "       Cell Topology = " << cell.getName() << "\n"
-                  //           << "       Face Topology = " << cell.getCellTopologyData(2, faceOrd) -> name << "\n"
-                  //           << "        Face ordinal = " << faceOrd << "\n"
-                  //           << "   Face point number = " << pt << "\n"
-                  //           << "   Normal coordinate = " << d  << "\n"
-                  //           << "     CellTools value = " <<  triFacePointNormals(0, pt, d)
-                  //           << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
-                  //       }
-                  //       //side normal method
-                  //       if( std::abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > tol ){
-                  //         errorFlag++;
-                  //         *outStream
-                  //           << std::setw(70) << "^^^^----FAILURE!" << "\n"
-                  //           << " Side normal computation by CellTools failed for: \n"
-                  //           << "       Cell Topology = " << cell.getName() << "\n"
-                  //           << "       Side Topology = " << cell.getCellTopologyData(2, faceOrd) -> name << "\n"
-                  //           << "        Side ordinal = " << faceOrd << "\n"
-                  //           << "   Side point number = " << pt << "\n"
-                  //           << "   Normal coordinate = " << d  << "\n"
-                  //           << "     CellTools value = " <<  triSidePointNormals(0, pt, d)
-                  //           << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
-                  //       }
-                  //     }
-                  //   }
-                  //   break;
-                  // }
+                case shards::Triangle<3>::key: {
+                  // Compute face normals using CellTools
+                  ct::mapToReferenceSubcell(refTriFacePoints, paramTriFacePoints, 2, faceOrd, cell);
+                  ct::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, cell);
+                  ct::getPhysicalFaceNormals(triFacePointNormals, triFacePointsJacobians, faceOrd, cell);
+                  ct::getPhysicalSideNormals(triSidePointNormals, triFacePointsJacobians, faceOrd, cell);
+                  
+                  /*
+                   * Compute face normals using direct linear parametrization of the face: the map from
+                   * standard 2-simplex to physical Triangle<3> face in 3D is
+                   * F(x,y) = V0 + (V1-V0)x + (V2-V0)*y
+                   * Face normal is vector product Tx X Ty where Tx = (V1-V0); Ty = (V2-V0)
+                   */
+                  const auto v0ord = cell.getNodeMap(2, faceOrd, 0);
+                  const auto v1ord = cell.getNodeMap(2, faceOrd, 1);
+                  const auto v2ord = cell.getNodeMap(2, faceOrd, 2);
+                  
+                  // Loop over face points: redundant for affine faces, but CellTools gives one vector
+                  // per point so need to check all points anyways.
+                  for (auto pt=0;pt<numTriFaceCubPoints;++pt) {
+                    DynRankView ConstructWithLabel(tanX, 3);
+                    DynRankView ConstructWithLabel(tanY, 3);
+                    DynRankView ConstructWithLabel(faceNormal, 3);
+                    for (auto d=0;d<cellDim;++d) {
+                      tanX(d) = physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d);
+                      tanY(d) = physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d);
+                    }
+                    
+                    rst::vecprod(faceNormal, tanX, tanY);
+                    
+                    // Compare direct normal with d-component of the face/side normal by CellTools
+                    for (auto d=0;d<cellDim;++d) {
+                      
+                      // face normal method
+                      if ( std::abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > tol ){
+                        errorFlag++;
+                        *outStream
+                          << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                          << " Face normal computation by CellTools failed for: \n"
+                          << "       Cell Topology = " << cell.getName() << "\n"
+                          << "       Face Topology = " << cell.getCellTopologyData(2, faceOrd) -> name << "\n"
+                          << "        Face ordinal = " << faceOrd << "\n"
+                          << "   Face point number = " << pt << "\n"
+                          << "   Normal coordinate = " << d  << "\n"
+                          << "     CellTools value = " <<  triFacePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                      }
+                      //side normal method
+                      if( std::abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > tol ){
+                        errorFlag++;
+                        *outStream
+                          << std::setw(70) << "^^^^----FAILURE!" << "\n"
+                          << " Side normal computation by CellTools failed for: \n"
+                          << "       Cell Topology = " << cell.getName() << "\n"
+                          << "       Side Topology = " << cell.getCellTopologyData(2, faceOrd) -> name << "\n"
+                          << "        Side ordinal = " << faceOrd << "\n"
+                          << "   Side point number = " << pt << "\n"
+                          << "   Normal coordinate = " << d  << "\n"
+                          << "     CellTools value = " <<  triSidePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                      }
+                    }
+                  }
+                  break;
+                }
                 case shards::Quadrilateral<4>::key: {
                   // Compute face normals using CellTools
                   ct::mapToReferenceSubcell(refQuadFacePoints, paramQuadFacePoints, 2, faceOrd, cell);

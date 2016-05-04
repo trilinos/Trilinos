@@ -53,6 +53,7 @@ namespace BaskerNS
     //Default number of threads
     num_threads = 1;
     global_nnz  = 0;
+    gn = 0;
 
     btf_total_work = 0;
 
