@@ -83,7 +83,7 @@ public:
              subMap[1] = { 2, 5 };
              concatenated map = { 0, 1, 3, 4, 2 ,5 };
     */
-  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > concatenateMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
+  static Teuchos::RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > concatenateMaps(const std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
 
     // merge submaps to global map
     std::vector<GlobalOrdinal> gids;
