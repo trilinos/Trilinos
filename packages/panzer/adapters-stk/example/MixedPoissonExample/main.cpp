@@ -148,7 +148,7 @@ int main(int argc,char * argv[])
      panzer_stk_classic::CubeTetMeshFactory mesh_factory;
   
      // other declarations
-     const std::size_t workset_size = 2*2;
+     const std::size_t workset_size = 500;
   
      // construction of uncommitted (no elements) mesh 
      ////////////////////////////////////////////////////////
