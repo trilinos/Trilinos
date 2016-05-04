@@ -42,13 +42,13 @@
 #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 #define KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -1101,8 +1101,8 @@ broadcast
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
-
 #endif // defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+#endif // defined(HAVE_SACADO_KOKKOSCORE)
 
 #endif /* #ifndef KOKKOS_EXPERIMENTAL_VIEW_SACADO_FAD_HPP */

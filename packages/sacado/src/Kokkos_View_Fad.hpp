@@ -30,17 +30,17 @@
 #ifndef KOKKOS_VIEW_FAD_HPP
 #define KOKKOS_VIEW_FAD_HPP
 
-#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
-
-#include "KokkosExp_View_Fad.hpp"
-
-#else
-
 #include "Sacado_ConfigDefs.h"
 #if defined(HAVE_SACADO_KOKKOSCORE)
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp"
+
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+#include "KokkosExp_View_Fad.hpp"
+
+#else
 
 // Some definition that should exist whether the specializations exist or not
 
@@ -1060,8 +1060,8 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 
 #endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif // defined(HAVE_SACADO_KOKKOSCORE)
-
 #endif // !defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+#endif // defined(HAVE_SACADO_KOKKOSCORE)
 
 #endif /* #ifndef KOKKOS_VIEW_FAD_HPP */
