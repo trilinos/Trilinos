@@ -166,6 +166,8 @@ private:
 
   int suggested_vector_size;
   int suggested_team_size;
+  row_lno_t num_result_nnz;
+
 
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
@@ -177,7 +179,7 @@ private:
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
     algorithm_type(gs),
     called_symbolic(false), called_numeric(false),
-    suggested_vector_size(0), suggested_team_size(0)
+    suggested_vector_size(0), suggested_team_size(0), num_result_nnz(0)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -267,11 +269,19 @@ private:
   bool is_symbolic_called(){return this->called_symbolic;}
   bool is_numeric_called(){return this->called_numeric;}
 
+
+  row_lno_t get_num_result_nnz() const{
+    return this->num_result_nnz ;
+  }
+
   //setters
   void set_algorithm_type(const SPGEMMAlgorithm &sgs_algo){this->algorithm_type = sgs_algo;}
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
   void set_call_numeric(bool call = true){this->called_numeric = call;}
 
+  void set_num_result_nnz(row_lno_t num_result_nnz_){
+    this->num_result_nnz = num_result_nnz_;
+  }
   void vector_team_size(
       int max_allowed_team_size,
       int &suggested_vector_size_,
