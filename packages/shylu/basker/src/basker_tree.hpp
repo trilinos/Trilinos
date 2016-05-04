@@ -1359,50 +1359,34 @@ namespace BaskerNS
   BASKER_INLINE
   int Basker<Int,Entry,Exe_Space>::sfactor_copy2()
   {
-    
-
-    //This is the good one
-    //printf("\n====== sfactor_copy2=======\n");
-    //ALM(0)(0).info();
-
-    //A.print();
     //Reorder A;
     //Match order
     if(match_flag == BASKER_TRUE)
       {
-	//printf("Test order_mactch_array(0): %d %d \n",
-	//     order_match_array(0),
-	//    order_match_array(1));
-
-        
-        //printf("match_flag\n");
+        if(Options.verbose == BASKER_TRUE)
+          {printf("match copy\n");}
 	permute_row(A,order_match_array);
 	sort_matrix(A);
       }
     //BTF order
     if(btf_flag == BASKER_TRUE)
       {
-	//printf("Test order_btf_array(0): %d %d: \n",
-	//     order_btf_array(0),
-	//    order_btf_array(1));
-
-        //printf("btf_flag\n");
+        if(Options.verbose == BASKER_TRUE)
+          {printf("btf copy\n");}
 	permute_col(A,order_btf_array);
 	permute_row(A,order_btf_array);
 	sort_matrix(A);
+
 	permute_col(A,order_blk_amd_array);
 	permute_row(A,order_blk_amd_array);
 	sort_matrix(A);
-
-	//printMTX("A_AMD_OTHER.mtx", A);
 
 	break_into_parts2(A, btf_nblks, btf_tabs);
       }
     //ND order
     if(nd_flag == BASKER_TRUE)
       {
-
-        //printf("nd_flag \n");
+        printf("nd copy \n");
 
 	if(btf_tabs_offset != 0)
 	  {
@@ -1410,77 +1394,67 @@ namespace BaskerNS
 	    // part_tree.permtab(0),
 	    // part_tree.permtab(1));
 	
-
-	//BTF_A.print();
+            //BTF_A.print();
 	
-	sort_matrix(BTF_A);
-	//Permute the A
-	permute_row(BTF_A, part_tree.permtab);
-	permute_col(BTF_A, part_tree.permtab);
-	//Permute the B
-	if(btf_nblks > 1)
-	  {
-	    permute_row(BTF_B, part_tree.permtab);
-	  }
-	sort_matrix(BTF_A);
-	if(btf_nblks > 1)
-	  {
-	    sort_matrix(BTF_B);
-	    sort_matrix(BTF_C);
-	  }
+            sort_matrix(BTF_A);
+            //Permute the A
+            permute_row(BTF_A, part_tree.permtab);
+            permute_col(BTF_A, part_tree.permtab);
+            //Permute the B
+            if(btf_nblks > 1)
+              {
+                permute_row(BTF_B, part_tree.permtab);
+              }
+            sort_matrix(BTF_A);
+            if(btf_nblks > 1)
+              {
+                sort_matrix(BTF_B);
+                sort_matrix(BTF_C);
+              }
 	  }
       }
     //AMD
     if(amd_flag == BASKER_TRUE)
       {
-	
-        //printf("amd flag \n");
+        if(Options.verbose == BASKER_TRUE)
+          {printf("amd copy \n");}
 
 	if(btf_tabs_offset != 0)
 	  {
-
-	    
 	    //printf("Test order_amd_array(0): %d %d: \n",
 	    // order_csym_array(0),
 	    // order_csym_array(1));
 
-	//Permute A
-	permute_col(BTF_A, order_csym_array);
-	sort_matrix(BTF_A);
-	permute_row(BTF_A, order_csym_array);
-	sort_matrix(BTF_A);
-       
-	//Permute B
-	if(btf_nblks > 1)
-	  {
-	permute_row(BTF_B, order_csym_array);
-	sort_matrix(BTF_B);
-	  }
+            //Permute A
+            permute_col(BTF_A, order_csym_array);
+            sort_matrix(BTF_A);
+            permute_row(BTF_A, order_csym_array);
+            sort_matrix(BTF_A);
+            
+            //Permute B
+            if(btf_nblks > 1)
+              {
+                permute_row(BTF_B, order_csym_array);
+                sort_matrix(BTF_B);
+              }
 	  }
       }
-
-    
-    //printf("ALM after perms\n");
-    //ALM(0)(0).info();
-
     if(btf_tabs_offset != 0)
       {
-    //=====Move into 2D ND-Structure====/
-    //Find submatices view shapes
-	
+        //=====Move into 2D ND-Structure====/
+        //Find submatices view shapes
+	if(Options.verbose == BASKER_TRUE)
+          {printf("btf tabs reorder\n");}
 
-	printMTX("A_BTF.mtx", BTF_A);
-       
-
-    clean_2d();
-    //printf("Done with clean 2d\n");
-    //ALM(0)(0).info();
-    //matrix_to_views_2D(BTF_A);
-    //Find starting point
-    find_2D_convert(BTF_A);
-    //printf("done with 2d convert \n");
-    //ALM(0)(0).info();
-    //Fill 2D structure
+        clean_2d();
+        //printf("Done with clean 2d\n");
+        //ALM(0)(0).info();
+        //matrix_to_views_2D(BTF_A);
+        //Find starting point
+        find_2D_convert(BTF_A);
+        //printf("done with 2d convert \n");
+        //ALM(0)(0).info();
+        //Fill 2D structure
     #ifdef BASKER_KOKKOS
     kokkos_order_init_2D<Int,Entry,Exe_Space> iO(this, BASKER_FALSE);
     Kokkos::parallel_for(TeamPolicy(num_threads,1), iO);
@@ -1498,31 +1472,9 @@ namespace BaskerNS
 	  }
       }
 
-
-    /*
-    if(btf_nblks > 1)
-      {
-	sort_matrix(BTF_C);
-	permute_col(BTF_C, order_c_csym_array);
-	sort_matrix(BTF_C);
-	permute_row(BTF_C, order_c_csym_array);
-	sort_matrix(BTF_C);
-	
-
-	if(btf_tabs_offset != 0)
-	  {
-	    permute_col(BTF_B, order_c_csym_array);	
-	    sort_matrix(BTF_B);
-	  }
-
-      }
-    */
-
     //If same pattern, permute using pivot, and reset
-    //printf("gn: %d \n", gn);
     if((Options.same_pattern == BASKER_TRUE))
       {
-	printf("reset gperm");
 	if(same_pattern_flag == BASKER_FALSE)
 	  {
 	    MALLOC_INT_1DARRAY(gperm_same, gn);
@@ -1533,32 +1485,14 @@ namespace BaskerNS
 	      }
 	    same_pattern_flag = BASKER_TRUE;
 	  }
-	
-	//Everyone permutes
-	//JDB: come back
       }
     else
       {
-	for(Int i = 0; i < gn; i++)
+	for(Int i = 0; i < gn; ++i)
 	  {
 	    gperm(i) = BASKER_MAX_IDX;
 	  }
-
-	//Clear pend btf
-	/*
-	for(Int b =0; b < btf_nblks; b++)
-	  {
-	    BASKER_MATRIX& Ltemp = LBTF(b);
-	    Ltemp.clear_pend();
-	  }
-	*/
-
       }
-    //test
-    //printMTX("A_BTF.mtx", BTF_A);
-
-    //test 
-    // printMTX("extra_C.mtx", BTF_C);
 
     if(factor_flag == BASKER_TRUE)
       {
@@ -1569,11 +1503,8 @@ namespace BaskerNS
 			     reset_factors);
 	Kokkos::fence();
       }
-
     return 0;
   }//sfactor_copy2()
-
-
 
 }//end namespace basker
 

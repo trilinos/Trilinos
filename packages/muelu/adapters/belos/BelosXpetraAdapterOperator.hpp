@@ -154,6 +154,8 @@ namespace Belos {
     }
 #endif
 
+    RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() const { return Op_; }
+
   private:
 
     RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
@@ -246,6 +248,8 @@ namespace Belos {
       Op_->apply(tX,tY);
     }
 #endif
+
+    RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() const { return Op_; }
 
   private:
 
@@ -342,6 +346,8 @@ namespace Belos {
       Op_->apply(tX,tY);
     }
 #endif
+
+    RCP<const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getOperator() const { return Op_; }
 
   private:
 
