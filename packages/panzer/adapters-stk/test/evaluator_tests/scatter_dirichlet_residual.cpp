@@ -97,7 +97,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_residual)
   {
-    PHX::KokkosDeviceSession session;
 
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -348,7 +347,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_jacobian)
   {
-    PHX::KokkosDeviceSession session;
     
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));

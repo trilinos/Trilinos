@@ -152,7 +152,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
   typedef Sacado::ScalarValue<typename EvalType::ScalarT> SV;
 
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

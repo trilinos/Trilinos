@@ -127,7 +127,6 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

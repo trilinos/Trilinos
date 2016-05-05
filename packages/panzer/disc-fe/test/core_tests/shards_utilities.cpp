@@ -56,7 +56,6 @@ using panzer::getLocalSideIndexFromGlobalNodeList;
 namespace panzer {
   TEUCHOS_UNIT_TEST(shards_utilities, quad_test)
   {    
-    PHX::KokkosDeviceSession session;
     
     const shards::CellTopology 
       quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
@@ -135,7 +134,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(shards_utilities, hex_test)
   {
-    PHX::KokkosDeviceSession session;
     
     const shards::CellTopology 
       hex(shards::getCellTopologyData<shards::Hexahedron<8> >());

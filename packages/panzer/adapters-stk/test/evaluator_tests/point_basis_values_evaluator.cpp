@@ -96,7 +96,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
@@ -250,7 +249,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
@@ -349,7 +347,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval_vector)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName = "U";
@@ -476,7 +473,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";

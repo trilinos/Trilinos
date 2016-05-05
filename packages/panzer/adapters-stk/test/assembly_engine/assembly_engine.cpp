@@ -114,7 +114,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -235,7 +234,6 @@ namespace panzer {
 //     std::cout << *eVector << std::endl;
 //     std::cout << *eLinearOp << std::endl;
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, dirichlet_only)
@@ -243,7 +241,6 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp_dynamic_cast;
 
-    PHX::InitializeKokkosDevice();
   
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -380,14 +377,12 @@ namespace panzer {
     }
     TEST_ASSERT(passed);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, basic_tpetra)
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
     {
     // build global communicator
     Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -515,12 +510,10 @@ namespace panzer {
     tVector = Thyra::constTpetraVector<double,int,panzer::Ordinal64>(Thyra::tpetraVectorSpace<double,int,panzer::Ordinal64>(baseOp->getRangeMap()).getConst(),
                                                        globalCont->get_f().getConst());
     }
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(assembly_engine, z_basic_epetra_vtpetra)
   {
-    PHX::InitializeKokkosDevice();
 
      TEUCHOS_ASSERT(tLinearOp!=Teuchos::null);
      TEUCHOS_ASSERT(eLinearOp!=Teuchos::null);
@@ -557,7 +550,6 @@ namespace panzer {
      eVector = Teuchos::null;
      tVector = Teuchos::null;
 
-     PHX::FinalizeKokkosDevice();
   }
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

@@ -102,7 +102,6 @@ namespace panzer {
 
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
   #ifdef HAVE_MPI
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));

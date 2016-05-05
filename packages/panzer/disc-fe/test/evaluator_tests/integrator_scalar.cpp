@@ -81,7 +81,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -206,7 +205,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test2d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI
@@ -339,7 +337,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar_side,test3d,EvalType)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(integrator_scalar,test3d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

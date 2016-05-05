@@ -128,7 +128,6 @@ namespace panzer {
   // These are used when computing df/dx*dx/dp with the tangent evaluation type
   void testGatherScatter(const bool enable_tangents, Teuchos::FancyOStream& out, bool& success)
   {
-    PHX::KokkosDeviceSession session;
 
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -607,7 +606,6 @@ namespace panzer {
 /*
   TEUCHOS_UNIT_TEST(block_assembly, gather_solution)
   {
-    PHX::KokkosDeviceSession session;
 
    #ifdef HAVE_MPI
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -862,7 +860,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(tpetra_block_assembly, gather_solution)
   {
-    PHX::KokkosDeviceSession session;
 
     // build global (or serial communicator)
 #ifdef HAVE_MPI

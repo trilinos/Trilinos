@@ -91,7 +91,6 @@ bool intrepid_same_geom(const RCP<Intrepid2::Basis<double,FieldContainer> > & ba
 // triangle tests
 TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 

@@ -28,6 +28,10 @@ ELSE()
    GLOBAL_SET(PANZER_HAVE_LONG_LONG_INT OFF)
 ENDIF()
 
+GLOBAL_SET(PANZER_UNIT_TEST_MAIN
+  "${PHALANX_UNIT_TEST_MAIN}")
+
+
 # Explicit Template Instantiation
 
 # ALWAYS FORCE ETI ON FOR PANZER!  ETI in Panzer is for evaluation

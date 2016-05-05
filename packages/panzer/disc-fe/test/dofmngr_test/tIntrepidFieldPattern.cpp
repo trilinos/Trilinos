@@ -87,7 +87,6 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
 // triangle tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -163,7 +162,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
    // test quadratic triangle
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -247,7 +245,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 // quad tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -331,7 +328,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -446,7 +442,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 // hex tests
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -539,7 +534,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -703,7 +697,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
    typedef Intrepid2::FieldContainer<double> FieldContainer;
@@ -723,7 +716,6 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 
 TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
    typedef Intrepid2::FieldContainer<double> FieldContainer;

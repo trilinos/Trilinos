@@ -93,7 +93,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 {
-  PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -180,13 +179,11 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
      }
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
 {
-  PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -399,7 +396,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 // this just excercises a bunch of functions
@@ -411,7 +407,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
 
    typedef Thyra::SpmdVectorSpaceBase<double> SpmdSpace;
 
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -533,7 +528,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    }
 
 
-   PHX::FinalizeKokkosDevice();
 }
 
 

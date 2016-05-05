@@ -94,7 +94,6 @@ typedef Intrepid2::FieldContainer<double> FieldContainer;
 //    - getDimension 
 TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 

@@ -110,7 +110,6 @@ namespace panzer {
   {
     typedef Sacado::mpl::vector<char,short> VecType;
 
-    PHX::KokkosDeviceSession session;
 
     TypeAssocMap<VecType,std::string> tMap;
 
@@ -136,7 +135,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library2, test)
   {
-    PHX::KokkosDeviceSession session;
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;
@@ -241,7 +239,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(response_library2, test_surface)
   {
-    PHX::KokkosDeviceSession session;
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;

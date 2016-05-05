@@ -116,7 +116,6 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst)
   {
-    PHX::KokkosDeviceSession session;
 
   #ifdef HAVE_MPI
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -194,7 +193,6 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_wkst2)
   {
-    PHX::KokkosDeviceSession session;
 
   #ifdef HAVE_MPI
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
@@ -269,7 +267,6 @@ namespace panzer_stk_classic {
 
   TEUCHOS_UNIT_TEST(volumetric_side_response, test_eval)
   {
-    PHX::KokkosDeviceSession session;
 
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physics_blocks;
     panzer::ClosureModelFactory_TemplateManager<panzer::Traits> cm_factory;

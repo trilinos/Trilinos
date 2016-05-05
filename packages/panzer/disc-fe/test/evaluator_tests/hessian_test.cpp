@@ -243,7 +243,6 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  PHX::KokkosDeviceSession session;
 
   // the one and only evaluator
   Teuchos::ParameterList empty_pl;

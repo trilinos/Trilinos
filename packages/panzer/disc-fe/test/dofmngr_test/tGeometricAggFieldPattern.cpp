@@ -85,7 +85,6 @@ typedef Intrepid2::FieldContainer<double> FieldContainer;
 // triangle tests
 TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -178,7 +177,6 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 // HEX tests
 TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 

@@ -114,7 +114,6 @@ TEUCHOS_UNIT_TEST(hessian_test_k,correctness)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  PHX::KokkosDeviceSession session;
 
   double x_val = 0.25;
   double y_val = 0.5;

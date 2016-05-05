@@ -146,7 +146,6 @@ std::string prws (const panzer::Workset& w) {
 
 TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
 {
-  PHX::KokkosDeviceSession session;
 
   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
   pl->set("X Blocks",2);

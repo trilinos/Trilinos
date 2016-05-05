@@ -133,7 +133,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     // panzer::pauseToAttach();
 
@@ -253,7 +252,6 @@ namespace panzer {
     bool parameter_on = true;
     AssemblyPieces ap;
 
-    PHX::KokkosDeviceSession session;
   
     buildAssemblyPieces(parameter_on,ap);
 
@@ -308,7 +306,6 @@ namespace panzer {
     // ss_me is created!
     // RCP<panzer::ModelEvaluator_Epetra> me = ss_me; This appears to cause seg faults for some reason!!!!
 
-    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     {
@@ -413,7 +410,6 @@ namespace panzer {
   // Testing Ditributed Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator, distributed_parameters)
   {
-    PHX::KokkosDeviceSession session;
 
     RCP<panzer::ModelEvaluator_Epetra> me;
     int distributed_parameter_index = -1;

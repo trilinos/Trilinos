@@ -86,7 +86,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
 
     panzer_stk_classic::STK_ExodusReaderFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -223,7 +222,6 @@ namespace panzer {
     for (int i=0; i < x->MyLength(); ++i)
       TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   void testInitialzation_blockStructure(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

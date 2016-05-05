@@ -60,7 +60,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(papi, krp_c_fcn_calls)
   {
-    PHX::KokkosDeviceSession session;
     
     int iam;
     MPI_Comm_rank(MPI_COMM_WORLD, &iam);

@@ -67,7 +67,6 @@ namespace panzer {
     typedef PHX::KokkosViewFactory<double,PHX::Device> ViewFactory;
     typedef PHX::MDField<double>::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -140,7 +139,6 @@ namespace panzer {
     typedef PHX::KokkosViewFactory<ScalarType,PHX::Device> ViewFactory;
     typedef PHX::MDField<double>::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));

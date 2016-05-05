@@ -128,7 +128,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(scatter_field_evaluators, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 20;
     linBasis = buildLinearBasis(workset_size);
@@ -212,7 +211,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(scatter_field_evaluators, cell_field)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 5;
     linBasis = buildLinearBasis(workset_size);

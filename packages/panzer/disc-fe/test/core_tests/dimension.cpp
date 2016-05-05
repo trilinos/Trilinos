@@ -57,7 +57,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dimension, default)
   {
-    PHX::KokkosDeviceSession session;
 
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> a;
     Array<double,NaturalOrder,Dim,IP,BASIS,NODE,Point,Cell,Dummy,Edge> b;

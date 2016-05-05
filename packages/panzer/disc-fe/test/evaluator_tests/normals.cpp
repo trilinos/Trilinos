@@ -76,7 +76,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
 {
-  PHX::KokkosDeviceSession session;
 
   // build global (or serial communicator)
   #ifdef HAVE_MPI

@@ -103,7 +103,6 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -207,14 +206,12 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
    }
    
-   PHX::FinalizeKokkosDevice();
 }
 #endif
 
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -318,7 +315,6 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 6 : 9);
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 }

@@ -89,7 +89,6 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 
 TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
