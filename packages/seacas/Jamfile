@@ -1861,6 +1861,14 @@ exe Utst_database_io
   : <tag>@utility-exec-tag
   ;
 
+rule xcb-for_cray-rule ( properties * )
+{
+  if $(cray-system) = "yes"
+  {
+     return <linkflags>"-lxcb -lxcb-xlib -lXau" ;
+  }
+}
+
 fexe blot_x11
   :
     blot_main
@@ -1868,7 +1876,7 @@ fexe blot_x11
     blotlib
   : <include>$(seacas-root)/applications/blot
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1881,7 +1889,7 @@ fexe blot_xcps
     blotlib
   : <include>$(seacas-root)/applications/blot
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1932,7 +1940,7 @@ fexe fastq_x11
     fastqlib
   : <include>$(seacas-root)/applications/fastq
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1945,7 +1953,7 @@ fexe fastq_xcps
     fastqlib
   : <include>$(seacas-root)/applications/fastq
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
