@@ -76,7 +76,8 @@ protected:
 
     void expect_5_additional_ids_are_parallel_unique()
     {
-        expect_ids_are_parallel_unique(numInitialIdsToRequestPerProc+numAdditionalIdsToRequestPerProc);
+        // when asking for 5 more, it will double the requested size
+        expect_ids_are_parallel_unique(2*(numInitialIdsToRequestPerProc+numAdditionalIdsToRequestPerProc));
     }
 
     const unsigned numAdditionalIdsToRequestPerProc = 5;

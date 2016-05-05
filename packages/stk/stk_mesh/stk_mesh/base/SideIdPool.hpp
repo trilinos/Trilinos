@@ -39,6 +39,7 @@ private:
     stk::mesh::BulkData &mBulkData;
     stk::mesh::EntityIdVector mSuggestedIds;
     size_t mNumIdsUsed;
+    size_t mNumIdsRequested;
 };
 
 }}
