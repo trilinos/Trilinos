@@ -73,7 +73,7 @@ namespace Intrepid2 {
       output(1, 1) =  x;
       
       output(2, 0) = -y;
-      output(2, 1) = 1.0 + x;
+      output(2, 1) = -1.0 + x;
       break;
     }
     case OPERATOR_CURL: {
