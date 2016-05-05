@@ -238,7 +238,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
       // Add only status tests which are not in the user-specified list of tagged status tests
       // More specifically: we want to add the implicit residual test
       typename std::map<std::string,Teuchos::RCP<StatusTest<ScalarType,MV,OP> > >::iterator it;
-      for (int j=0; j<tmpVec.size(); ++j) {
+      for (size_t j=0; j<tmpVec.size(); ++j) {
         tmpResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(tmpVec[j]);
 
         if(tmpResTest == Teuchos::null) continue;
@@ -337,7 +337,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
           os << ind << indheader;
         }
         os << "[" << std::setw(numLSDgts_) << currIdx_[i]+1 << "] : ";
-        for (int j=0; j<resTestVec_.size(); ++j) {
+        for (size_t j=0; j<resTestVec_.size(); ++j) {
           os << std::setw(15) << resTestNamesVec_[j];
         }
         os << std::endl;
@@ -355,7 +355,7 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
         os << ind << ind2;
       }
       os << "[" << std::setw(numLSDgts_) << currIdx_[i]+1 << "] : ";
-      for (int j=0; j<resTestVec_.size(); ++j) {
+      for (size_t j=0; j<resTestVec_.size(); ++j) {
         if ( resTestVec_[j]->getStatus() != Undefined && currIdx_[i]!=-1 ) {
           // distinguish between ResNormTest derived and others
           Teuchos::RCP<StatusTestResNorm_t> tempResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(resTestVec_[j]);
