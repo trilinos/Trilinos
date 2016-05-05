@@ -88,13 +88,14 @@ int main(int argc, char* argv[])
  
   //-----------------------Start Basker (Test - 1, 1 thread)-----------------
   {
-    std::cout << "Starting Test 1, 1 Threads" << std::endl;
+    std::cout << "==============Starting Test 1, 1 Threads===========" 
+              << std::endl;
 
     int result = 0;
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_TRUE;
+    mybasker.Options.verbose            = BASKER_FALSE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;
@@ -167,13 +168,14 @@ int main(int argc, char* argv[])
 
   //-----------------------Start Basker (Test - 2, 2 thread)--------------------//
   {
-    std::cout << "Starting Test 2, 2 Threads" << std::endl;
+    std::cout << "============Starting Test 2, 2 Threads================" 
+              << std::endl;
 
     int result = 0;
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_TRUE;
+    mybasker.Options.verbose            = BASKER_FALSE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;
@@ -248,13 +250,14 @@ int main(int argc, char* argv[])
   
   //-----------------------Start Basker (Test - 4, 4 thread)--------------------//
   {
-    std::cout << "Starting Test 4, 4 Threads" << std::endl;
+    std::cout << "============Starting Test 4, 4 Threads=============" 
+              << std::endl;
 
     int result = 0;
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_TRUE;
+    mybasker.Options.verbose            = BASKER_FALSE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;

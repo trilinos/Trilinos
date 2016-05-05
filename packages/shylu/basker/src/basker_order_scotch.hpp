@@ -521,6 +521,8 @@ namespace BaskerNS
 
 
     //DEBUG
+    if(Options.verbose == BASKER_TRUE)
+      {
     printf("test - otree\n");
     for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
       {
@@ -538,8 +540,8 @@ namespace BaskerNS
 	 */
       }
     printf("\n");
-
-
+    printf("nblks %d \n", nblks);
+      }
 
 
     //test if enough domain
@@ -548,7 +550,7 @@ namespace BaskerNS
     Int indomains  = 0;
     //Int c_treenode = tree(0);
     //scan over all and count set of pairs
-    printf("nblks %d \n", nblks);
+    
     for(Int t_blk = 1; t_blk < nblks; t_blk++)
       {
 	
@@ -573,16 +575,21 @@ namespace BaskerNS
 	  }
       }
 
-    
-    printf("Domains Found: %d \n", ndomains);
-    printf("Domains Ideal: %d \n", indomains);
-  
+    if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Domains Found: %d \n", ndomains);
+        printf("Domains Ideal: %d \n", indomains);
+      }  
+
     if(ndomains != indomains)
       {
-	printf("Domains Found: %d \n", ndomains);
-	printf("Domains Ideal: %d \n", indomains);
-	printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
-	printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
+        if(Options.verbose == BASKER_TRUE)
+          {
+            printf("Domains Found: %d \n", ndomains);
+            printf("Domains Ideal: %d \n", indomains);
+            printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
+            printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
+          }
 	exit(EXIT_FAILURE);
       }
 
