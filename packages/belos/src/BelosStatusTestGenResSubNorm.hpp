@@ -443,11 +443,11 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *cur_res ) );
     MvSubNorm( *cur_res, subIdx_, tmp_resvector, resnormtype_ );
 
-    typename std::vector<int>::iterator p = curLSIdx_.begin();
-    for (int i=0; p<curLSIdx_.end(); ++p, ++i) {
+    typename std::vector<int>::iterator pp = curLSIdx_.begin();
+    for (int i=0; pp<curLSIdx_.end(); ++pp, ++i) {
       // Check if this index is valid
-      if (*p != -1)
-        resvector_[*p] = tmp_resvector[i];
+      if (*pp != -1)
+        resvector_[*pp] = tmp_resvector[i];
     }
 
     //
@@ -470,11 +470,11 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
       }
     }
     else {
-      typename std::vector<int>::iterator p = curLSIdx_.begin();
-      for (; p<curLSIdx_.end(); ++p) {
+      typename std::vector<int>::iterator ppp = curLSIdx_.begin();
+      for (; ppp<curLSIdx_.end(); ++ppp) {
         // Check if this index is valid
-        if (*p != -1)
-          testvector_[ *p ] = resvector_[ *p ] / scalevalue_;
+        if (*ppp != -1)
+          testvector_[ *ppp ] = resvector_[ *ppp ] / scalevalue_;
       }
     }
     // Check status of new linear system residuals and see if we have the quorum.
@@ -483,7 +483,7 @@ class StatusTestGenResSubNorm<ScalarType,Thyra::MultiVectorBase<ScalarType>,Thyr
     typename std::vector<int>::iterator p2 = curLSIdx_.begin();
     for (; p2<curLSIdx_.end(); ++p2) {
       // Check if this index is valid
-      if (*p != -1) {
+      if (*p2 != -1) {
         // Check if any of the residuals are larger than the tolerance.
         if (testvector_[ *p2 ] > tolerance_) {
           // do nothing.
