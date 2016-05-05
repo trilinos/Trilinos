@@ -237,8 +237,14 @@ private:
    // Update the connectivity vector with the field pattern. The connectivity is specified
    // here using the i,j,k index of the local element. Also, this is where the ordering
    // of a cell is embedded into the system. 
-   void updateConnectivity(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
-                           std::vector<GlobalOrdinal> & conn) const;
+   void updateConnectivity_2d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
+                             std::vector<GlobalOrdinal> & conn) const;
+
+   // Update the connectivity vector with the field pattern. The connectivity is specified
+   // here using the i,j,k index of the local element. Also, this is where the ordering
+   // of a cell is embedded into the system. 
+   void updateConnectivity_3d(const panzer::FieldPattern & fp,int subcellDim,int localElementId,
+                             std::vector<GlobalOrdinal> & conn) const;
 
    int numProc_;
    int myRank_;
