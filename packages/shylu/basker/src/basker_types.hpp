@@ -60,7 +60,7 @@ enum BASKER_MATCHING_CODE
 #define BASKER_BTF_LARGE        500  //Made smaller for unit test
 #define BASKER_BTF_IMBALANCE     0.10
 #define BASKER_BTF_SMALL         100
-#define BASKER_BTF_NNZ_OVER      1.20
+#define BASKER_BTF_NNZ_OVER      2.0 //Upped from 1.20
 #define BASKER_BTF_PRUNE_SIZE    100
 
 enum BASKER_INCOMPLETE_CODE
