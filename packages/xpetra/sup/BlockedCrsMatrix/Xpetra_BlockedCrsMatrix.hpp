@@ -273,7 +273,10 @@ namespace Xpetra {
     //@{
 
     //! Insert matrix entries, using global IDs.
-    /** All index values must be in the global space.
+    /**
+      Note: this routine throws for Rows() > 1 and/or Cols() > 1
+
+      All index values must be in the global space.
       \pre \c globalRow exists as an ID in the global row map
       \pre <tt>isLocallyIndexed() == false</tt>
       \pre <tt>isStorageOptimized() == false</tt>
@@ -296,11 +299,18 @@ namespace Xpetra {
       matrix.
       */
     void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal>& cols, const ArrayView<const Scalar>& vals) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->insertGlobalValues(globalRow, cols, vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("insertGlobalValues not supported by BlockedCrsMatrix");
     }
 
     //! Insert matrix entries, using local IDs.
-    /** All index values must be in the local space.
+    /**
+       Note: this routine throws if Rows() > 1 and/or Cols() > 1
+
+       All index values must be in the local space.
       \pre \c localRow exists as an ID in the local row map
       \pre <tt>isGloballyIndexed() == false</tt>
       \pre <tt>isStorageOptimized() == false</tt>
@@ -308,10 +318,18 @@ namespace Xpetra {
       \post <tt>isLocallyIndexed() == true</tt>
       */
     void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal>& cols, const ArrayView<const Scalar>& vals) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->insertLocalValues(localRow, cols, vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("insertLocalValues not supported by BlockedCrsMatrix");
     }
 
     void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->removeEmptyProcessesInPlace(newMap);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("removeEmptyProcesses not supported by BlockedCrsMatrix");
     }
 
@@ -327,6 +345,10 @@ namespace Xpetra {
     void replaceGlobalValues(GlobalOrdinal globalRow,
                              const ArrayView<const GlobalOrdinal> &cols,
                              const ArrayView<const Scalar>        &vals) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->replaceGlobalValues(globalRow,cols,vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("replaceGlobalValues not supported by BlockedCrsMatrix");
     }
 
@@ -338,16 +360,30 @@ namespace Xpetra {
     void replaceLocalValues(LocalOrdinal localRow,
                             const ArrayView<const LocalOrdinal> &cols,
                             const ArrayView<const Scalar>       &vals) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->replaceLocalValues(localRow,cols,vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("replaceLocalValues not supported by BlockedCrsMatrix");
     }
 
     //! Set all matrix entries equal to scalar
+    //  TODO: extend this routine to global
     virtual void setAllToScalar(const Scalar& alpha) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->setAllToScalar(alpha);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("setAllToScalar not supported by BlockedCrsMatrix");
     }
 
     //! Scale the current values of a matrix, this = alpha*this.
+    //  TODO: extend this routine to global
     void scale(const Scalar& alpha) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->scale(alpha);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("scale not supported by BlockedCrsMatrix");
     }
 
@@ -363,8 +399,14 @@ namespace Xpetra {
 
       \post  <tt>isFillActive() == true<tt>
       \post  <tt>isFillComplete() == false<tt>
+
+      TODO: extend this routine to global
       */
     void resumeFill(const RCP< ParameterList >& params = null) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->resumeFill(params);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("resumeFill not supported for block matrices");
     }
 
@@ -382,6 +424,10 @@ namespace Xpetra {
       \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
       */
     void fillComplete(const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, const RCP<ParameterList>& params = null) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->fillComplete(domainMap, rangeMap, params);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("fillComplete with arguments not supported for block matrices");
     }
 
@@ -524,6 +570,9 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
+      }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow not supported by BlockedCrsMatrix");
     }
 
@@ -531,6 +580,9 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     global_size_t getGlobalNumDiags() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getGlobalNumDiags();
+      }
       throw Xpetra::Exceptions::RuntimeError("getGlobalNumDiags() not supported by BlockedCrsMatrix");
     }
 
@@ -538,6 +590,9 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getNodeNumDiags() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNodeNumDiags();
+      }
       throw Xpetra::Exceptions::RuntimeError("getNodeNumDiags() not supported by BlockedCrsMatrix");
     }
 
@@ -545,6 +600,9 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getGlobalMaxNumRowEntries() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getGlobalMaxNumRowEntries();
+      }
       throw Xpetra::Exceptions::RuntimeError("getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix");
     }
 
@@ -552,6 +610,9 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getNodeMaxNumRowEntries() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNodeMaxNumRowEntries();
+      }
       throw Xpetra::Exceptions::RuntimeError("getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix");
     }
 
@@ -604,6 +665,10 @@ namespace Xpetra {
                                  const ArrayView<LocalOrdinal>& Indices,
                                  const ArrayView<Scalar>& Values,
                                  size_t &NumEntries) const {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowCopy not supported by BlockedCrsMatrix" );
     }
 
@@ -618,6 +683,10 @@ namespace Xpetra {
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
       */
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal>& indices, ArrayView<const Scalar>& values) const {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getGlobalRowView(GlobalRow, indices, values);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getGlobalRowView not supported by BlockedCrsMatrix");
     }
 
@@ -632,6 +701,10 @@ namespace Xpetra {
       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
       */
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal>& indices, ArrayView<const Scalar>& values) const {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getLocalRowView(LocalRow, indices, values);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowView not supported by BlockedCrsMatrix");
     }
 
@@ -640,11 +713,18 @@ namespace Xpetra {
       matrix's row map, containing the
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector& diag) const {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getLocalDiagCopy(diag);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getLocalDiagCopy not supported by BlockedCrsMatrix" );
     }
 
     //! Get Frobenius norm of the matrix
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getFrobeniusNorm();
+      }
       throw Xpetra::Exceptions::RuntimeError("getFrobeniusNorm() not supported by BlockedCrsMatrix, yet");
     }
 
@@ -834,26 +914,45 @@ namespace Xpetra {
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
     const Teuchos::RCP< const Map > getMap() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getMap();
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getMap(): operation not supported.");
     }
 
     //! Import.
     void doImport(const Matrix &source, const Import& importer, CombineMode CM) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doImport(source, importer, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doImport(): operation not supported.");
     }
 
     //! Export.
     void doExport(const Matrix& dest, const Import& importer, CombineMode CM) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doExport(dest, importer, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doExport(): operation not supported.");
     }
 
     //! Import (using an Exporter).
     void doImport(const Matrix& source, const Export& exporter, CombineMode CM) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doImport(source, exporter, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doImport(): operation not supported.");
     }
 
     //! Export (using an Importer).
     void doExport(const Matrix& dest, const Export& exporter, CombineMode CM) {
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doExport(dest, exporter, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doExport(): operation not supported.");
     }
 
@@ -891,6 +990,9 @@ namespace Xpetra {
 
     //! Returns the CrsGraph associated with this matrix.
     RCP<const CrsGraph> getCrsGraph() const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getCrsGraph();
+      }
       throw Xpetra::Exceptions::RuntimeError("getCrsGraph() not supported by BlockedCrsMatrix");
     }
 
@@ -954,6 +1056,9 @@ namespace Xpetra {
 
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrix () const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getLocalMatrix();
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
     }
 #endif
@@ -1048,7 +1153,6 @@ namespace Xpetra {
     Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
     //Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
-    //std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
     std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
