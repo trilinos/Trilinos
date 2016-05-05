@@ -515,10 +515,10 @@ namespace Thyra {
 #endif
 
     RCP<BlockedCrsMatrix> A = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-    A->setMatrix(0, 0, A_11_crs);
-    A->setMatrix(0, 1, A_12_crs);
-    A->setMatrix(1, 0, A_21_crs);
-    A->setMatrix(1, 1, A_22_crs);
+    A->setMatrix(0, 0, A_11);
+    A->setMatrix(0, 1, A_12);
+    A->setMatrix(1, 0, A_21);
+    A->setMatrix(1, 1, A_22);
     A->fillComplete();
 
     H->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
