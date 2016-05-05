@@ -17,6 +17,12 @@ IF(Kokkos_ENABLE_OpenMP)
 	NOEXEPREFIX
 	SOURCES amesos2_interface_test.cpp test_util.hpp
      )
+     
+     TRIBITS_ADD_EXECUTABLE(
+        amesos2_interface_coverage_test
+	NOEXEPREFIX
+	SOURCES amesos2_interface_coverage_test.cpp test_util.hpp
+     )
          
      ##Single threaded test
      TRIBITS_ADD_ADVANCED_TEST(

@@ -66,19 +66,20 @@ void readMatrix(std::string fname,
       Entry v_;
       while(nnz_ > 0)
 	{
+	 
 	  inp_str >> i_;
 	  (*row_idx)[innz] = i_-1;
 	  inp_str >> j_;
 	  (*col_ptr)[j_] = (*col_ptr)[j_]+1;
 	  inp_str >> v_;
 	  (*val)[innz] = v_;
-	  
+	 
 	  innz++;
 	  nnz_--;
 	}//over nnz
       inp_str.close();
     }//is open
-  
+
   for(Int k = 1; k < n+1; k++)
     {
       (*col_ptr)[k] = (*col_ptr)[k] + (*col_ptr)[k-1];
@@ -122,6 +123,7 @@ void readVector(std::string fname,
 	{
 	  inp_str >> v_;
 	  (*x)[ni] = (Entry) v_;
+	  //std::cout << "vect val" << (*x)[ni] << std::endl;
 	  n_--;
 	  ni++;
 	}
@@ -154,7 +156,7 @@ void multiply(Int m, Int n, Int col_ptr[],
       for(Int i = col_ptr[k]; i < col_ptr[k+1]; i++)
 	{
 	  const Int j = row_idx[i];
-	  y[j] += val[i]*x[j];
+	  y[j] += val[i]*x[k];
 	}//over row
     }//over column
 }//end multiply

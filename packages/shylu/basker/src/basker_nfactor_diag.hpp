@@ -173,8 +173,8 @@ namespace BaskerNS
 
 	if(Options.verbose == BASKER_TRUE)
 	  {
-	    printf("kid: %d factoring current_chunk: %d size: %d \n",
-		   kid, c, c_size);
+	    printf("kid: %d factoring current_chunk: %d size: %d start: %d\n",
+		   kid, c, c_size, btf_tabs(c));
 	  }
 
 	Int err = BASKER_SUCCESS;
@@ -319,7 +319,7 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
 	//if(k < 3)
 	  {
-	    //printf("\n------------K=%d-------------\n", k);
+	    printf("\n------------K=%d-------------\n", k);
 	BASKER_ASSERT(top == ws_size, "nfactor dig, top");
 	for( i = 0; i < ws_size; ++i)
 	  {
@@ -360,17 +360,15 @@ namespace BaskerNS
 		continue;
 	      }
 
-
-	    //X[j-brow] = M.val[i];
 	    X(j) = M.val(i);
 	    
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
-	    //if(k  < 3)
+	    if(k  <= 117)
 	      {
 		printf("In put j: %d %d %g \n", 
 		       M.row_idx(i), j, M.val(i));
 	      }
-	     #endif
+	    #endif
 	    
 	    #ifdef BASKER_DEBUG_NFACTOR_DIAG
 	    printf("i: %d row: %d %d %d  val: %g  top: %d \n", 
@@ -458,7 +456,7 @@ namespace BaskerNS
 	    }
 	
 	  #ifdef BASKER_DEBUG_NFACTOR_DEBUG
-	  if(k < 45)
+	  if(k <= 117)
 	    {
 	      printf("pivot: %g maxindex: %d K:%d \n",
 		     pivot, maxindex, k);
@@ -595,10 +593,10 @@ namespace BaskerNS
 	      t = gperm(j+L.srow);
             
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
-	      if(k < 45)
+	      if(k <= 117)
 		{
-		  printf("j: %d t: %d k: %d\n", 
-			 j, t, k);
+		  printf("j: %d t: %d k: %d x: %g\n", 
+			 j, t, k, X(j));
 		}
               #endif            
 

@@ -323,7 +323,7 @@ namespace BaskerNS
 			 );
 
 	
-	//#ifdef BASKER_DEBUG_ORDER_SCOTCH
+	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
 	for(Int i = 0; i < iblks+1; i++)
@@ -337,7 +337,7 @@ namespace BaskerNS
 	    printf("%d, ", ttabs(i));
 	  }
 	printf("\n");
-	///#endif
+	#endif
 
 	//copy back into scotch
 	sg.cblk = iblks;

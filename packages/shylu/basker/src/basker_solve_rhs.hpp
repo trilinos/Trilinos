@@ -91,7 +91,7 @@ namespace BaskerNS
         if(btf_nblks > 1)
           {
             
-            //printf("btf_c spmv \n");
+            printf("btf_c spmv \n");
             spmv(BTF_C, x_known, y);
           }
 	//return -1;
@@ -102,14 +102,19 @@ namespace BaskerNS
 	//spmv(BTF_A, x_known,y);
       }
     
-    
-
+    /*
+    for(Int i = 0; i < gn; i++)
+      {
+	printf("before y(%d) %e \n",
+	       i, y(i));
+      }
+    */
     
     
     //printf("\n Before Test Points \n");
     //printf("i: %d x: %f y: %f \n", 0, x_known(0), y(0));
     //if(gn > 24)
-    //  {
+    // {
     //   printf("i: %d x: %f y: %f \n", 24, x_known(24), y(24));
     //  }
     
@@ -160,7 +165,7 @@ namespace BaskerNS
     printf("RHS: \n");
     for(Int i =0; i < gm; i++)
       {
-	printf("%d %f,\n ", i, y(i)); 
+	printf("%d %e,\n ", i, y(i)); 
       }
     printf("\n\n");
     #endif
@@ -183,7 +188,7 @@ namespace BaskerNS
       {
 	//A\y -> y
 	//serial_btf_solve(y,x);
-        printf("before btf serial solve\n");
+        //printf("before btf serial solve\n");
 	serial_btf_solve(y,x);
         
 	//printf("After btf solve\n");
@@ -343,20 +348,9 @@ namespace BaskerNS
 
      permute_inv(y, gperm, gn);
 
-    //printVec("perm.txt" , gperm, gn);
-    //permute_inv(y, gperm, gn);
-    //printf("Before solve interface\n");
 
-    solve_interface(x,y);
+     solve_interface(x,y);
 
-    /*
-    printf("After solver interface\n");
-    for(Int i = 0; i < gn ; i++)
-      {
-	printf("X(%d) %g \n",
-	       i, x(i));
-      }
-    */
 
     //Inverse perm
     //Note: don't need to inverse a row only perm
@@ -589,6 +583,9 @@ namespace BaskerNS
 	//L\x -> y 
 	lower_tri_solve(LC,x,y);
 
+	//printf("AFTER LOWER\n");
+	//printVec(y,gn);
+
 	BASKER_MATRIX &UC = UBTF(b);
 	//U\x -> y
 	upper_tri_solve(UC,x,y);
@@ -612,13 +609,13 @@ namespace BaskerNS
 		 BTF_C, y, x);
 	  }
           
-          #ifdef BASKER_DEBUG_SOLVE_RHS
+	  #ifdef BASKER_DEBUG_SOLVE_RHS
           printf("After spmv\n");
           printf("Inner Vector y print\n");
           printVec(y, gn);
           printf("Inner Vector x print\n");
           printVec(x, gn);
-          #endif
+	  #endif
         
 
 	//BASKER_MATRIX &UC = UBTF[b];
@@ -811,7 +808,24 @@ namespace BaskerNS
 	    //	   j, i, j+brow, k+bcol);
 	    
 	    //y[j] += M.val[i]*x[k];
+	    /*
+	    if(j+brow == 9)
+	      {
+		printf("ybefore: %g \n",
+		       y(j+brow));
+	      }
+	    */
+
 	    y(j+brow) += M.val(i)*x(k+bcol);
+	    
+	    /*
+	    if(j+brow == 9)
+	      {
+		printf("j: %d brow: %d M.val: %g k: %d x:%g y: %g \n",
+		       j, brow, M.val(i), k+bcol, 
+		       x(k+bcol), y(j+brow));
+	      }
+	    */
 
 	  }
       }
@@ -932,6 +946,7 @@ namespace BaskerNS
 
 	//Replace with Entry divide in future
 	//y[k+bcol] = x[k+bcol] / M.val[M.col_ptr[k]];
+
 	y(k+brow) = x(k+bcol) / M.val(M.col_ptr(k));
 	
 	//for(Int i = M.col_ptr[k]+1; i < M.col_ptr[k+1]; i++)
@@ -1055,20 +1070,20 @@ namespace BaskerNS
     //loop over each column
     for(Int k = bcol; k < ecol; ++k)
       {
-	//for(Int i = M.col_ptr[k]; i < M.col_ptr[k+1]; i++)
-        //printf("k: %d col_ptr: %d \n", k, M.col_ptr(k));
 	for(Int i = M.col_ptr(k); i < M.col_ptr(k+1); ++i)
 	  {
 	    //Int j = M.row_idx[i];
 	    const Int j = gperm(M.row_idx(i)+M.srow);
-	    
+	   
+
 	    //if(k == 111)
 	    //{
 	    //	printf("k: %d j: %d jp: %d \n", 
-	    //	       k, M.row_idx(i), j);
+	    //      k, M.row_idx(i)+M.srow, j);
 	    //}
-	    if(j > erow)
+	    if(j >= erow)
 	      {
+		//printf("continue called\n");
 		#ifdef BASKER_DEBUG_SOLVE_RHS
 		///printf("break, k: %d j: %d erow: %d\n",
                 //     k, j, erow);

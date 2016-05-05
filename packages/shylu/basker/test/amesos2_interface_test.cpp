@@ -1,3 +1,8 @@
+/*
+  Joshua Dennis Booth
+  Test the Amesos2 Interface calls with refactoring
+*/
+
 #include "test_util.hpp"
 #include "shylubasker_decl.hpp"
 #include "shylubasker_def.hpp"
@@ -28,7 +33,9 @@ int main(int argc, char* argv[])
   m = n = nnz = 0;
   Int *col_ptr, *row_idx;
   Entry *val;
- 
+  col_ptr = NULL;
+  
+  std::cout << "Matrix read" << std::endl;
   double rmatrix = myTime();
   readMatrix<Int,Entry>(mname, m, n, nnz, 
 			&col_ptr, &row_idx, &val);
@@ -39,12 +46,15 @@ int main(int argc, char* argv[])
   Int vn, vm;
   vn = vm = 0;
   Entry *x, *xhat, *y;
+  x = xhat = y = NULL;
   vn = n;
   x = new Entry[n]();
   xhat = new Entry[n]();
   if(argc == 4)
     {
+      
       vname = std::string(argv[3]);
+      //std::cout << "reading vector " << vname << std::endl;
       readVector<Int,Entry>(vname, vm, &y);
     }
   else
@@ -58,6 +68,7 @@ int main(int argc, char* argv[])
       multiply<Int,Entry>(m,n,col_ptr,row_idx,val, xhat, y);
       for(Int i = 0; i < vm; i++)
 	{
+	  //std::cout  << "y " << y[i] << std::endl;
 	  xhat[i] = (Entry) 0.0;
 	}
     }
@@ -80,7 +91,7 @@ int main(int argc, char* argv[])
     BaskerNS::Basker<Int, Entry, Exe_Space> mybasker;
     //---Options
     mybasker.Options.same_pattern       = BASKER_FALSE;
-    mybasker.Options.verbose            = BASKER_FALSE;
+    mybasker.Options.verbose            = BASKER_TRUE;
     mybasker.Options.verbose_matrix_out = BASKER_FALSE;
     mybasker.Options.realloc            = BASKER_TRUE;
     mybasker.Options.transpose          = BASKER_FALSE;
@@ -110,24 +121,60 @@ int main(int argc, char* argv[])
 	      << totalTime(ftime, myTime()) << std::endl;
     //mybasker.DEBUG_PRINT();
     double ttime = myTime();
+    mybasker.SolveTest();
+    Int *lperm;
+    Int *rperm;
+    mybasker.GetPerm(&lperm,&rperm);
+    
     mybasker.Solve(y,x);
     std::cout << "Done with Solve, Time: "
-	      << totalTime(ftime, myTime()) << std::endl;
+	      << totalTime(ttime, myTime()) << std::endl;
 
     multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
+    for(Int i = 0; i < m; i++)
+      {
+	xhat[i] = y[i] - xhat[i];
+      }
     
+    /*
     for(Int i = 0; i < n; i++)
       {
-	std::cout << "x: " << x[i]
+	std::cout << "idx: " << i
+	          << "x: " << x[i]
 		  << " xhat: " << xhat[i]
 		  << " y: " << y[i]
 		  << std::endl;
       }
+    */
 
     std::cout << "||X||: " << norm2<Int,Entry>(n,x)
 	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
 	      << std::endl;
     
+
+    /*
+    //Refactor
+    double rftime = myTime();
+    mybasker.Factor(m,n,nnz,col_ptr,row_idx,val);
+    std::cout << "Done with Refactor Factor, Time: "
+	      << totalTime(rftime, myTime()) << std::endl;
+    //ReSolve
+    double rttime = myTime();
+    mybasker.Solve(y,x);
+    std::cout << "Done with Refactor Solve, Time: "
+	      << totalTime(rttime, myTime()) << std::endl;
+
+    multiply<Int,Entry>(m,n,col_ptr,row_idx,val, x, xhat);
+    for(Int i = 0; i < m; i++)
+      {
+	xhat[i] = y[i] - xhat[i];
+      }
+    
+    std::cout << "||X||: " << norm2<Int,Entry>(n,x)
+	      << " ||Y-AX||: " << norm2<Int,Entry>(m,xhat)
+	      << std::endl;
+
+    */
     //mybasker.GetPerm()
     mybasker.Finalize();
   }
