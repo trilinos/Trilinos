@@ -25,8 +25,9 @@ public:
   /// Constructor
   SolutionStateMetaData(
     const Scalar time_,
-    const Scalar dt_,
     const int    iStep_,
+    const Scalar dt_,
+    const Scalar suggestedDt_,
     const Scalar errorAbs_,
     const Scalar errorRel_,
     const int    order_,
@@ -46,13 +47,14 @@ public:
   virtual ~SolutionStateMetaData() {};
 
   Scalar time;            ///< Time of solution
-  Scalar dt;              ///< Time step for this solution
   int    iStep;           ///< Time step index for this solution
+  Scalar dt;              ///< Time step for this solution
+  Scalar suggestedDt;     ///< Time step suggested to the Stepper
   Scalar errorAbs;        ///< Absolute local truncation error
   Scalar errorRel;        ///< Relative local truncation error
-  unsigned order;         ///< Order of this solution
-  unsigned nFailures;     ///< Total number of stepper failures
-  unsigned nConsecutiveFailures; ///< Consecutive number of stepper failures
+  int order;              ///< Order of this solution
+  int nFailures;          ///< Total number of stepper failures
+  int nConsecutiveFailures; ///< Consecutive number of stepper failures
   SolutionStatus status;  ///< Status of SolutionState (passing, failed)
   bool   output;          ///< SolutionState should be or has been outputted
   bool   isAccepted;      ///< SolutionState accepted (i.e, no more changes)
@@ -69,4 +71,7 @@ public:
 
 };
 } // namespace Tempus
+
+#include "Tempus_SolutionStateMetaData_impl.hpp"
+
 #endif // TEMPUS_SOLUTIONSTATEMETADATA_HPP

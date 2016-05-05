@@ -91,13 +91,13 @@ public:
   /// \name Accessor methods
   //@{
     /// Get the current solution, x.
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() {return x;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x;}
 
     /// Get the current time derivative of the solution, xdot.
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
 
     /// Get the current time second derivative of the solution, xdotdot.
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
   //@}
 
 
@@ -147,17 +147,20 @@ public:
   Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData;
 
   /// Solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x;
 
   /// Time derivative of the solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot;
 
   /// Second time derivative of the solution
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot;
 
   /// StepperState for this SolutionState
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
 
 };
 } // namespace Tempus
+
+#include "Tempus_SolutionState_impl.hpp"
+
 #endif // TEMPUS_SOLUTIONSTATE_HPP

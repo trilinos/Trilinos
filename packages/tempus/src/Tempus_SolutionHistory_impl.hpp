@@ -5,7 +5,6 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 // Tempus
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
@@ -56,7 +55,7 @@ template<class Scalar>
 SolutionHistory<Scalar>::SolutionHistory(RCP<ParameterList> pList_)
 {
   // Create history, an array of solution states.
-  history = rcp(new Teuchos::Array<SolutionState<Scalar> >);
+  history = rcp(new Teuchos::Array<RCP<SolutionState<Scalar> > >);
 
   if (pList_ == Teuchos::null) {
     pList     = Teuchos::null;
@@ -95,17 +94,16 @@ void SolutionHistory<Scalar>::addState(
       break;
     }
     case HISTORY_POLICY_KEEP_NEWEST:
-    case HISTORY_POLICY_UNDO:
-    case HISTORY_POLICY_STATIC: {
+    case HISTORY_POLICY_UNDO: {
       if (state_->getTime() > history->front()->getTime()) {
-        // Case:  State is newer than the oldest state in history.
+        // Case:  State is older than the youngest state in history.
         // Remove state from the beginning of history, then add new state.
         history->erase(history->begin());
       } else {
-        // Case:  State is older than the oldest state in history.
+        // Case:  State is younger than the youngest state in history.
         RCP<Teuchos::FancyOStream> out = this->getOStream();
         Teuchos::OSTab ostab(out,1,"SolutionHistory::addState");
-        *out << "Warning, state is older than oldest state in history.  "
+        *out << "Warning, state is younger than youngest state in history.  "
              << "State not added!\n" << std::endl;
         return;
       }
@@ -123,10 +121,10 @@ void SolutionHistory<Scalar>::addState(
   if (history->size() == 0) {
     history->push_back(state_);
   } else {
-    typename Teuchos::Array<SolutionState<Scalar> >::iterator
+    typename Teuchos::Array<RCP<SolutionState<Scalar> > >::iterator
       state_it = history->begin();
-    for (state_it; state_it < history->end(); ++state_it) {
-      if (state_ < state_it) break;
+    for (; state_it < history->end(); state_it++) {
+      if (state_->getTime() < (*state_it)->getTime()) break;
     }
     history->insert(state_it, state_);
   }
@@ -139,8 +137,8 @@ void SolutionHistory<Scalar>::removeState(
   if (history->size() != 0) {
     typename Teuchos::Array<SolutionState<Scalar> >::reverse_iterator
       state_it = history->rbegin();
-    for (state_it; state_it < history->rend(); ++state_it) {
-      if (state_ == state_it) break;
+    for (state_it; state_it < history->rend(); state_it++) {
+      if (state_->getTime() == (*state_it)->getTime()) break;
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->rend(), std::logic_error,
@@ -219,28 +217,20 @@ RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getWorkingState() const
   return workingState;
 }
 
-/** Initialize the working state
- *
- *  <b>Tasks:</b>
- *    -# Get the working state by creating a new SolutionState or
- *       use the last SolutionState in the SolutionHistory.
- *    -# Set working state to current state (deepcopy).
- *       This is making the initial guess for the next time step
- *       equal to the current time step.
- */
+/** Initialize the working state */
 template<class Scalar>
-RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::initWorkingState()
+RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::initWorkingState(const bool stepperStatus)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(history->size() == 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(currentState == Teuchos::null, std::logic_error,
     "Error - SolutionHistory::initWorkingState()\n"
-    "Can not initialize working state without at least one solution state!\n");
+    "Can not initialize working state without a current state!\n");
 
-  if (history->size() < storage_limit) {
-    workingState->clone(currentState);
-  } else {
+  if (stepperStatus == true) {
+    addState(currentState);
     workingState = history->back();
-    workingState->deepcopy(currentState);
   }
+
+  return workingState;
 }
 
 
@@ -250,12 +240,14 @@ void SolutionHistory<Scalar>::promoteWorkingState()
   RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData;
   md->time += md->dt;
   md->iStep++;
-  md->nConsecutiveFailures = std::max(0,md->nConsecutiveFailures-1);
-  md->status = SolutionStatus::PASSING;
+  md->nFailures = std::max(0,md->nFailures-1);
+  md->nConsecutiveFailures = 0;
+  md->status = SolutionStatus::PASSED;
   md->isAccepted = true;
   md->isRestartable = true;
   md->isInterpolated = false;
   currentState = workingState;
+  workingState = Teuchos::null;
 }
 
 
@@ -321,13 +313,14 @@ void SolutionHistory<Scalar>::describe(
     out << "historyPolicy    = " << historyPolicy << std::endl;
     out << "number of states = " << history->size() << std::endl;
     out << "time range       = (" << history->front()->getTime() << ", "
-                                  << history->back()->getTime() << ")" << std::endl;
+                                  << history->back()->getTime() << ")"
+                                  << std::endl;
   } else if (Teuchos::as<int>(verbLevel) >=
              Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "SolutionStates: " << std::endl;
     for (Teuchos::Ordinal i=0; i<history->size() ; ++i) {
       out << "SolutionState[" << i << "] = " << std::endl;
-      (*history)[i].describe(out,this->getVerbLevel());
+      (*history)[i]->describe(out,this->getVerbLevel());
     }
   }
 }

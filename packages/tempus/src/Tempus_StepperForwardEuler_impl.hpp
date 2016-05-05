@@ -3,8 +3,6 @@
 
 // Teuchos
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-// Tempus
-#include "Tempus_StepperForwardEuler.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -28,10 +26,9 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 
 template<class Scalar>
 bool StepperForwardEuler<Scalar>::takeStep(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  const Teuchos::Ptr<SolutionState<Scalar> > workingState =
-    solutionHistory->getWorkingState();
+  RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(workingState), std::logic_error,
     "Error - SolutionState, workingstate, is invalid!\n");
@@ -54,7 +51,7 @@ bool StepperForwardEuler<Scalar>::takeStep(
   model->evalModel(inArgs,outArgs);
 
   // Forward Euler update, x = x + dt*xdot
-  Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot));
+  Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
 
   return (true);
 }

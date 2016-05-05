@@ -7,7 +7,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 // Tempus
 #include "Tempus_StepType.hpp"
-#include "Tempus_SolutionStateMetaData.hpp"
+#include "Tempus_SolutionHistory.hpp"
 
 namespace Tempus {
 
@@ -37,7 +37,8 @@ public:
   TimeStepControl();
 
   /** \brief Construct from ParameterList */
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null);
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null,
+                  const Scalar dtConstant_ = 0.0);
 
   /// This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc_);
@@ -46,8 +47,9 @@ public:
   virtual ~TimeStepControl() {};
 
   /** \brief Determine the time step size.*/
-  virtual void getNextTimeStep(Teuchos::RCP<SolutionStateMetaData<Scalar> >
-    metaData, bool stepperStatus, bool integratorStatus) const;
+  virtual void getNextTimeStep(
+    const RCP<SolutionHistory<Scalar> > & solutionHistory,
+    const bool stepperStatus, bool & integratorStatus) const;
 
   /** \brief Check if time is within minimum and maximum time. */
   virtual bool timeInRange(const Scalar time) const;
@@ -57,20 +59,18 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream          &out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
+    std::string description() const;
+    void describe(Teuchos::FancyOStream          &out,
+                  const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
-
 
   Scalar timeMin;         ///< Minimum simulation time
   Scalar timeMax;         ///< Maximum simulation time
@@ -80,8 +80,8 @@ public:
   int    iStepMax;        ///< Maximum time step index
   Scalar errorMaxAbs;     ///< Maximum absolute error
   Scalar errorMaxRel;     ///< Maximum relative error
-  unsigned int orderMin;  ///< Minimum time integration order
-  unsigned int orderMax;  ///< Maximum time integration order
+  int orderMin;  ///< Minimum time integration order
+  int orderMax;  ///< Maximum time integration order
 
   StepType stepType;      ///< Step type for step control
   Scalar dtConstant;      ///< Constant time step if stepType=CONSTANT_STEP_SIZE
@@ -89,10 +89,13 @@ public:
   std::vector<int>    outputIndices;  ///< Vector of output indices.
   std::vector<Scalar> outputTimes;    ///< Vector of output times.
 
-  unsigned int nFailuresMax;            ///< Maximum number of stepper failures
-  unsigned int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
+  int nFailuresMax;            ///< Maximum number of stepper failures
+  int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
 
   Teuchos::RCP<Teuchos::ParameterList> pList;
 };
 } // namespace Tempus
+
+#include "Tempus_TimeStepControl_impl.hpp"
+
 #endif // TEMPUS_TIMESTEPCONTROL_HPP

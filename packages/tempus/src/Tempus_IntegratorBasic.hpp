@@ -38,7 +38,17 @@ public:
   /// \name Basic integrator methods
   //@{
     /// Advance the solution to time, and return true if successful.
-    virtual bool advanceTime(const Scalar time);
+    bool advanceTime(const Scalar time);
+    /// Only accept step after meeting time step criteria.
+    void acceptTimeStep(bool & stepperStatus, bool & integratorStatus);
+  //@}
+
+  /// \name Accessor methods
+  //@{
+    /// Get time
+    Scalar getTime() const{return workingState->getTime();}
+    /// Get index
+    Scalar getIndex() const{return workingState->getIndex();}
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -51,22 +61,9 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
-  //@}
-  /// \name Accessor methods
-  //@{
-    /// Get time
-    virtual Scalar getTime() const{return workingState->getTime();}
-    /// Get index
-    virtual Scalar getIndex() const{return workingState->getIndex();}
-  //@}
-
-  /// \name Undo type capabilities
-  //@{
-    /// Only accept step after meeting time step criteria.
-    virtual bool acceptTimeStep();
+    std::string description() const;
+    void describe(Teuchos::FancyOStream        & out,
+                  const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
 protected:
@@ -79,6 +76,8 @@ protected:
 
   Teuchos::RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
+
+  Scalar suggestedDt;  ///< Time step size suggested to the Stepper.
 
 };
 } // namespace Tempus

@@ -3,7 +3,6 @@
 
 #include "Tempus_Stepper.hpp"
 
-
 namespace Tempus {
 
 
@@ -21,7 +20,7 @@ public:
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_ );
 
   /// Destructor
-  virtual ~StepperForwardEuler();
+//  virtual ~StepperForwardEuler();
 
   /// \name Basic stepper methods
   //@{
@@ -36,10 +35,10 @@ public:
 
   /// \name ParameterList methods
   //@{
-    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -60,4 +59,7 @@ protected:
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
 };
 } // namespace Tempus
+
+#include "Tempus_StepperForwardEuler_impl.hpp"
+
 #endif // TEMPUS_STEPPERFORWARDEULER_HPP

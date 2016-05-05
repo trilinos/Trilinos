@@ -12,8 +12,9 @@ template RCP<SolutionStateMetaData<double> > SolutionStateMetaData();
 
 template RCP<SolutionStateMetaData<double> >
 SolutionStateMetaData(const double time,
-                      const double dt,
                       const int    iStep,
+                      const double dt,
+                      const double suggestedDt,
                       const double errorAbs,
                       const double errorRel,
                       const int    order,

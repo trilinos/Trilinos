@@ -29,8 +29,9 @@ const char* toString(const StepType stepType)
 
 /** \brief Solution Status. */
 enum SolutionStatus {
-  PASSING,     ///< Constant integrator step size
-  FAILED,     ///< Variable integrator step size
+  WORKING,    ///< Solution is the working solution and not yet completed
+  PASSED,     ///< Solution has passed and is archivable.
+  FAILED,     ///< Solution has failed.
 };
 
 
@@ -39,8 +40,10 @@ inline
 const char* toString(const SolutionStatus status)
 {
   switch(status) {
-    case PASSING:
-      return "PASSING";
+    case WORKING:
+      return "WORKING";
+    case PASSED:
+      return "PASSED";
     case FAILED:
       return "FAILED";
     default:

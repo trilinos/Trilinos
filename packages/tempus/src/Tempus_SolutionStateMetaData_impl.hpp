@@ -1,7 +1,6 @@
 #ifndef TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATEMETADATA_IMPL_HPP
 
-#include "Tempus_SolutionStateMetaData.hpp"
 
 namespace Tempus {
 
@@ -9,14 +8,15 @@ namespace Tempus {
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData()
   :time          (0.0),
-   dt            (0.0),
    iStep         (0),
+   dt            (0.0),
+   suggestedDt   (0.0),
    errorAbs      (0.0),
    errorRel      (0.0),
    order         (1),
    nFailures     (0),
    nConsecutiveFailures(0),
-   status        (PASSING),
+   status        (PASSED),
    output        (false),
    isAccepted    (false),
    isRestartable (true),
@@ -27,8 +27,9 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar time_,
-  const Scalar dt_,
   const int    iStep_,
+  const Scalar dt_,
+  const Scalar suggestedDt_,
   const Scalar errorAbs_,
   const Scalar errorRel_,
   const int    order_,
@@ -41,8 +42,9 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const bool   isRestartable_,
   const Scalar accuracy_)
   :time          (time_),
-   dt            (dt_),
    iStep         (iStep_),
+   dt            (dt_),
+   suggestedDt   (suggestedDt_),
    errorAbs      (errorAbs_),
    errorRel      (errorRel_),
    order         (order_),
@@ -59,8 +61,9 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_)
   :time          (ssmd_.time),
-   dt            (ssmd_.dt),
    iStep         (ssmd_.iStep),
+   dt            (ssmd_.dt),
+   suggestedDt   (ssmd_.suggestedDt),
    errorAbs      (ssmd_.errorAbs),
    errorRel      (ssmd_.errorRel),
    order         (ssmd_.order),
@@ -91,8 +94,9 @@ void SolutionStateMetaData<Scalar>::describe(
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
         << "time           = " << time << std::endl
-        << "dt             = " << dt << std::endl
         << "iStep          = " << iStep << std::endl
+        << "dt             = " << dt << std::endl
+        << "suggestedDt    = " << suggestedDt << std::endl
         << "errorAbs       = " << errorAbs << std::endl
         << "errorRel       = " << errorRel << std::endl
         << "order          = " << order << std::endl

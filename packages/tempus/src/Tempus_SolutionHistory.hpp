@@ -81,7 +81,7 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const;
 
     /// Initialize the working state
-    Teuchos::RCP<SolutionState<Scalar> > initWorkingState();
+    Teuchos::RCP<SolutionState<Scalar> > initWorkingState(const bool stepperStatus);
 
     /// Promote the working state to current state
     void promoteWorkingState();
@@ -107,11 +107,10 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
   //@}
 
   /// \name Overridden from Teuchos::Describable
@@ -134,7 +133,7 @@ public:
 protected:
 
   Teuchos::RCP<Teuchos::ParameterList>                  pList;
-  Teuchos::RCP<Teuchos::Array<SolutionState<Scalar> > > history;
+  Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > > history;
 //  Teuchos::RCP<InterpolatorBase<Scalar> >      interpolator;
   HistoryPolicy                       historyPolicy;
   int                                 storage_limit;
@@ -157,4 +156,7 @@ Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
 }
 
 } // namespace Tempus
+
+#include "Tempus_SolutionHistory_impl.hpp"
+
 #endif // TEMPUS_SOLUTIONHISTORY_HPP

@@ -41,43 +41,14 @@ class Integrator
 {
 public:
 
-  /// Destructor
-  virtual ~Integrator();
-
   /// \name Basic integrator methods
   //@{
     /// Advance the solution to time, and return true if successful.
     virtual bool advanceTime(const Scalar time_final) = 0;
-  //@}
-
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  //@}
-
-  /// \name Overridden from Teuchos::Describable
-  //@{
-    virtual std::string description() const;
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
-  //@}
-
-  /// \name Accessor methods
-  //@{
-    /// Get time
-    virtual Scalar getTime() const;
-    /// Get index
-    virtual Scalar getIndex() const;
-  //@}
-
-  /// \name Undo type capabilities
-  //@{
-    /// Only accept step after meeting time step criteria.
-    virtual bool acceptTimeStep() = 0;
+    /// Get current time
+    virtual Scalar getTime() const = 0;
+    /// Get current index
+    virtual Scalar getIndex() const = 0;
   //@}
 
 };

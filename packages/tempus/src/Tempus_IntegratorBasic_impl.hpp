@@ -131,36 +131,95 @@ bool IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
   bool integratorStatus = true;
   bool stepperStatus = true;
 
-  while (timeStepControl->timeInRange(currentState->getTime()) and
+  while (integratorStatus == true and
+         timeStepControl->timeInRange(currentState->getTime()) and
          timeStepControl->indexInRange(currentState->getIndex())){
 
     integratorObserver->observeStartTimeStep();
 
-    workingState = solutionHistory->initWorkingState();
+    workingState = solutionHistory->initWorkingState(stepperStatus);
 
-    timeStepControl->getNextTimeStep(workingState->metaData,
-                                     stepperStatus, integratorStatus);
+    timeStepControl->getNextTimeStep(solutionHistory, stepperStatus,
+                                     integratorStatus);
 
-    if (integratorStatus != true) {
-      integratorObserver->observeFailedIntegrator();
-      break;
-    }
+    integratorObserver->observeNextTimeStep(stepperStatus, integratorStatus);
+
+    if (integratorStatus != true) break;
 
     integratorObserver->observeBeforeTakeStep();
 
     stepperStatus = stepper->takeStep(solutionHistory);
 
-    if (stepperStatus != true) {
-      integratorObserver->observeFailedTimeStep();
-      continue;
-    }
+    integratorObserver->observeAfterTakeStep();
 
-    acceptTimeStep();
-    integratorObserver->observeAcceptedTimeStep();
+    acceptTimeStep(stepperStatus, integratorStatus);
+    integratorObserver->observeAcceptedTimeStep(stepperStatus,integratorStatus);
   }
 
-  integratorObserver->observeEndIntegrator();
+  integratorObserver->observeEndIntegrator(stepperStatus, integratorStatus);
+
   return integratorStatus;
+}
+
+
+template <class Scalar>
+void IntegratorBasic<Scalar>::acceptTimeStep(
+  bool & stepperStatus, bool & integratorStatus)
+{
+  RCP<SolutionStateMetaData<Scalar> > metaData = workingState->metaData;
+  //const Scalar time = metaData->time;
+  //const int iStep = metaData->iStep;
+  //const Scalar errorAbs = metaData->errorAbs;
+  //const Scalar errorRel = metaData->errorRel;
+  //const int order = metaData->order;
+  Scalar & dt = metaData->dt;
+  int & nFailures = metaData->nFailures;
+  int & nConsecutiveFailures = metaData->nConsecutiveFailures;
+
+  // Stepper failure
+  if (stepperStatus != true) {
+    nFailures++;
+    nConsecutiveFailures++;
+  }
+
+  // Constant time step failure
+  if ((timeStepControl->stepType == CONSTANT_STEP_SIZE) and
+      (dt != timeStepControl->dtConstant)) {
+    nFailures++;
+    nConsecutiveFailures++;
+  }
+
+  // Too many failures
+  if (nFailures >= timeStepControl->nFailuresMax) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"continueIntegration");
+    *out << "Failure - Stepper has failed more than the maximum allowed.\n"
+         << "  (nFailures = "<<nFailures << ") >= (nFailuresMax = "
+         <<timeStepControl->nFailuresMax<<")" << std::endl;
+    integratorStatus = false;
+    return;
+  }
+  if (nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"continueIntegration");
+    *out << "Failure - Stepper has failed more than the maximum "
+         << "consecutive allowed.\n"
+         << "  (nConsecutiveFailures = "<<nConsecutiveFailures
+         << ") >= (nConsecutiveFailuresMax = "
+         <<timeStepControl->nConsecutiveFailuresMax
+         << ")" << std::endl;
+    integratorStatus = false;
+    return;
+  }
+
+  // Made it here! Accept this time step
+
+  nFailures = std::max(nFailures-1,0);
+  nConsecutiveFailures = 0;
+
+  solutionHistory->promoteWorkingState();
+
+  return;
 }
 
 

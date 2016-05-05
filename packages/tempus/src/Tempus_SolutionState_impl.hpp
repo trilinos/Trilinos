@@ -1,8 +1,6 @@
 #ifndef TEMPUS_SOLUTIONSTATE_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATE_IMPL_HPP
 
-#include "Tempus_SolutionState.hpp"
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
