@@ -3714,30 +3714,40 @@ namespace Tpetra {
     //
     // Total number of cases: 32 (= 2^5).
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ATS::is_complex && (transA == TRANS || transB == TRANS),
-      std::invalid_argument, errPrefix << "Transpose without conjugation "
-      "(transA == TRANS || transB == TRANS) is not supported for complex Scalar "
-      "types.");
-
-    transA = (transA == NO_TRANS ? NO_TRANS : CONJ_TRANS);
-    transB = (transB == NO_TRANS ? NO_TRANS : CONJ_TRANS);
-
-    // Compute effective dimensions, w.r.t. transpose operations on
-    size_t A_nrows = (transA==CONJ_TRANS) ? A.getNumVectors() : A.getLocalLength();
-    size_t A_ncols = (transA==CONJ_TRANS) ? A.getLocalLength() : A.getNumVectors();
-    size_t B_nrows = (transB==CONJ_TRANS) ? B.getNumVectors() : B.getLocalLength();
-    size_t B_ncols = (transB==CONJ_TRANS) ? B.getLocalLength() : B.getNumVectors();
-
     impl_scalar_type beta_local = beta; // local copy of beta; might be reassigned below
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      getLocalLength () != A_nrows || getNumVectors () != B_ncols ||
-      A_ncols != B_nrows, std::runtime_error, errPrefix << "Dimensions of "
-      "*this, op(A), and op(B) must be consistent.  Local part of *this is "
-      << getLocalLength() << " x " << getNumVectors()
-      << ", A is " << A_nrows << " x " << A_ncols
-      << ", and B is " << B_nrows << " x " << B_ncols << ".");
+    // In a debug build, check compatibility of local dimensions.  We
+    // only do this in a debug build, since we have to do an
+    // all-reduce to ensure correctness on all processses.  It's
+    // entirely possible that only some processes may have
+    // incompatible local dimensions.  Throwing an exception only on
+    // those processes could cause this method to hang.
+#ifdef HAVE_TPETRA_DEBUG
+    if (! this->getMap ().is_null () && ! this->getMap ()->getComm ().is_null ()) {
+      const size_t A_nrows = (transA != NO_TRANS) ? A.getNumVectors() : A.getLocalLength();
+      const size_t A_ncols = (transA != NO_TRANS) ? A.getLocalLength() : A.getNumVectors();
+      const size_t B_nrows = (transB != NO_TRANS) ? B.getNumVectors() : B.getLocalLength();
+      const size_t B_ncols = (transB != NO_TRANS) ? B.getLocalLength() : B.getNumVectors();
+
+      const bool lclBad = this->getLocalLength () != A_nrows ||
+        this->getNumVectors () != B_ncols || A_ncols != B_nrows;
+
+      const int lclGood = lclBad ? 0 : 1;
+      int gblGood = 0;
+
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      using Teuchos::outArg;
+
+      auto comm = this->getMap ()->getComm (); // not null; see above
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (gblGood != 1, std::runtime_error, errPrefix << "Local dimensions of "
+         "*this, op(A), and op(B) are not consistent on at least one process "
+         "in this object's communicator.");
+    }
+#endif // HAVE_TPETRA_DEBUG
 
     const bool A_is_local = ! A.isDistributed ();
     const bool B_is_local = ! B.isDistributed ();
@@ -3746,7 +3756,8 @@ namespace Tpetra {
     const bool Case1 = C_is_local && A_is_local && B_is_local;
     // Case 2: C(local) = A^T(distr) * B  (distr)
     const bool Case2 = C_is_local && ! A_is_local && ! B_is_local &&
-      transA == CONJ_TRANS && transB == NO_TRANS;
+      transA != NO_TRANS &&
+      transB == NO_TRANS;
     // Case 3: C(distr) = A  (distr) * B^X(local)
     const bool Case3 = ! C_is_local && ! A_is_local && B_is_local &&
       transA == NO_TRANS;
@@ -3765,7 +3776,7 @@ namespace Tpetra {
       // processes except Process 0.
       const int myRank = this->getMap ()->getComm ()->getRank ();
       if (myRank != 0) {
-        beta_local = STS::zero ();
+        beta_local = ATS::zero ();
       }
     }
 
@@ -3801,9 +3812,28 @@ namespace Tpetra {
 
     typedef Kokkos::DeviceGEMM<impl_scalar_type, device_type> gemm_type;
 
-    gemm_type::GEMM (transA, transB, alpha,
-                     A_tmp->getDualView ().d_view, B_tmp->getDualView ().d_view,
-                     beta_local, C_tmp->getDualView ().d_view);
+    {
+      const size_t A_lclNumRows = A_tmp->getLocalLength ();
+      const size_t A_numVecs = A_tmp->getNumVectors ();
+      auto A_lcl = A_tmp->template getLocalView<device_type> ();
+      auto A_sub = Kokkos::subview (A_lcl,
+                                    std::make_pair (size_t (0), A_lclNumRows),
+                                    std::make_pair (size_t (0), A_numVecs));
+      const size_t B_lclNumRows = B_tmp->getLocalLength ();
+      const size_t B_numVecs = B_tmp->getNumVectors ();
+      auto B_lcl = B_tmp->template getLocalView<device_type> ();
+      auto B_sub = Kokkos::subview (B_lcl,
+                                    std::make_pair (size_t (0), B_lclNumRows),
+                                    std::make_pair (size_t (0), B_numVecs));
+      const size_t C_lclNumRows = C_tmp->getLocalLength ();
+      const size_t C_numVecs = C_tmp->getNumVectors ();
+      auto C_lcl = C_tmp->template getLocalView<device_type> ();
+      auto C_sub = Kokkos::subview (C_lcl,
+                                    std::make_pair (size_t (0), C_lclNumRows),
+                                    std::make_pair (size_t (0), C_numVecs));
+      gemm_type::GEMM (transA, transB, alpha, A_sub, B_sub, beta_local, C_sub);
+    }
+
     if (! isConstantStride ()) {
       deep_copy (*this, *C_tmp); // Copy the result back into *this.
     }
