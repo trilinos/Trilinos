@@ -231,6 +231,12 @@ using namespace NOX::Epetra;
   }
 }
 
+%pythonbegin
+%{
+from .. import Abstract
+from .  import Interface
+%}
+
 // Allow import from the parent directory
 %pythoncode
 %{

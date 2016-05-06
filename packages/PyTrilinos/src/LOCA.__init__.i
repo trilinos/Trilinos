@@ -252,12 +252,15 @@ from . import AnasaziOperator
 %teuchos_rcp(LOCA::Abstract::Iterator)
 %import(module="Abstract") "LOCA_Abstract_Iterator.H"
 
-// At this point, 'Abstract' will be 'NOX.Abstract', but we need it
-// to be 'LOCA.Abstract'
+// At this point, 'Abstract' might be 'NOX.Abstract' (depending on the
+// Python version and related import rules), but we need it to be
+// 'LOCA.Abstract'
 %pythoncode
 %{
-del Abstract
-from . import Abstract
+import os.path
+if 'NOX' in Abstract.__file__.split(os.path.sep):
+  del Abstract
+  from . import Abstract
 %}
 
 // LOCA Stepper class
