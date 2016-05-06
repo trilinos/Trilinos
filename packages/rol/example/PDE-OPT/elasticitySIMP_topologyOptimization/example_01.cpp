@@ -74,6 +74,8 @@
 #include "constraint.hpp"
 #include "volume_constraint.hpp"
 
+#include <fenv.h>
+
 typedef double RealT;
 
 Teuchos::RCP<Tpetra::MultiVector<> > createTpetraVector(const Teuchos::RCP<const Tpetra::Map<> > &map) {
@@ -81,6 +83,7 @@ Teuchos::RCP<Tpetra::MultiVector<> > createTpetraVector(const Teuchos::RCP<const
 }
 
 int main(int argc, char *argv[]) {
+  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -200,8 +203,10 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     Teuchos::RCP<Tpetra::MultiVector<> > hi_rcp = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_z, 1, true));
     lo_rcp->putScalar(0.0); hi_rcp->putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > lop = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(lo_rcp, zscale_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > hip = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(hi_rcp, zscale_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > lop
+      = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(lo_rcp, zscale_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > hip
+      = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(hi_rcp, zscale_rcp));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd = Teuchos::rcp(new ROL::BoundConstraint<RealT>(lop,hip));
 
     /*** Check functional interface. ***/

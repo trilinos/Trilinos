@@ -118,13 +118,13 @@ public:
   void resetMaterialDensity (const Real val) {
     myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     myDensity_->putScalar(val);
-    renewMaterialVector ();
+    renewMaterialVector();
   }
 
   void updateMaterialDensity (const Teuchos::RCP<const Tpetra::MultiVector<> > & newDensity) {
     myDensity_ = Teuchos::rcp(new Tpetra::MultiVector<>(this->myCellMap_, 1, true));
     Tpetra::deep_copy(*myDensity_, *newDensity);	
-    renewMaterialVector ();
+    renewMaterialVector();
   }
 
   void renewMaterialVector () {

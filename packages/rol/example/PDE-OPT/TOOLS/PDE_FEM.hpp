@@ -371,7 +371,7 @@ public:
     matGraph_->fillComplete();
     // Assemble matrices.
     // Stiffness matrix A.
-    matA_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matA_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     int numLocalMatEntries = numLocalDofs_ * numLocalDofs_;
     Teuchos::ArrayRCP<const Real> gradgradArrayRCP = gradgradMats_->getData();
     for (int i=0; i<numCells_; ++i) {
@@ -383,7 +383,7 @@ public:
     }
     matA_->fillComplete();
     // Mass matrix M.
-    matM_ = Tpetra::rcp(new Tpetra::CrsMatrix<>(matGraph_));
+    matM_ = Teuchos::rcp(new Tpetra::CrsMatrix<>(matGraph_));
     Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
@@ -399,33 +399,33 @@ public:
   virtual void AssembleRHSVector(void) {
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
-    vecF_overlap_ = Tpetra::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
-    for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
+    vecF_         = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_overlap_ = Teuchos::rcp(new Tpetra::MultiVector<>(myOverlapMap_, 1, true));
+    // assembly on the overlap map
+    for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         vecF_overlap_->sumIntoGlobalValue(cellDofs_(myCellIds_[i],j),
                                           0,
                                           (*datavalVecF_)[i*numLocalDofs_+j]);
       }
     }
-    
+ 
     //Assemble the point loads!
-    for (unsigned i=0; i<myPointLoadDofs_.size(); i++)
-    {
-        vecF_overlap_->sumIntoGlobalValue(myPointLoadDofs_[i],
-                                          0,
-                                          myPointLoadVals_[i]);
+    for (unsigned i=0; i<myPointLoadDofs_.size(); ++i) {
+      vecF_overlap_->sumIntoGlobalValue(myPointLoadDofs_[i],
+                                        0,
+                                        myPointLoadVals_[i]);
     }
 
-    // change map	
-    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
-    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
+    // change map
+    Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap()); // redistribution
+    vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);              // from the overlap map to the unique map
   }
   
   
   virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
-    vecUd_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
+    vecUd_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getDomainMap(), 1, true));
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs_(myCellIds_[i],j))) {
@@ -565,38 +565,39 @@ public:
     myDirichletDofs_.erase( std::unique(myDirichletDofs_.begin(), myDirichletDofs_.end()), myDirichletDofs_.end() );
   }
 
-  virtual int check_DBC_Coords_Range( std::vector<Real> x )
-  {
-// return value :
-// -1: not a DBC node
-//  0: x direction fixed
-//  1: y direction fixed
-//  5: both x, y direction are fixed
-	return 5;
+  virtual int check_DBC_Coords_Range( const std::vector<Real> &x ) const {
+    // return value :
+    // -1: not a DBC node
+    //  0: x direction fixed
+    //  1: y direction fixed
+    //  5: both x, y direction are fixed
+    return 5;
   }
 //
 //
 //
-virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist) {}
+  virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist) {}
 //
 //note that the point load is only allowed to applied on the boundary, not inside the body! 2D only
-  virtual void check_and_Apply_PointLoad_By_Coords(bool ifUpdateF, const std::vector<Real> &param, int globalCellNum, int pointload_bc) {
-	Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
-        const CellTopologyData * ctd = cellType_.getCellTopologyData();
-        Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][pointload_bc].node), cellType_.getVertexCount(spaceDim_-1, pointload_bc));
-	std::vector<Real> x1(spaceDim_);
-	std::vector<Real> x2(spaceDim_);
-	std::vector<int > localNodeNum(2);
-        x1[0]=nodes(ctn_(globalCellNum, locNodes[0]), 0);
-        x1[1]=nodes(ctn_(globalCellNum, locNodes[0]), 1);
-        x2[0]=nodes(ctn_(globalCellNum, locNodes[1]), 0);
-        x2[1]=nodes(ctn_(globalCellNum, locNodes[1]), 1);
-	ApplyPointLoad(ifUpdateF, param, pointload_bc, globalCellNum, localNodeNum, x1, x2);
+  virtual void check_and_Apply_PointLoad_By_Coords(int globalCellNum, int pointload_bc) {
+    Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
+    const CellTopologyData * ctd = cellType_.getCellTopologyData();
+    Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][pointload_bc].node), cellType_.getVertexCount(spaceDim_-1, pointload_bc));
+    std::vector<Real> x1(spaceDim_);
+    std::vector<Real> x2(spaceDim_);
+    std::vector<int > localNodeNum(2);
+    x1[0]=nodes(ctn_(globalCellNum, locNodes[0]), 0);
+    x1[1]=nodes(ctn_(globalCellNum, locNodes[0]), 1);
+    x2[0]=nodes(ctn_(globalCellNum, locNodes[1]), 0);
+    x2[1]=nodes(ctn_(globalCellNum, locNodes[1]), 1);
+    ApplyPointLoad(pointload_bc, globalCellNum, localNodeNum, x1, x2);
   }
 
-  virtual void ApplyPointLoad(bool ifUpdateF, const std::vector<Real> &param, int pointload_bc,
-			      int globalCellNum, std::vector<int> &localNodeNum, std::vector<Real> &coord1, std::vector<Real> &coord2) 
-  { 
+  virtual void ApplyPointLoad(const int pointload_bc,
+                              const int globalCellNum,
+                              const std::vector<int> &localNodeNum,
+                              const std::vector<Real> &coord1,
+                              const std::vector<Real> &coord2) { 
     	//Intrepid::FieldContainer<int>  &nodeDofs = *(dofMgr_->getNodeDofs());
 	//bool isLoadPosContainedInCurrentSegment = false;
 	//int whichNodeIsCloserToPos = -1;
@@ -605,28 +606,28 @@ virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterLi
 //
 //
 //
-  virtual void EnforceDBC(void) {    
+  virtual void EnforceDBC(void) {
     // Apply Dirichlet conditions.
-    // zero out row and column, make matrix symmetric  
+    // zero out row and column, make matrix symmetric
     Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     matA_dirichlet_ = matA_->clone(node);
     matM_dirichlet_ = matM_->clone(node);
-    vecF_dirichlet_ = Tpetra::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
-    
+ 
     matA_dirichlet_->resumeFill();
     matM_dirichlet_->resumeFill();
-    
-    int gDof; 
+ 
+    int gDof;
     for(int i=0; i<numCells_; i++) {
       for(int j=0; j<numLocalDofs_; j++) {
         gDof = cellDofs_(myCellIds_[i], j);
         if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
           size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
-          Teuchos::Array<int> indices(numRowEntries, 0);    
+          Teuchos::Array<int> indices(numRowEntries, 0);
           Teuchos::Array<Real> values(numRowEntries, 0);
-          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);    
-          Teuchos::Array<Real> zeroValues(numRowEntries, 0);    
+          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
+          Teuchos::Array<Real> zeroValues(numRowEntries, 0);
           matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
           matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
           for (int k=0; k<indices.size(); k++) {
@@ -638,11 +639,11 @@ virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterLi
           matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
           vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
         }
-               
+ 
         if (!check_myGlobalDof_on_boundary(gDof)) {
           size_t numDBCDofs = myDirichletDofs_.size();
-          Teuchos::Array<int> indices(numDBCDofs, 0);    
-          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);    
+          Teuchos::Array<int> indices(numDBCDofs, 0);
+          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);
           for (int k=0; k<indices.size(); k++) {
             indices[k] = myDirichletDofs_[k];
           }
@@ -650,11 +651,73 @@ virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterLi
           matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
         }
       }
-    }	
+    }
     matA_dirichlet_->fillComplete();
     matM_dirichlet_->fillComplete();
   }
 
+  virtual void MatrixRemoveDBC(void) {
+    // Apply Dirichlet conditions.
+    // zero out row and column, make matrix symmetric
+    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+    matA_dirichlet_ = matA_->clone(node);
+    matM_dirichlet_ = matM_->clone(node);
+ 
+    matA_dirichlet_->resumeFill();
+    matM_dirichlet_->resumeFill();
+ 
+    int gDof;
+    for(int i=0; i<numCells_; i++) {
+      for(int j=0; j<numLocalDofs_; j++) {
+        gDof = cellDofs_(myCellIds_[i], j);
+        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
+          size_t numRowEntries = matA_dirichlet_->getNumEntriesInGlobalRow(gDof);
+          Teuchos::Array<int> indices(numRowEntries, 0);
+          Teuchos::Array<Real> values(numRowEntries, 0);
+          Teuchos::Array<Real> canonicalValues(numRowEntries, 0);
+          Teuchos::Array<Real> zeroValues(numRowEntries, 0);
+          matA_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          matM_dirichlet_->getGlobalRowCopy(gDof, indices, values, numRowEntries);
+          for (int k=0; k<indices.size(); k++) {
+            if (indices[k] == gDof) {
+              canonicalValues[k] = 1.0;
+            }
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, canonicalValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        }
+ 
+        if (!check_myGlobalDof_on_boundary(gDof)) {
+          size_t numDBCDofs = myDirichletDofs_.size();
+          Teuchos::Array<int> indices(numDBCDofs, 0);
+          Teuchos::Array<Real> zeroValues(numDBCDofs, 0);
+          for (int k=0; k<indices.size(); k++) {
+            indices[k] = myDirichletDofs_[k];
+          }
+          matA_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+          matM_dirichlet_->replaceGlobalValues(gDof, indices, zeroValues);
+        }
+      }
+    }
+    matA_dirichlet_->fillComplete();
+    matM_dirichlet_->fillComplete();
+  }
+
+  virtual void VectorRemoveDBC(void) {
+    // Apply Dirichlet conditions.
+    vecF_dirichlet_ = Teuchos::rcp(new Tpetra::MultiVector<>(matA_->getRangeMap(), 1, true));
+    Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
+ 
+    int gDof(0);
+    for(int i=0; i<numCells_; i++) {
+      for(int j=0; j<numLocalDofs_; j++) {
+        gDof = cellDofs_(myCellIds_[i], j);
+        if (myUniqueMap_->isNodeGlobalElement(gDof) && check_myGlobalDof_on_boundary(gDof)) {
+          vecF_dirichlet_->replaceGlobalValue (gDof, 0, 0);
+        }
+      }
+    }
+  }
 /*
   virtual void GenerateTransposedMats() {
     // Create matrix transposes.
@@ -739,13 +802,6 @@ virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterLi
       return solverA_;
     }
   }
-
- virtual Real funcRHS_BodyForce(const Real &x1, const Real &x2) const { return 0.0; }
- virtual void funcRHS_BodyForce(std::vector<Real> &F,
-                const std::vector<Real> &x,
-                const std::vector<Real> &param) const {
-   F.clear(); F.resize(1);
- }
 
  virtual Real funcTarget(const Real &x1, const Real &x2) const { return 0.0; }
 

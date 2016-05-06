@@ -118,10 +118,31 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     }
 
+    RealT xx = std::sqrt(x.dot(x)), xnorm = x.norm();
+    RealT yy = std::sqrt(y.dot(y)), ynorm = y.norm();
+
+    outStream << "\nAbsolute error between sqrt(x.dot(x)) and x.norm(): "
+              << std::abs(xx-xnorm) << "\n";
+    outStream << "sqrt(x.dot(x)): " << xx << "\n";
+    outStream << "x.norm():       " << xnorm << "\n";
+    if ( std::abs(xx-xnorm) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
+    outStream << "\nAbsolute error between sqrt(y.dot(y)) and y.norm(): "
+              << std::abs(yy-ynorm) << "\n";
+    outStream << "sqrt(y.dot(y)): " << yy << "\n";
+    outStream << "y.norm():       " << ynorm << "\n";
+    if ( std::abs(yy-ynorm) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
     // clone z from x, deep copy x into z, norm of z
     Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
-    RealT znorm = z->norm(), xnorm = x.norm();
+    RealT znorm = z->norm();
     outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
     if ( std::abs(xnorm - znorm) > errtol ) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
@@ -130,7 +151,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
-    RealT wnorm = w->norm(), ynorm = y.norm();
+    RealT wnorm = w->norm();
     outStream << "\nNorm of ROL::Vector w (clone of y): " << wnorm << "\n";
     if ( std::abs(ynorm - wnorm) > errtol ) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
@@ -139,17 +160,17 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP xx_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP yy_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP zz_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> xx(xx_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> yy(yy_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> zz(zz_rcp,W_rcp);
-    xx_rcp->randomize();
-    yy_rcp->randomize();
-    zz_rcp->randomize();
+    MVP x1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    MVP y1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    MVP z1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_rcp,W_rcp);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_rcp,W_rcp);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_rcp,W_rcp);
+    x1_rcp->randomize();
+    y1_rcp->randomize();
+    z1_rcp->randomize();
 
-    std::vector<RealT> consistency = xx.checkVector(yy, zz, true, outStream);
+    std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
     ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;

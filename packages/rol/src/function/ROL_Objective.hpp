@@ -182,9 +182,9 @@ public:
                                                          std::ostream & outStream = std::cout,
                                                          const int numSteps = ROL_NUM_CHECKDERIV_STEPS,
                                                          const int order = 1 ) {
-
-    return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps, order);
-
+    Teuchos::RCP<Vector<Real> > g = x.dual().clone();
+    return checkGradient(x, *g, d, printToStream, outStream, numSteps, order);
+//    return checkGradient(x, x.dual(), d, printToStream, outStream, numSteps, order);
   }
 
   /** \brief Finite-difference gradient check.

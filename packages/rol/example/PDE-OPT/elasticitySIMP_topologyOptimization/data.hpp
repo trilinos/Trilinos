@@ -69,8 +69,8 @@ public:
     this->SetUpMyDBCInfo(true, dbc_side);
     this->process_loading_information(parlist);
 //With new modification on boundary traction, ComputeLocalForceVec should go after SetUpMyBCInfo and process_loading_information
-    this->ComputeLocalForceVec();
     this->AssembleSystemMats();
+    this->ComputeLocalForceVec();
     this->AssembleRHSVector();
     this->EnforceDBC();
     this->ConstructSolvers();
@@ -89,7 +89,7 @@ public:
     bool ifInit = false;
     this->ComputeLocalSystemMats(ifInit);
     this->AssembleSystemMats();
-    this->EnforceDBC();
+    this->MatrixRemoveDBC();
     this->ConstructSolvers();
   }
   //

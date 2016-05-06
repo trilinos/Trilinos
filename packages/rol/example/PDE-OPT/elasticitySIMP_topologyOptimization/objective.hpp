@@ -50,6 +50,7 @@
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_ScaledTpetraMultiVector.hpp"
+#include "filter.hpp"
 #include "data.hpp"
 
 template<class Real>
@@ -60,6 +61,7 @@ private:
   const Teuchos::RCP<DensityFilter<Real> > filter_;
   Real scale_;
   bool useFU_;
+  bool print_;
 
 public:
 
@@ -72,7 +74,8 @@ public:
     (data_->getVecF())->dot(*(data_->getVecF()),dotF);
     Real minDensity = parlist->sublist("ElasticitySIMP").get<Real>("Minimum Density");
     scale_ = minDensity/dotF[0];
-    useFU_ = parlist->sublist("ElasticitySIMP").get<bool>("Use Force Dot Displacement Objective");
+    useFU_ = parlist->sublist("ElasticitySIMP").get("Use Force Dot Displacement Objective",true);
+    print_ = parlist->sublist("ElasticitySIMP").get("Print Density",false);
   }
 
   void update(const ROL::Vector<Real> &u,
@@ -87,6 +90,13 @@ public:
       filter_->apply(Fzp, zp);
       data_->updateMaterialDensity(Fzp);
     }
+    if ( (flag && iter >= 0) && print_ ) {
+      Teuchos::RCP<const Tpetra::MultiVector<> > zp
+        = (Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(z)).getVector();
+      std::stringstream filename;
+      filename << "density_" << iter << ".txt";
+      data_->outputTpetraVector(zp,filename.str());
+    }
   }
 
   Real value(const ROL::Vector<Real> &u,
@@ -99,13 +109,13 @@ public:
     
    Teuchos::Array<Real> dotvalU(1, 0);
     if ( useFU_ ) {
-      up->dot(*(data_->getVecF()), dotvalU);
+      up->dot(*(data_->getVecF()), dotvalU.view(0,1));
     }
     else {
       Teuchos::RCP<Tpetra::MultiVector<> > matvecp
         = Teuchos::rcp(new Tpetra::MultiVector<>(*up, Teuchos::Copy));
       data_->ApplyJacobian1ToVec(matvecp, up);
-      up->dot(*matvecp, dotvalU);
+      up->dot(*matvecp, dotvalU.view(0,1));
     }
 
     return scale_*dotvalU[0];

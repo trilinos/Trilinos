@@ -48,6 +48,7 @@
 #include "ROL_EqualityConstraint_SimOpt.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 #include "Amesos2.hpp"
+#include "filter.hpp"
 #include "data.hpp"
 
 template<class Real>
