@@ -46,32 +46,17 @@
 */
 
 
-#include "ROL_ScaledTpetraMultiVector.hpp"
-#include "ROL_StdVector.hpp"
+#include "ROL_ScaledStdVector.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Tpetra_DefaultPlatform.hpp"
-
 typedef double RealT;
 typedef double ElementT;
-
-typedef Tpetra::Map<>::local_ordinal_type LO;
-typedef Tpetra::Map<>::global_ordinal_type GO;
-typedef Tpetra::Map<>::node_type Node;
-typedef Tpetra::Map<LO, GO, Node> Map;
-typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
-typedef Tpetra::Vector<RealT, LO, GO, Node> V;
-typedef Teuchos::RCP<MV> MVP;
-typedef Teuchos::RCP<V> VP;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  Teuchos::RCP<const Tpetra::Comm<int> > comm = platform.getComm();
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -85,31 +70,24 @@ int main(int argc, char *argv[]) {
     // Dimension of the optimization vector
 
     int dim = 10; 
-  
-    Teuchos::RCP<Map> map = Teuchos::rcp( new Map(dim,0,comm) );
 
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP y_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    VP W_rcp = Teuchos::rcp( new V(map,true) );
+    Teuchos::RCP<std::vector<ElementT> > x_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
+    Teuchos::RCP<std::vector<ElementT> > y_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim) ); 
+    Teuchos::RCP<std::vector<ElementT> > W_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim,static_cast<ElementT>(2)) ); 
 
     // Random elements
-    //x_rcp->randomize();
-    //y_rcp->randomize();
-    x_rcp->putScalar(1.0);
-    y_rcp->putScalar(1.0);
-
-    // Set all values to 2
-    W_rcp->putScalar(2.0);
+    for (int i = 0; i < dim; i++) {
+      (*x_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*y_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+    }
 
     // Create ROL vectors
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x(x_rcp,W_rcp);
-    ROL::DualScaledTpetraMultiVector<RealT,LO,GO,Node>   y(y_rcp,W_rcp);
-
-    const ROL::Vector<RealT> &g = x.dual();
-    const ROL::Vector<RealT> &h = x.dual();
-    RealT hnorm = h.norm();
-    RealT gnorm = g.norm();
+    ROL::PrimalScaledStdVector<RealT,ElementT> x(x_rcp,W_rcp);
+    ROL::DualScaledStdVector<RealT,ElementT>   y(y_rcp,W_rcp);
 
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
@@ -165,15 +143,25 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP y1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    MVP z1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_rcp,W_rcp);
-    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_rcp,W_rcp);
-    x1_rcp->randomize();
-    y1_rcp->randomize();
-    z1_rcp->randomize();
+    // Create Tpetra::MultiVectors (single vectors) 
+    Teuchos::RCP<std::vector<ElementT> > x1_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim) );
+    Teuchos::RCP<std::vector<ElementT> > y1_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim) );
+    Teuchos::RCP<std::vector<ElementT> > z1_rcp
+      = Teuchos::rcp( new std::vector<ElementT>(dim) );
+
+    // Random elements
+    for (int i = 0; i < dim; i++) {
+      (*x1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*y1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+      (*z1_rcp)[i] = static_cast<ElementT>(rand())/static_cast<ElementT>(RAND_MAX);
+    }
+
+    // Create ROL vectors
+    ROL::PrimalScaledStdVector<RealT,ElementT> x1(x1_rcp,W_rcp);
+    ROL::PrimalScaledStdVector<RealT,ElementT> y1(y1_rcp,W_rcp);
+    ROL::PrimalScaledStdVector<RealT,ElementT> z1(z1_rcp,W_rcp);
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
     ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
