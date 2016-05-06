@@ -76,6 +76,8 @@ MARK_AS_ADVANCED(Trilinos_REPOS_URL_BASE)
 
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   MOOCHO  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
+  CTrilinos  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
+  ForTrilinos  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  Nightly
   preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
   TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
   )

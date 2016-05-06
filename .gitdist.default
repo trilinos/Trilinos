@@ -1,4 +1,6 @@
 packages/moocho
+packages/CTrilinos
+packages/ForTrilinos
 packages/xSDKTrilinos
 TriBITS
 TriBITS/TriBITSDoc
