@@ -54,7 +54,8 @@ template<typename Int, typename Size, typename Sclr> struct util {
   };
 
   struct TestOptions {
-    enum MatrixType { diag, dense, sparse, missing_diag, not_tri, block_sparse };
+    enum MatrixType { diag, dense, sparse, missing_diag, not_tri, block_sparse,
+                      not_tri_almost_diag };
     enum SolveType { hybrid = 0, ls_only, rb_only, n_solve_types };
 
     int n, nthreads, block_size, nrhs;
@@ -182,6 +183,10 @@ template<typename Int, typename Size, typename Sclr> struct util {
     return std::sqrt(num/den);
   }
 
+  static bool is_not_tri (const typename TestOptions::MatrixType& mt) {
+    return mt == TestOptions::not_tri || mt == TestOptions::not_tri_almost_diag;
+  }
+
   // Remove or add an entry to make the matrix non-triangular. This will test
   // the shape-detection code.
   static void
@@ -191,7 +196,7 @@ template<typename Int, typename Size, typename Sclr> struct util {
       --d.ir[r+1];
       d.jc.pop_back();
       d.v.pop_back();
-    } else if (to.matrix_type == TestOptions::not_tri && r == to.n/2) {
+    } else if (is_not_tri(to.matrix_type) && r == to.n/2) {
       // Add an entry on the wrong tri side.
       d.jc.push_back(to.upper ? std::max(0, r-1) : std::min(to.n-1, r+1));
       d.v.push_back(0.5);
@@ -219,6 +224,13 @@ template<typename Int, typename Size, typename Sclr> struct util {
             row_val.push_back(rand_scalar<Sclr>());
             row_col.push_back(static_cast<Int>(base + i));
           }
+        // If testing shape checking, make sure there's at least one entry on
+        // the correct side.
+        if (is_not_tri(to.matrix_type) && to.n > 2 && r == to.n/2 &&
+            row_val.empty()) {
+          row_val.push_back(rand_scalar<Sclr>());
+          row_col.push_back(static_cast<Int>(base + ntrial - 1));
+        }
         double sum = 0;
         for (std::size_t i = 0; i < row_val.size(); ++i)
           sum += std::abs(row_val[i]);
@@ -229,7 +241,7 @@ template<typename Int, typename Size, typename Sclr> struct util {
       }
       d.ir[r+1] = d.ir[r];
       if (to.upper) {
-        if (to.matrix_type == TestOptions::not_tri)
+        if (is_not_tri(to.matrix_type))
           test_shape_checking(to, d, r);
         ++d.ir[r+1];
         d.jc.push_back(r);
@@ -317,12 +329,14 @@ template<typename Int, typename Size, typename Sclr> struct util {
     case TestOptions::missing_diag:
     case TestOptions::not_tri:
       gen_tri_sparse_matrix(to, d, to.density); break;
-    case TestOptions::block_sparse:
+    case TestOptions::block_sparse: {
       Data point_sparse(d);
       gen_tri_sparse_matrix(to, point_sparse, to.density);
       gen_tri_block_matrix_from_tri_matrix(point_sparse, to.block_size,
                                            to.upper, d);
-      break;
+    } break;
+    case TestOptions::not_tri_almost_diag:
+      gen_tri_sparse_matrix(to, d, 0); break;
     }
     assert((std::size_t) d.ir.back() == d.v.size());
     assert((std::size_t) d.ir.back() == d.jc.size());

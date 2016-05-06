@@ -90,7 +90,7 @@ namespace Sacado {
               dx_[i] = x.dx_[i];
           else
             for (int i=0; i<sz_.value; ++i)
-              dx_[i*stride_.value] = x.dx_[i*stride_.value];
+              dx_[i*stride_.value] = x.dx_[i*x.stride_.value];
         }
         return *this;
       }
