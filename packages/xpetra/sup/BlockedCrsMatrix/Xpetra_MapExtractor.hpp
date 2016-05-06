@@ -113,7 +113,7 @@ namespace Xpetra {
         fullmap_ = fullmap;
         maps_ = maps;
       } else {
-        std::cout << "Create Map Extractor in Thyra Mode!!! " << std::endl;
+        //std::cout << "Create Map Extractor in Thyra Mode!!! " << std::endl;
         // use Thyra-style numbering for sub-block maps
         // That is, all sub-block maps start with zero as GID and are contiguous
 

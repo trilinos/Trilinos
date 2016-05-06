@@ -130,7 +130,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   // create diagonal blocks
   std::vector<Teuchos::RCP<CrsMatrix> > blocks(noBlocks,Teuchos::null);
   for (int it=0; it<noBlocks; it++) {
-    std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
+    //std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
     blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
 
     LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
@@ -183,7 +183,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   // create diagonal blocks
   std::vector<Teuchos::RCP<CrsMatrix> > blocks(noBlocks,Teuchos::null);
   for (int it=0; it<noBlocks; it++) {
-    std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
+    //std::cout << it << " " << maps[it]->getMinAllGlobalIndex() << " - " << maps[it]->getMaxAllGlobalIndex() << std::endl;
     blocks[it] = CrsMatrixFactory::Build(maps[it], 1);
 
     LocalOrdinal NumMyElements = maps[it]->getNodeNumElements();
