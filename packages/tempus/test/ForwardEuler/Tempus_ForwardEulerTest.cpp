@@ -21,16 +21,14 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     getParametersFromXmlFile("ForwardEuler_SinCos.xml");
 
   // Setup the SinCosModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel");
+  RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   //RCP<SinCosModel> model    = sineCosineModel(scm_pl);
   RCP<SinCosModel> model    = Teuchos::rcp(new SinCosModel(scm_pl));
 
   // Setup the Integrator
-  RCP<ParameterList> pl = sublist(pList, "Tempus");
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<double> >& solver=Teuchos::null;
-  //RCP<Tempus::IntegratorBasic<double> > integrator = intBasic<double>(pl, model, solver);
-  RCP<Tempus::IntegratorBasic<double> > integrator = Teuchos::rcp(new Tempus::IntegratorBasic<double>(pl, model,solver));
-
+  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+  RCP<Tempus::IntegratorBasic<double> > integrator =
+    integratorBasic<double>(pl, model);
 }
 
-}
+} // namespace Tempus_Test

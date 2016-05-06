@@ -100,6 +100,16 @@ TimeStepControl<Scalar>::TimeStepControl(
     pList = pList_;
 
   this->setParameterList(pList);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (dtConstant < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
+    "Error - Negative constant time step.  dtConstant = "<<dtConstant<<")\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (dtConstant < dtMin || dtConstant > dtMax ), std::out_of_range,
+    "Error - Constant time step is out of range.\n"
+    << "    [dtMin, dtMax] = [" << dtMin << ", " << dtMax << "]\n"
+    << "    dtConstant = " << dtConstant << "\n");
+
 }
 
 template<class Scalar>
@@ -406,15 +416,6 @@ void TimeStepControl<Scalar>::setParameterList(
   stepType = StepTypeValidator->getIntegralValue(
       *pList, StepType_name, StepType_default);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtConstant < Teuchos::ScalarTraits<Scalar>::zero() ), std::logic_error,
-    "Error - Negative constant time step.  dtConstant = "<<dtConstant<<")\n");
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    (dtConstant < dtMin || dtConstant > dtMax ), std::out_of_range,
-    "Error - Constant time step is out of range.\n"
-    << "    [dtMin, dtMax] = [" << dtMin << ", " << dtMax << "]\n"
-    << "    dtConstant = " << dtConstant << "\n");
-
 
   // Parse output times
   {
@@ -476,10 +477,10 @@ void TimeStepControl<Scalar>::setParameterList(
     std::sort(outputIndices.begin(),outputIndices.end());
   }
 
-  nFailuresMax = pList->get<int>(
-    nFailuresMax_name, nFailuresMax_default);
+  nFailuresMax = pList->get<int>(nFailuresMax_name, nFailuresMax_default);
   nConsecutiveFailuresMax = pList->get<int>(
     nConsecutiveFailuresMax_name, nConsecutiveFailuresMax_default);
+  return;
 }
 
 

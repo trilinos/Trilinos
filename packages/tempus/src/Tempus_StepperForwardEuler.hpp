@@ -19,9 +19,6 @@ public:
     Teuchos::RCP<Teuchos::ParameterList>                pList_,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_ );
 
-  /// Destructor
-//  virtual ~StepperForwardEuler();
-
   /// \name Basic stepper methods
   //@{
     /// Take the specified timestep, dt, and return true if successful.

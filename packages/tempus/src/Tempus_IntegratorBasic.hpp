@@ -76,25 +76,22 @@ protected:
 
   Teuchos::RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
-
-  Scalar suggestedDt;  ///< Time step size suggested to the Stepper.
-
 };
 } // namespace Tempus
 
 #include "Tempus_IntegratorBasic_impl.hpp"
 
 /// Non-member constructor
-//template<class Scalar>
-//Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > intBasic(
-//  Teuchos::RCP<Teuchos::ParameterList>                pList,
-//  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-//  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver)
-//{
-//  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-//    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, solver));
-//  return(integrator);
-//}
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver=Teuchos::null)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, solver));
+  return(integrator);
+}
 
 
 #endif // TEMPUS_INTEGRATORBASIC_HPP

@@ -35,9 +35,6 @@ public:
   /// Constructor
   StepperState(std::string name_):stepperName(name_){}
 
-  /// Destructor
-//  virtual ~StepperState();
-
   /// This is a deep copy
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {

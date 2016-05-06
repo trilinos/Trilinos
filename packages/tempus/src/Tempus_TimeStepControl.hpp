@@ -37,7 +37,7 @@ public:
   TimeStepControl();
 
   /** \brief Construct from ParameterList */
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null,
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_,
                   const Scalar dtConstant_ = 0.0);
 
   /// This is a copy constructor
@@ -80,8 +80,8 @@ public:
   int    iStepMax;        ///< Maximum time step index
   Scalar errorMaxAbs;     ///< Maximum absolute error
   Scalar errorMaxRel;     ///< Maximum relative error
-  int orderMin;  ///< Minimum time integration order
-  int orderMax;  ///< Maximum time integration order
+  int orderMin;           ///< Minimum time integration order
+  int orderMax;           ///< Maximum time integration order
 
   StepType stepType;      ///< Step type for step control
   Scalar dtConstant;      ///< Constant time step if stepType=CONSTANT_STEP_SIZE

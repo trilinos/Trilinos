@@ -51,9 +51,6 @@ class Stepper
 {
 public:
 
-  /// Destructor
-//  virtual ~Stepper();
-
   /// \name Basic stepper methods
   //@{
     /// Take the specified timestep, dt, and return true if successful.
@@ -63,21 +60,6 @@ public:
       const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState) = 0;
 
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState() = 0;
-  //@}
-
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-//    virtual void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& pl);
-//    virtual Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-//    virtual Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-//    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-  //@}
-
-  /// \name Overridden from Teuchos::Describable
-  //@{
-//    virtual std::string description() const;
-//    virtual void describe(Teuchos::FancyOStream        & out,
-//                          const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
   /// \name Error estimation methods

@@ -228,6 +228,7 @@ RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::initWorkingState(const bool
   if (stepperStatus == true) {
     addState(currentState);
     workingState = history->back();
+    workingState->metaData->status = SolutionStatus::WORKING;
   }
 
   return workingState;
@@ -254,7 +255,7 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::setStorage(int storage)
 {
-  int storage_limit = std::max(1,storage);
+  storage_limit = std::max(1,storage);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     (Teuchos::as<int>(history->size()) > storage_limit), std::logic_error,

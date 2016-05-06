@@ -169,7 +169,8 @@ private:
 
 
 /// Non-member constructor
-//Teuchos::RCP<SinCosModel> sineCosineModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
+//Teuchos::RCP<SinCosModel> sineCosineModel(
+//  Teuchos::RCP<Teuchos::ParameterList> pList_)
 //{
 //  Teuchos::RCP<SinCosModel> model = rcp(new SinCosModel(pList_));
 //  return(model);

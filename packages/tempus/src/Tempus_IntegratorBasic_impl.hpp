@@ -40,25 +40,20 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   const RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver)
 {
-  // Create TimeStepControl before ParameterList so we can check
-  // ParameterList ranges.
-  RCP<ParameterList> tsc_pl = Teuchos::sublist(pList_, TimeStepControl_name);
-  timeStepControl = rcp(new TimeStepControl<Scalar>(tsc_pl));
 
-  if (pList_ == Teuchos::null)
-    pList->validateParametersAndSetDefaults(*this->getValidParameters());
-  else
-    pList = pList_;
+  // Create classes from nested blocks prior to setParameters call.
+  RCP<ParameterList> tmpiPL = Teuchos::sublist(pList_,"Integrator",true);
 
-  this->setParameterList(pList);
+  //    Create solution history
+  RCP<ParameterList> shPL = Teuchos::sublist(tmpiPL, SolutionHistory_name,true);
+  solutionHistory = rcp(new SolutionHistory<Scalar>(shPL));
 
-  // Create meta data
-  RCP<SolutionStateMetaData<Scalar> > md =
-                                   rcp(new SolutionStateMetaData<Scalar> ());
-  md->time = pList->get<double>(initTime_name, initTime_default);
-  md->iStep = pList->get<int>(initTimeIndex_name, initTimeIndex_default);
-  md->dt = pList->get<double>(initTimeStep_name, initTimeStep_default);
-  md->order = pList->get<int>(initOrder_name, initOrder_default);
+  //    Create TimeStepControl
+  RCP<ParameterList> tscPL = Teuchos::sublist(tmpiPL,TimeStepControl_name,true);
+  Scalar dtTmp = tmpiPL->get<double>(initTimeStep_name, initTimeStep_default);
+  timeStepControl = rcp(new TimeStepControl<Scalar>(tscPL, dtTmp));
+
+  this->setParameterList(pList_);
 
   // Create Stepper
   RCP<StepperFactory<Scalar> > sf = rcp(new StepperFactory<Scalar>());
@@ -66,18 +61,27 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList> s_pl = Teuchos::sublist(pList, s);
   stepper = sf->createStepper(s, s_pl, model);
 
+  // Create meta data
+  RCP<SolutionStateMetaData<Scalar> > md =
+                                   rcp(new SolutionStateMetaData<Scalar> ());
+  md->time  = pList->get<double>(initTime_name,      initTime_default);
+  md->iStep = pList->get<int>   (initTimeIndex_name, initTimeIndex_default);
+  md->dt    = pList->get<double>(initTimeStep_name,  initTimeStep_default);
+  md->order = pList->get<int>   (initOrder_name,     initOrder_default);
+
   // Create initial condition solution state
-  RCP<Thyra::VectorBase<Scalar> > x    = model->getNominalValues().get_x()->clone_v();
-  RCP<Thyra::VectorBase<Scalar> > xdot = model->getNominalValues().get_x_dot()->clone_v();
+  typedef Thyra::ModelEvaluatorBase MEB;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =model->getNominalValues();
+  RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
+  RCP<Thyra::VectorBase<Scalar> > xdot;
+  if (inArgsIC.supports(MEB::IN_ARG_x_dot))
+    xdot = inArgsIC.get_x_dot()->clone_v();
+  else
+    xdot = x->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
-  //RCP<Thyra::VectorBase<Scalar> > xdotdot = model->getNominalValues().get_x_dot_dot()->clone_v();
   RCP<SolutionState<Scalar> > currentState =
     rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
                                   stepper->getStepperState()));
-
-  // Create solution history
-  RCP<ParameterList> sh_pl = Teuchos::sublist(pList, SolutionHistory_name);
-  solutionHistory = rcp(new SolutionHistory<Scalar>(sh_pl));
   solutionHistory->addState(currentState);
 
   if (Teuchos::as<int>(this->getVerbLevel()) >=
@@ -227,9 +231,12 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
   const RCP<ParameterList> & pList_)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
-  pList_->validateParameters(*this->getValidParameters());
-  pList = pList_;
+  if (pList_ == Teuchos::null)
+    pList->validateParametersAndSetDefaults(*this->getValidParameters());
+  else {
+    pList = Teuchos::sublist(pList_,"Integrator",true);
+    pList->validateParameters(*this->getValidParameters());
+  }
 
   Teuchos::readVerboseObjectSublist(&*pList,this);
 
@@ -289,7 +296,7 @@ void IntegratorBasic<Scalar>::setParameterList(
     << "    [iStepMin, iStepMax] = [" << timeStepControl->iStepMin << ", "
                                       << timeStepControl->iStepMax << "]\n"
     << "    iStep = " << fiStep << "\n");
-
+  return;
 }
 
 
@@ -338,8 +345,20 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
       "'Forward Euler' - performs classic first-order Forward Euler\n",
       StepperValidator);
 
-    validPL = pl;
+    // Solution History
+    ParameterList& solutionHistoryPL =
+      pl->sublist(SolutionHistory_name,false,"solutionHistory_docs")
+         .disableRecursiveValidation();
+    solutionHistoryPL.setParameters(*(solutionHistory->getValidParameters()));
 
+    // Time Step Control
+    ParameterList& timeStepControlPL =
+      pl->sublist(TimeStepControl_name,false,"solutionHistory_docs")
+         .disableRecursiveValidation();
+    timeStepControlPL.setParameters(*(timeStepControl->getValidParameters()));
+
+
+    validPL = pl;
   }
   return validPL;
 }
