@@ -34,16 +34,16 @@ namespace {
       Static_name,
       Unlimited_name);
 
-  const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::HistoryPolicy> >
-    PolicyValidator = Teuchos::rcp(
-        new Teuchos::StringToIntegralParameterEntryValidator<Tempus::HistoryPolicy>(
+  const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StorageType> >
+    StorageTypeValidator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<Tempus::StorageType>(
           HistoryPolicies,
-          Teuchos::tuple<Tempus::HistoryPolicy>(
-            Tempus::HISTORY_POLICY_INVALID,
-            Tempus::HISTORY_POLICY_KEEP_NEWEST,
-            Tempus::HISTORY_POLICY_UNDO,
-            Tempus::HISTORY_POLICY_STATIC,
-            Tempus::HISTORY_POLICY_UNLIMITED),
+          Teuchos::tuple<Tempus::StorageType>(
+            Tempus::STORAGE_TYPE_INVALID,
+            Tempus::STORAGE_TYPE_KEEP_NEWEST,
+            Tempus::STORAGE_TYPE_UNDO,
+            Tempus::STORAGE_TYPE_STATIC,
+            Tempus::STORAGE_TYPE_UNLIMITED),
           Storage_name));
 
 } // namespace
@@ -60,8 +60,8 @@ SolutionHistory<Scalar>::SolutionHistory(RCP<ParameterList> pList_)
   if (pList_ == Teuchos::null) {
     pList     = Teuchos::null;
     //interpolator  = Teuchos::null;
-    storage_limit = StorageLimit_default;
-    historyPolicy = HISTORY_POLICY_KEEP_NEWEST;
+    storageLimit = StorageLimit_default;
+    storageType = STORAGE_TYPE_KEEP_NEWEST;
   } else {
     this->setParameterList(pList_);
   }
@@ -80,21 +80,24 @@ void SolutionHistory<Scalar>::addState(
   const RCP<SolutionState<Scalar> >& state_)
 {
   // Check that we're not going to exceed our storage limit:
-  if (Teuchos::as<int>(history->size()+1) > storage_limit) {
-    switch (historyPolicy) {
-    case HISTORY_POLICY_INVALID: {
+  if (Teuchos::as<int>(history->size()+1) > storageLimit) {
+    switch (storageType) {
+    case STORAGE_TYPE_INVALID: {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - history policy is HISTORY_POLICY_INVALID.\n");
+        "Error - Storage type is STORAGE_TYPE_INVALID.\n");
       break;
     }
-    case HISTORY_POLICY_STATIC: {
+    case STORAGE_TYPE_STATIC: {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - history will overflow and policy is HISTORY_POLICY_STATIC.  "
-        "This state can not be added\n");
+        "Error - history will overflow and storage type is "
+        "STORAGE_TYPE_STATIC.  This state can not be added\n");
       break;
     }
-    case HISTORY_POLICY_KEEP_NEWEST:
-    case HISTORY_POLICY_UNDO: {
+    case STORAGE_TYPE_KEEP_NEWEST: {
+      if (history->size() == 1) history->erase(history->begin());
+      break;
+    }
+    case STORAGE_TYPE_UNDO: {
       if (state_->getTime() > history->front()->getTime()) {
         // Case:  State is older than the youngest state in history.
         // Remove state from the beginning of history, then add new state.
@@ -109,17 +112,18 @@ void SolutionHistory<Scalar>::addState(
       }
       break;
     }
-    case HISTORY_POLICY_UNLIMITED:
+    case STORAGE_TYPE_UNLIMITED:
       break;
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error - unknown history policy.\n");
+        "Error - unknown storage type.\n");
     }
   }
 
   // Add new state in chronological order.
   if (history->size() == 0) {
     history->push_back(state_);
+    currentState = history->back();
   } else {
     typename Teuchos::Array<RCP<SolutionState<Scalar> > >::iterator
       state_it = history->begin();
@@ -128,6 +132,7 @@ void SolutionHistory<Scalar>::addState(
     }
     history->insert(state_it, state_);
   }
+  return;
 }
 
 template<class Scalar>
@@ -170,12 +175,12 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
     "        [Min, Max] = [" << minTime() << ", " << maxTime() << "]\n"
     "        time = "<< time <<"\n");
 
-  Scalar reltol = 1.0e-14;
+  const Scalar relTol = 1.0e-14;
   typename Teuchos::Array<SolutionState<Scalar> >::iterator
     state_it = history->begin();
   // Linear search
   for (state_it; state_it < history->end(); ++state_it) {
-    if (abs((state_it.getTime()-time)/state_it.getTime()) < reltol) break;
+    if (abs((state_it.getTime()-time)/state_it.getTime()) < relTol) break;
   }
 
   TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->end(), std::logic_error,
@@ -225,11 +230,11 @@ RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::initWorkingState(const bool
     "Error - SolutionHistory::initWorkingState()\n"
     "Can not initialize working state without a current state!\n");
 
-  if (stepperStatus == true) {
-    addState(currentState);
-    workingState = history->back();
-    workingState->metaData->status = SolutionStatus::WORKING;
-  }
+  if (stepperStatus != true) return workingState;
+
+  addState(currentState);
+  workingState = history->back();
+  workingState->metaData->status = SolutionStatus::WORKING;
 
   return workingState;
 }
@@ -255,11 +260,11 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::setStorage(int storage)
 {
-  storage_limit = std::max(1,storage);
+  storageLimit = std::max(1,storage);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (Teuchos::as<int>(history->size()) > storage_limit), std::logic_error,
-    "Error - requested storage limit = " << storage_limit
+    (Teuchos::as<int>(history->size()) > storageLimit), std::logic_error,
+    "Error - requested storage limit = " << storageLimit
     << " is smaller than the current number of states stored = "
     << history->size() << "!\n");
 }
@@ -268,14 +273,14 @@ void SolutionHistory<Scalar>::setStorage(int storage)
 template<class Scalar>
 int SolutionHistory<Scalar>::getStorage() const
 {
-  return(storage_limit);
+  return(storageLimit);
 }
 
 
 template <class Scalar>
-HistoryPolicy SolutionHistory<Scalar>::getHistoryPolicy()
+StorageType SolutionHistory<Scalar>::getStorageType()
 {
-  return historyPolicy;
+  return storageType;
 }
 
 
@@ -310,8 +315,8 @@ void SolutionHistory<Scalar>::describe(
       (Teuchos::as<int>(verbLevel)>=Teuchos::as<int>(Teuchos::VERB_LOW)    )  ){
     out << description() << "::describe" << std::endl;
     //out << "interpolator     = " << interpolator->description() << std::endl;
-    out << "storage_limit    = " << storage_limit << std::endl;
-    out << "historyPolicy    = " << historyPolicy << std::endl;
+    out << "storageLimit     = " << storageLimit << std::endl;
+    out << "storageType      = " << storageType << std::endl;
     out << "number of states = " << history->size() << std::endl;
     out << "time range       = (" << history->front()->getTime() << ", "
                                   << history->back()->getTime() << ")"
@@ -339,15 +344,49 @@ void SolutionHistory<Scalar>::setParameterList(
 
   //setInterpolator(interpolator);
 
-  HistoryPolicy policy_ = PolicyValidator->getIntegralValue(
+  StorageType sType = StorageTypeValidator->getIntegralValue(
       *pList, Storage_name, Storage_default);
 
-  if (policy_ != HISTORY_POLICY_INVALID)
-    historyPolicy = policy_;
-  else
-    historyPolicy = HISTORY_POLICY_KEEP_NEWEST;
-
   int storage_limit = pList->get(StorageLimit_name, StorageLimit_default);
+
+  switch (sType) {
+  case STORAGE_TYPE_INVALID:
+  case STORAGE_TYPE_KEEP_NEWEST: {
+    storageType = STORAGE_TYPE_KEEP_NEWEST;
+    if (storage_limit != 1) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"SoltuionHistory::setParameterList");
+      *out << "Warning - 'Storage Limit' for 'Keep Newest' is 1.\n"
+           << "  (Storage Limit = "<<storage_limit<<").  Resetting to 1."
+           << std::endl;
+      storage_limit = 1;
+    }
+    setStorage(storage_limit);
+    break;
+  }
+  case STORAGE_TYPE_UNDO: {
+    storageType = STORAGE_TYPE_UNDO;
+    if (storage_limit != 2) {
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,"SoltuionHistory::setParameterList");
+      *out << "Warning - 'Storage Limit' for 'Undo' is 2.\n"
+           << "  (Storage Limit = "<<storage_limit<<").  Resetting to 2."
+           << std::endl;
+      storage_limit = 2;
+    }
+    setStorage(storage_limit);
+    break;
+  }
+  case STORAGE_TYPE_STATIC: {
+    storageType = STORAGE_TYPE_STATIC;
+    break;
+  }
+  case STORAGE_TYPE_UNLIMITED: {
+    storageType = STORAGE_TYPE_UNLIMITED;
+    storage_limit = std::numeric_limits<int>::max();
+    break;
+  }
+  }
   setStorage(storage_limit);
 }
 
@@ -363,12 +402,12 @@ RCP<const ParameterList> SolutionHistory<Scalar>::getValidParameters() const
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     pl->set(Storage_name, Storage_default,
-      "History Policy sets the memory storage.  "
+      "'Storage Type' sets the memory storage.  "
       "'Keep Newest' - will retain the single newest solution state.  "
       "'Undo' - will retain two solution states in order to do a single undo.  "
       "'Static' - will retain 'Storage Limit' number of solution states.  "
       "'Unlimited' - will not remove any solution states!",
-      PolicyValidator);
+      StorageTypeValidator);
 
     pl->set(StorageLimit_name, StorageLimit_default,
       "Storage limit for the solution history.");

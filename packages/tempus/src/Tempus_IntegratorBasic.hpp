@@ -37,10 +37,14 @@ public:
 
   /// \name Basic integrator methods
   //@{
-    /// Advance the solution to time, and return true if successful.
-    bool advanceTime(const Scalar time);
+    /// Advance the solution to timeMax, and return true if successful.
+    bool advanceTime();
+    /// Advance the solution to timeFinal, and return true if successful.
+    bool advanceTime(const Scalar timeFinal);
     /// Only accept step after meeting time step criteria.
     void acceptTimeStep(bool & stepperStatus, bool & integratorStatus);
+    /// Perform output.
+    void outputTimeStep(bool stepperStatus, bool integratorStatus);
   //@}
 
   /// \name Accessor methods

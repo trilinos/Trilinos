@@ -36,11 +36,11 @@ public:
   IntegratorObserver(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory_,
     const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl_)
-    : solutionHistory(solutionHistory), timeStepControl(timeStepControl_)
+    : solutionHistory(solutionHistory_), timeStepControl(timeStepControl_)
   {}
 
   /// Destructor
-  virtual ~IntegratorObserver();
+  virtual ~IntegratorObserver(){}
 
   /// \name Basic IntegratorObserver methods
   //@{
@@ -63,6 +63,10 @@ public:
     /// Observe after accepting time step.
     virtual void observeAcceptedTimeStep(
       bool & stepperStatus, bool & integratorStatus){}
+
+    /// Observe after outputting time step.
+    virtual void observeOutputTimeStep(
+      bool stepperStatus, bool integratorStatus){}
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(

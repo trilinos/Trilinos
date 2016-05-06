@@ -79,10 +79,13 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   else
     xdot = x->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
-  RCP<SolutionState<Scalar> > currentState =
-    rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
-                                  stepper->getStepperState()));
+  currentState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
+                                               stepper->getStepperState()));
   solutionHistory->addState(currentState);
+
+  // Create default IntegratorObserver
+  integratorObserver = rcp(new IntegratorObserver<Scalar>(solutionHistory,
+                                                          timeStepControl));
 
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
@@ -127,40 +130,67 @@ void IntegratorBasic<Scalar>::describe(
 
 
 template <class Scalar>
-bool IntegratorBasic<Scalar>::advanceTime(const Scalar time_final)
+bool IntegratorBasic<Scalar>::advanceTime(const Scalar timeFinal)
 {
-  timeStepControl->timeMax = time_final;
+  if (timeStepControl->timeInRange(timeFinal))
+    timeStepControl->timeMax = timeFinal;
+  bool itgrStatus = advanceTime();
+  return itgrStatus;
+}
+
+
+template <class Scalar>
+bool IntegratorBasic<Scalar>::advanceTime()
+{
+  std::cout << "Got Here Test A!" << std::endl;
   integratorObserver->observeStartIntegrator();
 
   bool integratorStatus = true;
   bool stepperStatus = true;
 
+  std::cout << "Got Here Test B!" << std::endl;
   while (integratorStatus == true and
          timeStepControl->timeInRange(currentState->getTime()) and
          timeStepControl->indexInRange(currentState->getIndex())){
 
+    std::cout << "Got Here Test C!" << std::endl;
     integratorObserver->observeStartTimeStep();
 
+    std::cout << "Got Here Test D!" << std::endl;
     workingState = solutionHistory->initWorkingState(stepperStatus);
 
+    std::cout << "Got Here Test E!" << std::endl;
     timeStepControl->getNextTimeStep(solutionHistory, stepperStatus,
                                      integratorStatus);
 
+    std::cout << "Got Here Test F!" << std::endl;
     integratorObserver->observeNextTimeStep(stepperStatus, integratorStatus);
 
+    std::cout << "Got Here Test G!" << std::endl;
     if (integratorStatus != true) break;
 
+    std::cout << "Got Here Test H!" << std::endl;
     integratorObserver->observeBeforeTakeStep();
 
+    std::cout << "Got Here Test I!" << std::endl;
     stepperStatus = stepper->takeStep(solutionHistory);
 
+    std::cout << "Got Here Test J!" << std::endl;
     integratorObserver->observeAfterTakeStep();
 
+    std::cout << "Got Here Test K!" << std::endl;
     acceptTimeStep(stepperStatus, integratorStatus);
+    std::cout << "Got Here Test L!" << std::endl;
     integratorObserver->observeAcceptedTimeStep(stepperStatus,integratorStatus);
+    std::cout << "Got Here Test M!" << std::endl;
+
+    outputTimeStep(stepperStatus, integratorStatus);
+    integratorObserver->observeOutputTimeStep(stepperStatus, integratorStatus);
   }
 
+  std::cout << "Got Here Test N!" << std::endl;
   integratorObserver->observeEndIntegrator(stepperStatus, integratorStatus);
+  std::cout << "Got Here Test O!" << std::endl;
 
   return integratorStatus;
 }
@@ -224,6 +254,13 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
   solutionHistory->promoteWorkingState();
 
   return;
+}
+
+
+template <class Scalar>
+void IntegratorBasic<Scalar>::outputTimeStep(
+  bool stepperStatus, bool integratorStatus)
+{
 }
 
 

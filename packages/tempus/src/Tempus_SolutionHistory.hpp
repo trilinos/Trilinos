@@ -12,12 +12,12 @@
 
 namespace Tempus {
 
-enum HistoryPolicy {
-  HISTORY_POLICY_INVALID     = 0,  ///< Invalid policy
-  HISTORY_POLICY_KEEP_NEWEST = 1,  ///< Keep the single newest state
-  HISTORY_POLICY_UNDO        = 2,  ///< Keep the 2 newest states for undo
-  HISTORY_POLICY_STATIC      = 3,  ///< Keep a fix number of states
-  HISTORY_POLICY_UNLIMITED   = 4,  ///< Grow the history as needed
+enum StorageType {
+  STORAGE_TYPE_INVALID     = 0,  ///< Invalid storgae type
+  STORAGE_TYPE_KEEP_NEWEST = 1,  ///< Keep the single newest state
+  STORAGE_TYPE_UNDO        = 2,  ///< Keep the 2 newest states for undo
+  STORAGE_TYPE_STATIC      = 3,  ///< Keep a fix number of states
+  STORAGE_TYPE_UNLIMITED   = 4,  ///< Grow the history as needed
 };
 
 
@@ -96,7 +96,7 @@ public:
     /// Get the maximum storage of this history
     int getStorage() const;
 
-    HistoryPolicy getHistoryPolicy();
+    StorageType getStorageType();
 
     /// Return the current minimum time of the SolutionStates
     Scalar minTime() const;
@@ -135,8 +135,8 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>                  pList;
   Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > > history;
 //  Teuchos::RCP<InterpolatorBase<Scalar> >      interpolator;
-  HistoryPolicy                       historyPolicy;
-  int                                 storage_limit;
+  StorageType                         storageType;
+  int                                 storageLimit;
 
   Teuchos::RCP<SolutionState<Scalar> > currentState;   ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> > workingState;   ///< The state being worked on

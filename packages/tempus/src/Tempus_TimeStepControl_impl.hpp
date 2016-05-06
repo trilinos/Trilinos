@@ -164,63 +164,69 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   if (stepType == CONSTANT_STEP_SIZE) {
 
     // Stepper failure
-    if (stepperStatus and (order+1 <= orderMax)) {
-      order++;
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Warning - Stepper failure with constant time step.\n"
-           << "  Try increasing order.  order = " << order << std::endl;
-    } else {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Failure - Stepper failed and can not change time step size "
-           << "or order!\n"
-           << "    Time step type == CONSTANT_STEP_SIZE\n"
-           << "    order = " << order << std::endl;
-      integratorStatus = false;
-      return;
+    if (stepperStatus != true) {
+      if (order+1 <= orderMax) {
+        order++;
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Warning - Stepper failure with constant time step.\n"
+             << "  Try increasing order.  order = " << order << std::endl;
+      } else {
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Failure - Stepper failed and can not change time step size "
+             << "or order!\n"
+             << "    Time step type == CONSTANT_STEP_SIZE\n"
+             << "    order = " << order << std::endl;
+        integratorStatus = false;
+        return;
+      }
     }
 
     // Absolute error failure
-    if ((errorAbs > errorMaxAbs) and (order+1 <= orderMax)) {
-      order++;
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Warning - Absolute error is too large with constant time step.\n"
-           << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs<<")"
-           << "  Try increasing order.  order = " << order << std::endl;
-    } else {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Failure - Absolute error failed and can not change time step "
-           << "size or order!\n"
-           << "  Time step type == CONSTANT_STEP_SIZE\n"
-           << "  order = " << order
-           << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs<<")"
-           << std::endl;
-      integratorStatus = false;
-      return;
+    if (errorAbs > errorMaxAbs) {
+      if (order+1 <= orderMax) {
+        order++;
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Warning - Absolute error is too large with constant time step.\n"
+             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs<<")"
+             << "  Try increasing order.  order = " << order << std::endl;
+      } else {
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Failure - Absolute error failed and can not change time step "
+             << "size or order!\n"
+             << "  Time step type == CONSTANT_STEP_SIZE\n"
+             << "  order = " << order
+             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs<<")"
+             << std::endl;
+        integratorStatus = false;
+        return;
+      }
     }
 
     // Relative error failure
-    if ((errorRel > errorMaxRel) and (order+1 <= orderMax)) {
-      order++;
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Warning - Relative error is too large with constant time step.\n"
-           << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel<<")"
-           << "  Try increasing order.  order = " << order << std::endl;
-    } else {
-      RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"getNextTimeStep");
-      *out << "Failure - Relative error failed and can not change time step "
-           << "size or order!\n"
-           << "  Time step type == CONSTANT_STEP_SIZE\n"
-           << "  order = " << order
-           << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel<<")"
-           << std::endl;
-      integratorStatus = false;
-      return;
+    if (errorRel > errorMaxRel) {
+      if (order+1 <= orderMax) {
+        order++;
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Warning - Relative error is too large with constant time step.\n"
+             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel<<")"
+             << "  Try increasing order.  order = " << order << std::endl;
+      } else {
+        RCP<Teuchos::FancyOStream> out = this->getOStream();
+        Teuchos::OSTab ostab(out,1,"getNextTimeStep");
+        *out << "Failure - Relative error failed and can not change time step "
+             << "size or order!\n"
+             << "  Time step type == CONSTANT_STEP_SIZE\n"
+             << "  order = " << order
+             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel<<")"
+             << std::endl;
+        integratorStatus = false;
+        return;
+      }
     }
 
     // Check if to output this step
@@ -307,16 +313,18 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 }
 
 
+/// Test if time is within range: include timeMin and exclude timeMax.
 template<class Scalar>
 bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const{
-  bool tir = (time >= timeMin and time < timeMax);
+  const Scalar relTol = 1.0e-14;
+  bool tir = (timeMin*(1.0-relTol) <= time and time < timeMax*(1.0-relTol));
   return tir;
 }
 
 
 template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
-  bool iir = (iStep >= iStepMin and iStep < iStepMax);
+  bool iir = (iStepMin <= iStep and iStep < iStepMax);
   return iir;
 }
 
