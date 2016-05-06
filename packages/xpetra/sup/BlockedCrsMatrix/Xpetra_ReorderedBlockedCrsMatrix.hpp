@@ -238,95 +238,108 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > mergeSubBlockM
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mergeSubBlocks(Teuchos::RCP<const Xpetra::BlockReorderManager> rowMgr, Teuchos::RCP<const Xpetra::BlockReorderManager> colMgr, Teuchos::RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bmat) {
+
+  typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+  typedef Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node> MapUtils;
+  typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
+  typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+  typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReorderedBlockedCrsMatrix;
+
   // number of sub blocks
   size_t rowSz = rowMgr->GetNumBlocks();
   size_t colSz = colMgr->GetNumBlocks();
+
+  Teuchos::RCP<ReorderedBlockedCrsMatrix> rbmat = Teuchos::null;
 
   if(rowSz == 0 && colSz == 0) {
     // it is a leaf node
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
 
-    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
+    RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+    Teuchos::RCP<const Map> submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
+    std::vector<Teuchos::RCP<const Map> > rowSubMaps (1, submap);
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
 
-    return mat;
+    RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+    Teuchos::RCP<const Map> submap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
+    std::vector<Teuchos::RCP<const Map> > colSubMaps (1, submap2);
+    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(submap2, colSubMaps, false));
+
+    Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
+
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+    rbmat->setMatrix(0,0,mat);
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rgMapExtractor = Teuchos::null;
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::null;
     if(rowSz > 0) {
-      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > rowSubMaps (rowSz, Teuchos::null);
+      std::vector<Teuchos::RCP<const Map> > rowSubMaps (rowSz, Teuchos::null);
       for(size_t i = 0; i < rowSz; i++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
         rowSubMaps[i] = mergeSubBlockMaps(rowSubMgr,bmat,false /*xpetra*/);
         TEUCHOS_ASSERT(rowSubMaps[i].is_null()==false);
       }
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rgMergedSubMaps = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(rowSubMaps);
-      rgMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rgMergedSubMaps, rowSubMaps, false /*fullRangeMapExtractor->getThyraMode()*/));
+      Teuchos::RCP<const Map> rgMergedSubMaps = MapUtils::concatenateMaps(rowSubMaps);
+      rgMapExtractor = Teuchos::rcp(new MapExtractor(rgMergedSubMaps, rowSubMaps, false));
     } else {
       Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
-      RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
       // TODO think about Thyra style maps: we cannot use thyra style maps when recombining several blocks!!!
       // The GIDs might not start with 0 and may not be consecutive!
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
-      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > rowSubMaps (1, submap);
-      rgMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(submap, rowSubMaps, false /*fullRangeMapExtractor->getThyraMode()*/));
+      Teuchos::RCP<const Map> submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
+      std::vector<Teuchos::RCP<const Map> > rowSubMaps (1, submap);
+      rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
     }
 
-    Teuchos::RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > doMapExtractor = Teuchos::null;
+    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::null;
     if(colSz > 0) {
-      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > colSubMaps (colSz, Teuchos::null);
+      std::vector<Teuchos::RCP<const Map> > colSubMaps (colSz, Teuchos::null);
       for(size_t j = 0; j < colSz; j++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
         colSubMaps[j] = mergeSubBlockMaps(colSubMgr,bmat,false/*xpetra*/);
         TEUCHOS_ASSERT(colSubMaps[j].is_null()==false);
       }
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > doMergedSubMaps = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(colSubMaps);
-      doMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(doMergedSubMaps, colSubMaps, false /*fullDomainMapExtractor->getThyraMode()*/));
+      Teuchos::RCP<const Map> doMergedSubMaps = MapUtils::concatenateMaps(colSubMaps);
+      doMapExtractor = Teuchos::rcp(new MapExtractor(doMergedSubMaps, colSubMaps, false));
     } else {
       Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
-      RCP<const Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> > fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
       // TODO think about Thyra style maps: we cannot use thyra style maps when recombining several blocks!!!
       // The GIDs might not start with 0 and may not be consecutive!
-      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > submap = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
-      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > colSubMaps (1, submap);
-      doMapExtractor = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(submap, colSubMaps, false /*fullRangeMapExtractor->getThyraMode()*/));
+      Teuchos::RCP<const Map> submap = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
+      std::vector<Teuchos::RCP<const Map> > colSubMaps (1, submap);
+      doMapExtractor = Teuchos::rcp(new MapExtractor(submap, colSubMaps, false));
     }
 
-    Teuchos::RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > rbmat =
-        Teuchos::rcp(new Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
 
     if (rowSz == 0 && colSz > 0) {
       for(size_t j = 0; j < colSz; j++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
-        Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > submat =
-            mergeSubBlocks(rowMgr, colSubMgr, bmat);
-        rbmat->setMatrix(0,j,Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(submat));
+        Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowMgr, colSubMgr, bmat);
+        rbmat->setMatrix(0,j,Teuchos::rcp_const_cast<Matrix>(submat));
       }
     } else if (rowSz > 0 && colSz == 0) {
       for(size_t i = 0; i < rowSz; i++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
-        Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > submat =
-            mergeSubBlocks(rowSubMgr, colMgr, bmat);
-        rbmat->setMatrix(i,0,Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(submat));
+        Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowSubMgr, colMgr, bmat);
+        rbmat->setMatrix(i,0,Teuchos::rcp_const_cast<Matrix>(submat));
       }
     } else {
       for(size_t i = 0; i < rowSz; i++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
         for(size_t j = 0; j < colSz; j++) {
           Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
-          Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > submat =
-              mergeSubBlocks(rowSubMgr, colSubMgr, bmat);
-          rbmat->setMatrix(i,j,Teuchos::rcp_const_cast<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(submat));
+          Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowSubMgr, colSubMgr, bmat);
+          rbmat->setMatrix(i,j,Teuchos::rcp_const_cast<Matrix>(submat));
         }
       }
     }
-
-    rbmat->fillComplete();
-    return rbmat;
   }
-
-  return Teuchos::null;
+  rbmat->fillComplete();
+  return rbmat;
 }
 
   //MapExtractor(const std::vector<RCP<const Map> >& maps, const std::vector<RCP<const Map> >& thyramaps);
@@ -346,15 +359,41 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
   size_t rowSz = rowMgr->GetNumBlocks();
   size_t colSz = colMgr->GetNumBlocks();
 
+  Teuchos::RCP<ReorderedBlockedCrsMatrix> rbmat = Teuchos::null;
+
   if(rowSz == 0 && colSz == 0) {
     // it is a leaf node
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // build map extractors
+    RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+    // extract Xpetra and Thyra based GIDs
+    Teuchos::RCP<const Map> xpsubmap  = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
+    Teuchos::RCP<const Map> thysubmap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),true);
+    std::vector<Teuchos::RCP<const Map> > rowXpSubMaps (1, xpsubmap);
+    std::vector<Teuchos::RCP<const Map> > rowTySubMaps (1, thysubmap);
+    // use expert constructor
+    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(rowXpSubMaps, rowTySubMaps));
+
+    RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+    // extract Xpetra and Thyra based GIDs
+    Teuchos::RCP<const Map> xpsubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
+    Teuchos::RCP<const Map> tysubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),true);
+    std::vector<Teuchos::RCP<const Map> > colXpSubMaps (1, xpsubmap2);
+    std::vector<Teuchos::RCP<const Map> > colTySubMaps (1, tysubmap2);
+    // use expert constructor
+    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(colXpSubMaps, colTySubMaps));
+
+    ///////////////////////////////////////////////////////////////////////////
+    // build reordered block operator
+
     // this matrix uses Thyra style GIDs as global row, range, domain and column indices
     Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
 
-    return mat;
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+    rbmat->setMatrix(0,0,mat);
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
@@ -411,8 +450,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
     }
 
     // TODO matrix should have both rowMgr and colMgr??
-    Teuchos::RCP<ReorderedBlockedCrsMatrix> rbmat =
-        Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
 
     if (rowSz == 0 && colSz > 0) {
       for(size_t j = 0; j < colSz; j++) {
@@ -436,12 +474,10 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
         }
       }
     }
-
-    rbmat->fillComplete();
-    return rbmat;
   }
 
-  return Teuchos::null;
+  rbmat->fillComplete();
+  return rbmat;
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
