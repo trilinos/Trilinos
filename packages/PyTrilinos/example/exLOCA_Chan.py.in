@@ -44,10 +44,8 @@ Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
 EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
 NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
 LOCA      = fromPyTrilinosImport('LOCA'     , options.testharness)
-print(dir(LOCA.Epetra.Interface))
 
 # ######################################################################
-
 
 class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
                            LOCA.Epetra.Interface.Required ):
@@ -62,7 +60,7 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
 
     vec = zeros(N)
     for i in range(0,self.n):
-      vec[i] = i*(self.n-1-i)/((self.n-1.)*(self.n-1.)) + 0.001
+      vec[i] = i*(self.n-1-i) / ((self.n-1.)*(self.n-1.)) + 0.001
     
     map_ = Epetra.Map(N,0,comm)
     self.initGuess = Epetra.Vector(map_,vec)  
@@ -70,7 +68,8 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
   def printSolution(self,x,conParam):
       print(x)
     
-  def computeF(self, x, F, fillFlag): # we ignore the fillFlag argument and always perform all computation
+  def computeF(self, x, F, fillFlag):
+    # we ignore the fillFlag argument and always perform all computation
     n = self.n
     for i in range(0,n):
       F[i] = x[i]**2 - self.lambda_ * float(i)
@@ -151,7 +150,6 @@ def main():
   locaSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
 
   globalData = LOCA.createGlobalData(paramList)
-  print("mro =", type(interface).mro())
   group = LOCA.Epetra.Group(globalData, printParams, interface, locaSoln, linSys, p)
 
   print('--> group done!')
@@ -162,13 +160,10 @@ def main():
   converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
 
   # Create the stepper
-  print("Making stepper")
   stepper = LOCA.Stepper(globalData, group, converged, paramList)
 
   # Perform continuation run
-  print("About to run stepper")
   status = stepper.run()
-  print("Completed stepper run")
 
   return 0
 
