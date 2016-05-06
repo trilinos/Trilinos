@@ -51,7 +51,9 @@
 
 #include "MueLu_ReorderBlockAFactory_decl.hpp"
 
+#include <Xpetra_BlockReorderManager.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
@@ -87,28 +89,22 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(),     Exceptions::BadCast,      "Input matrix A is not a BlockedCrsMatrix.");
 
-    //Teuchos::RCP<Block::BlockReorderManager> brm = blockedReorderFromString("[[0 1] 2]");
+    Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString(reorderStr);
 
+    Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop =
+        Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(Xpetra::buildReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(brm, A));
 
-    //RCP<Matrix> Op = A->getMatrix(row, col);
+    TEUCHOS_TEST_FOR_EXCEPTION(brop.is_null(),     Exceptions::RuntimeError,      "Block reordering of " << A->Rows() << "x" << A->Cols() << " blocked operator failed.");
 
-    // build new map extractors containing sub blocks
-    //RCP<const MapExtractor> rangeMapExtractor  = A->getRangeMapExtractor();
-    //RCP<const MapExtractor> domainMapExtractor = A->getDomainMapExtractor();
+    GetOStream(Statistics1) << "Reordering A using " << brm->toString() << " block gives a " << brop->Rows() << "x" << brop->Cols() << " blocked operators" << std::endl;
+    GetOStream(Debug) << "Reordered operator has " << brop->getRangeMap()->getGlobalNumElements() << " rows and " << brop->getDomainMap()->getGlobalNumElements() << " columns" << std::endl;
+    GetOStream(Debug) << "Reordered operator: Use of Thyra style gids = " << brop->getRangeMapExtractor()->getThyraMode() << std::endl;
 
+    // TODO strided maps
+    // blocked operators do not have strided maps (information could be misleading?)
+    //Op->CreateView("stridedMaps", srangeMap, sdomainMap);
 
-    /*GetOStream(Statistics1) << "A(" << row << "," << col << ") has strided maps:"
-        << "\n  range  map fixed block size = " << srangeMap ->getFixedBlockSize() << ", strided block id = " << srangeMap ->getStridedBlockId()
-        << "\n  domain map fixed block size = " << sdomainMap->getFixedBlockSize() << ", strided block id = " << sdomainMap->getStridedBlockId() << std::endl;
-
-    // TODO do we really need that? we moved the code to getMatrix...
-    if (Op->IsView("stridedMaps") == true)
-      Op->RemoveView("stridedMaps");
-    Op->CreateView("stridedMaps", srangeMap, sdomainMap);
-
-    TEUCHOS_TEST_FOR_EXCEPTION(Op->IsView("stridedMaps") == false, Exceptions::RuntimeError, "Failed to set \"stridedMaps\" view.");
-    */
-    //currentLevel.Set("A", Op, this);
+    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<const Matrix>(brop), this);
   }
 
 } // namespace MueLu

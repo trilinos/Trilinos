@@ -106,6 +106,7 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
+#include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SegregatedAFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -113,8 +114,8 @@
 #include "MueLu_SimpleSmoother.hpp"
 #endif
 #include "MueLu_SmootherFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_SubBlockAFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother.hpp"
 #endif
@@ -217,10 +218,9 @@ namespace MueLu {
       if (factoryName == "RAPFactory")                      return BuildRAPFactory<RAPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceTransferFactory")        return Build2<RebalanceTransferFactory>      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ReorderBlockAFactory")            return Build2<ReorderBlockAFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SegregatedAFactory")              return Build2<SegregatedAFactory>            (paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>              (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ToggleCoordinatesTransferFactory")return BuildToggleCoordinatesTransferFactory (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>   (paramList, factoryMapIn, factoryManagersIn);

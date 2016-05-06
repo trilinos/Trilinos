@@ -52,7 +52,7 @@
 #include <Xpetra_MapExtractor_fwd.hpp>
 #include <Xpetra_StridedMap_fwd.hpp>
 #include <Xpetra_StridedMapFactory_fwd.hpp>
-#include "../../../../xpetra/sup/BlockedCrsMatrix/Xpetra_BlockReorderManager.hpp"
+#include "Xpetra_ReorderedBlockedCrsMatrix_fwd.hpp"
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
@@ -68,15 +68,14 @@ namespace MueLu {
 
     Example
     \code
-    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = Teuchos::rcp(new Xpetra::BlockedCrsMatrix<Scalar,LO,GO>(mapExtractor,mapExtractor,10));
-    // ... let bOp be a 2x2 blocked operator ...
+    Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOp = ...;
     bOp->fillComplete();
 
     TODO
     \endcode
   */
 
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   class ReorderBlockAFactory : public SingleLevelFactoryBase {
 #undef MUELU_REORDERBLOCKAFACTORY_SHORT
     #include "MueLu_UseShortNames.hpp"
@@ -105,20 +104,6 @@ namespace MueLu {
     //! @name Build methods.
 
     /*! @brief Build an object with this factory.
-     *
-     * Extract sub block matrix from a given blocked crs operator.
-     * Strided or block information is extracted in the following way:
-     *   1) first check whether the corresponding sub maps are strided
-     *      If yes, use the fixed block size and strided block id
-     *   2) If no, get the full map of the map extractors.
-     *      Check whether the full map is strided.
-     *      If yes, use the strided information of the full map and build
-     *      partial (strided) maps with it
-     *      If no, throw an exception
-     *
-     * For blocked operators with block maps one should use the striding
-     * information from the sub maps. for strided operators, the striding
-     * information of the full map is the best choice.
      */
     void Build(Level & currentLevel) const;
 
