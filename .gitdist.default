@@ -1,6 +1,9 @@
 packages/moocho
+packages/Sundance
 packages/CTrilinos
 packages/ForTrilinos
+package/optika
+packages/mesquite
 packages/xSDKTrilinos
 TriBITS
 TriBITS/TriBITSDoc
