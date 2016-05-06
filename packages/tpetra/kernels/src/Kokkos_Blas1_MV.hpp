@@ -43,6 +43,10 @@
 #ifndef KOKKOS_BLAS1_MV_HPP_
 #define KOKKOS_BLAS1_MV_HPP_
 
+/// \file Kokkos_Blas1_MV.hpp
+/// \brief BLAS 1 kernels specifically optimized for typical
+///   Tpetra::Vector and Tpetra::MultiVector use cases.
+
 #include <Kokkos_Blas1.hpp>
 #include <Kokkos_Blas1_MV_impl_abs.hpp>
 #include <Kokkos_Blas1_MV_impl_axpby.hpp>
