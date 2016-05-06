@@ -245,6 +245,12 @@ if "delete_Group" not in dir(___init__):
   }
 }
 
+%pythonbegin
+%{
+from .. import Abstract
+from .  import Interface
+%}
+
 // This might need to be deleted?
 // ==============================
 

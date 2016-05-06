@@ -175,7 +175,6 @@ parentDir = op.normpath(op.join(thisDir,".."))
 if not thisDir   in sys.path: sys.path.append(thisDir  )
 if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
-from .. import Abstract
 %}
 
 // LOCA base classes
@@ -213,6 +212,19 @@ from .. import Abstract
 %pythoncode
 %{
 from .. import Abstract
+// // point to NOX.Abstract.  Force it back to LOCA.Abstract.  Also,
+// // ___init__ was pointing to Pitchfork/___init__.so (?!?), and
+// // Interface was pointing to NOX/Epetra/Interface, so I fix those, too.
+// %pythoncode
+// %{
+// del Abstract
+// from .. import Abstract
+// del ___init__
+// from . import ___init__
+// import os.path
+// if 'NOX' in Interface.__file__.split(os.path.sep):
+//   del Interface
+//   from .  import Interface
 %}
 
 // Director exception handling
