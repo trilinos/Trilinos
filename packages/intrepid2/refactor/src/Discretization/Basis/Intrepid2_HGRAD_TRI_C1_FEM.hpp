@@ -134,7 +134,7 @@ namespace Intrepid2 {
                                     opType != OPERATOR_CURL &&
                                     opType != OPERATOR_D2 &&
                                     opType != OPERATOR_MAX,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_C1_FEM::Serial::getValues) operator is not supported");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_C1_FEM::Serial::getValues) operator is not supported");
         }
         }
       }
@@ -166,7 +166,7 @@ namespace Intrepid2 {
                  const EOperator operatorType  = OPERATOR_VALUE ) const;
 
       /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-          <strong>reference Quadrilateral</strong>.
+          <strong>reference Triangule</strong>.
           
           \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
           dimensioned (F,D)

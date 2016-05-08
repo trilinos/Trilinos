@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::G_TET_C1_FEM class.
+/** \file test_01.hpp
+    \brief  Unit tests for the Intrepid2::HGRAD_TET_C1_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson and Kyungjoo Kim.
 */
 
@@ -119,8 +119,6 @@ namespace Intrepid2 {
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
       Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> tetBasis;
-      //typedef typename decltype(tetBasis)::outputViewType outputViewType;
-      //typedef typename decltype(tetBasis)::pointViewType  pointViewType;
 
       try {
         ordinal_type nthrow = 0, ncatch = 0;

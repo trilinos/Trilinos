@@ -209,17 +209,17 @@ namespace Intrepid2 {
     {
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
     DynRankView ConstructWithLabel(badVals2, triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #13 incorrect 1st  dimension of output array (must equal number of points)
     DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension() );
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
     DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() - 1);
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE), throwCounter, nException ) ;
+    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE) ) ;
     } 
     // exception #15: D2 cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
