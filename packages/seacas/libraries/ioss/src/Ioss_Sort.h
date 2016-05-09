@@ -52,17 +52,35 @@ namespace {
 
   template <typename INT> void SWAP(INT *V, size_t I, size_t J) { std::swap(V[I], V[J]); }
 
-  template <typename INT> size_t median3(INT v[], size_t left, size_t right)
+  template <typename INT> void order3(INT v[], size_t left, size_t center, size_t right)
   {
-    size_t center;
-    center = (left + right) / 2;
-
     if (v[left] > v[center])
       SWAP(v, left, center);
     if (v[left] > v[right])
       SWAP(v, left, right);
     if (v[center] > v[right])
       SWAP(v, center, right);
+  }
+
+  template <typename INT> size_t median3(INT v[], size_t left, size_t right)
+  {
+    size_t center = (left + right) / 2;
+    size_t pl     = left;
+    size_t pm     = center;
+    size_t pr     = right;
+
+    if (right - left > 40) {
+      size_t s = (right - left) / 8;
+      order3(v, left, left + s, left + 2 * s);
+      order3(v, center - s, center, center + s);
+      order3(v, right - 2 * s, right - s, right);
+
+      // Now set up to get median of the 3 medians...
+      pl = left + s;
+      pm = center;
+      pr = right - s;
+    }
+    order3(v, pl, pm, pr);
 
     SWAP(v, center, right - 1);
     return right - 1;
@@ -73,7 +91,7 @@ namespace {
     size_t pivot;
     size_t i, j;
 
-    if (left + QSORT_CUTOFF <= right) {
+    if (left + QSORT_CUTOFF < right) {
       pivot = median3(v, left, right);
       i     = left;
       j     = right - 1;
