@@ -128,7 +128,7 @@ namespace Iocgns {
     nodeMap.release_memory();
     elemMap.release_memory();
     try {
-      decomp.release();
+      decomp.reset();
     }
     catch (...) {
     }

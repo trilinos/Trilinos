@@ -94,7 +94,7 @@ namespace smart_assert {
       out << context.get_level_msg();
     else
       out << "\nExpression: " << context.get_expr();
-    out << std::endl;
+    out << '\n';
   }
 
   void dump_context_detail(const assert_context &context, std::ostream &out)
@@ -123,7 +123,7 @@ namespace smart_assert {
         ++first;
       }
     }
-    out << std::endl;
+    out << '\n';
   }
 
   ///////////////////////////////////////////////////////
