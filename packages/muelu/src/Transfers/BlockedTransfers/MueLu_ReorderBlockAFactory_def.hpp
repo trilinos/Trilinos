@@ -82,7 +82,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReorderBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     const ParameterList& pL = GetParameterList();
-    std::string reorderStr = Teuchos::as<std::string>(pL.get<std::string>("Reorder Type"));
+    std::string reorderStr = pL.get<std::string>("Reorder Type");
 
     RCP<Matrix>           Ain = Get<RCP<Matrix> >(currentLevel, "A");
     RCP<BlockedCrsMatrix> A   = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
@@ -100,11 +100,15 @@ namespace MueLu {
     GetOStream(Debug) << "Reordered operator has " << brop->getRangeMap()->getGlobalNumElements() << " rows and " << brop->getDomainMap()->getGlobalNumElements() << " columns" << std::endl;
     GetOStream(Debug) << "Reordered operator: Use of Thyra style gids = " << brop->getRangeMapExtractor()->getThyraMode() << std::endl;
 
+    // get rid of const (we expect non-const operators stored in Level)
+    Teuchos::RCP<ReorderedBlockedCrsMatrix> bret =
+        Teuchos::rcp_const_cast<ReorderedBlockedCrsMatrix>(brop);
+
     // TODO strided maps
     // blocked operators do not have strided maps (information could be misleading?)
     //Op->CreateView("stridedMaps", srangeMap, sdomainMap);
 
-    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<const Matrix>(brop), this);
+    currentLevel.Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bret), this);
   }
 
 } // namespace MueLu
