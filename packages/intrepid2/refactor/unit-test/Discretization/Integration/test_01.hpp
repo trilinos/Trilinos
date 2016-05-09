@@ -62,7 +62,7 @@
 //#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
-//#include "Intrepid2_CubatureTensorPyr.hpp"
+#include "Intrepid2_CubatureTensorPyr.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -128,6 +128,7 @@ namespace Intrepid2 {
       typedef CubatureDirectTriDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
       typedef CubatureDirectTetDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
       typedef CubatureTensor          <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
+      typedef CubatureTensorPyr       <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
 
       const auto tol = 100.0 * Parameters::Tolerence;
 
@@ -389,20 +390,25 @@ namespace Intrepid2 {
             }
         }
         
-        *outStream << "-> Pyramid testing\n\n";
-        // {
-        //   shards::CellTopology pyr(shards::getCellTopologyData< shards::Pyramid<> >());
-        //   for (int deg=0; deg<=std::min(INTREPID2_CUBATURE_LINE_GAUSS_MAX,INTREPID2_CUBATURE_LINE_GAUSSJACOBI20_MAX); deg++) {
-        //     const auto testVol = computeRefVolume(pyr, deg);
-        //     const auto refVol  = 4.0/3.0;
-        //     if (std::abs(testVol - refVol) > tol) {
-        //       *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
-        //         std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
-        //       ++errorFlag;
-        //       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        //     }
-        //   }
-        // }
+        *outStream << "-> Pyramid testing: 0 and 1 degree are not tested (not accurate with duffy transformation) \n\n";
+        {
+          for (auto deg=2;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
+            const auto line = CubatureLineType(deg);
+            CubatureTensorPyrType cub( line );
+            cub.getCubature(cubPoints, cubWeights);
+            const auto npts = cub.getNumPoints();
+            
+            const auto testVol = computeRefVolume(npts, cubWeights);
+            const auto refVol  = 4.0/3.0;
+            if (std::abs(testVol - refVol) > tol) {              
+              *outStream << std::setw(30) << "Pyramid volume --> " << std::setw(10) << std::scientific << testVol <<
+                std::setw(10) << "diff = " << std::setw(10) << std::scientific << std::abs(testVol - refVol) << "\n";
+              
+              ++errorFlag;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            }
+          }
+        }
 
         *outStream << "-> Hypercube testing\n\n";
         // later.... refVol = 32

@@ -113,19 +113,16 @@ namespace Intrepid2 {
         }
       break;
     }
-    // case shards::Pyramid<>::key:
-    //   INTREPID2_TEST_FOR_EXCEPTION( (degree.size() < 3), std::invalid_argument,
-    //                                 ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
-    //   {
-    //     std::vector< Teuchos::RCP< Cubature<SpT,PT,WT> > > lineCubs(3);
-    //     lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<SpT,PT,WT>(degree[0]));
-    //     lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<SpT,PT,WT>(degree[1]));
-    //     lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGaussJacobi20<SpT,PT,WT>(degree[2]));
-    //     r_val = Teuchos::rcp(new CubatureTensorPyr<SpT,PT,WT>(lineCubs));
-    //   }
-    //   break;
-
-    default:
+    case shards::Pyramid<>::key: {
+      INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
+                                    ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
+      {
+        const auto line = CubatureDirectLineGauss<SpT,PT,WT>(degree[0]);
+        r_val = Teuchos::rcp(new CubatureTensorPyr<SpT,PT,WT>( line ));
+      }
+      break;
+    }
+    default: {
       INTREPID2_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key)             &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key)         &&
                                       (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key)    &&
@@ -136,7 +133,7 @@ namespace Intrepid2 {
                                     std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Invalid cell topology prevents cubature creation.");
     }
-
+    }
     return r_val;
   }
 

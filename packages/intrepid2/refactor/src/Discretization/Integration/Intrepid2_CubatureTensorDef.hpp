@@ -52,34 +52,6 @@
 namespace Intrepid2 {
 
   template<typename SpT, typename PT, typename WT>
-  template<typename CT0, typename CT1>
-  CubatureTensor<SpT,PT,WT>::
-  CubatureTensor( const CT0 ct0,
-                  const CT1 ct1 ) 
-    : numCubatures_(2),
-      dimension_(ct0.getDimension()+ct1.getDimension()),
-      impl_(this) {
-    cubatures_[0] = ct0;
-    cubatures_[1] = ct1;
-  }
-
-
-  template<typename SpT, typename PT, typename WT>
-  template<typename CT0, typename CT1, typename CT2>
-  CubatureTensor<SpT,PT,WT>::
-  CubatureTensor( const CT0 ct0,
-                  const CT1 ct1,
-                  const CT2 ct2 ) 
-    : numCubatures_(3),
-      dimension_(ct0.getDimension()+ct1.getDimension()+ct2.getDimension()),
-      impl_(this) { 
-    cubatures_[0] = ct0;
-    cubatures_[1] = ct1;
-    cubatures_[2] = ct2;
-  }
-
-
-  template<typename SpT, typename PT, typename WT>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void 

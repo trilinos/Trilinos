@@ -173,7 +173,13 @@ namespace Intrepid2 {
     template<typename CubatureType0,
              typename CubatureType1>
     CubatureTensor( const CubatureType0 cubature0,
-                    const CubatureType1 cubature1 );
+                    const CubatureType1 cubature1 )
+      : numCubatures_(2),
+        dimension_(cubature0.getDimension()+cubature1.getDimension()),
+        impl_(this) {
+      cubatures_[0] = cubature0;
+      cubatures_[1] = cubature1;
+    }
 
     /** \brief Constructor.
 
@@ -186,7 +192,14 @@ namespace Intrepid2 {
              typename CubatureType2>
     CubatureTensor( const CubatureType0 cubature0,
                     const CubatureType1 cubature1,
-                    const CubatureType2 cubature2 );
+                    const CubatureType2 cubature2 ) 
+      : numCubatures_(3),
+        dimension_(cubature0.getDimension()+cubature1.getDimension()+cubature2.getDimension()),
+        impl_(this) {
+      cubatures_[0] = cubature0;
+      cubatures_[1] = cubature1;
+      cubatures_[2] = cubature2;
+    }
 
     CubatureTensor& operator=(const CubatureTensor &b) {
       if (this != &b) {
