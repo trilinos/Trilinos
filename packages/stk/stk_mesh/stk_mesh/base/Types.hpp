@@ -165,7 +165,7 @@ struct FastMeshIndex
   unsigned bucket_ord;
 };
 
-NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket);
+NAMED_PAIR(BucketInfo, unsigned, bucket_id, unsigned, num_entities_this_bucket)
 
 struct BucketIndices
 {
