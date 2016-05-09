@@ -42,7 +42,9 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve the mother problem of PDE-constrained optimization:
+    \brief Solves a source inversion problem governed by the
+           advection-diffusion equation.  Performs optimal
+           experimental design (OED).
 */
 
 #include "Teuchos_Comm.hpp"

@@ -42,7 +42,8 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve the mother problem of PDE-constrained optimization:
+    \brief Solves a source inversion problem governed by the
+           advection-diffusion equation.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -193,7 +194,8 @@ int main(int argc, char *argv[]) {
 
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(z_rcp, "control.txt");
-    data->outputTpetraVector(data->getVecWeights(), "weights.txt");
+    data->outputTpetraVector(w_rcp, "weights.txt");
+    //data->outputTpetraVector(data->getVecWeights(), "weights.txt");
     //data->outputTpetraVector(data->getVecF(), "control.txt");
     //data->outputTpetraData();
 

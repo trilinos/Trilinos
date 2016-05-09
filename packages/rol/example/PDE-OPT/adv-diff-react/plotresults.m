@@ -2,22 +2,10 @@ adj = load('cell_to_node_quad.txt') + 1;  %% load node adjacency table, incremen
 
 nodes = load('nodes.txt');  %% load node coordinates
 
-figure()
-data_obj = importdata('weights.txt', ' ', 2);  %% we need to skip the first two lines
-weights = data_obj.data;
-trisurf(adj, nodes(:,1), nodes(:,2), weights);
-shading flat;
-view(2);
-axis square;
-xlabel('x');
-ylabel('y');
-title('Sensors');
-colormap summer
-set(findall(gcf,'-property','FontSize'),'FontSize',16); set(gcf, 'Color', 'White'); tightfig;
-myaa(2); myaa('publish');
+publish_results = 0;
 
 axsize = 400;
-figure('Position', [100 100 3*axsize 1.6*axsize])
+figure('Position', [100 100 3.3*axsize 1.6*axsize])
 
 subplot(2,3,4)
 data_obj = importdata('data.txt', ' ', 2);  %% we need to skip the first two lines
@@ -87,4 +75,27 @@ title('State error (rel)');
 colorbar
 
 set(findall(gcf,'-property','FontSize'),'FontSize',16); set(gcf, 'Color', 'White'); tightfig;
-myaa(2); myaa('publish');
+if publish_results
+  myaa(2);
+  myaa('publish');
+end
+
+
+fig1 = gcf;
+sizevec = get(fig1, 'Position');
+figure('Position', [sizevec(1)+sizevec(3)+50 sizevec(2) axsize axsize]);
+data_obj = importdata('weights.txt', ' ', 2);  %% we need to skip the first two lines
+weights = data_obj.data;
+trisurf(adj, nodes(:,1), nodes(:,2), weights);
+shading flat;
+view(2);
+axis square;
+xlabel('x');
+ylabel('y');
+title('Sensors');
+colormap summer
+set(findall(gcf,'-property','FontSize'),'FontSize',16); set(gcf, 'Color', 'White'); tightfig;
+if publish_results
+  myaa(2);
+  myaa('publish');
+end
