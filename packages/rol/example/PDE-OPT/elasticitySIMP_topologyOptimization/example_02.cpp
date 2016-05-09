@@ -134,14 +134,14 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> >    vc_lam_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
     Teuchos::RCP<std::vector<RealT> >    vscale_rcp = Teuchos::rcp(new std::vector<RealT>(1, 0));
     // Set all values to 1 in u, z.
-    u_rcp->putScalar(1.0);
+    RealT one(1), two(2);
+    u_rcp->putScalar(one);
     // Set z to gray solution.
     RealT volFrac = parlist->sublist("ElasticityTopoOpt").get<RealT>("Volume Fraction");
     z_rcp->putScalar(volFrac);
     // Set scaling vector for constraint
     RealT W = parlist->sublist("Geometry").get<RealT>("Width");
     RealT H = parlist->sublist("Geometry").get<RealT>("Height");
-    RealT one(1), two(2);
     (*vscale_rcp)[0] = one/std::pow(W*H*(one-volFrac),two);
     // Set Scaling vector for density
     bool  useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
@@ -153,31 +153,18 @@ int main(int argc, char *argv[]) {
     }
     Teuchos::RCP<const Tpetra::Vector<> > zscale_rcp = scaleVec->getVector(0);
 
-   //test     
-   /*data->updateMaterialDensity (z_rcp);
-    Teuchos::RCP<Tpetra::MultiVector<RealT> > rhs
-      = Teuchos::rcp(new Tpetra::MultiVector<> (data->getVecF()->getMap(), 1, true));
-    data->ApplyMatAToVec(rhs, u_rcp);
-    data->outputTpetraVector(rhs, "KU0.txt");
-    data->ApplyInverseJacobian1ToVec(u_rcp, rhs, false);
-    data->outputTpetraVector(u_rcp, "KKU0.txt");
-    
-    data->ApplyJacobian1ToVec(rhs, u_rcp);
-    data->outputTpetraVector(rhs, "KU1.txt");
-    data->ApplyInverseJacobian1ToVec(u_rcp, rhs, false);
-    data->outputTpetraVector(u_rcp, "KKU1.txt");
-  */
-    //u_rcp->putScalar(1.0);
-    //z_rcp->putScalar(1.0);
     // Randomize d vectors.
     du_rcp->randomize(); //du_rcp->scale(0);
     dw_rcp->randomize();
     dz_rcp->randomize(); //dz_rcp->scale(0);
     dz2_rcp->randomize();
     // Create ROL::TpetraMultiVectors.
-    Teuchos::RCP<ROL::Vector<RealT> > up   = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dup  = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
-    Teuchos::RCP<ROL::Vector<RealT> > dwp  = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dw_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > up
+      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(u_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dup
+      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(du_rcp));
+    Teuchos::RCP<ROL::Vector<RealT> > dwp
+      = Teuchos::rcp(new ROL::TpetraMultiVector<RealT>(dw_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > zp 
       = Teuchos::rcp(new ROL::PrimalScaledTpetraMultiVector<RealT>(z_rcp,zscale_rcp));
     Teuchos::RCP<ROL::Vector<RealT> > dzp
@@ -198,21 +185,23 @@ int main(int argc, char *argv[]) {
     buildSampler.print("samples");
 
     /*** Compute compliance objective function scaling. ***/
-    RealT max(0), gmax(0), sum(0), gsum(0), tmp(0);
+    RealT min(ROL::ROL_INF<RealT>()), gmin(0), max(0), gmax(0), sum(0), gsum(0), tmp(0);
     Teuchos::Array<RealT> dotF(1, 0);
     RealT minDensity = parlist->sublist("ElasticitySIMP").get<RealT>("Minimum Density");
     for (int i = 0; i < buildSampler.get()->numMySamples(); ++i) {
       data->updateF(buildSampler.get()->getMyPoint(i));
-      (data->getVecF())->dot(*(data->getVecF()),dotF);
+      (data->getVecF())->dot(*(data->getVecF()),dotF.view(0,1));
       tmp = minDensity/dotF[0];
+      min = ((min < tmp) ? min : tmp);
       max = ((max > tmp) ? max : tmp);
       sum += buildSampler.get()->getMyWeight(i) * tmp;
     }
+    ROL::Elementwise::ReductionMin<RealT> ROLmin;
+    buildSampler.getBatchManager()->reduceAll(&min,&gmin,ROLmin);
     ROL::Elementwise::ReductionMax<RealT> ROLmax;
     buildSampler.getBatchManager()->reduceAll(&max,&gmax,ROLmax);
     buildSampler.getBatchManager()->sumAll(&sum,&gsum,1);
-    //RealT scale = gsum;
-    RealT scale = gmax;
+    RealT scale = gmin;
 
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj

@@ -161,6 +161,8 @@ protected:
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
   Teuchos::RCP<Intrepid::FieldContainer<Real> > dataUd_;
 
+  bool verbose_;
+
 protected:
 public:
 
@@ -177,7 +179,11 @@ public:
     outStream_ = outStream;
     myRank_    = comm->getRank();
     numProcs_  = comm->getSize();
-    *outStream_ << "Total number of processors: " << numProcs_ << std::endl;
+
+    verbose_ = parlist->sublist("PDE FEM").get("Verbose Output",false);
+    if ( verbose_ ) {
+      *outStream_ << "Total number of processors: " << numProcs_ << std::endl;
+    }
 
     basisOrder_ = parlist->sublist("PDE FEM").get<int>("Order of FE Discretization");
   }
@@ -240,7 +246,10 @@ public:
       
     cellDofs_ = *(dofMgr_->getCellDofs());
     numLocalDofs_ = cellDofs_.dimension(1);
-    *outStream_ << "Cell offsets across processors: " << cellOffsets_ << std::endl;
+    if ( verbose_ ) {
+      *outStream_ << "Cell offsets across processors: " << cellOffsets_
+                  << std::endl;
+    }
     for (int i=0; i<numCells_; ++i) {
       myCellIds_.push_back(cellOffsets_[myRank_]+i);
       for (int j=0; j<numLocalDofs_; ++j) {
@@ -469,10 +478,13 @@ public:
     	my_dbc_ = dbc_side;
     }
     //Print to check my BC info
-    *outStream_<<"My dbc numbers: ";
-    for(unsigned i=0; i<my_dbc_.size(); i++)
-    	*outStream_<<my_dbc_[i];
-    *outStream_<<std::endl;
+    if ( verbose_ ) {
+      *outStream_ << "My dbc numbers: ";
+      for(unsigned i=0; i<my_dbc_.size(); ++i) {
+        *outStream_ << my_dbc_[i];
+      }
+      *outStream_ << std::endl;
+    }
     //
     Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
@@ -531,27 +543,39 @@ public:
         const CellTopologyData * ctd = cellType_.getCellTopologyData();
         Teuchos::ArrayView<unsigned> locNodes(const_cast<unsigned *>(ctd->subcell[spaceDim_-1][i].node), cellType_.getVertexCount(spaceDim_-1, i));
         for (int l=0; l<static_cast<int>(cellType_.getVertexCount(spaceDim_-1, i)); ++l) {
-            	x[0]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0);
-            	x[1]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1);
-	// use coordinates to check if a DOF is DBC DOF
-	    	int ifDBCNode = check_DBC_Coords_Range( x );
-	    	if(ifDBCNode < 0){
-			continue;
-		}
-		else if(ifDBCNode == 0){
-			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing X direction"<<std::endl;
-            		myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0));
-		}
-		else if(ifDBCNode == 1 && numDofsPerNode >= 2){
-			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing Y direction"<<std::endl;
-            		myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1));
-		}
-		else {
-			*outStream_<<"DBC node: "<<ctn_(myBoundaryCellIds_[i][j], locNodes[l])<<", fixing ALL direction"<<std::endl;
-			for (int k=0; k<numDofsPerNode; ++k) {
-            			myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), k));
-          		}
-		}
+          x[0]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0);
+          x[1]=nodes(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1);
+	  // use coordinates to check if a DOF is DBC DOF
+	  int ifDBCNode = check_DBC_Coords_Range( x );
+	  if(ifDBCNode < 0){
+            continue;
+          }
+          else if(ifDBCNode == 0){
+            if ( verbose_ ) {
+              *outStream_ << "DBC node: "
+                          << ctn_(myBoundaryCellIds_[i][j], locNodes[l])
+                          << ", fixing X direction" << std::endl;
+            }
+            myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 0));
+          }
+          else if(ifDBCNode == 1 && numDofsPerNode >= 2){
+            if ( verbose_ ) {
+              *outStream_ << "DBC node: "
+                          << ctn_(myBoundaryCellIds_[i][j], locNodes[l])
+                          << ", fixing Y direction" << std::endl;
+            }
+            myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), 1));
+          }
+          else {
+            if ( verbose_ ) {
+              *outStream_ << "DBC node: "
+                          << ctn_(myBoundaryCellIds_[i][j], locNodes[l])
+                          << ", fixing ALL direction" << std::endl;
+            }
+            for (int k=0; k<numDofsPerNode; ++k) {
+              myDirichletDofs_.push_back(nodeDofs(ctn_(myBoundaryCellIds_[i][j], locNodes[l]), k));
+            }
+          }
         }
 	// edge dofs are NOT in use	
 	/*

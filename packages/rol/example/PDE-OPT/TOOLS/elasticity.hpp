@@ -159,12 +159,11 @@ public:
     // DBC cases
     DBC_Case_    = Elist.get<int>("DBC Case");
 
-    verbose_     = Elist.get("Verbose Output",false);
-
     /****************************************************************************/
     /*** Initialize mesh / finite element fields / degree-of-freedom manager. ***/
     /****************************************************************************/
     Teuchos::ParameterList &Plist = parlist->sublist("PDE FEM");
+    verbose_ = Plist.get("Verbose Output",false);
     int basisOrder = Plist.get<int>("Order of FE Discretization");
     Teuchos::RCP<MeshManager<Real> > meshMgr = Teuchos::rcp(new MeshManager_Rectangle<Real>(*parlist));
     int spaceDim = 2;
