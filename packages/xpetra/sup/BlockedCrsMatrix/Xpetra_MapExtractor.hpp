@@ -388,6 +388,8 @@ namespace Xpetra {
     /// depending on the parameter bThyraMode the sub map that is returned uses Thyra or Xpetra numbering
     /// Note: Thyra-numbering is only allowed if the MapExtractor is also constructed using Thyra numbering
     const RCP<const Map> getMap(size_t i, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION( i >= NumMaps(), Xpetra::Exceptions::RuntimeError, "MapExtractor::getMap: tried to access block " << i << ", but MapExtractor has only " << NumMaps() << " blocks! Block indices must be between 0 and " << NumMaps() - 1 << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION( i < 0, Xpetra::Exceptions::RuntimeError, "MapExtractor::getMap: A negative block index " << i << " is invalid. Block indices must be between 0 and " << NumMaps() - 1 << ".");
       if(bThyraMode_ == true && bThyraMode == true)
         return thyraMaps_[i];
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
