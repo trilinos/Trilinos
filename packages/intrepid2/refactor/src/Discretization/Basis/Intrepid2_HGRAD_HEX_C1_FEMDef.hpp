@@ -324,11 +324,11 @@ namespace Intrepid2 {
       break;
     }
 
-    case OPERATOR_D2:
+    case OPERATOR_D2: {
       typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-
+    }
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:

@@ -41,8 +41,8 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_TRI_C1_FEM class.
-    \author Created by P. Bochev, D. Ridzal, K. Peterson.
+    \brief  Unit tests for the Intrepid2::Basis_HGRAD_WEDGE_C1_FEM class.
+    \author Created by Kyungjoo Kim
 */
 
 #include "Kokkos_Core.hpp"
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HGRAD_TRI_C1_FEM_Test01<double,Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::HGRAD_WEDGE_C1_FEM_Test01<double,Kokkos::OpenMP>(verbose);
 
   Kokkos::finalize();
   return r_val;

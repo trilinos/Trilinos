@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_TRI_C1_FEM class.
+    \brief  Unit tests for the Intrepid2::Basis_HDIV_TET_I1_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HGRAD_TRI_C1_FEM_Test01<double,Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::HDIV_TET_I1_FEM_Test01<double,Kokkos::OpenMP>(verbose);
 
   Kokkos::finalize();
   return r_val;

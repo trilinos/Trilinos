@@ -114,7 +114,7 @@ private:
   Teuchos::RCP<Objective_SimOpt<Real> > obj_;            // objective function used for the conventional inverse problem 
   Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
   Teuchos::RCP<Vector<Real> > state_;                    // state vector, used for cloning
-  Teuchos::RCP<Vector<Real> > adjoint_;                  // state vector, used for cloning
+  Teuchos::RCP<Vector<Real> > adjoint_;                  // adjoint vector, used for cloning
   Teuchos::RCP<Vector<Real> > control_;                  // control vector, used for cloning
   Teuchos::RCP<Vector<Real> > constraint_;               // constraint vector, used for cloning
   Teuchos::RCP<Vector<Real> > observation_;              // observation vector, used for cloning
@@ -159,17 +159,19 @@ public:
     Teuchos::RCP<Vector<Real> > BtAitQtVx = control_->dual().clone();
     Teuchos::RCP<Vector<Real> > CinvBtAitQtVx = control_->clone();
 
-    int numTraining = training_.size();
-
     Real mytol(1e-8);
     // Initialize sum of bias, variance and sparse regularization.
     Real sumBVR(0);
     // Norm computation for the bias term.
+    // Comment out, for now.
+    /*
+    int numTraining = static_cast<int>(training_.size());
     for (int i=0; i<numTraining; ++i) {
       obj_->hessVec_22(*Mtrain, *(training_[i]), *state_, *control_, tol);
       applyInverseReducedHessian(*CinvMtrain, *Mtrain, x);
       sumBVR += CinvMtrain->dot(*CinvMtrain);
     }
+    */
     // Trace estimation for the variance term.
     Vx->set(*rand01_);
     Vx->applyBinary(Elementwise::Multiply<Real>(), x);
