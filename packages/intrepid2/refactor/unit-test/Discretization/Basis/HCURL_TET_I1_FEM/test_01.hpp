@@ -40,9 +40,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   test_01.cpp
+/** \file   test_01.hpp
     \brief  Unit tests for the Intrepid2::HCURL_TET_I1_FEM class.
-    \author Created by P. Bochev, D. Ridzal, and K. Peterson.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson and Kyungjoo Kim.
 */
 
 #include "Intrepid2_config.h"
@@ -92,172 +92,180 @@ namespace Intrepid2 {
       *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
-  *outStream \
-    << "===============================================================================\n" \
-    << "|                                                                             |\n" \
-    << "|                 Unit Test (Basis_HCURL_TET_I1_FEM)                          |\n" \
-    << "|                                                                             |\n" \
-    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
-    << "|     2) Basis values for VALUE and CURL operators                            |\n" \
-    << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
-    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
-    << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-    << "|                                                                             |\n" \
-    << "===============================================================================\n"\
-    << "| TEST 1: Basis creation, exception testing                                   |\n"\
+  *outStream
+    << "===============================================================================\n"
+    << "|                                                                             |\n"
+    << "|                 Unit Test (Basis_HCURL_TET_I1_FEM)                          |\n"
+    << "|                                                                             |\n"
+    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
+    << "|     2) Basis values for VALUE and CURL operators                            |\n"
+    << "|                                                                             |\n"
+    << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n"
+    << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n"
+    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
+    << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
+    << "|                                                                             |\n"
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
+    << "|                                                                             |\n"
     << "===============================================================================\n";
-  int errorFlag = 0;
- /* 
-  // Define basis and error flag
-  Basis_HCURL_TET_I1_FEM<double, FieldContainer<double> > tetBasis;
-  int errorFlag = 0;
 
-// Define throw number for exception testing
-  int nException     = 0;
-  int throwCounter   = 0;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      const ValueType tol = Parameters::Tolerence;
 
-  // Define array containing the 4 vertices of the reference TET and its 6 edge centers.
-  FieldContainer<double> tetNodes(10, 3);
-  tetNodes(0,0) =  0.0;  tetNodes(0,1) =  0.0;  tetNodes(0,2) =  0.0;
-  tetNodes(1,0) =  1.0;  tetNodes(1,1) =  0.0;  tetNodes(1,2) =  0.0;
-  tetNodes(2,0) =  0.0;  tetNodes(2,1) =  1.0;  tetNodes(2,2) =  0.0;
-  tetNodes(3,0) =  0.0;  tetNodes(3,1) =  0.0;  tetNodes(3,2) =  1.0;
-  tetNodes(4,0) =  0.5;  tetNodes(4,1) =  0.0;  tetNodes(4,2) =  0.0;
-  tetNodes(5,0) =  0.5;  tetNodes(5,1) =  0.5;  tetNodes(5,2) =  0.0;
-  tetNodes(6,0) =  0.0;  tetNodes(6,1) =  0.5;  tetNodes(6,2) =  0.0;
-  tetNodes(7,0) =  0.0;  tetNodes(7,1) =  0.0;  tetNodes(7,2) =  0.5;
-  tetNodes(8,0) =  0.5;  tetNodes(8,1) =  0.0;  tetNodes(8,2) =  0.5;
-  tetNodes(9,0) =  0.0;  tetNodes(9,1) =  0.5;  tetNodes(9,2) =  0.5;
+      int errorFlag = 0;
 
+      // for virtual function, value and point types are declared in the class
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HCURL_TET_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> tetBasis;
 
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
-
+    *outStream
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 1: Basis creation, exception testing                                   |\n"
+    << "===============================================================================\n";
 
   try{
+    ordinal_type nthrow = 0, ncatch = 0;
+#ifdef HAVE_INTREPID2_DEBUG  
+
+    DynRankView ConstructWithLabel( tetNodes, 10, 3 );
+
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    const auto numFields = tetBasis.getCardinality();
+    const auto numPoints = tetNodes.dimension(0);
+    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+
+    DynRankView vals;
+    vals = DynRankView("vals", numFields, numPoints);
+
+    {
     // exception #1: GRAD cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-     vals.resize(tetBasis.getCardinality(), tetNodes.dimension(0), 3 );
-     INTREPID_TEST_COMMAND(  tetBasis.getValues(vals, tetNodes, OPERATOR_GRAD), throwCounter, nException );
-
+      INTREPID2_TEST_ERROR_EXPECTED(  tetBasis.getValues(vals, tetNodes, OPERATOR_GRAD) );
+    }
+    {
     // exception #2: DIV cannot be applied to HCURL functions
     // resize vals to rank-2 container with dimensions (num. basis functions, num. points)
-     vals.resize(tetBasis.getCardinality(), tetNodes.dimension(0) );
-     INTREPID_TEST_COMMAND(  tetBasis.getValues(vals, tetNodes, OPERATOR_DIV), throwCounter, nException );
-        
+      INTREPID2_TEST_ERROR_EXPECTED(  tetBasis.getValues(vals, tetNodes, OPERATOR_DIV) );
+    }
+    {     
     // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
     // getDofTag() to access invalid array elements thereby causing bounds check exception
     // exception #3
-    INTREPID_TEST_COMMAND( tetBasis.getDofOrdinal(3,0,0), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(3,0,0) );
     // exception #4
-    INTREPID_TEST_COMMAND( tetBasis.getDofOrdinal(1,1,1), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(1,1,1) );
     // exception #5
-    INTREPID_TEST_COMMAND( tetBasis.getDofOrdinal(0,4,1), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofOrdinal(0,4,1) );
     // exception #6
-    INTREPID_TEST_COMMAND( tetBasis.getDofTag(7), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(7) );
     // exception #7
-    INTREPID_TEST_COMMAND( tetBasis.getDofTag(-1), throwCounter, nException );
-
-#ifdef HAVE_INTREPID2_DEBUG  
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofTag(-1) );
+    }
+    {
     // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
     // exception #8: input points array must be of rank-2
-    FieldContainer<double> badPoints1(4, 5, 3);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(vals,badPoints1,OPERATOR_VALUE), throwCounter, nException );
-
+      DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals,badPoints1,OPERATOR_VALUE) );
+    }
+    {
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, 2);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(vals,badPoints2,OPERATOR_VALUE), throwCounter, nException );
-    
+      DynRankView ConstructWithLabel(badPoints2, 4, 2);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(vals,badPoints2,OPERATOR_VALUE) );
+    }
+    {
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE
-    FieldContainer<double> badVals1(4, 3);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals1,tetNodes,OPERATOR_VALUE), throwCounter, nException );
- 
+      DynRankView ConstructWithLabel(badVals1, 4, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals1,tetNodes,OPERATOR_VALUE) );
     // exception #11 output values must be of rank-3 for OPERATOR_CURL
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals1,tetNodes,OPERATOR_CURL), throwCounter, nException );
-    
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals1,tetNodes,OPERATOR_CURL) );
+    }
+    { 
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    FieldContainer<double> badVals2(tetBasis.getCardinality() + 1, tetNodes.dimension(0), 3);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals2,tetNodes,OPERATOR_VALUE), throwCounter, nException );
-    
+      DynRankView ConstructWithLabel(badVals2, numFields+1, numPoints, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals2,tetNodes,OPERATOR_VALUE) );
+    }
+    { 
     // exception #13 incorrect 1st dimension of output array (must equal number of points)
-    FieldContainer<double> badVals3(tetBasis.getCardinality(), tetNodes.dimension(0) + 1, 3);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals3,tetNodes,OPERATOR_VALUE), throwCounter, nException );
-
+      DynRankView ConstructWithLabel(badVals3, numFields, numPoints+1, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals3,tetNodes,OPERATOR_VALUE) );
+    }
+    {
     // exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
-    FieldContainer<double> badVals4(tetBasis.getCardinality(), tetNodes.dimension(0), 4);
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals4,tetNodes,OPERATOR_VALUE), throwCounter, nException );
-    
+      DynRankView ConstructWithLabel(badVals4, numFields, numPoints, 4);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4,tetNodes,OPERATOR_VALUE) );
     // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
-    INTREPID_TEST_COMMAND( tetBasis.getValues(badVals4,tetNodes,OPERATOR_CURL), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getValues(badVals4,tetNodes,OPERATOR_CURL) );
+    }
 #endif
-    
-  }
-  catch (std::logic_error err) {
+  // Check if number of thrown exceptions matches the one we expect
+    if (nthrow != ncatch) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+    }
+  } catch (std::logic_error err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
   
-  // Check if number of thrown exceptions matches the one we expect
-  // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
-  if (throwCounter != nException) {
-    errorFlag++;
-    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-  }
-  
-  *outStream \
+  *outStream
     << "\n"
-    << "===============================================================================\n"\
-    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"\
+    << "===============================================================================\n"
+    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
     << "===============================================================================\n";
   
+  // all tags are on host space
   try{
-    std::vector<std::vector<int> > allTags = tetBasis.getAllDofTags();
+    const auto numFields = tetBasis.getCardinality();
+    const auto allTags = tetBasis.getAllDofTags();
     
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    for (unsigned i = 0; i < allTags.size(); i++) {
-      int bfOrd  = tetBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
+    const auto dofTagSize = allTags.dimension(0);
+    for (auto i = 0; i < dofTagSize; ++i) {
+      auto bfOrd  = tetBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
-      std::vector<int> myTag = tetBasis.getDofTag(bfOrd);
-       if( !( (myTag[0] == allTags[i][0]) &&
-              (myTag[1] == allTags[i][1]) &&
-              (myTag[2] == allTags[i][2]) &&
-              (myTag[3] == allTags[i][3]) ) ) {
+      const auto myTag = tetBasis.getDofTag(bfOrd);
+       if( !( (myTag(0) == allTags(i,0)) &&
+              (myTag(1) == allTags(i,1)) &&
+              (myTag(2) == allTags(i,2)) &&
+              (myTag(3) == allTags(i,3)) ) ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " getDofOrdinal( {" 
-          << allTags[i][0] << ", " 
-          << allTags[i][1] << ", " 
-          << allTags[i][2] << ", " 
-          << allTags[i][3] << "}) = " << bfOrd <<" but \n";   
+          << allTags(i,0) << ", " 
+          << allTags(i,1) << ", " 
+          << allTags(i,2) << ", " 
+          << allTags(i,3) << "}) = " << bfOrd <<" but \n";   
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "}\n";        
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "}\n";        
       }
     }
     
     // Now do the same but loop over basis functions
-    for( int bfOrd = 0; bfOrd < tetBasis.getCardinality(); bfOrd++) {
-      std::vector<int> myTag  = tetBasis.getDofTag(bfOrd);
-      int myBfOrd = tetBasis.getDofOrdinal(myTag[0], myTag[1], myTag[2]);
+    for( auto bfOrd = 0; bfOrd < tetBasis.getCardinality(); bfOrd++) {
+      const auto myTag = tetBasis.getDofTag(bfOrd);
+      const auto myBfOrd = tetBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "} but getDofOrdinal({" 
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "} ) = " << myBfOrd << "\n";
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "} but getDofOrdinal({" 
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "} ) = " << myBfOrd << "\n";
       }
     }
   }
@@ -266,16 +274,16 @@ namespace Intrepid2 {
     errorFlag = -1000;
   };
   
-  *outStream \
+  *outStream
     << "\n"
-    << "===============================================================================\n"\
-    << "| TEST 3: correctness of basis function values                                |\n"\
+    << "===============================================================================\n"
+    << "| TEST 3: correctness of basis function values                                |\n"
     << "===============================================================================\n";
   
   outStream -> precision(20);
   
   // VALUE: Each row pair gives the 6x3 correct basis set values at an evaluation point: (P,F,D) layout
-  double basisValues[] = {
+  const ValueType basisValues[] = {
     // 4 vertices
      1.0,0.,0.,  0.,0.,0.,  0.,-1.0,0.,  0.,0.,1.0, 
      0.,0.,0.,  0.,0.,0.,
@@ -310,7 +318,7 @@ namespace Intrepid2 {
   };
   
   // CURL: each row pair gives the 3x12 correct values of the curls of the 12 basis functions: (P,F,D) layout
-  double basisCurls[] = {   
+  const ValueType basisCurls[] = {   
     // 4 vertices
      0.,-2.0,2.0,  0.,0.,2.0,  -2.0,0.,2.0,  -2.0,2.0,0.,
      0.,-2.0,0.,  2.0,0.,0.,
@@ -345,59 +353,79 @@ namespace Intrepid2 {
   };
   
   try{
+    // Define array containing the 4 vertices of the reference TET and its 6 edge centers.
+    DynRankView ConstructWithLabel(tetNodesHost, 10, 3);
+    tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;
+    tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;
+    tetNodesHost(2,0) =  0.0;  tetNodesHost(2,1) =  1.0;  tetNodesHost(2,2) =  0.0;
+    tetNodesHost(3,0) =  0.0;  tetNodesHost(3,1) =  0.0;  tetNodesHost(3,2) =  1.0;
+    tetNodesHost(4,0) =  0.5;  tetNodesHost(4,1) =  0.0;  tetNodesHost(4,2) =  0.0;
+    tetNodesHost(5,0) =  0.5;  tetNodesHost(5,1) =  0.5;  tetNodesHost(5,2) =  0.0;
+    tetNodesHost(6,0) =  0.0;  tetNodesHost(6,1) =  0.5;  tetNodesHost(6,2) =  0.0;
+    tetNodesHost(7,0) =  0.0;  tetNodesHost(7,1) =  0.0;  tetNodesHost(7,2) =  0.5;
+    tetNodesHost(8,0) =  0.5;  tetNodesHost(8,1) =  0.0;  tetNodesHost(8,2) =  0.5;
+    tetNodesHost(9,0) =  0.0;  tetNodesHost(9,1) =  0.5;  tetNodesHost(9,2) =  0.5;
+
+    auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+    Kokkos::deep_copy(tetNodes, tetNodesHost);
         
     // Dimensions for the output arrays:
-    int numFields = tetBasis.getCardinality();
-    int numPoints = tetNodes.dimension(0);
-    int spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+    const auto numFields = tetBasis.getCardinality();
+    const auto numPoints = tetNodes.dimension(0);
+    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
+    { 
     // Generic array for values and curls that will be properly sized before each call
-    FieldContainer<double> vals;
-    
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     // Check VALUE of basis functions: resize vals to rank-3 container:
-    vals.resize(numFields, numPoints, spaceDim);
     tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
-    for (int i = 0; i < numFields; i++) {
-      for (int j = 0; j < numPoints; j++) {
-        for (int k = 0; k < spaceDim; k++) {
+    auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
+    for (auto i = 0; i < numFields; ++i) {
+      for (auto j = 0; j < numPoints; ++j) {
+        for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+           auto l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed value: " << vals(i,j,k)
+             *outStream << "}  computed value: " << vals_host(i,j,k)
                << " but reference value: " << basisValues[l] << "\n";
             }
          }
       }
     }
-    
+    }
+    { 
     // Check CURL of basis function: resize vals to rank-3 container
-    vals.resize(numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     tetBasis.getValues(vals, tetNodes, OPERATOR_CURL);
-    for (int i = 0; i < numFields; i++) {
-      for (int j = 0; j < numPoints; j++) {
-        for (int k = 0; k < spaceDim; k++) {
+    auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
+    for (auto i = 0; i < numFields; ++i) {
+      for (auto j = 0; j < numPoints; ++j) {
+        for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID_TOL) {
+           auto l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed curl component: " << vals(i,j,k)
+             *outStream << "}  computed curl component: " << vals_host(i,j,k)
                << " but reference curl component: " << basisCurls[l] << "\n";
             }
          }
       }
+    }
     }
 
    }    
@@ -408,41 +436,52 @@ namespace Intrepid2 {
     errorFlag = -1000;
   };
  
-  *outStream \
+  *outStream
     << "\n"
-    << "===============================================================================\n"\
-    << "| TEST 4: correctness of DoF locations                                        |\n"\
+    << "===============================================================================\n"
+    << "| TEST 4: correctness of DoF locations                                        |\n"
     << "===============================================================================\n";
 
   try{
-    Teuchos::RCP<Basis<double, FieldContainer<double> > > basis =
-      Teuchos::rcp(new Basis_HCURL_TET_I1_FEM<double, FieldContainer<double> >);
-    Teuchos::RCP<DofCoordsInterface<FieldContainer<double> > > coord_iface =
-      Teuchos::rcp_dynamic_cast<DofCoordsInterface<FieldContainer<double> > >(basis);
+    const auto numFields = tetBasis.getCardinality();
+    const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
 
-    int spaceDim = 3;
-    FieldContainer<double> cvals;
-    FieldContainer<double> bvals(basis->getCardinality(), basis->getCardinality(),spaceDim); // last dimension is spatial dim
- 
     // Check exceptions.
+    ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-    cvals.resize(1,2,3);
-    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
-    cvals.resize(3,2);
-    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
-    cvals.resize(4,2);
-    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+    {
+      DynRankView ConstructWithLabel(badVals, 1, 2, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofCoords(badVals) );
+    }
+    {
+      DynRankView ConstructWithLabel(badVals, 3, 2);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofCoords(badVals) );
+    }
+    {
+      DynRankView ConstructWithLabel(badVals, 4, 2);
+      INTREPID2_TEST_ERROR_EXPECTED( tetBasis.getDofCoords(badVals) );
+    }
 #endif
-    cvals.resize(6,spaceDim);
-    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException ); nException--;
     // Check if number of thrown exceptions matches the one we expect
-    if (throwCounter != nException) {
+    if (nthrow != ncatch) {
       errorFlag++;
       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
     }
 
     // Check mathematical correctness
-    FieldContainer<double> tangents(basis->getCardinality(),spaceDim); // tangents at each point basis point
+    DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim);
+    DynRankView ConstructWithLabel(cvals, 6, spaceDim); 
+    tetBasis.getDofCoords(cvals);
+    tetBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+
+    auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
+    Kokkos::deep_copy(cvals_host, cvals);
+    auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
+    Kokkos::deep_copy(bvals_host, bvals);
+
+    //DynRankView ConstructWithLabel(tangents, numFields, spaceDim); 
+    Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
     tangents(0,0)  =  1.0; tangents(0,1)  =  0.0; tangents(0,2)  =  0.0;
     tangents(1,0)  = -1.0; tangents(1,1)  =  1.0; tangents(1,2)  =  0.0;
     tangents(2,0)  =  0.0; tangents(2,1)  = -1.0; tangents(2,2)  =  0.0;
@@ -450,23 +489,22 @@ namespace Intrepid2 {
     tangents(4,0)  = -1.0; tangents(4,1)  =  0.0; tangents(4,2)  =  1.0;
     tangents(5,0)  =  0.0; tangents(5,1)  = -1.0; tangents(5,2)  =  1.0;
 
-    basis->getValues(bvals, cvals, OPERATOR_VALUE);
     char buffer[120];
-    for (int i=0; i<bvals.dimension(0); i++) {
-      for (int j=0; j<bvals.dimension(1); j++) {
+    for (auto i=0; i<bvals_host.dimension(0); ++i) {
+      for (auto j=0; j<bvals_host.dimension(1); ++j) {
 
         double tangent = 0.0;
-        for(int d=0;d<spaceDim;d++)
-           tangent += bvals(i,j,d)*tangents(j,d);
+        for(auto d=0;d<spaceDim;++d)
+           tangent += bvals_host(i,j,d)*tangents(j,d);
 
-        if ((i != j) && (std::abs(tangent - 0.0) > INTREPID_TOL)) {
+        if ((i != j) && (std::abs(tangent - 0.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), tangent, 0.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), tangent, 0.0);
           *outStream << buffer;
         }
-        else if ((i == j) && (std::abs(tangent - 1.0) > INTREPID_TOL)) {
+        else if ((i == j) && (std::abs(tangent - 1.0) > tol )) {
           errorFlag++;
-          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), cvals(i,2), tangent, 1.0);
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals_host(i,0), cvals_host(i,1), cvals_host(i,2), tangent, 1.0);
           *outStream << buffer;
         }
       }
@@ -477,9 +515,6 @@ namespace Intrepid2 {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
-
-  Kokkos::finalize();
-*/
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";

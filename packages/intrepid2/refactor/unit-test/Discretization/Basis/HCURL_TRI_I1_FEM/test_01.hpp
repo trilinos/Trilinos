@@ -127,22 +127,6 @@ namespace Intrepid2 {
     << "===============================================================================\n"
     << "| TEST 1: Basis creation, exception testing                                   |\n"
     << "===============================================================================\n";
- /* 
-
-  FieldContainer<double> triNodes(7, 2);
-  triNodes(0,0) =  0.0;  triNodes(0,1) =  0.0;  
-  triNodes(1,0) =  1.0;  triNodes(1,1) =  0.0;  
-  triNodes(2,0) =  0.0;  triNodes(2,1) =  1.0;  
-  // edge midpoints
-  triNodes(3,0) =  0.5;  triNodes(3,1) =  0.0;  
-  triNodes(4,0) =  0.5;  triNodes(4,1) =  0.5;  
-  triNodes(5,0) =  0.0;  triNodes(5,1) =  0.5;  
-  // Inside Triangle
-  triNodes(6,0) =  0.25; triNodes(6,1) =  0.25;  
-
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
-*/
 
   try{
     ordinal_type nthrow = 0, ncatch = 0;
@@ -161,65 +145,61 @@ namespace Intrepid2 {
 
     {
     // exception #1: GRAD cannot be applied to HCURL functions 
-    // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-//    vals.resize(triBasis.getCardinality(), triNodes.dimension(0), 4 );
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_GRAD) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_GRAD) );
     }
     {
     // exception #2: DIV cannot be applied to HCURL functions
-    // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
-//    vals.resize(triBasis.getCardinality(), triNodes.dimension(0) );
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_DIV) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, triNodes, OPERATOR_DIV) );
     }
     // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
     // getDofTag() to access invalid array elements thereby causing bounds check exception
     {
     // exception #3
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(3,0,0) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(3,0,0) );
     // exception #4
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(1,1,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(1,1,1) );
     // exception #5
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(0,4,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofOrdinal(0,4,1) );
     // exception #6
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(12) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(12) );
     // exception #7
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(-1) );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofTag(-1) );
     }
     // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
     {
     // exception #8: input points array must be of rank-2
-    DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
+      DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
     }
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
     {
-    DynRankView ConstructWithLabel(badPoints2, 4, triBasis.getBaseCellTopology().getDimension() + 1);
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE) ); 
+      DynRankView ConstructWithLabel(badPoints2, 4, triBasis.getBaseCellTopology().getDimension() + 1);
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE) ); 
     }
     {
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE in 2D
-    DynRankView ConstructWithLabel(badVals1, 4, 3);
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE) ); 
+      DynRankView ConstructWithLabel(badVals1, 4, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE) ); 
     }
     {
-    DynRankView ConstructWithLabel(badCurls1,4,3,2);
     // exception #11 output values must be of rank-2 for OPERATOR_CURL
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badCurls1, triNodes, OPERATOR_CURL) ); 
+      DynRankView ConstructWithLabel(badCurls1,4,3,2);
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badCurls1, triNodes, OPERATOR_CURL) ); 
     }
     {
     // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    DynRankView ConstructWithLabel(badVals2, triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE) ) ;
+      DynRankView ConstructWithLabel(badVals2, triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-    DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension() );
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE) ) ;
+      DynRankView ConstructWithLabel(badVals3, triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension() );
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE) ) ;
     }
     {
     // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-    DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() - 1);
-    INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE) ) ;
+      DynRankView ConstructWithLabel(badVals4, triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() - 1);
+      INTREPID2_TEST_ERROR_EXPECTED( triBasis.getValues(badVals4, triNodes, OPERATOR_VALUE) ) ;
     } 
     // exception #15: D2 cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
@@ -352,7 +332,6 @@ namespace Intrepid2 {
     // Generic array for values and curls that will be properly sized before each call
     DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     // Check VALUE of basis functions: resize vals to rank-3 container:
-//    vals.resize(numFields, numPoints, spaceDim);
     triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
@@ -369,7 +348,7 @@ namespace Intrepid2 {
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed value: " << vals(i,j,k)
+             *outStream << "}  computed value: " << vals_host(i,j,k)
                << " but reference value: " << basisValues[l] << "\n";
             }
          }
@@ -380,13 +359,12 @@ namespace Intrepid2 {
     {
     // Check CURL of basis function: resize vals to rank-2 container
     DynRankView ConstructWithLabel(vals, numFields, numPoints);
-//    vals.resize(numFields, numPoints);
     triBasis.getValues(vals, triNodes, OPERATOR_CURL);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
     for (auto i = 0; i < numFields; ++i) {
       for (auto j = 0; j < numPoints; ++j) {
-        int l =  i + j * numFields;
+        auto l =  i + j * numFields;
         if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -394,7 +372,7 @@ namespace Intrepid2 {
           // Output the multi-index of the value where the error is:
           *outStream << " At multi-index { ";
           *outStream << i << " ";*outStream << j << " ";
-          *outStream << "}  computed curl component: " << vals(i,j)
+          *outStream << "}  computed curl component: " << vals_host(i,j)
             << " but reference curl component: " << basisCurls[l] << "\n";
         }
       }
@@ -434,8 +412,6 @@ namespace Intrepid2 {
       INTREPID2_TEST_ERROR_EXPECTED( triBasis.getDofCoords(badVals) );
     }
 #endif
-//    cvals.resize(3,spaceDim);
-//    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException ); nException--;
     // Check if number of thrown exceptions matches the one we expect
     if (nthrow != ncatch) {
       errorFlag++;
@@ -460,8 +436,8 @@ namespace Intrepid2 {
     tangents(2,0) =  0.0; tangents(2,1) = -1.0;
 
     char buffer[120];
-    for (auto i=0; i<bvals_host.dimension(0); i++) { 
-      for (auto j=0; j<bvals_host.dimension(1); j++) {
+    for (auto i=0; i<bvals_host.dimension(0); ++i) { 
+      for (auto j=0; j<bvals_host.dimension(1); ++j) {
 
         double tangent = 0.0;
         for(auto d=0;d<spaceDim;d++)
