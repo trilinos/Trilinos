@@ -1,0 +1,14 @@
+To develop device-friendly and portable code, execution space and memory
+movement should be considered at the design stage. This note is about 
+lessons that I learned.
+
+1. Device functions cannot use std.
+
+   Whenever std-like functions are necessary, avoid them or write your own.
+   If they needs to be used, use "std::" so that we can see whether the code
+   is executable on device or noe.
+
+2. Memory movement among devices is made by "memcpy", which means that the 
+   memory range is supposed to be contiguous. When the layout is different, 
+   memcpy doesnot happen. For different layouts, it has to go two-step procedure.
+   First, deep_copy with the same layout and then remap on the same memory space.
