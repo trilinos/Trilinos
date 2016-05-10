@@ -53,6 +53,7 @@
 
 #include "Xpetra_MapUtils.hpp"
 
+#include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
 
@@ -243,33 +244,45 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
   typedef Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node> MapUtils;
   typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
   typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
   typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReorderedBlockedCrsMatrix;
 
   // number of sub blocks
   size_t rowSz = rowMgr->GetNumBlocks();
   size_t colSz = colMgr->GetNumBlocks();
 
-  Teuchos::RCP<ReorderedBlockedCrsMatrix> rbmat = Teuchos::null;
+  Teuchos::RCP<BlockedCrsMatrix> rbmat = Teuchos::null;
 
   if(rowSz == 0 && colSz == 0) {
     // it is a leaf node
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
 
-    RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
-    Teuchos::RCP<const Map> submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
-    std::vector<Teuchos::RCP<const Map> > rowSubMaps (1, submap);
-    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
-
-    RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
-    Teuchos::RCP<const Map> submap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
-    std::vector<Teuchos::RCP<const Map> > colSubMaps (1, submap2);
-    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(submap2, colSubMaps, false));
-
+    // extract leaf node
     Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
 
-    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
-    rbmat->setMatrix(0,0,mat);
+    // check, whether leaf node is of type Xpetra::CrsMatrixWrap
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matwrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    if(matwrap != Teuchos::null) {
+      // If the leaf node is of type Xpetra::CrsMatrixWrap wrap it into a 1x1 ReorderedBlockMatrix
+      // with the corresponding MapExtractors for translating Thyra to Xpetra GIDs if necessary
+      RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      Teuchos::RCP<const Map> submap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
+      std::vector<Teuchos::RCP<const Map> > rowSubMaps (1, submap);
+      Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(submap, rowSubMaps, false));
+
+      RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      Teuchos::RCP<const Map> submap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
+      std::vector<Teuchos::RCP<const Map> > colSubMaps (1, submap2);
+      Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(submap2, colSubMaps, false));
+
+      rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+      rbmat->setMatrix(0,0,mat);
+    } else {
+      // If leaf node is already wrapped into a blocked matrix do not wrap it again.
+      rbmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+      TEUCHOS_ASSERT(rbmat != Teuchos::null);
+    }
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
@@ -350,6 +363,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
   typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
   typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
   typedef Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Matrix;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
   typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ReorderedBlockedCrsMatrix;
 
   TEUCHOS_ASSERT(bmat->getRangeMapExtractor()->getThyraMode() == true);
@@ -359,41 +373,48 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
   size_t rowSz = rowMgr->GetNumBlocks();
   size_t colSz = colMgr->GetNumBlocks();
 
-  Teuchos::RCP<ReorderedBlockedCrsMatrix> rbmat = Teuchos::null;
+  Teuchos::RCP<BlockedCrsMatrix> rbmat = Teuchos::null;
 
   if(rowSz == 0 && colSz == 0) {
     // it is a leaf node
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> rowleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(rowMgr);
     Teuchos::RCP<const Xpetra::BlockReorderLeaf> colleaf = Teuchos::rcp_dynamic_cast<const Xpetra::BlockReorderLeaf>(colMgr);
 
-    ///////////////////////////////////////////////////////////////////////////
-    // build map extractors
-    RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
-    // extract Xpetra and Thyra based GIDs
-    Teuchos::RCP<const Map> xpsubmap  = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
-    Teuchos::RCP<const Map> thysubmap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),true);
-    std::vector<Teuchos::RCP<const Map> > rowXpSubMaps (1, xpsubmap);
-    std::vector<Teuchos::RCP<const Map> > rowTySubMaps (1, thysubmap);
-    // use expert constructor
-    Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(rowXpSubMaps, rowTySubMaps));
-
-    RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
-    // extract Xpetra and Thyra based GIDs
-    Teuchos::RCP<const Map> xpsubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
-    Teuchos::RCP<const Map> tysubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),true);
-    std::vector<Teuchos::RCP<const Map> > colXpSubMaps (1, xpsubmap2);
-    std::vector<Teuchos::RCP<const Map> > colTySubMaps (1, tysubmap2);
-    // use expert constructor
-    Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(colXpSubMaps, colTySubMaps));
-
-    ///////////////////////////////////////////////////////////////////////////
-    // build reordered block operator
-
     // this matrix uses Thyra style GIDs as global row, range, domain and column indices
     Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
 
-    rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
-    rbmat->setMatrix(0,0,mat);
+    // check, whether leaf node is of type Xpetra::CrsMatrixWrap
+    Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matwrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
+    if(matwrap != Teuchos::null) {
+      ///////////////////////////////////////////////////////////////////////////
+      // build map extractors
+      RCP<const MapExtractor> fullRangeMapExtractor = bmat->getRangeMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap  = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),false);
+      Teuchos::RCP<const Map> thysubmap = fullRangeMapExtractor->getMap(rowleaf->GetIndex(),true);
+      std::vector<Teuchos::RCP<const Map> > rowXpSubMaps (1, xpsubmap);
+      std::vector<Teuchos::RCP<const Map> > rowTySubMaps (1, thysubmap);
+      // use expert constructor
+      Teuchos::RCP<const MapExtractor> rgMapExtractor = Teuchos::rcp(new MapExtractor(rowXpSubMaps, rowTySubMaps));
+
+      RCP<const MapExtractor> fullDomainMapExtractor = bmat->getDomainMapExtractor();
+      // extract Xpetra and Thyra based GIDs
+      Teuchos::RCP<const Map> xpsubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),false);
+      Teuchos::RCP<const Map> tysubmap2 = fullDomainMapExtractor->getMap(colleaf->GetIndex(),true);
+      std::vector<Teuchos::RCP<const Map> > colXpSubMaps (1, xpsubmap2);
+      std::vector<Teuchos::RCP<const Map> > colTySubMaps (1, tysubmap2);
+      // use expert constructor
+      Teuchos::RCP<const MapExtractor> doMapExtractor = Teuchos::rcp(new MapExtractor(colXpSubMaps, colTySubMaps));
+
+      ///////////////////////////////////////////////////////////////////////////
+      // build reordered block operator
+      rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
+      rbmat->setMatrix(0,0,mat);
+    } else {
+      // If leaf node is already wrapped into a blocked matrix do not wrap it again.
+      rbmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+      TEUCHOS_ASSERT(rbmat != Teuchos::null);
+    }
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
