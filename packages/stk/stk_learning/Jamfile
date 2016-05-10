@@ -62,7 +62,7 @@ alias install-targets
     stk_learning_dgelement_utest
     stk_learning_openmp_utest
     stk_learning_mpi_openmp_utest
-#    stk_learning_kokkos_utest
+    stk_learning_kokkos_utest
     stk_learning_diffing_tool_utest
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
@@ -262,14 +262,14 @@ exe stk_learning_mesh_builder_utest
 #    <tag>@sierra-exec-tag
 #  ;
 
-#exe stk_learning_kokkos_utest
-#  :
-#    $(gtest-root)/src/gtest_main.cc
-#    [ glob $(stk_learning-root)/Kokkos/*.C ]
-#    /tpl/trilinos-kokkoscore//kokkoscore
-#    /tpl/gtest//gtest
-#    /sierra/stk_util//stk_util_environment
-#  :
-#    <tag>@sierra-exec-tag
-#  ;
+exe stk_learning_kokkos_utest 
+  :
+    [ glob $(stk_learning-root)/Kokkos/*.C ]
+    /tpl/trilinos-kokkoscore//kokkoscore
+    /tpl/gtest//gtest
+    /sierra/stk_util//stk_util_environment
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
+  :
+    <tag>@sierra-exec-tag
+  ;
 

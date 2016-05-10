@@ -42,7 +42,7 @@
 
 namespace
 {
-
+/*
 struct MatVecFunctor
 {
     typedef typename Kokkos::Threads device_type;
@@ -190,5 +190,5 @@ TEST(KokkosThreads, SumOverVectorUsingEightThreads)
     const int numThreads = 8;
     runSumOverVectorTest(numThreads);
 }
-
+*/
 } // end namespace
