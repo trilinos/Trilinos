@@ -180,7 +180,7 @@ namespace Intrepid2 {
                  const EOperator operatorType  = OPERATOR_VALUE ) const;
 
       /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-          <strong>reference Triangule</strong>.
+          <strong>reference Tetrahedron</strong>.
 
           \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
           dimensioned (F,D)

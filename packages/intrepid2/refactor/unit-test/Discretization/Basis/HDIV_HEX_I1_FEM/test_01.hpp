@@ -376,9 +376,9 @@ namespace Intrepid2 {
 
         // Check VALUE of basis functions: resize vals to rank-3 container:
         hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
-        for (auto i=0;i<numFields;++i) 
-          for (auto j=0;j<numPoints;++j) 
-            for (auto k=0;k<spaceDim;++k) {
+        for (ordinal_type i=0;i<numFields;++i) 
+          for (size_type j=0;j<numPoints;++j) 
+            for (size_type k=0;k<spaceDim;++k) {
               
               // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
               const auto l = k + i * spaceDim + j * spaceDim * numFields;
@@ -397,8 +397,8 @@ namespace Intrepid2 {
         // Check DIV of basis function: resize vals to rank-2 container
         vals = DynRankView("vals", numFields, numPoints);
         hexBasis.getValues(vals, hexNodes, OPERATOR_DIV);
-        for (auto i=0;i<numFields;++i)
-          for (auto j=0;j<numPoints;++j) {
+        for (ordinal_type i=0;i<numFields;++i)
+          for (size_type j=0;j<numPoints;++j) {
             const auto l =  i + j * numFields;
             if (std::abs(vals(i,j) - basisDivs[l]) > tol) {
               errorFlag++;
@@ -467,8 +467,8 @@ namespace Intrepid2 {
         hexBasis.getDofCoords(cvals);
         hexBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
-        for (size_type i=0;i<numFields;++i) 
-          for (size_type j=0;j<numFields;++j) {
+        for (ordinal_type i=0;i<numFields;++i) 
+          for (ordinal_type j=0;j<numFields;++j) {
 
             ValueType normal = 0.0;
             for(size_type d=0;d<spaceDim;++d)
@@ -478,7 +478,7 @@ namespace Intrepid2 {
             if (std::abs(normal - expected_normal) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ", " << cvals(i,2) << ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ", " << cvals(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
               *outStream << ss.str();
             }
           }

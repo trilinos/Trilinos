@@ -437,7 +437,7 @@ namespace Intrepid2 {
             if (std::abs(normal - expected_normal) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ") is " << normal << " but should be " << expected_normal << "\n";
               *outStream << ss.str();
             }
           }
