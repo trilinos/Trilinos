@@ -67,7 +67,8 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      std::memcpy(dest,src,sz*sizeof(T));
+      if (sz > 0)
+        std::memcpy(dest,src,sz*sizeof(T));
     }
 
     //! Zero out array \c dest of length \c sz
