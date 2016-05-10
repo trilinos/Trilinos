@@ -261,8 +261,6 @@ namespace Intrepid2 {
     const auto loopSize = inputPoints.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
-    const auto eps = epsilon<inputPointValueType>();
-  
     switch (operatorType) {
     
     case OPERATOR_VALUE: {
