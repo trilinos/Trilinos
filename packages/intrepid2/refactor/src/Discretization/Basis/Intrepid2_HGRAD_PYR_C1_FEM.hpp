@@ -40,24 +40,24 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_C1_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TRI_C1_FEM class.
-    \author Created by P. Bochev and D. Ridzal.
+/** \file   Intrepid_HGRAD_PYR_C1_FEM.hpp
+    \brief  Header file for the Intrepid2::HGRAD_PYR_C1_FEM class.
+    \author Created by P. Bochev, D. Ridzal and M. Perego
             Kokkorized by Kyungjoo Kim
 */
 
-#ifndef __INTREPID2_HGRAD_TRI_C1_FEM_HPP__
-#define __INTREPID2_HGRAD_TRI_C1_FEM_HPP__
+#ifndef __INTREPID2_HGRAD_PYR_C1_FEM_HPP__
+#define __INTREPID2_HGRAD_PYR_C1_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
 
-  /** \class  Intrepid2::Basis_HGRAD_TRI_C1_FEM
-      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Triangle cell
+  /** \class  Intrepid2::Basis_HGRAD_PYR_C1_FEM
+      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Pyramid cell
 
-      Implements Lagrangian basis of degree 1 on the reference Triangle cell. The basis has
-      cardinality 3 and spans a COMPLETE linear polynomial space. Basis functions are dual
+      Implements Lagrangian basis of degree 1 on the reference Pyramid cell. The basis has
+      cardinality 4 and spans a COMPLETE linear polynomial space. Basis functions are dual
       to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
 
       \verbatim
@@ -66,21 +66,24 @@ namespace Intrepid2 {
       |   DoF   |----------------------------------------------------------|      DoF definition       |
       | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
       |=========|==============|==============|==============|=============|===========================|
-      |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0)         |
+      |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0,0)       |
       |---------|--------------|--------------|--------------|-------------|---------------------------|
-      |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0)         |
+      |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0,0)       |
       |---------|--------------|--------------|--------------|-------------|---------------------------|
-      |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(0,1)         |
+      |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(1,1,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    3    |       0      |       3      |       0      |      1      |   L_3(u) = u(0,1,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    4    |       0      |       4      |       0      |      1      |   L_4(u) = u(0,0,1)       |
       |=========|==============|==============|==============|=============|===========================|
-      |   MAX   |  maxScDim=0  |  maxScOrd=2  |  maxDfOrd=0  |     -       |                           |
+      |   MAX   |  maxScDim=0  |  maxScOrd=3  |  maxDfOrd=0  |     -       |                           |
       |=========|==============|==============|==============|=============|===========================|
       \endverbatim
   */
-
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_HGRAD_TRI_C1_FEM: public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  class Basis_HGRAD_PYR_C1_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
   public:
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
@@ -96,7 +99,6 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints );
 
     };
-
 
     template<typename outputValueViewType,
              typename inputPointViewType,
@@ -121,6 +123,7 @@ namespace Intrepid2 {
         }
         case OPERATOR_GRAD :
         case OPERATOR_CURL :
+        case OPERATOR_D2 :
         case OPERATOR_MAX : {
           auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
           const auto input  = Kokkos::subdynrankview( _inputPoints,                 pt, Kokkos::ALL() );
@@ -131,8 +134,9 @@ namespace Intrepid2 {
           INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                     opType != OPERATOR_GRAD &&
                                     opType != OPERATOR_CURL &&
+                                    opType != OPERATOR_D2 &&
                                     opType != OPERATOR_MAX,
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_C1_FEM::Serial::getValues) operator is not supported");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_PYR_C1_FEM::Serial::getValues) operator is not supported");
         }
         }
       }
@@ -140,32 +144,33 @@ namespace Intrepid2 {
 
     class Internal {
     private:
-      Basis_HGRAD_TRI_C1_FEM *obj_;
-      
+      Basis_HGRAD_PYR_C1_FEM *obj_;
+
     public:
-      Internal(Basis_HGRAD_TRI_C1_FEM *obj)
+      Internal(Basis_HGRAD_PYR_C1_FEM *obj)
         : obj_(obj) {}
-      
-      /** \brief  Evaluation of a FEM basis on a <strong>reference Triangle</strong> cell.
-          
+
+      /** \brief  FEM basis evaluation on a <strong>reference Pyramid</strong> cell.
+
           Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-          points in the <strong>reference Triangle</strong> cell. For rank and dimensions of
+          points in the <strong>reference Tetrahedron</strong> cell. For rank and dimensions of
           I/O array arguments see Section \ref basis_md_array_sec .
-          
-          \param  outputValues      [out] - variable rank array with the basis values
-          \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
-          \param  operatorType      [in]  - the operator acting on the basis functions
+
+          \param  outputValues      [out] - rank-2 or 3 array with the computed basis values
+          \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points
+          \param  operatorType      [in]  - operator applied to basis functions
+
+          For rank and dimension specifications of <var>ArrayScalar</var> arguments see \ref basis_array_specs
       */
       template<typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
-      void 
+      void
       getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType  = OPERATOR_VALUE ) const;
-
       /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-          <strong>reference Triangule</strong>.
-          
+          <strong>reference Triangle</strong>.
+
           \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
           dimensioned (F,D)
       */
@@ -174,22 +179,21 @@ namespace Intrepid2 {
       getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
     };
     Internal impl_;
-    
+
     /** \brief  Constructor.
      */
-    Basis_HGRAD_TRI_C1_FEM();
-    Basis_HGRAD_TRI_C1_FEM(const Basis_HGRAD_TRI_C1_FEM &b)
+    Basis_HGRAD_PYR_C1_FEM();
+    Basis_HGRAD_PYR_C1_FEM(const Basis_HGRAD_PYR_C1_FEM &b)
       : Basis<ExecSpaceType,outputValueType,pointValueType>(b),
         impl_(this) {}
 
-    Basis_HGRAD_TRI_C1_FEM& operator=(const Basis_HGRAD_TRI_C1_FEM &b) {
+    Basis_HGRAD_PYR_C1_FEM& operator=(const Basis_HGRAD_PYR_C1_FEM &b) {
       if (this != &b) {
         Basis<ExecSpaceType,outputValueType,pointValueType>::operator= (b);
         // do not copy impl
       }
       return *this;
     }
-
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
 
@@ -208,9 +212,8 @@ namespace Intrepid2 {
     }
 
   };
-
 }// namespace Intrepid2
 
-#include "Intrepid2_HGRAD_TRI_C1_FEMDef.hpp"
+#include "Intrepid2_HGRAD_PYR_C1_FEMDef.hpp"
 
 #endif

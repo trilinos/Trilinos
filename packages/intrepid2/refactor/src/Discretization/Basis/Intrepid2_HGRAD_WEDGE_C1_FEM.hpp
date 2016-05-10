@@ -124,7 +124,6 @@ namespace Intrepid2 {
           break;
         }
         case OPERATOR_GRAD :
-        case OPERATOR_CURL :
         case OPERATOR_D2 :
         case OPERATOR_MAX : {
           auto       output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), pt, Kokkos::ALL() );
@@ -135,7 +134,6 @@ namespace Intrepid2 {
         default: {
           INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
                                     opType != OPERATOR_GRAD &&
-                                    opType != OPERATOR_CURL &&
                                     opType != OPERATOR_D2 &&
                                     opType != OPERATOR_MAX,
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_WEDGE_C1_FEM::Serial::getValues) operator is not supported");
