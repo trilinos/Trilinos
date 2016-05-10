@@ -439,7 +439,8 @@ namespace Intrepid2 {
          Kokkos::deep_copy(vals_host, vals);
          for (auto i=0;i<numFields;++i) {
            for (auto j=0;j<numPoints;++j) {
-             if (j == 4) continue; // derivatives are singular when z = 1.
+             // derivatives are singular when z = 1; using the same eps, it can be comparable
+             //if (j == 4) continue; 
              for (auto k=0;k<D2Cardin;++k) {
                const auto l = k + i * D2Cardin + j * D2Cardin * numFields;
                if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
