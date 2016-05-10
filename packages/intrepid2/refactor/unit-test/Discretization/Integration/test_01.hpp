@@ -390,10 +390,10 @@ namespace Intrepid2 {
             }
         }
         
-        *outStream << "-> Pyramid testing: 0 and 1 degree are not tested (not accurate with duffy transformation) \n\n";
+        *outStream << "-> Pyramid testing: over-integration by 2 (due to duffy transformation) \n\n";
         {
-          for (auto deg=2;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
-            const auto line = CubatureLineType(deg);
+          for (auto deg=0;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
+            const auto line = CubatureLineType(deg+2);
             CubatureTensorPyrType cub( line );
             cub.getCubature(cubPoints, cubWeights);
             const auto npts = cub.getNumPoints();
