@@ -44,6 +44,7 @@
 
 #include "Kokkos_Blas1_MV.hpp"
 #include "Kokkos_Blas2_MV.hpp"
+#include "Kokkos_Blas_impl_MKL.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include <sstream>
 #include <stdexcept>
