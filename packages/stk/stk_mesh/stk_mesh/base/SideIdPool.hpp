@@ -26,6 +26,7 @@ public:
     void clear()
     {
         mNumIdsUsed = 0;
+        mNumIdsRequested = 0;
         mSuggestedIds.clear();
     }
 
