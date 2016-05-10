@@ -104,12 +104,8 @@ C   --changing the table.
       DATA GMTHD /'DISTANCE'/, SORTYP /'NONE'/, SORUP /.TRUE./
 
       AXI = .TRUE.
-C
-C   --Determine if running batch or interactive.
-C
       EXOSAV = EXODUS
       IF (FIRST) THEN
-         CALL EXPARM (NAME, NAME, MODE, KCSU, KNSU, IDAU)
          FIRST = .FALSE.
          CALL HEADER (NDIM, TITLE, NUMEL, NUMNP, AXI)
       END IF
@@ -328,6 +324,9 @@ C-----------------------------------------------------------------------
             END IF
             CENTER = .TRUE.
          ELSE
+            CENT(1) = 0.0
+            CENT(2) = 0.0
+            CENT(3) = 0.0
             CENTER = .FALSE.
          END IF
          CALL CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
