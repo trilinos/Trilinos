@@ -36,10 +36,22 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   blas2_MV_unit
   SOURCES
     blas2_MV
-    TpetraKernels_Blas1_MV_UnitTests.hpp
+    TpetraKernels_Blas2_MV_GEMV.hpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_MKL)
+IF (${PACKAGE_NAME}_ENABLE_MKL)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    blas2_MV_unit_MKL
+    SOURCES
+      blas2_MV_MKL
+      TpetraKernels_Blas2_MV_GEMV_MKL.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
 IF (${PACKAGE_NAME}_ENABLE_quadmath)
