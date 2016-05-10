@@ -231,7 +231,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     // Check if to output this step
     std::vector<int>::const_iterator it;
-    it = std::find(outputIndices.begin(), outputIndices.end(), iStep);
+    it = std::find(outputIndices.begin(), outputIndices.end(), iStep+1);
     if (it != outputIndices.end()) output = true;
 
     if (!output) {

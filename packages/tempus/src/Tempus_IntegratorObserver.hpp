@@ -1,7 +1,6 @@
 #ifndef TEMPUS_INTEGRATOROBSERVER_HPP
 #define TEMPUS_INTEGRATOROBSERVER_HPP
 
-#include "Tempus_SolutionHistory.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
 namespace Tempus {
@@ -63,10 +62,6 @@ public:
     /// Observe after accepting time step.
     virtual void observeAcceptedTimeStep(
       bool & stepperStatus, bool & integratorStatus){}
-
-    /// Observe after outputting time step.
-    virtual void observeOutputTimeStep(
-      bool stepperStatus, bool integratorStatus){}
 
     /// Observe the end of the time integrator.
     virtual void observeEndIntegrator(

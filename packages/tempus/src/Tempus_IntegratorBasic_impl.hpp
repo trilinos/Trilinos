@@ -7,6 +7,8 @@
 #include "Tempus_StepperFactory.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
+#include <ctime>
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::ParameterList;
@@ -28,6 +30,17 @@ namespace {
   static double      finalTime_default      = std::numeric_limits<double>::max();
   static std::string finalTimeIndex_name    = "Final Time Index";
   static int         finalTimeIndex_default = std::numeric_limits<int>::max();
+
+  static std::string outputScreenTimeList_name     = "Screen Output Time List";
+  static std::string outputScreenTimeList_default  = "";
+  static std::string outputScreenIndexList_name    = "Screen Output Index List";
+  static std::string outputScreenIndexList_default = "";
+  static std::string outputScreenTimeInterval_name     =
+    "Screen Output Time Interval";
+  static double      outputScreenTimeInterval_default  = 100.0;
+  static std::string outputScreenIndexInterval_name    =
+    "Screen Output Index Interval";
+  static int         outputScreenIndexInterval_default = 100;
 
 } // namespace
 
@@ -87,6 +100,9 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   integratorObserver = rcp(new IntegratorObserver<Scalar>(solutionHistory,
                                                           timeStepControl));
 
+  integratorTimer = rcp(new Teuchos::Time("Integrator Timer"));
+  stepperTimer    = rcp(new Teuchos::Time("Stepper Timer"));
+
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -140,57 +156,64 @@ bool IntegratorBasic<Scalar>::advanceTime(const Scalar timeFinal)
 
 
 template <class Scalar>
+void IntegratorBasic<Scalar>::startIntegrator()
+{
+  std::time_t begin = std::time(nullptr);
+  integratorTimer->start();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "\nTempus - IntegratorBasic\n"
+       << std::asctime(std::localtime(&begin)) << "\n"
+       << "  Stepper = " << stepper->description() << "\n"
+       << "  Simulation Time Range  [" << timeStepControl->timeMin
+       << ", " << timeStepControl->timeMax << "]\n"
+       << "  Simulation Index Range [" << timeStepControl->iStepMin
+       << ", " << timeStepControl->iStepMax << "]\n"
+       << "============================================================================\n"
+       << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
+       << std::endl;
+}
+
+
+template <class Scalar>
 bool IntegratorBasic<Scalar>::advanceTime()
 {
-  std::cout << "Got Here Test A!" << std::endl;
+  startIntegrator();
   integratorObserver->observeStartIntegrator();
 
   bool integratorStatus = true;
   bool stepperStatus = true;
 
-  std::cout << "Got Here Test B!" << std::endl;
   while (integratorStatus == true and
          timeStepControl->timeInRange(currentState->getTime()) and
          timeStepControl->indexInRange(currentState->getIndex())){
 
-    std::cout << "Got Here Test C!" << std::endl;
+    stepperTimer->reset();
+    stepperTimer->start();
     integratorObserver->observeStartTimeStep();
 
-    std::cout << "Got Here Test D!" << std::endl;
     workingState = solutionHistory->initWorkingState(stepperStatus);
 
-    std::cout << "Got Here Test E!" << std::endl;
     timeStepControl->getNextTimeStep(solutionHistory, stepperStatus,
                                      integratorStatus);
 
-    std::cout << "Got Here Test F!" << std::endl;
     integratorObserver->observeNextTimeStep(stepperStatus, integratorStatus);
 
-    std::cout << "Got Here Test G!" << std::endl;
     if (integratorStatus != true) break;
 
-    std::cout << "Got Here Test H!" << std::endl;
     integratorObserver->observeBeforeTakeStep();
 
-    std::cout << "Got Here Test I!" << std::endl;
     stepperStatus = stepper->takeStep(solutionHistory);
 
-    std::cout << "Got Here Test J!" << std::endl;
     integratorObserver->observeAfterTakeStep();
 
-    std::cout << "Got Here Test K!" << std::endl;
+    stepperTimer->stop();
     acceptTimeStep(stepperStatus, integratorStatus);
-    std::cout << "Got Here Test L!" << std::endl;
     integratorObserver->observeAcceptedTimeStep(stepperStatus,integratorStatus);
-    std::cout << "Got Here Test M!" << std::endl;
-
-    outputTimeStep(stepperStatus, integratorStatus);
-    integratorObserver->observeOutputTimeStep(stepperStatus, integratorStatus);
   }
 
-  std::cout << "Got Here Test N!" << std::endl;
+  endIntegrator(stepperStatus, integratorStatus);
   integratorObserver->observeEndIntegrator(stepperStatus, integratorStatus);
-  std::cout << "Got Here Test O!" << std::endl;
 
   return integratorStatus;
 }
@@ -200,45 +223,37 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::acceptTimeStep(
   bool & stepperStatus, bool & integratorStatus)
 {
-  RCP<SolutionStateMetaData<Scalar> > metaData = workingState->metaData;
-  //const Scalar time = metaData->time;
-  //const int iStep = metaData->iStep;
-  //const Scalar errorAbs = metaData->errorAbs;
-  //const Scalar errorRel = metaData->errorRel;
-  //const int order = metaData->order;
-  Scalar & dt = metaData->dt;
-  int & nFailures = metaData->nFailures;
-  int & nConsecutiveFailures = metaData->nConsecutiveFailures;
+  RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData;
 
   // Stepper failure
   if (stepperStatus != true) {
-    nFailures++;
-    nConsecutiveFailures++;
+    md->nFailures++;
+    md->nConsecutiveFailures++;
   }
 
   // Constant time step failure
   if ((timeStepControl->stepType == CONSTANT_STEP_SIZE) and
-      (dt != timeStepControl->dtConstant)) {
-    nFailures++;
-    nConsecutiveFailures++;
+      (md->dt != timeStepControl->dtConstant)) {
+    md->nFailures++;
+    md->nConsecutiveFailures++;
   }
 
   // Too many failures
-  if (nFailures >= timeStepControl->nFailuresMax) {
+  if (md->nFailures >= timeStepControl->nFailuresMax) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"continueIntegration");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
-         << "  (nFailures = "<<nFailures << ") >= (nFailuresMax = "
+         << "  (nFailures = "<<md->nFailures << ") >= (nFailuresMax = "
          <<timeStepControl->nFailuresMax<<")" << std::endl;
     integratorStatus = false;
     return;
   }
-  if (nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
+  if (md->nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"continueIntegration");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
-         << "  (nConsecutiveFailures = "<<nConsecutiveFailures
+         << "  (nConsecutiveFailures = "<<md->nConsecutiveFailures
          << ") >= (nConsecutiveFailuresMax = "
          <<timeStepControl->nConsecutiveFailuresMax
          << ")" << std::endl;
@@ -246,21 +261,61 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
     return;
   }
 
+  // =======================================================================
   // Made it here! Accept this time step
 
-  nFailures = std::max(nFailures-1,0);
-  nConsecutiveFailures = 0;
+  md->nFailures = std::max(md->nFailures-1,0);
+  md->nConsecutiveFailures = 0;
 
   solutionHistory->promoteWorkingState();
 
-  return;
+  // Output and screen output
+  std::vector<int>::const_iterator it;
+  it = std::find(outputScreenIndices.begin(),
+                 outputScreenIndices.end(), md->iStep);
+  if (it != outputScreenIndices.end()) {
+    const double steppertime = stepperTimer->totalElapsedTime();
+    stepperTimer->reset();
+    RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,0,"ScreenOutput");
+    *out <<std::scientific<<std::setw( 6)<<std::setprecision(3)<< md->iStep
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->time
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->dt
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->errorAbs
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->errorRel
+         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< md->order
+         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< md->nFailures
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< steppertime
+         <<std::endl;
+  }
+
+  if (md->output == true) {
+    // Dump solution!
+  }
 }
 
 
 template <class Scalar>
-void IntegratorBasic<Scalar>::outputTimeStep(
-  bool stepperStatus, bool integratorStatus)
+void IntegratorBasic<Scalar>::endIntegrator(
+  bool stepperStatus, bool integratorStatus) const
 {
+  std::string exitStatus;
+  if (stepperStatus != true or integratorStatus != true)
+    exitStatus = "Time integration FAILURE!";
+  else
+    exitStatus = "Time integration complete.";
+
+  integratorTimer->stop();
+  const double runtime = integratorTimer->totalElapsedTime();
+  std::time_t end = std::time(nullptr);
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "============================================================================\n"
+       << "  Total runtime = " << runtime << " sec = "
+       << runtime/60.0 << " min\n"
+       << std::asctime(std::localtime(&end))
+       << exitStatus << "\n"
+       << std::endl;
 }
 
 
@@ -333,6 +388,37 @@ void IntegratorBasic<Scalar>::setParameterList(
     << "    [iStepMin, iStepMax] = [" << timeStepControl->iStepMin << ", "
                                       << timeStepControl->iStepMax << "]\n"
     << "    iStep = " << fiStep << "\n");
+
+  // Parse output indices
+  {
+    outputScreenIndices.clear();
+    std::string str = pList->get<std::string>(outputScreenIndexList_name,
+                                              outputScreenIndexList_default);
+    std::string delimiters(",");
+    std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
+    while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+      std::string token = str.substr(lastPos,pos-lastPos);
+      outputScreenIndices.push_back(int(std::stoi(token)));
+      if(pos==std::string::npos)
+        break;
+
+      lastPos = str.find_first_not_of(delimiters, pos);
+      pos = str.find_first_of(delimiters, lastPos);
+    }
+
+    Scalar outputScreenIndexInterval =
+      pList->get<int>(outputScreenIndexInterval_name, outputScreenIndexInterval_default);
+    Scalar outputScreen_i = timeStepControl->iStepMin;
+    while (outputScreen_i <= timeStepControl->iStepMax) {
+      outputScreenIndices.push_back(outputScreen_i);
+      outputScreen_i += outputScreenIndexInterval;
+    }
+
+    // order output indices
+    std::sort(outputScreenIndices.begin(),outputScreenIndices.end());
+  }
+
   return;
 }
 
@@ -376,6 +462,13 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
     tmp << "Final time index.  Required to be range ["
         << timeStepControl->iStepMin << ", "<< timeStepControl->iStepMax <<"].";
     pl->set(finalTimeIndex_name, finalTimeIndex_default, tmp.str());
+
+    tmp.clear();
+    tmp << "Screen Output Index List.  Required to be range ["
+        << timeStepControl->iStepMin << ", "<< timeStepControl->iStepMax <<"].";
+    pl->set(outputScreenIndexList_name, outputScreenIndexList_default, tmp.str());
+    pl->set(outputScreenIndexInterval_name, outputScreenIndexInterval_default,
+      "Screen Output Index Interval (e.g., every 100 time steps");
 
     pl->set( getStepperName(), getStepperDefault(),
       "'Stepper' sets the Stepper.\n"

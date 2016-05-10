@@ -82,7 +82,7 @@ RCP<Tempus::StepperState<Scalar> > StepperForwardEuler<Scalar>::getStepperState(
 template<class Scalar>
 std::string StepperForwardEuler<Scalar>::description() const
 {
-  std::string name = "Tempus::StepperForwardEuler";
+  std::string name = "Forward Euler";
   return(name);
 }
 

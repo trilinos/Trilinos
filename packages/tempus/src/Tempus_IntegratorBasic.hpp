@@ -5,6 +5,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Time.hpp"
 // Tempus
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
@@ -37,22 +38,30 @@ public:
 
   /// \name Basic integrator methods
   //@{
+    /// Perform tasks before start of integrator.
+    void startIntegrator();
     /// Advance the solution to timeMax, and return true if successful.
     bool advanceTime();
     /// Advance the solution to timeFinal, and return true if successful.
     bool advanceTime(const Scalar timeFinal);
     /// Only accept step after meeting time step criteria.
     void acceptTimeStep(bool & stepperStatus, bool & integratorStatus);
-    /// Perform output.
-    void outputTimeStep(bool stepperStatus, bool integratorStatus);
+    /// Perform tasks after end of integrator.
+    void endIntegrator(bool stepperStatus, bool integratorStatus) const;
   //@}
 
   /// \name Accessor methods
   //@{
-    /// Get time
+    /// Get current time
     Scalar getTime() const{return workingState->getTime();}
-    /// Get index
+    /// Get current index
     Scalar getIndex() const{return workingState->getIndex();}
+    /// Get SolutionHistory
+    Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
+    { return solutionHistory; }
+    /// Get current state
+    Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
+    { return currentState; }
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -80,6 +89,11 @@ protected:
 
   Teuchos::RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
+
+  Teuchos::RCP<Teuchos::Time>  integratorTimer;
+  Teuchos::RCP<Teuchos::Time>  stepperTimer;
+
+  std::vector<int>    outputScreenIndices; ///< Vector of screen output indices.
 };
 } // namespace Tempus
 

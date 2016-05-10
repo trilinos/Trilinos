@@ -18,8 +18,11 @@
       <Parameter name="Initial Order"      type="int"    value="1"/>
       <Parameter name="Final Time"         type="double" value="1.0"/>
       <Parameter name="Final Time Index"   type="int"    value="1000"/>
+      <Parameter name="Screen Output Index List"    type="string" value=""/>
+      <Parameter name="Screen Output Index Interval" type="int"   value="1"/>
+      <Parameter name="Stepper"            type="string" value="Forward Euler"/>
       <ParameterList name="Solution History">
-        <Parameter name="Storage Type"  type="string" value="Keep Newest"/>
+        <Parameter name="Storage Type"  type="string" value="Unlimited"/>
         <Parameter name="Storage Limit" type="int"    value="1"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
@@ -34,11 +37,10 @@
         <Parameter name="Minimum Time Integration Order" type="int" value="1"/>
         <Parameter name="Maximum Time Integration Order" type="int" value="1"/>
         <Parameter name="Step Type"             type="string" value="Constant"/>
-        <Parameter name="Constant Time Step Size" type="double" value="0.1"/>
         <Parameter name="Output Time List"        type="string" value=""/>
         <Parameter name="Output Index List"       type="string" value=""/>
-        <Parameter name="Output Time Interval"    type="double" value="100.0"/>
-        <Parameter name="Output Index Interval"   type="int"    value="1"/>
+        <Parameter name="Output Time Interval"    type="double" value="10.0"/>
+        <Parameter name="Output Index Interval"   type="int"    value="1000"/>
         <Parameter name="Maximum Number of Stepper Failures" type="int" value="10"/>
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       </ParameterList>
