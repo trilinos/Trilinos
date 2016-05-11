@@ -58,9 +58,13 @@ typedef enum {
   TET4,
   TET10,
   TET8,
+  TET14,
+  TET15,
   WEDGE6,
   WEDGE15,
   WEDGE16,
+  WEDGE20,
+  WEDGE21,
   PYRAMID5,
   PYRAMID13,
   SHELL2,
@@ -106,9 +110,7 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
 
 /* Define element info requests */
 #define NNODES 0
-#define NQUAD 1
 #define NDIM 2
-#define NQUAD_SURF 3
 #define NSIDE_NODES 4
 #define NSIDES 5
 
