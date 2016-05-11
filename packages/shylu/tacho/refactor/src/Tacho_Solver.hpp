@@ -169,12 +169,13 @@ namespace Tacho {
       _YY.createConfTo(_XX);      
     }
 
-    void setLeftHandSide(const CrsMatrixBaseHostType AA) {
+    void setMatrix(const CrsMatrixBaseHostType AA) {
       _AA = AA;
     }
-    void setRightHandSide(const DenseMatrixBaseHostType BB,
-                          const DenseMatrixBaseHostType XX) {
+    void setRightHandSide(const DenseMatrixBaseHostType BB) {
       _XX = XX;
+    }
+    void setLeftHandSide(const DenseMatrixBaseHostType XX) {
       _BB = BB;
 
       // temporary storage
