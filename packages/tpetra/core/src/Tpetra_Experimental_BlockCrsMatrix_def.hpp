@@ -426,21 +426,14 @@ namespace Experimental {
       offsets.resize (lclNumRows);
     }
 
-    // Kokkos #178 (closed because it was considered a question, not
-    // because it was resolved) talks about how the first argument
-    // of this metafunction (despite its name) must be a memory
-    // space, not an execution space.
-    using Kokkos::Impl::VerifyExecutionCanAccessMemorySpace;
-    const bool canReachHost =
-      VerifyExecutionCanAccessMemorySpace<typename device_type::memory_space,
-                                          Kokkos::HostSpace>::value;
-    if (canReachHost) {
-      // This matrix's execution space can access host memory.  Thus,
-      // we don't need to copy.
-      //
+    // The input ArrayRCP must always be a host pointer.  Thus, if
+    // device_type::memory_space is Kokkos::HostSpace, it's OK for us
+    // to write to that allocation directly as a Kokkos::View.
+    typedef typename device_type::memory_space memory_space;
+    if (std::is_same<memory_space, Kokkos::HostSpace>::value) {
       // It is always syntactically correct to assign a raw host
       // pointer to a device View, so this code will compile correctly
-      // (though never execute) even if canReachHost is false.
+      // even if this branch never runs.
       typedef Kokkos::View<size_t*, device_type,
                            Kokkos::MemoryUnmanaged> output_type;
       output_type offsetsOut (offsets.getRawPtr (), lclNumRows);
