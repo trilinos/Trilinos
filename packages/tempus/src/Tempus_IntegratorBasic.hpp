@@ -53,15 +53,25 @@ public:
   /// \name Accessor methods
   //@{
     /// Get current time
-    Scalar getTime() const{return workingState->getTime();}
+    Scalar getTime() const {return solutionHistory->getCurrentTime();}
     /// Get current index
-    Scalar getIndex() const{return workingState->getIndex();}
+    Scalar getIndex() const {return solutionHistory->getCurrentIndex();}
+    /// Get current the solution, x
+    Teuchos::RCP<Thyra::VectorBase<double> > getX() const
+      {return solutionHistory->getCurrentState()->getX();}
+    /// Get current the time derivative of the solution, xdot
+    Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
+      {return solutionHistory->getCurrentState()->getXdot();}
+    /// Get current the second time derivative of the solution, xdotdot
+    Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
+      {return solutionHistory->getCurrentState()->getXdotdot();}
+
     /// Get SolutionHistory
     Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
     { return solutionHistory; }
     /// Get current state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
-    { return currentState; }
+    { return solutionHistory->getCurrentState(); }
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -86,9 +96,6 @@ protected:
   Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl;
   Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver;
   Teuchos::RCP<Stepper<Scalar> >            stepper;
-
-  Teuchos::RCP<SolutionState<Scalar> >      currentState; ///< The last accepted state
-  Teuchos::RCP<SolutionState<Scalar> >      workingState; ///< The state being worked on
 
   Teuchos::RCP<Teuchos::Time>  integratorTimer;
   Teuchos::RCP<Teuchos::Time>  stepperTimer;

@@ -1,0 +1,21 @@
+INCLUDE(TribitsLibraryMacros)
+#INCLUDE(TribitsAddExecutableAndTest)
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_SET(HEADERS
+  Tempus_ConvergenceTestUtils.hpp
+  )
+
+APPEND_SET(SOURCES
+  )
+
+TRIBITS_ADD_LIBRARY(
+  tempus_test_utils
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  TESTONLY
+  )

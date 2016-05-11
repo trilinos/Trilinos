@@ -71,6 +71,9 @@ SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
 template<class Scalar>
 RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 {
+  RCP<SolutionStateMetaData<Scalar> > metaData_out;
+  if (!Teuchos::is_null(metaData)) metaData_out = metaData->clone();
+
   RCP<Thyra::VectorBase<Scalar> > x_out;
   if (!Teuchos::is_null(x)) x_out = x->clone_v();
 
@@ -84,7 +87,7 @@ RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
   if (!Teuchos::is_null(stepperState)) stepperState_out=stepperState->clone();
 
   RCP<SolutionState<Scalar> > ss_out = Teuchos::rcp(new SolutionState<Scalar> (
-    metaData, x_out, xdot_out, xdotdot_out, stepperState_out));
+    metaData_out, x_out, xdot_out, xdotdot_out, stepperState_out));
 
   return ss_out;
 }

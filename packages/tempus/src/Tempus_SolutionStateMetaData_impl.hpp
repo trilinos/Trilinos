@@ -53,8 +53,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    status        (status_),
    output        (output_),
    isAccepted    (isAccepted_),
-   isInterpolated(isInterpolated_),
    isRestartable (isRestartable_),
+   isInterpolated(isInterpolated_),
    accuracy      (accuracy_)
 {}
 
@@ -76,6 +76,31 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    isInterpolated(ssmd_.isInterpolated),
    accuracy      (ssmd_.accuracy)
 {}
+
+
+template<class Scalar>
+Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clone()
+{
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
+    rcp(new SolutionStateMetaData<Scalar> (
+      time,
+      iStep,
+      dt,
+      suggestedDt,
+      errorAbs,
+      errorRel,
+      order,
+      nFailures,
+      nConsecutiveFailures,
+      status,
+      output,
+      isAccepted,
+      isRestartable,
+      isInterpolated,
+      accuracy));
+
+  return md;
+}
 
 
 template<class Scalar>

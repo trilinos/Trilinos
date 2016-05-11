@@ -43,6 +43,9 @@ public:
   /// Copy constructor
   SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_);
 
+  /// Clone
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > clone();
+
   /// Destructor
   virtual ~SolutionStateMetaData() {};
 

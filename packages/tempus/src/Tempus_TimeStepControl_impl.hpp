@@ -243,7 +243,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
     }
 
-    if (time + dt < timeMin || time + dt > timeMax) {
+    const Scalar relTol = 1.0e-14;
+    if (time + dt < timeMin*(1.0-relTol) || time + dt > timeMax*(1.0+relTol)) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"getNextTimeStep");
       *out << "Warning - Time step moves time outside desired time range.\n"

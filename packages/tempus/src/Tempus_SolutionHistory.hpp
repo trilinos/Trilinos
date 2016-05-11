@@ -81,7 +81,7 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const;
 
     /// Initialize the working state
-    Teuchos::RCP<SolutionState<Scalar> > initWorkingState(const bool stepperStatus);
+    void initWorkingState(const bool stepperStatus);
 
     /// Promote the working state to current state
     void promoteWorkingState();
@@ -90,19 +90,36 @@ public:
 
   /// \name Accessor methods
   //@{
+    /// Get underlining history
+    Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > >
+      getHistory() const {return history;}
+
+    /// Get current state
+    Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
+      {return currentState;}
+
+    /// Get the current number of states
+    int getSize() const {return history->size();}
+
+    /// Get the current time
+    Scalar getCurrentTime() const {return currentState->getTime();}
+
+    /// Get the current index
+    int getCurrentIndex() const {return currentState->getIndex();}
+
     /// Set the maximum storage of this history
-    void setStorage(int storage);
+    void setStorageLimit(int storage_limit);
 
     /// Get the maximum storage of this history
-    int getStorage() const;
+    int getStorageLimit() const {return storageLimit;}
 
-    StorageType getStorageType();
+    StorageType getStorageType() {return storageType;}
 
     /// Return the current minimum time of the SolutionStates
-    Scalar minTime() const;
+    Scalar minTime() const {return (history->front())->getTime();}
 
     /// Return the current maximum time of the SolutionStates
-    Scalar maxTime() const;
+    Scalar maxTime() const {return (history->back())->getTime();}
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor

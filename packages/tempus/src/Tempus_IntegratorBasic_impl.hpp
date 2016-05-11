@@ -92,9 +92,9 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   else
     xdot = x->clone_v();
   RCP<Thyra::VectorBase<Scalar> > xdotdot = Teuchos::null;
-  currentState = rcp(new SolutionState<Scalar>(md, x, xdot, xdotdot,
-                                               stepper->getStepperState()));
-  solutionHistory->addState(currentState);
+  RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
+    md, x, xdot, xdotdot, stepper->getStepperState()));
+  solutionHistory->addState(newState);
 
   // Create default IntegratorObserver
   integratorObserver = rcp(new IntegratorObserver<Scalar>(solutionHistory,
@@ -127,7 +127,6 @@ void IntegratorBasic<Scalar>::describe(
 {
   out << description() << "::describe" << std::endl;
   out << "solutionHistory= " << solutionHistory->description()<<std::endl;
-  out << "workingState   = " << workingState   ->description()<<std::endl;
   out << "timeStepControl= " << timeStepControl->description()<<std::endl;
   out << "stepper        = " << stepper        ->description()<<std::endl;
 
@@ -135,8 +134,6 @@ void IntegratorBasic<Scalar>::describe(
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "solutionHistory= " << std::endl;
     solutionHistory->describe(out,verbLevel);
-    out << "workingState   = " << std::endl;
-    workingState   ->describe(out,verbLevel);
     out << "timeStepControl= " << std::endl;
     timeStepControl->describe(out,verbLevel);
     out << "stepper        = " << std::endl;
@@ -185,14 +182,14 @@ bool IntegratorBasic<Scalar>::advanceTime()
   bool stepperStatus = true;
 
   while (integratorStatus == true and
-         timeStepControl->timeInRange(currentState->getTime()) and
-         timeStepControl->indexInRange(currentState->getIndex())){
+         timeStepControl->timeInRange (solutionHistory->getCurrentTime()) and
+         timeStepControl->indexInRange(solutionHistory->getCurrentIndex())){
 
     stepperTimer->reset();
     stepperTimer->start();
     integratorObserver->observeStartTimeStep();
 
-    workingState = solutionHistory->initWorkingState(stepperStatus);
+    solutionHistory->initWorkingState(stepperStatus);
 
     timeStepControl->getNextTimeStep(solutionHistory, stepperStatus,
                                      integratorStatus);
@@ -223,37 +220,38 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::acceptTimeStep(
   bool & stepperStatus, bool & integratorStatus)
 {
-  RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData;
+  RCP<SolutionStateMetaData<Scalar> > wsmd =
+    solutionHistory->getWorkingState()->metaData;
 
   // Stepper failure
   if (stepperStatus != true) {
-    md->nFailures++;
-    md->nConsecutiveFailures++;
+    wsmd->nFailures++;
+    wsmd->nConsecutiveFailures++;
   }
 
   // Constant time step failure
   if ((timeStepControl->stepType == CONSTANT_STEP_SIZE) and
-      (md->dt != timeStepControl->dtConstant)) {
-    md->nFailures++;
-    md->nConsecutiveFailures++;
+      (wsmd->dt != timeStepControl->dtConstant)) {
+    wsmd->nFailures++;
+    wsmd->nConsecutiveFailures++;
   }
 
   // Too many failures
-  if (md->nFailures >= timeStepControl->nFailuresMax) {
+  if (wsmd->nFailures >= timeStepControl->nFailuresMax) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"continueIntegration");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
-         << "  (nFailures = "<<md->nFailures << ") >= (nFailuresMax = "
+         << "  (nFailures = "<<wsmd->nFailures << ") >= (nFailuresMax = "
          <<timeStepControl->nFailuresMax<<")" << std::endl;
     integratorStatus = false;
     return;
   }
-  if (md->nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
+  if (wsmd->nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"continueIntegration");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
-         << "  (nConsecutiveFailures = "<<md->nConsecutiveFailures
+         << "  (nConsecutiveFailures = "<<wsmd->nConsecutiveFailures
          << ") >= (nConsecutiveFailuresMax = "
          <<timeStepControl->nConsecutiveFailuresMax
          << ")" << std::endl;
@@ -264,32 +262,35 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
   // =======================================================================
   // Made it here! Accept this time step
 
-  md->nFailures = std::max(md->nFailures-1,0);
-  md->nConsecutiveFailures = 0;
-
   solutionHistory->promoteWorkingState();
+
+  RCP<SolutionStateMetaData<Scalar> > csmd =
+    solutionHistory->getCurrentState()->metaData;
+
+  csmd->nFailures = std::max(csmd->nFailures-1,0);
+  csmd->nConsecutiveFailures = 0;
 
   // Output and screen output
   std::vector<int>::const_iterator it;
   it = std::find(outputScreenIndices.begin(),
-                 outputScreenIndices.end(), md->iStep);
+                 outputScreenIndices.end(), csmd->iStep);
   if (it != outputScreenIndices.end()) {
     const double steppertime = stepperTimer->totalElapsedTime();
     stepperTimer->reset();
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,0,"ScreenOutput");
-    *out <<std::scientific<<std::setw( 6)<<std::setprecision(3)<< md->iStep
-         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->time
-         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->dt
-         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->errorAbs
-         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< md->errorRel
-         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< md->order
-         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< md->nFailures
+    *out <<std::scientific<<std::setw( 6)<<std::setprecision(3)<< csmd->iStep
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< csmd->time
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< csmd->dt
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< csmd->errorAbs
+         <<std::scientific<<std::setw(11)<<std::setprecision(3)<< csmd->errorRel
+         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< csmd->order
+         <<std::scientific<<std::setw( 7)<<std::setprecision(3)<< csmd->nFailures
          <<std::scientific<<std::setw(11)<<std::setprecision(3)<< steppertime
          <<std::endl;
   }
 
-  if (md->output == true) {
+  if (csmd->output == true) {
     // Dump solution!
   }
 }
