@@ -158,6 +158,17 @@ ENDIF()
 #   )
 # ENDIF()
 
+IF(Kokkos_ENABLE_OpenMP)
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_OpenMP
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_OpenMP.cpp
+    COMM serial mpi
+  )
+ENDIF()
+ENDIF()
+
 
 # Solver Interface
 # ================
