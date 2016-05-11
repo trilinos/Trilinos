@@ -611,8 +611,8 @@ public:
   /// calls to fillComplete() and resumeFill().  "Invalidates" means
   /// that you must call this method again to recompute the offsets.
   void
-  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type, 
-		         Kokkos::MemoryUnmanaged>& offsets) const;
+  getLocalDiagOffsets (const Kokkos::View<size_t*, device_type,
+                         Kokkos::MemoryUnmanaged>& offsets) const;
 
   /// \brief DEPRECATED overload of this method that writes offsets to
   ///   a Teuchos::ArrayRCP instead of a Kokkos::View.
@@ -672,7 +672,7 @@ public:
   /// If the matrix has a const ("static") graph, and if that graph
   /// is fill complete, then the offsets array remains valid through
   /// calls to fillComplete() and resumeFill().
-  void
+  void TPETRA_DEPRECATED
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
 

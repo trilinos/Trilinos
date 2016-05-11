@@ -598,7 +598,7 @@ namespace Experimental {
   }
 
   template <class Scalar, class LO, class GO, class Node>
-  void
+  void TPETRA_DEPRECATED
   BlockCrsMatrix<Scalar,LO,GO,Node>::
   getLocalDiagCopy (BlockCrsMatrix<Scalar,LO,GO,Node>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
