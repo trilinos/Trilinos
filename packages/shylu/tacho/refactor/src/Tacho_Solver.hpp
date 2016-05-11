@@ -173,10 +173,10 @@ namespace Tacho {
       _AA = AA;
     }
     void setRightHandSide(const DenseMatrixBaseHostType BB) {
-      _XX = XX;
+      _BB = BB;
     }
     void setLeftHandSide(const DenseMatrixBaseHostType XX) {
-      _BB = BB;
+      _XX = XX;
 
       // temporary storage
       _YY.setLabel("YY");

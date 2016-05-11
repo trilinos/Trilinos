@@ -84,8 +84,9 @@ namespace Tacho {
           BB.Value(i, rhs) = (rhs + 1);
       
       //tacho.setProblem(AA, BB, XX);
-      tacho.setLeftHandSide(AA);
-      tacho.setRightHandSide(BB, XX);
+      tacho.setMatrix(AA);
+      tacho.setLeftHandSide(XX);
+      tacho.setRightHandSide(BB);
     } else {
       data.is_allocated = true;
       std::cout << "Solver:: "
