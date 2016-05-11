@@ -119,7 +119,7 @@ class PartitionerTestCase(unittest.TestCase):
         self.failUnless(newMap.IsOneToOne())
         myElems = newMap.MyGlobalElements()
         for elem in myElems:
-            self.failUnless(elem / 10 == comm.MyPID())
+            self.failUnless(elem // 10 == comm.MyPID())
 
     def testCyclicPartition(self):
         """Test Cyclic 1D Partitioning, relies on createNewMap()"""
