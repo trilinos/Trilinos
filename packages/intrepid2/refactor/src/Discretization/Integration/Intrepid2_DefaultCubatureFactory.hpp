@@ -57,7 +57,7 @@
 
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
-//#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
+#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
 //#include "Intrepid2_CubatureCompositeTet.hpp"

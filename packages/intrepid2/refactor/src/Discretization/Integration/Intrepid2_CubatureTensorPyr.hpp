@@ -80,7 +80,9 @@ namespace Intrepid2 {
         _cubPoints(i,0) *= tmp; 
         _cubPoints(i,1) *= tmp; 
         _cubPoints(i,2)  = 1.0 - tmp; 
-        _cubWeights(i)  *= (tmp*tmp*.5);
+
+        _cubWeights(i)  /= 8.0;  // when line jacobi20 is used (exact)
+        //_cubWeights(i)  *= (tmp*tmp*.5); // when gauss integration rule is used (need over-integration) 
       }
     };
 
@@ -135,8 +137,8 @@ namespace Intrepid2 {
              typename CubatureLineType1,
              typename CubatureLineType2>
     CubatureTensorPyr( const CubatureLineType0 line0,
-                       const CubatureLineType0 line1,
-                       const CubatureLineType0 line2 ) 
+                       const CubatureLineType1 line1,
+                       const CubatureLineType2 line2 ) 
       : CubatureTensor<ExecSpaceType,pointValueType,weightValueType>(line0, line1, line2),
         impl_(this) {}
     

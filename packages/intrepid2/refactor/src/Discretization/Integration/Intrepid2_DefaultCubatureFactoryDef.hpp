@@ -117,9 +117,11 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( degree.size() < 1, std::invalid_argument,
                                     ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
-        // pyramid need over-integration to account for the additional transformation
-        const auto line = CubatureDirectLineGauss<SpT,PT,WT>(degree[0] + 2);
-        r_val = Teuchos::rcp(new CubatureTensorPyr<SpT,PT,WT>( line ));
+        // if direct gauss is used for pyramid 
+        // need over-integration to account for the additional transformation
+        const auto xy_line = CubatureDirectLineGauss<SpT,PT,WT>(degree[0]);
+        const auto z_line  = CubatureDirectLineGaussJacobi20<SpT,PT,WT>(degree[0]);
+        r_val = Teuchos::rcp(new CubatureTensorPyr<SpT,PT,WT>( xy_line, xy_line, z_line ));
       }
       break;
     }

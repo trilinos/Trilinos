@@ -58,6 +58,7 @@
 #include "Intrepid2_Utils_ExtData.hpp"
 
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
+#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
 #include "Intrepid2_CubatureTensorPyr.hpp"
 
@@ -124,6 +125,7 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
       typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureDirectLineGaussJacobi20<DeviceSpaceType,pointValueType,weightValueType> CubatureLineJacobiType;
       typedef CubatureTensorPyr<DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
       
       // tolerence is too tight to test upto order 20
@@ -165,8 +167,9 @@ namespace Intrepid2 {
 
         // compute integrals
         for (auto cubDeg=0;cubDeg<=maxDeg;++cubDeg) {
-          CubatureLineType line(cubDeg + 2);          
-          CubatureTensorPyrType pyrCub(line);
+          CubatureLineType xy_line(cubDeg);          
+          CubatureLineJacobiType z_line(cubDeg);          
+          CubatureTensorPyrType pyrCub( xy_line, xy_line, z_line );
           *outStream << "Cubature order " << std::setw(2) << std::left << cubDeg << "  Testing\n";
           
           ordinal_type cnt = 0;

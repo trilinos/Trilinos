@@ -71,7 +71,7 @@ namespace Intrepid2 {
 
   private:
     // static data initialize upto 1 but we only support upto Parameters::MaxCubatureDegreePyr
-    static constexpr int cubatureDataStaticSize=11;
+    static constexpr int cubatureDataStaticSize=12;
 
     /** \brief Complete set of data defining line Gauss(-Legendre) rules.
      */

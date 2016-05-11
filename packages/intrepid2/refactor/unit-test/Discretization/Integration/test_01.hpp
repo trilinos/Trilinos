@@ -59,7 +59,7 @@
 #include "Intrepid2_CubatureDirectLineGauss.hpp"
 #include "Intrepid2_CubatureTensor.hpp"
 
-//#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
+#include "Intrepid2_CubatureDirectLineGaussJacobi20.hpp"
 #include "Intrepid2_CubatureDirectTriDefault.hpp"
 #include "Intrepid2_CubatureDirectTetDefault.hpp"
 #include "Intrepid2_CubatureTensorPyr.hpp"
@@ -124,11 +124,12 @@ namespace Intrepid2 {
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
-      typedef CubatureDirectLineGauss <DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      typedef CubatureDirectTriDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
-      typedef CubatureDirectTetDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
-      typedef CubatureTensor          <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
-      typedef CubatureTensorPyr       <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
+      typedef CubatureDirectLineGauss        <DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureDirectLineGaussJacobi20<DeviceSpaceType,pointValueType,weightValueType> CubatureLineJacobiType;
+      typedef CubatureDirectTriDefault       <DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
+      typedef CubatureDirectTetDefault       <DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
+      typedef CubatureTensor                 <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorType;
+      typedef CubatureTensorPyr              <DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
 
       const auto tol = 100.0 * Parameters::Tolerence;
 
@@ -393,8 +394,9 @@ namespace Intrepid2 {
         *outStream << "-> Pyramid testing: over-integration by 2 (due to duffy transformation) \n\n";
         {
           for (auto deg=0;deg<=Parameters::MaxCubatureDegreePyr;++deg) {
-            const auto line = CubatureLineType(deg+2);
-            CubatureTensorPyrType cub( line );
+            const auto xy_line = CubatureLineType(deg);
+            const auto z_line  = CubatureLineJacobiType(deg);
+            CubatureTensorPyrType cub( xy_line, xy_line, z_line );
             cub.getCubature(cubPoints, cubWeights);
             const auto npts = cub.getNumPoints();
             
