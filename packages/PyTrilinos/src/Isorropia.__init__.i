@@ -172,8 +172,15 @@ __version__ = Isorropia_Version().split()[3]
 %include "Isorropia_LevelScheduler.hpp"
 
 // Isorropia namespace imports
+
+// Allow import from the current directory
 %pythoncode
 %{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
+del sys, op
+
 # Epetra namespace
 __all__ = ['Epetra']
 import IsorropiaEpetra as Epetra

@@ -180,6 +180,15 @@ The purpose of Isorropia.Epetra is to ....
 // Epetra interface import
 %import "Epetra.i"
 
+// Allow import from the current directory
+%pythoncode
+%{
+import sys, os.path as op
+thisDir = op.dirname(op.abspath(__file__))
+if not thisDir   in sys.path: sys.path.append(thisDir  )
+del sys, op
+%}
+
 // Isorropia import (let SWIG know about the base classes that will be
 // needed for the derived classes below)
 %teuchos_rcp(Isorropia::Operator)
