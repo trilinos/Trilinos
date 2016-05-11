@@ -174,36 +174,30 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   };
 
   /* tetra */
-  static int tetra_table[4][6] = {
-      /*      1              2               3               4       side   */
-      {1, 2, 4, 5, 9, 8},
-      {2, 3, 4, 6, 10, 9},
-      {1, 4, 3, 8, 10, 7},
-      {1, 3, 2, 7, 6, 5} /* nodes  */
+  static int tetra_table[4][7] = {
+    {1, 2, 4, 5, 9, 8, 14},  /* Side 1 nodes */
+    {2, 3, 4, 6, 10, 9, 12}, /* Side 2 nodes */
+    {1, 4, 3, 8, 10, 7, 13}, /* Side 3 nodes */
+    {1, 3, 2, 7, 6, 5, 11}   /* Side 4 nodes */
   };
 
   /* wedge */
-  static int wedge_table[5][8] = {
-      /*        1                     2                     3 side   */
-      {1, 2, 5, 4, 7, 11, 13, 10},
-      {2, 3, 6, 5, 8, 12, 14, 11},
-      {1, 4, 6, 3, 10, 15, 12, 9},
-      /*        4                  5 side   */
-      {1, 3, 2, 0, 9, 8, 7, 0},
-      {4, 5, 6, 0, 13, 14, 15, 0} /* nodes  */
+  static int wedge_table[5][9] = {
+    {1, 2, 5, 4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
+    {2, 3, 6, 5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
+    {1, 4, 6, 3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
+    {1, 3, 2, 0,  9,  8,  7,  0, 16},    /* Side 4 nodes -- triangle */
+    {4, 5, 6, 0, 13, 14, 15,  0, 17}  /* Side 5 nodes -- triangle */
   };
 
   /* hex */
   static int hex_table[6][9] = {
-      /*         1                        2 side   */
-      {1, 2, 6, 5, 9, 14, 17, 13, 26},
-      {2, 3, 7, 6, 10, 15, 18, 14, 25}, /* nodes  */
-      /*         3                        4 side   */
-      {3, 4, 8, 7, 11, 16, 19, 15, 27},
-      {1, 5, 8, 4, 13, 20, 16, 12, 24}, /* nodes  */
-      /*         5                        6 side   */
-      {1, 4, 3, 2, 12, 11, 10, 9, 22},
-      {5, 6, 7, 8, 17, 18, 19, 20, 23} /* nodes  */
+    {1, 2, 6, 5,  9, 14, 17, 13, 26}, /* side 1 */
+    {2, 3, 7, 6, 10, 15, 18, 14, 25}, /* side 2 */
+    {3, 4, 8, 7, 11, 16, 19, 15, 27}, /* side 3 */
+    {1, 5, 8, 4, 13, 20, 16, 12, 24}, /* side 4 */
+    {1, 4, 3, 2, 12, 11, 10,  9, 22}, /* side 5 */
+    {5, 6, 7, 8, 17, 18, 19, 20, 23}  /* side 6 */
   };
 
   /* pyramid */
@@ -767,8 +761,11 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       }
 
       if (num_nodes_per_elem > 6) {
+	/* Not sure how to create a wedge 12 or where it came from... */
         /* Wedge 12 - 4-node quad faces (0,1,2) and 6-node tri faces (3,4) */
         /* Wedge 15 - 8-node quad faces (0,1,2) and 6-node tri faces (3,4) */
+        /* Wedge 20 - 9-node quad faces (0,1,2) and 7-node tri faces (3,4) */
+        /* Wedge 21 - 9-node quad faces (0,1,2) and 7-node tri faces (3,4) + center */
 
         if (num_nodes_per_elem > 12 || side_num == 3 || side_num == 4) {
           get_nodes(exoid, side_set_node_list, node_pos++, connect,
