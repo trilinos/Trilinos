@@ -708,16 +708,26 @@ namespace Xpetra {
       throw Xpetra::Exceptions::RuntimeError("getLocalRowView not supported by BlockedCrsMatrix");
     }
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
     /*! Returns a distributed Vector object partitioned according to this
       matrix's row map, containing the
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector& diag) const {
-      if (Rows() == 1 && Cols () == 1) {
-        getMatrix(0,0)->getLocalDiagCopy(diag);
-        return;
+      TEUCHOS_TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::getLocalDiagCopy(): the map of the vector diag is not compatible with the full map of the blocked operator." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Rows() != Cols(), Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::getLocalDiagCopy(): you cannot extract the diagonal of a "<< Rows() << "x"<<Cols()<<" blocked matrix." );
+
+      for (size_t row = 0; row < Rows(); ++row) {
+        if (!getMatrix(row,row).is_null()) {
+          // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+          bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,row)) == Teuchos::null);
+          RCP<Vector> dd = rangemaps_->getVector(row, bThyraMode);
+          getMatrix(row,row)->getLocalDiagCopy(*dd);
+          rangemaps_->InsertVector(*dd,row,diag,bThyraMode);
+        }
       }
-      throw Xpetra::Exceptions::RuntimeError("getLocalDiagCopy not supported by BlockedCrsMatrix" );
     }
 
     //! Get Frobenius norm of the matrix
