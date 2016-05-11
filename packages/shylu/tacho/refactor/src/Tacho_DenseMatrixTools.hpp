@@ -32,6 +32,7 @@ namespace Tacho {
                      "Space type of input matrices does not match" );
       
       typedef typename DenseMatrixTypeA::space_type space_type;
+      typedef typename DenseMatrixTypeA::ordinal_type ordinal_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
       
       space_type::execution_space::fence();      
@@ -64,6 +65,7 @@ namespace Tacho {
                      "Space type of input matrices does not match" );
       
       typedef typename DenseMatrixTypeA::space_type space_type;
+      typedef typename DenseMatrixTypeA::ordinal_type ordinal_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
       
       space_type::execution_space::fence();      

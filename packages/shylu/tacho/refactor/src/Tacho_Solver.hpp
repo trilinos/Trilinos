@@ -169,6 +169,19 @@ namespace Tacho {
       _YY.createConfTo(_XX);      
     }
 
+    void setLeftHandSide(const CrsMatrixBaseHostType AA) {
+      _AA = AA;
+    }
+    void setRightHandSide(const DenseMatrixBaseHostType BB,
+                          const DenseMatrixBaseHostType XX) {
+      _XX = XX;
+      _BB = BB;
+
+      // temporary storage
+      _YY.setLabel("YY");
+      _YY.createConfTo(_XX);      
+    }
+
     // void setAlgorithm(const int algo) {
     //   switch (algo) {
     //   case AlgoChol::SuperNodes:
