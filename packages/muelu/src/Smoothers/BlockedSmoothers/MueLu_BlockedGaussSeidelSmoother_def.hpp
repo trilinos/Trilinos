@@ -75,7 +75,7 @@ namespace MueLu {
   BlockedGaussSeidelSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockedGaussSeidelSmoother()
     : type_("blocked GaussSeidel"), A_(Teuchos::null)
   {
-    FactManager_.reserve(10);
+    FactManager_.reserve(10); // TODO fix me!
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -126,6 +126,9 @@ namespace MueLu {
 
       // request "Smoother" for current subblock row.
       currentLevel.DeclareInput("PreSmoother",(*it)->GetFactory("Smoother").get());
+
+      // request "A" for current subblock row (only needed for Thyra mode)
+      currentLevel.DeclareInput("A",(*it)->GetFactory("A").get());
     }
 
     //RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -166,6 +169,9 @@ namespace MueLu {
       RCP<const SmootherBase> Smoo = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",(*it)->GetFactory("Smoother").get());
       Inverse_.push_back(Smoo);
 
+      // store whether subblock matrix is blocked or not!
+      RCP<Matrix> Aii = currentLevel.Get< RCP<Matrix> >("A",(*it)->GetFactory("A").get());
+      bIsBlockedOperator_.push_back(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Aii)!=Teuchos::null);
       // extract i-th diagonal block Aii -> determine block
       /*currentLevel.print(*out, Teuchos::VERB_EXTREME);
       std::cout << "BGS: need A from factory " << (*it)->GetFactory("A").get() << std::endl;
@@ -222,14 +228,17 @@ namespace MueLu {
         // calculate block residual r = B-A*X
         // note: A_ is the full blocked operator
         residual->update(1.0,B,0.0); // r = B
+
         A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
-        // extract corresponding subvectors from X and residual
         size_t blockRowIndex = at(bgsOrderingIndex2blockRowIndex_, i); // == bgsOrderingIndex2blockRowIndex_.at(i) (only available since C++11)
-        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, blockRowIndex);
-        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, blockRowIndex);
 
-        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(blockRowIndex, X.getNumVectors());
+        // extract corresponding subvectors from X and residual
+        bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode()  && (bIsBlockedOperator_[i] == false);
+        bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[i] == false);
+        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, blockRowIndex, bDomainThyraMode);
+        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, blockRowIndex, bRangeThyraMode);
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(blockRowIndex, X.getNumVectors(), bDomainThyraMode);
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
@@ -238,7 +247,7 @@ namespace MueLu {
         Xi->update(omega,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
         // update corresponding part of rhs and lhs
-        domainMapExtractor_->InsertVector(Xi, blockRowIndex, rcpX); // TODO wrong! fix me
+        domainMapExtractor_->InsertVector(Xi, blockRowIndex, rcpX, bDomainThyraMode); // TODO wrong! fix me
       }
     }
 
