@@ -134,6 +134,10 @@ int main(int argc, char *argv[])
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
     CLP.setOption("check", "no-check", &check, "Check correctness");
+#ifdef KOKKOS_HAVE_SERIAL
+    bool serial = true;
+    CLP.setOption("serial", "no-serial", &serial, "Enable Serial device");
+#endif
 #ifdef KOKKOS_HAVE_PTHREAD
     bool threads = true;
     CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
@@ -170,6 +174,27 @@ int main(int argc, char *argv[])
       Kokkos::Example::FENL::FadElementOptimized;
     // const Kokkos::Example::FENL::AssemblyMethod Method =
     //   Kokkos::Example::FENL::Analytic;
+
+#ifdef KOKKOS_HAVE_SERIAL
+    if (serial) {
+      typedef Kokkos::Serial Device;
+      typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
+
+      Kokkos::Serial::initialize();
+
+      if (comm->getRank() == 0)
+        std::cout << std::endl
+                  << "Serial performance with " << comm->getSize()
+                  << " MPI ranks" << std::endl;
+
+      Kokkos::Example::FENL::DeviceConfig dev_config(1, 1, 1);
+
+      mainHost<Storage,Method>(comm, print, nIter, use_nodes, check,
+                               dev_config);
+
+      Kokkos::Serial::finalize();
+    }
+#endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
     if (threads) {

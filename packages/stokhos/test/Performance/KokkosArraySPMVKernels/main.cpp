@@ -71,6 +71,9 @@ int main(int argc, char *argv[])
   bool symmetric = true;
   bool single = false;
   bool mkl = false;
+#ifdef KOKKOS_HAVE_SERIAL
+  bool serial = true;
+#endif
 #ifdef KOKKOS_HAVE_OPENMP
   bool omp = true;
 #endif
@@ -130,6 +133,12 @@ int main(int argc, char *argv[])
     else if (s == "double")
       single = false;
 #ifdef KOKKOS_HAVE_OPENMP
+    else if (s == "serial")
+      serial = true;
+    else if (s == "no-serial")
+      serial = false;
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
     else if (s == "omp")
       omp = true;
     else if (s == "no-omp")
@@ -152,12 +161,23 @@ int main(int argc, char *argv[])
   if (print_usage) {
     std::cout << "Usage:" << std::endl
               << "\t" << argv[0]
-              << " [no-][cuda|host|omp|threads|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
+              << " [no-][cuda|host|serial|omp|threads|block|flat|orig|deg|linear|symmetric] [single|double] [device device_id]"
               << std::endl << "Defaults are all enabled." << std::endl;
     return -1;
   }
 
   if (test_host) {
+
+#ifdef KOKKOS_HAVE_SERIAL
+    if (serial) {
+      if (single)
+        mainHost<float,Kokkos::Serial>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+      else
+        mainHost<double,Kokkos::Serial>(
+          test_flat, test_orig, test_deg, test_lin, test_block, symmetric, mkl);
+    }
+#endif
 
 #ifdef KOKKOS_HAVE_PTHREAD
     if (threads) {
