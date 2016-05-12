@@ -42,60 +42,63 @@
 
 #include <Kokkos_Core.hpp>
 
-namespace
-{
-
 struct MatVecFunctor
 {
-    MatVecFunctor(const std::vector<std::vector<double> > &matrix,
-                  const std::vector<double> &vecIn,
-                  std::vector<double> &vecOut) :
-            mMatrix(matrix),
-            mVecIn(vecIn),
-            mVecOut(vecOut)
-    {}
+    MatVecFunctor(Kokkos::View<double**> matrix, Kokkos::View<double*> vecIn, Kokkos::View<double*> vecOut) :
+            matrix(matrix),
+            vecIn(vecIn),
+            vecOut(vecOut)
+    {
+    }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(size_t rowIndex) const
+    void operator()(size_t row) const
     {
-        const size_t numCols = mMatrix[rowIndex].size();
-        for(size_t j = 0; j < numCols; j++)
-        {
-            mVecOut[rowIndex] += mMatrix[rowIndex][j] * mVecIn[j];
-        }
+        const size_t numCols = matrix.extent(1);
+        for(size_t col = 0; col < numCols; col++)
+            vecOut(row) += matrix(row, col) * vecIn(col);
     }
 
 private:
-    const std::vector<std::vector<double> > &mMatrix;
-    const std::vector<double> &mVecIn;
-    std::vector<double> &mVecOut;
+    Kokkos::View<double**> matrix;
+    Kokkos::View<double*> vecIn;
+    Kokkos::View<double*> vecOut;
 };
 
 void runMatVecThreadedTest()
 {
-    size_t numRows = 2000;
-    size_t numCols = 2000;
-    std::vector<std::vector<double> > matrix(numRows);
-    std::vector<double> vec_in(numCols, 1);
-    std::vector<double> vec_out(numRows, 0);
-    for(size_t i = 0; i < numRows; i++)
-    {
-        matrix[i].resize(numCols, i + 1);
-    }
+    const size_t numRows = 3;
+    const size_t numCols = 2;
+    Kokkos::View<double**> matrix("matrix", numRows, numCols);
+    Kokkos::View<double*> vecIn("vecIn", numCols);
+    Kokkos::View<double*> vecOut("vecOut", numRows);
+
+    Kokkos::deep_copy(vecIn, 1);
+    Kokkos::deep_copy(vecOut, 0);
+
+    Kokkos::parallel_for(numRows,
+        KOKKOS_LAMBDA(size_t row)
+        {
+            for(size_t col=0; col<numCols; col++)
+                matrix(row, col) = row + 1;
+        }
+    );
 
     double start_time_wall = stk::wall_time();
 
-    MatVecFunctor matVecFunctor(matrix, vec_in, vec_out);
+    MatVecFunctor matVecFunctor(matrix, vecIn, vecOut);
     Kokkos::parallel_for(numRows, matVecFunctor);
 
     double end_time_wall = stk::wall_time();
 
     std::cerr << "Wall Time: " << (end_time_wall - start_time_wall) << std::endl;
 
+    Kokkos::View<double*>::HostMirror vecOutHost =  Kokkos::create_mirror_view(vecOut);
+    Kokkos::deep_copy(vecOutHost, vecOut);
     for(size_t i = 0; i < numRows; i++)
     {
         double goldAnswer = (i + 1) * numCols;
-        EXPECT_EQ(goldAnswer, vec_out[i]);
+        EXPECT_EQ(goldAnswer, vecOutHost(i));
     }
 }
 
@@ -109,38 +112,28 @@ TEST_F(MTK_Kokkos, MatrixVectorMultiply)
 
 struct SumOverVectorFunctor
 {
-    SumOverVectorFunctor(const std::vector<double> &vector) :
+    SumOverVectorFunctor(Kokkos::View<double*> vector) :
         mVector(vector)
     {}
 
     KOKKOS_INLINE_FUNCTION
-    void init(double &threadLocalSum) const
-    {
-        threadLocalSum = 0.0;
-    }
-
-    KOKKOS_INLINE_FUNCTION
     void operator()(size_t vectorIndex, double &threadLocalSum) const
     {
-        threadLocalSum += mVector[vectorIndex];
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void join(volatile double & joinedThreadSum, volatile double const& threadLocalSum) const
-    {
-        joinedThreadSum += threadLocalSum;
+        threadLocalSum += mVector(vectorIndex);
     }
 
 private:
-    const std::vector<double> mVector;
+    Kokkos::View<double*> mVector;
 };
 
 void runSumOverVectorTest()
 {
     //size_t sizeOfVector = 4000000000;
-    size_t sizeOfVector = 1000000;
+    size_t sizeOfVector = 100000;
+    Kokkos::View<double*> vec("vec", sizeOfVector);
+
     double initVal = 1.0;
-    std::vector<double> vec(sizeOfVector,initVal);
+    Kokkos::deep_copy(vec, initVal);
 
     double start_time_wall = stk::wall_time();
 
@@ -161,4 +154,3 @@ TEST_F(MTK_Kokkos, SumOverVector)
     runSumOverVectorTest();
 }
 
-} // end namespace
