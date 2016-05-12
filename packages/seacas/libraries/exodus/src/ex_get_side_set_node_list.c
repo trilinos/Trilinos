@@ -761,8 +761,6 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
       }
 
       if (num_nodes_per_elem > 6) {
-	/* Not sure how to create a wedge 12 or where it came from... */
-        /* Wedge 12 - 4-node quad faces (0,1,2) and 6-node tri faces (3,4) */
         /* Wedge 15 - 8-node quad faces (0,1,2) and 6-node tri faces (3,4) */
         /* Wedge 20 - 9-node quad faces (0,1,2) and 7-node tri faces (3,4) */
         /* Wedge 21 - 9-node quad faces (0,1,2) and 7-node tri faces (3,4) + center */
