@@ -621,7 +621,19 @@ public:
        ( Rank == 5 ? m_offset.dimension_5() :
        ( Rank == 6 ? m_offset.dimension_6() :
                      m_offset.dimension_7() ))))))) - 1 )
-    {}
+    {
+      const unsigned fad_dim =
+       ( Rank == 0 ? m_offset.dimension_0() :
+       ( Rank == 1 ? m_offset.dimension_1() :
+       ( Rank == 2 ? m_offset.dimension_2() :
+       ( Rank == 3 ? m_offset.dimension_3() :
+       ( Rank == 4 ? m_offset.dimension_4() :
+       ( Rank == 5 ? m_offset.dimension_5() :
+       ( Rank == 6 ? m_offset.dimension_6() :
+         m_offset.dimension_7() )))))));
+      if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)
+        Kokkos::abort("invalid fad dimension (0) supplied!");
+    }
 
   //----------------------------------------
   /*  Allocate and construct mapped array.
@@ -644,14 +656,18 @@ public:
     typedef std::integral_constant< unsigned , 0 > padding ;
 
     m_offset = offset_type( padding(), local_layout );
-    m_fad_size = ( Rank == 0 ? m_offset.dimension_0() :
-                   ( Rank == 1 ? m_offset.dimension_1() :
-                     ( Rank == 2 ? m_offset.dimension_2() :
-                       ( Rank == 3 ? m_offset.dimension_3() :
-                         ( Rank == 4 ? m_offset.dimension_4() :
-                           ( Rank == 5 ? m_offset.dimension_5() :
-                             ( Rank == 6 ? m_offset.dimension_6() :
-                               m_offset.dimension_7() ))))))) - 1 ;
+    const unsigned fad_dim =
+      ( Rank == 0 ? m_offset.dimension_0() :
+      ( Rank == 1 ? m_offset.dimension_1() :
+      ( Rank == 2 ? m_offset.dimension_2() :
+      ( Rank == 3 ? m_offset.dimension_3() :
+      ( Rank == 4 ? m_offset.dimension_4() :
+      ( Rank == 5 ? m_offset.dimension_5() :
+      ( Rank == 6 ? m_offset.dimension_6() :
+        m_offset.dimension_7() )))))));
+    if (unsigned(FadStaticDimension) == 0 && fad_dim == 0)
+      Kokkos::abort("invalid fad dimension (0) supplied!");
+    m_fad_size = fad_dim - 1 ;
 
     const size_t alloc_size = m_offset.span() * sizeof(fad_value_type);
 
