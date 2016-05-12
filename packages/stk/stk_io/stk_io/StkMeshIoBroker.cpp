@@ -1383,14 +1383,16 @@ namespace stk {
       }
 
 
-      size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type)
+      size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type, 
+                                                 char const* type)
       {
-        return create_output_mesh(filename, db_type, m_property_manager);
+        return create_output_mesh(filename, db_type, m_property_manager, type);
       }
 
 
       size_t StkMeshIoBroker::create_output_mesh(const std::string &filename, DatabasePurpose db_type,
-                                                 Ioss::PropertyManager &properties)
+                                                 Ioss::PropertyManager &properties,
+                                                 char const* type)
       {
         std::string out_filename = filename;
         stk::util::filename_substitution(out_filename);
@@ -1407,7 +1409,7 @@ namespace stk {
 	}
 
         Teuchos::RCP<impl::OutputFile> output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
-                                                                           properties, input_region));
+                                                                           properties, input_region, type));
         m_output_files.push_back(output_file);
 
         size_t index_of_output_file = m_output_files.size()-1;
@@ -2088,11 +2090,11 @@ namespace stk {
         }
 
         void impl::OutputFile::setup_output_file(const std::string &filename, stk::ParallelMachine communicator,
-                                           Ioss::PropertyManager &property_manager)
+                                           Ioss::PropertyManager &property_manager, char const* type)
         {
           ThrowErrorMsgIf (filename.empty(),
                            "No filename was specified for the output file creation.");
-          Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", filename,
+          Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(type, filename,
                                                           Ioss::WRITE_RESULTS,
                                                           communicator,
                                                           property_manager);

@@ -88,12 +88,12 @@ namespace impl
     {
     public:
       OutputFile(const std::string &filename, MPI_Comm communicator, DatabasePurpose db_type,
-		 Ioss::PropertyManager& property_manager, const Ioss::Region *input_region)
+		 Ioss::PropertyManager& property_manager, const Ioss::Region *input_region, char const* type = "exodus")
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
 	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(NULL)
       {
-	setup_output_file(filename, communicator, property_manager);
+	setup_output_file(filename, communicator, property_manager, type);
       }
 
       OutputFile(Teuchos::RCP<Ioss::Region> ioss_output_region, MPI_Comm communicator,
@@ -143,7 +143,8 @@ namespace impl
     private:
       void define_output_fields(const stk::mesh::BulkData& bulk_data);
       void setup_output_file(const std::string &filename, MPI_Comm communicator,
-			     Ioss::PropertyManager &property_manager);
+			     Ioss::PropertyManager &property_manager,
+                             char const* type = "exodus");
 
       int m_current_output_step;
       bool m_use_nodeset_for_part_nodes_fields;
@@ -493,11 +494,15 @@ namespace impl
       //    the newest state of a multi-state field.
       // Other behavioral differences may be added in the future 
       //    (e.g., dealing with adaptivity...)
-      size_t create_output_mesh(const std::string &filename,
-				DatabasePurpose purpose);
+      // \param[in] type The format of the mesh that will be output.
+      // Valid types are "exodus", "catalyst".
       size_t create_output_mesh(const std::string &filename,
 				DatabasePurpose purpose,
-				Ioss::PropertyManager &properties);
+                                char const* type = "exodus");
+      size_t create_output_mesh(const std::string &filename,
+				DatabasePurpose purpose,
+				Ioss::PropertyManager &properties,
+                                char const* type = "exodus");
 
       void write_output_mesh(size_t output_file_index);
 
