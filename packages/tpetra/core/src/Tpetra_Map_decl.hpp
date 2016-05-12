@@ -110,6 +110,10 @@ namespace Tpetra {
     template<class LocalOrdinal, class GlobalOrdinal, class DeviceType>
     class LocalMap {
     public:
+      typedef LocalOrdinal local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef DeviceType device_type;
+
       LocalMap (const Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, DeviceType>& glMap,
                 const Kokkos::View<const GlobalOrdinal*, Kokkos::LayoutLeft, DeviceType>& lgMap,
                 const GlobalOrdinal indexBase,

@@ -68,83 +68,203 @@
 #include "Tpetra_CrsGraph_def.hpp"
 
 namespace Tpetra {
-  //
-  // Users must never rely on anything in the Details namespace.
-  //
-  namespace Details {
-    /// \struct AbsMax
-    /// \brief Functor for the the ABSMAX CombineMode of Import and Export operations.
-    /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
-    ///
-    /// \warning This is an implementation detail of CrsMatrix.  Users
-    ///   must not rely on this class.  It may disappear or its
-    ///   interface may change at any time.
-    ///
-    /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
-    template<class Scalar>
-    struct AbsMax {
-      //! Return the maximum of the magnitudes (absolute values) of x and y.
-      Scalar operator() (const Scalar& x, const Scalar& y) {
-        typedef Teuchos::ScalarTraits<Scalar> STS;
-        return std::max (STS::magnitude (x), STS::magnitude (y));
+//
+// Users must never rely on anything in the Details namespace.
+//
+namespace Details {
+
+/// \struct AbsMax
+/// \brief Functor for the the ABSMAX CombineMode of Import and Export operations.
+/// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
+///
+/// \warning This is an implementation detail of CrsMatrix.  Users
+///   must not rely on this class.  It may disappear or its
+///   interface may change at any time.
+///
+/// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
+template<class Scalar>
+struct AbsMax {
+  //! Return the maximum of the magnitudes (absolute values) of x and y.
+  Scalar operator() (const Scalar& x, const Scalar& y) {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    return std::max (STS::magnitude (x), STS::magnitude (y));
+  }
+};
+
+/// \struct CrsIJV
+/// \brief Struct representing a sparse matrix entry as an i,j,v triplet.
+/// \tparam Ordinal Same as the GlobalOrdinal template parameter of CrsMatrix.
+/// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
+///
+/// \warning This is an implementation detail of CrsMatrix.  Users
+///   must not rely on this class.  It may disappear or its
+///   interface may change at any time.
+///
+/// CrsMatrix uses this struct to communicate nonlocal sparse
+/// matrix entries in its globalAssemble() method.
+template <class Ordinal, class Scalar>
+struct CrsIJV {
+  /// \brief Default constructor
+  ///
+  /// This constructor sets the row and column indices to
+  /// <tt>Teuchos::OrdinalTraits<Ordinal>::invalid()</tt>, as a
+  /// clear sign that they were not initialized.
+  CrsIJV () :
+    i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+    j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+    v (Teuchos::ScalarTraits<Scalar>::zero ())
+  {}
+
+  /// \brief Standard constructor
+  ///
+  /// \param row [in] (Global) row index
+  /// \param col [in] (Global) column index
+  /// \param val [in] Value of matrix entry
+  CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
+    i (row), j (col), v (val)
+  {}
+
+  /// \brief Comparison operator
+  ///
+  /// Comparison operator for sparse matrix entries stored as
+  /// (i,j,v) triples.  Defining this lets Tpetra::CrsMatrix use
+  /// std::sort to sort CrsIJV instances.
+  bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const {
+    // FIXME (mfh 10 May 2013): This is what I found when I moved
+    // this operator out of the std namespace to be an instance
+    // method of CrsIJV.  It's a little odd to me that it doesn't
+    // include the column index in the sort order (for the usual
+    // lexicographic sort).  It doesn't really matter because
+    // CrsMatrix will sort rows by column index anyway, but it's
+    // still odd.
+    return this->i < rhs.i;
+  }
+
+  Ordinal i; //!< (Global) row index
+  Ordinal j; //!< (Global) column index
+  Scalar  v; //!< Value of matrix entry
+};
+
+/// \brief Functor that implements much of the one-argument overload
+///   of Tpetra::CrsMatrix::getLocalDiagCopy, for the case where the
+///   matrix is fill complete.
+///
+/// The one-argument version of Tpetra::CrsMatrix::getLocalDiagCopy
+/// must compute offsets inline.
+///
+/// \tparam CrsMatrixType Specialization of KokkosSparse::CrsMatrix
+/// \tparam LocalMapType Type of the local part of Tpetra::Map
+template<class DiagType,
+         class LocalMapType,
+         class CrsMatrixType>
+struct CrsMatrixGetDiagCopyFunctor {
+  typedef typename LocalMapType::local_ordinal_type LO; // local ordinal type
+  typedef typename LocalMapType::global_ordinal_type GO; // global ordinal type
+  typedef typename CrsMatrixType::device_type device_type;
+  typedef typename CrsMatrixType::value_type scalar_type;
+  typedef typename CrsMatrixType::size_type offset_type;
+
+  //! The result of the reduction; number of errors.
+  typedef LO value_type;
+
+  /// \brief Constructor
+  ///
+  /// \param D [out] 1-D Kokkos::View into which to store the matrix's
+  ///   diagonal.
+  /// \param rowMap [in] Local part of the Tpetra row Map.
+  /// \param colMap [in] Local part of the Tpetra column Map.
+  /// \param A [in] The sparse matrix from which to get the diagonal.
+  CrsMatrixGetDiagCopyFunctor (const DiagType& D,
+                               const LocalMapType& rowMap,
+                               const LocalMapType& colMap,
+                               const CrsMatrixType& A) :
+    D_ (D), rowMap_ (rowMap), colMap_ (colMap), A_ (A)
+  {}
+
+  /// \brief Operator for Kokkos::parallel_for.
+  ///
+  /// \param lclRowInd [in] Index of current (local) row of the sparse matrix.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const LO& lclRowInd, value_type& errCount) const
+  {
+    const LO INV = Tpetra::Details::OrdinalTraits<LO>::invalid ();
+    const scalar_type ZERO =
+      Kokkos::Details::ArithTraits<scalar_type>::zero ();
+
+    // If the row lacks a stored diagonal entry, then its value is zero.
+    D_(lclRowInd) = ZERO;
+    const GO gblInd = rowMap_.getGlobalElement (lclRowInd);
+    const LO lclColInd = colMap_.getLocalElement (gblInd);
+
+    if (lclColInd != INV) {
+      auto curRow = A_.template rowConst<LO> (lclRowInd);
+
+      // FIXME (mfh 12 May 2016) Use binary search when the row is
+      // long enough.  findRelOffset currently lives in TpetraCore (in
+      // Tpetra_Util.hpp).
+      LO offset = 0;
+      const LO numEnt = curRow.length;
+      for ( ; offset < numEnt; ++offset) {
+        if (curRow.colidx(offset) == lclColInd) {
+          break;
+        }
       }
-    };
 
-    /// \struct CrsIJV
-    /// \brief Struct representing a sparse matrix entry as an i,j,v triplet.
-    /// \tparam Ordinal Same as the GlobalOrdinal template parameter of CrsMatrix.
-    /// \tparam Scalar Same as the Scalar template parameter of CrsMatrix.
-    ///
-    /// \warning This is an implementation detail of CrsMatrix.  Users
-    ///   must not rely on this class.  It may disappear or its
-    ///   interface may change at any time.
-    ///
-    /// CrsMatrix uses this struct to communicate nonlocal sparse
-    /// matrix entries in its globalAssemble() method.
-    template <class Ordinal, class Scalar>
-    struct CrsIJV {
-      /// \brief Default constructor
-      ///
-      /// This constructor sets the row and column indices to
-      /// <tt>Teuchos::OrdinalTraits<Ordinal>::invalid()</tt>, as a
-      /// clear sign that they were not initialized.
-      CrsIJV () :
-        i (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-        j (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
-        v (Teuchos::ScalarTraits<Scalar>::zero ())
-      {}
-
-      /// \brief Standard constructor
-      ///
-      /// \param row [in] (Global) row index
-      /// \param col [in] (Global) column index
-      /// \param val [in] Value of matrix entry
-      CrsIJV (Ordinal row, Ordinal col, const Scalar &val) :
-        i (row), j (col), v (val)
-      {}
-
-      /// \brief Comparison operator
-      ///
-      /// Comparison operator for sparse matrix entries stored as
-      /// (i,j,v) triples.  Defining this lets Tpetra::CrsMatrix use
-      /// std::sort to sort CrsIJV instances.
-      bool operator< (const CrsIJV<Ordinal, Scalar>& rhs) const {
-        // FIXME (mfh 10 May 2013): This is what I found when I moved
-        // this operator out of the std namespace to be an instance
-        // method of CrsIJV.  It's a little odd to me that it doesn't
-        // include the column index in the sort order (for the usual
-        // lexicographic sort).  It doesn't really matter because
-        // CrsMatrix will sort rows by column index anyway, but it's
-        // still odd.
-        return this->i < rhs.i;
+      if (offset == numEnt) {
+        ++errCount;
       }
+      else {
+        D_(lclRowInd) = curRow.value(offset);
+      }
+    }
+  }
 
-      Ordinal i; //!< (Global) row index
-      Ordinal j; //!< (Global) column index
-      Scalar  v; //!< Value of matrix entry
-    };
+private:
+  //! 1-D Kokkos::View into which to store the matrix's diagonal.
+  DiagType D_;
+  //! Local part of the Tpetra row Map.
+  LocalMapType rowMap_;
+  //! Local part of the Tpetra column Map.
+  LocalMapType colMap_;
+  //! The sparse matrix from which to get the diagonal.
+  CrsMatrixType A_;
+};
 
-  } // namespace Details
+
+template<class DiagType,
+         class LocalMapType,
+         class CrsMatrixType>
+static typename LocalMapType::local_ordinal_type
+getDiagCopyWithoutOffsets (const DiagType& D,
+                           const LocalMapType& rowMap,
+                           const LocalMapType& colMap,
+                           const CrsMatrixType& A)
+{
+  static_assert (Kokkos::Impl::is_view<DiagType>::value,
+                 "DiagType must be a Kokkos::View.");
+  static_assert (static_cast<int> (DiagType::rank) == 1,
+                 "DiagType must be a 1-D Kokkos::View.");
+  static_assert (std::is_same<DiagType, typename DiagType::non_const_type>::value,
+                 "DiagType must be a nonconst Kokkos::View.");
+  typedef typename LocalMapType::local_ordinal_type LO;
+  typedef typename CrsMatrixType::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
+
+  typedef Kokkos::View<typename DiagType::non_const_value_type*,
+    typename DiagType::array_layout,
+    typename DiagType::device_type,
+    Kokkos::MemoryUnmanaged> diag_type;
+  diag_type D_out = D;
+  CrsMatrixGetDiagCopyFunctor<diag_type, LocalMapType, CrsMatrixType>
+    functor (D_out, rowMap, colMap, A);
+  const LO numRows = static_cast<LO> (D.dimension_0 ());
+  LO errCount = 0;
+  Kokkos::parallel_reduce (policy_type (0, numRows), functor, errCount);
+  return errCount;
+}
+
+} // namespace Details
 } // namespace Tpetra
 
 namespace Teuchos {
@@ -2942,19 +3062,31 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::av_reinterpret_cast;
-    const char tfecfFuncName[] = "getLocalDiagCopy: ";
+    const char tfecfFuncName[] = "getLocalDiagCopy (1-arg): ";
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
-    typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
+    typedef typename vec_type::dual_view_type::host_mirror_space::execution_space
+      host_execution_space;
+    typedef impl_scalar_type IST;
+    typedef local_ordinal_type LO;
+    typedef global_ordinal_type GO;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       staticGraph_.is_null (), std::runtime_error,
       "This method requires that the matrix have a graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! hasColMap (), std::runtime_error,
-      "This method requires that the matrix have a column Map.");
-    const map_type& rowMap = * (this->getRowMap ());
-    const map_type& colMap = * (this->getColMap ());
+    auto rowMapPtr = this->getRowMap ();
+    if (rowMapPtr.is_null () || rowMapPtr->getComm ().is_null ()) {
+      // Processes on which the row Map or its communicator is null
+      // don't participate.  Users shouldn't even call this method on
+      // those processes.
+      return;
+    }
+    auto colMapPtr = this->getColMap ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->hasColMap () || colMapPtr.is_null (), std::runtime_error,
+       "This method requires that the matrix have a column Map.");
+    const map_type& rowMap = * rowMapPtr;
+    const map_type& colMap = * colMapPtr;
+    const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
 
 #ifdef HAVE_TPETRA_DEBUG
     // isCompatible() requires an all-reduce, and thus this check
@@ -2966,89 +3098,88 @@ namespace Tpetra {
       "diag.getMap ()->isCompatible (A.getRowMap ());");
 #endif // HAVE_TPETRA_DEBUG
 
-    // For now, we fill the Vector on the host and sync to device.
-    // Later, we may write a parallel kernel that works entirely on
-    // device.
-    diag.template modify<host_execution_space> ();
-    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
-    // 1-D subview of the first (and only) column of lclVecHost.
-    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
+    // Keep a count of the local number of errors.
+    LO lclNumErrs = 0;
+    if (this->isFillComplete ()) {
+      diag.template modify<device_type> ();
+      const auto D_lcl = diag.template getLocalView<device_type> ();
+      // 1-D subview of the first (and only) column of D_lcl.
+      const auto D_lcl_1d =
+        Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-    // Find the diagonal entries and put them in lclVecHost1d.
-    const LocalOrdinal myNumRows =
-      static_cast<LocalOrdinal> (this->getNodeNumRows ());
+      const auto lclRowMap = rowMap.getLocalMap ();
+      const auto lclColMap = colMap.getLocalMap ();
+      const auto lclMatrix = this->lclMatrix_;
+      using ::Tpetra::Details::getDiagCopyWithoutOffsets;
+      lclNumErrs = getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap, lclColMap, lclMatrix);
+    }
+    else {
+      // For now, we fill the Vector on the host and sync to device.
+      // Later, we may write a parallel kernel that works entirely on
+      // device.
+      diag.template modify<host_execution_space> ();
+      const auto D_lcl = diag.template getLocalView<host_execution_space> ();
+      // 1-D subview of the first (and only) column of lclVecHost.
+      auto D_lcl_1d =
+        Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-#ifdef HAVE_TPETRA_DEBUG
-    // In a debug build, keep a count of the local number of errors.
-    // Use a global ordinal, because in a debug build, we'll sum this
-    // across all processes.
-    GlobalOrdinal lclNumErrs = 0;
-#endif // HAVE_TPETRA_DEBUG
+      // Find the diagonal entries and put them in lclVecHost1d.
 
-    // NOTE (mfh 03 Feb 2016) We use the host execution space here,
-    // because the lambda's body calls methods that aren't yet
-    // suitable for marking as CUDA device functions.
-    typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
-    policy_type range (0, myNumRows);
-    // NOTE (mfh 03 Feb 2016) We use [=] here rather than
-    // KOKKOS_LAMBDA, because the lambda's body calls methods that
-    // aren't yet suitable for marking as CUDA device functions.
+      // NOTE (mfh 03 Feb 2016) We use the host execution space here,
+      // because the lambda's body calls methods that aren't yet
+      // suitable for marking as CUDA device functions.
+      typedef Kokkos::RangePolicy<host_execution_space, LocalOrdinal> policy_type;
+      policy_type range (0, myNumRows);
+      // NOTE (mfh 03 Feb 2016) We use [=] here rather than
+      // KOKKOS_LAMBDA, because the lambda's body calls methods that
+      // aren't yet suitable for marking as CUDA device functions.
 
-    // In a debug build, keep a count of the local number of errors
-    // (hence parallel_reduce).  In a release build, don't count
-    // errors (hence parallel_for).
-#ifdef HAVE_TPETRA_DEBUG
-    Kokkos::parallel_reduce (range, [=] (const LocalOrdinal& r, GlobalOrdinal& errCount) {
-#else
-    Kokkos::parallel_for (range, [=] (const LocalOrdinal& r) {
-#endif // HAVE_TPETRA_DEBUG
-        lclVecHost1d(r) = STS::zero (); // default value if no diag entry
-        const GlobalOrdinal gblInd = rowMap.getGlobalElement (r);
-        const LocalOrdinal lclColInd = colMap.getLocalElement (gblInd);
+      // Always keep a count of the local number of errors (hence
+      // parallel_reduce).  In a release build, don't try to compute
+      // those across MPI processes.
+      Kokkos::parallel_reduce (range, [=] (const LO& r, LO& errCount) {
+          D_lcl_1d(r) = Kokkos::Details::ArithTraits<IST>::zero ();
+          const GO gblInd = rowMap.getGlobalElement (r);
+          const LO lclColInd = colMap.getLocalElement (gblInd);
 
-        if (lclColInd != Teuchos::OrdinalTraits<LocalOrdinal>::invalid ()) {
-          const RowInfo rowinfo = staticGraph_->getRowInfo (r);
-          if (rowinfo.numEntries > 0) {
-            const size_t j = staticGraph_->findLocalIndex (rowinfo, lclColInd);
-            if (j != Teuchos::OrdinalTraits<size_t>::invalid ()) {
-              // NOTE (mfh 03 Feb 2016) This may assume UVM.
-              const impl_scalar_type* curVals;
-              LocalOrdinal numEnt;
-              const LocalOrdinal err =
-                this->getViewRawConst (curVals, numEnt, rowinfo);
-              if (err == 0) {
-                // Even in a release build, if an error occurs, don't
-                // attempt to write to memory.
-                lclVecHost1d(r) = curVals[j];
+          if (lclColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+            const RowInfo rowinfo = staticGraph_->getRowInfo (r);
+            if (rowinfo.numEntries > 0) {
+              const size_t j = staticGraph_->findLocalIndex (rowinfo, lclColInd);
+              if (j != Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
+                // NOTE (mfh 03 Feb 2016) This may assume UVM.
+                const impl_scalar_type* curVals;
+                LO numEnt;
+                const LO err = this->getViewRawConst (curVals, numEnt, rowinfo);
+                if (err == 0) {
+                  // Even in a release build, if an error occurs, don't
+                  // attempt to write to memory.
+                  D_lcl_1d(r) = curVals[j];
+                }
+                else {
+                  ++errCount;
+                }
               }
-#ifdef HAVE_TPETRA_DEBUG
-              else {
-                ++errCount;
-              }
-#endif // HAVE_TPETRA_DEBUG
             }
           }
-        }
-#ifdef HAVE_TPETRA_DEBUG
-      }, lclNumErrs); // reduction result goes at the end
-#else
-      }); // don't count errors in a release build
-#endif // HAVE_TPETRA_DEBUG
+        }, lclNumErrs);
 
 #ifdef HAVE_TPETRA_DEBUG
-    if (! this->getComm ().is_null ()) {
-      using Teuchos::reduceAll;
-      GlobalOrdinal gblNumErrs = 0;
-      reduceAll<int, GlobalOrdinal> (* (this->getComm ()), Teuchos::REDUCE_SUM,
-                                     lclNumErrs, Teuchos::outArg (gblNumErrs));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (gblNumErrs != 0, std::logic_error, "Something went wrong on "
-         << gblNumErrs << " out of " << this->getComm ()->getSize ()
-         << " process(es).");
+      if (! this->getComm ().is_null ()) {
+        using Teuchos::reduceAll;
+        GlobalOrdinal gblNumErrs = 0;
+        reduceAll<int, GO> (* (this->getComm ()), Teuchos::REDUCE_SUM,
+                            static_cast<LO> (lclNumErrs),
+                            Teuchos::outArg (gblNumErrs));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (gblNumErrs != 0, std::logic_error, "Something went wrong on "
+           << gblNumErrs << " out of " << this->getComm ()->getSize ()
+           << " process(es).");
+      }
+#endif // HAVE_TPETRA_DEBUG
+
+      diag.template sync<execution_space> (); // sync changes back to device
     }
-#endif // HAVE_TPETRA_DEBUG
-
-    diag.template sync<execution_space> (); // sync changes back to device
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
