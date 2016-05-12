@@ -55,13 +55,13 @@ namespace Intrepid2 {
 
   template<typename SpT, typename OT, typename PT>
   template<EOperator opType>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
+  template<typename outputValueViewType,
+           typename inputPointViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Basis_HGRAD_LINE_C1_FEM<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+  getValues( /**/  outputValueViewType output,
+             const inputPointViewType  input ) {
     switch (opType) {
     case OPERATOR_VALUE : {
       const auto x = input();

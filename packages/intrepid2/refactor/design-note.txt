@@ -19,3 +19,7 @@ lessons that I learned.
    virtual functions, the class is not very portable to devices (we cannot transfer
    the instance of the class to device as it has vtable pointers inside. 
  
+4. Serial device functions with ViewType template arguments should not to use 
+   subview. Now the input maybe Kokkos::View or Kokkos::DynRankView. These 
+   views have separate subview syntax. 
+   

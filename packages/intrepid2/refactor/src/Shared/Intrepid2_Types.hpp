@@ -59,6 +59,8 @@ namespace Intrepid2 {
   typedef int    ordinal_type;
   typedef size_t size_type;
 
+  typedef DeviceStackSpace Kokkos::Serial;
+
   template<typename ValueType>
   KOKKOS_INLINE_FUNCTION
   ValueType epsilon() {
@@ -119,6 +121,44 @@ namespace Intrepid2 {
   // - Enum, String (char*) helper, valid
   // - can be used on device and inside of kernel for debugging purpose
   // - let's decorate kokkos inline
+
+  /** \enum  PolyType
+      \brief Enumeration of polynomial type; used in polylib
+  */
+  enum EPolyType {
+    POLYTYPE_GAUSS=0,
+    POLYTYPE_GAUSS_RADAU_LEFT,
+    POLYTYPE_GAUSS_RADAU_RIGHT,
+    POLYTYPE_GAUSS_LOBATTO,
+    POLYTYPE_MAX
+  };
+
+  KOKKOS_INLINE_FUNCTION
+  const char* EPolyTypeToString(const EPolyType polytype) {
+    switch(polytype) {
+    case POLYTYPE_GAUSS:                return "Gauss";
+    case POLYTYPE_GAUSS_RADAU_LEFT:     return "GaussRadauLeft";
+    case POLYTYPE_GAUSS_RADAU_RIGHT:    return "GaussRadauRight";
+    case POLYTYPE_GAUSS_LOBATTO:        return "GaussRadauLobatto";
+    case POLYTYPE_MAX:                  return "Max PolyType";
+    default:                            return "INVALID EPolyType";
+    }
+    return "Error";
+  }
+  
+  /** \brief  Verifies validity of a PolyType enum
+
+      \param  polytype      [in]  - enum of the coordinate system
+      \return 1 if the argument is valid poly type; 0 otherwise
+  */
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool isValidPolyType(const EPolyType polytype){
+    return( polytype == POLYTYPE_GAUSS ||
+            polytype == POLYTYPE_GAUSS_RADAU_LEFT ||
+            polytype == POLYTYPE_GAUSS_RADAU_RIGHT ||
+            polytype == POLYTYPE_GAUSS_LOBATTO );
+  }
+
 
   /** \enum   Intrepid2::ECoordinates
       \brief  Enumeration of coordinate systems for geometrical entities (cells, points).

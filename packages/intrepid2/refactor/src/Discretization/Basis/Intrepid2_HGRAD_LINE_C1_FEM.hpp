@@ -89,12 +89,12 @@ namespace Intrepid2 {
     // this is specialized for each operator type
     template<EOperator opType>
     struct Serial {
-      template<typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties>
+      template<typename outputValueViewType,
+               typename inputPointViewType>
       KOKKOS_INLINE_FUNCTION
       static void
-      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints );
+      getValues( /**/  outputValueViewType outputValues,
+                 const inputPointViewType  inputPoints );
 
     };
 
