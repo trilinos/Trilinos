@@ -38,15 +38,15 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
+#include "mtk_kokkos.h"
+
 #include <Kokkos_Core.hpp>
 
 namespace
 {
-/*
+
 struct MatVecFunctor
 {
-    typedef typename Kokkos::Threads device_type;
-
     MatVecFunctor(const std::vector<std::vector<double> > &matrix,
                   const std::vector<double> &vecIn,
                   std::vector<double> &vecOut) :
@@ -71,7 +71,7 @@ private:
     std::vector<double> &mVecOut;
 };
 
-void runMatVecThreadedTest(const int numThreads)
+void runMatVecThreadedTest()
 {
     size_t numRows = 2000;
     size_t numCols = 2000;
@@ -83,19 +83,13 @@ void runMatVecThreadedTest(const int numThreads)
         matrix[i].resize(numCols, i + 1);
     }
 
-    double start_time = stk::cpu_time();
     double start_time_wall = stk::wall_time();
 
-    Kokkos::Threads::initialize( numThreads );
     MatVecFunctor matVecFunctor(matrix, vec_in, vec_out);
     Kokkos::parallel_for(numRows, matVecFunctor);
-    Kokkos::Threads::finalize();
 
-    double end_time = stk::cpu_time();
     double end_time_wall = stk::wall_time();
 
-    std::cerr << "Num threads: " << numThreads << std::endl;
-    std::cerr << "Time: " << (end_time - start_time)/double(numThreads) << std::endl;
     std::cerr << "Wall Time: " << (end_time_wall - start_time_wall) << std::endl;
 
     for(size_t i = 0; i < numRows; i++)
@@ -105,16 +99,9 @@ void runMatVecThreadedTest(const int numThreads)
     }
 }
 
-TEST(KokkosThreads, MatrixVectorMultiplyUsingOneThread)
+TEST_F(MTK_Kokkos, MatrixVectorMultiply)
 {
-    const int numThreads = 1;
-    runMatVecThreadedTest(numThreads);
-}
-
-TEST(KokkosThreads, MatrixVectorMultiplyUsingEightThreads)
-{
-    const int numThreads = 8;
-    runMatVecThreadedTest(numThreads);
+    runMatVecThreadedTest();
 }
 
 
@@ -122,73 +109,56 @@ TEST(KokkosThreads, MatrixVectorMultiplyUsingEightThreads)
 
 struct SumOverVectorFunctor
 {
-    typedef typename Kokkos::Threads device_type;
-    typedef double value_type;
-
-    SumOverVectorFunctor(const std::vector<value_type> &vector) :
+    SumOverVectorFunctor(const std::vector<double> &vector) :
         mVector(vector)
     {}
 
     KOKKOS_INLINE_FUNCTION
-    void init(value_type &threadLocalSum) const
+    void init(double &threadLocalSum) const
     {
         threadLocalSum = 0.0;
     }
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(size_t vectorIndex, value_type &threadLocalSum) const
+    void operator()(size_t vectorIndex, double &threadLocalSum) const
     {
         threadLocalSum += mVector[vectorIndex];
     }
 
     KOKKOS_INLINE_FUNCTION
-    void join(volatile value_type & joinedThreadSum, volatile value_type const& threadLocalSum) const
+    void join(volatile double & joinedThreadSum, volatile double const& threadLocalSum) const
     {
         joinedThreadSum += threadLocalSum;
     }
 
 private:
-    const std::vector<value_type> mVector;
+    const std::vector<double> mVector;
 };
 
-void runSumOverVectorTest(const int numThreads)
+void runSumOverVectorTest()
 {
     //size_t sizeOfVector = 4000000000;
     size_t sizeOfVector = 1000000;
     double initVal = 1.0;
     std::vector<double> vec(sizeOfVector,initVal);
 
-    double start_time = stk::cpu_time();
     double start_time_wall = stk::wall_time();
 
     double sum = 0;
-
-    Kokkos::Threads::initialize( numThreads );
     SumOverVectorFunctor sumOverVectorFunctor(vec);
     Kokkos::parallel_reduce(sizeOfVector, sumOverVectorFunctor, sum);
-    Kokkos::Threads::finalize();
 
-    double end_time = stk::cpu_time();
     double end_time_wall = stk::wall_time();
 
-    std::cerr << "Num threads: " << numThreads << std::endl;
-    std::cerr << "Time: " << (end_time - start_time)/double(numThreads) << std::endl;
     std::cerr << "Wall Time: " << (end_time_wall - start_time_wall) << std::endl;
 
     double goldAnswer = sizeOfVector*initVal;
     EXPECT_EQ(goldAnswer, sum);
 }
 
-TEST(KokkosThreads, SumOverVectorUsingOneThread)
+TEST_F(MTK_Kokkos, SumOverVector)
 {
-    const int numThreads = 1;
-    runSumOverVectorTest(numThreads);
+    runSumOverVectorTest();
 }
 
-TEST(KokkosThreads, SumOverVectorUsingEightThreads)
-{
-    const int numThreads = 8;
-    runSumOverVectorTest(numThreads);
-}
-*/
 } // end namespace
