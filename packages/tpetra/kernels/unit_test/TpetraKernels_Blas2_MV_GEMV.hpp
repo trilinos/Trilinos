@@ -663,7 +663,7 @@ testScalarsLayoutsDevices (std::ostream& out,
     out << indent << "Test Cuda, CudaSpace" << endl;
     typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> device_type;
     curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testfloat,
+                                                  testFloat,
                                                   testComplex,
                                                   printOnlyOnFailure,
                                                   debug);
