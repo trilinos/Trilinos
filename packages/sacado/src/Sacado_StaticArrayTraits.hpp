@@ -68,14 +68,24 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
       if (sz > 0)
+#ifdef __CUDACC__
+        for (int i=0; i<sz; ++i)
+          dest[i] = src[i];
+#else
         std::memcpy(dest,src,sz*sizeof(T));
+#endif
     }
 
     //! Zero out array \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
+#ifdef __CUDACC__
+        for (int i=0; i<sz; ++i)
+          dest[i] = T(0.);
+#else
         std::memset(dest,0,sz*sizeof(T));
+#endif
     }
 
   };
