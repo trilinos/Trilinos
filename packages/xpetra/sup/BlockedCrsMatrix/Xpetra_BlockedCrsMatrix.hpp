@@ -209,6 +209,7 @@ namespace Xpetra {
       for (size_t r = 0; r < Rows(); ++r) {
         for (size_t c = 0; c < Cols(); ++c) {
           if(thyraOp->blockExists(r,c)) {
+            // TODO we do not support nested Thyra operators here!
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
             Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
