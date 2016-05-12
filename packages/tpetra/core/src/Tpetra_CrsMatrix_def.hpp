@@ -57,6 +57,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Kokkos_Sparse_getDiagCopy.hpp"
 #include <typeinfo>
 
 // CrsMatrix relies on template methods implemented in Tpetra_CrsGraph_def.hpp
@@ -3058,10 +3059,6 @@ namespace Tpetra {
                       Kokkos::MemoryUnmanaged>& offsets) const
   {
     typedef LocalOrdinal LO;
-    typedef impl_scalar_type IST;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> vec_type;
-    typedef typename vec_type::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space::execution_space host_execution_space;
 
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getLocalDiagCopy: ";
@@ -3080,24 +3077,15 @@ namespace Tpetra {
     //
     // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
     // we write a device kernel, it will not need to assume UVM.
-    diag.template modify<host_execution_space> ();
-    auto lclVecHost = diag.template getLocalView<host_execution_space> ();
-    // 1-D subview of the first (and only) column of lclVecHost.
-    auto lclVecHost1d = Kokkos::subview (lclVecHost, Kokkos::ALL (), 0);
 
-    // Find the diagonal entries and put them in lclVecHost1d.
+    diag.template modify<device_type> ();
+    auto D_lcl = diag.template getLocalView<device_type> ();
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
-    typedef Kokkos::RangePolicy<host_execution_space, LO> policy_type;
-    const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
+    // Get 1-D subview of the first (and only) column of D_lcl.
+    auto D_lcl_1d =
+      Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
-    Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
-      lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
-      if (offsets(lclRow) != INV) {
-        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
-        lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(offsets(lclRow)));
-      }
-    });
-    diag.template sync<execution_space> (); // sync changes back to device
+    KokkosSparse::getDiagCopy (D_lcl_1d, offsets, this->lclMatrix_);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
