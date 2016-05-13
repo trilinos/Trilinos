@@ -601,20 +601,38 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getGlobalMaxNumRowEntries() const {
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getGlobalMaxNumRowEntries();
+      global_size_t globalMaxEntries = 0;
+
+      for (size_t row = 0; row < Rows(); row++) {
+        global_size_t globalMaxEntriesBlockRows = 0;
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            globalMaxEntriesBlockRows += getMatrix(row,col)->getGlobalMaxNumRowEntries();
+          }
+        }
+        if(globalMaxEntriesBlockRows > globalMaxEntries)
+          globalMaxEntries = globalMaxEntriesBlockRows;
       }
-      throw Xpetra::Exceptions::RuntimeError("getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix");
+      return globalMaxEntries;
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
     */
     size_t getNodeMaxNumRowEntries() const {
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getNodeMaxNumRowEntries();
+      size_t localMaxEntries = 0;
+
+      for (size_t row = 0; row < Rows(); row++) {
+        size_t localMaxEntriesBlockRows = 0;
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            localMaxEntriesBlockRows += getMatrix(row,col)->getNodeMaxNumRowEntries();
+          }
+        }
+        if(localMaxEntriesBlockRows > localMaxEntries)
+          localMaxEntries = localMaxEntriesBlockRows;
       }
-      throw Xpetra::Exceptions::RuntimeError("getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix");
+      return localMaxEntries;
     }
 
     //! \brief If matrix indices of all matrix blocks are in the local range, this function returns true. Otherwise, this function returns false.
