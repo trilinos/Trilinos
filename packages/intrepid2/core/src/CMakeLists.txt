@@ -138,6 +138,8 @@ APPEND_SET(HEADERS
   Discretization/Integration/Intrepid2_CubatureControlVolume.hpp
   Discretization/Integration/Intrepid2_CubatureControlVolumeSideDef.hpp
   Discretization/Integration/Intrepid2_CubatureControlVolumeSide.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolumeBoundaryDef.hpp
+  Discretization/Integration/Intrepid2_CubatureControlVolumeBoundary.hpp
   Discretization/Integration/Intrepid2_CubatureDirectDef.hpp
   Discretization/Integration/Intrepid2_CubatureDirect.hpp
   Discretization/Integration/Intrepid2_CubatureDirectLineGaussDef.hpp

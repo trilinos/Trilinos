@@ -42,13 +42,14 @@
 
 
 /** \file
-\brief  Unit test (CubatureControlVolume, CubatureControlVolume Side): 
+\brief  Unit test (CubatureControlVolume, CubatureControlVolumeSide, CubatureControlVolumeBoundary): 
         correctness of values.
 \author Created by K. Peterson, P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid2_CubatureControlVolume.hpp"
 #include "Intrepid2_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
 #include "Intrepid2_Utils.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -78,6 +79,7 @@ Kokkos::initialize();
   << "|                                                                             |\n" \
   << "|                         Unit Test (CubatureControlVolume)                   |\n" \
   << "|                                   (CubatureControlVolumeSide)               |\n" \
+  << "|                                   (CubatureControlVolumeBoundary)           |\n" \
   << "|                                                                             |\n" \
   << "|     1) Correctness of cubature points and weights                           |\n"\
   << "|     2) Comparison of sub-control volume weights and primary cell volume     |\n"\
@@ -99,6 +101,7 @@ Kokkos::initialize();
   Teuchos::RCP<shards::CellTopology> cellTopo;
   Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > controlVolCub;
   Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > controlVolSideCub;
+  Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > controlVolBCCub;
 
 
   // quadrilateral primary cells
@@ -114,6 +117,11 @@ Kokkos::initialize();
     // define control volume side cubature rule
     controlVolSideCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo));
     int numSidePoints = controlVolSideCub->getNumPoints();
+
+    // define control volume boundary cubature rule
+    int iside = 2;  // boundary side of primary cell  
+    controlVolBCCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo,iside));
+    int numBCPoints = controlVolBCCub->getNumPoints();
 
     // define quad coordinates
     Intrepid2::FieldContainer<double> cellCoords(2,4,2);
@@ -156,12 +164,31 @@ Kokkos::initialize();
      -0.5, 0.0, 0.0,-0.25
     };
 
+     // boundary points 
+    double exactBCCubPoints[] = {
+      0.375, 1.0, 0.125, 1.0,
+      0.875, 1.0, 0.625, 1.0
+    };
+
+     // boundary weights 
+    double exactBCCubWeights[] = {
+      0.25, 0.25, 0.25, 0.25
+    };
+
     int exactPoints = 4;
     if (numPoints != exactPoints) {
        errorFlag++;
        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
        *outStream << "Number of cubature points: " << numPoints;
        *outStream << "   does not equal correct number: " << exactPoints << "\n";
+    }
+
+    int exactBCPoints = 2;
+    if (numBCPoints != exactBCPoints) {
+       errorFlag++;
+       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+       *outStream << "Number of boundary cubature points: " << numBCPoints;
+       *outStream << "   does not equal correct number: " << exactBCPoints << "\n";
     }
 
     // get cubature points and weights for volume integration over control volume
@@ -176,8 +203,16 @@ Kokkos::initialize();
     Intrepid2::FieldContainer<double> sideCubWeights(numCells,numSidePoints,spaceDim);
     controlVolSideCub->getCubature(sideCubPoints,sideCubWeights,cellCoords);
 
-    int countp = 0;
-    int countw = 0;
+    // get cubature points and weights for surface integration over Neumann boundary
+    // (Note: this is a boundary of the primary cell)
+    Intrepid2::FieldContainer<double> bcCubPoints(numCells,numBCPoints,spaceDim);
+    Intrepid2::FieldContainer<double> bcCubWeights(numCells,numBCPoints);
+    controlVolBCCub->getCubature(bcCubPoints,bcCubWeights,cellCoords);
+
+    int countp   = 0;
+    int countw   = 0;
+    int countbcp = 0;
+    int countbcw = 0;
     for (int i=0; i<numCells; i++) {
        for (int j=0; j<numPoints; j++) {
           for (int k=0; k<spaceDim; k++) {
@@ -231,8 +266,34 @@ Kokkos::initialize();
           }
           countw++;
        }
-    }
 
+       for (int j=0; j<numBCPoints; j++) {
+          for (int k=0; k<spaceDim; k++) {
+
+             // check values of boundary cubature points
+             if (std::abs(bcCubPoints(i,j,k) - exactBCCubPoints[countbcp]) > Intrepid2::INTREPID_TOL) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " At multi-index { ";
+                *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                *outStream << "}  computed point: " << bcCubPoints(i,j,k)
+                 << " but reference value: " << exactBCCubPoints[countbcp] << "\n";
+             }
+             countbcp++;
+          }
+
+          // check values of cubature weights
+          if (std::abs(bcCubWeights(i,j) - exactBCCubWeights[countbcw]) > Intrepid2::INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";
+             *outStream << "}  computed weight: " << bcCubWeights(i,j)
+               << " but reference value: " << exactBCCubWeights[countbcw] << "\n";
+          }
+          countbcw++;
+       }
+    }
   }
   catch (std::exception err) {
     *outStream << err.what() << "\n";
@@ -252,6 +313,11 @@ Kokkos::initialize();
     // define control volume side cubature rule
     controlVolSideCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo));
     int numSidePoints = controlVolSideCub->getNumPoints();
+
+    // define control volume boundary cubature rule
+    int iside = 1;  // boundary side of primary cell  
+    controlVolBCCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo,iside));
+    int numBCPoints = controlVolBCCub->getNumPoints();
 
     // define triangle coordinates
     Intrepid2::FieldContainer<double> cellCoords(2,3,2);
@@ -289,6 +355,17 @@ Kokkos::initialize();
      -0.1666666666666667,-0.0833333333333333, 0.0833333333333333,-0.0833333333333333
     };
 
+    // boundary points 
+    double exactBCCubPoints[] = {
+      0.375, 0.125, 0.125, 0.375,
+      0.375, 0.5, 0.125, 0.5
+    };
+
+    // boundary weights 
+    double exactBCCubWeights[] = {
+      0.353553390593274, 0.353553390593274, 0.25, 0.25
+    };
+
     // same number of points for volume and side in 2-D
     int exactPoints = 3;
     if (numPoints != exactPoints) {
@@ -304,6 +381,14 @@ Kokkos::initialize();
        *outStream << "   does not equal correct number: " << exactPoints << "\n";
     }
 
+    int exactBCPoints = 2;
+    if (numBCPoints != exactBCPoints) {
+       errorFlag++;
+       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+       *outStream << "Number of boundary cubature points: " << numBCPoints;
+       *outStream << "   does not equal correct number: " << exactBCPoints << "\n";
+    }
+
     // get cubature points and weights for volume integration over control volume
     int numCells = 2; int spaceDim = 2;
     Intrepid2::FieldContainer<double> cubPoints(numCells,numPoints,spaceDim);
@@ -316,8 +401,16 @@ Kokkos::initialize();
     Intrepid2::FieldContainer<double> sideCubWeights(numCells,numSidePoints,spaceDim);
     controlVolSideCub->getCubature(sideCubPoints,sideCubWeights,cellCoords);
 
+    // get cubature points and weights for surface integration over Neumann boundary
+    // (Note: this is a boundary of the primary cell)
+    Intrepid2::FieldContainer<double> bcCubPoints(numCells,numBCPoints,spaceDim);
+    Intrepid2::FieldContainer<double> bcCubWeights(numCells,numBCPoints);
+    controlVolBCCub->getCubature(bcCubPoints,bcCubWeights,cellCoords);
+
     int countp = 0;
     int countw = 0;
+    int countbcp = 0;
+    int countbcw = 0;
     for (int i=0; i<numCells; i++) {
        for (int j=0; j<numPoints; j++) {
           for (int k=0; k<spaceDim; k++) {
@@ -371,6 +464,33 @@ Kokkos::initialize();
           }
           countw++;
        }
+
+       for (int j=0; j<numBCPoints; j++) {
+          for (int k=0; k<spaceDim; k++) {
+
+             // check values of boundary cubature points
+             if (std::abs(bcCubPoints(i,j,k) - exactBCCubPoints[countbcp]) > Intrepid2::INTREPID_TOL) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " At multi-index { ";
+                *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                *outStream << "}  computed point: " << bcCubPoints(i,j,k)
+                 << " but reference value: " << exactBCCubPoints[countbcp] << "\n";
+             }
+             countbcp++;
+          }
+
+          // check values of cubature weights
+          if (std::abs(bcCubWeights(i,j) - exactBCCubWeights[countbcw]) > Intrepid2::INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";
+             *outStream << "}  computed weight: " << bcCubWeights(i,j)
+               << " but reference value: " << bcCubWeights(i,j) - exactBCCubWeights[countbcw] << "\n";
+          }
+          countbcw++;
+       }
     }
 
   }
@@ -392,6 +512,11 @@ Kokkos::initialize();
     // define control volume side cubature rule
     controlVolSideCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo));
     int numSidePoints = controlVolSideCub->getNumPoints();
+
+    // define control volume boundary cubature rule
+    int iside = 0;  // boundary side of primary cell  
+    controlVolBCCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo,iside));
+    int numBCPoints = controlVolBCCub->getNumPoints();
 
     // define tetrahedron coordinates
     Intrepid2::FieldContainer<double> cellCoords(1,4,3);
@@ -434,6 +559,18 @@ Kokkos::initialize();
       0.0000000000000000,-0.0416666666666667, 0.041666666666667
     };
 
+    // boundary points 
+    double exactBCCubPoints[] = {
+      0.208333333333333, 0.00, 0.208333333333333,
+      0.583333333333333, 0.00, 0.208333333333333, 
+      0.208333333333333, 0.00, 0.583333333333333, 
+    };
+
+    // boundary weights 
+    double exactBCCubWeights[] = {
+      0.166666666666667, 0.166666666666667, 0.166666666666667
+    };
+
     // volume points
     int exactPoints = 4;
     if (numPoints != exactPoints) {
@@ -450,6 +587,14 @@ Kokkos::initialize();
        *outStream << "Number of side cubature points: " << numSidePoints;
        *outStream << "   does not equal correct number: " << exactPoints << "\n";
     }
+    // boundary points
+    int exactBCPoints = 3;
+    if (numBCPoints != exactBCPoints) {
+       errorFlag++;
+       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+       *outStream << "Number of boundary cubature points: " << numBCPoints;
+       *outStream << "   does not equal correct number: " << exactBCPoints << "\n";
+    }
 
     // get cubature points and weights for volume integration over control volume
     int numCells = 1; int spaceDim = 3;
@@ -463,9 +608,16 @@ Kokkos::initialize();
     Intrepid2::FieldContainer<double> sideCubWeights(numCells,numSidePoints,spaceDim);
     controlVolSideCub->getCubature(sideCubPoints,sideCubWeights,cellCoords);
 
+    // get cubature points and weights for surface integration over Neumann boundary
+    // (Note: this is a boundary of the primary cell)
+    Intrepid2::FieldContainer<double> bcCubPoints(numCells,numBCPoints,spaceDim);
+    Intrepid2::FieldContainer<double> bcCubWeights(numCells,numBCPoints);
+    controlVolBCCub->getCubature(bcCubPoints,bcCubWeights,cellCoords);
 
     int countp = 0;
     int countw = 0;
+    int countbcp = 0;
+    int countbcw = 0;
     for (int i=0; i<numCells; i++) {
        for (int j=0; j<numPoints; j++) {
           for (int k=0; k<spaceDim; k++) {
@@ -520,6 +672,33 @@ Kokkos::initialize();
           }
           countw++;
        }
+
+       for (int j=0; j<numBCPoints; j++) {
+          for (int k=0; k<spaceDim; k++) {
+
+             // check values of boundary cubature points
+             if (std::abs(bcCubPoints(i,j,k) - exactBCCubPoints[countbcp]) > Intrepid2::INTREPID_TOL) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " At multi-index { ";
+                *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                *outStream << "}  computed point: " << bcCubPoints(i,j,k)
+                 << " but reference value: " << exactBCCubPoints[countbcp] << "\n";
+             }
+             countbcp++;
+          }
+
+          // check values of cubature weights
+          if (std::abs(bcCubWeights(i,j) - exactBCCubWeights[countbcw]) > Intrepid2::INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";
+             *outStream << "}  computed weight: " << bcCubWeights(i,j)
+               << " but reference value: " << exactBCCubWeights[countbcw] << "\n";
+          }
+          countbcw++;
+       }
     }
 
 
@@ -542,6 +721,11 @@ Kokkos::initialize();
     // define control volume side cubature rule
     controlVolSideCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo));
     int numSidePoints = controlVolSideCub->getNumPoints();
+
+    // define control volume boundary cubature rule
+    int iside = 0;  // boundary side of primary cell  
+    controlVolBCCub  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeBoundary<double,Intrepid2::FieldContainer<double>,Intrepid2::FieldContainer<double> >(cellTopo,iside));
+    int numBCPoints = controlVolBCCub->getNumPoints();
 
     // define hexahedron coordinates
     Intrepid2::FieldContainer<double> cellCoords(1,8,3);
@@ -588,6 +772,19 @@ Kokkos::initialize();
      0.000, 0.00, 0.75, 0.00, 0.00, 0.75,
     };
 
+    // boundary points 
+    double exactBCCubPoints[] = {
+      0.5, 0.00, 0.25,
+      1.5, 0.00, 0.25,
+      1.5, 0.00, 0.75,
+      0.5, 0.00, 0.75,
+    };
+
+    // boundary weights 
+    double exactBCCubWeights[] = {
+      0.5, 0.5, 0.5, 0.5
+    };
+
     // volume points
     int exactPoints = 8;
     if (numPoints != exactPoints) {
@@ -604,6 +801,14 @@ Kokkos::initialize();
        *outStream << "Number of side cubature points: " << numSidePoints;
        *outStream << "   does not equal correct number: " << exactPoints << "\n";
     }
+    // boundary points
+    int exactBCPoints = 4;
+    if (numBCPoints != exactBCPoints) {
+       errorFlag++;
+       *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+       *outStream << "Number of boundary cubature points: " << numBCPoints;
+       *outStream << "   does not equal correct number: " << exactBCPoints << "\n";
+    }
 
     // get cubature points and weights for volume integration over control volume
     int numCells = 1; int spaceDim = 3;
@@ -617,9 +822,16 @@ Kokkos::initialize();
     Intrepid2::FieldContainer<double> sideCubWeights(numCells,numSidePoints,spaceDim);
     controlVolSideCub->getCubature(sideCubPoints,sideCubWeights,cellCoords);
 
+    // get cubature points and weights for surface integration over Neumann boundary
+    // (Note: this is a boundary of the primary cell)
+    Intrepid2::FieldContainer<double> bcCubPoints(numCells,numBCPoints,spaceDim);
+    Intrepid2::FieldContainer<double> bcCubWeights(numCells,numBCPoints);
+    controlVolBCCub->getCubature(bcCubPoints,bcCubWeights,cellCoords);
 
     int countp = 0;
     int countw = 0;
+    int countbcp = 0;
+    int countbcw = 0;
     for (int i=0; i<numCells; i++) {
        for (int j=0; j<numPoints; j++) {
           for (int k=0; k<spaceDim; k++) {
@@ -673,6 +885,33 @@ Kokkos::initialize();
                  *outStream << cubWeights(i,j)-exactCubWeights[countp] << "\n";
           }
           countw++;
+       }
+
+       for (int j=0; j<numBCPoints; j++) {
+          for (int k=0; k<spaceDim; k++) {
+
+             // check values of boundary cubature points
+             if (std::abs(bcCubPoints(i,j,k) - exactBCCubPoints[countbcp]) > Intrepid2::INTREPID_TOL) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " At multi-index { ";
+                *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+                *outStream << "}  computed point: " << bcCubPoints(i,j,k)
+                 << " but reference value: " << exactBCCubPoints[countbcp] << "\n";
+             }
+             countbcp++;
+          }
+
+          // check values of cubature weights
+          if (std::abs(bcCubWeights(i,j) - exactBCCubWeights[countbcw]) > Intrepid2::INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";
+             *outStream << "}  computed weight: " << bcCubWeights(i,j)
+               << " but reference value: " << exactBCCubWeights[countbcw] << "\n";
+          }
+          countbcw++;
        }
     }
 
