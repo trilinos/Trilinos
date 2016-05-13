@@ -42,6 +42,9 @@
 
 #include <Kokkos_Core.hpp>
 
+namespace stk
+{
+
 class NgpVector
 {
 public:
@@ -116,8 +119,6 @@ private:
     KokkosMatrix::HostMirror hostMatrix;
 };
 
-namespace stk
-{
 template <typename FUNCTOR>
 void parallel_for(size_t n, const FUNCTOR &functor)
 {
@@ -128,7 +129,8 @@ void parallel_reduce(size_t n, const FUNCTOR &functor, VAL_TYPE &sum)
 {
     Kokkos::parallel_reduce(n, functor, sum);
 }
-}
+
+} //namespace stk
 
 #define STK_LAMBDA KOKKOS_LAMBDA
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
@@ -136,7 +138,7 @@ void parallel_reduce(size_t n, const FUNCTOR &functor, VAL_TYPE &sum)
 
 namespace NgpMatrixComputations
 {
-    void initialize_matrix_to_row_values(NgpMatrix matrix)
+    void initialize_matrix_to_row_values(stk::NgpMatrix matrix)
     {
         stk::parallel_for(matrix.num_rows(),
             STK_LAMBDA(size_t row)
@@ -147,7 +149,7 @@ namespace NgpMatrixComputations
             }
         );
     }
-    void compute_mat_vec(NgpMatrix matrix, NgpVector vecIn, NgpVector vecOut)
+    void compute_mat_vec(stk::NgpMatrix matrix, stk::NgpVector vecIn, stk::NgpVector vecOut)
     {
         stk::parallel_for(matrix.num_rows(),
             STK_LAMBDA(size_t row)
@@ -160,13 +162,14 @@ namespace NgpMatrixComputations
     }
 };
 
-void runMatVecThreadedTest()
+
+void runMatVecTest()
 {
     const size_t numRows = 3;
     const size_t numCols = 2;
-    NgpMatrix matrix(numRows, numCols);
-    NgpVector vecIn(numCols, 1);
-    NgpVector vecOut(numRows);
+    stk::NgpMatrix matrix(numRows, numCols);
+    stk::NgpVector vecIn(numCols, 1);
+    stk::NgpVector vecOut(numRows);
 
     NgpMatrixComputations::initialize_matrix_to_row_values(matrix);
 
@@ -186,7 +189,7 @@ void runMatVecThreadedTest()
 
 TEST_F(MTK_Kokkos, MatrixVectorMultiply)
 {
-    runMatVecThreadedTest();
+    runMatVecTest();
 }
 
 
@@ -194,7 +197,7 @@ TEST_F(MTK_Kokkos, MatrixVectorMultiply)
 
 struct SumOverVectorFunctor
 {
-    SumOverVectorFunctor(NgpVector vector) :
+    SumOverVectorFunctor(stk::NgpVector vector) :
         mVector(vector)
     {}
 
@@ -205,14 +208,14 @@ struct SumOverVectorFunctor
     }
 
 private:
-    NgpVector mVector;
+    stk::NgpVector mVector;
 };
 
 void runSumOverVectorTest()
 {
     size_t sizeOfVector = 100000;
     double initVal = 1.0;
-    NgpVector vec(sizeOfVector, 1.0);
+    stk::NgpVector vec(sizeOfVector, 1.0);
 
     double startTime = stk::wall_time();
     double sum = 0;
