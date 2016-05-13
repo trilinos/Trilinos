@@ -39,3 +39,23 @@
 //
 // ************************************************************************
 // @HEADER
+
+/** \file test_01.cpp
+\brief  Unit test for the RealSpaceTools class.
+\author Created by Kyungjoo Kim
+*/
+
+#include "Kokkos_Core.hpp"
+
+//#include "test_01.hpp"
+
+int main(int argc, char *argv[]) {
+
+  const bool verbose = (argc-1) > 0;
+  Kokkos::initialize();
+
+  //const int r_val = Intrepid2::Test::Polylib_Test01<double,Kokkos::OpenMP>(verbose);
+  
+  Kokkos::finalize();
+  return r_val;
+}
