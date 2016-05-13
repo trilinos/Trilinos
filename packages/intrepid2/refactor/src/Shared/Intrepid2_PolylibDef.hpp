@@ -104,7 +104,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename zViewType,
-           typename wViewtype>
+           typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Cubature<POLYTYPE_GAUSS>::
@@ -116,9 +116,9 @@ namespace Intrepid2 {
     const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
     ValueType fac;
 
-    Serial::JacobiZeros(np, z, alpha, beta);
+    Serial::JacobiZeros(z, np, alpha, beta);
     Serial::JacobiPolynomialDerivative(np, z, w, np, alpha, beta);
-
+    
     fac  = pow(two, apb + one)*GammaFunction(alpha + np + one)*GammaFunction(beta + np + one);
     fac /= GammaFunction((ValueType)(np + one))*GammaFunction(apb + np + one);
 
@@ -129,7 +129,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename zViewType,
-           typename wViewtype>
+           typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_LEFT>::
@@ -148,9 +148,9 @@ namespace Intrepid2 {
       z(0) = -one;
 
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
-      Serial::JacobiZeros(np-1, z_plus_1, alpha, beta+1);
+      Serial::JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
       Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -165,7 +165,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename zViewType,
-           typename wViewtype>
+           typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_RIGHT>::
@@ -181,16 +181,16 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
       ValueType fac;
 
-      Serial::JacobiZeros(np-1, z, alpha+1, beta);
+      Serial::JacobiZeros(z, np-1, alpha+1, beta);
       z(np-1) = one;
 
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
       Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= GammaFunction((ValueType)np)*(alpha + np)*GammaFunction(apb + np + 1);
 
-      for (const i = 0; i < np; ++i)
+      for (auto i = 0; i < np; ++i)
         w(i) = fac*(1+z(i))/(w(i)*w(i));
       w(np-1) *= (alpha + one);
     }
@@ -199,7 +199,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename zViewType,
-           typename wViewtype>
+           typename wViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>::
@@ -219,9 +219,9 @@ namespace Intrepid2 {
       z(np-1) =  one;
 
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
-      JacobiZeros(np-2, z_plus_1, alpha+one, beta+one);
+      JacobiZeros(z_plus_1, np-2, alpha+one, beta+one);
 
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb + 1)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -242,7 +242,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename DViewType,
-           typename zViewtype>
+           typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Derivative<POLYTYPE_GAUSS>::
@@ -256,8 +256,8 @@ namespace Intrepid2 {
     } else {
       const ValueType one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibOrder];
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(pd_buf, MaxPolylibOrder);
+      ValueType pd_buf[MaxPolylibPoint];
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
 
@@ -275,7 +275,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename DViewType,
-           typename zViewtype>
+           typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Derivative<POLYTYPE_GAUSS_RADAU_LEFT>::
@@ -289,8 +289,8 @@ namespace Intrepid2 {
     } else {
       const ValueType one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibOrder];
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(pd_buf, MaxPolylibOrder);
+      ValueType pd_buf[MaxPolylibPoint];
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       pd(0) = pow(-one,np-1)*GammaFunction((ValueType)np+beta+one);
       pd(0) /= GammaFunction((ValueType)np)*GammaFunction(beta+two);
@@ -319,7 +319,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename DViewType,
-           typename zViewtype>
+           typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Derivative<POLYTYPE_GAUSS_RADAU_RIGHT>::
@@ -333,8 +333,8 @@ namespace Intrepid2 {
     } else {
       const ValueType one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibOrder];
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(pd_buf, MaxPolylibOrder);
+      ValueType pd_buf[MaxPolylibPoint];
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
       for (auto i = 0; i < np-1; ++i)
@@ -360,7 +360,7 @@ namespace Intrepid2 {
   template<>
   template<typename ValueType,
            typename DViewType,
-           typename zViewtype>
+           typename zViewType>
   KOKKOS_INLINE_FUNCTION
   void
   Polylib::Serial::Derivative<POLYTYPE_GAUSS_LOBATTO>::
@@ -374,8 +374,8 @@ namespace Intrepid2 {
     } else {
       const ValueType one = 1.0, two = 2.0;
 
-      ValueType pd_buf[MaxPolylibOrder];
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(pd_buf, MaxPolylibOrder);
+      ValueType pd_buf[MaxPolylibPoint];
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       pd(0)  = two*pow(-one,np)*GammaFunction((ValueType)np + beta);
       pd(0) /= GammaFunction((ValueType)np - one)*GammaFunction(beta + two);
@@ -384,7 +384,8 @@ namespace Intrepid2 {
       auto  z_plus_1 = Kokkos::subview( z, Kokkos::pair<ordinal_type,ordinal_type>(1,  z.dimension(0)));
 
       JacobiPolynomialDerivative(np-2, z_plus_1, pd_plus_1, np-2, alpha+1, beta+1);
-      for(i = 1; i < np-1; ++i) pd(i) *= (one-z(i)*z(i));
+      for (auto i = 1; i < np-1; ++i) 
+        pd(i) *= (one-z(i)*z(i));
 
       pd(np-1)  = -two*GammaFunction((ValueType)np + alpha);
       pd(np-1) /= GammaFunction((ValueType)np - one)*GammaFunction(alpha + two);
@@ -431,7 +432,7 @@ namespace Intrepid2 {
       return 1.0;
 
     JacobiPolynomialDerivative(1, zi, pd, np, alpha, beta);
-    JacobiPolynomial(1, z , p, null , np, alpha, beta);
+    JacobiPolynomial(1, z, p, null , np, alpha, beta);
 
     h = p/(pd*dz);
 
@@ -548,7 +549,7 @@ namespace Intrepid2 {
 
   template<EPolyType polyType>
   template<typename ValueType,
-           typename imViewtype,
+           typename imViewType,
            typename zgrjViewType,
            typename zmViewType>
   KOKKOS_INLINE_FUNCTION
@@ -607,7 +608,11 @@ namespace Intrepid2 {
     } else {
       ValueType a1, a2, a3, a4;
       ValueType apb = alpha + beta;
-      ValueType poly[MaxPolylibOrder], polyn1[MaxPolylibOrder], polyn2[MaxPolylibOrder];
+      ValueType poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
+
+      if (polyi.data()) 
+        for (auto i=0;i<np;++i)
+          poly[i] = polyi(i);
 
       for (auto i = 0; i < np; ++i) {
         polyn2[i] = one;
@@ -631,7 +636,7 @@ namespace Intrepid2 {
         }
       }
 
-      if (polyd) {
+      if (polyd.data()) {
         a1 = n*(alpha - beta);
         a2 = n*(two*n + alpha + beta);
         a3 = two*(n + alpha)*(n + beta);
@@ -646,6 +651,10 @@ namespace Intrepid2 {
           polyd(i) /= (one - z(i)*z(i));
         }
       }
+
+      if (polyi.data()) 
+        for (auto i=0;i<np;++i)
+          polyi(i) = poly[i];
     }
   }
 
@@ -666,7 +675,7 @@ namespace Intrepid2 {
       for(auto i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
-      Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
       for(auto i = 0; i < np; ++i)
         polyd(i) *= 0.5*(alpha + beta + (ValueType)n + one);
@@ -677,15 +686,15 @@ namespace Intrepid2 {
 
   template<typename ValueType,
            typename zViewType,
-           bool type>
+           bool DeflationEnabled>
   KOKKOS_INLINE_FUNCTION
-  static void
+  void
   Polylib::Serial::
   JacobiZeros(/**/  zViewType z,
               const ordinal_type n,
               const ValueType alpha,
               const ValueType beta) {
-    if (type == PolynomialDeflationEnabled)
+    if (DeflationEnabled)
       JacobiZerosPolyDeflation(z, n, alpha, beta);
     else
       JacobiZerosTriDiagonal(z, n, alpha, beta);
@@ -700,34 +709,38 @@ namespace Intrepid2 {
                            const ordinal_type n,
                            const ValueType alpha,
                            const ValueType beta) {
-    const ValueType dth = M_PI/(2.0*(ValueType)n);
-    const ValueType poly, pder, rlast = 0.0;
-    const Valuetype sum, delr, r;
-    const ValueType one = 1.0, two = 2.0;
-    const ValueType tol = epsilon<ValueType>();
-
     if(!n)
       return;
 
+    const ValueType dth = M_PI/(2.0*(ValueType)n);
+    const ValueType one = 1.0, two = 2.0;
+    const ValueType tol = epsilon<ValueType>();
+
+    ValueType r_buf, poly_buf, pder_buf;
+    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+      poly(&poly_buf, 1), pder(&pder_buf, 1), r(&r_buf, 1); 
+
+    ValueType rlast = 0.0;
     for (auto k = 0; k < n; ++k) {
-      r = -cos((two*(ValueType)k + one) * dth);
+      r(0) = -cos((two*(ValueType)k + one) * dth);
       if (k) 
-        r = 0.5*(r + rlast);
+        r(0) = 0.5*(r(0) + rlast);
 
       for (auto j = 1; j < MaxPolylibIteration; ++j) {
-        JacobiPolynomial(1, &r, &poly, &pder, n, alpha, beta);
+        JacobiPolynomial(1, r, poly, pder, n, alpha, beta);
 
-        for (auto i = 0, sum = 0.0; i < k; ++i) 
-          sum += one/(r - z(i));
+        ValueType sum = 0;
+        for (auto i = 0; i < k; ++i) 
+          sum += one/(r(0) - z(i));
 
-        delr = -poly / (pder - sum * poly);
-        r   += delr;
+        const ValueType delr = -poly(0) / (pder(0) - sum * poly(0));
+        r(0) += delr;
 
         if( Util::abs(delr) < tol ) 
           break;
       }
-      z(k)  = r;
-      rlast = r;
+      z(k)  = r(0);
+      rlast = r(0);
     }
   }
   
@@ -743,8 +756,8 @@ namespace Intrepid2 {
     if(!n)
       return;
 
-    ValueType b_buf[MaxPolylibOrder];
-    Kokkos::View<Valuetype*,DeviceStackSpace,Kokkos::MemoryUnmanaged> b(&b_buf[0], MaxPolylibOrder);
+    ValueType b_buf[MaxPolylibPoint];
+    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> b(&b_buf[0], MaxPolylibPoint);
 
     // generate normalised terms
     auto apb  = alpha + beta;

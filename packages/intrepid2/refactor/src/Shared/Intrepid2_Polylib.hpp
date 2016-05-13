@@ -204,9 +204,9 @@ namespace Intrepid2 {
   class Polylib {
   public:
 
-    static constexpr bool PolynomialDeflationEnabled = true;
     static constexpr int  MaxPolylibIteration = 50;
     static constexpr int  MaxPolylibOrder = Parameters::MaxOrder;
+    static constexpr int  MaxPolylibPoint = Parameters::MaxOrder*2;
 
     struct Serial {
 
@@ -476,7 +476,7 @@ namespace Intrepid2 {
       */
       template<typename ValueType,
                typename zViewType,
-               bool type = PolynomialDeflationEnabled>
+               bool DeflationEnabled = false>
       KOKKOS_INLINE_FUNCTION
       static void   
       JacobiZeros (/**/  zViewType z,
@@ -582,7 +582,7 @@ namespace Intrepid2 {
       static ValueType 
       GammaFunction(const ValueType x);
 
-    }
+    };
 
     // -----------------------------------------------------------------------
   };

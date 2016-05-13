@@ -47,15 +47,14 @@
 
 #include "Kokkos_Core.hpp"
 
-//#include "test_01.hpp"
+#include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = 0; // = Intrepid2::Test::Polylib_Test01<double,Kokkos::Serial>(verbose);
-  std::cout << "TEST PASSED\n";
+  const int r_val = Intrepid2::Test::Polylib_Test01<double,Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;
