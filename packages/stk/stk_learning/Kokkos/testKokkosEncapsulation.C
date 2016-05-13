@@ -169,7 +169,8 @@ void report_bandwidth(double numDoubles, double time)
     std::cerr << "\t\t\t\t\tBandwidth: " << matVecSizeGb / time << " GB/s" << std::endl;
 }
 
-TEST_F(MTK_Kokkos, MatrixVectorMultiply)
+class EncapsulateKokkos : public MTK_Kokkos {};
+TEST_F(EncapsulateKokkos, MatrixVectorMultiply)
 {
     const size_t numRows = 30000;
     const size_t numCols = 2000;
@@ -211,12 +212,11 @@ struct SumOverVectorFunctor
 private:
     stk::NgpVector mVector;
 };
-
-TEST_F(MTK_Kokkos, SumOverVector)
+TEST_F(EncapsulateKokkos, SumOverVector)
 {
     size_t sizeOfVector = 1000000;
     double initVal = 1.0;
-    stk::NgpVector vec(sizeOfVector, 1.0);
+    stk::NgpVector vec(sizeOfVector, initVal);
 
     double startTime = stk::wall_time();
     double sum = 0;
@@ -226,5 +226,24 @@ TEST_F(MTK_Kokkos, SumOverVector)
     report_bandwidth(sizeOfVector, endTime - startTime);
 
     EXPECT_EQ(sizeOfVector*initVal, sum);
+}
+
+
+class CopyHostToDevice : public MTK_Kokkos {};
+TEST_F(CopyHostToDevice, CopyDataToDeviceAndMirrorBack)
+{
+    size_t sizeOfVector = 1000000;
+    double initVal = 1.0;
+    Kokkos::View<double*, Kokkos::HostSpace> hostVec("hostVec", sizeOfVector);
+    for(size_t i=0; i<sizeOfVector; i++)
+        hostVec(i) = initVal;
+
+    Kokkos::View<double*> vec("vec", sizeOfVector);
+    Kokkos::deep_copy(vec, hostVec);
+
+    Kokkos::View<double*>::HostMirror hostMirrorVector = Kokkos::create_mirror_view(vec);
+    Kokkos::deep_copy(hostMirrorVector, vec);
+    for(size_t i=0; i<sizeOfVector; i++)
+        EXPECT_EQ(initVal, hostMirrorVector(i));
 }
 
