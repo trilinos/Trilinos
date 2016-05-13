@@ -42,63 +42,133 @@
 
 #include <Kokkos_Core.hpp>
 
-struct MatVecFunctor
+class NgpVector
 {
-    MatVecFunctor(Kokkos::View<double**> matrix, Kokkos::View<double*> vecIn, Kokkos::View<double*> vecOut) :
-            matrix(matrix),
-            vecIn(vecIn),
-            vecOut(vecOut)
+public:
+    NgpVector(size_t size) :
+        vector("NgpVector", size),
+        hostVector(Kokkos::create_mirror_view(vector))
     {
     }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(size_t row) const
+    NgpVector(size_t size, double initialValue) :
+        NgpVector(size)
     {
-        const size_t numCols = matrix.extent(1);
-        for(size_t col = 0; col < numCols; col++)
-            vecOut(row) += matrix(row, col) * vecIn(col);
+        Kokkos::deep_copy(vector, initialValue);
     }
 
+    double & device_get(size_t i) const
+    {
+        return vector(i);
+    }
+    double & host_get(size_t i) const
+    {
+        return hostVector(i);
+    }
+    void copy_device_to_host()
+    {
+        Kokkos::deep_copy(hostVector, vector);
+    }
 private:
-    Kokkos::View<double**> matrix;
-    Kokkos::View<double*> vecIn;
-    Kokkos::View<double*> vecOut;
+    typedef Kokkos::View<double*> KokkosVector;
+    KokkosVector vector;
+    KokkosVector::HostMirror hostVector;
 };
+
+class NgpMatrix
+{
+public:
+    NgpMatrix(size_t numRows, size_t numCols) :
+        matrix("NgpMatrix", numRows, numCols),
+        hostMatrix(Kokkos::create_mirror_view(matrix))
+    {
+    }
+    NgpMatrix(size_t numRows, size_t numCols, double initialValue) :
+        NgpMatrix(numRows, numCols)
+    {
+        Kokkos::deep_copy(matrix, initialValue);
+    }
+
+    double & device_get(size_t row, size_t col) const
+    {
+        return matrix(row, col);
+    }
+    double & host_get(size_t row, size_t col) const
+    {
+        return hostMatrix(row, col);
+    }
+
+    size_t num_rows() const
+    {
+        return matrix.extent(0);
+    }
+    size_t num_cols() const
+    {
+        return matrix.extent(1);
+    }
+
+    void copy_device_to_host()
+    {
+        Kokkos::deep_copy(hostMatrix, matrix);
+    }
+private:
+    typedef Kokkos::View<double**> KokkosMatrix;
+    KokkosMatrix matrix;
+    KokkosMatrix::HostMirror hostMatrix;
+};
+
+namespace stk
+{
+template <typename FUNCTOR>
+void parallel_for(size_t n, const FUNCTOR &functor)
+{
+    Kokkos::parallel_for(n, functor);
+}
+template <typename FUNCTOR, typename VAL_TYPE>
+void parallel_reduce(size_t n, const FUNCTOR &functor, VAL_TYPE &sum)
+{
+    Kokkos::parallel_reduce(n, functor, sum);
+}
+}
+
+#define STK_LAMBDA KOKKOS_LAMBDA
+#define STK_INLINE KOKKOS_INLINE_FUNCTION
+
+
 
 void runMatVecThreadedTest()
 {
     const size_t numRows = 3;
     const size_t numCols = 2;
-    Kokkos::View<double**> matrix("matrix", numRows, numCols);
-    Kokkos::View<double*> vecIn("vecIn", numCols);
-    Kokkos::View<double*> vecOut("vecOut", numRows);
+    NgpMatrix matrix(numRows, numCols);
+    NgpVector vecIn(numCols, 1);
+    NgpVector vecOut(numRows);
 
-    Kokkos::deep_copy(vecIn, 1);
-    Kokkos::deep_copy(vecOut, 0);
-
-    Kokkos::parallel_for(numRows,
-        KOKKOS_LAMBDA(size_t row)
+    stk::parallel_for(numRows,
+        STK_LAMBDA(size_t row)
         {
             for(size_t col=0; col<numCols; col++)
-                matrix(row, col) = row + 1;
+                matrix.device_get(row, col) = row + 1;
         }
     );
 
-    double start_time_wall = stk::wall_time();
+    double startTime = stk::wall_time();
+    stk::parallel_for(numRows,
+        STK_LAMBDA(size_t row)
+        {
+            const size_t numCols = matrix.num_cols();
+            for(size_t col = 0; col < numCols; col++)
+                vecOut.device_get(row) += matrix.device_get(row, col) * vecIn.device_get(col);
+        }
+    );
+    double endTime = stk::wall_time();
 
-    MatVecFunctor matVecFunctor(matrix, vecIn, vecOut);
-    Kokkos::parallel_for(numRows, matVecFunctor);
+    std::cerr << "Wall Time: " << (endTime - startTime) << std::endl;
 
-    double end_time_wall = stk::wall_time();
-
-    std::cerr << "Wall Time: " << (end_time_wall - start_time_wall) << std::endl;
-
-    Kokkos::View<double*>::HostMirror vecOutHost =  Kokkos::create_mirror_view(vecOut);
-    Kokkos::deep_copy(vecOutHost, vecOut);
+    vecOut.copy_device_to_host();
     for(size_t i = 0; i < numRows; i++)
     {
         double goldAnswer = (i + 1) * numCols;
-        EXPECT_EQ(goldAnswer, vecOutHost(i));
+        EXPECT_EQ(goldAnswer, vecOut.host_get(i));
     }
 }
 
@@ -112,41 +182,34 @@ TEST_F(MTK_Kokkos, MatrixVectorMultiply)
 
 struct SumOverVectorFunctor
 {
-    SumOverVectorFunctor(Kokkos::View<double*> vector) :
+    SumOverVectorFunctor(NgpVector vector) :
         mVector(vector)
     {}
 
-    KOKKOS_INLINE_FUNCTION
+    STK_INLINE
     void operator()(size_t vectorIndex, double &threadLocalSum) const
     {
-        threadLocalSum += mVector(vectorIndex);
+        threadLocalSum += mVector.device_get(vectorIndex);
     }
 
 private:
-    Kokkos::View<double*> mVector;
+    NgpVector mVector;
 };
 
 void runSumOverVectorTest()
 {
-    //size_t sizeOfVector = 4000000000;
     size_t sizeOfVector = 100000;
-    Kokkos::View<double*> vec("vec", sizeOfVector);
-
     double initVal = 1.0;
-    Kokkos::deep_copy(vec, initVal);
+    NgpVector vec(sizeOfVector, 1.0);
 
-    double start_time_wall = stk::wall_time();
-
+    double startTime = stk::wall_time();
     double sum = 0;
-    SumOverVectorFunctor sumOverVectorFunctor(vec);
-    Kokkos::parallel_reduce(sizeOfVector, sumOverVectorFunctor, sum);
+    stk::parallel_reduce(sizeOfVector, SumOverVectorFunctor(vec), sum);
+    double endTime = stk::wall_time();
 
-    double end_time_wall = stk::wall_time();
+    std::cerr << "Wall Time: " << (endTime - startTime) << std::endl;
 
-    std::cerr << "Wall Time: " << (end_time_wall - start_time_wall) << std::endl;
-
-    double goldAnswer = sizeOfVector*initVal;
-    EXPECT_EQ(goldAnswer, sum);
+    EXPECT_EQ(sizeOfVector*initVal, sum);
 }
 
 TEST_F(MTK_Kokkos, SumOverVector)
