@@ -59,7 +59,7 @@ namespace Intrepid2 {
   typedef int    ordinal_type;
   typedef size_t size_type;
 
-  typedef DeviceStackSpace Kokkos::Serial;
+  typedef Kokkos::Serial DeviceStackSpace;
 
   template<typename ValueType>
   KOKKOS_INLINE_FUNCTION

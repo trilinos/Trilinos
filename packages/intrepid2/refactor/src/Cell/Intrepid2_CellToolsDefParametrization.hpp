@@ -77,16 +77,16 @@ namespace Intrepid2 {
       setSubcellParametrization( subcellParamData_.hexFaces,   2, hex );
       setSubcellParametrization( subcellParamData_.hexEdges,   1, hex );
     }
-    // {
-    //   const auto pyr = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<5> >());
-    //   setSubcellParametrization( subcellParamData_.pyrFaces,   2, pyr );
-    //   setSubcellParametrization( subcellParamData_.pyrEdges,   1, pyr );
-    // }
-    // {
-    //   const auto wedge = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >());
-    //   setSubcellParametrization( subcellParamData_.wedgeFaces, 2, wedge );
-    //   setSubcellParametrization( subcellParamData_.wedgeEdges, 1, wedge );
-    // }
+    {
+      const auto pyr = shards::CellTopology(shards::getCellTopologyData<shards::Pyramid<5> >());
+      setSubcellParametrization( subcellParamData_.pyrFaces,   2, pyr );
+      setSubcellParametrization( subcellParamData_.pyrEdges,   1, pyr );
+    }
+    {
+      const auto wedge = shards::CellTopology(shards::getCellTopologyData<shards::Wedge<6> >());
+      setSubcellParametrization( subcellParamData_.wedgeFaces, 2, wedge );
+      setSubcellParametrization( subcellParamData_.wedgeEdges, 1, wedge );
+    }
     {
       const auto tri = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >());
       setSubcellParametrization( subcellParamData_.triEdges,   1, tri );
