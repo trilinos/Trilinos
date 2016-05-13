@@ -170,8 +170,8 @@ namespace Intrepid2 {
             if (!ct::hasReferenceCell(cell))
               continue;
             
-            // Exclude 0D (node), 1D (Line) and Pyramid<5> cells
-            if ( cell.getDimension() >= 2 && cell.getKey() != shards::Pyramid<5>::key ) { 
+            // Exclude 0D (node), 1D (Line) 
+            if ( cell.getDimension() >= 2 ) { //&& cell.getKey() != shards::Pyramid<5>::key ) { 
               const auto cellDim  = cell.getDimension();
               const auto nCount   = cell.getNodeCount();
               const auto vCount   = cell.getVertexCount();

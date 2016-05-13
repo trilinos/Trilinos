@@ -231,11 +231,11 @@ Basis_HCURL_WEDGE_I1_FEM()
              const EOperator operatorType ) const {
   // Verify arguments
 #ifdef HAVE_INTREPID2_DEBUG
-  Intrepid2::getValues_HCURL_Args<Scalar, ArrayScalar>(outputValues,
-                                                       inputPoints,
-                                                       operatorType,
-                                                       obj_->getBaseCellTopology(),
-                                                       obj_->getCardinality() );
+    Intrepid2::getValues_HCURL_Args(outputValues,
+                                    inputPoints,
+                                    operatorType,
+                                    obj_->getBaseCellTopology(),
+                                    obj_->getCardinality() );
 #endif
   
     typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;

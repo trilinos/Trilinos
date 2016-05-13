@@ -175,7 +175,7 @@ namespace Test {
     {
     // exception #9 dimension 1 in the input point array must equal space dimension of the cell
       DynRankView ConstructWithLabel(badPoints2, 4, 2);
-      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals, badPoints2, OPERATOR_VALUE) );
     }
     {
     // exception #10 output values must be of rank-3 for OPERATOR_VALUE

@@ -180,7 +180,7 @@ namespace Intrepid2 {
               continue;
 
             // Exclude 2D and Pyramid<5> cells
-            if ( cell.getDimension() == 3 && cell.getKey() != shards::Pyramid<5>::key ) {
+            if ( cell.getDimension() == 3 ) { // && cell.getKey() != shards::Pyramid<5>::key ) {
               const auto cellDim  = cell.getDimension();
               const auto nCount   = cell.getNodeCount();
               const auto vCount   = cell.getVertexCount();
