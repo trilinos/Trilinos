@@ -92,193 +92,198 @@ namespace Test {
     *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
     *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
-  *outStream \
-    << "===============================================================================\n" \
-    << "|                                                                             |\n" \
-    << "|                 Unit Test (Basis_HCURL_WEDGE_I1_FEM)                        |\n" \
-    << "|                                                                             |\n" \
-    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
-    << "|     2) Basis values for VALUE and CURL operators                            |\n" \
-    << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
-    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
-    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
-    << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-    << "|                                                                             |\n" \
-    << "===============================================================================\n"\
-    << "| TEST 1: Basis creation, exception testing                                   |\n"\
+  *outStream 
+    << "\n"
+    << "===============================================================================\n" 
+    << "|                                                                             |\n" 
+    << "|                 Unit Test (Basis_HCURL_WEDGE_I1_FEM)                        |\n" 
+    << "|                                                                             |\n" 
+    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" 
+    << "|     2) Basis values for VALUE and CURL operators                            |\n" 
+    << "|                                                                             |\n" 
+    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" 
+    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" 
+    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" 
+    << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
+    << "|                                                                             |\n" 
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" 
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" 
+    << "|                                                                             |\n" 
     << "===============================================================================\n";
-  int errorFlag = 0;
-/* 
-  // Define basis and error flag
-  Basis_HCURL_WEDGE_I1_FEM<double, FieldContainer<double> > wedgeBasis;
 
-  // Initialize throw counter for exception testing
-  int nException     = 0;
-  int throwCounter   = 0;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      const ValueType tol = Parameters::Tolerence;
 
-  // Define array containing the 6 vertices of the reference WEDGE and 6 other points.
-  FieldContainer<double> wedgeNodes(12, 3);
-  wedgeNodes(0,0) =  0.0;  wedgeNodes(0,1) =  0.0;  wedgeNodes(0,2) = -1.0;
-  wedgeNodes(1,0) =  1.0;  wedgeNodes(1,1) =  0.0;  wedgeNodes(1,2) = -1.0;
-  wedgeNodes(2,0) =  0.0;  wedgeNodes(2,1) =  1.0;  wedgeNodes(2,2) = -1.0;
-  wedgeNodes(3,0) =  0.0;  wedgeNodes(3,1) =  0.0;  wedgeNodes(3,2) =  1.0;
-  wedgeNodes(4,0) =  1.0;  wedgeNodes(4,1) =  0.0;  wedgeNodes(4,2) =  1.0;
-  wedgeNodes(5,0) =  0.0;  wedgeNodes(5,1) =  1.0;  wedgeNodes(5,2) =  1.0;
+      int errorFlag = 0;
 
-  wedgeNodes(6,0) =  0.25; wedgeNodes(6,1) =  0.5;  wedgeNodes(6,2) = -1.0;
-  wedgeNodes(7,0) =  0.5;  wedgeNodes(7,1) =  0.25; wedgeNodes(7,2) =  0.0;
-  wedgeNodes(8,0) =  0.25; wedgeNodes(8,1) =  0.25; wedgeNodes(8,2) =  1.0;
-  wedgeNodes(9,0) =  0.25; wedgeNodes(9,1) =  0.0;  wedgeNodes(9,2) =  0.75;
-  wedgeNodes(10,0)=  0.0;  wedgeNodes(10,1)=  0.5;  wedgeNodes(10,2)= -0.25;
-  wedgeNodes(11,0)=  0.5;  wedgeNodes(11,1)=  0.5;  wedgeNodes(11,2)=  0.0;
+      // for virtual function, value and point types are declared in the class
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HCURL_WEDGE_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> wedgeBasis;
 
-
-
-  // Generic array for the output values; needs to be properly resized depending on the operator type
-  FieldContainer<double> vals;
+  *outStream 
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 1: Basis creation, exception testing                                   |\n"
+    << "===============================================================================\n";
 
   try{
+    ordinal_type nthrow = 0, ncatch = 0;
+#ifdef HAVE_INTREPID2_DEBUG
+    // Define array containing the 4 vertices of the reference WEDGE and its center.
+    DynRankView ConstructWithLabel(wedgeNodes, 12, 3);
+
+    // Generic array for the output values; needs to be properly resized depending on the operator type
+    const auto numFields = wedgeBasis.getCardinality();
+    const auto numPoints = wedgeNodes.dimension(0);
+    const auto spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+
+    DynRankView vals ("vals", numFields, numPoints);
+    DynRankView vals_vec ("vals", numFields, numPoints, spaceDim);
+
+    {
     // exception #1: GRAD cannot be applied to HCURL functions 
     // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
-    vals.resize(wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 3 );
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_GRAD), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals_vec, wedgeNodes, OPERATOR_GRAD) );
 
     // exception #2: DIV cannot be applied to HCURL functions
     // resize vals to rank-2 container with dimensions (num. basis functions, num. points)
-    vals.resize(wedgeBasis.getCardinality(), wedgeNodes.dimension(0));
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_DIV), throwCounter, nException );
-        
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_DIV) );
+    }   
     // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
     // getDofTag() to access invalid array elements thereby causing bounds check exception
+    {
     // exception #3
-    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(3,0,0), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofOrdinal(3,0,0) );
     // exception #4
-    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(1,1,1), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofOrdinal(1,1,1) );
     // exception #5
-    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(0,4,1), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofOrdinal(0,4,1) );
     // exception #6
-    INTREPID_TEST_COMMAND( wedgeBasis.getDofTag(10), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(10) );
     // exception #7
-    INTREPID_TEST_COMMAND( wedgeBasis.getDofTag(-1), throwCounter, nException );
-    
-#ifdef HAVE_INTREPID2_DEBUG
-    // Exceptions 8- test exception handling with incorrectly dimensioned input/output arrays
-    // exception #8: input points array must be of rank-2
-    FieldContainer<double> badPoints1(4, 5, 3);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
-    
-    // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-    FieldContainer<double> badPoints2(4, 2);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
-    
-    // exception #10 output values must be of rank-3 for OPERATOR_VALUE
-    FieldContainer<double> badVals1(4, 3);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
- 
-    // exception #11 output values must be of rank-3 for OPERATOR_CURL
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_CURL), throwCounter, nException );
-    
-    // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-    FieldContainer<double> badVals2(wedgeBasis.getCardinality() + 1, wedgeNodes.dimension(0), 3);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals2, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
-    
-    // exception #13 incorrect 1st dimension of output array (must equal number of points)
-    FieldContainer<double> badVals3(wedgeBasis.getCardinality(), wedgeNodes.dimension(0) + 1, 3);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals3, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getDofTag(-1) );
+    }
 
+    // Exceptions 8- test exception handling with incorrectly dimensioned input/output arrays
+    {
+    // exception #8: input points array must be of rank-2
+      DynRankView ConstructWithLabel(badPoints1, 4, 5, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
+    } 
+    {
+    // exception #9 dimension 1 in the input point array must equal space dimension of the cell
+      DynRankView ConstructWithLabel(badPoints2, 4, 2);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE) );
+    }
+    {
+    // exception #10 output values must be of rank-3 for OPERATOR_VALUE
+      DynRankView ConstructWithLabel(badVals1, 4, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_VALUE) );
+    // exception #11 output values must be of rank-3 for OPERATOR_CURL
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_CURL) );
+    }
+    { 
+    // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
+      DynRankView ConstructWithLabel(badVals2, numFields + 1, numPoints, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals2, wedgeNodes, OPERATOR_VALUE) );
+    }
+    {
+    // exception #13 incorrect 1st dimension of output array (must equal number of points)
+      DynRankView ConstructWithLabel(badVals3, numFields, numPoints + 1, 3);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals3, wedgeNodes, OPERATOR_VALUE) );
+    }
+    {
     // exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
-    FieldContainer<double> badVals4(wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 4);
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+      DynRankView ConstructWithLabel(badVals4, numFields, numPoints, 4);
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_VALUE) );
     
     // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
-    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_CURL), throwCounter, nException );
+      INTREPID2_TEST_ERROR_EXPECTED( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_CURL) );
+    }
 #endif
-    
-  }
-  catch (std::logic_error err) {
+  // Check if number of thrown exceptions matches the one we expect 
+    if (nthrow != ncatch) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+    }
+  } catch (std::logic_error err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
     *outStream << err.what() << '\n';
     *outStream << "-------------------------------------------------------------------------------" << "\n\n";
     errorFlag = -1000;
   };
-  
-  // Check if number of thrown exceptions matches the one we expect 
-  // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
-  if (throwCounter != nException) {
-    errorFlag++;
-    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-  }
-  
-  *outStream \
+
+  *outStream 
     << "\n"
-    << "===============================================================================\n"\
-    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"\
+    << "===============================================================================\n"
+    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
     << "===============================================================================\n";
   
   try{
-    std::vector<std::vector<int> > allTags = wedgeBasis.getAllDofTags();
-    
+    const auto numFields = wedgeBasis.getCardinality();
+    const auto allTags = wedgeBasis.getAllDofTags();
+
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
-    for (unsigned i = 0; i < allTags.size(); i++) {
-      int bfOrd  = wedgeBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
+    const auto dofTagSize = allTags.dimension(0);
+    for (auto i = 0; i < dofTagSize; ++i) {
+      auto bfOrd  = wedgeBasis.getDofOrdinal(allTags(i,0), allTags(i,1), allTags(i,2));
       
-      std::vector<int> myTag = wedgeBasis.getDofTag(bfOrd);
-       if( !( (myTag[0] == allTags[i][0]) &&
-              (myTag[1] == allTags[i][1]) &&
-              (myTag[2] == allTags[i][2]) &&
-              (myTag[3] == allTags[i][3]) ) ) {
+      const auto myTag = wedgeBasis.getDofTag(bfOrd);
+       if( !( (myTag(0) == allTags(i,0)) &&
+              (myTag(1) == allTags(i,1)) &&
+              (myTag(2) == allTags(i,2)) &&
+              (myTag(3) == allTags(i,3)) ) ) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " getDofOrdinal( {" 
-          << allTags[i][0] << ", " 
-          << allTags[i][1] << ", " 
-          << allTags[i][2] << ", " 
-          << allTags[i][3] << "}) = " << bfOrd <<" but \n";   
+          << allTags(i,0) << ", " 
+          << allTags(i,1) << ", " 
+          << allTags(i,2) << ", " 
+          << allTags(i,3) << "}) = " << bfOrd <<" but \n";   
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "}\n";        
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "}\n";        
       }
     }
     
     // Now do the same but loop over basis functions
-    for( int bfOrd = 0; bfOrd < wedgeBasis.getCardinality(); bfOrd++) {
-      std::vector<int> myTag  = wedgeBasis.getDofTag(bfOrd);
-      int myBfOrd = wedgeBasis.getDofOrdinal(myTag[0], myTag[1], myTag[2]);
+    for( auto bfOrd = 0; bfOrd < numFields; ++bfOrd) {
+      const auto  myTag  = wedgeBasis.getDofTag(bfOrd);
+      const auto myBfOrd = wedgeBasis.getDofOrdinal(myTag(0), myTag(1), myTag(2));
       if( bfOrd != myBfOrd) {
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
         *outStream << " getDofTag(" << bfOrd << ") = { "
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "} but getDofOrdinal({" 
-          << myTag[0] << ", " 
-          << myTag[1] << ", " 
-          << myTag[2] << ", " 
-          << myTag[3] << "} ) = " << myBfOrd << "\n";
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "} but getDofOrdinal({" 
+          << myTag(0) << ", " 
+          << myTag(1) << ", " 
+          << myTag(2) << ", " 
+          << myTag(3) << "} ) = " << myBfOrd << "\n";
       }
     }
-  }
-  catch (std::logic_error err){
+  } catch (std::logic_error err){
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
   
-  *outStream \
+  *outStream
     << "\n"
-    << "===============================================================================\n"\
-    << "| TEST 3: correctness of basis function values                                |\n"\
+    << "===============================================================================\n"
+    << "| TEST 3: correctness of basis function values                                |\n"
     << "===============================================================================\n";
   
   outStream -> precision(20);
   
   // VALUE: Each row pair gives the 9x3 correct basis set values at an evaluation point: (P,F,D) layout
-  double basisValues[] = {
+  const ValueType basisValues[] = {
     1.00000, 0, 0, 0, 0, 0, 0, -1.00000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
     0, 0.500000, 0, 0, 0, 0, 0, 0, 1.00000, 1.00000, 0, 0, 1.00000, 0, 0, \
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.500000, 0, 0, 0, 0, \
@@ -306,7 +311,7 @@ namespace Test {
   };
   
   // CURL: each row pair gives the 9x3 correct values of the curls of the 9 basis functions: (P,F,D) layout
-  double basisCurls[] = {  
+  const ValueType basisCurls[] = {  
     0, -0.500000, 2.00000, 0, 0, 2.00000, -0.500000, 0, 2.00000, 0, \
     0.500000, 0, 0, 0, 0, 0.500000, 0, 0, -0.500000, 0.500000, 0, 0, \
     -0.500000, 0, 0.500000, 0, 0, 0.500000, -0.500000, 2.00000, 0.500000, \
@@ -346,59 +351,81 @@ namespace Test {
   };
   
   try{
+    
+    DynRankView ConstructWithLabel(wedgeNodesHost, 12, 3);
+    wedgeNodesHost(0,0) =  0.0;  wedgeNodesHost(0,1) =  0.0;  wedgeNodesHost(0,2) = -1.0;
+    wedgeNodesHost(1,0) =  1.0;  wedgeNodesHost(1,1) =  0.0;  wedgeNodesHost(1,2) = -1.0;
+    wedgeNodesHost(2,0) =  0.0;  wedgeNodesHost(2,1) =  1.0;  wedgeNodesHost(2,2) = -1.0;
+    wedgeNodesHost(3,0) =  0.0;  wedgeNodesHost(3,1) =  0.0;  wedgeNodesHost(3,2) =  1.0;
+    wedgeNodesHost(4,0) =  1.0;  wedgeNodesHost(4,1) =  0.0;  wedgeNodesHost(4,2) =  1.0;
+    wedgeNodesHost(5,0) =  0.0;  wedgeNodesHost(5,1) =  1.0;  wedgeNodesHost(5,2) =  1.0;
+  
+    wedgeNodesHost(6,0) =  0.25; wedgeNodesHost(6,1) =  0.5;  wedgeNodesHost(6,2) = -1.0;
+    wedgeNodesHost(7,0) =  0.5;  wedgeNodesHost(7,1) =  0.25; wedgeNodesHost(7,2) =  0.0;
+    wedgeNodesHost(8,0) =  0.25; wedgeNodesHost(8,1) =  0.25; wedgeNodesHost(8,2) =  1.0;
+    wedgeNodesHost(9,0) =  0.25; wedgeNodesHost(9,1) =  0.0;  wedgeNodesHost(9,2) =  0.75;
+    wedgeNodesHost(10,0)=  0.0;  wedgeNodesHost(10,1)=  0.5;  wedgeNodesHost(10,2)= -0.25;
+    wedgeNodesHost(11,0)=  0.5;  wedgeNodesHost(11,1)=  0.5;  wedgeNodesHost(11,2)=  0.0;
+
+    const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
         
     // Dimensions for the output arrays:
-    int numFields = wedgeBasis.getCardinality();
-    int numPoints = wedgeNodes.dimension(0);
-    int spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = wedgeBasis.getCardinality();
+    const ordinal_type numPoints = wedgeNodes.dimension(0);
+    const ordinal_type spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
     
-    // Generic array for values and curls that will be properly sized before each call
-    FieldContainer<double> vals;
-    
+    {
     // Check VALUE of basis functions: resize vals to rank-3 container:
-    vals.resize(numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_VALUE);
-    for (int i = 0; i < numFields; i++) {
-      for (int j = 0; j < numPoints; j++) {
-        for (int k = 0; k < spaceDim; k++) {
+    auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
+    for (auto i = 0; i < numFields; ++i) {
+      for (auto j = 0; j < numPoints; ++j) {
+        for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed value: " << vals(i,j,k)
+             *outStream << "}  computed value: " << vals_host(i,j,k)
                << " but reference value: " << basisValues[l] << "\n";
             }
          }
       }
     }
+    }
 
+    {
     // Check CURL of basis function: resize vals to rank-3 container
-    vals.resize(numFields, numPoints, spaceDim);
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_CURL);
-    for (int i = 0; i < numFields; i++) {
-      for (int j = 0; j < numPoints; j++) {
-        for (int k = 0; k < spaceDim; k++) {
+    auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
+    for (auto i = 0; i < numFields; ++i) {
+      for (auto j = 0; j < numPoints; ++j) {
+        for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID_TOL) {
+           const auto l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed curl component: " << vals(i,j,k)
+             *outStream << "}  computed curl component: " << vals_host(i,j,k)
                << " but reference curl component: " << basisCurls[l] << "\n";
             }
          }
       }
+    }
     }
     
    }    
@@ -409,9 +436,6 @@ namespace Test {
     errorFlag = -1000;
   };
 
-   Kokkos::finalize();
-  
-*/
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
