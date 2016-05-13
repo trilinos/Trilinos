@@ -235,6 +235,187 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == false || A->isFillActive() == true, std::runtime_error, "");
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, leftScale, M, Scalar, LO, GO, Node )
+  {
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+    typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+
+    LO NumMyElements = map->getNodeNumElements();
+    GO NumGlobalElements = map->getGlobalNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+    for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
+       if (MyGlobalElements[i] == 0) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (2.0, -1.0));
+       }
+       else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0));
+       }
+       else {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
+       }
+    }
+    A->fillComplete();
+    TEST_EQUALITY(A->isFillComplete(), true);
+
+    RCP<VectorClass> s = VectorFactoryClass::Build(map, true);
+    Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
+    for(LO i = 0; i < NumMyElements; ++i) {
+      sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+    }
+
+    A->leftScale(*s);
+
+    for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
+      if (MyGlobalElements[i] == 0) {
+        Teuchos::ArrayView< const LO > indices;
+        Teuchos::ArrayView< const Scalar > values;
+        A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+        TEST_EQUALITY(indices.size(), 2);
+        TEST_EQUALITY(values[0], 0.0);
+        TEST_EQUALITY(values[1], 0.0);
+      }
+      else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+        if(map->isNodeGlobalElement(MyGlobalElements[i])) {
+          Teuchos::ArrayView< const LO > indices;
+          Teuchos::ArrayView< const Scalar > values;
+          A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+          TEST_EQUALITY(indices.size(), 2);
+          TEST_EQUALITY(values[0], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+          TEST_EQUALITY(values[1], Teuchos::as<Scalar>(2.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+        }
+      }
+      else {
+        // skip check on first row of each processor due to different local ordering (communication overlap)
+        if(map->isNodeGlobalElement(MyGlobalElements[i]) && map->getLocalElement(MyGlobalElements[i]) != 0) {
+          Teuchos::ArrayView< const LO > indices;
+          Teuchos::ArrayView< const Scalar > values;
+          A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+          TEST_EQUALITY(indices.size(), 3);
+          TEST_EQUALITY(values[0], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+          TEST_EQUALITY(values[1], Teuchos::as<Scalar>(2.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+          TEST_EQUALITY(values[2], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+        }
+      }
+    }
+
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( CrsMatrix, rightScale, M, Scalar, LO, GO, Node )
+  {
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+    typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+
+    // get a comm and node
+    RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+    M testMap(1,0,comm);
+    Xpetra::UnderlyingLib lib = testMap.lib();
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    TEST_EQUALITY(map->getGlobalNumElements(), nEle);
+
+    LO NumMyElements = map->getNodeNumElements();
+    GO NumGlobalElements = map->getGlobalNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 3);
+    TEUCHOS_TEST_FOR_EXCEPTION(A->isFillComplete() == true || A->isFillActive() == false, std::runtime_error, "");
+
+    for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
+       if (MyGlobalElements[i] == 0) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (2.0, -1.0));
+       }
+       else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i]),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0));
+       }
+       else {
+         A->insertGlobalValues(MyGlobalElements[i],
+                               Teuchos::tuple<GO>(MyGlobalElements[i] -1, MyGlobalElements[i], MyGlobalElements[i] +1),
+                               Teuchos::tuple<Scalar> (-1.0, 2.0, -1.0));
+       }
+    }
+    A->fillComplete();
+    TEST_EQUALITY(A->isFillComplete(), true);
+
+    RCP<VectorClass> s = VectorFactoryClass::Build(map, true);
+    Teuchos::ArrayRCP< Scalar > sd = s->getDataNonConst(0);
+    for(LO i = 0; i < NumMyElements; ++i) {
+      sd[i] = Teuchos::as<Scalar>(map->getGlobalElement(i));
+    }
+
+    A->rightScale(*s);
+
+    for (size_t i = 0; i < static_cast<size_t> (NumMyElements); i++) {
+      if (MyGlobalElements[i] == 0) {
+        Teuchos::ArrayView< const LO > indices;
+        Teuchos::ArrayView< const Scalar > values;
+        A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+        TEST_EQUALITY(indices.size(), 2);
+        TEST_EQUALITY(values[0], 0.0);
+        TEST_EQUALITY(values[1], -1.0);
+      }
+      else if (MyGlobalElements[i] == NumGlobalElements - 1) {
+        if(map->isNodeGlobalElement(MyGlobalElements[i])) {
+          Teuchos::ArrayView< const LO > indices;
+          Teuchos::ArrayView< const Scalar > values;
+          A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+          TEST_EQUALITY(indices.size(), 2);
+          TEST_EQUALITY(values[0], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]-1));
+          TEST_EQUALITY(values[1], Teuchos::as<Scalar>(2.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+        }
+      }
+      else {
+        // skip check on first row of each processor due to different local ordering (communication overlap)
+        if(map->isNodeGlobalElement(MyGlobalElements[i]) && map->getLocalElement(MyGlobalElements[i]) != 0) {
+          Teuchos::ArrayView< const LO > indices;
+          Teuchos::ArrayView< const Scalar > values;
+          A->getLocalRowView(map->getLocalElement(MyGlobalElements[i]), indices, values);
+          TEST_EQUALITY(indices.size(), 3);
+          TEST_EQUALITY(values[0], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]-1));
+          TEST_EQUALITY(values[1], Teuchos::as<Scalar>(2.0) * Teuchos::as<Scalar>(MyGlobalElements[i]));
+          TEST_EQUALITY(values[2], Teuchos::as<Scalar>(-1.0) * Teuchos::as<Scalar>(MyGlobalElements[i]+1));
+        }
+      }
+    }
+
+  }
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Constructor_Epetra, Scalar, LO, GO, Node )
   {
 #ifdef HAVE_XPETRA_EPETRA
@@ -1274,7 +1455,9 @@ namespace {
 // for common tests (Epetra and Tpetra...)
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, Apply , M##LO##GO##Node , SC, LO, GO, Node ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, ReplaceGlobalAndLocalValues, M##LO##GO##Node , SC, LO, GO, Node )
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, ReplaceGlobalAndLocalValues, M##LO##GO##Node , SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, leftScale, M##LO##GO##Node , SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(   CrsMatrix, rightScale, M##LO##GO##Node , SC, LO, GO, Node )
 // for Tpetra tests only
 #define UNIT_TEST_GROUP_ORDINAL_TPETRAONLY( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node ) \

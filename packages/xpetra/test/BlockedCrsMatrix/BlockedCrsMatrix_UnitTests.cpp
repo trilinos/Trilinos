@@ -1394,6 +1394,210 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, getLocalDiagCopy, M, MA, Sc
   TEST_EQUALITY(bCheck, true);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, leftScale, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Xpetra::Vector<Scalar,LO,GO,Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar,LO,GO,Node> VectorFactoryClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  TEST_EQUALITY(bop->Rows(), noBlocks);
+  TEST_EQUALITY(bop->Cols(), noBlocks);
+
+  Teuchos::RCP<VectorClass> v1 = VectorFactoryClass::Build(bop->getRangeMap(),true);
+  bop->getLocalDiagCopy(*v1);
+
+  Teuchos::RCP<BlockedCrsMatrixClass> bop_nonconst = Teuchos::rcp_const_cast<BlockedCrsMatrixClass>(bop);
+
+  Teuchos::RCP<VectorClass> s = VectorFactoryClass::Build(bop_nonconst->getRangeMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  bop_nonconst->leftScale(*s);
+
+  Teuchos::RCP<VectorClass> v2 = VectorFactoryClass::Build(bop_nonconst->getRangeMap(),true);
+  bop_nonconst->getLocalDiagCopy(*v2);
+
+  Teuchos::ArrayRCP< const Scalar > v1d = v1->getData(0);
+  Teuchos::ArrayRCP< const Scalar > v2d = v2->getData(0);
+  bool bCheck = true;
+  for(int i=0; i<20; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+
+  // reordered Xpetra operator
+  bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(8, *comm);
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 [ 2 3 4 ] 5 ] [6 7] ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  Teuchos::RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop_nonconst =
+      Teuchos::rcp_const_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop);
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
+
+  s = VectorFactoryClass::Build(brop->getRangeMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  v1 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v1);
+
+  brop_nonconst->leftScale(*s);
+
+  v2 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v2);
+
+  v1d = v1->getData(0);
+  v2d = v2->getData(0);
+  bCheck = true;
+  for(int i=0; i<640; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+
+  // reordered Thyra operator
+  bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(8, *comm);
+
+  brop = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  brop_nonconst = Teuchos::rcp_const_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop);
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  s = VectorFactoryClass::Build(brop->getRangeMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  v1 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v1);
+
+  brop_nonconst->leftScale(*s);
+
+  v2 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v2);
+
+  v1d = v1->getData(0);
+  v2d = v2->getData(0);
+  bCheck = true;
+  for(int i=0; i<640; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, rightScale, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Xpetra::Vector<Scalar,LO,GO,Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar,LO,GO,Node> VectorFactoryClass;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  TEST_EQUALITY(bop->Rows(), noBlocks);
+  TEST_EQUALITY(bop->Cols(), noBlocks);
+
+  Teuchos::RCP<VectorClass> v1 = VectorFactoryClass::Build(bop->getRangeMap(),true);
+  bop->getLocalDiagCopy(*v1);
+
+  Teuchos::RCP<BlockedCrsMatrixClass> bop_nonconst = Teuchos::rcp_const_cast<BlockedCrsMatrixClass>(bop);
+
+  Teuchos::RCP<VectorClass> s = VectorFactoryClass::Build(bop_nonconst->getDomainMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  bop_nonconst->rightScale(*s);
+
+  Teuchos::RCP<VectorClass> v2 = VectorFactoryClass::Build(bop_nonconst->getRangeMap(),true);
+  bop_nonconst->getLocalDiagCopy(*v2);
+
+  Teuchos::ArrayRCP< const Scalar > v1d = v1->getData(0);
+  Teuchos::ArrayRCP< const Scalar > v2d = v2->getData(0);
+  bool bCheck = true;
+  for(int i=0; i<20; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+
+  // reordered Xpetra operator
+  bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(8, *comm);
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [ 1 [ 2 3 4 ] 5 ] [6 7] ]");
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  Teuchos::RCP<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop_nonconst =
+      Teuchos::rcp_const_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop);
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
+
+  s = VectorFactoryClass::Build(brop->getDomainMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  v1 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v1);
+
+  brop_nonconst->rightScale(*s);
+
+  v2 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v2);
+
+  v1d = v1->getData(0);
+  v2d = v2->getData(0);
+  bCheck = true;
+  for(int i=0; i<640; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+
+  // reordered Thyra operator
+  bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(8, *comm);
+
+  brop = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  brop_nonconst = Teuchos::rcp_const_cast<Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(brop);
+
+  TEST_EQUALITY(brop->Rows(),3);
+  TEST_EQUALITY(brop->Cols(),3);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+  s = VectorFactoryClass::Build(brop->getDomainMap(),true);
+  s->putScalar(Teuchos::ScalarTraits<Scalar>::one() * Teuchos::as<Scalar>(2.0));
+
+  v1 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v1);
+
+  brop_nonconst->rightScale(*s);
+
+  v2 = VectorFactoryClass::Build(brop_nonconst->getRangeMap(),true);
+  brop_nonconst->getLocalDiagCopy(*v2);
+
+  v1d = v1->getData(0);
+  v2d = v2->getData(0);
+  bCheck = true;
+  for(int i=0; i<640; i++)  if(v1d[i] * Teuchos::as<Scalar>(2.0) != v2d[i]) bCheck = false;
+  TEST_EQUALITY(bCheck, true);
+  TEST_EQUALITY(v1->norm1() * Teuchos::as<Scalar>(2.0), v2->norm1());
+  TEST_EQUALITY(v1->norm2() * Teuchos::as<Scalar>(2.0), v2->norm2());
+  TEST_EQUALITY(v1->normInf() * Teuchos::as<Scalar>(2.0), v2->normInf());
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, deepCopy, M, MA, Scalar, LO, GO, Node )
 {
   typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
@@ -1843,6 +2047,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, ReorderBlockOperatorApply2Thyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, Apply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, getLocalDiagCopy, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, leftScale, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, rightScale, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, deepCopy, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
