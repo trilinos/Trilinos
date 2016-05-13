@@ -749,6 +749,45 @@ namespace Xpetra {
       }
     }
 
+    //! Left scale matrix using the given vector entries
+    void leftScale (const Vector& x) {
+      TEUCHOS_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::leftScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
+
+      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+
+      for (size_t row = 0; row < Rows(); ++row) {
+        for (size_t col = 0; col < Cols(); ++col) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+            bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
+            RCP<Vector> xx = rangemaps_->ExtractVector(rcpx,row,bThyraMode);
+            getMatrix(row,col)->leftScale(*xx);
+          }
+        }
+      }
+    }
+
+    //! Right scale matrix using the given vector entries
+    void rightScale (const Vector& x) {
+      TEUCHOS_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*domainmaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::rightScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
+
+      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+
+      for (size_t col = 0; col < Cols(); ++col) {
+        for (size_t row = 0; row < Rows(); ++row) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+            bool bThyraMode = domainmaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
+            RCP<Vector> xx = domainmaps_->ExtractVector(rcpx,col,bThyraMode);
+            getMatrix(row,col)->rightScale(*xx);
+          }
+        }
+      }
+    }
+
+
     //! Get Frobenius norm of the matrix
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
       if (Rows() == 1 && Cols () == 1) {

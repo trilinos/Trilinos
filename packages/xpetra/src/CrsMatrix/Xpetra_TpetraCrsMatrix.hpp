@@ -412,6 +412,18 @@ namespace Xpetra {
       mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
     }
 
+    //! Left scale operator with given vector values
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      XPETRA_MONITOR("TpetraCrsMatrix::leftScale");
+      mtx_->leftScale(*(toTpetra(x)));
+    }
+
+    //! Right scale operator with given vector values
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      XPETRA_MONITOR("TpetraCrsMatrix::rightScale");
+      mtx_->rightScale(*(toTpetra(x)));
+    }
+
     //! Implements DistObject interface
     //{@
 

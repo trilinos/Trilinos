@@ -326,6 +326,16 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
+    //! Left scale operator with given vector values
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
+    }
+
+    //! Right scale operator with given vector values
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");
+    }
+
     //! Implements DistObject interface
     //{@
 
@@ -652,6 +662,10 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
 
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+
+
     //! Implements DistObject interface
     //{@
 
@@ -970,6 +984,9 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const
     {}
+
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
 
     //! Implements DistObject interface
     //{@
