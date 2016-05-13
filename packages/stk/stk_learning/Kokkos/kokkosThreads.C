@@ -134,6 +134,31 @@ void parallel_reduce(size_t n, const FUNCTOR &functor, VAL_TYPE &sum)
 #define STK_INLINE KOKKOS_INLINE_FUNCTION
 
 
+namespace NgpMatrixComputations
+{
+    void initialize_matrix_to_row_values(NgpMatrix matrix)
+    {
+        stk::parallel_for(matrix.num_rows(),
+            STK_LAMBDA(size_t row)
+            {
+                const size_t numCols = matrix.num_cols();
+                for(size_t col=0; col<numCols; col++)
+                    matrix.device_get(row, col) = row + 1;
+            }
+        );
+    }
+    void compute_mat_vec(NgpMatrix matrix, NgpVector vecIn, NgpVector vecOut)
+    {
+        stk::parallel_for(matrix.num_rows(),
+            STK_LAMBDA(size_t row)
+            {
+                const size_t numCols = matrix.num_cols();
+                for(size_t col = 0; col < numCols; col++)
+                    vecOut.device_get(row) += matrix.device_get(row, col) * vecIn.device_get(col);
+            }
+        );
+    }
+};
 
 void runMatVecThreadedTest()
 {
@@ -143,23 +168,10 @@ void runMatVecThreadedTest()
     NgpVector vecIn(numCols, 1);
     NgpVector vecOut(numRows);
 
-    stk::parallel_for(numRows,
-        STK_LAMBDA(size_t row)
-        {
-            for(size_t col=0; col<numCols; col++)
-                matrix.device_get(row, col) = row + 1;
-        }
-    );
+    NgpMatrixComputations::initialize_matrix_to_row_values(matrix);
 
     double startTime = stk::wall_time();
-    stk::parallel_for(numRows,
-        STK_LAMBDA(size_t row)
-        {
-            const size_t numCols = matrix.num_cols();
-            for(size_t col = 0; col < numCols; col++)
-                vecOut.device_get(row) += matrix.device_get(row, col) * vecIn.device_get(col);
-        }
-    );
+    NgpMatrixComputations::compute_mat_vec(matrix, vecIn, vecOut);
     double endTime = stk::wall_time();
 
     std::cerr << "Wall Time: " << (endTime - startTime) << std::endl;
