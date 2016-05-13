@@ -34,6 +34,8 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
 
+#include <stk_util/stk_config.h>
+
 #include <string>
 
 #include <utility>
@@ -143,6 +145,7 @@ struct topology
   unsigned dimension() const;
 
   /// how many nodes define this topology
+  STK_FUNCTION
   unsigned num_nodes() const;
 
   /// how many nodes are vertices
@@ -352,11 +355,13 @@ struct topology
   //constructors
   //***************************************************************************
   /// default construct to invalid
+  STK_FUNCTION
   topology()
     : m_value(INVALID_TOPOLOGY)
   {}
 
   /// implicit construct from a topology_t
+  STK_FUNCTION
   topology(topology_t topo)
     : m_value(topo)
   {}
