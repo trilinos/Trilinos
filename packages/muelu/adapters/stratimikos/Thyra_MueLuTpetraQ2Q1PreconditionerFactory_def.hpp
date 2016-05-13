@@ -425,10 +425,10 @@ namespace Thyra {
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
-    RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix();
-    RCP<CrsMatrix> fA_12_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_21_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB)->getCrsMatrix();
+    RCP<Matrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA);
+    RCP<Matrix> fA_12_crs = Teuchos::null;
+    RCP<Matrix> fA_21_crs = Teuchos::null;
+    RCP<Matrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB);
 
     // Build the large filtered matrix which requires strided maps
     std::vector<size_t> stridingInfo(1, 1);
