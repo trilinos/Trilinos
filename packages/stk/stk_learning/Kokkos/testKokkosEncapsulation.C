@@ -160,13 +160,19 @@ namespace NgpMatrixComputations
             }
         );
     }
-};
+}
 
 
-void runMatVecTest()
+void report_bandwidth(double numDoubles, double time)
 {
-    const size_t numRows = 3;
-    const size_t numCols = 2;
+    double matVecSizeGb = numDoubles * sizeof(double) / (1<<30);
+    std::cerr << "\t\t\t\t\tBandwidth: " << matVecSizeGb / time << " GB/s" << std::endl;
+}
+
+TEST_F(MTK_Kokkos, MatrixVectorMultiply)
+{
+    const size_t numRows = 30000;
+    const size_t numCols = 2000;
     stk::NgpMatrix matrix(numRows, numCols);
     stk::NgpVector vecIn(numCols, 1);
     stk::NgpVector vecOut(numRows);
@@ -177,7 +183,7 @@ void runMatVecTest()
     NgpMatrixComputations::compute_mat_vec(matrix, vecIn, vecOut);
     double endTime = stk::wall_time();
 
-    std::cerr << "Wall Time: " << (endTime - startTime) << std::endl;
+    report_bandwidth(numRows*numCols + numRows + numCols, endTime - startTime);
 
     vecOut.copy_device_to_host();
     for(size_t i = 0; i < numRows; i++)
@@ -185,11 +191,6 @@ void runMatVecTest()
         double goldAnswer = (i + 1) * numCols;
         EXPECT_EQ(goldAnswer, vecOut.host_get(i));
     }
-}
-
-TEST_F(MTK_Kokkos, MatrixVectorMultiply)
-{
-    runMatVecTest();
 }
 
 
@@ -211,9 +212,9 @@ private:
     stk::NgpVector mVector;
 };
 
-void runSumOverVectorTest()
+TEST_F(MTK_Kokkos, SumOverVector)
 {
-    size_t sizeOfVector = 100000;
+    size_t sizeOfVector = 1000000;
     double initVal = 1.0;
     stk::NgpVector vec(sizeOfVector, 1.0);
 
@@ -222,13 +223,8 @@ void runSumOverVectorTest()
     stk::parallel_reduce(sizeOfVector, SumOverVectorFunctor(vec), sum);
     double endTime = stk::wall_time();
 
-    std::cerr << "Wall Time: " << (endTime - startTime) << std::endl;
+    report_bandwidth(sizeOfVector, endTime - startTime);
 
     EXPECT_EQ(sizeOfVector*initVal, sum);
-}
-
-TEST_F(MTK_Kokkos, SumOverVector)
-{
-    runSumOverVectorTest();
 }
 
