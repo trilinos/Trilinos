@@ -1,5 +1,3 @@
-#ifndef INTREPID2_HGRAD_QUAD_C2_FEMDEF_HPP
-#define INTREPID2_HGRAD_QUAD_C2_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -152,6 +150,8 @@ namespace Intrepid2 {
       break;
     }
     case OPERATOR_D2 : {
+      const auto x = input(0);
+      const auto y = input(1);
       // output is a rank-3 array with dimensions (basisCardinality_, dim0, D2Cardinality=3) 
       output(0, 0) = 0.5*(-1.0 + y)*y;
       output(0, 1) = 0.25 - 0.5*y + x*(-0.5 + 1.*y);
@@ -191,6 +191,8 @@ namespace Intrepid2 {
       break;
     }
     case OPERATOR_D3 : {
+      const auto x = input(0);
+      const auto y = input(1);
       output(0, 0) = 0.0;
       output(0, 1) =-0.5 + y;
       output(0, 2) =-0.5 + x;
@@ -398,11 +400,11 @@ getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   
   // Verify arguments
 #ifdef HAVE_INTREPID2_DEBUG
-  Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                       inputPoints,
-                                                       operatorType,
-                                                       obj_->getBaseCellTopology(),
-                                                       obj_->getCardinality() );
+  Intrepid2::getValues_HGRAD_Args(outputValues,
+                                  inputPoints,
+                                  operatorType,
+                                  obj_->getBaseCellTopology(),
+                                  obj_->getCardinality() );
 #endif
   
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
@@ -432,7 +434,7 @@ getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties.
       break;
     } 
     case OPERATOR_DIV: {
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+     INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_QUAD_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 2D");
       break;
     } 
@@ -464,7 +466,7 @@ getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties.
       break;
     }
     default: {
-      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
+      INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_QUAD_C2_FEM): Invalid operator type");
     }
   }
