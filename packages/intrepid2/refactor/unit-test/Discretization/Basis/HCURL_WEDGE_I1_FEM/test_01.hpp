@@ -40,51 +40,58 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   test_01.cpp
+/** \file   test_01.hpp
     \brief  Unit tests for the Intrepid2::C_WEDGE_I1_FEM class.
-    \author Created by P. Bochev, D. Ridzal, and K. Peterson.
+    \author Created by P. Bochev, D. Ridzal, K. Peterson, and Kyungjoo Kim.
 */
-#include "Intrepid2_FieldContainer.hpp"
+
+#include "Intrepid2_config.h"
+
+#ifdef HAVE_INTREPID2_DEBUG
+#define INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
+#endif
+
 #include "Intrepid2_HCURL_WEDGE_I1_FEM.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 
-using namespace std;
-using namespace Intrepid2;
-
-#define INTREPID_TEST_COMMAND( S , throwCounter, nException )                                                              \
-{                                                                                                                          \
-  ++nException;                                                                                                            \
-  try {                                                                                                                    \
-    S ;                                                                                                                    \
-  }                                                                                                                        \
-  catch (std::logic_error err) {                                                                                           \
-      ++throwCounter;                                                                                                      \
-      *outStream << "Expected Error " << nException << " -------------------------------------------------------------\n"; \
-      *outStream << err.what() << '\n';                                                                                    \
-      *outStream << "-------------------------------------------------------------------------------" << "\n\n";           \
-  };                                                                                                                       \
-}
-
-int main(int argc, char *argv[]) {
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-   Kokkos::initialize();
-  // This little trick lets us print to std::cout only if
-  // a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
-  Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
-  else
-    outStream = Teuchos::rcp(&bhs, false);
+namespace Intrepid2 {
   
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
-  
+namespace Test {
+    
+#define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
+    try {                                                               \
+      ++nthrow;                                                         \
+      S ;                                                               \
+    }                                                                   \
+    catch (std::logic_error err) {                                      \
+      ++ncatch;                                                         \
+      *outStream << "Expected Error ----------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                 \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
+    }
+
+  template<typename ValueType, typename DeviceSpaceType>
+  int HCURL_WEDGE_I1_FEM_Test01(const bool verbose) {
+      
+    Teuchos::RCP<std::ostream> outStream;
+    Teuchos::oblackholestream bhs; // outputs nothing
+
+    if (verbose)
+      outStream = Teuchos::rcp(&std::cout, false);
+    else
+      outStream = Teuchos::rcp(&bhs, false);
+      
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(std::cout);
+      
+    typedef typename
+      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+      
+    *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+    *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
@@ -103,10 +110,10 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n"\
     << "| TEST 1: Basis creation, exception testing                                   |\n"\
     << "===============================================================================\n";
-  
+  int errorFlag = 0;
+/* 
   // Define basis and error flag
   Basis_HCURL_WEDGE_I1_FEM<double, FieldContainer<double> > wedgeBasis;
-  int errorFlag = 0;
 
   // Initialize throw counter for exception testing
   int nException     = 0;
@@ -401,7 +408,10 @@ int main(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
+
+   Kokkos::finalize();
   
+*/
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
@@ -409,6 +419,8 @@ int main(int argc, char *argv[]) {
   
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-   Kokkos::finalize();
   return errorFlag;
 }
+
+} //end namespace
+} //end namespace
