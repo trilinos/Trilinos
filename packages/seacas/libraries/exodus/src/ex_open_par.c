@@ -362,7 +362,7 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
   return (exoid);
 }
 #else
-/* 
+/*
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */

@@ -145,9 +145,9 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 #include "exodusII.h"
 #if defined(PARALLEL_AWARE_EXODUS)
 
+#include "exodusII_int.h"
 #include <mpi.h>
 #include <stdlib.h>
-#include "exodusII_int.h"
 
 static int warning_output = 0;
 
@@ -591,7 +591,7 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
   return (exoid);
 }
 #else
-/* 
+/*
  * Prevent warning in some versions of ranlib(1) because the object
  * file has no symbols.
  */
