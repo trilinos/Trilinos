@@ -122,12 +122,14 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
     elem_blk_parm->elem_type_val = EX_EL_TRIANGLE;
     if (ndim == 2) { /* 2d TRIs */
       elem_blk_parm->num_sides = 3;
-      if (elem_blk_parm->num_nodes_per_elem == 3) {
+      if (elem_blk_parm->num_nodes_per_elem == 3 ||  /* Tri3 */
+          elem_blk_parm->num_nodes_per_elem == 4) {  /* Tri4 */
         elem_blk_parm->num_nodes_per_side[0] = 2;
         elem_blk_parm->num_nodes_per_side[1] = 2;
         elem_blk_parm->num_nodes_per_side[2] = 2;
       }
-      else if (elem_blk_parm->num_nodes_per_elem == 6) {
+      else if (elem_blk_parm->num_nodes_per_elem == 6 || /* Tri6 */
+               elem_blk_parm->num_nodes_per_elem == 7) { /* Tri7 */
         elem_blk_parm->num_nodes_per_side[0] = 3;
         elem_blk_parm->num_nodes_per_side[1] = 3;
         elem_blk_parm->num_nodes_per_side[2] = 3;
@@ -135,16 +137,18 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
     }
     else if (ndim == 3) {           /* 3d TRIs -- triangular shell*/
       elem_blk_parm->num_sides = 5; /* 2 Faces and 3 Edges */
-      if (elem_blk_parm->num_nodes_per_elem == 3) {
-        elem_blk_parm->num_nodes_per_side[0] = 3;
-        elem_blk_parm->num_nodes_per_side[1] = 3;
+      if (elem_blk_parm->num_nodes_per_elem == 3 ||
+          elem_blk_parm->num_nodes_per_elem == 4) {
+        elem_blk_parm->num_nodes_per_side[0] = elem_blk_parm->num_nodes_per_elem;
+        elem_blk_parm->num_nodes_per_side[1] = elem_blk_parm->num_nodes_per_elem;
         elem_blk_parm->num_nodes_per_side[2] = 2;
         elem_blk_parm->num_nodes_per_side[3] = 2;
         elem_blk_parm->num_nodes_per_side[4] = 2;
       }
-      else if (elem_blk_parm->num_nodes_per_elem == 6) {
-        elem_blk_parm->num_nodes_per_side[0] = 6;
-        elem_blk_parm->num_nodes_per_side[1] = 6;
+      else if (elem_blk_parm->num_nodes_per_elem == 6 ||
+               elem_blk_parm->num_nodes_per_elem == 7) {
+        elem_blk_parm->num_nodes_per_side[0] = elem_blk_parm->num_nodes_per_elem;
+        elem_blk_parm->num_nodes_per_side[1] = elem_blk_parm->num_nodes_per_elem;
         elem_blk_parm->num_nodes_per_side[2] = 3;
         elem_blk_parm->num_nodes_per_side[3] = 3;
         elem_blk_parm->num_nodes_per_side[4] = 3;
@@ -237,7 +241,7 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
     elem_blk_parm->num_sides     = 4;
     /* determine side set node stride */
     if (elem_blk_parm->num_nodes_per_elem == 4 ||
-	elem_blk_parm->num_nodes_per_elem == 5) {
+        elem_blk_parm->num_nodes_per_elem == 5) {
       elem_blk_parm->num_nodes_per_side[0] = 3;
       elem_blk_parm->num_nodes_per_side[1] = 3;
       elem_blk_parm->num_nodes_per_side[2] = 3;
@@ -250,14 +254,14 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 4;
     }
     else if (elem_blk_parm->num_nodes_per_elem == 10 ||
-	     elem_blk_parm->num_nodes_per_elem == 11) {
+             elem_blk_parm->num_nodes_per_elem == 11) {
       elem_blk_parm->num_nodes_per_side[0] = 6;
       elem_blk_parm->num_nodes_per_side[1] = 6;
       elem_blk_parm->num_nodes_per_side[2] = 6;
       elem_blk_parm->num_nodes_per_side[3] = 6;
     }
     else if (elem_blk_parm->num_nodes_per_elem == 14 ||
-	     elem_blk_parm->num_nodes_per_elem == 15) {
+             elem_blk_parm->num_nodes_per_elem == 15) {
       elem_blk_parm->num_nodes_per_side[0] = 7;
       elem_blk_parm->num_nodes_per_side[1] = 7;
       elem_blk_parm->num_nodes_per_side[2] = 7;
@@ -284,8 +288,15 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 6;
       elem_blk_parm->num_nodes_per_side[4] = 6;
     }
+    else if (elem_blk_parm->num_nodes_per_elem == 18) { 
+      elem_blk_parm->num_nodes_per_side[0] = 9;  /* 9-node quad faces */
+      elem_blk_parm->num_nodes_per_side[1] = 9;
+      elem_blk_parm->num_nodes_per_side[2] = 9;
+      elem_blk_parm->num_nodes_per_side[3] = 6;  /* 6-node tri faces */
+      elem_blk_parm->num_nodes_per_side[4] = 6;
+    }
     else if (elem_blk_parm->num_nodes_per_elem == 20 ||
-	     elem_blk_parm->num_nodes_per_elem == 21) {
+             elem_blk_parm->num_nodes_per_elem == 21) {
       elem_blk_parm->num_nodes_per_side[0] = 9;
       elem_blk_parm->num_nodes_per_side[1] = 9;
       elem_blk_parm->num_nodes_per_side[2] = 9;
@@ -306,7 +317,8 @@ int ex_int_get_block_param(int exoid, ex_entity_id id, int ndim,
       elem_blk_parm->num_nodes_per_side[3] = 3;
       elem_blk_parm->num_nodes_per_side[4] = 4;
     }
-    else if (elem_blk_parm->num_nodes_per_elem == 13) {
+    else if (elem_blk_parm->num_nodes_per_elem == 13 ||
+             elem_blk_parm->num_nodes_per_elem == 14) {
       elem_blk_parm->num_nodes_per_side[0] = 6;
       elem_blk_parm->num_nodes_per_side[1] = 6;
       elem_blk_parm->num_nodes_per_side[2] = 6;
