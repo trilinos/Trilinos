@@ -85,7 +85,7 @@ int testElement(const std::string &name)
   stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
     std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '"
-              << name << "'.";
+              << name << "'.\n";
     return 1;
   }
 
