@@ -48,6 +48,8 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_BlockReorderManager.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 
 #include <MueLu_config.hpp>
 
@@ -174,9 +176,100 @@ namespace MueLuTests {
 
   } //DetectDirichletRows
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetDiagonalInverse,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    // blocked diagonal operator (Xpetra)
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrix(lib, 3, comm);
+
+    RCP<const BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
+    TEST_EQUALITY(bA != Teuchos::null, true);
+
+    RCP<Vector> diagInv = Utilities::GetMatrixDiagonalInverse(*bA);
+    Teuchos::ArrayRCP<const Scalar> diagInvData = diagInv->getData(0);
+    for(size_t i = 0; i < diagInv->getLocalLength(); ++i) {
+      if(i >= 0  && i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+      if(i >= 5  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
+      if(i >= 10 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+    }
+    TEST_EQUALITY(diagInv->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
+
+    A = Teuchos::null; bA = Teuchos::null; diagInv = Teuchos::null;
+
+    // blocked diagonal operator (Thyra)
+    A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrixThyra(lib, 3, comm);
+
+    bA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
+    TEST_EQUALITY(bA != Teuchos::null, true);
+
+    diagInv = Utilities::GetMatrixDiagonalInverse(*bA);
+    diagInvData = diagInv->getData(0);
+    for(size_t i = 0; i < diagInv->getLocalLength(); ++i) {
+      if(i >= 0  && i < 5 ) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+      if(i >= 5  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
+      if(i >= 10 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+    }
+    TEST_EQUALITY(diagInv->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
+
+    // reordered blocked diagonal operator (Xpetra)
+    A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrix(lib, 3, comm);
+    Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 2 0] 1 ]");
+    RCP<const BlockedCrsMatrix> bAA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
+    bA = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(buildReorderedBlockedCrsMatrix(brm, bAA));
+
+    TEST_EQUALITY(bA->Rows(),2);
+    TEST_EQUALITY(bA->Cols(),2);
+
+    TEST_EQUALITY(bA->getRangeMapExtractor()->getThyraMode(),false);
+    TEST_EQUALITY(bA->getDomainMapExtractor()->getThyraMode(),false);
+
+    diagInv = Utilities::GetMatrixDiagonalInverse(*bA);
+    diagInvData = diagInv->getData(0);
+    for(size_t i = 0; i < diagInv->getLocalLength(); ++i) {
+      if(i >= 10 && i < 15) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+      if(i >= 15 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
+      if(i >= 0  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+    }
+    TEST_EQUALITY(diagInv->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
+
+
+    // reordered blocked diagonal operator (Thyra)
+    A = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateBlockDiagonalExampleMatrixThyra(lib, 3, comm);
+    brm = Xpetra::blockedReorderFromString("[ [ 2 0] 1 ]");
+    bAA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(A);
+    bA = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(buildReorderedBlockedCrsMatrix(brm, bAA));
+
+    TEST_EQUALITY(bA->Rows(),2);
+    TEST_EQUALITY(bA->Cols(),2);
+
+    TEST_EQUALITY(bA->getRangeMapExtractor()->getThyraMode(),true);
+    TEST_EQUALITY(bA->getDomainMapExtractor()->getThyraMode(),true);
+
+    diagInv = Utilities::GetMatrixDiagonalInverse(*bA);
+    diagInvData = diagInv->getData(0);
+    for(size_t i = 0; i < diagInv->getLocalLength(); ++i) {
+      if(i >= 10 && i < 15) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0),true);
+      if(i >= 15 && i < 20) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(0.5),true);
+      if(i >= 0  && i < 10) TEST_EQUALITY(diagInvData[i] == Teuchos::as<Scalar>(1.0/3.0),true);
+    }
+    TEST_EQUALITY(diagInv->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
+
+  } // GetDiagonalInverse
+
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node)
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node) \
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
