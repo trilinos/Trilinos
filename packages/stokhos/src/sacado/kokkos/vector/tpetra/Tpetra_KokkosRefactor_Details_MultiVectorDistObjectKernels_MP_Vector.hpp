@@ -74,11 +74,11 @@ namespace Details {
             typename IdxView>
   struct PackArraySingleColumn<
     Kokkos::View<Sacado::MP::Vector<DS>*,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>**,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>**,SP...>,
     IdxView >
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>*,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>**,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -122,11 +122,11 @@ namespace Details {
             typename IdxView>
   struct PackArrayMultiColumn<
     Kokkos::View<Sacado::MP::Vector<DS>*,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>**,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>**,SP...>,
     IdxView >
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>*,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>**,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -178,12 +178,12 @@ namespace Details {
             typename ColView>
   struct PackArrayMultiColumnVariableStride<
     Kokkos::View<Sacado::MP::Vector<DS>*,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>**,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>**,SP...>,
     IdxView,
     ColView>
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>*,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>**,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -238,12 +238,12 @@ namespace Details {
             typename IdxView, typename Op>
   struct UnpackArrayMultiColumn<
     Kokkos::View<Sacado::MP::Vector<DS>**,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>*,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>*,SP...>,
     IdxView,
     Op >
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>**,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>*,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>*,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -297,13 +297,13 @@ namespace Details {
             typename IdxView, typename ColView, typename Op>
   struct UnpackArrayMultiColumnVariableStride<
     Kokkos::View<Sacado::MP::Vector<DS>**,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>*,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>*,SP...>,
     IdxView,
     ColView,
     Op>
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>**,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>*,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>*,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -361,12 +361,12 @@ namespace Details {
             typename DstIdxView, typename SrcIdxView>
   struct PermuteArrayMultiColumn<
     Kokkos::View<Sacado::MP::Vector<DS>**,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>**,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>**,SP...>,
     DstIdxView,
     SrcIdxView>
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>**,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>**,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
@@ -423,12 +423,12 @@ namespace Details {
             typename DstColView, typename SrcColView>
   struct PermuteArrayMultiColumnVariableStride<
     Kokkos::View<Sacado::MP::Vector<DS>**,DP...>,
-    Kokkos::View<Sacado::MP::Vector<SS>**,SP...>,
+    Kokkos::View<const Sacado::MP::Vector<SS>**,SP...>,
     DstIdxView, SrcIdxView,
     DstColView, SrcColView >
   {
     typedef Kokkos::View<Sacado::MP::Vector<DS>**,DP...> DstView;
-    typedef Kokkos::View<Sacado::MP::Vector<SS>**,SP...> SrcView;
+    typedef Kokkos::View<const Sacado::MP::Vector<SS>**,SP...> SrcView;
     typedef typename DstView::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
