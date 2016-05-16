@@ -76,7 +76,10 @@ int testElement(const std::string &name)
 
   std::cerr << "Testing element '" << name << "'\n";
   // Currently not supported:
-  if (element->name() == "unknown") {
+  if (element->name() == "unknown" ||
+      element->name() == "tetra14" || element->name() == "tetra15" ||
+      element->name() == "tri7" ||
+      element->name() == "wedge20" || element->name() == "wedge21") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
