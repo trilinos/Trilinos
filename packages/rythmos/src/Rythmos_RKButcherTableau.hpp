@@ -117,6 +117,8 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& b() const { return b_; }
     /** \brief . */
+    virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const { return (isEmbedded_ ) ? bhat_ : b_; }
+    /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const { return c_; }
     /** \brief . */
     virtual int order() const { return order_; }
