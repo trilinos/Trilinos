@@ -39,6 +39,7 @@
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
+#include <numeric>
 #include <assert.h>
 
 #if !defined(NO_CGNS_SUPPORT)
