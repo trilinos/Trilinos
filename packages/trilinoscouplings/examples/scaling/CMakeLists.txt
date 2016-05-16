@@ -16,6 +16,7 @@ IF(Trilinos_ENABLE_SEACAS)
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
+
 ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -30,6 +31,14 @@ ENDIF()
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson2D_p2
+    SOURCES example_Poisson2D_p2.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    NUM_MPI_PROCS 1
+    )
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
