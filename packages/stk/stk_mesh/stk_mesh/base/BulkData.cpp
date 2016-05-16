@@ -7398,6 +7398,7 @@ void BulkData::delete_face_adjacent_element_graph()
 {
     unregister_observer(m_elemElemGraphUpdater);
     delete m_elemElemGraph; m_elemElemGraph = nullptr;
+    delete m_elemElemGraphUpdater; m_elemElemGraphUpdater = nullptr;
 }
 
 stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph()
