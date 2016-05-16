@@ -51,6 +51,9 @@
 *
 *
 *****************************************************************************/
+/* Determine whether compiling against a parallel netcdf... */
+#include "exodusII.h"
+#if defined(PARALLEL_AWARE_EXODUS)
 
 #include "exodusII.h"     // for exerrval, ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
@@ -358,3 +361,10 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
 
   return (exoid);
 }
+#else
+/* 
+ * Prevent warning in some versions of ranlib(1) because the object
+ * file has no symbols.
+ */
+const char exodus_unused_symbol_dummy_1;
+#endif

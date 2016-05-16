@@ -67,8 +67,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.31f
-#define EX_API_VERS_NODOT 631
+#define EX_API_VERS 6.32f
+#define EX_API_VERS_NODOT 632
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT EX_API_VERS_NODOT
@@ -418,6 +418,14 @@ EXODUS_EXPORT int ex_copy(int in_exoid, int out_exoid);
 EXODUS_EXPORT int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                 int run_version);
 
+#if defined(PARALLEL_AWARE_EXODUS)
+#define ex_create_par(path, mode, comp_ws, io_ws, comm, info)                                      \
+  ex_create_par_int(path, mode, comp_ws, io_ws, comm, info, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws,
+                                    MPI_Comm comm, MPI_Info info, int my_version);
+#endif
+
 EXODUS_EXPORT int ex_create_group(int parent_id, const char *group_name);
 
 EXODUS_EXPORT int ex_get_group_id(int parent_id, const char *group_name, int *group_id);
@@ -501,6 +509,14 @@ EXODUS_EXPORT int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type,
 
 EXODUS_EXPORT int ex_get_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var,
                                      int *var_tab);
+
+#if defined(PARALLEL_AWARE_EXODUS)
+#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
+  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
+                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
+#endif
 
 #define ex_open(path, mode, comp_ws, io_ws, version)                                               \
   ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
