@@ -71,11 +71,19 @@ namespace {
 const char *elem_name_from_enum(const E_Type elem_type)
 {
   static const char *elem_names[NULL_EL] = {
-      "SPHERE",  "BAR2",    "BAR3",     "QUAD4",  "QUAD8",   "QUAD9",   "SHELL4",
-      "SHELL8",  "SHELL9",  "TRI3",     "TRI6",   "TSHELL3", "TSHELL6", "HEX8",
-      "HEX20",   "HEX27",   "HEXSHELL", "TET4",   "TET10",   "TET8",    "TET14",
-      "TET15",   "WEDGE6",  "WEDGE15", "WEDGE16", "WEDGE20", "WEDGE21", "PYRAMID5",
-      "PYRAMID13", "SHELL2",  "SHELL3"};
+    "SPHERE",
+    "BAR2",      "BAR3",
+    "QUAD4",     "QUAD8",   "QUAD9",
+    "SHELL4",    "SHELL8",  "SHELL9",
+    "TRI3",      "TRI6",
+    "TSHELL3",   "TSHELL6",
+    "HEX8",      "HEX20",   "HEX27",   "HEXSHELL",
+    "TET4",      "TET10",   "TET8",    "TET14",   "TET15",
+    "WEDGE6",    "WEDGE15", "WEDGE16", "WEDGE20", "WEDGE21",
+    "PYRAMID5",
+    "PYRAMID13",
+    "SHELL2",    "SHELL3"
+  };
   return elem_names[elem_type];
 }
 
@@ -589,6 +597,34 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
+  case TET14:   
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 14; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 7; break;
+    case NSIDES: answer                                   = 4; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TET15:   
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 15; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 7; break;
+    case NSIDES: answer                                   = 4; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
   case TET8:     /* 8-node (midface nodes) tetrahedron */
     switch (req) /* select type of information required */
     {
@@ -631,6 +667,30 @@ int get_elem_info(const int req, const E_Type etype)
   case WEDGE16:
     switch (req) {
     case NNODES: answer                                   = 15; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case WEDGE20:
+    switch (req) {
+    case NNODES: answer                                   = 20; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case WEDGE21:
+    switch (req) {
+    case NNODES: answer                                   = 21; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -1254,6 +1314,8 @@ int get_side_id_hex_tet(const E_Type etype,        /* The element type */
   switch (etype) {
   case TET4:
   case TET10:
+  case TET14:
+  case TET15:
   case TET8:
   case TET14:
   case TET15:
@@ -1404,35 +1466,29 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
   /* triangle */
   static int tri_table[3][3] = {
-      /*   1        2        3                                            side   */
-      {1, 2, 4},
-      {2, 3, 5},
-      {3, 1, 6} /* nodes  */
+    {1, 2, 4}, // side 1
+    {2, 3, 5}, // side 2
+    {3, 1, 6}  // side 3
   };
 
   /* tshell */
   static int tshell_table[2][6] = {
-      /*        1                  2                                      side   */
-      {
-          1, 2, 3, 4, 5, 6,
-      },
-      {1, 3, 2, 6, 5, 4} /* nodes  */
+    {1, 2, 3, 4, 5, 6}, // side 1
+    {1, 3, 2, 6, 5, 4}  // side 2
   };
 
   /* quad */
   static int quad_table[4][3] = {
-      /*   1        2        3        4                                   side   */
-      {1, 2, 5},
-      {2, 3, 6},
-      {3, 4, 7},
-      {4, 1, 8} /* nodes  */
+    {1, 2, 5}, // side 1
+    {2, 3, 6}, // side 2
+    {3, 4, 7}, // side 3
+    {4, 1, 8}  // side 4
   };
 
   /* shell */
   static int shell_table[2][9] = {
-      /*        1                  2                                      side   */
-      {1, 2, 3, 4, 5, 6, 7, 8, 9},
-      {1, 4, 3, 2, 8, 7, 6, 5, 9} /* nodes  */
+    {1, 2, 3, 4, 5, 6, 7, 8, 9}, // side 1
+    {1, 4, 3, 2, 8, 7, 6, 5, 9}  // side 2
   };
 
   /* tetra */
@@ -1464,34 +1520,26 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
   /* hexshell */
   static int hexshell_table[6][6] = {
-      /*      1               2                3                4         side   */
-      {1, 2, 6, 5, 10, 9},
-      {2, 3, 7, 6, 11, 10},
-      {3, 4, 8, 7, 12, 11},
-      {4, 1, 5, 8, 9, 12},
-      /*      5               6                                           side   */
-      {1, 4, 3, 2, 0, 0},
-      {5, 6, 7, 8, 0, 0} /*nodes*/
+    {1, 2, 6, 5, 10, 9},   // side 1
+    {2, 3, 7, 6, 11, 10},  // side 2
+    {3, 4, 8, 7, 12, 11},  // side 3
+    {4, 1, 5, 8, 9, 12},   // side 4
+    {1, 4, 3, 2, 0, 0},    // side 5
+    {5, 6, 7, 8, 0, 0}     // side 6
   };
 
   /* pyramid */
   static int pyramid_table[5][8] = {
-      /*          1                   2                    3              side   */
-      {1, 2, 5, 6, 11, 10, 0, 0},
-      {2, 3, 5, 7, 12, 11, 0, 0},
-      {3, 4, 5, 8, 13, 12, 0, 0},
-      /*          4                  5                                    side   */
-      {1, 5, 4, 10, 13, 9, 0, 0},
-      {1, 4, 3, 2, 9, 8, 7, 6} /* nodes  */
+    {1, 2, 5, 6, 11, 10, 0, 0}, // side 1 (tri)
+    {2, 3, 5, 7, 12, 11, 0, 0}, // side 2 (tri)
+    {3, 4, 5, 8, 13, 12, 0, 0}, // side 3 (tri)
+    {1, 5, 4, 10, 13, 9, 0, 0}, // side 4 (tri)
+    {1, 4, 3, 2, 9, 8, 7, 6}    // side 5 (quad)
   };
 
   static int bar_table[1][3] = {{1, 2, 3}};
 
-  /* {2, 0} , {1,2} */
-  /***************************** execution begins ******************************/
-
   /* Locally decrement side_num */
-
   side_num--;
 
   /* Switch over the element type. */
@@ -1648,6 +1696,12 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
   case TET10:
     for (i            = 0; i < 6; i++)
+      ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
+    break;
+
+  case TET14:
+  case TET15:
+    for (i            = 0; i < 7; i++)
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
     break;
 
@@ -1939,6 +1993,12 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
 
   case TET10:
     for (i                = 0; i < 6; i++)
+      mirror_node_list[i] = ss_node_list[tri_table[i]];
+    break;
+
+  case TET14:
+  case TET15:
+    for (i                = 0; i < 7; i++)
       mirror_node_list[i] = ss_node_list[tri_table[i]];
     break;
 

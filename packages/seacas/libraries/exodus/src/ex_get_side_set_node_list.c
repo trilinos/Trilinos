@@ -134,43 +134,36 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
   */
   /* triangle */
   static int tri_table[3][3] = {
-      /*   1        2        3 side   */
-      {1, 2, 4},
-      {2, 3, 5},
-      {3, 1, 6} /* nodes  */
+    {1, 2, 4}, /* side 1 */
+    {2, 3, 5}, /* side 2 */
+    {3, 1, 6}  /* side 3 */
   };
 
   /* triangle 3d */
   static int tri3_table[5][7] = {
-      /*       1                2 side   */
-      {1, 2, 3, 4, 5, 6, 7},
-      {3, 2, 1, 6, 5, 4, 7}, /* nodes  */
-      /*       3              4              5 side   */
-      {1, 2, 4, 0, 0, 0, 0},
-      {2, 3, 5, 0, 0, 0, 0},
-      {3, 1, 6, 0, 0, 0, 0} /* nodes  */
+    {1, 2, 3, 4, 5, 6, 7}, /* side 1 (face) */
+    {3, 2, 1, 6, 5, 4, 7}, /* side 2 (face) */
+    {1, 2, 4, 0, 0, 0, 0}, /* side 3 (edge) */
+    {2, 3, 5, 0, 0, 0, 0}, /* side 4 (edge) */
+    {3, 1, 6, 0, 0, 0, 0}  /* side 5 (edge) */
   };
 
   /* quad */
   static int quad_table[4][3] = {
-      /*   1        2        3        4 side   */
-      {1, 2, 5},
-      {2, 3, 6},
-      {3, 4, 7},
-      {4, 1, 8} /* nodes  */
+    {1, 2, 5}, /* side 1 */
+    {2, 3, 6}, /* side 2 */
+    {3, 4, 7}, /* side 3 */
+    {4, 1, 8}  /* side 4 */
   };
 
   /* shell */
   static int shell_table[6][9] = {
-      /*        1                  2                                 side   */
-      {1, 2, 3, 4, 5, 6, 7, 8, 9},
-      {1, 4, 3, 2, 8, 7, 6, 5, 9}, /* nodes  */
-      /*        3                  4                                 side   */
-      {1, 2, 5, 0, 0, 0, 0, 0, 0},
-      {2, 3, 6, 0, 0, 0, 0, 0, 0}, /* nodes  */
-      /*        5                  6                                 side   */
-      {3, 4, 7, 0, 0, 0, 0, 0, 0},
-      {4, 1, 8, 0, 0, 0, 0, 0, 0} /* nodes  */
+    {1, 2, 3, 4, 5, 6, 7, 8, 9}, /* side 1 (face) */
+    {1, 4, 3, 2, 8, 7, 6, 5, 9}, /* side 2 (face) */
+    {1, 2, 5, 0, 0, 0, 0, 0, 0}, /* side 3 (edge) */
+    {2, 3, 6, 0, 0, 0, 0, 0, 0}, /* side 4 (edge) */
+    {3, 4, 7, 0, 0, 0, 0, 0, 0}, /* side 5 (edge) */
+    {4, 1, 8, 0, 0, 0, 0, 0, 0}  /* side 6 (edge) */
   };
 
   /* tetra */
@@ -202,13 +195,11 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
 
   /* pyramid */
   static int pyramid_table[5][8] = {
-      /*          1                   2                    3 side   */
-      {1, 2, 5, 0, 6, 11, 10, 0},
-      {2, 3, 5, 0, 7, 12, 11, 0},
-      {3, 4, 5, 0, 8, 13, 12, 0}, /* nodes  */
-      /*          4                  5 side   */
-      {1, 5, 4, 0, 10, 13, 9, 0},
-      {1, 4, 3, 2, 9, 8, 7, 6} /* nodes  */
+    {1, 2, 5, 0, 6, 11, 10, 0}, /* side 1 (tri) */
+    {2, 3, 5, 0, 7, 12, 11, 0}, /* side 2 (tri) */
+    {3, 4, 5, 0, 8, 13, 12, 0}, /* side 3 (tri) */
+    {1, 5, 4, 0, 10, 13, 9, 0}, /* side 4 (tri) */
+    {1, 4, 3, 2, 9, 8, 7, 6}    /* side 5 (quad) */
   };
 
   char errmsg[MAX_ERR_LENGTH];
