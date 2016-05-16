@@ -55,6 +55,7 @@
 #include <fenl.hpp>
 #include <fenl_functors_pce.hpp>
 #include <fenl_impl.hpp>
+#include <MeanBasedPreconditioner.hpp>
 
 namespace Kokkos {
 namespace Example {
@@ -77,8 +78,9 @@ namespace Example {
     GetMeanValsFunc(const ViewType& vals_) : vals(vals_)
     {
       const size_type nnz = vals.dimension_0();
-      mean_vals =
-        Kokkos::make_view<ViewType>("mean-values", Kokkos::cijk(vals), nnz, 1);
+      typename Scalar::cijk_type mean_cijk =
+        Stokhos::create_mean_based_product_tensor<execution_space, typename Storage::ordinal_type, typename Storage::value_type>();
+      mean_vals = Kokkos::make_view<ViewType>("mean-values", mean_cijk, nnz, 1);
       Kokkos::parallel_for( nnz, *this );
     }
 
@@ -131,6 +133,91 @@ namespace Example {
   };
 
 #endif
+
+  /*!
+   * \brief A stochastic preconditioner based on applying the inverse of the
+   * mean.  Specialized for UQ::PCE
+   */
+  template<class Storage, class LO, class GO, class N>
+  class MeanBasedPreconditioner<Sacado::UQ::PCE<Storage>,LO,GO,N> :
+    public SGPreconditioner<Sacado::UQ::PCE<Storage>, LO, GO, N> {
+  public:
+
+    typedef Sacado::UQ::PCE<Storage> Scalar;
+
+    //! Constructor
+    MeanBasedPreconditioner() {}
+
+    //! Destructor
+    virtual ~MeanBasedPreconditioner() {}
+
+    //! Setup preconditioner
+    virtual
+    Teuchos::RCP<Tpetra::Operator<Scalar,LO,GO,N> >
+    setupPreconditioner(
+      const Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LO,GO,N> >& A,
+      const Teuchos::RCP<Teuchos::ParameterList>& precParams,
+      const Teuchos::RCP<Tpetra::MultiVector<double,LO,GO,N> >& coords)
+    {
+      using Teuchos::ArrayView;
+      using Teuchos::Array;
+      typedef Tpetra::CrsMatrix<Scalar,LO,GO,N> MatrixType;
+      typedef Tpetra::Map<LO,GO,N> Map;
+      typedef Tpetra::Operator<Scalar,LO,GO,N> OperatorType;
+      typedef MueLu::TpetraOperator<Scalar,LO,GO,N> PreconditionerType;
+
+      typedef typename MatrixType::local_matrix_type KokkosMatrixType;
+
+      typedef typename KokkosMatrixType::StaticCrsGraphType KokkosGraphType;
+      typedef typename KokkosMatrixType::values_type KokkosMatrixValuesType;
+      typedef typename Scalar::cijk_type Cijk;
+
+      Teuchos::RCP< const Map > rmap = A->getRowMap();
+      Teuchos::RCP< const Map > cmap = A->getColMap();
+
+      KokkosMatrixType  kokkos_matrix = A->getLocalMatrix();
+      KokkosGraphType kokkos_graph = kokkos_matrix.graph;
+      KokkosMatrixValuesType matrix_values = kokkos_matrix.values;
+      const size_t ncols = kokkos_matrix.numCols();
+
+      typedef GetMeanValsFunc <KokkosMatrixValuesType > MeanFunc;
+      typedef typename MeanFunc::MeanViewType KokkosMeanMatrixValuesType;
+      MeanFunc meanfunc(matrix_values);
+      KokkosMeanMatrixValuesType mean_matrix_values = meanfunc.getMeanValues();
+
+      // From here on we are assuming that
+      // KokkosMeanMatrixValuesType == KokkosMatrixValuestype
+
+      Cijk cijk = Kokkos::getGlobalCijkTensor<Cijk>();
+      Cijk mean_cijk =
+        Stokhos::create_mean_based_product_tensor<typename Storage::execution_space,typename Storage::ordinal_type,typename Storage::value_type>();
+      Kokkos::setGlobalCijkTensor(mean_cijk);
+
+      KokkosMatrixType mean_kokkos_matrix(
+        "mean-matrix", ncols, mean_matrix_values, kokkos_graph);
+      Teuchos::RCP < MatrixType > M =
+          Teuchos::rcp( new MatrixType(rmap, cmap, mean_kokkos_matrix) );
+
+      Teuchos::RCP< OperatorType > M_op = M;
+      Teuchos::RCP< PreconditionerType > mueluPreconditioner;
+      mueluPreconditioner =
+        MueLu::CreateTpetraPreconditioner(M_op,*precParams,coords);
+
+      Kokkos::setGlobalCijkTensor(cijk);
+
+      return mueluPreconditioner;
+    };
+
+  private:
+
+    //! Private to prohibit copying
+    MeanBasedPreconditioner(const MeanBasedPreconditioner&);
+
+    //! Private to prohibit copying
+    MeanBasedPreconditioner& operator=(const MeanBasedPreconditioner&);
+
+
+  }; // class MeanBasedPreconditioner
 
 }
 }
