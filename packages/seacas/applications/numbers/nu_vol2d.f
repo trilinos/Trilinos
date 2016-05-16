@@ -31,17 +31,6 @@ C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C    
 
-C $Id: vol2d.f,v 1.2 1992/12/11 22:34:15 gdsjaar Exp $
-C $Log: vol2d.f,v $
-C Revision 1.2  1992/12/11 22:34:15  gdsjaar
-C Fixed problem with incorrect determination of cavity center in 2d
-C
-c Revision 1.1.1.1  1991/02/21  15:46:17  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:46:16  gdsjaar
-c Initial revision
-c
       SUBROUTINE VOL2D( COORD, LSTSN, NSEG, VOLUME, NDIM, NUMESS, AXI,
      *   CENT, NUMNP, CENTER)
 C
