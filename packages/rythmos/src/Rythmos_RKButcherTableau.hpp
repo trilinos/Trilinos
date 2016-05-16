@@ -129,7 +129,9 @@ class RKButcherTableauDefaultBase :
         const Teuchos::SerialDenseVector<int,Scalar>& b_in,
         const Teuchos::SerialDenseVector<int,Scalar>& c_in,
         const int order_in,
-        const std::string& longDescription_in
+        const std::string& longDescription_in,
+        const bool isEmbedded = false, /* (default) tell the stepper the RK is an embedded method  */
+        const Teuchos::SerialDenseVector<int,Scalar>& bhat_in =  Teuchos::SerialDenseVector<int,Scalar>() /* (default) */
         )
     {
       const int numStages_in = A_in.numRows();
@@ -143,6 +145,13 @@ class RKButcherTableauDefaultBase :
       c_ = c_in;
       order_ = order_in;
       longDescription_ = longDescription_in;
+
+      /* Sidafa */
+      if (isEmbedded) {
+        TEUCHOS_ASSERT_EQUALITY( bhat_in.length(), numStages_in );
+        bhat_ = bhat_in;
+        isEmbedded_ = true;
+      }
     }
 
     /* \brief Redefined from Teuchos::ParameterListAcceptorDefaultBase */
@@ -214,6 +223,10 @@ class RKButcherTableauDefaultBase :
     int order_;
     std::string longDescription_;
     mutable RCP<ParameterList> validPL_;
+
+    /* Sidafa - Embedded method parameters */
+    Teuchos::SerialDenseVector<int,Scalar> bhat_; 
+    bool isEmbedded_;
 };
 
 
