@@ -1854,7 +1854,7 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
   static int hs_table[6] = {0, 3, 2, 1, 5, 4};
 
   /* triangle (2-d) */
-  static int tri_table[6] = {1, 0, 2, 3, 5, 4};
+  static int tri_table[7] = {1, 0, 2, 3, 5, 4, 6};
 
   /***************************** execution begins ******************************/
 
