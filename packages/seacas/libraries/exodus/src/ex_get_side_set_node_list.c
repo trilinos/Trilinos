@@ -830,27 +830,27 @@ int ex_get_side_set_node_list(int exoid, ex_entity_id side_set_id, void_int *sid
                   connect_offset + wedge_table[side_num][node_off++] - 1);
 
         if (side_num == 3 || side_num == 4) {
-          /* This is a quad face -- either 8-node or 9-node */
-          get_nodes(exoid, side_set_node_list, node_pos++, connect,
-                    connect_offset + wedge_table[side_num][node_off++] - 1);
-          if (num_nodes_per_elem == 20 || num_nodes_per_elem == 21) {
-            get_nodes(exoid, side_set_node_list, node_pos++, connect,
-                      connect_offset + wedge_table[side_num][node_off++] - 1);
-            set_count(exoid, side_set_node_cnt_list, elem_ndx, 9); /* 9 node side */
-          }
-          else {
-            set_count(exoid, side_set_node_cnt_list, elem_ndx, 8); /* 8 node side */
-          }
-        }
-        else {
           /* This is a tri face -- either 6-node or 7-node */
           if (num_nodes_per_elem == 20 || num_nodes_per_elem == 21) {
             get_nodes(exoid, side_set_node_list, node_pos++, connect,
-                      connect_offset + wedge_table[side_num][node_off++] - 1);
-            set_count(exoid, side_set_node_cnt_list, elem_ndx, 7); /* 7 node side */
+                      connect_offset + wedge_table[side_num][node_off++] - 1); /* gets node 7 */
+            set_count(exoid, side_set_node_cnt_list, elem_ndx, 7); 
           }
           else {
-            set_count(exoid, side_set_node_cnt_list, elem_ndx, 6); /* 6 node side */
+            set_count(exoid, side_set_node_cnt_list, elem_ndx, 6); 
+          }
+        }
+        else {
+          /* This is a quad face -- either 8-node or 9-node */
+          get_nodes(exoid, side_set_node_list, node_pos++, connect,
+                    connect_offset + wedge_table[side_num][node_off++] - 1); /* gets node 8 */
+          if (num_nodes_per_elem == 20 || num_nodes_per_elem == 21) {
+            get_nodes(exoid, side_set_node_list, node_pos++, connect,
+                      connect_offset + wedge_table[side_num][node_off++] - 1); /* gets node 9 */
+            set_count(exoid, side_set_node_cnt_list, elem_ndx, 9); 
+          }
+          else {
+            set_count(exoid, side_set_node_cnt_list, elem_ndx, 8); 
           }
         }
       }
