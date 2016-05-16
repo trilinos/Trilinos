@@ -230,7 +230,7 @@ namespace Intrepid2 {
         << "| TEST 2: correctness of math operations                                      |\n"\
         << "===============================================================================\n";
 
-      outStream->precision(20);
+      outStream->precision(5);
 
       // this test upto order 30 - offset (1,2,3)
       const ordinal_type npLower = 5, npUpper = 15;
@@ -267,25 +267,11 @@ namespace Intrepid2 {
               ValueType beta = -0.5;
               while (beta <= 5.0) {
                 for (auto np = npLower; np <= npUpper; ++np){
-                  switch (poly) {
-                  case POLYTYPE_GAUSS:
-                    Polylib::Serial::Cubature<POLYTYPE_GAUSS>::getValues(z, w, np, alpha, beta);
-                    break;
-                  case POLYTYPE_GAUSS_RADAU_LEFT:
-                    Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_LEFT>::getValues(z, w, np, alpha, beta);
-                    break;
-                  case POLYTYPE_GAUSS_RADAU_RIGHT:
-                    Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_RIGHT>::getValues(z, w, np, alpha, beta);
-                    break;
-                  case POLYTYPE_GAUSS_LOBATTO:
-                    Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>::getValues(z, w, np, alpha, beta);
-                    break;
-                  default: 
-                    break;
-                  }
+                  Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
+
                   for (auto n = 2; n < 2*np-off; ++n){
                     Polylib::Serial::JacobiPolynomial(np, z, p, null, n, alpha, beta);
-                    const auto sum = ddot<ValueType>(np, w, p);
+                    const ValueType sum = ddot<ValueType>(np, w, p);
                     if (std::isnan(sum) || std::abs(sum) > tol) {
                       errorFlag = -1000;
                       *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
@@ -299,273 +285,78 @@ namespace Intrepid2 {
               alpha += 0.5;
             }
           }
-          *outStream << "Finished checking integration: " << EPolyTypeToString(poly) << "\n";
-        }
-        
-        // #if GAUSS_DIFF
-        //           *outStream << "Begin checking differentiation through Gauss points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
+          *outStream << "Finished checking integration: " << EPolyTypeToString(poly) << "\n\n";
 
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgj(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   ipl::Dgj(d,z,np,alpha,beta);
+          *outStream << "Begin checking differentiation: " << EPolyTypeToString(poly) << "\n";
+          {
+            ValueType alpha = -0.5;
+            while (alpha <= 5.0) {
+              ValueType beta = -0.5;
+              while (beta <= 5.0) {
+                for (auto np = npLower; np <= npUpper; ++np) {
+                  Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
 
-        //                   for(i = 0; i < np; ++i) p[i] = std::pow(z[i],n);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - n*std::pow(z[i],n-1));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss Jacobi differentiation\n";
-        // #endif
+                  for (auto n = 2; n < np-1; ++n) {
+                    Polylib::Serial::getDerivative(d, z, np, alpha, beta, poly);
+                    
+                    for (auto i = 0; i < np; ++i) 
+                      p(i) = std::pow(z(i), n);
 
-        // #if GAUSS_RADAUM_DIFF
-        //           *outStream << "Begin checking differentiation through Gauss-Radau (z=-1) points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
+                    ValueType sum = 0.0;
+                    for (auto i = 0; i < np; ++i)
+                      sum += std::abs(ddot<ValueType>(np, Kokkos::subview(d, i, Kokkos::ALL()), p) - n*std::pow(z(i),n-1));
+                    sum /= (ValueType)np;
+                    if (std::abs(sum)>tol) {
+                      errorFlag = -1000;
+                      *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
+                        ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
+                    }
+                  }
+                }
+                beta += 0.5;
+              }
+              *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
+              alpha += 0.5;
+            }
+          }
+          *outStream << "Finished checking differentiation: " << EPolyTypeToString(poly) << "\n\n";
+          
+          *outStream << "Begin checking interpolation: " << EPolyTypeToString(poly) << "\n";
+          {
+            ValueType alpha = -0.5;
+            while (alpha <= 5.0) {
+              ValueType beta = -0.5;
+              while (beta <= 5.0) {
+                
+                for (auto np = npLower; np <= npUpper; ++np) {
+                  Polylib::Serial::getCubature(z, w, np, alpha, beta, poly);
 
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgrjm(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   ipl::Dgrjm(d,z,np,alpha,beta);
+                  for (auto n = 2; n < np-1; ++n) {
+                    for (auto i = 0; i < np; ++i) {
+                      w(i) = 2.0*i/(ValueType)(np-1)-1.0;
+                      p(i) = std::pow(z(i),n);
+                    }
+                    Polylib::Serial::getInterpolationOperator(d, z, w, np, np, alpha, beta, poly);
 
-        //                   for(i = 0; i < np; ++i) p[i] = std::pow(z[i],n);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - n*std::pow(z[i],n-1));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Radau (z=-1) differentiation\n";
-        // #endif
-
-        // #if GAUSS_RADAUP_DIFF
-        //           *outStream << "Begin checking differentiation through Gauss-Radau (z=+1) points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgrjp(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   ipl::Dgrjp(d,z,np,alpha,beta);
-
-        //                   for(i = 0; i < np; ++i) p[i] = std::pow(z[i],n);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - n*std::pow(z[i],n-1));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Radau (z=+1) differentiation\n";
-        // #endif
-
-        // #if GAUSS_RADAUP_DIFF
-        //           *outStream << "Begin checking differentiation through Gauss-Lobatto (z=+1) points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwglj(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   ipl::Dglj(d,z,np,alpha,beta);
-
-        //                   for(i = 0; i < np; ++i) p[i] = std::pow(z[i],n);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - n*std::pow(z[i],n-1));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Lobatto differentiation\n";
-        // #endif
-
-        // #if GAUSS_INTERP
-        //           *outStream << "Begin checking interpolation through Gauss points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgj(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   for(i = 0; i < np; ++i) {
-        //                     w[i] = 2.0*i/(double)(np-1)-1.0;
-        //                     p[i] = std::pow(z[i],n);
-        //                   }
-        //                   ipl::Imgj(d,z,w,np,np,alpha,beta);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - std::pow(w[i],n));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss Jacobi interpolation\n";
-        // #endif
-
-        // #if GAUSS_RADAUM_INTERP
-        //           *outStream << "Begin checking interpolation through Gauss-Radau (z=-1) points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgrjm(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   for(i = 0; i < np; ++i) {
-        //                     w[i] = 2.0*i/(double)(np-1)-1.0;
-        //                     p[i] = std::pow(z[i],n);
-        //                   }
-        //                   ipl::Imgrjm(d,z,w,np,np,alpha,beta);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - std::pow(w[i],n));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Radau (z=-1) interpolation\n";
-        // #endif
-
-        // #if GAUSS_RADAUP_INTERP
-        //           *outStream << "Begin checking interpolation through Gauss-Radau (z=+1) points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwgrjp(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   for(i = 0; i < np; ++i) {
-        //                     w[i] = 2.0*i/(double)(np-1)-1.0;
-        //                     p[i] = std::pow(z[i],n);
-        //                   }
-        //                   ipl::Imgrjp(d,z,w,np,np,alpha,beta);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - std::pow(w[i],n));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Radau (z=+1) interpolation\n";
-        // #endif
-
-        // #if GAUSS_LOBATTO_INTERP
-        //           *outStream << "Begin checking interpolation through Gauss-Lobatto points\n";
-        //           alpha = -0.5;
-        //           while(alpha <= 5.0){
-        //             beta = -0.5;
-        //             while(beta <= 5.0){
-
-        //               for(np = npLower; np <= npUpper; ++np){
-        //                 ipl::zwglj(z,w,np,alpha,beta);
-        //                 for(n = 2; n < np-1; ++n){
-        //                   for(i = 0; i < np; ++i) {
-        //                     w[i] = 2.0*i/(double)(np-1)-1.0;
-        //                     p[i] = std::pow(z[i],n);
-        //                   }
-        //                   ipl::Imglj(d,z,w,np,np,alpha,beta);
-        //                   sum = 0;
-        //                   for(i = 0; i < np; ++i)
-        //                     sum += std::abs(ddot(np,d+i*np,1,p,1) - std::pow(w[i],n));
-        //                   sum /= np;
-        //                   if(std::abs(sum)>tol) {
-        //                     errorFlag = -1000;
-        //                     *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
-        //                       ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
-        //                   }
-        //                 }
-        //               }
-        //               beta += 0.5;
-        //             }
-        //             *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
-        //             alpha += 0.5;
-        //           }
-        //           *outStream << "Finished checking Gauss-Lobatto interpolation\n";
-        // #endif
-
+                    ValueType sum = 0;
+                    for (auto i = 0; i < np; ++i)
+                      sum += std::abs(ddot<ValueType>(np, Kokkos::subview(d, i, Kokkos::ALL()), p) - std::pow(w(i),n));
+                    sum /= (ValueType)np;
+                    if (std::abs(sum)>tol) {
+                      errorFlag = -1000;
+                      *outStream << "ERROR:  alpha = " << alpha << ", beta = " << beta <<
+                        ", np = " << np << ", n = " << n << "  difference " << sum << "\n";
+                    }
+                  }
+                }
+                beta += 0.5;
+              }
+              *outStream << "finished checking all beta values for alpha = " << alpha << "\n";
+              alpha += 0.5;
+            }
+            *outStream << "Finished checking interpolation: " << EPolyTypeToString(poly) << "\n\n";
+          }
+        }          
         /******************************************/
         *outStream << "\n";
       } catch (std::logic_error err) {

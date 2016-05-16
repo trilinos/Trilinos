@@ -245,7 +245,29 @@ namespace Intrepid2 {
                   const ValueType beta);
       };
 
-
+      template<typename ValueType,
+               typename zViewType,
+               typename wViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getCubature(/**/  zViewType z, 
+                  /**/  wViewType w, 
+                  const ordinal_type np, 
+                  const ValueType alpha, 
+                  const ValueType beta,
+                  const EPolyType poly) {
+        switch (poly) {
+        case POLYTYPE_GAUSS:             Polylib::Serial::Cubature<POLYTYPE_GAUSS>            ::getValues(z, w, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_LEFT:  Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_LEFT> ::getValues(z, w, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_RIGHT: Polylib::Serial::Cubature<POLYTYPE_GAUSS_RADAU_RIGHT>::getValues(z, w, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_LOBATTO:     Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>    ::getValues(z, w, np, alpha, beta); break;
+        default:
+          INTREPID2_TEST_FOR_ABORT(true,
+                                   ">>> ERROR (Polylib::Serial::getCubature): Not supported poly type.");
+          break;
+        }
+      }
+     
       // -----------------------------------------------------------------------
       // Derivative Matrix
       // -----------------------------------------------------------------------
@@ -272,6 +294,28 @@ namespace Intrepid2 {
                   const ValueType beta);
       };
 
+      template<typename ValueType,
+               typename DViewType,
+               typename zViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getDerivative(/**/  DViewType D,  
+                    const zViewType z, 
+                    const ordinal_type np, 
+                    const ValueType alpha, 
+                    const ValueType beta,
+                    const EPolyType poly) {
+        switch (poly) {
+        case POLYTYPE_GAUSS:             Polylib::Serial::Derivative<POLYTYPE_GAUSS>            ::getValues(D, z, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_LEFT:  Polylib::Serial::Derivative<POLYTYPE_GAUSS_RADAU_LEFT> ::getValues(D, z, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_RIGHT: Polylib::Serial::Derivative<POLYTYPE_GAUSS_RADAU_RIGHT>::getValues(D, z, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_LOBATTO:     Polylib::Serial::Derivative<POLYTYPE_GAUSS_LOBATTO>    ::getValues(D, z, np, alpha, beta); break;
+        default:
+          INTREPID2_TEST_FOR_ABORT(true,
+                                   ">>> ERROR (Polylib::Serial::getDerivative): Not supported poly type.");
+          break;
+        }
+      }
 
       // -----------------------------------------------------------------------
       // Lagrangian Interpolants 
@@ -350,6 +394,31 @@ namespace Intrepid2 {
                  const ValueType beta);
       };
 
+      template<typename ValueType,
+               typename zgViewType>
+      KOKKOS_INLINE_FUNCTION
+      static ValueType 
+      getLagrangianInterpolant(const ordinal_type i, 
+                               const ValueType z, 
+                               const zgViewType zgj,
+                               const ordinal_type np,
+                               const ValueType alpha,
+                               const ValueType beta,
+                               const EPolyType poly) {
+        ValueType r_val = 0;
+        switch (poly) {
+        case POLYTYPE_GAUSS:             r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS>            ::getValue(i, z, zgj, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_LEFT:  r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_RADAU_LEFT> ::getValue(i, z, zgj, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_RIGHT: r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_RADAU_RIGHT>::getValue(i, z, zgj, np, alpha, beta); break;
+        case POLYTYPE_GAUSS_LOBATTO:     r_val = Polylib::Serial::LagrangianInterpolant<POLYTYPE_GAUSS_LOBATTO>    ::getValue(i, z, zgj, np, alpha, beta); break;
+        default:
+          INTREPID2_TEST_FOR_ABORT(true,
+                                   ">>> ERROR (Polylib::Serial::getLagrangianInterpolant): Not supported poly type.");
+          break;
+        }
+        return r_val;
+      }
+
       // -----------------------------------------------------------------------
       // Interpolation operators 
       // -----------------------------------------------------------------------
@@ -380,6 +449,33 @@ namespace Intrepid2 {
                   const ValueType alpha,
                   const ValueType beta);
       };
+
+      template<typename ValueType,
+               typename imViewType,
+               typename zgrjViewType,
+               typename zmViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getInterpolationOperator(/**/  imViewType im,
+                               const zgrjViewType zgrj,
+                               const zmViewType zm,
+                               const ordinal_type nz,
+                               const ordinal_type mz,
+                               const ValueType alpha,
+                               const ValueType beta,
+                               const EPolyType poly) {
+        switch (poly) {
+        case POLYTYPE_GAUSS:             Polylib::Serial::InterpolationOperator<POLYTYPE_GAUSS>            ::getMatrix(im, zgrj, zm, nz, mz, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_LEFT:  Polylib::Serial::InterpolationOperator<POLYTYPE_GAUSS_RADAU_LEFT> ::getMatrix(im, zgrj, zm, nz, mz, alpha, beta); break;
+        case POLYTYPE_GAUSS_RADAU_RIGHT: Polylib::Serial::InterpolationOperator<POLYTYPE_GAUSS_RADAU_RIGHT>::getMatrix(im, zgrj, zm, nz, mz, alpha, beta); break;
+        case POLYTYPE_GAUSS_LOBATTO:     Polylib::Serial::InterpolationOperator<POLYTYPE_GAUSS_LOBATTO>    ::getMatrix(im, zgrj, zm, nz, mz, alpha, beta); break;
+        default:
+          INTREPID2_TEST_FOR_ABORT(true,
+                                   ">>> ERROR (Polylib::Serial::getInterpolationOperator): Not supported poly type.");
+          break;
+        }
+      }
+
       
       // -----------------------------------------------------------------------
       // Polynomial functions 
