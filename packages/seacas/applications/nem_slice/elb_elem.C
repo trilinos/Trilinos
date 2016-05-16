@@ -597,34 +597,6 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET14:   
-    switch (req) /* select type of information required */
-    {
-    case NNODES: /* number of nodes */ answer             = 14; break;
-    case NDIM: /* number of physical dimensions */ answer = 3; break;
-    case NSIDE_NODES: answer                              = 7; break;
-    case NSIDES: answer                                   = 4; break;
-    default:
-      Gen_Error(0, "fatal: unknown quantity");
-      error_report();
-      exit(1);
-    }
-    break;
-
-  case TET15:   
-    switch (req) /* select type of information required */
-    {
-    case NNODES: /* number of nodes */ answer             = 15; break;
-    case NDIM: /* number of physical dimensions */ answer = 3; break;
-    case NSIDE_NODES: answer                              = 7; break;
-    case NSIDES: answer                                   = 4; break;
-    default:
-      Gen_Error(0, "fatal: unknown quantity");
-      error_report();
-      exit(1);
-    }
-    break;
-
   case TET8:     /* 8-node (midface nodes) tetrahedron */
     switch (req) /* select type of information required */
     {
@@ -667,30 +639,6 @@ int get_elem_info(const int req, const E_Type etype)
   case WEDGE16:
     switch (req) {
     case NNODES: answer                                   = 15; break;
-    case NSIDES: answer                                   = 5; break;
-    case NDIM: /* number of physical dimensions */ answer = 3; break;
-    default:
-      Gen_Error(0, "fatal: unknown quantity");
-      error_report();
-      exit(1);
-    }
-    break;
-
-  case WEDGE20:
-    switch (req) {
-    case NNODES: answer                                   = 20; break;
-    case NSIDES: answer                                   = 5; break;
-    case NDIM: /* number of physical dimensions */ answer = 3; break;
-    default:
-      Gen_Error(0, "fatal: unknown quantity");
-      error_report();
-      exit(1);
-    }
-    break;
-
-  case WEDGE21:
-    switch (req) {
-    case NNODES: answer                                   = 21; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -1314,8 +1262,6 @@ int get_side_id_hex_tet(const E_Type etype,        /* The element type */
   switch (etype) {
   case TET4:
   case TET10:
-  case TET14:
-  case TET15:
   case TET8:
   case TET14:
   case TET15:
@@ -1705,12 +1651,6 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
     break;
 
-  case TET14:
-  case TET15:
-    for (i            = 0; i < 7; i++)
-      ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
-    break;
-
   case TET8:
     for (i            = 0; i < 4; i++)
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
@@ -1993,12 +1933,6 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
 
   case TET10:
     for (i                = 0; i < 6; i++)
-      mirror_node_list[i] = ss_node_list[tri_table[i]];
-    break;
-
-  case TET14:
-  case TET15:
-    for (i                = 0; i < 7; i++)
       mirror_node_list[i] = ss_node_list[tri_table[i]];
     break;
 
