@@ -603,10 +603,12 @@ int main(int argc, char *argv[]) {
    // Enumerate edges 
    // NOTE: Only correct in serial
    FieldContainer<int> elemToEdge(numElems,4);// Because quads
-   FieldContainer<int> elemToEdgeOrient(numElems);
+   FieldContainer<int> elemToEdgeOrient(numElems,4);
    FieldContainer<double> edgeCoord(1,dim);//will be resized  
    GenerateEdgeEnumeration(elemToNode, nodeCoord, elemToEdge,elemToEdgeOrient,edgeCoord);
 
+
+   // Generate
 
 
 
@@ -1532,11 +1534,10 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   if(elemToEdge.dimension(0)!=numElems || elemToEdge.dimension(1)!=4 || elemToEdge.dimension(0)!=elemToEdgeOrient.dimension(0) || elemToEdge.dimension(1)!=elemToEdgeOrient.dimension(1)) 
      throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
 
- int edge_node0_id[4]={0,1,2,3};
- int edge_node1_id[4]={1,2,3,0};
-
+  int edge_node0_id[4]={0,1,2,3};
+  int edge_node1_id[4]={1,2,3,0};
   
-  // Run over all the elements and start enumerating edges
+ // Run over all the elements and start enumerating edges
   typedef std::map<std::pair<int,int>,int> en_map_type;
   en_map_type e2n;
 
@@ -1545,7 +1546,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   for(int i=0; i<numElems; i++) {
 
     // Generate edge pairs, based on the global orientation of "edges go from low ID to high ID"
-    for(int j=0; i<4; j++) {
+    for(int j=0; j<4; j++) {
       int lo = std::min(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
       int hi = std::max(elemToNode(i,edge_node0_id[j]),elemToNode(i,edge_node1_id[j]));
 
@@ -1556,6 +1557,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       if(iter==edge_map.end()) {
 	edge_map[ep] = num_edges;
 	edge_id = num_edges;
+	num_edges++;
       }
       else
 	edge_id = (*iter).second;
@@ -1568,10 +1570,9 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
   // Fill out the edge centers (clobbering data if needed)
   edgeCoord.resize(num_edges,dim);
   for(int i=0; i<numElems; i++) {
-    for(int j=0; i<4; j++) {      
+    for(int j=0; j<4; j++) {      
       int n0 = elemToNode(i,edge_node0_id[j]);
       int n1 = elemToNode(i,edge_node1_id[j]);
-      
       for(int k=0; k<dim; k++)
 	edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
     }
