@@ -109,6 +109,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -296,7 +297,7 @@ namespace Intrepid2 {
   
       try {
         // Define array containing the 4 vertices of the reference TET and its 6 edge midpoints.
-        DynRankView ConstructWithLabel(tetNodesHost, 10, 3);
+        DynRankViewHost ConstructWithLabel(tetNodesHost, 10, 3);
         tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;
         tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;
         tetNodesHost(2,0) =  0.0;  tetNodesHost(2,1) =  1.0;  tetNodesHost(2,2) =  0.0;
@@ -309,30 +310,32 @@ namespace Intrepid2 {
         tetNodesHost(9,0) =  0.0;  tetNodesHost(9,1) =  0.5;  tetNodesHost(9,2) =  0.5;
   
         const auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+        Kokkos::deep_copy(tetNodes, tetNodesHost);
   
           // Dimensions for the output arrays:
         const auto numFields = tetBasis.getCardinality();
         const auto numPoints = tetNodes.dimension(0);
         const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
+
         {
-          // Generic array for values and curls that will be properly sized before each call
-          DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-    
           // Check VALUE of basis functions:
+          DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
           tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
+          const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (int i = 0; i < numFields; i++) {
             for (size_type j = 0; j < numPoints; j++) {
               for (size_type k = 0; k < spaceDim; k++) {
                 // basisValues is (P,F,D) array so its multiindex is (j,i,k) and not (i,j,k)!
                  int l = k + i * spaceDim + j * spaceDim * numFields;
-                 if (std::abs(vals(i,j,k) - basisValues[l]) > tol) {
+                 if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
                    errorFlag++;
                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                    // Output the multi-index of the value where the error is:
                    *outStream << " At (Field,Point,Dim) multi-index { ";
                    *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                   *outStream << "}  computed value: " << vals(i,j,k)
+                   *outStream << "}  computed value: " << vals_host(i,j,k)
                      << " but reference value: " << basisValues[l] << "\n";
                   }
                }
@@ -344,17 +347,19 @@ namespace Intrepid2 {
           // Check DIV of basis function:
           DynRankView ConstructWithLabel(vals, numFields, numPoints);
           tetBasis.getValues(vals, tetNodes, OPERATOR_DIV);
+          const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (int i = 0; i < numFields; i++) {
             for (size_type j = 0; j < numPoints; j++) {
                 int l =  i + j * numFields;
-                 if (std::abs(vals(i,j) - basisDivs[l]) > tol) {
+                 if (std::abs(vals_host(i,j) - basisDivs[l]) > tol) {
                    errorFlag++;
                    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                    // Output the multi-index of the value where the error is:
                    *outStream << " At multi-index { ";
                    *outStream << i << " ";*outStream << j << " ";
-                   *outStream << "}  computed divergence component: " << vals(i,j)
+                   *outStream << "}  computed divergence component: " << vals_host(i,j)
                      << " but reference divergence component: " << basisDivs[l] << "\n";
                }
             }
@@ -405,7 +410,7 @@ namespace Intrepid2 {
         tetBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
         // Check mathematical correctness
-        DynRankView ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
+        DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
         normals(0,0)  =  0.0; normals(0,1)  = -0.5; normals(0,2)  =  0.0;
         normals(1,0)  =  0.5; normals(1,1)  =  0.5; normals(1,2)  =  0.5;
         normals(2,0)  = -0.5; normals(2,1)  =  0.0; normals(2,2)  =  0.0;
@@ -422,14 +427,14 @@ namespace Intrepid2 {
 
             ValueType normal = 0.0;
             for(size_type d=0;d<spaceDim;++d) {
-               normal += bvals(i,j,d)*normals(j,d);
+               normal += bvals_host(i,j,d)*normals(j,d);
             }
 
             const ValueType expected_normal = (i == j);
             if (std::abs(normal - expected_normal) > tol || isnan(normal)) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ", " << cvals(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nNormal component of basis function " << i << " at (" << cvals_host(j,0) << ", " << cvals_host(j,1)<< ", " << cvals_host(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
               *outStream << ss.str();
             }
           }

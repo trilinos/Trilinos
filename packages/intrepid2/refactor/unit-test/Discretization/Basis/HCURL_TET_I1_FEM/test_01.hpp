@@ -111,6 +111,7 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = Parameters::Tolerence;
 
@@ -354,7 +355,8 @@ namespace Intrepid2 {
   
   try{
     // Define array containing the 4 vertices of the reference TET and its 6 edge centers.
-    DynRankView ConstructWithLabel(tetNodesHost, 10, 3);
+    DynRankViewHost ConstructWithLabel(tetNodesHost, 10, 3);
+
     tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;
     tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;
     tetNodesHost(2,0) =  0.0;  tetNodesHost(2,1) =  1.0;  tetNodesHost(2,2) =  0.0;
@@ -375,9 +377,8 @@ namespace Intrepid2 {
     const auto spaceDim  = tetBasis.getBaseCellTopology().getDimension();
     
     { 
-    // Generic array for values and curls that will be properly sized before each call
-    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     // Check VALUE of basis functions: resize vals to rank-3 container:
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     tetBasis.getValues(vals, tetNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
@@ -386,7 +387,7 @@ namespace Intrepid2 {
         for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const auto l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -412,7 +413,7 @@ namespace Intrepid2 {
         for (auto k = 0; k < spaceDim; ++k) {
           
           // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-           auto l = k + i * spaceDim + j * spaceDim * numFields;
+           const auto l = k + i * spaceDim + j * spaceDim * numFields;
            if (std::abs(vals_host(i,j,k) - basisCurls[l]) > tol ) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -480,8 +481,8 @@ namespace Intrepid2 {
     auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
     Kokkos::deep_copy(bvals_host, bvals);
 
-    //DynRankView ConstructWithLabel(tangents, numFields, spaceDim); 
-    Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
+//    Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
+    DynRankViewHost ConstructWithLabel(tangents, numFields, spaceDim);
     tangents(0,0)  =  1.0; tangents(0,1)  =  0.0; tangents(0,2)  =  0.0;
     tangents(1,0)  = -1.0; tangents(1,1)  =  1.0; tangents(1,2)  =  0.0;
     tangents(2,0)  =  0.0; tangents(2,1)  = -1.0; tangents(2,2)  =  0.0;

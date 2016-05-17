@@ -114,7 +114,12 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = Parameters::Tolerence;
+
       int errorFlag = 0;
+
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> quadBasis;
   
       *outStream
         << "\n"
@@ -127,7 +132,6 @@ namespace Intrepid2 {
       try {
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
 
         // Array with the 4 vertices of the reference Quadrilateral, its center and 4 more points
         DynRankView ConstructWithLabel(quadNodes, 9, 2);
@@ -215,7 +219,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       try {
-        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
 
         const auto numFields = quadBasis.getCardinality();
         const auto allTags = quadBasis.getAllDofTags();
@@ -301,8 +304,6 @@ namespace Intrepid2 {
           0.25, 0.25, 0.25, 0.25
         };
       
-        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
-
         DynRankViewHost ConstructWithLabel(quadNodesHost, 9, 2);
 
         quadNodesHost(0,0) = -1.0;  quadNodesHost(0,1) = -1.0;
@@ -382,7 +383,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
     
       try{
-        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
+//        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
         const auto numFields = quadBasis.getCardinality();
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
       

@@ -112,6 +112,7 @@ namespace Intrepid2 {
     << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = Parameters::Tolerence;
 
@@ -309,7 +310,7 @@ namespace Intrepid2 {
   };
   
   try{
-    DynRankView ConstructWithLabel(triNodesHost, 7, 2);
+    DynRankViewHost ConstructWithLabel(triNodesHost, 7, 2);
     triNodesHost(0,0) =  0.0;  triNodesHost(0,1) =  0.0;  
     triNodesHost(1,0) =  1.0;  triNodesHost(1,1) =  0.0;  
     triNodesHost(2,0) =  0.0;  triNodesHost(2,1) =  1.0;  
@@ -329,9 +330,8 @@ namespace Intrepid2 {
     const auto spaceDim  = triBasis.getBaseCellTopology().getDimension();        
     
     {
-    // Generic array for values and curls that will be properly sized before each call
-    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     // Check VALUE of basis functions: resize vals to rank-3 container:
+    DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     triBasis.getValues(vals, triNodes, OPERATOR_VALUE);
     auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
     Kokkos::deep_copy(vals_host, vals);
@@ -430,7 +430,8 @@ namespace Intrepid2 {
     auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
     Kokkos::deep_copy(bvals_host, bvals);
 
-    Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
+    //Kokkos::View<ValueType**, typename DynRankView::array_layout, typename HostSpaceType::execution_space> ConstructWithLabel(tangents, numFields, spaceDim); 
+    DynRankViewHost ConstructWithLabel(tangents, numFields, spaceDim);
     tangents(0,0) =  1.0; tangents(0,1) =  0.0;
     tangents(1,0) = -1.0; tangents(1,1) =  1.0;
     tangents(2,0) =  0.0; tangents(2,1) = -1.0;
