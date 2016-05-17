@@ -493,7 +493,6 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
   int which_id=0;
   ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
-  Kokkos::fence();
   for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
     for(int j=0; j<numFields_; ++j){
       if(editnonoverlap[j][i]!=0){
