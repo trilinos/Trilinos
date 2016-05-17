@@ -1741,6 +1741,144 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, deepCopy, M, MA, Scalar, LO
   TEST_EQUALITY(brop21100->getDomainMapExtractor()->getThyraMode(), true);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixAdd, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Matrix<Scalar, LO, GO, Node> MatrixClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  TEST_EQUALITY(bop->Rows(), noBlocks);
+  TEST_EQUALITY(bop->Cols(), noBlocks);
+
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop2 = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  TEST_EQUALITY(bop2->Rows(), noBlocks);
+  TEST_EQUALITY(bop2->Cols(), noBlocks);
+
+  // matrix-matrix multiplication of blocked operators
+  //Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOpbOp = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixMultiplyBlock(*bop,false,*bop2,false,out);
+  Teuchos::RCP<MatrixClass> bOpOp = Teuchos::null;
+
+  Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixAdd(*bop,false,STS::one(),*bop2,false,STS::one()*Teuchos::as<Scalar>(3.0),bOpOp,out);
+
+  TEST_EQUALITY(bOpOp != Teuchos::null, true);
+  Teuchos::RCP<BlockedCrsMatrixClass> bOpOp2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(bOpOp);
+  TEST_EQUALITY(bOpOp2 != Teuchos::null, true);
+
+  TEST_EQUALITY(bOpOp2->Rows(), noBlocks);
+  TEST_EQUALITY(bOpOp2->Cols(), noBlocks);
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor(), bop->getRangeMapExtractor());
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor(), bop2->getDomainMapExtractor());
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor()->getFullMap()->isSameAs(*(bop->getRangeMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor()->getFullMap()->isSameAs(*(bop->getDomainMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getRangeMap()->isSameAs(*(bop->getMatrix(0,1)->getRangeMap())),true);
+  //TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getDomainMap()->isSameAs(*(bop->getMatrix(0,1)->getDomainMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getRangeMap()->isSameAs(*(bop->getMatrix(1,0)->getRangeMap())),true);
+  //TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getDomainMap()->isSameAs(*(bop->getMatrix(1,0)->getDomainMap())),true);
+
+  bOpOp2->fillComplete();
+
+  TEST_EQUALITY(bOpOp2->getFrobeniusNorm(), 4.0 * bop->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,1)->getFrobeniusNorm(),4.0 * bop->getMatrix(1,1)->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),4.0 * bop->getMatrix(0,0)->getFrobeniusNorm());
+
+  // Nested addition test (Xpetra)
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 0 [1 2] ]");
+  bop  = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  bop2 = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  Teuchos::RCP<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> > brop2 =
+      Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop2));
+
+  TEST_EQUALITY(brop->Rows(),2);
+  TEST_EQUALITY(brop->Cols(),2);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop2->Rows(),2);
+  TEST_EQUALITY(brop2->Cols(),2);
+  TEST_EQUALITY(brop2->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(brop2->getDomainMapExtractor()->getThyraMode(), false);
+
+  bOpOp = Teuchos::null;
+
+  Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixAdd(*brop,false,STS::one(),*brop2,false,STS::one()*Teuchos::as<Scalar>(3.0),bOpOp,out);
+
+  TEST_EQUALITY(bOpOp != Teuchos::null, true);
+  bOpOp2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(bOpOp);
+  TEST_EQUALITY(bOpOp2 != Teuchos::null, true);
+
+  TEST_EQUALITY(bOpOp2->Rows(), 2);
+  TEST_EQUALITY(bOpOp2->Cols(), 2);
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor(), brop->getRangeMapExtractor());
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor(), brop2->getDomainMapExtractor());
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor()->getFullMap()->isSameAs(*(brop->getRangeMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor()->getFullMap()->isSameAs(*(brop->getDomainMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getRangeMap()->isSameAs(*(brop->getMatrix(0,1)->getRangeMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getDomainMap()->isSameAs(*(brop->getMatrix(0,1)->getDomainMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getRangeMap()->isSameAs(*(brop->getMatrix(1,0)->getRangeMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getDomainMap()->isSameAs(*(brop->getMatrix(1,0)->getDomainMap())),true);
+
+  bOpOp2->fillComplete();
+
+  TEST_EQUALITY(bOpOp2->getFrobeniusNorm(), 4.0 * brop->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,1)->getFrobeniusNorm(),4.0 * brop2->getMatrix(1,1)->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),4.0 * brop2->getMatrix(0,0)->getFrobeniusNorm());
+
+  // Nested addition test (Thyra)
+  bop  = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+  bop2 = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  brop = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop));
+  brop2 =Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LO,GO,Node> >(buildReorderedBlockedCrsMatrix(brm, bop2));
+
+  TEST_EQUALITY(brop->Rows(),2);
+  TEST_EQUALITY(brop->Cols(),2);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop2->Rows(),2);
+  TEST_EQUALITY(brop2->Cols(),2);
+  TEST_EQUALITY(brop2->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop2->getDomainMapExtractor()->getThyraMode(), true);
+
+  bOpOp = Teuchos::null;
+
+  Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixAdd(*brop,false,STS::one(),*brop2,false,STS::one()*Teuchos::as<Scalar>(3.0),bOpOp,out);
+
+  TEST_EQUALITY(bOpOp != Teuchos::null, true);
+  bOpOp2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(bOpOp);
+  TEST_EQUALITY(bOpOp2 != Teuchos::null, true);
+
+  TEST_EQUALITY(bOpOp2->Rows(), 2);
+  TEST_EQUALITY(bOpOp2->Cols(), 2);
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor(), brop->getRangeMapExtractor());
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor(), brop2->getDomainMapExtractor());
+  TEST_EQUALITY(bOpOp2->getRangeMapExtractor()->getFullMap()->isSameAs(*(brop->getRangeMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getDomainMapExtractor()->getFullMap()->isSameAs(*(brop->getDomainMapExtractor()->getFullMap())), true);
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getRangeMap()->isSameAs(*(brop->getMatrix(0,1)->getRangeMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getDomainMap()->isSameAs(*(brop->getMatrix(0,1)->getDomainMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getRangeMap()->isSameAs(*(brop->getMatrix(1,0)->getRangeMap())),true);
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getDomainMap()->isSameAs(*(brop->getMatrix(1,0)->getDomainMap())),true);
+
+  bOpOp2->fillComplete();
+
+  TEST_EQUALITY(bOpOp2->getFrobeniusNorm(), 4.0 * brop->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,1)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,0)->getFrobeniusNorm(),STS::magnitude(STS::zero()));
+  TEST_EQUALITY(bOpOp2->getMatrix(1,1)->getFrobeniusNorm(),4.0 * brop2->getMatrix(1,1)->getFrobeniusNorm());
+  TEST_EQUALITY(bOpOp2->getMatrix(0,0)->getFrobeniusNorm(),4.0 * brop2->getMatrix(0,0)->getFrobeniusNorm());
+
+
+}
 
 /// simple test routine for the apply function of BlockedCrsMatrix
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Scalar, LO, GO, Node )
@@ -2050,6 +2188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, leftScale, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, rightScale, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, deepCopy, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixAdd, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
