@@ -441,14 +441,44 @@ namespace MueLuTests {
         TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(8.0));
       }
     }
+  }
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetInverse,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    RCP<Map> m  = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib, 100, 0, comm);
+
+    RCP<Vector> v  = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
+    RCP<Vector> tv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
+    Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
+    Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
+    for(LocalOrdinal i = 0; i < v->getLocalLength(); ++i) {
+      vData[i] = Teuchos::as<Scalar>(i+1);
+      tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+    }
+
+    RCP<Vector> inv = Utilities::GetInverse(v);
+
+    tv->update(1.0,*inv,-1.0);
+    TEST_EQUALITY(tv->norm1(),Teuchos::ScalarTraits<Scalar>::zero());
+    TEST_EQUALITY(tv->norm2(),Teuchos::ScalarTraits<Scalar>::zero());
+    TEST_EQUALITY(tv->normInf(),Teuchos::ScalarTraits<Scalar>::zero());
   }
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LO,GO,Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node)
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node) \
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetInverse,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
