@@ -30,7 +30,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Fad_KokkosTests.hpp"
+#include "Fad_Fad_KokkosTests.hpp"
 
 #include "Kokkos_Core.hpp"
 

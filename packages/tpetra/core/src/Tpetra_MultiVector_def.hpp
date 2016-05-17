@@ -3649,7 +3649,7 @@ namespace Tpetra {
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = this->isConstantStride () ? j : this->whichVectors_[j];
-      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, j);
+      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, col);
       Teuchos::ArrayRCP<impl_scalar_type> X_lcl_j_arcp =
         Kokkos::Compat::persistingView (X_lcl_j);
       views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_lcl_j_arcp);
@@ -3684,7 +3684,7 @@ namespace Tpetra {
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
       const size_t col = this->isConstantStride () ? j : this->whichVectors_[j];
-      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, j);
+      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, col);
       Teuchos::ArrayRCP<const impl_scalar_type> X_lcl_j_arcp =
         Kokkos::Compat::persistingView (X_lcl_j);
       views[j] = Teuchos::arcp_reinterpret_cast<const Scalar> (X_lcl_j_arcp);

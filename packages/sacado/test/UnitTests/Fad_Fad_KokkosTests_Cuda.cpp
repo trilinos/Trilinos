@@ -30,25 +30,27 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Fad_KokkosTests.hpp"
+#include "Fad_Fad_KokkosTests.hpp"
 
 #include "Kokkos_Core.hpp"
 
-// Instantiate tests for OpenMP device
-using Kokkos::OpenMP;
-VIEW_FAD_TESTS_D( OpenMP )
+// Instantiate tests for Cuda device
+using Kokkos::Cuda;
+VIEW_FAD_TESTS_D( Cuda )
 
 int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // Initialize OpenMP
-  Kokkos::OpenMP::initialize();
-  Kokkos::OpenMP::print_configuration(std::cout);
+  // Initialize Cuda
+  Kokkos::HostSpace::execution_space::initialize();
+  Kokkos::Cuda::initialize(Kokkos::Cuda::SelectDevice(0));
+  Kokkos::Cuda::print_configuration(std::cout);
 
   int res = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
-  // Finalize OpenMP
-  Kokkos::OpenMP::finalize();
+  // Finalize Cuda
+  Kokkos::HostSpace::execution_space::finalize();
+  Kokkos::Cuda::finalize();
 
   return res;
 }
