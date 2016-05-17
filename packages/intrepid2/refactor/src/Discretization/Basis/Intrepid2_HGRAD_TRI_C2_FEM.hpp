@@ -46,44 +46,44 @@
             Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_HGRAD_TRI_C2_FEM_HPP
-#define INTREPID2_HGRAD_TRI_C2_FEM_HPP
+#ifndef __INTREPID2_HGRAD_TRI_C2_FEM_HPP__
+#define __INTREPID2_HGRAD_TRI_C2_FEM_HPP__
 
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
   
-/** \class  Intrepid2::Basis_HGRAD_TRI_C2_FEM
-    \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Triangle cell 
+  /** \class  Intrepid2::Basis_HGRAD_TRI_C2_FEM
+      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Triangle cell 
   
-            Implements Lagrangian basis of degree 2 on the reference Triangle cell. The basis has
-            cardinality 6 and spans a COMPLETE quadratic polynomial space. Basis functions are dual 
-            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
+      Implements Lagrangian basis of degree 2 on the reference Triangle cell. The basis has
+      cardinality 6 and spans a COMPLETE quadratic polynomial space. Basis functions are dual 
+      to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
   
-  \verbatim
-  =================================================================================================
-  |         |           degree-of-freedom-tag table                    |                           |
-  |   DoF   |----------------------------------------------------------|      DoF definition       |
-  | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
-  |=========|==============|==============|==============|=============|===========================|
-  |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0)         |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0)         |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(0,1)         |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    3    |       1      |       0      |       0      |      1      |   L_3(u) = u(1/2,0)       |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    4    |       1      |       1      |       0      |      1      |   L_4(u) = u(1/2,1/2)     |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    5    |       1      |       2      |       0      |      1      |   L_5(u) = u(0,1/2)       |
-  |=========|==============|==============|==============|=============|===========================|
-  |   MAX   |  maxScDim=1  |  maxScOrd=2  |  maxDfOrd=0  |     -       |                           |
-  |=========|==============|==============|==============|=============|===========================|
-  \endverbatim
+      \verbatim
+      =================================================================================================
+      |         |           degree-of-freedom-tag table                    |                           |
+      |   DoF   |----------------------------------------------------------|      DoF definition       |
+      | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
+      |=========|==============|==============|==============|=============|===========================|
+      |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0)         |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0)         |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(0,1)         |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    3    |       1      |       0      |       0      |      1      |   L_3(u) = u(1/2,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    4    |       1      |       1      |       0      |      1      |   L_4(u) = u(1/2,1/2)     |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    5    |       1      |       2      |       0      |      1      |   L_5(u) = u(0,1/2)       |
+      |=========|==============|==============|==============|=============|===========================|
+      |   MAX   |  maxScDim=1  |  maxScOrd=2  |  maxDfOrd=0  |     -       |                           |
+      |=========|==============|==============|==============|=============|===========================|
+      \endverbatim
   */
   
-   template<typename ExecSpaceType = void,
+  template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HGRAD_TRI_C2_FEM: public Basis<ExecSpaceType,outputValueType,pointValueType> {
@@ -216,7 +216,7 @@ namespace Intrepid2 {
       impl_.getDofCoords( dofCoords );
     }
 
-};
+  };
 
 }// namespace Intrepid2
 

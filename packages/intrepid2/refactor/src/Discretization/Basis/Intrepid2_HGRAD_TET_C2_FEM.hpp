@@ -46,55 +46,56 @@
             Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_HGRAD_TET_C2_FEM_HPP
-#define INTREPID2_HGRAD_TET_C2_FEM_HPP
+#ifndef __INTREPID2_HGRAD_TET_C2_FEM_HPP__
+#define __INTREPID2_HGRAD_TET_C2_FEM_HPP__
+
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {
   
-/** \class  Intrepid2::Basis_HGRAD_TET_C2_FEM
-    \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
+  /** \class  Intrepid2::Basis_HGRAD_TET_C2_FEM
+      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
   
-            Implements Lagrangian basis of degree 2 on the reference Tetrahedron cell. The basis has
-            cardinality 10 and spans a COMPLETE quadratic polynomial space. Basis functions are dual 
-            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
+      Implements Lagrangian basis of degree 2 on the reference Tetrahedron cell. The basis has
+      cardinality 10 and spans a COMPLETE quadratic polynomial space. Basis functions are dual 
+      to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
 
-  \verbatim
-  =================================================================================================
-  |         |           degree-of-freedom-tag table                    |                           |
-  |   DoF   |----------------------------------------------------------|      DoF definition       |
-  | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
-  |=========|==============|==============|==============|=============|===========================|
-  |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0,0)       |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0,0)       |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(0,1,0)       |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    3    |       0      |       3      |       0      |      1      |   L_3(u) = u(0,0,1)       |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    4    |       1      |       0      |       0      |      1      |   L_4(u) = u(1/2,0,0)     |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    5    |       1      |       1      |       0      |      1      |   L_5(u) = u(1/2,1/2,0)   |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    6    |       1      |       2      |       0      |      1      |   L_6(u) = u(0,1/2,0)     |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    7    |       1      |       3      |       0      |      1      |   L_7(u) = u(0,0,1/2)     |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    8    |       1      |       4      |       0      |      1      |   L_8(u) = u(1/2,0,1/2)   |
-  |---------|--------------|--------------|--------------|-------------|---------------------------|
-  |    9    |       1      |       5      |       0      |      1      |   L_9(u) = u(0,1/2,1/2)   |
-  |=========|==============|==============|==============|=============|===========================|
-  |   MAX   |  maxScDim=0  |  maxScOrd=3  |  maxDfOrd=0  |     -       |                           |
-  |=========|==============|==============|==============|=============|===========================|
-  \endverbatim
+      \verbatim
+      =================================================================================================
+      |         |           degree-of-freedom-tag table                    |                           |
+      |   DoF   |----------------------------------------------------------|      DoF definition       |
+      | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
+      |=========|==============|==============|==============|=============|===========================|
+      |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0,0,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1,0,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    2    |       0      |       2      |       0      |      1      |   L_2(u) = u(0,1,0)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    3    |       0      |       3      |       0      |      1      |   L_3(u) = u(0,0,1)       |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    4    |       1      |       0      |       0      |      1      |   L_4(u) = u(1/2,0,0)     |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    5    |       1      |       1      |       0      |      1      |   L_5(u) = u(1/2,1/2,0)   |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    6    |       1      |       2      |       0      |      1      |   L_6(u) = u(0,1/2,0)     |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    7    |       1      |       3      |       0      |      1      |   L_7(u) = u(0,0,1/2)     |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    8    |       1      |       4      |       0      |      1      |   L_8(u) = u(1/2,0,1/2)   |
+      |---------|--------------|--------------|--------------|-------------|---------------------------|
+      |    9    |       1      |       5      |       0      |      1      |   L_9(u) = u(0,1/2,1/2)   |
+      |=========|==============|==============|==============|=============|===========================|
+      |   MAX   |  maxScDim=0  |  maxScOrd=3  |  maxDfOrd=0  |     -       |                           |
+      |=========|==============|==============|==============|=============|===========================|
+      \endverbatim
   
-  \remark   Ordering of DoFs follows the node order in Tetrahedron<10> topology. Note that node order 
-            in this topology follows the natural order of k-subcells where the nodes are located, i.e.,
-            L_0 to L_3 correspond to 0-subcells (vertices) 0 to 3 and L_4 to L_9 correspond to
-            1-subcells (edges) 0 to 5.
- */
+      \remark   Ordering of DoFs follows the node order in Tetrahedron<10> topology. Note that node order 
+      in this topology follows the natural order of k-subcells where the nodes are located, i.e.,
+      L_0 to L_3 correspond to 0-subcells (vertices) 0 to 3 and L_4 to L_9 correspond to
+      1-subcells (edges) 0 to 5.
+  */
 
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
@@ -227,7 +228,7 @@ namespace Intrepid2 {
       impl_.getDofCoords( dofCoords );
     }
   
-};
+  };
 }// namespace Intrepid2
 
 #include "Intrepid2_HGRAD_TET_C2_FEMDef.hpp"
