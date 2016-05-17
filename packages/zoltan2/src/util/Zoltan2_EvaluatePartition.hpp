@@ -230,17 +230,20 @@ public:
   {
 	// find the beginning and the end of the contiguous block
 	// the list is an ArrayRCP and must preserve any ordering
-	int beginIndex = -1;
-	int endIndex = -1;
-	for( int n = 0; n < metricsBase_.size(); ++n ) {
+	size_t beginIndex = -1;
+	size_t sizeOfArrayView = 0;
+	for( size_t n = 0; n < metricsBase_.size(); ++n ) {
       if( metricsBase_[n]->getMetricType() == metricType ) {
         if (beginIndex == -1) {
         	beginIndex = n;
         }
-        endIndex = n;
+        ++sizeOfArrayView;
       }
 	}
-	return metricsBase_.view(beginIndex, endIndex);
+	if (sizeOfArrayView == 0) {
+	  return ArrayView<RCP<base_metric_type>>(); // empty array view
+	}
+	return metricsBase_.view(beginIndex, sizeOfArrayView);
   }
 
   /*! \brief Return the object count imbalance.

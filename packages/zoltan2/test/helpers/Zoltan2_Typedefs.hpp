@@ -187,8 +187,6 @@ namespace Zoltan2_TestingFramework {
   typedef Zoltan2::ColoringProblem<basic_id_t>                      coloring_problem_t; 
   
   typedef Zoltan2::BaseClassMetrics<zscalar_t>                      base_metric_t;
-  typedef Zoltan2::ImbalanceMetrics<zscalar_t>                      metric_t;
-  typedef Zoltan2::GraphMetrics<zscalar_t>                     		graph_metric_t;
 }
 
 #endif

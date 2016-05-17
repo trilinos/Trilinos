@@ -74,40 +74,6 @@
     </ParameterList>
       
   </ParameterList>
-  
-  <ParameterList name="Problem2">
-    <Parameter name="kind" type="string" value="partitioning"/>
-    <ParameterList name="InputAdapterParameters">
-      <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
-      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
-    </ParameterList>
-    
-    <ParameterList name="Zoltan2Parameters">
-    <Parameter name="num_global_parts" type="string" value="4"/>
-      <Parameter name="algorithm" type="string" value="multijagged"/>
-    </ParameterList>
-    
-     <ParameterList name="Metrics">
-      <ParameterList name="metriccheck1">
-        <Parameter name="check" type="string" value="max edge cuts"/>
-       	<Parameter name="weight" type="int" value="0"/>
-	    <Parameter name="lower" type="double" value="1.0"/>
-	    <Parameter name="upper" type="double" value="999.0"/>
-	  </ParameterList>
-	
-	  <ParameterList name="metriccheck2">
-	    <Parameter name="check" type="string" value="total edge cuts"/>
-	    <Parameter name="weight" type="int" value="0"/>
-	    <Parameter name="lower" type="double" value="1.0"/>
-	    <Parameter name="upper" type="double" value="999.0"/>
-	  </ParameterList>
-    </ParameterList>
-      
-  </ParameterList>
-  
-  <ParameterList name="Comparison">
-    <Parameter name="A" type="string" value="Problem1"/>
-    <Parameter name="B" type="string" value="Problem2"/>
-  </ParameterList>
+ 
   
 </ParameterList>

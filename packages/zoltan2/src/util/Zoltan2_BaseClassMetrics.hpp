@@ -52,7 +52,6 @@
 
 #include <Zoltan2_Standards.hpp>
 
-// MDM - we will likely change the format of how and where these are defined but not sure if templated will come into play - this is just to remove the string duplication for now
 #define UNKNOWN_METRICS_TYPE_NAME "UnknownMetricClass" 		// this is an error - I kept the base class non virtual so we could work with stl maps for example
 #define IMBALANCE_METRICS_TYPE_NAME "ImbalanceMetrics"		// For the ImbalanceMetrics class
 #define GRAPH_METRICS_TYPE_NAME "GraphMetrics"				// For the GraphMetrics class
@@ -89,7 +88,7 @@ void setValue(int enumIndex, scalar_t value) { values_[enumIndex] = value; }
 
 public:
 
-/*! \brief Constructor which exists only compiling - MDM - need to look into this as I would like to remove it */
+/*! \brief Constructor - for compiling but not used */
 BaseClassMetrics() :
 	values_(), metricName_(METRICS_UNSET_STRING) {
 	}
@@ -169,9 +168,7 @@ std::string BaseClassMetrics<scalar_t>::static_unknown_metricTypeName_ = UNKNOWN
 template <typename scalar_t>
 std::vector<std::string> BaseClassMetrics<scalar_t>::static_metricNames_ = {};
 
-/*! \This is a list of all possible types - it is used to generate a 'was not used message', if that's you want.
- * However note that recent changes to the parameter list mean this may become not needed and this will need to be resolved.
- * */
+/*! \This is a list of all possible types - it is used to generate an empty output for print messages when a metric does not appear in a list.*/
 template <typename scalar_t>
 std::vector<std::string> BaseClassMetrics<scalar_t>::static_allMetricNames_ = { IMBALANCE_METRICS_TYPE_NAME, GRAPH_METRICS_TYPE_NAME };
 
