@@ -123,6 +123,8 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual int order() const { return order_; }
     /** \brief . */
+    virtual bool isEmbeddedMethod() const { return isEmbedded_; }  // returns whether the stepper is Embedded or not (Sidafa)
+    /** \brief . */
     virtual void setDescription(std::string longDescription) { longDescription_ = longDescription; }
 
     /** \brief . */
