@@ -553,41 +553,43 @@ template <typename Adapter>
   env->debug(DETAILED_STATUS, "Exiting objectMetrics");
 }
 
-/*! \brief Print out a header and the values for a list of graph metrics.
+/*! \brief Print out header info for imbalance metrics.
  */
 template <typename scalar_t, typename part_t>
-  void printMetrics( std::ostream &os,
-    part_t targetNumParts, part_t numParts, part_t numNonemptyParts,
-    const ArrayRCP<RCP<BaseClassMetrics<scalar_t>>> &infoList)
+void printImbalanceMetricsHeader(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts)
 {
-  os << "NUMBER OF PARTS IS " << numParts;
-  if (numNonemptyParts < numParts)
+  os << "Imbalance Metrics: Number of parts is " << numParts;
+  if (numNonemptyParts < numParts) {
     os << " (" << numNonemptyParts << " of which are non-empty)";
+  }
   os << std::endl;
-  if (targetNumParts != numParts)
-    os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
-
-  std::string unset(METRICS_UNSET_STRING);
-
+  if (targetNumParts != numParts) {
+    os << "Target number of parts is " << targetNumParts << std::endl;
+  }
   ImbalanceMetrics<scalar_t>::printHeader(os);
+}
 
-  for (int i=0; i < infoList.size(); i++)
-    if (infoList[i]->getName() != unset)
+/*! \brief Print out list of imbalance metrics.
+ */
+template <typename scalar_t, typename part_t>
+void printImbalanceMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts, const ArrayView<RCP<BaseClassMetrics<scalar_t>>> &infoList)
+{
+  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts, numNonemptyParts);
+  for (int i=0; i < infoList.size(); i++) {
+    if (infoList[i]->getName() != METRICS_UNSET_STRING) {
       infoList[i]->printLine(os);
-
+    }
+  }
   os << std::endl;
 }
 
-/*! \brief Print out a header and the values for a single metric.
+/*! \brief Print out header and a single imbalance metric.
  */
 template <typename scalar_t, typename part_t>
-  void printMetrics( std::ostream &os,
-    part_t targetNumParts, part_t numParts, part_t numNonemptyParts,
-    RCP<BaseClassMetrics<scalar_t>> metricValue)
+void printImbalanceMetrics(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts, RCP<BaseClassMetrics<scalar_t>> metricValue)
 {
-   ArrayRCP<RCP<BaseClassMetrics<scalar_t> > > infoList = arcp<RCP<BaseClassMetrics<scalar_t>>>( 1 );	// new
-   infoList[0] = metricValue;
-   printMetrics( os, targetNumParts, numParts, numNonemptyParts, infoList);
+  printImbalanceMetricsHeader<scalar_t, part_t>(os, targetNumParts, numParts, numNonemptyParts);
+  metricValue->printLine(os);
 }
 
 } //namespace Zoltan2

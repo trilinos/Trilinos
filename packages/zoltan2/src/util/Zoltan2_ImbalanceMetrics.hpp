@@ -141,7 +141,7 @@ static std::vector<std::string> static_metricNames_;
 /*! \static class name for string - used to identify by parameter lists. */
 template <typename scalar_t> std::string ImbalanceMetrics<scalar_t>::static_metricTypeName_ = IMBALANCE_METRICS_TYPE_NAME;
 
-/*! \synchronize this with the enum list. */
+/*! \lists all metrics for this class. */
 template <typename scalar_t>
 std::vector<std::string> ImbalanceMetrics<scalar_t>::static_metricNames_ = {
   "local sum",

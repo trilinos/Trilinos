@@ -223,7 +223,7 @@ private:
    * \return a map with metrics assigned to keys assigned by name
    */
   static std::map<const string, const base_metric_t>
-  metricArrayToMap(const ArrayRCP<RCP<base_metric_t> > &metrics);
+  metricArrayToMap(ArrayView<RCP<base_metric_t> > metrics);
   
   /* \brief Method for inserting data from all timers to a map of clocked times
    * param[in] timers a map of timers
@@ -659,9 +659,9 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   
   // get metrics
   std::map<const string, const base_metric_t> prb_metrics = this->metricArrayToMap
-    (metricObjectPrb->getAllMetricsOfType( metricClassType )); // MDM - we may want to generalize this to getAllMetrics()
+    (metricObjectPrb->getAllMetricsOfType( metricClassType ));
   std::map<const string, const base_metric_t> ref_metrics = this->metricArrayToMap
-    (metricObjectRef->getAllMetricsOfType( metricClassType )); // MDM - we may want to generalize this to getAllMetrics()
+    (metricObjectRef->getAllMetricsOfType( metricClassType ));
   
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
@@ -720,19 +720,16 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
 }
 
 std::map<const string, const base_metric_t>
-ComparisonHelper::metricArrayToMap(const ArrayRCP<RCP<base_metric_t>> &metrics)
+ComparisonHelper::metricArrayToMap(ArrayView<RCP<base_metric_t>> metrics)
 {
   typedef std::pair<const string,const base_metric_t> pair_t;
   std::map<const string, const base_metric_t> metric_map;
   ArrayRCP<const base_metric_t>::size_type idx;
-  for(idx = 0; idx < metrics.size(); idx++)
-  {
-	  // MDM - I need to fix this ptr reference
+  for(idx = 0; idx < metrics.size(); idx++) {
     metric_map.insert(pair_t(metrics[idx]->getName(),*metrics[idx]));
   }
   
   return metric_map;
-  
 }
 
 std::map<const string, const double>

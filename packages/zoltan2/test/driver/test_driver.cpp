@@ -295,8 +295,8 @@ void run(const UserInputForTests &uinput,
       int stride=0;
       reinterpret_cast<xcrsGraph_adapter *>(ia)->getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=offsets[i], k=0; j < offsets[i + 1]; j++, k++)
-	  printf("%d %d %d %f\n", edim, vertexIds[i], adjIds[j], weights[stride*k]);
+	for (lno_t j=offsets[i]; j < offsets[i + 1]; j++)
+	  printf("%d %d %d %f\n", edim, vertexIds[i], adjIds[j], weights[stride*j]);
     }
   }
 #endif
@@ -310,19 +310,26 @@ void run(const UserInputForTests &uinput,
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
  // get metric object
-  RCP<EvaluatePartition<basic_id_t> > metricObject =
-		  rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
-  
-  try {
-	   std::ostringstream msg;
-	   MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msg ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
-	   if(rank == 0) {
-		   cout << msg.str();
-	   }
-  }
-  catch(std::logic_error theLogicError) {
+  if( problem_parameters.isSublist("Metrics") ) { // the specification is that we don't create anything unless the Metrics list exists
+    RCP<EvaluatePartition<basic_id_t> > metricObject =
+      rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
+
+    std::ostringstream msgSummary;
+	metricObject->printMetrics(msgSummary, true); //
+    if(rank == 0) {
+	     cout << msgSummary.str();
+    }
+
+	try {
+	     std::ostringstream msgResults;
+	     MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msgResults ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
+	     if(rank == 0) {
+	 	   cout << msgResults.str();
+	     }
+	}
+    catch(std::logic_error theLogicError) {
 	  cout << "test_driver.cpp passed bad input parameters to analyzeMetrics(): " << theLogicError.what() << endl;
-  }
+    }
 
 #define BDD
 #ifdef BDD 
@@ -383,6 +390,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 6. Clean up
   ////////////////////////////////////////////////////////////
+  }
 }
 
 int main(int argc, char *argv[])

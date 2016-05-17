@@ -101,7 +101,7 @@ static std::string static_metricTypeName_;
 template <typename scalar_t>
 std::string GraphMetrics<scalar_t>::static_metricTypeName_ = GRAPH_METRICS_TYPE_NAME;
 
-/*! \synchronize this with the enum list. */
+/*! \lists all metrics for this class. */
 template <typename scalar_t>
 std::vector<std::string> GraphMetrics<scalar_t>::static_metricNames_ = {
   "global sum",

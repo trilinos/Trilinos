@@ -88,21 +88,8 @@ public:
 							  const ParameterList &metricsParameters,
                               std::ostringstream & msg_stream )
   {
-	  // for debugging - print the full parameter list
-	  // metricsParameters.print( msg_stream );
-
-	  // this is a preference question - do we want to print all the metrics out?
-	  // this code will first print the list of info for "ImbalanceMetrics" then "GraphMetrics"
-	  // follows the original layout but doesn't fit that well into the new design scheme we are currently implementing
-	  const std::vector<std::string> & allPossibleTypes = Zoltan2::BaseClassMetrics<zscalar_t>::static_allMetricNames_;
-	  for(auto metricType : allPossibleTypes) {
-		  msg_stream << std::endl;
-		  msg_stream << "Printing data for: " << metricType << std::endl;
-		  metricObject->printMetrics(msg_stream, metricType); // Sequence is to print the metrics, then do analysis, then print the results, for each class type found
-	  }
-
 	  if(metricsParameters.numParams() == 0 ) {
-		  throw std::logic_error( "The parameter block is empty. No metric checks were found!" );
+		  return true; // specification is that we do nothing - we may just be testing our status
 	  }
 
 	  bool bAllPassed = true;

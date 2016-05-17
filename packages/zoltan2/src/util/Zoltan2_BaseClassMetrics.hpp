@@ -109,7 +109,7 @@ BaseClassMetrics(int memCount) :
 /*! \abstract printLine. Not abstract so that we can generically support stl containers like maps. */
 virtual void printLine(std::ostream &os) const {};
 
-/*! \abstract getMetrics. Forces declaration of a static string list which should be synchronized to the enum list definition */
+/*! \abstract getMetrics. Forces declaration of a static string list of the different metric types */
 virtual const std::vector<std::string> & getMetrics() const { return static_metricNames_; }
 
 /*! \brief Get the class type of the metric. */
@@ -151,7 +151,7 @@ int convertMetricNameToIndex(const std::string & metric_name) const
 	return metricIndex; // this can return metricNames.size() if not found
 }
 
-/*! \setup a static string name indicating my class name. This stub name exists so that this base class is not virtual. It should never be used. */
+/*! \setup a static string name indicating my class name. This stub name exists so that this base class is not virtual to resolve problems with using metrics with stl. It should never be used. */
 static std::string static_unknown_metricTypeName_;
 
 /*! \setup a static vector of strings. Non virtual so that we can generically support stl containers like maps. */
