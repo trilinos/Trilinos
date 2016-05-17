@@ -75,12 +75,12 @@ ENDIF()
 MARK_AS_ADVANCED(Trilinos_REPOS_URL_BASE)
 
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
-  MOOCHO  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
-  Sundance  packages/Sundance  GIT  ${Trilinos_REPOS_URL_BASE}Sundance  NOPACKAGES  Nightly
-  CTrilinos  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
-  ForTrilinos  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  Nightly
-  Optika  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly
-  Mesquite  packages/mesquite  GIT  ${Trilinos_REPOS_URL_BASE}mesquite  NOPACKAGES  Nightly
+  MOOCHO_repo  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
+  Sundance_repo  packages/Sundance  GIT  ${Trilinos_REPOS_URL_BASE}Sundance  NOPACKAGES  Nightly
+  CTrilinos_repo  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
+  ForTrilinos_repo  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  Nightly
+  Optika_repo  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly
+  Mesquite_repo  packages/mesquite  GIT  ${Trilinos_REPOS_URL_BASE}mesquite  NOPACKAGES  Nightly
   preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
   TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
   )
