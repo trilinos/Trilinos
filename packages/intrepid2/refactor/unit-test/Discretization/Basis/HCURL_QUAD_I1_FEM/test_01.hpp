@@ -111,6 +111,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
       
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = Parameters::Tolerence;
       int errorFlag = 0;
@@ -302,61 +303,71 @@ namespace Intrepid2 {
       
         Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
 
-        DynRankView ConstructWithLabel(quadNodes, 9, 2);
+        DynRankViewHost ConstructWithLabel(quadNodesHost, 9, 2);
 
-        quadNodes(0,0) = -1.0;  quadNodes(0,1) = -1.0;
-        quadNodes(1,0) =  1.0;  quadNodes(1,1) = -1.0;
-        quadNodes(2,0) =  1.0;  quadNodes(2,1) =  1.0;
-        quadNodes(3,0) = -1.0;  quadNodes(3,1) =  1.0;
+        quadNodesHost(0,0) = -1.0;  quadNodesHost(0,1) = -1.0;
+        quadNodesHost(1,0) =  1.0;  quadNodesHost(1,1) = -1.0;
+        quadNodesHost(2,0) =  1.0;  quadNodesHost(2,1) =  1.0;
+        quadNodesHost(3,0) = -1.0;  quadNodesHost(3,1) =  1.0;
 
-        quadNodes(4,0) =  0.0;  quadNodes(4,1) =  0.0;
-        quadNodes(5,0) =  0.0;  quadNodes(5,1) = -0.5;
-        quadNodes(6,0) =  0.0;  quadNodes(6,1) =  0.5;
-        quadNodes(7,0) = -0.5;  quadNodes(7,1) =  0.0;
-        quadNodes(8,0) =  0.5;  quadNodes(8,1) =  0.0;
+        quadNodesHost(4,0) =  0.0;  quadNodesHost(4,1) =  0.0;
+        quadNodesHost(5,0) =  0.0;  quadNodesHost(5,1) = -0.5;
+        quadNodesHost(6,0) =  0.0;  quadNodesHost(6,1) =  0.5;
+        quadNodesHost(7,0) = -0.5;  quadNodesHost(7,1) =  0.0;
+        quadNodesHost(8,0) =  0.5;  quadNodesHost(8,1) =  0.0;
+
+        auto quadNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+        Kokkos::deep_copy(quadNodes, quadNodesHost);
         
         // Dimensions for the output arrays:
         const auto numFields = quadBasis.getCardinality();
         const auto numPoints = quadNodes.dimension(0);
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
       
+        {
         DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
         quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
+        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        Kokkos::deep_copy(vals_host, vals);
         for (auto i=0;i<numFields;++i) 
           for (auto j=0;j<numPoints;++j) 
             for (auto k=0;k<spaceDim;++k) {
             
               // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
               const auto l = k + i * spaceDim + j * spaceDim * numFields;
-              if (std::abs(vals(i,j,k) - basisValues[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               
                 // Output the multi-index of the value where the error is: 
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                *outStream << "}  computed value: " << vals(i,j,k)
+                *outStream << "}  computed value: " << vals_host(i,j,k)
                            << " but reference value: " << basisValues[l] << "\n";
               }
             }
-      
+        }
+        { 
         // Check CURL of basis function: resize vals to rank-2 container
-        vals =  DynRankView("vals", numFields, numPoints);
+        DynRankView ConstructWithLabel(vals, numFields, numPoints);
         quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        Kokkos::deep_copy(vals_host, vals);
         for (auto i=0;i<numFields;++i) 
           for (auto j=0;j<numPoints;++j) {
             const auto l =  i + j * numFields;
-            if (std::abs(vals(i,j) - basisCurls[l]) > tol) {
+            if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
             
               // Output the multi-index of the value where the error is:
               *outStream << " At multi-index { ";
               *outStream << i << " ";*outStream << j << " ";
-              *outStream << "}  computed curl component: " << vals(i,j)
+              *outStream << "}  computed curl component: " << vals_host(i,j)
                          << " but reference curl component: " << basisCurls[l] << "\n";
             }
           }
+        }
       
         // Catch unexpected errors
       } catch (std::logic_error err) {
@@ -399,17 +410,22 @@ namespace Intrepid2 {
         }
       
         // Check mathematical correctness
-        DynRankView ConstructWithLabel(tangents, numFields,spaceDim); // tangents at each point basis point
+        DynRankViewHost ConstructWithLabel(tangents, numFields,spaceDim); // tangents at each point basis point
         tangents(0,0) =  2.0; tangents(0,1) =  0.0;
         tangents(1,0) =  0.0; tangents(1,1) =  2.0;
         tangents(2,0) = -2.0; tangents(2,1) =  0.0;
         tangents(3,0) =  0.0; tangents(3,1) = -2.0;
         
-        DynRankView ConstructWithLabel(cvals, numFields,spaceDim);
-        DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim); // last dimension is spatial dim
+        DynRankView ConstructWithLabel(cvals_dev, numFields,spaceDim);
+        DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
 
-        quadBasis.getDofCoords(cvals);
-        quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+        quadBasis.getDofCoords(cvals_dev);
+        quadBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+
+        const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
+        Kokkos::deep_copy(bvals, bvals_dev);
+        const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
+        Kokkos::deep_copy(cvals, cvals_dev);
 
         ValueType expected_tangent;
         for (auto i=0;i<numFields;++i) {
