@@ -50,10 +50,10 @@
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
-#include "MueLu_SubBlockAFactory_def.hpp"
+#include "MueLu_ReorderBlockAFactory_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::SubBlockAFactory<S, LO, GO, N>;
+  template class MueLu::ReorderBlockAFactory<S, LO, GO, N>;
 
 #define MUELU_INST_N(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
