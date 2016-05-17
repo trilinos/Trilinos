@@ -62,7 +62,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tEpetraScatter, constructor)
 {
-   PHX::KokkosDeviceSession session;
 
    using Teuchos::RCP;
    using Teuchos::rcp;

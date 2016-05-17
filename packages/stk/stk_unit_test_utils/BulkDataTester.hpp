@@ -42,8 +42,6 @@
 #include <stk_mesh/baseImpl/BucketRepository.hpp>  // for BucketRepository
 #include <stk_mesh/base/EntityLess.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
-#include "SideSharingUsingGraph.hpp"
-
 #include "BucketTester.hpp"
 
 namespace stk { namespace unit_test_util {
@@ -173,10 +171,9 @@ public:
         return this->internal_modification_end_for_change_entity_owner(opt);
     }
 
-    bool my_modification_end_for_entity_creation( stk::mesh::EntityRank entity_rank, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
+    bool my_modification_end_for_entity_creation( const std::vector<stk::mesh::EntityRank> & entityRanks, stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT)
     {
-        std::vector<stk::mesh::EntityRank> entity_rank_vector = {entity_rank};
-        return this->modification_end_for_entity_creation(entity_rank_vector, opt);
+        return this->modification_end_for_entity_creation(entityRanks, opt);
     }
 
     bool my_is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
@@ -373,14 +370,6 @@ public:
 
     ~BulkDataFaceSharingTester(){}
 
-    unsigned get_index_of_side_in_element_bucket(stk::mesh::Entity element, stk::mesh::Entity side);
-
-    stk::mesh::Permutation get_permutation(stk::mesh::Entity element, const stk::mesh::EntityVector& nodes);
-
-    stk::mesh::EntityVector convert_keys_to_entities(const std::vector<stk::mesh::EntityKey>& node_keys);
-
-    void change_connectivity_for_edge_or_face(stk::mesh::Entity side, const std::vector<stk::mesh::EntityKey>& node_keys);
-
     void change_entity_key_and_nodes(const std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides);
 
     virtual void change_entity_key_and_update_sharing_info(std::vector<stk::mesh::shared_entity_type> & potentially_shared_sides);
@@ -404,51 +393,6 @@ protected:
     void connect_side_from_other_proc_to_local_elements(const stk::mesh::EntityVector& elements, const stk::mesh::EntityVector& nodes, const stk::mesh::shared_entity_type &shared_entity_other_proc,
             stk::mesh::BulkData& bulkData, std::vector<stk::mesh::shared_entity_type>& shared_entities_this_proc, int other_proc_id);
 };
-
-class BulkDataElemGraphFaceSharingTester :  public BulkDataFaceSharingTester
-{
-public:
-    BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
-        BulkDataFaceSharingTester(mesh_meta_data, comm), graph(nullptr)
-    {
-    }
-
-    BulkDataElemGraphFaceSharingTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm, enum stk::mesh::BulkData::AutomaticAuraOption auto_aura_option) :
-        BulkDataFaceSharingTester(mesh_meta_data, comm, auto_aura_option), graph(nullptr)
-    {
-    }
-
-    ~BulkDataElemGraphFaceSharingTester()
-    {
-        delete graph;
-    }
-
-    virtual void fill_shared_entities_of_rank_while_updating_sharing_info(stk::mesh::EntityRank rank, std::vector<stk::mesh::Entity> &shared_new);
-
-    bool my_entity_comm_map_insert(stk::mesh::Entity entity, const stk::mesh::EntityCommInfo &val)
-    {
-        return entity_comm_map_insert(entity,val);
-    }
-
-    virtual void initialize_graph()
-    {
-        if(graph==nullptr)
-            graph = new stk::mesh::ElemElemGraph(*this, this->mesh_meta_data().locally_owned_part());
-    }
-
-    virtual stk::mesh::ElemElemGraph& get_graph()
-    {
-        return *graph;
-    }
-
-protected:
-    void add_comm_map_for_sharing(const std::vector<stk::unit_test_util::SideSharingData>& sideSharingDataToSend, stk::mesh::EntityVector& shared_entities);
-
-    void use_elem_elem_graph_to_determine_shared_entities(std::vector<stk::mesh::Entity>& shared_entities);
-    stk::mesh::ElemElemGraph *graph;
-};
-
-
 
 } } // namespace stk unit_test_util
 

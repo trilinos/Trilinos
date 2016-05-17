@@ -49,9 +49,9 @@ void CUSP_apply(
     in_nonzero_index_view_type entriesB,
     in_nonzero_value_view_type valuesB,
     bool transposeB,
-    in_row_index_view_type &row_mapC,
-    in_nonzero_index_view_type &entriesC,
-    in_nonzero_value_view_type &valuesC){
+    typename in_row_index_view_type::non_const_type &row_mapC,
+    typename in_nonzero_index_view_type::non_const_type &entriesC,
+    typename in_nonzero_value_view_type::non_const_type &valuesC){
 #ifdef KERNELS_HAVE_CUSP
   typedef typename KernelHandle::row_lno_t idx;
   typedef typename KernelHandle::nnz_scalar_t value_type;
@@ -146,11 +146,11 @@ void CUSP_apply(
   entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" ,  C.column_indices.size());
   valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  C.values.size());
 
-  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<in_row_index_view_type,
+  Kokkos::parallel_for (my_exec_space (0, m + 1) , CopyArrayToCuspArray<typename in_row_index_view_type::non_const_type,
       idx >(row_mapC, (idx *) thrust::raw_pointer_cast(C.row_offsets.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<in_nonzero_index_view_type,
+  Kokkos::parallel_for (my_exec_space (0, C.column_indices.size()) , CopyArrayToCuspArray<typename in_nonzero_index_view_type::non_const_type,
       idx >(entriesC, (idx *) thrust::raw_pointer_cast(C.column_indices.data())));
-  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<in_nonzero_value_view_type,
+  Kokkos::parallel_for (my_exec_space (0, C.values.size()) , CopyArrayToCuspArray<typename in_nonzero_value_view_type::non_const_type,
       value_type>(valuesC, (value_type *) thrust::raw_pointer_cast(C.values.data())));
 
 #else

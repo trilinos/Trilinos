@@ -89,7 +89,8 @@ namespace Basker{
     if(been_fact)
       {
         free_factor();
-        FREE(pinv);
+        //FREE(pinv);
+        delete pinv;
       }
     if(perm_flag)
       {

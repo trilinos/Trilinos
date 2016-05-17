@@ -91,7 +91,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -142,7 +141,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -272,7 +270,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -387,7 +384,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -564,7 +560,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
-   PHX::KokkosDeviceSession session;
 
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);

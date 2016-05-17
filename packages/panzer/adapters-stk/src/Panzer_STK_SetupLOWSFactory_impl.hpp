@@ -58,17 +58,17 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 
-#ifdef HAVE_TEKO
+#ifdef PANZER_HAVE_TEKO
 #include "Teko_StratimikosFactory.hpp"
 #endif
 
-#ifdef HAVE_MUELU
+#ifdef PANZER_HAVE_MUELU
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include "Stratimikos_MueLuHelpers.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #endif
 
-#ifdef HAVE_IFPACK2
+#ifdef PANZER_HAVE_IFPACK2
 #include <Thyra_Ifpack2PreconditionerFactory.hpp>
 #endif
 
@@ -206,7 +206,7 @@ namespace {
                    int spatialDim,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
                    const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
-                   #ifdef HAVE_TEKO
+                   #ifdef PANZER_HAVE_TEKO
                    const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif
                    bool writeCoordinates,
@@ -219,14 +219,14 @@ namespace {
     // before teko is added. This is because Teko steals its defaults from the solver its being injected
     // into!
 
-    #ifdef HAVE_MUELU
+    #ifdef PANZER_HAVE_MUELU
     {
       // TAW: the following is probably not optimal but it corresponds to what have been there before...
       Stratimikos::enableMueLu(linearSolverBuilder,"MueLu");
       Stratimikos::enableMueLu<int,panzer::Ordinal64,panzer::TpetraNodeType>(linearSolverBuilder,"MueLu-Tpetra");
     }
     #endif // MUELU
-    #ifdef HAVE_IFPACK2
+    #ifdef PANZER_HAVE_IFPACK2
     {
       typedef Thyra::PreconditionerFactoryBase<double> Base;
       typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double, int, panzer::Ordinal64,panzer::TpetraNodeType> > Impl;
@@ -236,7 +236,7 @@ namespace {
     #endif // MUELU
 
 
-    #ifdef HAVE_TEKO
+    #ifdef PANZER_HAVE_TEKO
     Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
 
     if(!blockedAssembly) {
@@ -288,7 +288,7 @@ namespace {
              }
           }
 
-          #ifdef HAVE_MUELU
+          #ifdef PANZER_HAVE_MUELU
           if(Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<int,panzer::Ordinal64> >(globalIndexer)!=Teuchos::null) {
              if(!writeCoordinates)
                 callback->preRequest(Teko::RequestMesg(Teuchos::rcp(new Teuchos::ParameterList())));

@@ -5349,6 +5349,398 @@ namespace Tpetra {
         } // If my process' rank is 0
       }
 
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given output stream.
+      ///
+      /// Write the given Tpetra::CrsGraph sparse graph to an output
+      /// stream, using the Matrix Market "coordinate" format.
+      ///
+      /// \param out [out] Name of the output stream to which to write
+      ///   the given sparse graph.  The graph is distributed, but
+      ///   only Process 0 in the graph's communicator writes to the
+      ///   output stream.  Thus, the output stream need only be valid
+      ///   (writeable) on Process 0.
+      ///
+      /// \param graph [in] The sparse graph to write.
+      ///
+      /// \param graphName [in] Name of the graph, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param graphDescription [in] Graph description, to print in
+      ///   the comments section of the output stream.  If empty, we
+      ///   don't print anything (not even an empty line).
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Process 0 of the graph's
+      ///   communicator.  False (do NOT print) by default.
+      ///
+      /// \warning The current implementation gathers the whole graph
+      ///   onto Process 0 in the graph's communicator.  This will
+      ///   cause out-of-memory errors if the graph is too big to fit
+      ///   on one process.  This will be fixed in the future.
+      static void
+      writeSparseGraph (std::ostream& out,
+                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const std::string& graphName,
+                        const std::string& graphDescription,
+                        const bool debug=false)
+      {
+        using Teuchos::Comm;
+        using Teuchos::FancyOStream;
+        using Teuchos::getFancyOStream;
+        using Teuchos::null;
+        using Teuchos::RCP;
+        using Teuchos::rcpFromRef;
+        using std::cerr;
+        using std::endl;
+        typedef local_ordinal_type LO;
+        typedef global_ordinal_type GO;
+        typedef typename sparse_matrix_type::crs_graph_type crs_graph_type;
+
+        // Get the graph's communicator.  Processes on which the
+        // graph's Map or communicator is null don't participate in
+        // this operation.  This function shouldn't even be called on
+        // those processes.
+        auto rowMap = graph.getRowMap ();
+        if (rowMap.is_null ()) {
+          return;
+        }
+        auto comm = rowMap->getComm ();
+        if (comm.is_null ()) {
+          return;
+        }
+        const int myRank = comm->getRank ();
+
+        // Optionally, make a stream for debugging output.
+        RCP<FancyOStream> err =
+          debug ? getFancyOStream (rcpFromRef (std::cerr)) : null;
+        if (debug) {
+          std::ostringstream os;
+          os << myRank << ": writeSparseGraph" << endl;
+          *err << os.str ();
+          comm->barrier ();
+          os << "-- " << myRank << ": past barrier" << endl;
+          *err << os.str ();
+        }
+
+        // Whether to print debugging output to stderr.
+        const bool debugPrint = debug && myRank == 0;
+
+        // We've already gotten the rowMap above.
+        auto colMap = graph.getColMap ();
+        auto domainMap = graph.getDomainMap ();
+        auto rangeMap = graph.getRangeMap ();
+
+        const global_size_t numRows = rangeMap->getGlobalNumElements ();
+        const global_size_t numCols = domainMap->getGlobalNumElements ();
+
+        if (debug && myRank == 0) {
+          std::ostringstream os;
+          os << "-- Input sparse graph is:"
+             << "---- " << numRows << " x " << numCols << " with "
+             << graph.getGlobalNumEntries () << " entries;" << endl
+             << "---- "
+             << (graph.isGloballyIndexed () ? "Globally" : "Locally")
+             << " indexed." << endl
+             << "---- Its row Map has " << rowMap->getGlobalNumElements ()
+             << " elements." << endl
+             << "---- Its col Map has " << colMap->getGlobalNumElements ()
+             << " elements." << endl;
+          *err << os.str ();
+        }
+        // Make the "gather" row map, where Proc 0 owns all rows and
+        // the other procs own no rows.
+        const size_t localNumRows = (myRank == 0) ? numRows : 0;
+        if (debug) {
+          std::ostringstream os;
+          os << "-- " << myRank << ": making gatherRowMap" << endl;
+          *err << os.str ();
+        }
+        auto gatherRowMap = Details::computeGatherMap (rowMap, err, debug);
+
+        // Since the graph may in general be non-square, we need to
+        // make a column map as well.  In this case, the column map
+        // contains all the columns of the original graph, because we
+        // are gathering the whole graph onto Proc 0.  We call
+        // computeGatherMap to preserve the original order of column
+        // indices over all the processes.
+        const size_t localNumCols = (myRank == 0) ? numCols : 0;
+        auto gatherColMap = Details::computeGatherMap (colMap, err, debug);
+
+        // Current map is the source map, gather map is the target map.
+        Import<LO, GO, node_type> importer (rowMap, gatherRowMap);
+
+        // Create a new CrsGraph to hold the result of the import.
+        // The constructor needs a column map as well as a row map,
+        // for the case that the graph is not square.
+        crs_graph_type newGraph (gatherRowMap, gatherColMap,
+                                 static_cast<size_t> (0));
+        // Import the sparse graph onto Proc 0.
+        newGraph.doImport (graph, importer, INSERT);
+
+        // fillComplete() needs the domain and range maps for the case
+        // that the graph is not square.
+        {
+          RCP<const map_type> gatherDomainMap =
+            rcp (new map_type (numCols, localNumCols,
+                               domainMap->getIndexBase (),
+                               comm));
+          RCP<const map_type> gatherRangeMap =
+            rcp (new map_type (numRows, localNumRows,
+                               rangeMap->getIndexBase (),
+                               comm));
+          newGraph.fillComplete (gatherDomainMap, gatherRangeMap);
+        }
+
+        if (debugPrint) {
+          cerr << "-- Output sparse graph is:"
+               << "---- " << newGraph.getRangeMap ()->getGlobalNumElements ()
+               << " x "
+               << newGraph.getDomainMap ()->getGlobalNumElements ()
+               << " with "
+               << newGraph.getGlobalNumEntries () << " entries;" << endl
+               << "---- "
+               << (newGraph.isGloballyIndexed () ? "Globally" : "Locally")
+               << " indexed." << endl
+               << "---- Its row map has "
+               << newGraph.getRowMap ()->getGlobalNumElements ()
+               << " elements, with index base "
+               << newGraph.getRowMap ()->getIndexBase () << "." << endl
+               << "---- Its col map has "
+               << newGraph.getColMap ()->getGlobalNumElements ()
+               << " elements, with index base "
+               << newGraph.getColMap ()->getIndexBase () << "." << endl
+               << "---- Element count of output graph's column Map may differ "
+               << "from that of the input matrix's column Map, if some columns "
+               << "of the matrix contain no entries." << endl;
+        }
+
+        //
+        // Print the metadata and the graph entries on Process 0 of
+        // the graph's communicator.
+        //
+        if (myRank == 0) {
+          // Print the Matrix Market banner line.  CrsGraph stores
+          // data nonsymmetrically ("general").  This implies that
+          // readSparseGraph() on a symmetrically stored input file,
+          // followed by writeSparseGraph() on the resulting sparse
+          // graph, will result in an output file with a different
+          // banner line than the original input file.
+          out << "%%MatrixMarket matrix coordinate pattern general" << endl;
+
+          // Print comments (the graph name and / or description).
+          if (graphName != "") {
+            printAsComment (out, graphName);
+          }
+          if (graphDescription != "") {
+            printAsComment (out, graphDescription);
+          }
+
+          // Print the Matrix Market header (# rows, # columns, #
+          // stored entries).  Use the range resp. domain map for the
+          // number of rows resp. columns, since Tpetra::CrsGraph uses
+          // the column map for the number of columns.  That only
+          // corresponds to the "linear-algebraic" number of columns
+          // when the column map is uniquely owned
+          // (a.k.a. one-to-one), which only happens if the graph is
+          // block diagonal (one block per process).
+          out << newGraph.getRangeMap ()->getGlobalNumElements () << " "
+              << newGraph.getDomainMap ()->getGlobalNumElements () << " "
+              << newGraph.getGlobalNumEntries () << endl;
+
+          // The Matrix Market format expects one-based row and column
+          // indices.  We'll convert the indices on output from
+          // whatever index base they use to one-based indices.
+          const GO rowIndexBase = gatherRowMap->getIndexBase ();
+          const GO colIndexBase = newGraph.getColMap()->getIndexBase ();
+          //
+          // Print the entries of the graph.
+          //
+          // newGraph can never be globally indexed, since we called
+          // fillComplete() on it.  We include code for both cases
+          // (globally or locally indexed) just in case that ever
+          // changes.
+          if (newGraph.isGloballyIndexed ()) {
+            // We know that the "gather" row Map is contiguous, so we
+            // don't need to get the list of GIDs.
+            const GO minAllGlobalIndex = gatherRowMap->getMinAllGlobalIndex ();
+            const GO maxAllGlobalIndex = gatherRowMap->getMaxAllGlobalIndex ();
+            for (GO globalRowIndex = minAllGlobalIndex;
+                 globalRowIndex <= maxAllGlobalIndex; // inclusive range
+                 ++globalRowIndex) {
+              ArrayView<const GO> ind;
+              newGraph.getGlobalRowView (globalRowIndex, ind);
+              for (auto indIter = ind.begin (); indIter != ind.end (); ++indIter) {
+                const GO globalColIndex = *indIter;
+                // Convert row and column indices to 1-based.
+                // This works because the global index type is signed.
+                out << (globalRowIndex + 1 - rowIndexBase) << " "
+                    << (globalColIndex + 1 - colIndexBase) << " ";
+                out << endl;
+              } // For each entry in the current row
+            } // For each row of the "gather" graph
+          }
+          else { // newGraph is locally indexed
+            typedef OrdinalTraits<GO> OTG;
+            for (LO localRowIndex = gatherRowMap->getMinLocalIndex ();
+                 localRowIndex <= gatherRowMap->getMaxLocalIndex ();
+                 ++localRowIndex) {
+              // Convert from local to global row index.
+              const GO globalRowIndex =
+                gatherRowMap->getGlobalElement (localRowIndex);
+              TEUCHOS_TEST_FOR_EXCEPTION
+                (globalRowIndex == OTG::invalid (), std::logic_error, "Failed "
+                 "to convert the supposed local row index " << localRowIndex <<
+                 " into a global row index.  Please report this bug to the "
+                 "Tpetra developers.");
+              ArrayView<const LO> ind;
+              newGraph.getLocalRowView (localRowIndex, ind);
+              for (auto indIter = ind.begin (); indIter != ind.end (); ++indIter) {
+                // Convert the column index from local to global.
+                const GO globalColIndex =
+                  newGraph.getColMap ()->getGlobalElement (*indIter);
+                TEUCHOS_TEST_FOR_EXCEPTION(
+                  globalColIndex == OTG::invalid(), std::logic_error,
+                  "On local row " << localRowIndex << " of the sparse graph: "
+                  "Failed to convert the supposed local column index "
+                  << *indIter << " into a global column index.  Please report "
+                  "this bug to the Tpetra developers.");
+                // Convert row and column indices to 1-based.
+                // This works because the global index type is signed.
+                out << (globalRowIndex + 1 - rowIndexBase) << " "
+                    << (globalColIndex + 1 - colIndexBase) << " ";
+                out << endl;
+              } // For each entry in the current row
+            } // For each row of the "gather" graph
+          } // Whether the "gather" graph is locally or globally indexed
+        } // If my process' rank is 0
+      }
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given output stream, with no comments.
+      ///
+      /// See the above five-argument version of this function for
+      /// full documentation.
+      static void
+      writeSparseGraph (std::ostream& out,
+                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const bool debug=false)
+      {
+        writeSparseGraph (out, graph, "", "", debug);
+      }
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given file (by filename).
+      ///
+      /// Write the given Tpetra::CrsGraph sparse graph to the given
+      /// file, using the Matrix Market "coordinate" format.  Process
+      /// 0 in the graph's communicator is the only MPI process that
+      /// opens or writes to the file.  Include the graph name and
+      /// description in the comments section of the file (after the
+      /// initial banner line, but before the graph metadata and
+      /// data).
+      ///
+      /// \param filename [in] Name of the file to which to write the
+      ///   given sparse graph.  The graph is distributed, but only
+      ///   Process 0 in the graph's communicator opens the file and
+      ///   writes to it.
+      ///
+      /// \param graph [in] The sparse graph to write.
+      ///
+      /// \param graphName [in] Name of the graph, to print in the
+      ///   comments section of the output stream.  If empty, we don't
+      ///   print anything (not even an empty line).
+      ///
+      /// \param graphDescription [in] Graph description, to print in
+      ///   the comments section of the output stream.  If empty, we
+      ///   don't print anything (not even an empty line).
+      ///
+      /// \param debug [in] Whether to print possibly copious
+      ///   debugging output to stderr on Process 0 of the graph's
+      ///   communicator.  False (do NOT print) by default.
+      ///
+      /// \warning The current implementation gathers the whole graph
+      ///   onto Process 0 in the graph's communicator.  This will
+      ///   cause out-of-memory errors if the graph is too big to fit
+      ///   on one process.  This will be fixed in the future.
+      static void
+      writeSparseGraphFile (const std::string& filename,
+                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const std::string& graphName,
+                            const std::string& graphDescription,
+                            const bool debug=false)
+      {
+        auto comm = graph.getComm ();
+        if (comm.is_null ()) {
+          // Processes on which the communicator is null shouldn't
+          // even call this function.  The convention is that
+          // processes on which the object's communicator is null do
+          // not participate in collective operations involving the
+          // object.
+          return;
+        }
+        const int myRank = comm->getRank ();
+        std::ofstream out;
+
+        // Only open the file on Process 0.
+        if (myRank == 0) {
+          out.open (filename.c_str ());
+        }
+        writeSparseGraph (out, graph, graphName, graphDescription, debug);
+        // We can rely on the destructor of the output stream to close
+        // the file on scope exit, even if writeSparseGraph() throws
+        // an exception.
+      }
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given file (by filename), with no comments.
+      ///
+      /// See the above five-argument overload for full documentation.
+      static void
+      writeSparseGraphFile (const std::string& filename,
+                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const bool debug=false)
+      {
+        writeSparseGraphFile (filename, graph, "", "", debug);
+      }
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given file (by filename), taking the graph by Teuchos::RCP.
+      ///
+      /// This is just a convenience for users who don't want to
+      /// remember to dereference the Teuchos::RCP.  For
+      /// documentation, see the above overload of this function that
+      /// takes the graph by const reference, rather than by
+      /// Teuchos::RCP.
+      static void
+      writeSparseGraphFile (const std::string& filename,
+                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const std::string& graphName,
+                            const std::string& graphDescription,
+                            const bool debug=false)
+      {
+        writeSparseGraphFile (filename, *pGraph, graphName, graphDescription, debug);
+      }
+
+      /// \brief Print the sparse graph in Matrix Market format to the
+      ///   given file (by filename), with no comments, taking the
+      ///   graph by Teuchos::RCP.
+      ///
+      /// This is just a convenience for users who don't want to
+      /// remember to dereference the Teuchos::RCP.  For
+      /// documentation, see the above overload of this function that
+      /// takes the graph by const reference, rather than by
+      /// Teuchos::RCP.
+      static void
+      writeSparseGraphFile (const std::string& filename,
+                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const bool debug=false)
+      {
+        writeSparseGraphFile (filename, *pGraph, "", "", debug);
+      }
+
       /// \brief Print the sparse matrix in Matrix Market format.
       ///
       /// Write the given Tpetra::CrsMatrix sparse matrix to an output

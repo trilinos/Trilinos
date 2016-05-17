@@ -42,17 +42,28 @@
 #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP
 #define KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP
 
-#include "Kokkos_DynRankView.hpp"
-
 #include "Sacado_ConfigDefs.h"
 
-#if defined(HAVE_SACADO_KOKKOSCONTAINERS) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+// This file is setup to always work even when KokkosContainers (which contains
+// Kokkos::DynRankView) isn't enabled.
+//
+// We also include Kokkos_DynRankView after our specializations to ensure any
+// overloads we provide here are in scope before they are used inside the
+// DynRankView
+
+#if defined(HAVE_SACADO_KOKKOSCONTAINERS)
+
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
 #include "Kokkos_View_Fad.hpp"
 
 namespace Kokkos {
 namespace Experimental {
 namespace Impl {
+
+// Forward declaration of the trait we are specialization
+// (see comments above about order of includes)
+template <typename Spec> struct DynRankDimTraits;
 
 template <>
 struct DynRankDimTraits<ViewSpecializeSacadoFad> {
@@ -69,14 +80,15 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
                            , const size_t N7 )
   {
     return
-      (   (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0 && N0 == 0) ? 0
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0) ? 0
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0) ? 1
-      : ( (N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0) ? 2
-      : ( (N6 == 0 && N5 && N4 == 0) ? 3
-      : ( (N6 == 0 && N5 == 0) ? 4
-      : ( (N6 == 0) ? 5
-      : 6 ) ) ) ) ) ) );
+      (   (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0 && N0 == 0) ? 0
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0) ? 0
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0) ? 1
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0) ? 2
+      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0) ? 3
+      : ( (N7 == 0 && N6 == 0 && N5 == 0) ? 4
+      : ( (N7 == 0 && N6 == 0) ? 5
+      : ( (N7 == 0) ? 6
+      : 7 ) ) ) ) ) ) ) );
   }
 
   // Compute the rank of the view from the nonzero layout arguments.
@@ -146,6 +158,22 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 }
 }
 
-#endif
+#endif //defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+
+#include "Kokkos_DynRankView.hpp"
+
+namespace Kokkos {
+
+// Overload of dimension_scalar() for all dynamic-rank views
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const Experimental::DynRankView<T,P...>& view) {
+  return dimension_scalar(view.ConstDownCast());
+}
+
+}
+
+#endif // defined(HAVE_SACADO_KOKKOSCONTAINERS)
 
 #endif /* #ifndef KOKKOS_DYN_RANK_VIEW_SACADO_FAD_HPP */

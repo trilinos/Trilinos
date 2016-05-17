@@ -78,7 +78,6 @@ namespace panzer {
 // triangle tests
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<double> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;
@@ -96,7 +95,6 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<double> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;

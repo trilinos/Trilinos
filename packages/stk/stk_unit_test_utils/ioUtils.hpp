@@ -11,12 +11,11 @@ namespace stk
 namespace unit_test_util
 {
 
-void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator);
-void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData, stk::ParallelMachine communicator);
+void fill_mesh_using_stk_io(const std::string &meshSpec, stk::mesh::BulkData &bulkData);
+void fill_mesh_using_stk_io_with_auto_decomp(const std::string &meshSpec, stk::mesh::BulkData &bulkData);
 
 void write_mesh_using_stk_io(const std::string &filename,
                              stk::mesh::BulkData &bulkData,
-                             stk::ParallelMachine communicator,
                              stk::io::DatabasePurpose databasePurpose = stk::io::WRITE_RESULTS);
 
 // Example:  meshSizeSpec = "2x2x1"

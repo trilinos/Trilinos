@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -32,63 +32,61 @@
 
 #include <Ioss_Transform.h>
 #include <Ioss_Utils.h>
-#include <stddef.h>
 #include <map>
 #include <ostream>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
 namespace Iotr {
 
-Ioss::Transform* Factory::create(const std::string& type)
-{
-  Ioss::Transform *transform = nullptr;
-  FactoryMap::iterator iter = registry()->find(type);
-  if (iter == registry()->end()) {
-    if (registry()->empty()) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: No transformations have been registered.\n"
-	     << "       Was Iotr::Initializer::initialize() called?\n\n";
-      IOSS_ERROR(errmsg);
-    } else {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: The transform named '" << type
-	     << "' is not supported.\n";
-      IOSS_ERROR(errmsg);
+  Ioss::Transform *Factory::create(const std::string &type)
+  {
+    Ioss::Transform *transform = nullptr;
+    auto             iter      = registry()->find(type);
+    if (iter == registry()->end()) {
+      if (registry()->empty()) {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: No transformations have been registered.\n"
+               << "       Was Iotr::Initializer::initialize() called?\n\n";
+        IOSS_ERROR(errmsg);
+      }
+      else {
+        std::ostringstream errmsg;
+        errmsg << "ERROR: The transform named '" << type << "' is not supported.\n";
+        IOSS_ERROR(errmsg);
+      }
     }
-  } else {
-    Factory* factory = (*iter).second;
-    transform = factory->make(type);
+    else {
+      Factory *factory = (*iter).second;
+      transform        = factory->make(type);
+    }
+    return transform;
   }
-  return transform;
-}
 
-int Factory::describe(Ioss::NameList *names)
-{
-  int count = 0;
-  FactoryMap::const_iterator I;
-  for (I = registry()->begin(); I != registry()->end(); ++I) {
-    names->push_back((*I).first);
-    count++;
+  int Factory::describe(Ioss::NameList *names)
+  {
+    int                        count = 0;
+    FactoryMap::const_iterator I;
+    for (I = registry()->begin(); I != registry()->end(); ++I) {
+      names->push_back((*I).first);
+      count++;
+    }
+    return count;
   }
-  return count;
-}
 
-Factory::Factory(const std::string& type)
-{
-  registry()->insert(std::make_pair(type, this));
-}
+  Factory::Factory(const std::string &type) { registry()->insert(std::make_pair(type, this)); }
 
-void Factory::alias(const std::string& base, const std::string& syn)
-{
-  Factory* factory = (*registry()->find(base)).second;
-  registry()->insert(std::make_pair(syn, factory));
-}
+  void Factory::alias(const std::string &base, const std::string &syn)
+  {
+    Factory *factory = (*registry()->find(base)).second;
+    registry()->insert(std::make_pair(syn, factory));
+  }
 
-FactoryMap* Factory::registry()
-{
-  static FactoryMap registry_;
-  return &registry_;
-}
+  FactoryMap *Factory::registry()
+  {
+    static FactoryMap registry_;
+    return &registry_;
+  }
 
-}
+} // namespace Iotr

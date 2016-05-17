@@ -334,6 +334,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
   typedef Tpetra::Vector<LO,GO> Vector;
   typedef Tpetra::Export<LO,GO,Node> Export;
+  typedef Tpetra::Import<LO,GO,Node> Import;
 
   //the GIDs are of type GO.
   typedef Tpetra::MultiVector<GO,LO,GO,Node> MultiVector;
@@ -454,6 +455,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
    */
   Export e(overlapmap,non_overlap_map);
 
+  // Note:  ETP 04/26/16  Temporarily create an importer for all of the
+  // doImport() calls below.  This works around mysterious failures when
+  // using the exporter for Cuda builds.
+  Import imp(non_overlap_map,overlapmap);
+
  /* 9.  Export data using ABSMAX.
    */
   non_overlap_mv->doExport(*overlap_mv,e,Tpetra::ABSMAX);
@@ -487,6 +493,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
   ArrayView<const GO> owned_ids = gid_map->getNodeElementList();
   int which_id=0;
   ArrayRCP<ArrayRCP<GO> > editnonoverlap = non_overlap_mv->get2dViewNonConst();
+  Kokkos::fence();
   for(size_t i=0; i<non_overlap_mv->getLocalLength(); ++i){
     for(int j=0; j<numFields_; ++j){
       if(editnonoverlap[j][i]!=0){
@@ -502,7 +509,7 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
 
  /* 13. Import data back to the overlap MV using REPLACE.
    */
-  overlap_mv->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
+  overlap_mv->doImport(*non_overlap_mv,imp,Tpetra::REPLACE);
 
  /* 14. Cross reference local element connectivity and overlap map to
    *     create final GID vectors.
@@ -519,13 +526,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     ElementBlockAccess naborAccess(false,connMngr_);
     RCP<const Map> overlapmap_nabor = buildOverlapMapFromElements(naborAccess);
 
-    Export e(overlapmap_nabor,non_overlap_map);
+    // Export e(overlapmap_nabor,non_overlap_map);
+    Import imp_nabor(non_overlap_map,overlapmap_nabor);
 
     Teuchos::RCP<MultiVector> overlap_mv_nabor
         = Tpetra::createMultiVector<GO>(overlapmap_nabor,(size_t)numFields_);
 
     // get all neighbor information
-    overlap_mv_nabor->doImport(*non_overlap_mv,e,Tpetra::REPLACE);
+    overlap_mv_nabor->doImport(*non_overlap_mv,imp_nabor,Tpetra::REPLACE);
 
     fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlapmap_nabor,*overlap_mv_nabor);
   }

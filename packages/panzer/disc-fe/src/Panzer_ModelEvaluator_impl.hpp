@@ -307,17 +307,9 @@ panzer::ModelEvaluator<Scalar>::getNominalValues() const
     for(std::size_t p=0;p<parameters_.size();p++) {
       // setup nominal in arguments
       nomInArgs.set_p(p,parameters_[p]->initial_value);
-      if (!parameters_[p]->is_distributed) {
-        Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_x = Thyra::createMember(*tangent_space_[v_index]);
-        Thyra::assign(v_nom_x.ptr(),0.0);
-        nomInArgs.set_p(v_index+parameters_.size(),v_nom_x);
-        if (build_transient_support_) {
-          Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_xdot = Thyra::createMember(*tangent_space_[v_index]);
-          Thyra::assign(v_nom_xdot.ptr(),0.0);
-          nomInArgs.set_p(v_index+parameters_.size()+tangent_space_.size(),v_nom_xdot);
-        }
-        ++v_index;
-      }
+
+      // We explicitly do not set nominal values for tangent parameters
+      // as these are parameters that should be hidden from client code
     }
 
     nominalValues_ = nomInArgs;
@@ -526,7 +518,7 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     }
   }
 
-  ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
+  //ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
@@ -904,6 +896,49 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+evalModel_D2gDx2(int respIndex,
+                 const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                 const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // set model parameters from supplied inArgs
+  setParameters(inArgs);
+
+  std::cout << "Setting derivative A" << std::endl;
+  {
+    std::string responseName = responses_[respIndex]->name;
+  std::cout << "Setting derivativeB " << std::endl;
+    Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Hessian> > resp
+        = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Hessian> >(
+            responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName));
+  std::cout << "Setting derivative C; " << resp<< std::endl;
+    resp->setDerivative(D2gDx2);
+  }
+
+  std::cout << "Setting derivative" << std::endl;
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  // evaluate responses
+  responseLibrary_->addResponsesToInArgs<panzer::Traits::Hessian>(ae_inargs);
+  responseLibrary_->evaluate<panzer::Traits::Hessian>(ae_inargs);
+
+  // reset parameters back to nominal values
+  resetParameters();
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
@@ -998,8 +1033,10 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
 
   if (!Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
-
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f and J)");
+
+    // only add auxiliary global data if Jacobian is being formed
+    ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
     // Set the targets
     thGlobalContainer->set_f_th(f_out);
@@ -1015,6 +1052,9 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(f)");
 
+    // don't add auxiliary global data if Jacobian is not computed.
+    // this leads to zeroing of aux ops in special cases.
+
     thGlobalContainer->set_f_th(f_out);
 
     // Zero values in ghosted container objects
@@ -1025,6 +1065,9 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   else if(Teuchos::is_null(f_out) && !Teuchos::is_null(W_out)) {
 
     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(J)");
+
+    // only add auxiliary global data if Jacobian is being formed
+    ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
 
     // this dummy nonsense is needed only for scattering dirichlet conditions
     RCP<Thyra::VectorBase<Scalar> > dummy_f = Thyra::createMember(f_space_);
@@ -1392,6 +1435,7 @@ evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
    ///////////////////////////////////////////////////////////////////////////////////////
 
    if(totalParameterCount>0) {
+     PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
      ae_tm_.getAsObject<panzer::Traits::Tangent>()->evaluate(ae_inargs);
    }
 }
@@ -1402,6 +1446,8 @@ panzer::ModelEvaluator<Scalar>::
 evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {
+   PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(df/dp)");
+
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 

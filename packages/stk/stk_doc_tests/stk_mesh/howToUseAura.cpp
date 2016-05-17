@@ -53,7 +53,7 @@ void expectNumElementsInAura(stk::mesh::BulkData::AutomaticAuraOption autoAuraOp
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator, autoAuraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk);
 
         EXPECT_EQ(numExpectedElementsInAura,
                   stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
@@ -74,7 +74,7 @@ TEST(StkMeshHowTo, useAuraDefaultBehavior)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulk);
 
         EXPECT_EQ(1u, stk::mesh::count_selected_entities(meta.aura_part(), bulk.buckets(stk::topology::ELEMENT_RANK)));
     }

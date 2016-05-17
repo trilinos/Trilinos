@@ -82,6 +82,12 @@ typeSupported() const
   if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Jacobian>())
     return linearObjFactory_!=Teuchos::null;
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  if(PHX::typeAsString<EvalT>()==PHX::typeAsString<panzer::Traits::Hessian>()) {
+    return linearObjFactory_!=Teuchos::null;
+  }
+#endif
+
   return false;
 }
 

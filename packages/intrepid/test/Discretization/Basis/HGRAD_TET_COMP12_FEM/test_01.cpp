@@ -51,6 +51,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <random>
+
 using namespace std;
 using namespace Intrepid;
 
@@ -351,6 +353,51 @@ int main(int argc, char *argv[]) {
              *outStream << "}  computed value: " << vals(i,j)
                << " but reference value: " << pointBasisValues[l] << "\n";
          }
+      }
+    }
+
+    // Check VALUE of basis functions at random points: resize vals to rank-2 container:\n";
+    *outStream << " check VALUE of basis functions at random points\n";
+    int numRandomPoints = 16384;
+    FieldContainer<double> tetRandomPoints(numRandomPoints, 3);
+    vals.resize(numFields, numRandomPoints);
+    vals.initialize(0.0);
+
+    int point = 0;
+    int count = 0;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0, 1);
+    while (point < numRandomPoints) {
+      
+      count++;
+      double r = dis(gen);
+      double s = dis(gen);
+      double t = dis(gen);
+      if (r + s + t > 1.0) continue; 
+
+      tetRandomPoints(point, 0) = r;
+      tetRandomPoints(point, 1) = s;
+      tetRandomPoints(point, 2) = t;
+
+      point++;
+    }
+    
+    tetBasis.getValues(vals, tetRandomPoints, OPERATOR_VALUE);
+
+    for (int j = 0; j < numRandomPoints; j++) {
+      double sum = 0.0;
+      for (int i = 0; i < numFields; i++) {
+        sum += vals(i,j);
+      }
+      if (std::abs(sum - 1.0) > INTREPID_TOL) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        
+        // Just indicate something bad happened
+        *outStream << " Composite tet basis functions";
+        *outStream << " are not summing to 1.0\n";
+        *outStream << " sum : " << sum << "\n";
       }
     }
 

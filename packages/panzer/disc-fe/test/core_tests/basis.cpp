@@ -55,7 +55,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -97,12 +96,10 @@ namespace panzer {
     TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
     TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, Q2_2D_side)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -145,12 +142,10 @@ namespace panzer {
     TEST_EQUALITY(basis.functional_grad->size(), num_cells * 9 * dim);
     TEST_EQUALITY(basis.functional_D2->size(), num_cells * 9 * dim * dim);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, TEdge1_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Triangle<3> >()));
@@ -170,12 +165,10 @@ namespace panzer {
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, QEdge1_2D_volume)
   {
-    PHX::InitializeKokkosDevice();
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -195,12 +188,10 @@ namespace panzer {
     TEST_ASSERT(basis->getIntrepid2Basis()!=Teuchos::null);
     TEST_ASSERT(basis->getCellTopology()!=Teuchos::null);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, supported_bases)
   {
-    PHX::InitializeKokkosDevice();
     
     const int num_cells = 20;
     Teuchos::RCP<PureBasis> basis;
@@ -285,12 +276,10 @@ namespace panzer {
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HGRAD);
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(basis, deprecated_bases)
   {
-    PHX::InitializeKokkosDevice();
     
     const int num_cells = 20;
 
@@ -366,7 +355,6 @@ namespace panzer {
       TEST_EQUALITY(basis->getElementSpace(),PureBasis::HCURL);
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
 }

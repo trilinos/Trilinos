@@ -114,7 +114,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 20;
     Teuchos::RCP<panzer::BasisIRLayout> linBasis = buildLinearBasis(workset_size);

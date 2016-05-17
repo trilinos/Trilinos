@@ -9,48 +9,54 @@
 namespace
 {
 
-class FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester : public FaceCreatorFixture
+class TwoHexGeneratedMeshWithFaceAdjacentElementGraph : public FaceCreatorFixture
 {
 protected:
     virtual void allocate_bulk(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        set_bulk(new stk::unit_test_util::BulkDataElemGraphFaceSharingTester(get_meta(), get_comm(), auraOption));
+        set_bulk(new stk::mesh::BulkData(get_meta(), get_comm(), auraOption));
+    }
+
+    void setup_mesh_and_create_graph(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        setup_mesh("generated:1x1x2", auraOption);
+        get_bulk().initialize_face_adjacent_element_graph();
     }
 };
 
 
-TEST_F(FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithAura)
+TEST_F(TwoHexGeneratedMeshWithFaceAdjacentElementGraph, onlyOneFaceExistsAfterBothProcsCreateFaceOnProcBoundary_aura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
-        setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+        setup_mesh_and_create_graph(stk::mesh::BulkData::AUTO_AURA);
         test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary();
     }
 }
 
-TEST_F(FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester, twoHexesTwoProcsCreateTwoFacesWithoutAura)
+TEST_F(TwoHexGeneratedMeshWithFaceAdjacentElementGraph, onlyOneFaceExistsAfterBothProcsCreateFaceOnProcBoundary_noAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
-        setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mesh_and_create_graph(stk::mesh::BulkData::NO_AUTO_AURA);
         test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary();
     }
 }
 
-TEST_F(FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester, twoHexesTwoProcsCreateOneFaceWithAura)
+TEST_F(TwoHexGeneratedMeshWithFaceAdjacentElementGraph, faceExistsOnBothProcsAfterOnlyOneProcCreatesFace_aura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
-        setup_mesh("generated:1x1x2", stk::mesh::BulkData::AUTO_AURA);
+        setup_mesh_and_create_graph(stk::mesh::BulkData::AUTO_AURA);
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
     }
 }
 
-TEST_F(FaceCreatorElemGraphUsingBDElemGraphFaceSharingTester, twoHexesTwoProcsCreateOneFaceWithoutAura)
+TEST_F(TwoHexGeneratedMeshWithFaceAdjacentElementGraph, faceExistsOnBothProcsAfterOnlyOneProcCreatesFace_noAura)
 {
     if(stk::parallel_machine_size(get_comm())==2)
     {
-        setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_mesh_and_create_graph(stk::mesh::BulkData::NO_AUTO_AURA);
         test_that_one_face_exists_on_both_procs_after_only_one_proc_makes_face();
     }
 }

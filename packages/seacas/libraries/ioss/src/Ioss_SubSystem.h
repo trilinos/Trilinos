@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,33 +33,33 @@
 #ifndef IOSS_Ioss_SubSystem_h
 #define IOSS_Ioss_SubSystem_h
 
-#include <Ioss_IOFactory.h>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_Region.h>
-#include <Ioss_EntityBlock.h>
-#include <Ioss_NodeBlock.h>
 #include <Ioss_EdgeBlock.h>
-#include <Ioss_FaceBlock.h>
 #include <Ioss_ElementBlock.h>
+#include <Ioss_EntityBlock.h>
+#include <Ioss_FaceBlock.h>
+#include <Ioss_GroupingEntity.h>
+#include <Ioss_IOFactory.h>
+#include <Ioss_NodeBlock.h>
+#include <Ioss_Region.h>
 
-#include <Ioss_EntitySet.h>
-#include <Ioss_NodeSet.h>
 #include <Ioss_EdgeSet.h>
-#include <Ioss_FaceSet.h>
 #include <Ioss_ElementSet.h>
+#include <Ioss_EntitySet.h>
+#include <Ioss_FaceSet.h>
+#include <Ioss_NodeSet.h>
 
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
 
 #include <Ioss_CommSet.h>
 #include <Ioss_CoordinateFrame.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_Property.h>
-#include <Ioss_Field.h>
-#include <Ioss_VariableType.h>
 #include <Ioss_DBUsage.h>
-#include <Ioss_SerializeIO.h>
+#include <Ioss_DatabaseIO.h>
 #include <Ioss_ElementTopology.h>
+#include <Ioss_Field.h>
+#include <Ioss_Property.h>
+#include <Ioss_SerializeIO.h>
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
+#include <Ioss_VariableType.h>
 #endif

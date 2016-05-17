@@ -76,7 +76,6 @@ namespace panzer {
 #ifdef PANZER_HAVE_FEI
 TEUCHOS_UNIT_TEST(tDOFManager_SimpleTests,validFieldOrder)
 {
-   PHX::KokkosDeviceSession session;
 
    DOFManagerFEI<int,int> dofManager; 
 

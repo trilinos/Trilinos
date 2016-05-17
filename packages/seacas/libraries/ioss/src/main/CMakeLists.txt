@@ -23,6 +23,13 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_XDMF)
 ADD_DEFINITIONS(-DNO_XDMF_SUPPORT)
 ENDIF()
 
+TRIBITS_ADD_LIBRARY(
+  io_info_lib
+  HEADERS io_info.h info_interface.h
+  SOURCES io_info.C volume.C info_interface.C
+  DEPLIBS Ioss
+  )
+
 TRIBITS_ADD_EXECUTABLE(
   cth_pressure_map
   NOEXEPREFIX
@@ -33,7 +40,7 @@ TRIBITS_ADD_EXECUTABLE(
   io_shell
   NOEXEPREFIX
   NOEXESUFFIX
-  SOURCES io_shell.C shell_interface.C Ioss_GetLongOpt.C
+  SOURCES io_shell.C shell_interface.C
   )
 TRIBITS_ADD_EXECUTABLE(
   shell_to_hex
@@ -45,7 +52,7 @@ TRIBITS_ADD_EXECUTABLE(
   io_info
   NOEXEPREFIX
   NOEXESUFFIX
-  SOURCES io_info.C volume.C info_interface.C Ioss_GetLongOpt.C
+  SOURCES io_info_main.C
   )
 TRIBITS_ADD_EXECUTABLE(
   sphgen
@@ -54,8 +61,17 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES sphgen.C
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  skinner
+  NOEXEPREFIX
+  NOEXESUFFIX
+  SOURCES skinner.C skinner_interface.C
+  )
+
+
 install_executable(cth_pressure_map)
 install_executable(io_shell)
 install_executable(shell_to_hex)
 install_executable(io_info)
 install_executable(sphgen)
+install_executable(skinner)

@@ -221,26 +221,20 @@ namespace MueLu {
     domainMapExtractor_ = bA->getDomainMapExtractor();
 
     // Store the blocks in local member variables
-    Teuchos::RCP<CrsMatrix> A00 = bA->getMatrix(0, 0);
-    Teuchos::RCP<CrsMatrix> A01 = bA->getMatrix(0, 1);
-    Teuchos::RCP<CrsMatrix> A10 = bA->getMatrix(1, 0);
-    Teuchos::RCP<CrsMatrix> A11 = bA->getMatrix(1, 1);
-
-    Teuchos::RCP<CrsMatrixWrap> Op00 = Teuchos::rcp(new CrsMatrixWrap(A00));
-    Teuchos::RCP<CrsMatrixWrap> Op01 = Teuchos::rcp(new CrsMatrixWrap(A01));
-    Teuchos::RCP<CrsMatrixWrap> Op10 = Teuchos::rcp(new CrsMatrixWrap(A10));
-    Teuchos::RCP<CrsMatrixWrap> Op11 = Teuchos::rcp(new CrsMatrixWrap(A11));
-
-    F_ = Teuchos::rcp_dynamic_cast<Matrix>(Op00);
-    G_ = Teuchos::rcp_dynamic_cast<Matrix>(Op01);
-    D_ = Teuchos::rcp_dynamic_cast<Matrix>(Op10);
-    Z_ = Teuchos::rcp_dynamic_cast<Matrix>(Op11);
+    F_ = bA->getMatrix(0, 0);
+    G_ = bA->getMatrix(0, 1);
+    D_ = bA->getMatrix(1, 0);
+    Z_ = bA->getMatrix(1, 1);
 
     // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));
+    /*if (F_->IsView("stridedMaps") == false)
+      F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
+    if (G_->IsView("stridedMaps") == false)
+      G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
+    if (D_->IsView("stridedMaps") == false)
+      D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
+    if (Z_->IsView("stridedMaps") == false)
+      Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));*/
 
     const ParameterList & pL = Factory::GetParameterList();
     bool bSIMPLEC = pL.get<bool>("UseSIMPLEC");

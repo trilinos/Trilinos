@@ -2,23 +2,23 @@
  * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
  * certain rights in this software
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
- * 
+ *
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
- * 
+ *
  *     * Neither the name of Sandia Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -30,15 +30,15 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 /* mdcgi - multiple simultaneous devices routines for cgi  */
-#include <stdio.h>
-#include "stdtyp.h"
-#include "fortyp.h"
-#include "cgi.h"
-#include "ifdefx.h"
 #include "mdcgi.h"
+#include "cgi.h"
+#include "fortyp.h"
+#include "ifdefx.h"
+#include "stdtyp.h"
+#include <stdio.h>
 /******************************************************************************/
 /*									      */
 /*	Global variables						      */
@@ -47,22 +47,20 @@
 
 /* these are shared with sdcgi.c, and are defined there */
 
-extern device_struct	devices[MAX_DEVICES];	/* list of currently active */
-extern anything	*in_params [MAX_IN_PARAMS];	/* params sent to driver */
-extern short	num_devices;		/* how many items in devices*/
-extern anything	*sol_surf;		/* current solicitation surface, */
+extern device_struct devices[MAX_DEVICES];     /* list of currently active */
+extern anything *    in_params[MAX_IN_PARAMS]; /* params sent to driver */
+extern short         num_devices;              /* how many items in devices*/
+extern anything *    sol_surf;                 /* current solicitation surface, */
 
 /* these aren't shared with anybody */
-static int	num_oldest = 0;	/* # surfs in oldest_surfs */
-static anything	*oldest_surfs [MAX_SURFACES];	/* states of oldest surfaces */
+static int       num_oldest = 0;             /* # surfs in oldest_surfs */
+static anything *oldest_surfs[MAX_SURFACES]; /* states of oldest surfaces */
 
 /******************************************************************************/
 /*									      */
 /*	Added functions to allow for multiple simultaneous devices	      */
 /*									      */
 /******************************************************************************/
-
-
 
 /******************************************************************************/
 /*									      */
@@ -73,123 +71,117 @@ static anything	*oldest_surfs [MAX_SURFACES];	/* states of oldest surfaces */
 /*	initialized. 							      */
 /*									      */
 /******************************************************************************/
-void xcoon_ (anything **surface_id) /* which surface to turn output on for*/
+void xcoon_(anything **surface_id) /* which surface to turn output on for*/
 {
-   /* does surface_id point to a valid surface? */
-      /* if not, do error action */
-   /* find out which device this surface is on */
-   /* rearrange the surface list for that device */
+  /* does surface_id point to a valid surface? */
+  /* if not, do error action */
+  /* find out which device this surface is on */
+  /* rearrange the surface list for that device */
 
-   short	dev;			/* which device to look at now */
-   short	dev_found = 0;		/* which device was it found on */
-   short	surf;			/* which surface on device to look at */
-   short	surf_found = 0;		/* which active_surface was found */
-   anything	*temp;			/* for swap */
+  short     dev;            /* which device to look at now */
+  short     dev_found = 0;  /* which device was it found on */
+  short     surf;           /* which surface on device to look at */
+  short     surf_found = 0; /* which active_surface was found */
+  anything *temp;           /* for swap */
 
-   /* search active devices for this surface */
-   dev_found = -1;
-   for (dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
-      for (surf = 0; surf < devices [dev]. num_active_surfaces; ++surf) {
-         if (*surface_id == devices[dev]. statelist [surf]) {
-            dev_found = dev; surf_found = surf; break;
-         } /* end if found on list */
-      } /* end for */
-   } /* end for all devices */
+  /* search active devices for this surface */
+  dev_found = -1;
+  for (dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
+    for (surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
+      if (*surface_id == devices[dev].statelist[surf]) {
+        dev_found  = dev;
+        surf_found = surf;
+        break;
+      } /* end if found on list */
+    }   /* end for */
+  }     /* end for all devices */
 
-   /* does surface_id point to a valid surface? */
-   if (dev_found < 0) {
-      fprintf (stderr, "xcoon: surface id not a valid surface\n");
-      return;
-   } /* end if surface not found */
+  /* does surface_id point to a valid surface? */
+  if (dev_found < 0) {
+    fprintf(stderr, "xcoon: surface id not a valid surface\n");
+    return;
+  } /* end if surface not found */
 
-   /* if surface was off */
-   if (surf_found >= devices [dev_found]. num_on_surfaces) { 
-      ++devices [dev_found]. num_on_surfaces;
-      /* swap target surface with first off surface if there is one */
-      if (devices [dev_found]. num_on_surfaces !=
-          devices [dev_found]. num_active_surfaces) {
-         temp = devices [dev_found]. statelist [surf_found];
-         devices [dev_found]. statelist [surf_found] =
-                      devices [dev_found].
-                       statelist [devices [dev_found].num_on_surfaces-1];
-         devices [dev_found].
-                      statelist [devices [dev_found].num_on_surfaces-1] =
-                      temp;
-      } /* end if there is an off surface */
-   } /* end if surface was off */
+  /* if surface was off */
+  if (surf_found >= devices[dev_found].num_on_surfaces) {
+    ++devices[dev_found].num_on_surfaces;
+    /* swap target surface with first off surface if there is one */
+    if (devices[dev_found].num_on_surfaces != devices[dev_found].num_active_surfaces) {
+      temp = devices[dev_found].statelist[surf_found];
+      devices[dev_found].statelist[surf_found] =
+          devices[dev_found].statelist[devices[dev_found].num_on_surfaces - 1];
+      devices[dev_found].statelist[devices[dev_found].num_on_surfaces - 1] = temp;
+    } /* end if there is an off surface */
+  }   /* end if surface was off */
 } /* end xcoon */
-
-
 
 /******************************************************************************/
 /*									      */
 /*	xcact - initialize and activate a cgi display surface		      */
 /*									      */
 /******************************************************************************/
-void xcact_ (void (*device_fn)(), anything **p_surface_id)
+void xcact_(void (*device_fn)(), anything **p_surface_id)
 {
-   short	arg1;			/* arg passed to device routine */
-   short	i;
-   anything	*temp_surface[1];	/* for calling driver */
-   short	which_device;		/* index of this device in devices */
-   short	which_surface;		/* index of surface in devices*/
+  short     arg1; /* arg passed to device routine */
+  short     i;
+  anything *temp_surface[1]; /* for calling driver */
+  short     which_device;    /* index of this device in devices */
+  short     which_surface;   /* index of surface in devices*/
 
+  /* is device already initialized? */
+  which_device = -1;
+  for (i = 0; i < num_devices; ++i) {
+    if (device_fn == devices[i].device_fn) {
+      which_device = i;
+      break;
+    } /* end if */
+  }   /* end for */
 
-   /* is device already initialized? */
-   which_device = -1;
-   for (i = 0; i < num_devices; ++i) {
-      if (device_fn == devices [i]. device_fn) {
-         which_device = i; break;
-      } /* end if */
-   } /* end for */
-
-   if (which_device < 0) {			/* if device not initialized */
-      if (num_devices >= MAX_DEVICES) {	/* if no room */
-         fprintf (stderr,
-                  "xcact: can't activate: too many initialized devices\n");
-         *p_surface_id = NULL;
-         return;
-      } /* end if no room for device */
-   } /* end if device not initialized */
-
-   /* call the device driver with ACTIVATE, so it can allocate a state list */
-   arg1 = ACTIVATE_FN;
-   in_params [0] = (anything *)&arg1;
-   (*device_fn) (in_params, 1, temp_surface);
-
-   if (temp_surface [0] == NULL) {	/* error */
-      fprintf (stderr, "xcact: can't activate surface: driver error\n");
+  if (which_device < 0) {             /* if device not initialized */
+    if (num_devices >= MAX_DEVICES) { /* if no room */
+      fprintf(stderr, "xcact: can't activate: too many initialized devices\n");
       *p_surface_id = NULL;
       return;
-   } /* end if error on activate */
+    } /* end if no room for device */
+  }   /* end if device not initialized */
 
-   if (which_device < 0) {		/* if device not initialized */
-      /* then initialize it */
-      which_device = num_devices;
-      ++num_devices;
-      devices [which_device]. num_active_surfaces = 0;
-      devices [which_device]. num_on_surfaces = 0;
-      devices [which_device]. device_fn = device_fn;
-   } /* end if */
+  /* call the device driver with ACTIVATE, so it can allocate a state list */
+  arg1         = ACTIVATE_FN;
+  in_params[0] = (anything *)&arg1;
+  (*device_fn)(in_params, 1, temp_surface);
 
-   /* add new surface to device */
-   which_surface = devices [which_device]. num_active_surfaces;
-   ++devices [which_device]. num_active_surfaces;
-   devices [which_device]. statelist [which_surface] = temp_surface [0];
+  if (temp_surface[0] == NULL) { /* error */
+    fprintf(stderr, "xcact: can't activate surface: driver error\n");
+    *p_surface_id = NULL;
+    return;
+  } /* end if error on activate */
 
-   /* if new surface is the oldest surface, make it the solicitation surface */
-   if (num_oldest == 0) sol_surf = temp_surface [0];
+  if (which_device < 0) { /* if device not initialized */
+    /* then initialize it */
+    which_device = num_devices;
+    ++num_devices;
+    devices[which_device].num_active_surfaces = 0;
+    devices[which_device].num_on_surfaces     = 0;
+    devices[which_device].device_fn           = device_fn;
+  } /* end if */
 
-   /* put this surface as newest surf on oldest_surfs list */
-   oldest_surfs [num_oldest] = temp_surface [0];
-   ++num_oldest;
+  /* add new surface to device */
+  which_surface = devices[which_device].num_active_surfaces;
+  ++devices[which_device].num_active_surfaces;
+  devices[which_device].statelist[which_surface] = temp_surface[0];
 
-   /* return id of new surface */
-   *p_surface_id = temp_surface [0];
+  /* if new surface is the oldest surface, make it the solicitation surface */
+  if (num_oldest == 0)
+    sol_surf = temp_surface[0];
+
+  /* put this surface as newest surf on oldest_surfs list */
+  oldest_surfs[num_oldest] = temp_surface[0];
+  ++num_oldest;
+
+  /* return id of new surface */
+  *p_surface_id = temp_surface[0];
 
 } /* end xcact */
-
-
 
 /******************************************************************************/
 /*									      */
@@ -200,9 +192,6 @@ void xcact_ (void (*device_fn)(), anything **p_surface_id)
 /*									      */
 /******************************************************************************/
 
-
-
-
 /******************************************************************************/
 /*									      */
 /*	xcdact - deactivate a cgi display surface			      */
@@ -210,41 +199,38 @@ void xcact_ (void (*device_fn)(), anything **p_surface_id)
 /*									      */
 /******************************************************************************/
 
-
-
 /******************************************************************************/
 /*									      */
 /*	xcsol - set solicitation surface				      */
 /*									      */
 /******************************************************************************/
-void xcsol_ (anything **surface_id)
+void xcsol_(anything **surface_id)
 {
-   /* does surface_id point to a valid surface? */
-      /* if not, do error action */
-   /* set the solicitation surface to surface_id */
+  /* does surface_id point to a valid surface? */
+  /* if not, do error action */
+  /* set the solicitation surface to surface_id */
 
-   short	dev;			/* which device to look at now */
-   short	dev_found;		/* which device was it found on */
-   short	surf;			/* which surface on device to look at */
+  short dev;       /* which device to look at now */
+  short dev_found; /* which device was it found on */
+  short surf;      /* which surface on device to look at */
 
+  /* search devices for this surface */
+  dev_found = -1;
+  for (dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
+    for (surf = 0; surf < devices[dev].num_active_surfaces; ++surf) {
+      if (*surface_id == devices[dev].statelist[surf]) {
+        dev_found = dev;
+        break;
+      } /* end if found on list */
+    }   /* end for */
+  }     /* end for all devices */
 
-   /* search devices for this surface */
-   dev_found = -1;
-   for (dev = 0; (dev < num_devices) && (dev_found == -1); ++dev) {
-      for (surf = 0; surf < devices [dev]. num_active_surfaces; ++surf) {
-         if (*surface_id == devices[dev]. statelist [surf]) {
-            dev_found = dev; break;
-         } /* end if found on list */
-      } /* end for */
-   } /* end for all devices */
+  /* does surface_id point to a valid surface? */
+  if (dev_found < 0) {
+    fprintf(stderr, "xcsol: surface id not a valid surface\n");
+    return;
+  } /* end if surface not found */
 
-   /* does surface_id point to a valid surface? */
-   if (dev_found < 0) {
-      fprintf (stderr, "xcsol: surface id not a valid surface\n");
-      return;
-   } /* end if surface not found */
-
-   sol_surf = *surface_id;
+  sol_surf = *surface_id;
 
 } /* end xcsol */
-

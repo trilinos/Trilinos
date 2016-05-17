@@ -46,6 +46,7 @@
 #define PHX_FIELD_DEF_H
 
 #include "Teuchos_Assert.hpp"
+#include "Phalanx_config.hpp"
 
 //**********************************************************************
 #ifdef PHX_DEBUG

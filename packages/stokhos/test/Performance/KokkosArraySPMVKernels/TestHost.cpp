@@ -160,6 +160,11 @@ int mainHost(bool test_flat, bool test_orig, bool test_deg, bool test_lin,
   return 0 ;
 }
 
+#ifdef KOKKOS_HAVE_SERIAL
+template int mainHost<float,Kokkos::Serial>(bool, bool, bool, bool, bool, bool, bool);
+template int mainHost<double,Kokkos::Serial>(bool, bool, bool, bool, bool, bool, bool);
+#endif
+
 #ifdef KOKKOS_HAVE_PTHREAD
 template int mainHost<float,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);
 template int mainHost<double,Kokkos::Threads>(bool, bool, bool, bool, bool, bool, bool);

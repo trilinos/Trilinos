@@ -58,10 +58,13 @@
 #include "build_solver.hpp"
 
 
-void process_command_line(int argc, char*argv[], std::string& xml_file);
+void
+process_command_line (bool& printedHelp,
+		      std::string& xml_file,
+		      int argc,
+		      char*argv[]);
 
-
-int main(int argc, char*argv[])
+int main (int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpisess(&argc, &argv);
 
@@ -91,7 +94,13 @@ int main(int argc, char*argv[])
     //to get parameters from.
 
     std::string xml_file("calore1_mm.xml");
-    process_command_line(argc, argv, xml_file);
+    {
+      bool printedHelp = false;
+      process_command_line (printedHelp, xml_file, argc, argv);
+      if (printedHelp) {
+	return EXIT_SUCCESS;
+      }
+    }
 
     //Read the contents of the xml file into a ParameterList. That parameter list
     //should specify a matrix-file and optionally which Belos solver to use, and
@@ -165,12 +174,24 @@ int main(int argc, char*argv[])
 }
 
 
-void process_command_line(int argc, char*argv[], std::string& xml_file)
+void
+process_command_line (bool& printedHelp,
+		      std::string& xml_file,
+		      int argc,
+		      char*argv[])
 {
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("xml_file", &xml_file, "XML Parameters file");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    throw std::runtime_error("Error parsing command-line.");
+  const auto result = cmdp.parse (argc, argv);
+
+  // mfh 21 Apr 2016: By ignoring options that this executable doesn't
+  // recognize, we can pass them through to (e.g.,) Kokkos.
+  
+  if (result == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+    printedHelp = true; // not an error to ask for help
+  }
+  else if (result == Teuchos::CommandLineProcessor::PARSE_ERROR) {
+    throw std::runtime_error ("Error parsing command-line.");
   }
 }
 

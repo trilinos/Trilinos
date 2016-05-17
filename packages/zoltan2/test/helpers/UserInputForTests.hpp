@@ -1483,8 +1483,6 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     
     memset(graphCounts, 0, 5*sizeof(int));
     
-    // This function is in the Zoltan C-library.
-    
     // Reads in the file and closes it when done.
     fail = chaco_input_graph(fptr, fname.c_str(), &start, &adj,
                              &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
@@ -1592,6 +1590,13 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       for (int i=0; i < nvtxs; i++){
         if (nzPerRow[i] > 0){
           ArrayView<const zgno_t> rowNz(nextId, nzPerRow[i]);
+#ifdef KDDKDDPRINT
+  std::cout << "INSERTING ROW " << i << ": ";
+  for (int j = 0; j < nzPerRow[i]; j++) {
+    std::cout << rowNz[j] << " ";
+  }
+  std::cout << std::endl;
+#endif
           fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));
           nextId += nzPerRow[i];
         }
@@ -1620,6 +1625,22 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     fromMatrix->fillComplete();
   }
   
+#ifdef KDDKDDPRINT
+  if (rank == 0) {
+    size_t sz = fromMatrix->getNodeMaxNumRowEntries();
+    Teuchos::Array<zgno_t> indices(sz);
+    Teuchos::Array<zscalar_t> values(sz);
+    for (size_t i = 0; i < fromMatrix->getNodeNumRows(); i++) {
+      zgno_t gid = fromMatrix->getRowMap()->getGlobalElement(i);
+      size_t num;
+      fromMatrix->getGlobalRowCopy(gid, indices(), values(), num);
+      std::cout << "ROW " << gid << ": ";
+      for (size_t j = 0; j < num; j++)
+        std::cout << indices[j] << " ";
+      std::cout << std::endl;
+    }
+  }
+#endif
   
   RCP<const map_t> toMap;
   RCP<tcrsMatrix_t> toMatrix;

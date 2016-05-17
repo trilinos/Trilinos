@@ -94,7 +94,6 @@ RCP<MultiVector> getTpetraMultiVector(RCP<Thyra::MultiVectorBase<double> > & vec
 
 TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -371,7 +370,6 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, gather_scatter_constr)
 
 TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -496,7 +494,6 @@ TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, adjustDirichlet)
 
 TEUCHOS_UNIT_TEST(tTpetraLinearObjFactory, initializeContainer)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI

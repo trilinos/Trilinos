@@ -77,7 +77,6 @@ namespace panzer {
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,GhostedFieldVector)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -178,7 +177,6 @@ void fillFieldContainer(int fieldNum,const std::string & blockId,
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
@@ -263,7 +261,6 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,updateGhostedDataVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
@@ -342,7 +339,6 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_ghost)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 
@@ -411,7 +407,6 @@ TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector)
 
 TEUCHOS_UNIT_TEST(tUniqueGlobalIndexer_Utilities,ArrayToFieldVector_multicol)
 {
-   PHX::KokkosDeviceSession session;
 
    typedef Intrepid2::FieldContainer<int> IntFieldContainer;
 

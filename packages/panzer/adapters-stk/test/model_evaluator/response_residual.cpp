@@ -253,7 +253,7 @@ namespace panzer {
       // evaluate
       rLibrary->evaluate<Traits::Residual>(ae_inargs);
 
-      TEST_ASSERT(testEqualityOfVectorValues(*response_residual->getResidual(),*f_me,1e-16,true));
+      TEST_ASSERT(testEqualityOfVectorValues(*response_residual->getResidual(),*f_me,1e-15,true));
     }
 
     // evaluate jacobian responses

@@ -11,6 +11,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Unit_tests      stk_unit_tests       SS  OPTIONAL
   Doc_tests       stk_doc_tests        SS  OPTIONAL
   Exp             stk_exp              EX  OPTIONAL
+  ExprEval        stk_expreval         SS  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

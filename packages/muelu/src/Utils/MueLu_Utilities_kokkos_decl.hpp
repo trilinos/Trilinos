@@ -836,43 +836,21 @@ namespace MueLu {
     // static_assert(false, "Error: NOT a Kokkos::View");
   };
 
-  // Arg3 == MemoryTraits
-  template < class DataType, class Arg1, class Arg2, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U> >, T> {
-    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U|T> >;
+  template < class MT, unsigned T >
+  struct CombineMemoryTraits {
+    // empty
   };
 
-  // Arg2 == MemoryTraits
-  template < class DataType, class Arg1, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U>, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U|T>, void >;
+  template < unsigned U, unsigned T>
+  struct CombineMemoryTraits<Kokkos::MemoryTraits<U>, T> {
+    typedef Kokkos::MemoryTraits<U|T> type;
   };
 
-
-  // Arg1 == MemoryTraits
-  template < class DataType, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Kokkos::MemoryTraits<U>, void, void >, T> {
-    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<U|T>, void, void >;
+  template < class DataType, unsigned T, class... Pack >
+  struct AppendTrait< Kokkos::View< DataType, Pack... >, T> {
+    typedef Kokkos::View< DataType, Pack... > view_type;
+    using type = Kokkos::View< DataType, typename view_type::array_layout, typename view_type::device_type, typename CombineMemoryTraits<typename view_type::memory_traits,T>::type >;
   };
-
-  // 2 arguments -- no traits
-  template < class DataType, class Arg1, class Arg2, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<T> >;
-  };
-
-  // 1 arguments -- no traits
-  template < class DataType, class Arg1, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, void, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<T>, void >;
-  };
-
-  // 0 arguments
-  template < class DataType, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, void, void, void >, T> {
-    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<T>, void, void >;
-  };
-
 
 } //namespace MueLu
 

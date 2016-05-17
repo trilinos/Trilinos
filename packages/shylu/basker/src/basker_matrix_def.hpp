@@ -26,6 +26,7 @@ namespace BaskerNS
     ncol    = 0;
     nrow    = 0;
     nnz     = 0;
+    mnnz    = 0;
     v_fill  = BASKER_FALSE;
     tpivot  = 0;
     #ifdef BASKER_2DL
@@ -134,6 +135,7 @@ namespace BaskerNS
     scol = _sc;
     ncol = _n;
     nnz  = 0;
+    mnnz = 0;
   }//end set_shape()
 
   template <class Int, class Entry, class Exe_Space>
@@ -186,6 +188,7 @@ namespace BaskerNS
 	col_ptr(i) = (Int) BASKER_MAX_IDX;
       }
     nnz = 0;
+    mnnz = 0;
 
   }//end clean_col()
 
@@ -199,6 +202,7 @@ namespace BaskerNS
     nrow = _m;
     ncol = _n;
     nnz  = _nnz;
+    mnnz = _nnz;
     
     if(ncol >= 0)
       {
@@ -292,6 +296,8 @@ namespace BaskerNS
     if(nrow!=_m)
       {
 	printf("Error: Changed m size\n");
+	printf("old m: %d new m: %d \n", 
+	       nrow , _m);
 	return BASKER_ERROR;
       }
     if(ncol==_n)
@@ -300,7 +306,9 @@ namespace BaskerNS
       }
     else
       {
-	printf("ERROR: Changed size \n");
+	printf("ERROR: Changed n size \n");
+	printf("old n: %d new n: %d \n",
+	       ncol, _n);
 	return BASKER_ERROR;
       }
     if(nnz == _nnz)
@@ -311,6 +319,8 @@ namespace BaskerNS
     else
       {
 	printf("ERROR: Changed number of entries \n");
+	printf("old nnz: %d new nnz: %d \n",
+	       nnz, _nnz);
 	return BASKER_ERROR;
       }
     
@@ -333,6 +343,8 @@ namespace BaskerNS
     if(nrow!=_m)
       {
 	printf("Error: Changed m size\n");
+	printf("old m: %d new m: %d \n",
+	       nrow, _m);
 	return BASKER_ERROR;
       }
     if(ncol==_n)
@@ -341,7 +353,9 @@ namespace BaskerNS
       }
     else
       {
-	printf("ERROR: Changed size \n");
+	printf("ERROR: Changed n size \n");
+	printf("old n: %d new n: %d \n",
+	       ncol, _n);
 	return BASKER_ERROR;
       }
     if(nnz == _nnz)
@@ -352,14 +366,13 @@ namespace BaskerNS
     else
       {
 	printf("ERROR: Changed number of entries \n");
+	printf("old nnz: %d new nnz: %d \n",
+	       nnz, _nnz);
 	return BASKER_ERROR;
       }
     
     return 0;
-
   }//end copy_values()
-
-
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -420,6 +433,19 @@ namespace BaskerNS
   }//end init_pend()
 
   template <class Int, class Entry, class Exe_Space>
+  void BaskerMatrix<Int,Entry,Exe_Space>::clear_pend()
+  {
+    if(ncol > 0)
+      {
+	for(Int i = 0 ; i < ncol+1; ++i)
+	  {
+	    pend(i) = BASKER_MAX_IDX;
+	  }
+      }
+  }// end clear_pend()
+
+
+  template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   int BaskerMatrix<Int,Entry,Exe_Space>::fill()
   {
@@ -464,7 +490,6 @@ namespace BaskerNS
    Int kid
    )
   {
-
     if(nnz == 0)
       {
 	for(Int i = 0; i < ncol+1; i++)
@@ -476,13 +501,10 @@ namespace BaskerNS
 	row_idx(0) = (Int) 0;
 	MALLOC_ENTRY_1DARRAY(val, 1);
 	val(0) = (Entry) 0;
-
-
 	return;
       }
 
     //info();
-
     //We could check some flag ??
     //We assume a pre-scan has already happened
     if(alloc == BASKER_TRUE)
@@ -566,7 +588,6 @@ namespace BaskerNS
 	    temp_count++;
 	  }
 	col_ptr(k-scol) = temp_count;
-	
       }
    
     //col_ptr[0] = 0;

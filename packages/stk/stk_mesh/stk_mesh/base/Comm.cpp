@@ -72,13 +72,6 @@ void fillNumEntitiesPerRankOnThisProc(const BulkData & M, std::vector<size_t>&lo
     }
 }
 
-void mesh_counts( const BulkData & M,
-                  std::vector<size_t> & localCounts,
-                  const Selector *selector)
-{
-    fillNumEntitiesPerRankOnThisProc(M, localCounts, selector);
-}
-
 void comm_mesh_counts( const BulkData & M ,
                        std::vector<size_t> & globalCounts ,
                        const Selector *selector)

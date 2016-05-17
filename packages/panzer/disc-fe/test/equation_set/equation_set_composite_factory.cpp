@@ -56,7 +56,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, composite_factory)
   {    
-    PHX::KokkosDeviceSession session;
 
     const int num_cells = 20;
     const int default_int_order = 2;

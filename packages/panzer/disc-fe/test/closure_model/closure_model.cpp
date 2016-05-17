@@ -64,7 +64,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(evaluator_factory, basic_construction)
   {
-    PHX::KokkosDeviceSession session;
 
     panzer::FieldLayoutLibrary fl;
     Teuchos::RCP<panzer::IntegrationRule> ir;

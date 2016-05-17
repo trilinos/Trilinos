@@ -67,7 +67,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
     
     //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::RCP<Teuchos::FancyOStream> pout= Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));

@@ -523,6 +523,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, BadMultiply, LO , GO , Scalar , Node )
   {
+
+    // mfh 05 May 2016: Tpetra::MultiVector::multiply only checks
+    // local dimensions in a debug build.
+#ifdef HAVE_TPETRA_DEBUG
     RCP<Node> node = getNode<Node>();
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -587,6 +591,7 @@ namespace {
       TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
       TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
     }
+#endif // HAVE_TPETRA_DEBUG
   }
 
 

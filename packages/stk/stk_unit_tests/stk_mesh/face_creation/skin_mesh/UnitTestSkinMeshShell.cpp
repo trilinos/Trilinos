@@ -76,7 +76,7 @@ TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
 
             if(stk::parallel_machine_rank(comm) == 0)
             {
-                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data, comm);
+                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data);
             }
         }
         stk::mesh::MetaData meta_data(3);

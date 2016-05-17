@@ -49,8 +49,6 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_search/IdentProc.hpp>
-#include <stk_search/BoundingBox.hpp>
 #include <stk_search/OctTree.hpp>
 
 

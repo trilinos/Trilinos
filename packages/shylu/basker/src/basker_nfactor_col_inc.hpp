@@ -1945,8 +1945,8 @@ namespace BaskerNS
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     printf("-------------lower_col_factor-------\n");
-    printf("JB scol: %d ecol: %d L.nnz: %d U.nnz: %d brow: %d ws_size: %d  kid: %d\n",
-	   bcol, U.scol+U.ncol, llnnz, uunnz, brow, ws_size, kid);
+    printf("JB ecol: %d L.nnz: %d U.nnz: %d brow: %d ws_size: %d  kid: %d\n",
+	   U.scol+U.ncol, llnnz, uunnz, brow, ws_size, kid);
     #endif
 
     #ifdef BASKER_DEBUG_NFACTOR_COL

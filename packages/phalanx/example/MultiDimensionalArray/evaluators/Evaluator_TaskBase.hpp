@@ -32,11 +32,11 @@ namespace PHX_example {
   struct TaskBase : public PHX::EvaluatorWithBaseImpl<Traits> {
 
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
 	       typename Traits::EvalData d) override
     {
-      return policy.create_team(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(d.num_cells,*dynamic_cast<Derived*>(this)),num_adjacencies);
+      return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,Derived>(d.num_cells,*dynamic_cast<Derived*>(this)),num_adjacencies);
     }
   };
 

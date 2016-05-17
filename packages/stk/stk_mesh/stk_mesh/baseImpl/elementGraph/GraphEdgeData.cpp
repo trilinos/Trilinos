@@ -41,7 +41,7 @@ void fill_graph_edges_for_elem_side(const GraphEdgesForElement &graphEdgesForEle
 {
     for(size_t i = 0; i < graphEdgesForElement.size(); ++i)
     {
-        if(graphEdgesForElement.get_edge_at_index(i).side1 == side)
+        if(graphEdgesForElement.get_edge_at_index(i).side1() == side)
         {
             edges.push_back(graphEdgesForElement.get_edge_at_index(i));
         }
@@ -62,7 +62,7 @@ const GraphEdgesForElement& Graph::get_edges_for_element(impl::LocalId elem) con
 
 void Graph::add_edge(const GraphEdge &graphEdge)
 {
-    m_graphEdges[graphEdge.elem1].push_back(graphEdge);
+    m_graphEdges[graphEdge.elem1()].push_back(graphEdge);
     ++m_numEdges;
 }
 
@@ -74,10 +74,10 @@ void Graph::delete_edge_from_graph(impl::LocalId elem, int offset)
 
 void Graph::delete_edge(const GraphEdge &graphEdge)
 {
-    const size_t numConnected = m_graphEdges[graphEdge.elem1].size();
+    const size_t numConnected = m_graphEdges[graphEdge.elem1()].size();
     for(size_t i=0; i<numConnected; ++i)
-        if(m_graphEdges[graphEdge.elem1].get_edge_at_index(i) == graphEdge)
-            delete_edge_from_graph(graphEdge.elem1, i);
+        if(m_graphEdges[graphEdge.elem1()].get_edge_at_index(i) == graphEdge)
+            delete_edge_from_graph(graphEdge.elem1(), i);
 }
 
 void Graph::delete_all_edges(impl::LocalId elem)
@@ -122,8 +122,6 @@ std::string get_par_info_description(const impl::ParallelInfo &parInfo)
     s << "    chosen id: " << parInfo.m_chosen_side_id << std::endl;
     s << "    permutation: " << parInfo.m_permutation << std::endl;
     s << "    remote topology: " << parInfo.m_remote_element_toplogy << std::endl;
-    s << "    in body to be skinned: " << parInfo.is_in_body_to_be_skinned() << std::endl;
-    s << "    is air: " << parInfo.is_considered_air() << std::endl;
     return s.str();
 }
 
@@ -133,7 +131,7 @@ void ParallelInfoForGraphEdges::insert_parallel_info_for_graph_edge(const GraphE
     if (!inserted.second)
     {
         ThrowErrorMsg("Program error. local elem/remote elem pair"
-                        << " (" << graphEdge.elem1 << "," << graphEdge.side1 << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2) << "," << graphEdge.side2 << ")"
+                        << " (" << graphEdge.elem1() << "," << graphEdge.side1() << "/" << convert_negative_local_id_to_remote_global_id(graphEdge.elem2()) << "," << graphEdge.side2() << ")"
                         << " on procs (" << m_procRank << "," << parInfo.get_proc_rank_of_neighbor() << ")"
                         << " already exists in map. Please contact sierra-help@sandia.gov for support." << std::endl
                         << "existing par info " << std::endl
@@ -160,7 +158,7 @@ void ParallelInfoForGraphEdges::clear()
 
 GraphEdge create_symmetric_edge(const GraphEdge& graphEdge)
 {
-    return GraphEdge(graphEdge.elem2, graphEdge.side2, graphEdge.elem1, graphEdge.side1);
+    return GraphEdge(graphEdge.elem2(), graphEdge.side2(), graphEdge.elem1(), graphEdge.side1());
 }
 
 }

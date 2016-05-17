@@ -117,9 +117,6 @@
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 #cmakedefine TPETRA_ENABLE_KOKKOS_DISTOBJECT
 
-/* Define when enabling RDMA support for MPI communication for CUDA GPUs */
-#cmakedefine TPETRA_ENABLE_MPI_CUDA_RDMA
-
 /* Define when enabling Tpetra for refactoring to new KokkosCore interface */
 #cmakedefine TPETRA_HAVE_KOKKOS_REFACTOR
 

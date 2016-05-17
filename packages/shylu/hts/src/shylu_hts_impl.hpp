@@ -1,8 +1,8 @@
 #ifndef INCLUDE_SHYLU_HTS_IMPL_HPP
 #define INCLUDE_SHYLU_HTS_IMPL_HPP
 
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 #include "shylu_hts.hpp"
 
 #ifdef HAVE_SHYLUHTS_MKL

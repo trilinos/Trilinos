@@ -7,6 +7,8 @@
 #include "basker_types.hpp"
 #include "basker_stats.hpp"
 
+#include <string>
+
 #ifdef BASKER_KOKKOS
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -155,6 +157,8 @@ namespace BaskerNS
     Int          lval  = 0;
     Int          uval  = 0;
 
+
+
     Int i,j,k;
     Int top, top1, maxindex, t;
     //Int top, maxindex, t;
@@ -191,8 +195,9 @@ namespace BaskerNS
     unnz = uval;
 
     #ifdef BASKER_DEBUG_NFACTOR_BLK
-    printf("b: %d scol: %d ecol: %d llnzz: %d uunzz: %d \n", 
-           b, scol, ecol, L.nnz, U.nnz);
+    printf("b: %d  ls: %d us: %d llnzz: %d uunzz: %d \n", 
+           b, lnnz, unnz, L.nnz, U.nnz);
+    printf("b: %d gperm: %d \n", b, gperm(L.srow));
     #endif
     
     //return 0 ;
@@ -205,6 +210,21 @@ namespace BaskerNS
     //Note: might want to add const trick for vectorize,
     //though this loop should really not vectorize
     
+    #ifdef BASKER_DEBUG_NFACTOR_BLK
+     for(i = 0; i < M.ncol; i++)
+	    {
+	      
+	      if(L.pend(i) != BASKER_MAX_IDX)
+		{
+		  printf("pend error: i: %d b: %d p: %d \n",
+			 i, b, L.pend(i));
+
+		}
+	      BASKER_ASSERT(L.pend(i) == BASKER_MAX_IDX, "pend");
+	      
+	    }
+     #endif
+
     //for(k = 0; k < 30; ++k)
      for(k = 0; k < M.ncol; ++k)
         {
@@ -226,9 +246,16 @@ namespace BaskerNS
           #ifdef BASKER_DEBUG_NFACTOR_BLK
           ASSERT(top == ws_size);
           //ASSERT entry workspace is clean
-          for(i = 0 ; i < ws_size; i++){ASSERT(X[i] == 0);}
+          for(i = 0 ; i < ws_size; i++)
+	    {
+	      BASKER_ASSERT(X(i) == 0, "Xerror");
+	    }
           //ASSERT int workspace is clean
-	  for(i = 0; i <  ws_size; i++){ASSERT(ws[i] == 0 );}
+	  for(i = 0; i <  ws_size; i++)
+	    {
+	      BASKER_ASSERT(ws(i) == 0, "wserror");
+	    }
+	 
           #endif
 
           //for each nnz in column
@@ -398,13 +425,18 @@ namespace BaskerNS
           //if((maxindex == L.max_idx) || (pivot == 0))
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
-	      cout << endl << endl;
-	      cout << "---------------------------"<<endl;
-              cout << "Error: Matrix is singular, blk" << endl;
-              cout << "k: " << k << " MaxIndex: " << maxindex 
-		   << " pivot " 
-                   << pivot << endl;
-              cout << "lcnt: " << lcnt << endl;
+	      if (Options.verbose == BASKER_TRUE)
+		{
+		  cout << endl << endl;
+		  cout << "---------------------------"<<endl;
+		  cout << "Error: Matrix is singular, blk" 
+		       << endl;
+		  cout << "k: " << k << " MaxIndex: " 
+		       << maxindex 
+		       << " pivot " 
+		       << pivot << endl;
+		  cout << "lcnt: " << lcnt << endl;
+		}
 	      thread_array(kid).error_type =
 		BASKER_ERROR_SINGULAR;
 	      thread_array(kid).error_blk   = b;
@@ -427,12 +459,16 @@ namespace BaskerNS
           //Note: Come back to this!!!!
           if(lnnz + lcnt > llnnz)
             {
-	      printf("\n\n");
-	      printf("----------------------\n");
+	      //printf("\n\n");
+	      // printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *M.nrow + 1;
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
               printf("b: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      b, llnnz, lnnz, lcnt, newsize);
+		}
 
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -454,12 +490,16 @@ namespace BaskerNS
           if(unnz+ucnt > uunnz)
             {
 
-	      printf("\n\n");
-	      printf("-------------------\n");
+	      // printf("\n\n");
+	      //printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*M.nrow+1;
-              printf("b: %d Reallocing U oldsize: %d newsize: %d \n",
-                     b, uunnz, newsize);
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
+              printf("b: %d Reallocing U oldsize: %d newsize: %d  k: %d \n",
+                     b, uunnz, unnz+ucnt, k);
+		}
 
 	       if(Options.realloc == BASKER_FALSE)
 		{
@@ -1388,8 +1428,11 @@ namespace BaskerNS
 	     return BASKER_ERROR;
 	   }
 
+	 if (Options.verbose == BASKER_TRUE)
+	   {
 	printf("-Warning, Need to remalloc L: %d %d kid: %d current size: %d used_size: %d  addition: %d \n",
 	       blkcol, blkrow, kid, llnnz,lnnz,p_size  );
+	   }
 	//BASKER_ASSERT(0==1, "REALLOC LOWER BLOCK\n");
 	
       }

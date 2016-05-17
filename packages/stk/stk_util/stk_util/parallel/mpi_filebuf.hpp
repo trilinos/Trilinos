@@ -108,6 +108,8 @@ public:
   //: Query wall-clock time spent communicating.
   double wtime() const ;
 
+  //: Return number of aprepro parse errors detected
+  int aprepro_parse_error_count() const {return aprepro_parsing_error_count;}
 protected:
 
   //: Called to refill the input buffer
@@ -139,6 +141,7 @@ private:
   char *  aprepro_buffer;     // Buffer holding results of aprepro processing input file (root only)
   size_t  aprepro_buffer_len; // Length of aprepro buffer.
   size_t  aprepro_buffer_ptr; // Pointer to current location of data returned from aprepro_buffer.
+  int     aprepro_parsing_error_count; // Number of errors during parsing.
   const std::string aprepro_defines;
 };
 

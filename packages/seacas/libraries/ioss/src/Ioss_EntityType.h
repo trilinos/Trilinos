@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -34,20 +34,22 @@
 #define IOSS_Ioss_EntityType_H
 
 namespace Ioss {
-  enum EntityType {NODEBLOCK    =    1,
-		   EDGEBLOCK    =    2,
-		   FACEBLOCK    =    4,
-		   ELEMENTBLOCK =    8,
-		   NODESET      =   16,
-		   EDGESET      =   32,
-		   FACESET      =   64,
-		   ELEMENTSET   =  128,
-		   SIDESET      =  256,
-		   SURFACE      =  256, //: Same as sideset
-		   COMMSET      =  512,
-		   SIDEBLOCK    = 1024,
-                   REGION       = 2048,
-                   SUPERELEMENT = 4096,
-                   INVALID_TYPE = 8192};
+  enum EntityType {
+    NODEBLOCK    = 1,
+    EDGEBLOCK    = 2,
+    FACEBLOCK    = 4,
+    ELEMENTBLOCK = 8,
+    NODESET      = 16,
+    EDGESET      = 32,
+    FACESET      = 64,
+    ELEMENTSET   = 128,
+    SIDESET      = 256,
+    SURFACE      = 256, //: Same as sideset
+    COMMSET      = 512,
+    SIDEBLOCK    = 1024,
+    REGION       = 2048,
+    SUPERELEMENT = 4096,
+    INVALID_TYPE = 8192
+  };
 }
 #endif

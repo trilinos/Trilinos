@@ -345,39 +345,39 @@ exp:	  NUM			{ $$ = $1; 				}
 	| IMMVAR EQ_POW exp	{ immutable_modify(aprepro, $1); YYERROR; }
 
 	| UNDVAR		{ $$ = $1->value.var;
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| INC UNDVAR		{ $$ = ++($2->value.var);		
 		                  set_type(aprepro, $2, token::VAR);
-				  undefined_warning(aprepro, $2->name);          }
+				  undefined_error(aprepro, $2->name);          }
 	| DEC UNDVAR		{ $$ = --($2->value.var);		
 		                  set_type(aprepro, $2, token::VAR);
-				  undefined_warning(aprepro, $2->name);          }
+				  undefined_error(aprepro, $2->name);          }
 	| UNDVAR INC		{ $$ = ($1->value.var)++;		
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR DEC		{ $$ = ($1->value.var)--;		
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQUAL exp	{ $$ = $3; $1->value.var = $3;
 		                  set_type(aprepro, $1, token::VAR);                      }
 	| UNDVAR EQ_PLUS exp	{ $1->value.var += $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 	| UNDVAR EQ_POW exp	{ errno = 0;
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
 				  SEAMS::math_error(aprepro, "Power");
-				  undefined_warning(aprepro, $1->name);          }
+				  undefined_error(aprepro, $1->name);          }
 
         | FNCT LPAR RPAR	{
 	  if (arg_check($1, $1->value.fnctptr == NULL))

@@ -23,6 +23,13 @@ public:
 
     void reset_suggested_side_id_iter(size_t numIdsNotReallyUsed);
 
+    void clear()
+    {
+        mNumIdsUsed = 0;
+        mNumIdsRequested = 0;
+        mSuggestedIds.clear();
+    }
+
 protected:
     const stk::mesh::EntityIdVector &get_all_ids()
     {
@@ -33,6 +40,7 @@ private:
     stk::mesh::BulkData &mBulkData;
     stk::mesh::EntityIdVector mSuggestedIds;
     size_t mNumIdsUsed;
+    size_t mNumIdsRequested;
 };
 
 }}

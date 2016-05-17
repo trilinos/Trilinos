@@ -22,14 +22,15 @@
 #include "apr_util.h"
 #include "apr_tokenize.h"
 
-#ifndef RAND_MAX
-#include <limits.h>
-#define RAND_MAX INT_MAX
-#endif
+#include <random>
 
 #ifndef PI
 #define PI  3.141592653589793238462643
 #endif
+
+namespace {
+    std::mt19937_64 rng;
+}
 
 namespace SEAMS {
 
@@ -323,7 +324,7 @@ do_acos(double x)
 double
 do_srand(double seed)
 {
-  srand((unsigned)seed);
+  rng.seed((size_t)seed);
   return (0);
 }
 
@@ -331,67 +332,29 @@ do_srand(double seed)
 double 
 do_rand(double xl, double xh)
 {
-  double temp;
-  errno = 0;
-  temp = xl + (xh - xl) * ((double) rand() / (double) RAND_MAX);
-  SEAMS::math_error("rand");
-  return (temp);
+  std::uniform_real_distribution<double> dist(xl, xh);
+  return dist(rng);
 }
 
 double 
 do_rand_normal(double mean, double stddev)
 {
-  /* boxmuller.c
-     Implements the Polar form of the Box-Muller Transformation
-   
-     (c) Copyright 1994, Everett F. Carter Jr.  Permission is granted by
-     the author to use this software for any application provided this
-     copyright notice is preserved.
-  */
-  double x1, x2, w, y1;
-  static double y2;
-  static int use_last = 0;
-  
-  if (use_last) {
-    y1 = y2;
-    use_last = 0;
-  }
-  else {
-    do {
-      x1 = 2.0 * ((double)rand()/(double)RAND_MAX) - 1.0;
-      x2 = 2.0 * ((double)rand()/(double)RAND_MAX) - 1.0;
-      w = x1 * x1 + x2 * x2;
-    } while ( w >= 1.0 );
-
-    w = std::sqrt( (-2.0 * std::log(w)) / w);
-    y1 = x1 * w;
-    y2 = x2 * w;
-    use_last = 1;
-  }
-  return ( mean + y1 * stddev);
+  std::normal_distribution<> dist(mean, stddev);
+  return dist(rng);
 }
 
 double 
 do_rand_lognormal(double mean, double stddev)
 {
-  double x;
-  double logstd = std::log(1.0 + (stddev/mean)*(stddev/mean));
-  double logmean = std::log(mean) - 0.5 * logstd;
-  logstd = std::sqrt(logstd);
-
-  x = do_rand_normal(logmean, logstd);
-
-  return exp(x);
+  std::lognormal_distribution<> dist(mean, stddev);
+  return dist(rng);
 }
 
 double 
 do_rand_weibull(double alpha, double beta)
 {
-  double temp = (double) rand() / (double) RAND_MAX;
-  errno = 0;
-  temp = pow( (-1.0 / alpha * std::log(1.0 - temp)), (1.0/beta) );
-  SEAMS::math_error("weibull");
-  return (temp);
+  std::weibull_distribution<> dist(alpha, beta);
+  return dist(rng);
 }
 
 double 

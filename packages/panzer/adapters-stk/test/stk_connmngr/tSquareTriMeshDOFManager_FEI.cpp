@@ -101,7 +101,6 @@ RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -225,7 +224,6 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       }
    }
    
-   PHX::FinalizeKokkosDevice();
 }
 
 /*

@@ -116,11 +116,11 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
   int dim0 = inputPoints.dimension(0);
 
   // Temporaries: (x,y,z) coordinates of the evaluation point
-  Scalar x = 0.0;
-  Scalar y = 0.0;
-  Scalar z = 0.0;
+  Scalar r = 0.0;
+  Scalar s = 0.0;
+  Scalar t = 0.0;
 
-  // Temporary for the auxiliary node basis function
+  // Temporary for the auriliary node basis function
   Scalar aux = 0.0;
 
   // Array to store all the subtets containing the given pt
@@ -131,11 +131,11 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
 
     case OPERATOR_VALUE:
       for (int i0 = 0; i0 < dim0; i0++) {
-        x = inputPoints(i0, 0);
-        y = inputPoints(i0, 1);
-        z = inputPoints(i0, 2);
+        r = inputPoints(i0, 0);
+        s = inputPoints(i0, 1);
+        t = inputPoints(i0, 2);
 
-	pt_tets = getLocalSubTetrahedra(x,y,z);
+	pt_tets = getLocalSubTetrahedra(r,s,t);
 
 	// idependent verification shows that a given point will produce
 	// the same shape functions for each tet that contains it, so
@@ -147,76 +147,76 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
           // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
           switch (subtet) {
           case 0:
-            outputValues(0, i0) = 1. - 2. * (x + y + z);
-            outputValues(4, i0) = 2. * x;
-            outputValues(6, i0) = 2. * y;
-            outputValues(7, i0) = 2. * z;
+            outputValues(0, i0) = 1. - 2. * (r + s + t);
+            outputValues(4, i0) = 2. * r;
+            outputValues(6, i0) = 2. * s;
+            outputValues(7, i0) = 2. * t;
             break;
           case 1:
-            outputValues(1, i0) = 2. * x - 1.;
-            outputValues(4, i0) = 2. - 2. * (x + y + z);
-            outputValues(5, i0) = 2. * y;
-            outputValues(8, i0) = 2. * z;
+            outputValues(1, i0) = 2. * r - 1.;
+            outputValues(4, i0) = 2. - 2. * (r + s + t);
+            outputValues(5, i0) = 2. * s;
+            outputValues(8, i0) = 2. * t;
             break;
           case 2:
-            outputValues(2, i0) = 2. * y - 1.;
-            outputValues(5, i0) = 2. * x;
-            outputValues(6, i0) = 2. - 2. * (x + y + z);
-            outputValues(9, i0) = 2. * z;
+            outputValues(2, i0) = 2. * s - 1.;
+            outputValues(5, i0) = 2. * r;
+            outputValues(6, i0) = 2. - 2. * (r + s + t);
+            outputValues(9, i0) = 2. * t;
             break;
           case 3:
-            outputValues(3, i0) = 2. * z - 1.;
-            outputValues(7, i0) = 2. - 2. * (x + y + z);
-            outputValues(8, i0) = 2. * x;
-            outputValues(9, i0) = 2. * y;
+            outputValues(3, i0) = 2. * t - 1.;
+            outputValues(7, i0) = 2. - 2. * (r + s + t);
+            outputValues(8, i0) = 2. * r;
+            outputValues(9, i0) = 2. * s;
             break;
           case 4:
-            outputValues(4, i0) = 1. - 2. * (y + z);
-            outputValues(5, i0) = 2. * (x + y) - 1.;
-            outputValues(8, i0) = 2. * (x + z) - 1.;
-            aux = 2. - 4. * x;
+            outputValues(4, i0) = 1. - 2. * (s + t);
+            outputValues(5, i0) = 2. * (r + s) - 1.;
+            outputValues(8, i0) = 2. * (r + t) - 1.;
+            aux = 2. - 4. * r;
             break;
           case 5:
-            outputValues(5, i0) = 1. - 2. * (x + y);
-            outputValues(8, i0) = 1. - 2. * (x + z);
-            outputValues(9, i0) = 2. * (y + z) - 1.;
-            aux = 4. - 4. * (x + y + z);
+            outputValues(5, i0) = 2. * (r + s) - 1.;
+            outputValues(8, i0) = 2. * (r + t) - 1.;
+            outputValues(9, i0) = 2. * (s + t) - 1.;
+            aux = 4. - 4. * (r + s + t);
             break;
           case 6:
-            outputValues(7, i0) = 1. - 2. * (x + y);
-            outputValues(8, i0) = 2. * (x + z) - 1.;
-            outputValues(9, i0) = 2. * (y + z) - 1.;
-            aux = 2. - 4. * z;
+            outputValues(7, i0) = 1. - 2. * (r + s);
+            outputValues(8, i0) = 2. * (r + t) - 1.;
+            outputValues(9, i0) = 2. * (s + t) - 1.;
+            aux = 2. - 4. * t;
             break;
           case 7:
-            outputValues(4, i0) = 1. - 2. * (y + z);
-            outputValues(7, i0) = 1. - 2. * (x + y);
-            outputValues(8, i0) = 2. * (x + z) - 1.;
-            aux = 4. * y;
+            outputValues(4, i0) = 1. - 2. * (s + t);
+            outputValues(7, i0) = 1. - 2. * (r + s);
+            outputValues(8, i0) = 2. * (r + t) - 1.;
+            aux = 4. * s;
             break;
           case 8:
-            outputValues(4, i0) = 1. - 2. * (y + z);
-            outputValues(5, i0) = 2. * (x + y) - 1.;
-            outputValues(6, i0) = 1. - 2. * (x + z);
-            aux = 4. * z;
+            outputValues(4, i0) = 1. - 2. * (s + t);
+            outputValues(5, i0) = 2. * (r + s) - 1.;
+            outputValues(6, i0) = 1. - 2. * (r + t);
+            aux = 4. * t;
             break;
           case 9:
-            outputValues(5, i0) = 2. * (x + y) - 1.;
-            outputValues(6, i0) = 1. - 2. * (x + z);
-            outputValues(9, i0) = 2. * (y + z) - 1.;
-            aux = 2. - 4. * y;
+            outputValues(5, i0) = 2. * (r + s) - 1.;
+            outputValues(6, i0) = 1. - 2. * (r + t);
+            outputValues(9, i0) = 2. * (s + t) - 1.;
+            aux = 2. - 4. * s;
             break;
           case 10:
-            outputValues(6, i0) = 1. - 2. * (x + z);
-            outputValues(7, i0) = 1. - 2. * (x + y);
-            outputValues(9, i0) = 2. * (y + z) - 1.;
-            aux = 4. * x;
+            outputValues(6, i0) = 1. - 2. * (r + t);
+            outputValues(7, i0) = 1. - 2. * (r + s);
+            outputValues(9, i0) = 2. * (s + t) - 1.;
+            aux = 4. * r;
             break;
           case 11:
-            outputValues(4, i0) = 1. - 2. * (y + z);
-            outputValues(6, i0) = 1. - 2. * (x + z);
-            outputValues(7, i0) = 1. - 2. * (x + y);
-            aux = 4. * (x + y + z) - 2.;
+            outputValues(4, i0) = 1. - 2. * (s + t);
+            outputValues(6, i0) = 1. - 2. * (r + t);
+            outputValues(7, i0) = 1. - 2. * (r + s);
+            aux = 4. * (r + s + t) - 2.;
             break;
           }
           outputValues(4, i0) += aux/6.0;
@@ -238,9 +238,9 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
       FieldContainer<Scalar> Lopt(10,3);
       for (int pt=0; pt < dim0; ++pt) {
 
-        Scalar r = inputPoints(pt, 0);
-        Scalar s = inputPoints(pt, 1);
-        Scalar t = inputPoints(pt, 2);
+        r = inputPoints(pt, 0);
+        s = inputPoints(pt, 1);
+        t = inputPoints(pt, 2);
 
         Lopt(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
         Lopt(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;
@@ -423,7 +423,7 @@ Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getLocalSubTetrahedra(Scalar x,
   }
 
   // subtet #8 E8 := 0.0 <= r + t <= 0.5 && 0.0 <= s + t <= 0.5 &&  0.5 <= r + s <= 1.0 && 0.0 <= t <= 0.25
-  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.5) ) {
+  if ( (0.0 <= xz && xz <= 0.5) && (0.0 <= yz && yz <= 0.5) && (0.5 <= xy && xy <= 1.0) && (0.0 <= z && z <= 0.25) ) {
     count++;
     subTets.push_back(8);
   }

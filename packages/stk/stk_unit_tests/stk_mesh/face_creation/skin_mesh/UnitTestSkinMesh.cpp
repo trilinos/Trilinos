@@ -109,7 +109,7 @@ bool check_if_one_owned_face_with_these_nodes_exists(const std::array <uint64_t,
     node_vector[i] = mesh.get_entity(stk::topology::NODE_RANK, nodes[i]);
   }
 
-  stk::mesh::impl::find_faces_these_nodes_have_in_common(mesh, numNodes, &node_vector[0], face_vector);
+  stk::mesh::impl::find_entities_these_nodes_have_in_common(mesh,stk::topology::FACE_RANK,numNodes,&node_vector[0],face_vector);
 
   // remove all non-locally owned entities
   face_vector.erase(
@@ -170,7 +170,7 @@ void test_skin_mesh_with_hexes(stk::mesh::BulkData::AutomaticAuraOption autoAura
 
   stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
   // node ordering for generated mesh is different than hand-crafted meshes for other unit tests below
-  stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh, MPI_COMM_WORLD);
+  stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh);
   const int p_rank = mesh.parallel_rank();
 
   ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
@@ -890,7 +890,7 @@ void test_2_hex_2_block(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
         stk::mesh::Part & block_2 = meta.declare_part("block_2", stk::topology::FACE_RANK);
 
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh);
 
         ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
         ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );
@@ -945,7 +945,7 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
         stk::mesh::Part & block_2 = meta.declare_part("block_2", stk::topology::FACE_RANK);
 
         stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, autoAuraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", mesh);
 
         ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(stk::topology::NODE_RANK)) );
         ASSERT_EQ( 0u, stk::mesh::count_selected_entities( skin_part, mesh.buckets(side_rank)) );

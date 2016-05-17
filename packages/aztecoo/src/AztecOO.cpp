@@ -189,9 +189,10 @@ int AztecOO::AllocAzArrays()
 
   options_ = new int[AZ_OPTIONS_SIZE];
   params_ = new double[AZ_PARAMS_SIZE];
-  status_ = new double[AZ_STATUS_SIZE];
+  status_ = new double[AZ_STATUS_SIZE];  
 
   if (proc_config_ ==0 ||options_ == 0 || params_ == 0 || status_ == 0) EPETRA_CHK_ERR(-1);
+  for ( int i = 0; i < AZ_STATUS_SIZE; ++i ) status_[i] = 0.0;
 
   return(0);
 }

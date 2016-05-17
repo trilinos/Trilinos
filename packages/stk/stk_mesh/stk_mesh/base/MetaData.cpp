@@ -647,7 +647,7 @@ void MetaData::register_cell_topology(const CellTopology cell_topology, EntityRa
   //check_topo_db();
 }
 
-shards::CellTopology MetaData::register_superelement_cell_topology(stk::topology topo)
+shards::CellTopology MetaData::register_super_cell_topology(stk::topology topo)
 {
   shards::CellTopology cell_topology = get_cell_topology(topo.name());
   if (!cell_topology.isValid()) {
@@ -667,7 +667,12 @@ shards::CellTopology MetaData::register_superelement_cell_topology(stk::topology
     cell_topology_data->subcell_count[2]  = 0 ;
     cell_topology_data->subcell_count[3]  = 0 ;
 
-    register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
+    if (topo.is_superedge())
+        register_cell_topology(cell_topology, stk::topology::EDGE_RANK);
+    else if (topo.is_superface())
+        register_cell_topology(cell_topology, stk::topology::FACE_RANK);
+    else
+        register_cell_topology(cell_topology, stk::topology::ELEMENT_RANK);
   }
   return cell_topology;
 }
@@ -869,9 +874,9 @@ void set_topology(Part & part, stk::topology topo)
     meta.declare_part(part.name(), topo.rank());
   }
 
-  if (topo.is_superelement()) {
+  if (topo.is_super_topology()) {
     // Need to (possibly) create a CellTopology corresponding to this superelement stk::topology.
-    shards::CellTopology cell_topology = meta.register_superelement_cell_topology(topo);
+    shards::CellTopology cell_topology = meta.register_super_cell_topology(topo);
     set_cell_topology(part, cell_topology);
   } else {
     set_cell_topology(part, get_cell_topology(topo));
@@ -1029,6 +1034,10 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
     t = stk::topology::HEX_27;
   else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPERELEMENT", 12) == 0)
     return create_superelement_topology(shards_topology.getNodeCount());
+  else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPERFACE", 9) == 0)
+    return create_superface_topology(shards_topology.getNodeCount());
+  else if ( shards_topology.isValid() && strncmp(shards_topology.getName(), "SUPEREDGE", 9) == 0)
+    return create_superedge_topology(shards_topology.getNodeCount());
 
   if (t.defined_on_spatial_dimension(spatial_dimension))
     return t;

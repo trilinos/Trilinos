@@ -15,7 +15,7 @@ TEST(StkIo, readingParallelFilesMissingParallelCommInfo)
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator);
         // file from Salinas output is missing parallel info
-        EXPECT_THROW(stk::unit_test_util::fill_mesh_using_stk_io("twoHexMissingParallelInfo.e", bulk, communicator), std::runtime_error);
+        EXPECT_THROW(stk::unit_test_util::fill_mesh_using_stk_io("twoHexMissingParallelInfo.e", bulk), std::runtime_error);
     }
 }
 

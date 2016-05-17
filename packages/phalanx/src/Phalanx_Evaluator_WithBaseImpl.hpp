@@ -123,7 +123,7 @@ namespace PHX {
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
 	       typename Traits::EvalData d);
 #endif

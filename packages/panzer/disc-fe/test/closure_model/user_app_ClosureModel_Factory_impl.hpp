@@ -65,6 +65,8 @@
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_DOF.hpp"
 #include "Panzer_FieldSpy.hpp"
+#include "Panzer_Product.hpp"
+#include "Panzer_String_Utilities.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -182,6 +184,28 @@ buildClosureModels(const std::string& model_id,
             evaluators->push_back(e);
           }
 
+          found = true;
+        }
+        else if (plist.get<std::string>("Type") == "Product") {
+          RCP<std::vector<std::string> > valuesNames = rcp(new std::vector<std::string>); 
+          // Tokenize a string, put tokens in a vector
+          panzer::StringTokenizer(*valuesNames,plist.get<std::string>("Term Names"));
+          double scaling = 1.0; 
+          if(plist.isType<double>("Scaling")) 
+            scaling = plist.get<double>("Scaling");
+  
+          {
+            Teuchos::ParameterList input;
+            input.set("Scaling", scaling);
+            input.set("Product Name", key);
+            input.set("Values Names", valuesNames);
+            input.set("Data Layout", ir->dl_scalar);
+  
+            RCP< panzer::Product<EvalT,panzer::Traits> > e = 
+              rcp(new panzer::Product<EvalT,panzer::Traits>(input));
+            evaluators->push_back(e);
+          }
+  
           found = true;
         }
 

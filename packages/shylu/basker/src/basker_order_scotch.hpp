@@ -121,9 +121,6 @@ namespace BaskerNS
     //printf("scotch.  num_threads: %d lvls: %d \n", 
     //	   num_threads, lvls);
     part_scotch(M, BT, lvls);
-
-
-  
     return 0;
   }//end part_scotch
 
@@ -182,6 +179,7 @@ namespace BaskerNS
       {
         BASKER_ASSERT(self_edge == (sg.m-1), 
 		      "ZERO ON DIAGONAL, SCOTCH FAIL\n");
+	//JDB: comeback need to have a better way to exit
 	exit(0);
 	//Need to clean up this 
       }
@@ -325,7 +323,7 @@ namespace BaskerNS
 			 );
 
 	
-	//#ifdef BASKER_DEBUG_ORDER_SCOTCH
+	#ifdef BASKER_DEBUG_ORDER_SCOTCH
 	printf("\n\n DEBUG COMPLETE OUT \n\n");
 	printf("Tree: ");
 	for(Int i = 0; i < iblks+1; i++)
@@ -339,7 +337,7 @@ namespace BaskerNS
 	    printf("%d, ", ttabs(i));
 	  }
 	printf("\n");
-	///#endif
+	#endif
 
 	//copy back into scotch
 	sg.cblk = iblks;
@@ -523,6 +521,8 @@ namespace BaskerNS
 
 
     //DEBUG
+    if(Options.verbose == BASKER_TRUE)
+      {
     printf("test - otree\n");
     for(Int t_blk = 1; t_blk < iblks+1; t_blk++)
       {
@@ -540,8 +540,8 @@ namespace BaskerNS
 	 */
       }
     printf("\n");
-
-
+    printf("nblks %d \n", nblks);
+      }
 
 
     //test if enough domain
@@ -550,7 +550,7 @@ namespace BaskerNS
     Int indomains  = 0;
     //Int c_treenode = tree(0);
     //scan over all and count set of pairs
-    printf("nblks %d \n", nblks);
+    
     for(Int t_blk = 1; t_blk < nblks; t_blk++)
       {
 	
@@ -575,16 +575,21 @@ namespace BaskerNS
 	  }
       }
 
-    
-    printf("Domains Found: %d \n", ndomains);
-    printf("Domains Ideal: %d \n", indomains);
-  
+    if(Options.verbose == BASKER_TRUE)
+      {
+        printf("Domains Found: %d \n", ndomains);
+        printf("Domains Ideal: %d \n", indomains);
+      }  
+
     if(ndomains != indomains)
       {
-	printf("Domains Found: %d \n", ndomains);
-	printf("Domains Ideal: %d \n", indomains);
-	printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
-	printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
+        if(Options.verbose == BASKER_TRUE)
+          {
+            printf("Domains Found: %d \n", ndomains);
+            printf("Domains Ideal: %d \n", indomains);
+            printf("ERROR: NOT ENOUGH DOMAINS FOR THREADS\n");
+            printf("REDUCE THREAD COUNT AND TRY AGAIN\n");
+          }
 	exit(EXIT_FAILURE);
       }
 

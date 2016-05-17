@@ -99,7 +99,7 @@ void convert_edge_list_to_csr (idx nv, idx ne, idx *srcs, idx *dests, wt *ew, id
 }
 
 template <typename idx, typename wt>
-void write_graph_bin(idx nv, idx ne,idx *xadj, idx *adj, wt *ew, char *filename){
+void write_graph_bin(idx nv, idx ne,const idx *xadj,const  idx *adj,const  wt *ew,const  char *filename){
   std::ofstream myFile (filename, std::ios::out | std::ios::binary);
   myFile.write((char *) &nv, sizeof(idx));
   myFile.write((char *) &ne, sizeof(idx));
@@ -124,11 +124,17 @@ void read_graph_bin(idx *nv, idx *ne,idx **xadj, idx **adj, wt **ew, char *filen
   myFile.read((char *) *adj, sizeof(idx) * (*ne));
   myFile.read((char *) *ew, sizeof(wt) * (*ne));
   myFile.close();
+  std::cout << "nr:" << *nv << " nnz:" << *ne << std::endl;
 }
 
 
 template <typename idx, typename wt>
-int read_mtx (char *fileName, idx *nv, idx *ne, idx **xadj, idx **adj, wt **ew, bool symmetrize = false, bool remove_diagonal = true){
+int read_mtx (
+    char *fileName,
+    idx *nv, idx *ne,
+    idx **xadj, idx **adj, wt **ew,
+    bool symmetrize = false, bool remove_diagonal = true,
+    bool transpose = false){
 
   std::ifstream mmf (fileName, std::ifstream::in);
   if (!mmf.is_open()) {std::cerr << "File cannot be opened" << std::endl; return 1;}
@@ -219,9 +225,16 @@ int read_mtx (char *fileName, idx *nv, idx *ne, idx **xadj, idx **adj, wt **ew, 
     idx s,d;
     wt w;
     ss >> s >> d >> w;
-    tmp.src = s - 1;
-    tmp.dst = d - 1;
-    tmp.ew = w;
+    if (!transpose){
+      tmp.src = s - 1;
+      tmp.dst = d - 1;
+      tmp.ew = w;
+    }
+    else {
+      tmp.src = d - 1;
+      tmp.dst = s - 1;
+      tmp.ew = w;
+    }
 
     if (tmp.src == tmp.dst){
       noDiagonal++;
@@ -244,12 +257,19 @@ int read_mtx (char *fileName, idx *nv, idx *ne, idx **xadj, idx **adj, wt **ew, 
 
   std::sort (edges.begin(), edges.begin() + nE);
 
+  if (transpose){
+    idx tmp = nr;
+    nr = nc;
+    nc = tmp;
+  }
   std::cout   << "MTX READ" << std::endl
     << "NV:" << nr << " NNZ:" << nnz << std::endl
     << "No Diagonals:" << noDiagonal << " no edges:" << nE << std::endl;
 
   //idx *nv, idx *ne, idx **xadj, idx **adj, wt **wt
+
   *nv = nr;
+
   *ne = nE;
   //*xadj = new idx[nr + 1];
   md_malloc<idx>(xadj, nr+1);

@@ -30,20 +30,43 @@
 #ifndef KOKKOS_VIEW_FAD_HPP
 #define KOKKOS_VIEW_FAD_HPP
 
-// Make sure the user really wants these View specializations
 #include "Sacado_ConfigDefs.h"
-#if defined(HAVE_SACADO_KOKKOSCORE) && defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
-
-#include "Sacado_Traits.hpp"
+#if defined(HAVE_SACADO_KOKKOSCORE)
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
+#include "Kokkos_Macros.hpp"
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 #include "KokkosExp_View_Fad.hpp"
 
 #else
+
+// Some definition that should exist whether the specializations exist or not
+
+namespace Kokkos {
+
+// Whether a given type is a view with Sacado FAD scalar type
+template <typename view_type>
+struct is_view_fad { static const bool value = false; };
+
+// Template function for extracting sacado dimension
+template <typename view_type>
+KOKKOS_INLINE_FUNCTION
+constexpr unsigned
+dimension_scalar(const view_type& view) {
+  return 0;
+}
+
+}
+
+// Make sure the user really wants these View specializations
+#include "Sacado_ConfigDefs.h"
+#if defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
+
+#include "Sacado_Traits.hpp"
+
+#include "Kokkos_AnalyzeSacadoShape.hpp"
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -906,21 +929,12 @@ create_mirror( const View<T,L,D,M,Impl::ViewSpecializeSacadoFad> & src )
                          dims[7] );
 }
 
-// Whether a given type is a view with Sacado FAD scalar type
-template <typename view_type>
-struct is_view_fad { static const bool value = false; };
+
 
 template <typename T, typename L, typename D, typename M>
 struct is_view_fad< View<T,L,D,M,Impl::ViewSpecializeSacadoFad> > {
   static const bool value = true;
 };
-
-template <typename view_type>
-KOKKOS_INLINE_FUNCTION
-constexpr unsigned
-dimension_scalar(const view_type& view) {
-  return 0;
-}
 
 template <typename T, typename L, typename D, typename M>
 KOKKOS_INLINE_FUNCTION
@@ -1044,8 +1058,10 @@ struct ViewAssignment< ViewDefault , ViewSpecializeSacadoFad , void >
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#endif
+#endif // defined(HAVE_SACADO_VIEW_SPEC) && !defined(SACADO_DISABLE_FAD_VIEW_SPEC)
 
-#endif
+#endif // !defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
+#endif // defined(HAVE_SACADO_KOKKOSCORE)
 
 #endif /* #ifndef KOKKOS_VIEW_FAD_HPP */

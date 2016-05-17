@@ -13,6 +13,21 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
     " support is enabled in Teuchos, otherwise defaults to OFF."
   )
 
+#Optional Hessian support
+#############################
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PARENT_PACKAGE_NAME}_ENABLE_HESSIAN_SUPPORT
+  ${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT
+  "Enable building of Hessian AD types"
+  OFF
+  )
+
+IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
+   MESSAGE("-- Hessian support On")
+ELSE()
+   MESSAGE("-- Hessian support Off")
+ENDIF()
 
 ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_TEST_DIRECTORIES(test)

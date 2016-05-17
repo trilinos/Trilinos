@@ -241,30 +241,12 @@ namespace MueLu {
     typedef Node            NO;
 
     typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
-    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
     typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
 
     RCP<Hierarchy> H = Op.GetHierarchy();
+    RCP<Matrix>    A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
-                               "MueLu::ReuseTpetraPreconditioner: Hierarchy has no levels in it");
-    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
-                               "MueLu::ReuseTpetraPreconditioner: Hierarchy has no fine level operator");
-    RCP<Level> level0 = H->GetLevel(0);
-
-    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
-    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
-
-    RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
-    if (!A0.is_null()) {
-      // If a user provided a "number of equations" argument in a parameter list
-      // during the initial setup, we must honor that settings and reuse it for
-      // all consequent setups.
-      A->SetFixedBlockSize(A0->GetFixedBlockSize());
-    }
-    level0->Set("A", A);
-
-    H->SetupRe();
+    MueLu::ReuseXpetraPreconditioner<SC,LO,GO,NO>(A, H);
   }
 
 } //namespace

@@ -135,14 +135,14 @@ namespace BaskerNS
 
 
       Int chunk_start = thread_start(kid);
-      printf("test: %d %d \n", kid, thread_start(kid));
+      //printf("test: %d %d \n", kid, thread_start(kid));
       if(chunk_start != BASKER_MAX_IDX)
 	{
 	  Int chunk_size  = basker->btf_schedule(kid+1) - 
 	    chunk_start;
       
-	  printf("Chunk start: %d size: %d \n", 
-		 chunk_start, chunk_size);
+	  // printf("Chunk start: %d size: %d \n", 
+	  //	 chunk_start, chunk_size);
 	  basker->t_nfactor_diag(kid, chunk_start,
 				 chunk_size);
 
@@ -170,8 +170,12 @@ namespace BaskerNS
 	c < schunk+nchunk; ++c)
       {
 	Int c_size = btf_tabs(c+1)-btf_tabs(c);
-	//printf("kid: %d current_chunk: %d size: %d \n",
-	//   kid, c, c_size);
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("kid: %d factoring current_chunk: %d size: %d start: %d\n",
+		   kid, c, c_size, btf_tabs(c));
+	  }
 
 	Int err = BASKER_SUCCESS;
 	if(c_size == 1)
@@ -315,23 +319,23 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
 	//if(k < 3)
 	  {
-	printf("\n------------K=%d-------------\n", k);
+	    printf("\n------------K=%d-------------\n", k);
 	BASKER_ASSERT(top == ws_size, "nfactor dig, top");
 	for( i = 0; i < ws_size; ++i)
 	  {
-	    if(X[i] != 0)
+	    if(X(i) != 0)
 	      {
-		printf("x(i) error: %d \n", i);
+		printf("x(i) error: %d  %e k: %d \n", i , X(i), k);
 	      }
             if(ws[i] != 0)
               {
-                printf("ws(i) error: %d \n", i);
+                printf("ws(i) error: %d K: %d \n", i, k);
               }
 	    BASKER_ASSERT(X[i] == 0, "X!=0");
 	    BASKER_ASSERT(ws[i] == 0, "ws!=0");
 	  }
 	  }
-	  #endif
+	 #endif
 
 	value = 0.0;
 	pivot = 0.0;
@@ -356,17 +360,15 @@ namespace BaskerNS
 		continue;
 	      }
 
-
-	    //X[j-brow] = M.val[i];
 	    X(j) = M.val(i);
 	    
             #ifdef BASKER_DEBUG_NFACTOR_DIAG
-	    //if(k  < 3)
+	    if(k  <= 117)
 	      {
 		printf("In put j: %d %d %g \n", 
 		       M.row_idx(i), j, M.val(i));
 	      }
-	     #endif
+	    #endif
 	    
 	    #ifdef BASKER_DEBUG_NFACTOR_DIAG
 	    printf("i: %d row: %d %d %d  val: %g  top: %d \n", 
@@ -392,8 +394,11 @@ namespace BaskerNS
 	xnnz = ws_size - top;
 
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
+	if(k < 40)
+	  {
 	printf("xnnz: %d ws_size: %d top: %d \n", 
 	       xnnz, ws_size, top);
+	  }
         #endif
              
 	//add custom local_solve
@@ -437,8 +442,8 @@ namespace BaskerNS
 	#ifdef BASKER_DEBUG_NFACTOR_DIAG
 	//if(k < 3)
 	  {
-	    printf("pivot: %g maxindex: %d \n",
-		   pivot, maxindex);
+	    printf("pivot: %g maxindex: %d k: %d \n",
+		   pivot, maxindex, k);
 	  }
 	  #endif
 	
@@ -451,10 +456,10 @@ namespace BaskerNS
 	    }
 	
 	  #ifdef BASKER_DEBUG_NFACTOR_DEBUG
-	  //if(k < 3)
+	  if(k <= 117)
 	    {
-	      printf("pivot: %g maxindex: %d \n",
-		     pivot, maxindex);
+	      printf("pivot: %g maxindex: %d K:%d \n",
+		     pivot, maxindex, k);
 	    }
 	  #endif
   
@@ -464,6 +469,9 @@ namespace BaskerNS
          
 	  if((maxindex == BASKER_MAX_IDX) || (pivot == 0))
             {
+
+	      if (Options.verbose == BASKER_TRUE)
+		{
 	      cout << endl << endl;
 	      cout << "---------------------------"
 		   << endl;
@@ -475,6 +483,7 @@ namespace BaskerNS
               cout << "MaxIndex: " << maxindex 
 		   << " pivot " 
                    << pivot << endl;
+		}
 	      thread_array(kid).error_type = 
 		BASKER_ERROR_SINGULAR;
 	      thread_array(kid).error_blk  = c;
@@ -506,16 +515,20 @@ namespace BaskerNS
           //Note: Come back to this!!!!
           if(lnnz + lcnt > llnnz)
             {
-	      printf("\n\n");
-	      printf("----------------------\n");
+	      //printf("\n\n");
+	      //printf("----------------------\n");
 
               newsize = lnnz * 1.1 + 2 *L.nrow + 1;
+	      
+	      if (Options.verbose == BASKER_TRUE)
+		{
               printf("Diag blk: %d Reallocing L oldsize: %d current: %d count: %d newsize: %d \n",
                      c,
 		     llnnz, lnnz, lcnt, newsize);
 	      printf("Columns in blks: %d %d %d \n",
 		     btf_tabs(c), btf_tabs(c+1), 
 		     (btf_tabs(c+1)-btf_tabs(c)));
+		}
 	      
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -536,15 +549,18 @@ namespace BaskerNS
           if(unnz+ucnt > uunnz)
             {
 
-	      printf("\n\n");
-	      printf("-------------------\n");
+	      //printf("\n\n");
+	      //printf("-------------------\n");
 
               newsize = uunnz*1.1 + 2*L.nrow+1;
+
+	      if(Options.verbose == BASKER_TRUE)
+		{
               printf("Diag blk: %d Reallocing U oldsize: %d %d newsize: %d \n",
                      c, uunnz, unnz+ucnt, newsize);
 	      printf("blk: %d column: %d \n",
 		     c, k);
-
+		}
 
 	      if(Options.realloc == BASKER_FALSE)
 		{
@@ -577,7 +593,11 @@ namespace BaskerNS
 	      t = gperm(j+L.srow);
             
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
-              printf("j: %d t: %d \n", j, t);
+	      if(k <= 117)
+		{
+		  printf("j: %d t: %d k: %d x: %g\n", 
+			 j, t, k, X(j));
+		}
               #endif            
 
             
@@ -629,6 +649,10 @@ namespace BaskerNS
                       ++lnnz;
 
                     }
+		  else
+		    {
+		      BASKER_ASSERT(0==1, "T not be selected\n");
+		    }
                 }//end if() not 0
               
               //Note: move x[j] inside of if() not 0..
@@ -636,13 +660,14 @@ namespace BaskerNS
               #ifdef BASKER_DEBUG_NFACTOR_DIAG
               printf("Zeroing element: %d \n", j);
               #endif
-
+	      
 	      #ifdef BASKER_2DL
 	      //X[j-brow] = 0;
 	      X(j) = 0;
 	      #else
               X[j] = 0;
 	      #endif
+	      
             }//end if(x[i] != 0)
 
           //Fill in last element of U
@@ -650,7 +675,8 @@ namespace BaskerNS
 	  U.val(unnz)       = lastU;
 	  if(lastU == 0)
 	    {
-	      printf("diag btf zero, error \n");
+	      printf("diag btf zero, error, c: %d k: %d \n",
+		     c, k);
 	    }
           ++unnz;
 

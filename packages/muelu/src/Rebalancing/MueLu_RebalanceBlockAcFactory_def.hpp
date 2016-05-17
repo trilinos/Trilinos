@@ -143,9 +143,7 @@ namespace MueLu {
     for(size_t i=0; i<bA->Rows(); i++) {
       for(size_t j=0; j<bA->Cols(); j++) {
         // extract matrix block
-        Teuchos::RCP<CrsMatrix> Amij = bA->getMatrix(i, j);
-        Teuchos::RCP<CrsMatrixWrap> Awij = Teuchos::rcp(new CrsMatrixWrap(Amij));
-        Teuchos::RCP<Matrix> Aij = Teuchos::rcp_dynamic_cast<Matrix>(Awij);
+        Teuchos::RCP<Matrix> Aij = bA->getMatrix(i, j);
         //subBlockRebA[i*bA->Cols() + j] = Aij;
         subBlockRebA.push_back(Aij);
       }
@@ -406,9 +404,8 @@ namespace MueLu {
     Teuchos::RCP<BlockedCrsMatrix> reb_bA = Teuchos::rcp(new BlockedCrsMatrix(rebRangeMapExtractor,rebDomainMapExtractor,10));
     for(size_t i=0; i<bA->Rows(); i++) {
       for(size_t j=0; j<bA->Cols(); j++) {
-       Teuchos::RCP<const CrsMatrixWrap> crsOpij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebA[i*bA->Cols() + j]);
-       Teuchos::RCP<CrsMatrix> crsMatij = crsOpij->getCrsMatrix();
-       reb_bA->setMatrix(i,j,crsMatij);
+       //Teuchos::RCP<const CrsMatrixWrap> crsOpij = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(subBlockRebA[i*bA->Cols() + j]);
+       reb_bA->setMatrix(i,j,subBlockRebA[i*bA->Cols() + j]);
       }
     }
     reb_bA->fillComplete();

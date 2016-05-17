@@ -55,6 +55,8 @@
 
 #include "Sacado.hpp"
 #include "Kokkos_View_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
+#include "Kokkos_DynRankView_Fad.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 #include "Kokkos_TaskPolicy.hpp"
@@ -339,10 +341,15 @@ namespace phalanx_test {
     static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
 		  "ERROR: Kokkos AMT only works for pthread execution space!");
 
-    policy_type policy;
+    const unsigned task_max_count = 2;
+    const unsigned task_max_size = sizeof(TaskDep<execution_space>);
+    //const unsigned task_max_size = 128;
+    std::cout << "sizeof = " << task_max_size << std::endl;
+    const unsigned task_max_dependence = 1;
+    policy_type policy(task_max_count,task_max_size,task_max_dependence);
     
-    auto f1 = policy.create(TaskDep<execution_space>(policy,2),1);
-    auto f2 = policy.create(TaskDep<execution_space>(policy,3));
+    auto f1 = policy.task_create(TaskDep<execution_space>(policy,2),1);
+    auto f2 = policy.task_create(TaskDep<execution_space>(policy,3));
     // f1 depends on f2
     policy.add_dependence(f1,f2);
     
@@ -383,7 +390,7 @@ namespace phalanx_test {
     typedef Kokkos::Experimental::TaskPolicy<Space> policy_type;
     
     const int work_size;
-    const Functor& functor;
+    const Functor functor;
 
     TaskWrap(const int ws,const Functor& f) : work_size(ws),functor(f) {}
     
@@ -417,7 +424,6 @@ namespace phalanx_test {
     Kokkos::deep_copy(rho,0.0);
 
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(P,3.0));
-    //PHX::Device::fence();
     Kokkos::parallel_for(num_cells,InitializeView<double,execution_space>(T,4.0));
     PHX::Device::fence();
     Kokkos::parallel_for(num_cells,ComputeRho<double,execution_space>(rho,P,T,k));
@@ -432,18 +438,21 @@ namespace phalanx_test {
       for (int j=0; j< num_ip; j++)
 	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
 
-    out << "Starting taksing version" << std::endl;
+    out << "Starting tasking version" << std::endl;
 
     Kokkos::deep_copy(P,1.0);
     Kokkos::deep_copy(T,2.0);
     Kokkos::deep_copy(rho,0.0);
 
     // Now repeat above with task graph
-    policy_type policy;
+    const unsigned task_max_count = 3;
+    const unsigned task_max_size = std::max(sizeof(TaskDep<execution_space>),sizeof(InitializeView<double,execution_space>));
+    const unsigned task_max_dependence = 2;
+    policy_type policy(task_max_count,task_max_size,task_max_dependence);
 
-    auto f1 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
-    auto f2 = policy.create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
-    auto f3 = policy.create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
+    auto f1 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(P,3.0)),0);
+    auto f2 = policy.task_create_team(TaskWrap<execution_space,InitializeView<double,execution_space>>(num_cells,InitializeView<double,execution_space>(T,4.0)),0);
+    auto f3 = policy.task_create_team(TaskWrap<execution_space,ComputeRho<double,execution_space>>(num_cells,ComputeRho<double,execution_space>(rho,P,T,k)),2);
     
     policy.add_dependence(f3,f1);
     policy.add_dependence(f3,f2);
@@ -483,4 +492,209 @@ namespace phalanx_test {
 
 #endif // PHX_ENABLE_KOKKOS_AMT
 
+  // Test Kokkos::DynRankView
+  template <typename Array>
+  class AssignValue {
+    Array a_;
+    
+  public:
+    typedef PHX::Device execution_space;
+    
+    AssignValue(Array& a) : a_(a) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      for (int ip = 0; ip < a_.extent_int(1); ++ip) {
+	a_(i,ip) = i*a_.extent_int(1) + ip;
+      }
+    }
+  };
+  
+  template <typename Array>
+  class AssignValueBracket {
+    Array a_;
+    
+  public:
+    typedef PHX::Device execution_space;
+    
+    AssignValueBracket(Array& a) : a_(a) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      a_[i] = i;
+    }
+  };
+
+  TEUCHOS_UNIT_TEST(kokkos, DynRankView)
+  { 
+    PHX::InitializeKokkosDevice();
+
+    using array_type = 
+      Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>;
+
+    //using val_t = Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>::value_type;
+
+    array_type a("a",10,4);    
+    Kokkos::parallel_for(a.extent(0),AssignValue<array_type>(a));
+    array_type b("b",40);
+    Kokkos::parallel_for(b.size(),AssignValueBracket<array_type>(b));
+
+    Kokkos::fence();
+
+    auto host_a = Kokkos::create_mirror_view(a);
+    auto host_b = Kokkos::create_mirror_view(b);
+    
+    Kokkos::deep_copy(host_a,a);
+    Kokkos::deep_copy(host_b,b);
+
+    // In the initial implementation of the Kokkos::DynRankView
+    // bracket operator, you could only use it on a rank-1 view. This
+    // is not how Intrepid uses it. Intrepid expects access to the
+    // entire size of the array. This is dangerous and will not work
+    // with subviews/padding. So the bracket op was changed to support
+    // this but is considered a hack until we can remove all bracket
+    // op use. Below we use it correctly.
+    for (int i=0; i < a.extent_int(0); ++i)
+      for (int j=0; j < a.extent_int(1); ++j)
+	TEST_EQUALITY(host_a(i,j),host_b(i*4+j));
+
+    // Check assignment
+    {
+      array_type c = a;
+      TEST_EQUALITY(c.extent(0), a.extent(0));
+      TEST_EQUALITY(c.extent(1), a.extent(1));
+    }
+
+    // Create a DynRankView from a compiletime View
+    {
+      Kokkos::View<double**,PHX::Device> d("d",100,4);
+      Kokkos::DynRankView<double,PHX::Device,Kokkos::MemoryUnmanaged> e(d.ptr_on_device(),100,4);
+      TEST_EQUALITY(d.extent(0),e.extent(0));
+      TEST_EQUALITY(d.extent(1),e.extent(1));
+
+      // Interesting. ptr_on_device returns pointer before first
+      // touch. Would have expected test failure below since memory
+      // not allocated yet.
+      
+      Kokkos::parallel_for(d.extent(0),AssignValue<Kokkos::View<double**,PHX::Device>>(d));
+      Kokkos::fence();
+			   
+      auto host_d = Kokkos::create_mirror_view(d);
+      Kokkos::deep_copy(host_d,d);    
+      auto host_e = Kokkos::create_mirror_view(e);
+      Kokkos::deep_copy(host_e,e);
+      Kokkos::fence();
+			   
+      for (int i=0; i < host_d.extent_int(0); ++i)
+	for (int j=0; j < host_d.extent_int(1); ++j)
+	  TEST_EQUALITY(host_d(i,j),host_e(i,j));
+    }
+
+    // Fad and bracket op
+    {
+      {
+	const int deriv_dim_plus_one = 2;
+	using FadType = Sacado::Fad::DFad<double>;
+	Kokkos::DynRankView<FadType,PHX::Device> f("f",10,4,deriv_dim_plus_one);
+	double tol = std::numeric_limits<double>::epsilon() * 100.0;
+	f(0,0) = FadType(2.0);
+	f(0,0).fastAccessDx(0) = 3.0;
+	TEST_FLOATING_EQUALITY(f(0,0).val(),2.0,tol);
+	TEST_FLOATING_EQUALITY(f(0,0).fastAccessDx(0),3.0,tol);
+
+	f[0] = FadType(2.0);
+	f[0].fastAccessDx(0) = 3.0;
+	TEST_FLOATING_EQUALITY(f[0].val(),2.0,tol);
+	TEST_FLOATING_EQUALITY(f[0].fastAccessDx(0),3.0,tol);
+
+	const int index = 39;
+	f[index] = FadType(4.0);
+	f[index].fastAccessDx(0) = 5.0;
+	TEST_FLOATING_EQUALITY(f[index].val(),4.0,tol);
+	TEST_FLOATING_EQUALITY(f[index].fastAccessDx(0),5.0,tol);
+      }
+
+    }
+    
+
+    PHX::FinalizeKokkosDevice();
+  }
+
+  template <typename Array>
+  class AssignFad {
+    Array a_;
+    Array b_;
+    Array c_;
+    
+  public:
+    typedef PHX::Device execution_space;
+    
+    AssignFad(Array& a, Array& b, Array& c) : a_(a),b_(b),c_(c) {}
+    
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      a_[i].val() = static_cast<double>(i);
+      a_[i].fastAccessDx(0) = 1.;
+      b_[i].val() = 1.0;
+      b_[i].fastAccessDx(0) = 1.;
+      c_[i] = a_[i]*b_[i];
+    }
+  };
+
+  TEUCHOS_UNIT_TEST(kokkos, FadView)
+  { 
+    PHX::InitializeKokkosDevice();
+
+    {
+      const int deriv_dim_plus_one = 2;
+      using FadType = Sacado::Fad::DFad<double>;
+      Kokkos::View<FadType**,PHX::Device> g("g",10,4,deriv_dim_plus_one);
+      double tol = std::numeric_limits<double>::epsilon() * 100.0;
+      g(0,0) = FadType(2.0);
+      TEST_FLOATING_EQUALITY(g(0,0).val(),2.0,tol);
+      g(0,0).fastAccessDx(0) = 3.0; // 0 index is the value
+      TEST_FLOATING_EQUALITY(g(0,0).val(),2.0,tol);
+      TEST_FLOATING_EQUALITY(g(0,0).fastAccessDx(0),3.0,tol);
+    }
+
+    {    
+      const int num_cells = 3;
+      const int num_ip = 2;
+      const int deriv_dim_plus_one = 2;
+      using FadType = Sacado::Fad::DFad<double>;
+      Kokkos::DynRankView<FadType,PHX::Device> a("a",num_cells,num_ip,deriv_dim_plus_one);
+      Kokkos::DynRankView<FadType,PHX::Device> b("b",num_cells,num_ip,deriv_dim_plus_one);
+      Kokkos::DynRankView<FadType,PHX::Device> c("c",num_cells,num_ip,deriv_dim_plus_one);
+      
+      TEST_EQUALITY(a.size(),6);
+      TEST_EQUALITY(b.size(),6);
+      TEST_EQUALITY(c.size(),6);
+      TEST_EQUALITY(a.rank(),2);
+      TEST_EQUALITY(b.rank(),2);
+      TEST_EQUALITY(c.rank(),2);
+
+      Kokkos::parallel_for(a.size(), AssignFad<Kokkos::DynRankView<FadType,PHX::Device>>(a,b,c));
+      Kokkos::fence();
+      auto host_c = Kokkos::create_mirror_view(c);
+      Kokkos::deep_copy(host_c,c);    
+
+      TEST_EQUALITY(c.rank(),2);
+      TEST_EQUALITY(Kokkos::dimension_scalar(c),2);
+      TEST_EQUALITY(c.implementation_map().dimension_scalar(),2);
+
+      // verify for bracket access
+      double tol = std::numeric_limits<double>::epsilon() * 100.0;
+      for (int i = 0; i < num_cells*num_ip; ++i) {
+      	out << "i=" << i << ",val=" << c[i].val() << ",fad=" << c[i].fastAccessDx(1) << std::endl;
+      	TEST_FLOATING_EQUALITY(host_c[i].val(),static_cast<double>(i),tol);
+      	TEST_FLOATING_EQUALITY(host_c[i].fastAccessDx(0),static_cast<double>(i+1),tol);      
+      }
+    }
+
+    PHX::FinalizeKokkosDevice();
+  }
+ 
 }

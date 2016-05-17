@@ -64,13 +64,14 @@ public:
     this->SetSIMPParallelStructure();
     this->SetUpLocalIntrepidArrays();
     this->ComputeLocalSystemMats(true);
-    this->ComputeLocalForceVec();
-    std::vector<int> dbc_side {0};
-    this->SetUpMyDBCInfo(dbc_side);
-    
+//Setup DBC information, do not specify any bc sides, use coordinates to determine the BC instead
+    std::vector<int> dbc_side {};
+    this->SetUpMyDBCInfo(true, dbc_side);
+    this->process_loading_information(parlist);
+//With new modification on boundary traction, ComputeLocalForceVec should go after SetUpMyBCInfo and process_loading_information
     this->AssembleSystemMats();
+    this->ComputeLocalForceVec();
     this->AssembleRHSVector();
-    
     this->EnforceDBC();
     this->ConstructSolvers();
   }
@@ -79,7 +80,7 @@ public:
                                           const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                           const Teuchos::RCP<std::ostream> &outStream) {
     ElasticitySIMP<Real>::ElasticitySIMP_Initialize(comm, parlist, outStream);
-    volFrac_           = parlist->sublist("ElasticityTopoOpt").get("Volume Fraction", 0.5);
+    volFrac_           = parlist->sublist("ElasticityTopoOpt").get<Real>("Volume Fraction");
     this->initDensity_ = volFrac_;
   }
 
@@ -88,7 +89,7 @@ public:
     bool ifInit = false;
     this->ComputeLocalSystemMats(ifInit);
     this->AssembleSystemMats();
-    this->EnforceDBC();
+    this->MatrixRemoveDBC();
     this->ConstructSolvers();
   }
   //
@@ -113,7 +114,7 @@ public:
     Tpetra::Import<> importer(u->getMap(), u_overlap->getMap());
     u_overlap->doImport(*u, importer, Tpetra::REPLACE);
     //simply apply matrix to a vector, no need to apply EBC to the vec
-    //ApplyBCToVec (u_overlap);
+    //this-> ApplyBCToVec (u_overlap);
     Teuchos::ArrayRCP<const Real> uData = u_overlap->get1dView();
     
     Real SIMPScale(0), sum(0), zero(0);
@@ -142,7 +143,8 @@ public:
     }
     
     Tpetra::Export<> exporter(Ju_overlap->getMap(), Ju->getMap());
-    Ju->doExport(*Ju_overlap, exporter, Tpetra::REPLACE);
+    //Ju->doExport(*Ju_overlap, exporter, Tpetra::REPLACE);
+    Ju->doExport(*Ju_overlap, exporter, Tpetra::ADD);
   }
 
   void ApplyInverseJacobian1ToVec(Teuchos::RCP<Tpetra::MultiVector<> > &InvJu,
@@ -202,7 +204,8 @@ public:
       }
     }
     Tpetra::Export<> exporter2(Jv_overlap->getMap(), Jv->getMap());
-    Jv->doExport(*Jv_overlap, exporter2, Tpetra::REPLACE);
+    //Jv->doExport(*Jv_overlap, exporter2, Tpetra::REPLACE);
+    Jv->doExport(*Jv_overlap, exporter2, Tpetra::ADD);
   }
 
   void ApplyAdjointJacobian2ToVec (Teuchos::RCP<Tpetra::MultiVector<> > &Jv,

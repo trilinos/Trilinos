@@ -52,6 +52,10 @@ namespace ROL {
 template <class Real>
 class ExperimentDesignObjective;
 
+/*
+  Reduced Hessian for the OED problem.
+  This is a utility class, called by ExperimentDesignObjective.
+*/
 template <class Real>
 class ReducedHessian : public LinearOperator<Real> {
 private:
@@ -88,23 +92,41 @@ public:
 
 };
 
+
+/** @ingroup func_group
+    \class ROL::ExperimentDesignObjective
+    \brief Provides the interface to evaluate objective functions
+           used for optimal experimental design (OED).
+
+    ROL's objective function used for optimal experimental design
+    relies on the SimOpt functional interface and the Elementwise
+    vector interface.  It adds four virtual functions:
+
+    \li #applyObserveOp -- apply observation operator;
+    \li #applyAdjointObserveOp -- apply adjoint of the observation operator; and
+    \li #applyWeightOp -- apply weight operator.
+
+    ---
+*/
 template <class Real>
 class ExperimentDesignObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<Objective_SimOpt<Real> > obj_;
-  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;
-  Teuchos::RCP<Vector<Real> > state_;
-  Teuchos::RCP<Vector<Real> > adjoint_;
-  Teuchos::RCP<Vector<Real> > control_;
-  Teuchos::RCP<Vector<Real> > constraint_;
-  Teuchos::RCP<Vector<Real> > observation_;
-  std::vector<Teuchos::RCP<Vector<Real> > > training_;
-  Teuchos::RCP<Vector<Real> > ones_;
-  Teuchos::RCP<Reduced_Objective_SimOpt<Real> > redobj_;
+  Teuchos::RCP<Objective_SimOpt<Real> > obj_;            // objective function used for the conventional inverse problem 
+  Teuchos::RCP<EqualityConstraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
+  Teuchos::RCP<Vector<Real> > state_;                    // state vector, used for cloning
+  Teuchos::RCP<Vector<Real> > adjoint_;                  // adjoint vector, used for cloning
+  Teuchos::RCP<Vector<Real> > control_;                  // control vector, used for cloning
+  Teuchos::RCP<Vector<Real> > constraint_;               // constraint vector, used for cloning
+  Teuchos::RCP<Vector<Real> > observation_;              // observation vector, used for cloning
+  std::vector<Teuchos::RCP<Vector<Real> > > training_;   // training-set vectors used in OED
+  Teuchos::RCP<Vector<Real> > rand01_;                   // a vector of 0 and 1 entries occurring with probability 1/2
 
-  Real cgabstol_;
-  Real cgreltol_;
-  int  cgmaxiter_;
+  Real cgabstol_;   // CG absolute tolerance to solve reduced-Hessian subproblems
+  Real cgreltol_;   // CG relative tolerance to solve reduced-Hessian subproblems
+  int  cgmaxiter_;  // max number of CG iterations to solve reduced-Hessian subproblems
+
+  Real sigma_;      // standard deviation of the noise in data
+  Real beta_;       // sparsity regularization factor
 
 public:
   ExperimentDesignObjective(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
@@ -115,28 +137,52 @@ public:
                             const Teuchos::RCP<Vector<Real> > &constraint,
                             const Teuchos::RCP<Vector<Real> > &observation,
                             const std::vector<Teuchos::RCP<Vector<Real> > > &training,
-                            const Teuchos::RCP<Vector<Real> > &ones,
+                            const Teuchos::RCP<Vector<Real> > &rand01,
                             const Teuchos::RCP<Teuchos::ParameterList> &parlist) :
     obj_(obj), con_(con), state_(state), adjoint_(adjoint),
     control_(control), constraint_(constraint), observation_(observation),
-    training_(training), ones_(ones) {
-    //
+    training_(training), rand01_(rand01) {
+    // get problem parameters
     cgabstol_  = parlist->sublist("Problem").get("OED CG Absolute Tolerance", 1e10);
     cgreltol_  = parlist->sublist("Problem").get("OED CG Relative Tolerance", 1e-4);
     cgmaxiter_ = parlist->sublist("Problem").get("OED CG Iteration Limit", 1000);
+    sigma_     = parlist->sublist("Problem").get("OED Noise Standard Deviation", 1e-2);
+    beta_      = parlist->sublist("Problem").get("OED Sparsity Regularization", 1e-2);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
     Teuchos::RCP<Vector<Real> > Mtrain = (control_->dual()).clone();
     Teuchos::RCP<Vector<Real> > CinvMtrain = control_->clone();
-    int numTraining = training_.size();
-    Real sumB(0);
+    Teuchos::RCP<Vector<Real> > Vx = observation_->dual().clone();
+    Teuchos::RCP<Vector<Real> > QtVx = state_->dual().clone();
+    Teuchos::RCP<Vector<Real> > AitQtVx = constraint_->dual().clone();
+    Teuchos::RCP<Vector<Real> > BtAitQtVx = control_->dual().clone();
+    Teuchos::RCP<Vector<Real> > CinvBtAitQtVx = control_->clone();
+
+    Real mytol(1e-8);
+    // Initialize sum of bias, variance and sparse regularization.
+    Real sumBVR(0);
+    // Norm computation for the bias term.
+    // Comment out, for now.
+    /*
+    int numTraining = static_cast<int>(training_.size());
     for (int i=0; i<numTraining; ++i) {
       obj_->hessVec_22(*Mtrain, *(training_[i]), *state_, *control_, tol);
       applyInverseReducedHessian(*CinvMtrain, *Mtrain, x);
-      sumB += CinvMtrain->dot(*CinvMtrain);
+      sumBVR += CinvMtrain->dot(*CinvMtrain);
     }
-    return sumB;
+    */
+    // Trace estimation for the variance term.
+    Vx->set(*rand01_);
+    Vx->applyBinary(Elementwise::Multiply<Real>(), x);
+    applyAdjointObserveOp(*QtVx, *Vx);
+    con_->applyInverseAdjointJacobian_1(*AitQtVx, *QtVx, *state_, *control_, mytol);
+    con_->applyAdjointJacobian_2(*BtAitQtVx, *AitQtVx, *state_, *control_, mytol);
+    applyInverseReducedHessian(*CinvBtAitQtVx, *BtAitQtVx, x);
+    sumBVR += (sigma_*sigma_)*CinvBtAitQtVx->dot(*CinvBtAitQtVx);
+    // Sparse regularization term.
+    sumBVR += beta_*x.reduce(ROL::Elementwise::ReductionSum<Real>());
+    return sumBVR;
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
@@ -151,16 +197,16 @@ public:
     obsv.set(v);
   }
 
-
   virtual void applyAdjointObserveOp(Vector<Real> &aobsv, const Vector<Real> &v) const {
     aobsv.set(v);
   }
 
-
   virtual void applyWeightOp(Vector<Real> &weightv, const Vector<Real> &v, const Vector<Real> &w) const {
     weightv.set(v.dual());
+    weightv.applyBinary(Elementwise::Multiply<Real>(), w);
   }
 
+  // Access functions.
   Teuchos::RCP<Vector<Real> > getStateVec() const { return state_; }
   Teuchos::RCP<Vector<Real> > getAdjointVec() const { return adjoint_; }
   Teuchos::RCP<Vector<Real> > getControlVec() const { return control_; }

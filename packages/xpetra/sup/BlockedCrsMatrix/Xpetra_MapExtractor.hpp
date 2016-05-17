@@ -55,21 +55,21 @@
 #include <Xpetra_Import.hpp>
 #include <Xpetra_Map.hpp>
 
-#include "Xpetra_Import.hpp"
-#include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_MapFactory.hpp"
-#include "Xpetra_MultiVector.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_Vector.hpp"
-#include "Xpetra_VectorFactory.hpp"
-
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MapUtils.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
 namespace Xpetra {
 
-  template <class Scalar /*= MultiVector<>::scalar_type*/,
-            class LocalOrdinal /*= Map<>::local_ordinal_type*/,
-            class GlobalOrdinal /*= typename Map<LocalOrdinal>::global_ordinal_type*/,
-            class Node /*= typename Map<LocalOrdinal, GlobalOrdinal>::node_type*/>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class MapExtractor : public Teuchos::Describable {
   public:
     typedef Scalar scalar_type;
@@ -84,6 +84,17 @@ namespace Xpetra {
   public:
 
     //! MapExtractor basic constructor
+    //!
+    //! @param[in] fullmap Full map containing all GIDs throughout the full vector. This parameter is only important if bThyraMode == false (see below)
+    //! @param[in] maps    Vector containing submaps. The set of all GIDs stored in the submaps should be the same than stored in fullmap, if bThyraMode == false. In Thyra mode, the submaps should contain consecutive GIDs starting with 0 in each submap.
+    //! @param[in] bThyraMode Flag which allows to switch between generating a MapExtractor in Thyra mode or Xpetra mode
+    //!
+    //! In Thyra mode, fullmap is not important as a fullmap with unique blocked GIDs is automatically generated which map the GIDs of the submaps
+    //! to uniquely defined GIDs in the fullmap. The user has to provide a fullmap in Thyra mode to specify the underlying linear algebra library
+    //! (Epetra or Tpetra) and some other map information (e.g. indexBase). This could be fixed.
+    //!
+    //! In Xpetra mode, the fullmap has to be the same as the union of the GIDs stored in the submaps in maps. The intersection of the GIDs of the sub-
+    //! maps in maps must be empty.
     MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps, bool bThyraMode = false) {
       bThyraMode_ = bThyraMode;
 
@@ -102,7 +113,7 @@ namespace Xpetra {
         fullmap_ = fullmap;
         maps_ = maps;
       } else {
-        std::cout << "Create Map Extractor in Thyra Mode!!! " << std::endl;
+        //std::cout << "Create Map Extractor in Thyra Mode!!! " << std::endl;
         // use Thyra-style numbering for sub-block maps
         // That is, all sub-block maps start with zero as GID and are contiguous
 
@@ -167,6 +178,75 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
                                  "logic error. full map and sub maps are inconsistently distributed over the processors.");
 
+    }
+
+    //! Expert constructor for Thyra maps
+    MapExtractor(const std::vector<RCP<const Map> >& maps, const std::vector<RCP<const Map> >& thyramaps) {
+      bThyraMode_ = true;
+
+
+      // plausibility check
+      TEUCHOS_TEST_FOR_EXCEPTION(thyramaps.size() != maps.size(), std::logic_error, "logic error. The number of submaps must be identical!");
+      for(size_t v = 0; v < thyramaps.size(); ++v) {
+        TEUCHOS_TEST_FOR_EXCEPTION(thyramaps[v]->getMinAllGlobalIndex() != 0, std::logic_error,
+                                           "logic error. When using Thyra-style numbering all sub-block maps must start with zero as GID.");
+        TEUCHOS_TEST_FOR_EXCEPTION(thyramaps[v]->getNodeNumElements() != maps[v]->getNodeNumElements(), std::logic_error,
+                                           "logic error. The size of the submaps must be identical (same distribution, just different GIDs)");
+      }
+
+      // store user-provided maps and thyramaps
+      thyraMaps_ = thyramaps;
+      maps_      = maps;
+
+      fullmap_ = Xpetra::MapUtils<LocalOrdinal,GlobalOrdinal,Node>::concatenateMaps(maps);
+
+      // plausibility check
+      size_t numAllElements = 0;
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        numAllElements += maps_[v]->getGlobalNumElements();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(fullmap_->getGlobalNumElements() != numAllElements, std::logic_error,
+                                 "logic error. full map and sub maps have not same number of elements. This cannot be. Please report the bug to the Xpetra developers!");
+
+      // build importers for sub maps
+      importers_.resize(maps_.size());
+      for (unsigned i = 0; i < maps_.size(); ++i)
+        if (maps[i] != null)
+          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
+                                 "logic error. full map and sub maps are inconsistently distributed over the processors.");
+    }
+
+    //! copy constructor
+    MapExtractor(const MapExtractor& input) {
+      bThyraMode_ = input.getThyraMode();
+
+      fullmap_ = MapFactory::Build(input.getFullMap(),1);
+
+      maps_.resize(input.NumMaps(), Teuchos::null);
+      if(bThyraMode_ == true)
+        thyraMaps_.resize(input.NumMaps(), Teuchos::null);
+      for(size_t i = 0; i < input.NumMaps(); ++i) {
+        maps_[i] = MapFactory::Build(input.getMap(i,false),1);
+        if(bThyraMode_ == true)
+          thyraMaps_[i] = MapFactory::Build(input.getMap(i,true),1);
+      }
+
+      // plausibility check
+      size_t numAllElements = 0;
+      for(size_t v = 0; v < maps_.size(); ++v) {
+        numAllElements += maps_[v]->getGlobalNumElements();
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(fullmap_->getGlobalNumElements() != numAllElements, std::logic_error,
+                                 "logic error. full map and sub maps have not same number of elements. This cannot be. Please report the bug to the Xpetra developers!");
+
+      // build importers for sub maps
+      importers_.resize(maps_.size());
+      for (unsigned i = 0; i < maps_.size(); ++i)
+        if (maps_[i] != null)
+          importers_[i] = Xpetra::ImportFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(fullmap_, maps_[i]);
+      TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
+                                 "logic error. full map and sub maps are inconsistently distributed over the processors.");
     }
 
     /** \name Extract subblocks from full map */
@@ -340,6 +420,8 @@ namespace Xpetra {
     /// depending on the parameter bThyraMode the sub map that is returned uses Thyra or Xpetra numbering
     /// Note: Thyra-numbering is only allowed if the MapExtractor is also constructed using Thyra numbering
     const RCP<const Map> getMap(size_t i, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION( i >= NumMaps(), Xpetra::Exceptions::RuntimeError, "MapExtractor::getMap: tried to access block " << i << ", but MapExtractor has only " << NumMaps() << " blocks! Block indices must be between 0 and " << NumMaps() - 1 << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION( i < 0, Xpetra::Exceptions::RuntimeError, "MapExtractor::getMap: A negative block index " << i << " is invalid. Block indices must be between 0 and " << NumMaps() - 1 << ".");
       if(bThyraMode_ == true && bThyraMode == true)
         return thyraMaps_[i];
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,

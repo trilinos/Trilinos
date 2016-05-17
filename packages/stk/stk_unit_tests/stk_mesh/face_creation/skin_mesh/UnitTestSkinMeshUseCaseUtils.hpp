@@ -96,7 +96,7 @@ inline void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData
     stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
     meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
     stk::mesh::Part& active = meta.declare_part("active");
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, bulkData.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData);
 
     stk::mesh::EntityVector entitiesToMakeActive;
     std::vector<stk::mesh::PartVector> add_parts;

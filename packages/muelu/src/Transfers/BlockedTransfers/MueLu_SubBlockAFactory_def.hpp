@@ -57,8 +57,6 @@
 #include "MueLu_SubBlockAFactory_decl.hpp"
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MapExtractor.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
@@ -95,14 +93,51 @@ namespace MueLu {
     size_t row = Teuchos::as<size_t>(pL.get<int>("block row"));
     size_t col = Teuchos::as<size_t>(pL.get<int>("block col"));
 
-    RCP<Matrix>           Ain = Get<RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix>           Ain = currentLevel.Get< RCP<Matrix> >("A",this->GetFactory("A").get());
     RCP<BlockedCrsMatrix> A   = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
 
     TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(),     Exceptions::BadCast,      "Input matrix A is not a BlockedCrsMatrix.");
     TEUCHOS_TEST_FOR_EXCEPTION(row > A->Rows(), Exceptions::RuntimeError, "row [" << row << "] > A.Rows() [" << A->Rows() << "].");
     TEUCHOS_TEST_FOR_EXCEPTION(col > A->Cols(), Exceptions::RuntimeError, "col [" << col << "] > A.Cols() [" << A->Cols() << "].");
 
-    RCP<CrsMatrixWrap> Op = Teuchos::rcp(new CrsMatrixWrap(A->getMatrix(row, col)));
+    // get sub-matrix
+    RCP<Matrix> Op = A->getMatrix(row, col);
+
+    // Check if it is a BlockedCrsMatrix object
+    // If it is a BlockedCrsMatrix object (most likely a ReorderedBlockedCrsMatrix)
+    // we have to distinguish whether it is a 1x1 leaf block in the ReorderedBlockedCrsMatrix
+    // or a nxm block. If it is a 1x1 leaf block, we "unpack" it and return the underlying
+    // CrsMatrixWrap object.
+    RCP<BlockedCrsMatrix> bOp = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Op);
+    if (bOp != Teuchos::null) {
+      // check if it is a 1x1 leaf block
+      if (bOp->Rows() == 1 && bOp->Cols() == 1) {
+        // return the unwrapped CrsMatrixWrap object underneath
+        Op = bOp->getMatrix(0,0);
+        TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Op) == Teuchos::null, Exceptions::BadCast, "SubBlockAFactory::Build: sub block A[" << row << "," << col << "] must be a single block CrsMatrixWrap object!");
+      } else {
+        // If it is a regular nxm blocked operator, just return it.
+        // We do not set any kind of striding or blocking information as this
+        // usually would not make sense for general blocked operators
+        GetOStream(Statistics1) << "A(" << row << "," << col << ") is a " << bOp->Rows() << "x" << bOp->Cols() << " block matrix" << std::endl;
+        GetOStream(Statistics2) << "with altogether " << bOp->getGlobalNumRows() << "x" << bOp->getGlobalNumCols() << " rows and columns." << std::endl;
+        currentLevel.Set("A", Op, this);
+        return;
+      }
+    }
+
+    // The sub-block is not a BlockedCrsMatrix object, that is, we expect
+    // it to be of type CrsMatrixWrap allowing direct access to the corresponding
+    // data. For a single block CrsMatrixWrap type matrix we can/should set the
+    // corresponding striding/blocking information for the algorithms to work
+    // properly
+    //
+    // TAW: In fact, a 1x1 BlockedCrsMatrix object also allows to access the data
+    //      directly, but this feature is nowhere really used in the algorithms.
+    //      So let's keep checking for the CrsMatrixWrap class to avoid skrewing
+    //      things up
+    //
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Op) == Teuchos::null, Exceptions::BadCast, "SubBlockAFactory::Build: sub block A[" << row << "," << col << "] is NOT a BlockedCrsMatrix but also NOT a CrsMatrixWrap object? This cannot be.");
 
     // strided maps for range and domain map of sub matrix
     RCP<const StridedMap> srangeMap  = Teuchos::null;
@@ -170,17 +205,19 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(srangeMap.is_null(),  Exceptions::BadCast, "rangeMap "  << row << " is not a strided map.");
     TEUCHOS_TEST_FOR_EXCEPTION(sdomainMap.is_null(), Exceptions::BadCast, "domainMap " << col << " is not a strided map.");
 
-    GetOStream(Statistics1) << "A(" << row << "," << col << ") has strided maps:"
+    GetOStream(Statistics1) << "A(" << row << "," << col << ") is a single block and has strided maps:"
         << "\n  range  map fixed block size = " << srangeMap ->getFixedBlockSize() << ", strided block id = " << srangeMap ->getStridedBlockId()
         << "\n  domain map fixed block size = " << sdomainMap->getFixedBlockSize() << ", strided block id = " << sdomainMap->getStridedBlockId() << std::endl;
+    GetOStream(Statistics2) << "A(" << row << "," << col << ") has " << Op->getGlobalNumRows() << "x" << Op->getGlobalNumCols() << " rows and columns." << std::endl;
 
+    // TODO do we really need that? we moved the code to getMatrix...
     if (Op->IsView("stridedMaps") == true)
       Op->RemoveView("stridedMaps");
     Op->CreateView("stridedMaps", srangeMap, sdomainMap);
 
     TEUCHOS_TEST_FOR_EXCEPTION(Op->IsView("stridedMaps") == false, Exceptions::RuntimeError, "Failed to set \"stridedMaps\" view.");
 
-    currentLevel.Set("A", rcp_dynamic_cast<Matrix>(Op), this);
+    currentLevel.Set("A", Op, this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

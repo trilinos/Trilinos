@@ -53,6 +53,7 @@ namespace BaskerNS
     //Default number of threads
     num_threads = 1;
     global_nnz  = 0;
+    gn = 0;
 
     btf_total_work = 0;
 
@@ -277,6 +278,12 @@ namespace BaskerNS
   {
 
     // printf("befor symbolic\n");
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Symbolic\n");
+	printf("Matrix: %d %d %d \n",
+	       nrow, ncol, nnz);
+      }
     //Init Matrix A.
     if(matrix_flag == BASKER_TRUE)
       {
@@ -310,6 +317,11 @@ namespace BaskerNS
 			     A);
 	  }
 	sort_matrix(A);
+	
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Matrix Loaded \n");
+	  }
 
 	if(Options.verbose_matrix_out == BASKER_TRUE)
 	  {
@@ -347,6 +359,12 @@ namespace BaskerNS
 	  }
 	*/
 	btf_order2();
+	
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Ordering Found \n");
+	  }
+
 	//if(btf_tabs_offset != 0)
 	if((Options.btf == BASKER_TRUE) &&
 	   (btf_tabs_offset != 0))
@@ -354,6 +372,12 @@ namespace BaskerNS
 	    basker_barrier.init(num_threads, 16, tree.nlvls );
 	  }
 	order_flag = BASKER_TRUE;
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker P2P Thread Barriers Init\n");
+	  }
+
 	//std::cout << "Time Order/Init arrays " 
 	//	  << timer_order.seconds()
 	//	  << std::endl;
@@ -384,17 +408,26 @@ namespace BaskerNS
 	  {
 	    sfactor_inc();
 	  }
-	
+
+	if(Options.verbose == BASKER_TRUE)
+	  {
+	    printf("Basker Nonzero Counts Found \n");
+	  }
 	symb_flag = BASKER_TRUE;
       }
 
     
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Symbolic Done \n");
+      }
     
     //printf("\nTEST ALM\n");
     //ALM(0)(0).info();
     //printf("\n");
 
     
+
     return 0;
 	
   }//end Symbolic()
@@ -412,6 +445,9 @@ namespace BaskerNS
     #ifdef BASKER_KOKKOS_TIME
     stats.time_nfactor += timer.seconds();
     #endif
+
+    factor_flag = BASKER_TRUE;
+
     return 0;
   }//end Factor()
 
@@ -423,6 +459,14 @@ namespace BaskerNS
   {
 
     int err = 0;
+
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Factor Called\n");
+	printf("Matrix: %d %d %d \n",
+	       nrow, ncol, nnz);
+      }
+
     
     /*
     int err = A.copy_values(nrow, ncol, nnz, col_ptr, 
@@ -475,6 +519,11 @@ namespace BaskerNS
       }
     //err = sfactor_copy();
     err = sfactor_copy2();
+    if (Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Copy Structure Done \n");
+      }
+
     //printf("Done with sfactor_copy: %d \n", err);
     if(err == BASKER_ERROR)
       {
@@ -499,6 +548,11 @@ namespace BaskerNS
 	return BASKER_ERROR;
       }
 
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Factor Done \n");
+      }
+
     /*
     std::cout << "Raw Factor Time: "
 	      << timer.seconds()
@@ -506,6 +560,8 @@ namespace BaskerNS
     */
     
     //DEBUG_PRINT();
+
+    factor_flag = BASKER_TRUE;
 
     return 0;
 
@@ -533,8 +589,18 @@ namespace BaskerNS
   int Basker<Int, Entry, Exe_Space>::Solve(Entry *b, 
 					   Entry *x)
   {
-    // printf("Currrently not used \n");
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Solve Called \n");
+      }
+    
     solve_interface(x,b);
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Solve Done \n");
+      }
+
     return 0;
   }//Solve(Entry *, Entry *);
 
@@ -544,7 +610,18 @@ namespace BaskerNS
                                          Entry *b,
                                          Entry *x)
   {
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker MultiSolve Called \n");
+      }
+
     solve_interface(nrhs,x,b);
+
+    if(Options.verbose == BASKER_TRUE)
+      {
+	printf("Basker Multisolve Done \n");
+      }
+
     return 0;
   }
 

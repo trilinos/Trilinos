@@ -422,14 +422,16 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           RCP<Matrix> Cij;
 
           for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
-            RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
-            RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+            RCP<Matrix> crmat1 = A.getMatrix(i,l);
+            RCP<Matrix> crmat2 = B.getMatrix(l,j);
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
 
-            RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
-            RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
+            RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
+            RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null()==true, Xpetra::Exceptions::BadCast, "A is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop2.is_null()==true, Xpetra::Exceptions::BadCast, "B is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
 
             RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
@@ -449,11 +451,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
             TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
-                                       "MatrixFactory failed in generating a CrsMatrixWrap." );
-
-            RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
-
-            C->setMatrix(i, j, crsMatCij);
+                                       "MatrixFactory failed in generating a CrsMatrixWrap. (TwoMatrixMultiplyBlock)" );
+            C->setMatrix(i, j, crsCij);
 
           } else {
             C->setMatrix(i, j, Teuchos::null);
@@ -981,15 +980,17 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           RCP<Matrix> Cij = Teuchos::null;
 
           for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
-            RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
-            RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+            RCP<Matrix> crmat1 = A.getMatrix(i,l);
+            RCP<Matrix> crmat2 = B.getMatrix(l,j);
 
             if (crmat1.is_null() || crmat2.is_null()) {
               continue;
             }
 
-            RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
-            RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
+            RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
+            RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null()==true, Xpetra::Exceptions::BadCast, "A is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop2.is_null()==true, Xpetra::Exceptions::BadCast, "B is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
 
             RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
@@ -1009,11 +1010,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
             TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
-                                       "MatrixFactory failed in generating a CrsMatrixWrap." );
-
-            RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
-
-            C->setMatrix(i, j, crsMatCij);
+                                       "MatrixFactory failed in generating a CrsMatrixWrap. (TwoMatrixMultiplyBlock)" );
+            C->setMatrix(i, j, crsCij);
 
           } else {
             C->setMatrix(i, j, Teuchos::null);
@@ -1423,15 +1421,17 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
           RCP<Matrix> Cij = Teuchos::null;
 
           for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
-            RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
-            RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+            RCP<Matrix> crmat1 = A.getMatrix(i,l);
+            RCP<Matrix> crmat2 = B.getMatrix(l,j);
 
             if (crmat1.is_null() || crmat2.is_null()) {
               continue;
             }
 
-            RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
-            RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
+            RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
+            RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null()==true, Xpetra::Exceptions::BadCast, "A is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop2.is_null()==true, Xpetra::Exceptions::BadCast, "B is not a CrsMatrixWrap. Maybe it is a BlockedCrsMatrix? We do not support MM multiplication of nested block matrices, yet. (TwoMatrixMultiplyBlock)");
 
             RCP<Matrix> temp = Multiply (*crop1, false, *crop2, false, fos);
 
@@ -1451,11 +1451,8 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
             TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
-                                       "MatrixFactory failed in generating a CrsMatrixWrap." );
-
-            RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
-
-            C->setMatrix(i, j, crsMatCij);
+                                       "MatrixFactory failed in generating a CrsMatrixWrap. (TwoMatrixMultiplyBlock)" );
+            C->setMatrix(i, j, crsCij);
 
           } else {
             C->setMatrix(i, j, Teuchos::null);

@@ -47,6 +47,8 @@ void GameofLifeMesh::declare_fields()
     m_activeNeighborField =
             &m_metaData.declare_field<ScalarIntField>(stk::topology::ELEMENT_RANK,
                                                       "Neighbor Field");
+
+    m_distFactors = &m_metaData.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "distribution_factors");
 }
 void GameofLifeMesh::put_fields_on_parts()
 {
@@ -54,16 +56,31 @@ void GameofLifeMesh::put_fields_on_parts()
     stk::mesh::put_field(*m_lifeField, m_metaData.universal_part(), &val);
     stk::mesh::put_field(*m_lifeField, *m_elemPart, &val);
     stk::mesh::put_field(*m_activeNeighborField, m_metaData.universal_part(), &val);
+
+    double factor = 1.0;
+    stk::mesh::put_field(*m_distFactors, *m_nodeset1, &factor);
+    stk::mesh::put_field(*m_distFactors, *m_nodeset2, &factor);
+    stk::mesh::put_field(*m_distFactors, *m_nodeset3, &factor);
+    stk::mesh::put_field(*m_distFactors, *m_nodeset4, &factor);
 }
 void GameofLifeMesh::declare_parts()
 {
     m_elemPart = &m_metaData.declare_part_with_topology("Elem_Part", m_elemType);
     m_activePart = &m_metaData.declare_part_with_topology("Active Part", m_elemType);
+
+    m_nodeset1 = &m_metaData.declare_part("nodelist_1", stk::topology::NODE_RANK);
+    m_nodeset2 = &m_metaData.declare_part("nodelist_2", stk::topology::NODE_RANK);
+    m_nodeset3 = &m_metaData.declare_part("nodelist_3", stk::topology::NODE_RANK);
+    m_nodeset4 = &m_metaData.declare_part("nodelist_4", stk::topology::NODE_RANK);
 }
 void GameofLifeMesh::put_parts_in_io()
 {
-    stk::io::put_io_part_attribute(m_metaData.universal_part());
     stk::io::put_io_part_attribute(*m_elemPart);
+
+    stk::io::put_io_part_attribute(*m_nodeset1);
+    stk::io::put_io_part_attribute(*m_nodeset2);
+    stk::io::put_io_part_attribute(*m_nodeset3);
+    stk::io::put_io_part_attribute(*m_nodeset4);
 }
 void GameofLifeMesh::declare_element_ids()
 {
@@ -362,10 +379,14 @@ void HexGameofLifeMesh::declare_first_slice_element_node_ids(stk::mesh::EntityId
     V.resize(8);
     unsigned rowOffset = index/m_width;
     unsigned totalOffset = offset+rowOffset+index;
-    V = {totalOffset+1, totalOffset+2, totalOffset+m_nodesPerSlice+2,
-         totalOffset+m_nodesPerSlice+1, totalOffset+1+m_nodeWidth,
-         totalOffset+2+m_nodeWidth, totalOffset+m_nodesPerSlice+2+m_nodeWidth,
-         totalOffset+m_nodesPerSlice+1+m_nodeWidth};
+    V = {totalOffset+1+m_nodeWidth,
+         totalOffset+2+m_nodeWidth,
+         totalOffset+m_nodesPerSlice+2+m_nodeWidth,
+         totalOffset+m_nodesPerSlice+1+m_nodeWidth,
+         totalOffset+1,
+         totalOffset+2,
+         totalOffset+m_nodesPerSlice+2,
+         totalOffset+m_nodesPerSlice+1};
 }
 void HexGameofLifeMesh::declare_remaining_element_node_ids(stk::mesh::EntityIdVector& newer,
                                                         stk::mesh::EntityIdVector& older,

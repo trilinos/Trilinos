@@ -61,7 +61,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
        name == "HMCR"                           ||
        name == "Moreau-Yosida CVaR"             ||
        name == "Log-Exponential Quadrangle"     ||
-       name == "Log-Quantile Quadreangle"       ||
+       name == "Log-Quantile Quadrangle"        ||
+       name == "Mean-Variance Quadrangle"       ||
        name == "Quantile-Based Quadrangle"      ||
        name == "Smoothed Worst-Case Quadrangle" ||
        name == "Truncated Mean Quadrangle" ) {
@@ -124,7 +125,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
            riskString[i] == "HMCR"                           ||
            riskString[i] == "Moreau-Yosida CVaR"             ||
            riskString[i] == "Log-Exponential Quadrangle"     ||
-           riskString[i] == "Log-Quantile Quadreangle"       ||
+           riskString[i] == "Log-Quantile Quadrangle"        ||
+           riskString[i] == "Mean-Variance Quadrangle"       ||
            riskString[i] == "Quantile-Based Quadrangle"      ||
            riskString[i] == "Smoothed Worst-Case Quadrangle" ||
            riskString[i] == "Truncated Mean Quadrangle" ) {

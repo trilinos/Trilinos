@@ -28,7 +28,7 @@ TEST_F(DGTetFixture, tet)
 
     setup_mesh(tet_conn, node_coords);
 
-    stk::unit_test_util::write_mesh_using_stk_io("mike.g", get_bulk(), get_bulk().parallel());
+    stk::unit_test_util::write_mesh_using_stk_io("mike.g", get_bulk());
 
     //////////////////////////////////////////////////////////////////////////////////////
 

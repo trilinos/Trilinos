@@ -72,12 +72,13 @@ public:
   void run(Real &fx, Real &x, int &nfval, int &ngrad,
            ScalarFunction<Real> &f, const Real A, const Real B,
            ScalarMinimizationStatusTest<Real> &test) const {
+    Real zero(0), half(0.5);
     nfval = 0; ngrad = 0;
     // Compute value f(A) and f(B)
     Real a = A,         fa = f.value(a); nfval++;
     Real b = B,         fb = f.value(b); nfval++;
-    Real m = 0.5*(A+B), fm = f.value(m); nfval++;
-    Real u = 0.0, fu = 0.0, v = 0.0, fv = 0.0, gx = ROL_INF<Real>();
+    Real m = half*(A+B), fm = f.value(m); nfval++;
+    Real u = zero, fu = zero, v = zero, fv = zero, gx = ROL_INF<Real>();
     bool deriv = false;
     // Get minimum of all evaluations
     if ( fa <= fm && fa <= fb ) {
@@ -94,8 +95,8 @@ public:
       if ( std::abs(b - a) < tol_ || test.check(x,fx,gx,nfval,ngrad,deriv) ) {
         break;
       }
-      u = 0.5*(a+m); fu = f.value(u); nfval++;
-      v = 0.5*(m+b); fv = f.value(v); nfval++;
+      u = half*(a+m); fu = f.value(u); nfval++;
+      v = half*(m+b); fv = f.value(v); nfval++;
 
       if (    ( (fa <= fb) && (fa <= fu) && (fa <= fv) && (fa <= fm) ) 
            || ( (fu <= fb) && (fu <= fa) && (fu <= fv) && (fu <= fm) ) ) {

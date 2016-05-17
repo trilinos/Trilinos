@@ -19,22 +19,18 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     example_02
     SOURCES example_02.cpp
-    ARGS PrintItAll
-    NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ElasticitySIMPOperatorsCopy
     SOURCE_FILES
-      input.xml stochastic.xml plotdensity.m plotstate.m
+      input.xml stochastic.xml plotdensity.m plotstate.m plotnodaldensity.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )
-
 
 ENDIF()

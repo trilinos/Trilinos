@@ -595,14 +595,31 @@ struct Update<XMV, YMV, ZMV, 2>
       c = 2;
     }
 
-    if (numRows < static_cast<size_type> (INT_MAX) &&
-        numRows * numCols < static_cast<size_type> (INT_MAX)) {
-      typedef int index_type;
-      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
+    if (numCols == static_cast<size_type> (1)) {
+      // Special case: ZMV has rank 2, but only 1 column.
+      // Dispatch to the rank-1 version for better performance.
+      auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0);
+      auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0);
+      auto Z_0 = Kokkos::subview (Z, Kokkos::ALL (), 0);
+
+      if (numRows * numCols < static_cast<size_type> (INT_MAX)) {
+        typedef int index_type;
+        V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c);
+      }
+      else {
+        typedef typename XMV::size_type index_type;
+        V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c);
+      }
     }
     else {
-      typedef typename XMV::size_type index_type;
-      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
+      if (numRows * numCols < static_cast<size_type> (INT_MAX)) {
+        typedef int index_type;
+        MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
+      }
+      else {
+        typedef typename XMV::size_type index_type;
+        MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c);
+      }
     }
   }
 }
@@ -811,14 +828,29 @@ update (const XMV::non_const_value_type& alpha, const XMV& X, \
     c = 2; \
   } \
  \
-  if (numRows < static_cast<size_type> (INT_MAX) && \
-      numRows * numCols < static_cast<size_type> (INT_MAX)) { \
-    typedef int index_type; \
-    MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+  if (numCols == static_cast<size_type> (1)) { \
+    auto X_0 = Kokkos::subview (X, Kokkos::ALL (), 0); \
+    auto Y_0 = Kokkos::subview (Y, Kokkos::ALL (), 0); \
+    auto Z_0 = Kokkos::subview (Z, Kokkos::ALL (), 0); \
+ \
+    if (numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+      typedef int index_type; \
+      V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c); \
+    } \
+    else { \
+      typedef typename XMV::size_type index_type; \
+      V_Update_Generic<decltype (X_0), decltype (Y_0), decltype (Z_0), index_type> (alpha, X_0, beta, Y_0, gamma, Z_0, a, b, c); \
+    } \
   } \
   else { \
-    typedef XMV::size_type index_type; \
-    MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+    if (numRows * numCols < static_cast<size_type> (INT_MAX)) { \
+      typedef int index_type; \
+      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+    } \
+    else { \
+      typedef typename XMV::size_type index_type; \
+      MV_Update_Generic<XMV, YMV, ZMV, index_type> (alpha, X, beta, Y, gamma, Z, a, b, c); \
+    } \
   } \
 }
 

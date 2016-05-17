@@ -61,7 +61,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_values, volume)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -120,7 +119,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_values, control_volume)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));

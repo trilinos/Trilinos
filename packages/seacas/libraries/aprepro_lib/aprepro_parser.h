@@ -38,83 +38,64 @@
 // C++ LALR(1) parser skeleton written by Akim Demaille.
 
 #ifndef YY_SEAMS_APREPRO_PARSER_H_INCLUDED
-# define YY_SEAMS_APREPRO_PARSER_H_INCLUDED
+#define YY_SEAMS_APREPRO_PARSER_H_INCLUDED
 
-
-# include <cstdlib> // std::abort
-# include <iostream>
-# include <stdexcept>
-# include <string>
-# include <vector>
-# include "stack.hh"
-
-
+#include "stack.hh"
+#include <cstdlib> // std::abort
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 #ifndef YY_ATTRIBUTE
-# if (defined __GNUC__                                               \
-      && (2 < __GNUC__ || (__GNUC__ == 2 && 96 <= __GNUC_MINOR__)))  \
-     || defined __SUNPRO_C && 0x5110 <= __SUNPRO_C
-#  define YY_ATTRIBUTE(Spec) __attribute__(Spec)
-# else
-#  define YY_ATTRIBUTE(Spec) /* empty */
-# endif
+#if (defined __GNUC__ && (2 < __GNUC__ || (__GNUC__ == 2 && 96 <= __GNUC_MINOR__))) ||             \
+    defined __SUNPRO_C && 0x5110 <= __SUNPRO_C
+#define YY_ATTRIBUTE(Spec) __attribute__(Spec)
+#else
+#define YY_ATTRIBUTE(Spec) /* empty */
+#endif
 #endif
 
 #ifndef YY_ATTRIBUTE_PURE
-# define YY_ATTRIBUTE_PURE   YY_ATTRIBUTE ((__pure__))
+#define YY_ATTRIBUTE_PURE YY_ATTRIBUTE((__pure__))
 #endif
 
 #ifndef YY_ATTRIBUTE_UNUSED
-# define YY_ATTRIBUTE_UNUSED YY_ATTRIBUTE ((__unused__))
+#define YY_ATTRIBUTE_UNUSED YY_ATTRIBUTE((__unused__))
 #endif
 
-#if !defined _Noreturn \
-     && (!defined __STDC_VERSION__ || __STDC_VERSION__ < 201112)
-# if defined _MSC_VER && 1200 <= _MSC_VER
-#  define _Noreturn __declspec (noreturn)
-# else
-#  define _Noreturn YY_ATTRIBUTE ((__noreturn__))
-# endif
-#endif
-
-/* Suppress unused-variable warnings by "using" E.  */
-#if ! defined lint || defined __GNUC__
-# define YYUSE(E) ((void) (E))
+#if !defined _Noreturn && (!defined __STDC_VERSION__ || __STDC_VERSION__ < 201112)
+#if defined _MSC_VER && 1200 <= _MSC_VER
+#define _Noreturn __declspec(noreturn)
 #else
-# define YYUSE(E) /* empty */
+#define _Noreturn YY_ATTRIBUTE((__noreturn__))
+#endif
 #endif
 
 #if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
 /* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
-    _Pragma ("GCC diagnostic push") \
-    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
-    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
-    _Pragma ("GCC diagnostic pop")
+#define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN                                                        \
+  _Pragma("GCC diagnostic push") _Pragma("GCC diagnostic ignored \"-Wuninitialized\"")             \
+      _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+#define YY_IGNORE_MAYBE_UNINITIALIZED_END _Pragma("GCC diagnostic pop")
 #else
-# define YY_INITIAL_VALUE(Value) Value
+#define YY_INITIAL_VALUE(Value) Value
 #endif
 #ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END
+#define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+#define YY_IGNORE_MAYBE_UNINITIALIZED_END
 #endif
 #ifndef YY_INITIAL_VALUE
-# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#define YY_INITIAL_VALUE(Value) /* Nothing. */
 #endif
 
 /* Debug traces.  */
 #ifndef YYDEBUG
-# define YYDEBUG 1
+#define YYDEBUG 1
 #endif
-
 
 namespace SEAMS {
 #line 114 "aprepro_parser.h" // lalr1.cc:377
-
-
-
-
 
   /// A Bison parser.
   class Parser
@@ -122,14 +103,13 @@ namespace SEAMS {
   public:
 #ifndef YYSTYPE
     /// Symbol semantic values.
-    union semantic_type
-    {
-    #line 77 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:377
+    union semantic_type {
+#line 77 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:377
 
-  double  val;		/* For returning numbers.		*/
-  struct symrec *tptr;	/* For returning symbol-table pointers	*/
-  char   *string;	/* For returning quoted strings		*/
-  struct array  *arrval;       /* For returning arrays                 */
+      double         val;    /* For returning numbers.		*/
+      struct symrec *tptr;   /* For returning symbol-table pointers	*/
+      char *         string; /* For returning quoted strings		*/
+      struct array * arrval; /* For returning arrays                 */
 
 #line 135 "aprepro_parser.h" // lalr1.cc:377
     };
@@ -140,61 +120,60 @@ namespace SEAMS {
     /// Syntax errors thrown from user actions.
     struct syntax_error : std::runtime_error
     {
-      syntax_error (const std::string& m);
+      syntax_error(const std::string &m);
     };
 
     /// Tokens.
     struct token
     {
-      enum yytokentype
-      {
-        END = 0,
-        NUM = 258,
-        QSTRING = 259,
-        UNDVAR = 260,
-        VAR = 261,
-        SVAR = 262,
-        IMMVAR = 263,
-        IMMSVAR = 264,
-        AVAR = 265,
-        FNCT = 266,
-        SFNCT = 267,
-        AFNCT = 268,
-        COMMA = 269,
-        LPAR = 270,
-        RPAR = 271,
-        LBRACK = 272,
-        RBRACK = 273,
-        LBRACE = 274,
-        RBRACE = 275,
-        SEMI = 276,
-        EQUAL = 277,
-        EQ_PLUS = 278,
+      enum yytokentype {
+        END      = 0,
+        NUM      = 258,
+        QSTRING  = 259,
+        UNDVAR   = 260,
+        VAR      = 261,
+        SVAR     = 262,
+        IMMVAR   = 263,
+        IMMSVAR  = 264,
+        AVAR     = 265,
+        FNCT     = 266,
+        SFNCT    = 267,
+        AFNCT    = 268,
+        COMMA    = 269,
+        LPAR     = 270,
+        RPAR     = 271,
+        LBRACK   = 272,
+        RBRACK   = 273,
+        LBRACE   = 274,
+        RBRACE   = 275,
+        SEMI     = 276,
+        EQUAL    = 277,
+        EQ_PLUS  = 278,
         EQ_MINUS = 279,
-        EQ_TIME = 280,
-        EQ_DIV = 281,
-        EQ_POW = 282,
-        QUEST = 283,
-        COLON = 284,
-        LOR = 285,
-        LAND = 286,
-        LT = 287,
-        GT = 288,
-        LE = 289,
-        GE = 290,
-        EQ = 291,
-        NE = 292,
-        PLU = 293,
-        SUB = 294,
-        DIV = 295,
-        TIM = 296,
-        MOD = 297,
-        UNARY = 298,
-        NOT = 299,
-        POW = 300,
-        INC = 301,
-        DEC = 302,
-        CONCAT = 303
+        EQ_TIME  = 280,
+        EQ_DIV   = 281,
+        EQ_POW   = 282,
+        QUEST    = 283,
+        COLON    = 284,
+        LOR      = 285,
+        LAND     = 286,
+        LT       = 287,
+        GT       = 288,
+        LE       = 289,
+        GE       = 290,
+        EQ       = 291,
+        NE       = 292,
+        PLU      = 293,
+        SUB      = 294,
+        DIV      = 295,
+        TIM      = 296,
+        MOD      = 297,
+        UNARY    = 298,
+        NOT      = 299,
+        POW      = 300,
+        INC      = 301,
+        DEC      = 302,
+        CONCAT   = 303
       };
     };
 
@@ -216,72 +195,70 @@ namespace SEAMS {
     /// via type_get().
     ///
     /// Provide access to semantic value.
-    template <typename Base>
-    struct basic_symbol : Base
+    template <typename Base> struct basic_symbol : Base
     {
       /// Alias to Base.
       typedef Base super_type;
 
       /// Default constructor.
-      basic_symbol ();
+      basic_symbol();
 
       /// Copy constructor.
-      basic_symbol (const basic_symbol& other);
+      basic_symbol(const basic_symbol &other);
 
       /// Constructor for valueless symbols.
-      basic_symbol (typename Base::kind_type t);
+      basic_symbol(typename Base::kind_type t);
 
       /// Constructor for symbols with semantic value.
-      basic_symbol (typename Base::kind_type t,
-                    semantic_type  v);
+      basic_symbol(typename Base::kind_type t, semantic_type v);
 
       /// Destroy the symbol.
-      ~basic_symbol ();
+      ~basic_symbol();
 
       /// Destroy contents, and record that is empty.
-      void clear ();
+      void clear();
 
       /// Whether empty.
-      bool empty () const;
+      bool empty() const;
 
       /// Destructive move, \a s is emptied into this.
-      void move (basic_symbol& s);
+      void move(basic_symbol &s);
 
       /// The semantic value.
       semantic_type value;
 
     private:
       /// Assignment operator.
-      basic_symbol& operator= (const basic_symbol& other);
+      basic_symbol &operator=(const basic_symbol &other);
     };
 
     /// Type access provider for token (enum) based symbols.
     struct by_type
     {
       /// Default constructor.
-      by_type ();
+      by_type();
 
       /// Copy constructor.
-      by_type (const by_type& other);
+      by_type(const by_type &other);
 
       /// The symbol type as needed by the constructor.
       typedef token_type kind_type;
 
       /// Constructor from (external) token numbers.
-      by_type (kind_type t);
+      by_type(kind_type t);
 
       /// Record that this symbol is empty.
-      void clear ();
+      void clear();
 
       /// Steal the symbol type from \a that.
-      void move (by_type& that);
+      void move(by_type &that);
 
       /// The (internal) type number (corresponding to \a type).
       /// \a empty when empty.
-      symbol_number_type type_get () const;
+      symbol_number_type type_get() const;
 
       /// The token.
-      token_type token () const;
+      token_type token() const;
 
       /// The symbol type.
       /// \a empty_symbol when empty.
@@ -292,40 +269,39 @@ namespace SEAMS {
     /// "External" symbols: returned by the scanner.
     typedef basic_symbol<by_type> symbol_type;
 
-
     /// Build a parser object.
-    Parser (class Aprepro& aprepro_yyarg);
-    virtual ~Parser ();
+    Parser(class Aprepro &aprepro_yyarg);
+    virtual ~Parser();
 
     /// Parse.
     /// \returns  0 iff parsing succeeded.
-    virtual int parse ();
+    virtual int parse();
 
 #if YYDEBUG
     /// The current debugging stream.
-    std::ostream& debug_stream () const YY_ATTRIBUTE_PURE;
+    std::ostream &debug_stream() const YY_ATTRIBUTE_PURE;
     /// Set the current debugging stream.
-    void set_debug_stream (std::ostream &);
+    void set_debug_stream(std::ostream &);
 
     /// Type for debugging levels.
     typedef int debug_level_type;
     /// The current debugging level.
-    debug_level_type debug_level () const YY_ATTRIBUTE_PURE;
+    debug_level_type debug_level() const YY_ATTRIBUTE_PURE;
     /// Set the current debugging level.
-    void set_debug_level (debug_level_type l);
+    void set_debug_level(debug_level_type l);
 #endif
 
     /// Report a syntax error.
     /// \param msg    a description of the syntax error.
-    virtual void error (const std::string& msg);
+    virtual void error(const std::string &msg);
 
     /// Report a syntax error.
-    void error (const syntax_error& err);
+    void error(const syntax_error &err);
 
   private:
     /// This class is not copyable.
-    Parser (const Parser&);
-    Parser& operator= (const Parser&);
+    Parser(const Parser &);
+    Parser &operator=(const Parser &);
 
     /// State numbers.
     typedef int state_type;
@@ -333,119 +309,115 @@ namespace SEAMS {
     /// Generate an error message.
     /// \param yystate   the state where the error occurred.
     /// \param yyla      the lookahead token.
-    virtual std::string yysyntax_error_ (state_type yystate,
-                                         const symbol_type& yyla) const;
+    virtual std::string yysyntax_error_(state_type yystate, const symbol_type &yyla) const;
 
     /// Compute post-reduction state.
     /// \param yystate   the current state
     /// \param yysym     the nonterminal to push on the stack
-    state_type yy_lr_goto_state_ (state_type yystate, int yysym);
+    state_type yy_lr_goto_state_(state_type yystate, int yysym);
 
     /// Whether the given \c yypact_ value indicates a defaulted state.
     /// \param yyvalue   the value to check
-    static bool yy_pact_value_is_default_ (int yyvalue);
+    static bool yy_pact_value_is_default_(int yyvalue);
 
     /// Whether the given \c yytable_ value indicates a syntax error.
     /// \param yyvalue   the value to check
-    static bool yy_table_value_is_error_ (int yyvalue);
+    static bool yy_table_value_is_error_(int yyvalue);
 
     static const signed char yypact_ninf_;
     static const signed char yytable_ninf_;
 
     /// Convert a scanner token number \a t to a symbol number.
-    static token_number_type yytranslate_ (int t);
+    static token_number_type yytranslate_(int t);
 
     // Tables.
-  // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
-  // STATE-NUM.
-  static const short int yypact_[];
+    // YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
+    // STATE-NUM.
+    static const short int yypact_[];
 
-  // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
-  // Performed when YYTABLE does not specify something else to do.  Zero
-  // means the default is an error.
-  static const unsigned char yydefact_[];
+    // YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
+    // Performed when YYTABLE does not specify something else to do.  Zero
+    // means the default is an error.
+    static const unsigned char yydefact_[];
 
-  // YYPGOTO[NTERM-NUM].
-  static const signed char yypgoto_[];
+    // YYPGOTO[NTERM-NUM].
+    static const signed char yypgoto_[];
 
-  // YYDEFGOTO[NTERM-NUM].
-  static const short int yydefgoto_[];
+    // YYDEFGOTO[NTERM-NUM].
+    static const short int yydefgoto_[];
 
-  // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
-  // positive, shift that token.  If negative, reduce the rule whose
-  // number is the opposite.  If YYTABLE_NINF, syntax error.
-  static const unsigned short int yytable_[];
+    // YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
+    // positive, shift that token.  If negative, reduce the rule whose
+    // number is the opposite.  If YYTABLE_NINF, syntax error.
+    static const unsigned short int yytable_[];
 
-  static const short int yycheck_[];
+    static const short int yycheck_[];
 
-  // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
-  // symbol of state STATE-NUM.
-  static const unsigned char yystos_[];
+    // YYSTOS[STATE-NUM] -- The (internal number of the) accessing
+    // symbol of state STATE-NUM.
+    static const unsigned char yystos_[];
 
-  // YYR1[YYN] -- Symbol number of symbol that rule YYN derives.
-  static const unsigned char yyr1_[];
+    // YYR1[YYN] -- Symbol number of symbol that rule YYN derives.
+    static const unsigned char yyr1_[];
 
-  // YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.
-  static const unsigned char yyr2_[];
-
+    // YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.
+    static const unsigned char yyr2_[];
 
     /// Convert the symbol name \a n to a form suitable for a diagnostic.
-    static std::string yytnamerr_ (const char *n);
-
+    static std::string yytnamerr_(const char *n);
 
     /// For a symbol, its name in clear.
-    static const char* const yytname_[];
+    static const char *const yytname_[];
 #if YYDEBUG
-  // YYRLINE[YYN] -- Source line where rule number YYN was defined.
-  static const unsigned short int yyrline_[];
+    // YYRLINE[YYN] -- Source line where rule number YYN was defined.
+    static const unsigned short int yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
-    virtual void yy_reduce_print_ (int r);
+    virtual void yy_reduce_print_(int r);
     /// Print the state stack on the debug stream.
-    virtual void yystack_print_ ();
+    virtual void yystack_print_();
 
     // Debugging.
-    int yydebug_;
-    std::ostream* yycdebug_;
+    int           yydebug_;
+    std::ostream *yycdebug_;
 
     /// \brief Display a symbol type, value and location.
     /// \param yyo    The output stream.
     /// \param yysym  The symbol.
     template <typename Base>
-    void yy_print_ (std::ostream& yyo, const basic_symbol<Base>& yysym) const;
+    void yy_print_(std::ostream &yyo, const basic_symbol<Base> &yysym) const;
 #endif
 
     /// \brief Reclaim the memory associated to a symbol.
     /// \param yymsg     Why this token is reclaimed.
     ///                  If null, print nothing.
     /// \param yysym     The symbol.
-    template <typename Base>
-    void yy_destroy_ (const char* yymsg, basic_symbol<Base>& yysym) const;
+    template <typename Base> void yy_destroy_(const char *yymsg, basic_symbol<Base> &yysym) const;
 
   private:
     /// Type access provider for state based symbols.
     struct by_state
     {
       /// Default constructor.
-      by_state ();
+      by_state();
 
       /// The symbol type as needed by the constructor.
       typedef state_type kind_type;
 
       /// Constructor.
-      by_state (kind_type s);
+      by_state(kind_type s);
 
       /// Copy constructor.
-      by_state (const by_state& other);
+      by_state(const by_state &other);
 
       /// Record that this symbol is empty.
-      void clear ();
+      void clear();
 
       /// Steal the symbol type from \a that.
-      void move (by_state& that);
+      void move(by_state &that);
 
       /// The (internal) type number (corresponding to \a state).
       /// \a empty_symbol when empty.
-      symbol_number_type type_get () const;
+      symbol_number_type type_get() const;
 
       /// The state number used to denote an empty symbol.
       enum { empty_state = -1 };
@@ -461,11 +433,11 @@ namespace SEAMS {
       /// Superclass.
       typedef basic_symbol<by_state> super_type;
       /// Construct an empty symbol.
-      stack_symbol_type ();
+      stack_symbol_type();
       /// Steal the contents from \a sym to build this.
-      stack_symbol_type (state_type s, symbol_type& sym);
+      stack_symbol_type(state_type s, symbol_type &sym);
       /// Assignment, needed by push_back.
-      stack_symbol_type& operator= (const stack_symbol_type& that);
+      stack_symbol_type &operator=(const stack_symbol_type &that);
     };
 
     /// Stack type.
@@ -479,7 +451,7 @@ namespace SEAMS {
     ///             if null, no trace is output.
     /// \param s    the symbol
     /// \warning the contents of \a s.value is stolen.
-    void yypush_ (const char* m, stack_symbol_type& s);
+    void yypush_(const char *m, stack_symbol_type &s);
 
     /// Push a new look ahead token on the state on the stack.
     /// \param m    a debug message to display
@@ -487,34 +459,27 @@ namespace SEAMS {
     /// \param s    the state
     /// \param sym  the symbol (for its value and location).
     /// \warning the contents of \a s.value is stolen.
-    void yypush_ (const char* m, state_type s, symbol_type& sym);
+    void yypush_(const char *m, state_type s, symbol_type &sym);
 
     /// Pop \a n symbols the three stacks.
-    void yypop_ (unsigned int n = 1);
+    void yypop_(unsigned int n = 1);
 
     /// Constants.
-    enum
-    {
-      yyeof_ = 0,
-      yylast_ = 1208,     ///< Last index in yytable_.
-      yynnts_ = 7,  ///< Number of nonterminal symbols.
-      yyfinal_ = 2, ///< Termination state number.
-      yyterror_ = 1,
+    enum {
+      yyeof_     = 0,
+      yylast_    = 1208, ///< Last index in yytable_.
+      yynnts_    = 7,    ///< Number of nonterminal symbols.
+      yyfinal_   = 2,    ///< Termination state number.
+      yyterror_  = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 50  ///< Number of tokens.
+      yyntokens_ = 50 ///< Number of tokens.
     };
 
-
     // User arguments.
-    class Aprepro& aprepro;
+    class Aprepro &aprepro;
   };
-
-
 
 } // SEAMS
 #line 516 "aprepro_parser.h" // lalr1.cc:377
-
-
-
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

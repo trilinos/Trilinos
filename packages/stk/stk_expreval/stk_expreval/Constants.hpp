@@ -58,6 +58,7 @@ const double s_false	= 0.0;
 const double s_true	= 1.0;
 const double s_e	= 2.7182818284590452354;
 const double s_pi	= 3.14159265358979323846;
+const double s_two_pi	= 2.0 * s_pi;
 
 /**
  * @brief Member function <b>getConstantMap</b> returns s reference to the defined

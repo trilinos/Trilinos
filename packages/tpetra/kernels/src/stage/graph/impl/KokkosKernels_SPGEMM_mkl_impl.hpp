@@ -38,9 +38,9 @@ namespace Impl{
       in_nonzero_index_view_type entriesB,
       in_nonzero_value_view_type valuesB,
       bool transposeB,
-      in_row_index_view_type &row_mapC,
-      in_nonzero_index_view_type &entriesC,
-      in_nonzero_value_view_type &valuesC){
+      typename in_row_index_view_type::non_const_type &row_mapC,
+      typename in_nonzero_index_view_type::non_const_type &entriesC,
+      typename in_nonzero_value_view_type::non_const_type &valuesC){
 
 #ifdef KERNELS_HAVE_MKL
 
@@ -260,7 +260,28 @@ namespace Impl{
       }
     }
     else {
+
+      //int *a_xadj = row_mapA.ptr_on_device();
       std::cerr << "MKL requires integer values" << std::endl;
+
+      if (Kokkos::Impl::is_same<idx, unsigned int>::value){
+        std::cerr << "MKL is given unsigned integer" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, long>::value){
+        std::cerr << "MKL is given long" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, const int>::value){
+        std::cerr << "MKL is given const int" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, unsigned long>::value){
+        std::cerr << "MKL is given unsigned long" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, const unsigned long>::value){
+        std::cerr << "MKL is given const unsigned long" << std::endl;
+      }
+      else{
+        std::cerr << "MKL is given something else" << std::endl;
+      }
       return;
     }
 #else

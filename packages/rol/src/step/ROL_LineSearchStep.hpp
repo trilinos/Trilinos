@@ -155,6 +155,8 @@ private:
 
   bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
 
+  bool usePreviousAlpha_; ///< If true, use the previously accepted step length (if any) as the new initial step length
+
   int verbosity_;
   bool computeObj_;
   Real fval_;

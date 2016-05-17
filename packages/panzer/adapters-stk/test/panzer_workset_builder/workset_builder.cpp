@@ -78,7 +78,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(workset_builder, volume)
   {
-    PHX::KokkosDeviceSession session;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -170,7 +169,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(workset_builder, edge)
   {
-    PHX::KokkosDeviceSession session;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -298,7 +296,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   {
-    PHX::KokkosDeviceSession session;
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -425,7 +422,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
     
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -582,7 +578,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
     
     // excercise subcell entities capability
     {

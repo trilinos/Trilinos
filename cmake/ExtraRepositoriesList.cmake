@@ -64,8 +64,23 @@
 #  https://tribits.org/doc/TribitsDevelopersGuide.html#tribits-project-define-extra-repositories
 #
 
+IF (NOT "$ENV{Trilinos_REPOS_URL_BASE}" STREQUAL "")
+  SET(Trilinos_REPOS_URL_BASE  $ENV{Trilinos_REPOS_URL_BASE}
+    CACHE STRING "Set from env var Trilinos_REPOS_URL_BASE" FORCE)
+ELSE()
+  SET(Trilinos_REPOS_URL_BASE_DEFAULT git@github.com:trilinos/)
+  SET(Trilinos_REPOS_URL_BASE  ${Trilinos_REPOS_URL_BASE_DEFAULT}
+    CACHE STRING "Base URL to Trilinos repos <url-base><repo-name>")
+ENDIF()
+MARK_AS_ADVANCED(Trilinos_REPOS_URL_BASE)
+
 TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
-  MOOCHO  packages/moocho  GIT  git@github.com:trilinos/moocho  NOPACKAGES  Nightly
+  MOOCHO  packages/moocho  GIT  ${Trilinos_REPOS_URL_BASE}moocho  NOPACKAGES  Nightly
+  Sundance  packages/Sundance  GIT  ${Trilinos_REPOS_URL_BASE}Sundance  NOPACKAGES  Nightly
+  CTrilinos  packages/CTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}CTrilinos  NOPACKAGES  Nightly
+  ForTrilinos  packages/ForTrilinos  GIT  ${Trilinos_REPOS_URL_BASE}ForTrilinos  NOPACKAGES  Nightly
+  Optika  packages/optika  GIT  ${Trilinos_REPOS_URL_BASE}optika  NOPACKAGES  Nightly
+  Mesquite  packages/mesquite  GIT  ${Trilinos_REPOS_URL_BASE}mesquite  NOPACKAGES  Nightly
   preCopyrightTrilinos  ""  GIT  software.sandia.gov:/space/git/preCopyrightTrilinos  ""  Continuous
   TerminalApplication  ""  GIT  software.sandia.gov:/space/git/TerminalApplication  ""   EX 
   )

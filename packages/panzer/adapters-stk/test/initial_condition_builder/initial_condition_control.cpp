@@ -85,7 +85,6 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    PHX::InitializeKokkosDevice();
     Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     // setup mesh
@@ -208,7 +207,6 @@ namespace panzer {
       TEST_ASSERT(v==3.0 || v==9.0); 
     }
 
-    PHX::FinalizeKokkosDevice();
   }
 
 }

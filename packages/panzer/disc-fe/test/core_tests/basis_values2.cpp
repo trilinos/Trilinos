@@ -65,7 +65,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, const_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -168,7 +167,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, grad_quad)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -273,7 +271,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, hcurl_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -405,7 +402,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, hdiv_basis)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<4> >()));
@@ -586,7 +582,6 @@ namespace panzer {
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
@@ -721,7 +716,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values, md_field_setup)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -800,7 +794,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values, md_field_setup_fad)
   {
-    PHX::KokkosDeviceSession session;
 
     typedef panzer::Traits::FadType ScalarType;
 
@@ -882,7 +875,6 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(basis_values, control_vol_hgrad)
   {
     typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));

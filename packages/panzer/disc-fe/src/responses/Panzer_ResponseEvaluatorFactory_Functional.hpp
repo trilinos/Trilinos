@@ -131,7 +131,12 @@ struct FunctionalResponse_Builder : public ResponseMESupportBuilderBase {
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const
   { return build<panzer::Traits::Tangent>(); }
-  
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const
+  { return build<panzer::Traits::Hessian>(); }
+#endif
+
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;

@@ -12,6 +12,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
+#include "../../../stk_unit_test_utils/getOption.h"
 
 
 
@@ -1208,7 +1209,6 @@ TEST(PNGGameofLife, 1ProcTiny)
         PartGameofLife PartGame(PartMesh, meshName1);
         FieldGameofLife FieldGame(FieldMesh, meshName2);
 
-
         stk::mesh::EntityIdVector elemIds;
         PNG.fill_id_vector_with_active_pixels(elemIds);
         PartGame.activate_these_ids(elemIds);
@@ -1239,6 +1239,102 @@ TEST(PNGGameofLife, 1ProcTiny)
         EXPECT_EQ(23u, FieldGame.get_num_active_elements());
     }
 }
+
+enum PixelColor { RED = 2, GREEN, BLUE };
+
+std::vector<Pixel> get_colored_pixels_by_color(SimpleColoredPng & image, enum PixelColor pixelColor)
+{
+    switch(pixelColor)
+    {
+        case RED:
+            return image.get_red_color_coords();
+        case GREEN:
+            return image.get_green_color_coords();
+        case BLUE:
+            return image.get_blue_color_coords();
+        default:
+            break;
+    }
+    return {};
+}
+
+
+void create_nodeset_for_colored_pixels(stk::mesh::BulkData & bulk, SimpleColoredPng & image, enum PixelColor pixelColor)
+{
+    std::vector<Pixel> coloredPixels = get_colored_pixels_by_color(image, pixelColor);
+
+    stk::mesh::EntityIdVector elementIds = image.get_elemIds_for_colored_pixels(coloredPixels);
+
+    stk::mesh::EntityVector elementNodes;
+    for(stk::mesh::EntityId elemId : elementIds)
+    {
+        stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, elemId);
+        elementNodes.insert(elementNodes.end(), bulk.begin_nodes(elem), bulk.end_nodes(elem));
+    }
+
+    bulk.modification_begin();
+    std::string partName = "nodelist_" + std::to_string(pixelColor);
+    stk::mesh::Part& nodesetPart = bulk.mesh_meta_data().declare_part(partName, stk::topology::NODE_RANK);
+    for(stk::mesh::Entity node : elementNodes)
+        bulk.change_entity_parts(node, stk::mesh::PartVector {&nodesetPart});
+    bulk.modification_end();
+}
+
+TEST(TOSDTWD, quad_mesh_from_png)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (1 == numProcs)
+    {
+        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        SimpleColoredPng image(fileName);
+        unsigned width = image.get_image_width();
+        unsigned height = image.get_image_height();
+
+        QuadGameofLifeMesh FieldMesh(comm, width, height);
+        FieldGameofLife FieldGame(FieldMesh, "junk");
+
+        stk::mesh::EntityIdVector elemIds;
+        image.fill_id_vector_with_active_pixels(elemIds);
+        FieldGame.activate_these_ids(elemIds);
+
+        stk::mesh::BulkData &bulk = FieldMesh.bulk_data();
+        create_nodeset_for_colored_pixels(bulk, image, RED);
+        create_nodeset_for_colored_pixels(bulk, image, GREEN);
+        create_nodeset_for_colored_pixels(bulk, image, BLUE);
+
+        FieldGame.write_mesh();
+    }
+}
+
+TEST(TOSDTWD, hex_mesh_from_png)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (1 == numProcs)
+    {
+        std::string fileName = unitTestUtils::getOption("-i", "Tiny.png");
+        SimpleColoredPng image(fileName);
+        unsigned width = image.get_image_width();
+        unsigned height = image.get_image_height();
+
+        HexGameofLifeMesh FieldMesh(comm, width, height, 1);
+        FieldGameofLife FieldGame(FieldMesh, "junk");
+
+        stk::mesh::EntityIdVector elemIds;
+        image.fill_id_vector_with_active_pixels(elemIds);
+        FieldGame.activate_these_ids(elemIds);
+
+        stk::mesh::BulkData &bulk = FieldMesh.bulk_data();
+        create_nodeset_for_colored_pixels(bulk, image, RED);
+        create_nodeset_for_colored_pixels(bulk, image, GREEN);
+        create_nodeset_for_colored_pixels(bulk, image, BLUE);
+
+        FieldGame.write_mesh();
+    }
+}
+
+
 TEST(PNGGameofLife, 4ProcTiny)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;

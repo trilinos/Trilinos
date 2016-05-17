@@ -36,8 +36,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
       
-      QAINFO(2)(:8) = '20150120'
-      QAINFO(3)(:8) = '    1.25'
+      QAINFO(2)(:8) = '20160509'
+      QAINFO(3)(:8) = '    1.26'
 
 C ... Added esum and eaverage commands
 c ... Fixed cavity volume output

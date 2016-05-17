@@ -44,7 +44,7 @@ public:
 
 void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk::mesh::Part& active, stk::mesh::Part& skin)
 {
-    stk::mesh::ElemElemGraph graph(bulkData, active);
+    stk::mesh::ElemElemGraph graph(bulkData);
     stk::mesh::EntityVector deactivated_elems;
     if(bulkData.is_valid(element) && bulkData.parallel_owner_rank(element) == bulkData.parallel_rank())
     {
@@ -53,7 +53,11 @@ void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk:
 
     stk::mesh::PartVector boundary_mesh_parts={&active, &skin};
     ElemGraphTestUtils::deactivate_elements(deactivated_elems, bulkData,  active);
-    stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+
+    stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
+    stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, graph, active, remoteActiveSelector);
+
+    stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, remoteActiveSelector, boundary_mesh_parts, &boundary_mesh_parts);
 }
 
 stk::mesh::EntityVector get_entities(stk::mesh::BulkData& bulkData, const stk::mesh::ConstPartVector& parts)
@@ -113,7 +117,7 @@ TEST(ElementDeath, compare_death_and_skin_mesh)
          bulkData.set_sorting_by_face();
 
          stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
          stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
          ElemGraphTestUtils::skin_boundary(bulkData, active, {&skin, &active});

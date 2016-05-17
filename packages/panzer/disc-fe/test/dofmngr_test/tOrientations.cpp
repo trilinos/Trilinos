@@ -97,7 +97,6 @@ typedef Intrepid2::FieldContainer<double> FieldContainer;
 
 TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -207,7 +206,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
 
 TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -326,7 +324,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -436,7 +433,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -551,7 +547,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -573,7 +568,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri2)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
@@ -600,7 +594,6 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
 
 TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 
