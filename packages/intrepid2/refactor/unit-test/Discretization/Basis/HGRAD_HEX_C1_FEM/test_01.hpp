@@ -539,7 +539,7 @@ namespace Intrepid2 {
         hexNodesHost(14,0)=  0.0;  hexNodesHost(14,1)=  0.0;  hexNodesHost(14,2)= -1.0;
 
         auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-        Kokkos::deep_copy(hexNodes, hexNodeshost);
+        Kokkos::deep_copy(hexNodes, hexNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = hexBasis.getCardinality();
