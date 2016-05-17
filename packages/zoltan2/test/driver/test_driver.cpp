@@ -261,7 +261,7 @@ void run(const UserInputForTests &uinput,
     cout << problem_kind + "Problem solved." << endl;
  
 
-//#define KDDKDD
+#define KDDKDD
 #ifdef KDDKDD
   {
   const base_adapter_t::gno_t *kddIDs = NULL;
