@@ -222,9 +222,9 @@ Basis_HGRAD_TRI_C2_FEM()
     dofCoords(0,0) =  0.0;   dofCoords(0,1) =  0.0;
     dofCoords(1,0) =  1.0;   dofCoords(1,1) =  0.0;
     dofCoords(2,0) =  0.0;   dofCoords(2,1) =  1.0;
-    dofCoords(2,0) =  0.5;   dofCoords(2,1) =  0.0;
-    dofCoords(2,0) =  0.5;   dofCoords(2,1) =  0.5;
-    dofCoords(2,0) =  0.0;   dofCoords(2,1) =  0.5;
+    dofCoords(3,0) =  0.5;   dofCoords(3,1) =  0.0;
+    dofCoords(4,0) =  0.5;   dofCoords(4,1) =  0.5;
+    dofCoords(5,0) =  0.0;   dofCoords(5,1) =  0.5;
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
