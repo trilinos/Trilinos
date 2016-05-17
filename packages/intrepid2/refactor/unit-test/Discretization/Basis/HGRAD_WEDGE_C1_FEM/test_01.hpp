@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                      \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -215,7 +215,7 @@ namespace Intrepid2 {
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
-      } catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -228,7 +228,7 @@ namespace Intrepid2 {
         << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
         << "===============================================================================\n";
   
-      try{
+      try {
         const auto numFields = wedgeBasis.getCardinality();
         const auto allTags = wedgeBasis.getAllDofTags();
 
@@ -510,7 +510,7 @@ namespace Intrepid2 {
                 }
           }
         }
-      } catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       }
