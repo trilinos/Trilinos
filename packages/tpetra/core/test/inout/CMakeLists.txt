@@ -13,6 +13,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsGraph_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MatrixMarket_Operator_Test
     SOURCES
@@ -69,6 +80,14 @@ TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_FileTest
   SOURCES
     MatrixMarket_Tpetra_CrsMatrix_FileTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  MatrixMarket_Tpetra_CrsGraph_FileTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_FileTest.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )
