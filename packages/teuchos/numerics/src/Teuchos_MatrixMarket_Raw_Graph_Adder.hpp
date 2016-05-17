@@ -278,14 +278,24 @@ namespace Teuchos {
         /// duplicate entries if you prefer.
         ///
         /// \param out [out] Output stream to which to print
+        ///
         /// \param doMerge [in] Whether to merge entries before printing
-        /// \param replace [in] If merging, whether to replace duplicate
-        ///   entries; otherwise their values are added together.
+        ///
+        /// \param replace [in] If merging, whether to replace
+        ///   duplicate entries; otherwise their values are added
+        ///   together.
+        ///
+        /// \warning It never makes sense for replace to be true.
+        ///   Perhaps we should get rid of this argument at some
+        ///   point.
         void
         print (std::ostream& out, const bool doMerge, const bool replace=false)
         {
           if (doMerge) {
-            merge (replace);
+            TEUCHOS_TEST_FOR_EXCEPTION
+              (replace, std::logic_error, "replace = true not implemented!");
+            //merge (replace);
+            merge ();
           } else {
             std::sort (elts_.begin(), elts_.end());
           }
