@@ -1323,10 +1323,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 }
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_STOKHOS_IFPACK2)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 
 //
 // Test simple CG solve with MueLu preconditioning for a 1-D Laplacian matrix
+//
+// Currently requires ETI since the specializations needed for mean-based
+// are only brought in with ETI
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_PCE, SimplePCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node )
@@ -1417,9 +1420,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
-  // Create mean matrix for preconditioning
-  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
-
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
@@ -1438,11 +1438,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Create preconditioner
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  Cijk mean_cijk =
+    Stokhos::create_mean_based_product_tensor<Device,typename Storage::ordinal_type,BaseScalar>();
+  Kokkos::setGlobalCijkTensor(mean_cijk);
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
+  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
   RCP<OP> mean_matrix_op = mean_matrix;
   RCP<OP> M =
     MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
+  Kokkos::setGlobalCijkTensor(cijk);
 
   // Solve
   RCP<Tpetra_Vector> x = Tpetra::createVector<Scalar>(map);
@@ -1878,10 +1883,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
-#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2)
+#if defined(HAVE_STOKHOS_BELOS) && defined(HAVE_STOKHOS_IFPACK2) && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_STOKHOS_AMESOS2) && defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 
 //
 // Test Belos CG solve with MueLu preconditioning for a 1-D Laplacian matrix
+//
+// Currently requires ETI since the specializations needed for mean-based
+// are only brought in with ETI
 //
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_PCE, BelosCG_Muelu, Storage, LocalOrdinal, GlobalOrdinal, Node )
@@ -1972,9 +1980,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   matrix->fillComplete();
 
-  // Create mean matrix for preconditioning
-  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
-
   // Fill RHS vector
   RCP<Tpetra_Vector> b = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> b_view = b->get1dViewNonConst();
@@ -1993,11 +1998,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Create preconditioner
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> OP;
+  Cijk mean_cijk =
+    Stokhos::create_mean_based_product_tensor<Device,typename Storage::ordinal_type,BaseScalar>();
+  Kokkos::setGlobalCijkTensor(mean_cijk);
   RCP<ParameterList> muelu_params =
     getParametersFromXmlFile("muelu_cheby.xml");
+  RCP<Tpetra_CrsMatrix> mean_matrix = Stokhos::build_mean_matrix(*matrix);
   RCP<OP> mean_matrix_op = mean_matrix;
   RCP<OP> M =
     MueLu::CreateTpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mean_matrix_op, *muelu_params);
+  Kokkos::setGlobalCijkTensor(cijk);
 
   // Solve
   typedef Teuchos::ScalarTraits<BaseScalar> ST;

@@ -299,4 +299,35 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 } // namespace Details
 } // namespace Tpetra
 
+namespace Tpetra {
+  template <class S, class L, class G, class N, bool> class MultiVector;
+  template <class S, class L, class G, class N, bool> class Vector;
+}
+
+namespace Kokkos {
+  template <class S, class L, class G, class N, bool c>
+  size_t dimension_scalar(const Tpetra::MultiVector<S,L,G,N,c>& mv) {
+    typedef Tpetra::MultiVector<S,L,G,N,c> MV;
+    typedef typename MV::dual_view_type dual_view_type;
+    typedef typename dual_view_type::t_dev device_type;
+    typedef typename dual_view_type::t_host host_type;
+    dual_view_type dual_view = mv.getDualView();
+    if (dual_view.modified_host() > dual_view.modified_device())
+      return dimension_scalar(dual_view.template view<device_type>());
+    return dimension_scalar(dual_view.template view<host_type>());
+  }
+
+  template <class S, class L, class G, class N, bool c>
+  size_t dimension_scalar(const Tpetra::Vector<S,L,G,N,c>& v) {
+    typedef Tpetra::Vector<S,L,G,N,c> V;
+    typedef typename V::dual_view_type dual_view_type;
+    typedef typename dual_view_type::t_dev device_type;
+    typedef typename dual_view_type::t_host host_type;
+    dual_view_type dual_view = v.getDualView();
+    if (dual_view.modified_host() > dual_view.modified_device())
+      return dimension_scalar(dual_view.template view<device_type>());
+    return dimension_scalar(dual_view.template view<host_type>());
+  }
+}
+
 #endif // STOKHOS_TPETRA_UQ_PCE_HPP

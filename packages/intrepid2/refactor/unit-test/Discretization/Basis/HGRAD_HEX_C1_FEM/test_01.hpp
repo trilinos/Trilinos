@@ -225,7 +225,7 @@ namespace Intrepid2 {
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
 
       } catch (std::logic_error err) {

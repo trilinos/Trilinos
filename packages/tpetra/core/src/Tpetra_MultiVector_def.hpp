@@ -3628,19 +3628,31 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   get2dViewNonConst ()
   {
-    using Teuchos::ArrayRCP;
-    typedef Kokkos::DualView<impl_scalar_type*,
-      typename dual_view_type::array_layout, device_type> col_dual_view_type;
+    // NOTE (mfh 16 May 2016) get?dView() and get?dViewNonConst()
+    // (replace ? with 1 or 2) have always been device->host
+    // synchronization points.
+    this->sync<Kokkos::HostSpace> ();
+    // When users call the NonConst variants, it implies that they
+    // want to change the data.  Thus, it is appropriate to mark this
+    // MultiVector as modified.
+    this->modify<Kokkos::HostSpace> ();
 
-    const size_t numCols = getNumVectors ();
-    ArrayRCP<ArrayRCP<Scalar> > views (numCols);
+    const size_t myNumRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
+    const Kokkos::pair<size_t, size_t> rowRange (0, myNumRows);
+    // Don't use the row range here on the outside, in order to avoid
+    // a strided return type (in case Kokkos::subview is conservative
+    // about that).  Instead, use the row range for the column views
+    // in the loop.
+    auto X_lcl = this->getLocalView<Kokkos::HostSpace> ();
+
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
-      const size_t col = isConstantStride () ? j : whichVectors_[j];
-      col_dual_view_type X_col =
-        Kokkos::subview (view_, Kokkos::ALL (), col);
-      ArrayRCP<impl_scalar_type> X_col_arcp =
-        Kokkos::Compat::persistingView (X_col.d_view);
-      views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_col_arcp);
+      const size_t col = this->isConstantStride () ? j : this->whichVectors_[j];
+      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, j);
+      Teuchos::ArrayRCP<impl_scalar_type> X_lcl_j_arcp =
+        Kokkos::Compat::persistingView (X_lcl_j);
+      views[j] = Teuchos::arcp_reinterpret_cast<Scalar> (X_lcl_j_arcp);
     }
     return views;
   }
@@ -3650,19 +3662,32 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   get2dView () const
   {
-    using Teuchos::ArrayRCP;
-    typedef Kokkos::DualView<const impl_scalar_type*,
-      typename dual_view_type::array_layout, device_type> col_dual_view_type;
+    // NOTE (mfh 16 May 2016) get?dView() and get?dViewNonConst()
+    // (replace ? with 1 or 2) have always been device->host
+    // synchronization points.
+    //
+    // Since get2dView() is and was (unfortunately) always marked
+    // const, I have to cast away const here in order not to break
+    // backwards compatibility.
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> this_type;
+    const_cast<this_type*> (this)->sync<Kokkos::HostSpace> ();
 
-    const size_t numCols = getNumVectors ();
-    ArrayRCP<ArrayRCP<const Scalar> > views (numCols);
+    const size_t myNumRows = this->getLocalLength ();
+    const size_t numCols = this->getNumVectors ();
+    const Kokkos::pair<size_t, size_t> rowRange (0, myNumRows);
+    // Don't use the row range here on the outside, in order to avoid
+    // a strided return type (in case Kokkos::subview is conservative
+    // about that).  Instead, use the row range for the column views
+    // in the loop.
+    auto X_lcl = this->getLocalView<Kokkos::HostSpace> ();
+
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > views (numCols);
     for (size_t j = 0; j < numCols; ++j) {
-      const size_t col = isConstantStride () ? j : whichVectors_[j];
-      col_dual_view_type X_col =
-        Kokkos::subview (view_, Kokkos::ALL (), col);
-      ArrayRCP<const impl_scalar_type> X_col_arcp =
-        Kokkos::Compat::persistingView (X_col.d_view);
-      views[j] = Teuchos::arcp_reinterpret_cast<const Scalar> (X_col_arcp);
+      const size_t col = this->isConstantStride () ? j : this->whichVectors_[j];
+      auto X_lcl_j = Kokkos::subview (X_lcl, rowRange, j);
+      Teuchos::ArrayRCP<const impl_scalar_type> X_lcl_j_arcp =
+        Kokkos::Compat::persistingView (X_lcl_j);
+      views[j] = Teuchos::arcp_reinterpret_cast<const Scalar> (X_lcl_j_arcp);
     }
     return views;
   }

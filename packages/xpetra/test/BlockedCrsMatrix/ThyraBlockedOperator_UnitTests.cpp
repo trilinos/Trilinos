@@ -74,6 +74,7 @@
 #include <Xpetra_DefaultPlatform.hpp>
 
 #include <Xpetra_Map.hpp>
+#include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
@@ -187,7 +188,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
 
   typedef Xpetra::Map<LO, GO, Node> MapClass;
   typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
-  typedef Xpetra::MatrixUtils<Scalar, LO, GO, Node> MatrixUtilsClass;
+  typedef Xpetra::MapUtils<LO, GO, Node> MapUtilsClass;
 
   // generate non-overlapping map
   Teuchos::Array<GO> myGIDs;
@@ -196,7 +197,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
   }
   const Teuchos::RCP<const MapClass> map = MapFactoryClass::Build (lib,Teuchos::OrdinalTraits<GO>::invalid(),myGIDs(),0,comm);
 
-  const Teuchos::RCP<const MapClass> thMap = MatrixUtilsClass::shrinkMapGIDs(*map,*map);
+  const Teuchos::RCP<const MapClass> thMap = MapUtilsClass::shrinkMapGIDs(*map,*map);
 
   TEST_EQUALITY(thMap->getGlobalNumElements() , Teuchos::as<Xpetra::global_size_t>(comm->getSize() * 10));
   TEST_EQUALITY(thMap->getNodeNumElements() , 10);
@@ -221,7 +222,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ThyraShrinkMaps, M, MA,
 
   const Teuchos::RCP<const MapClass> map2 = MapFactoryClass::Build (lib,Teuchos::OrdinalTraits<GO>::invalid(),myovlGIDs(),0,comm);
 
-  const Teuchos::RCP<const MapClass> thMap2 = MatrixUtilsClass::shrinkMapGIDs(*map2,*map);
+  const Teuchos::RCP<const MapClass> thMap2 = MapUtilsClass::shrinkMapGIDs(*map2,*map);
 
   TEST_EQUALITY(thMap2->getMinGlobalIndex() , std::max(0,comm->getRank() * 10 - 3));
   TEST_EQUALITY(thMap2->getMaxGlobalIndex() , comm->getRank() * 10 + 9);

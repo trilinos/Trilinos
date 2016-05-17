@@ -128,6 +128,15 @@ ENDIF()
 # Numeric Factorization
 # =====================
 
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleCholSuperNodesByBlocks_Serial
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleCholSuperNodesByBlocks_Serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleCholUnblocked_Pthreads

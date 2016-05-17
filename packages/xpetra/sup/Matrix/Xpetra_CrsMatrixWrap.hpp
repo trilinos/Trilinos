@@ -447,6 +447,16 @@ public:
     return matrixData_->getFrobeniusNorm();
   }
 
+  //! Left scale matrix using the given vector entries
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    matrixData_->leftScale(x);
+  }
+
+  //! Right scale matrix using the given vector entries
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    matrixData_->rightScale(x);
+  }
+
   //@}
 
   //! @name Advanced Matrix-vector multiplication and solve methods

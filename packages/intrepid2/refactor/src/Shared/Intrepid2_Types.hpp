@@ -95,6 +95,12 @@ namespace Intrepid2 {
     return (s.i32 < 0 ? 1 - s.f32 : s.f32 - 1);
   }
 
+  template<typename ValueType>
+  KOKKOS_INLINE_FUNCTION
+  ValueType tolerence() {
+    return 100.0*epsilon<ValueType>();
+  }
+
   /// define constants
   class Parameters {
   public:
