@@ -109,6 +109,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -514,27 +515,31 @@ namespace Intrepid2 {
 
 
         // Define array containing the 8 vertices of the reference HEX, its center and 6 face centers
-        DynRankView ConstructWithLabel(hexNodes, 15, 3);
-        hexNodes(0,0) = -1.0;  hexNodes(0,1) = -1.0;  hexNodes(0,2) = -1.0;
-        hexNodes(1,0) =  1.0;  hexNodes(1,1) = -1.0;  hexNodes(1,2) = -1.0;
-        hexNodes(2,0) =  1.0;  hexNodes(2,1) =  1.0;  hexNodes(2,2) = -1.0;
-        hexNodes(3,0) = -1.0;  hexNodes(3,1) =  1.0;  hexNodes(3,2) = -1.0;
+        DynRankViewHost ConstructWithLabel(hexNodesHost, 15, 3);
 
-        hexNodes(4,0) = -1.0;  hexNodes(4,1) = -1.0;  hexNodes(4,2) =  1.0;
-        hexNodes(5,0) =  1.0;  hexNodes(5,1) = -1.0;  hexNodes(5,2) =  1.0;
-        hexNodes(6,0) =  1.0;  hexNodes(6,1) =  1.0;  hexNodes(6,2) =  1.0;
-        hexNodes(7,0) = -1.0;  hexNodes(7,1) =  1.0;  hexNodes(7,2) =  1.0;
+        hexNodesHost(0,0) = -1.0;  hexNodesHost(0,1) = -1.0;  hexNodesHost(0,2) = -1.0;
+        hexNodesHost(1,0) =  1.0;  hexNodesHost(1,1) = -1.0;  hexNodesHost(1,2) = -1.0;
+        hexNodesHost(2,0) =  1.0;  hexNodesHost(2,1) =  1.0;  hexNodesHost(2,2) = -1.0;
+        hexNodesHost(3,0) = -1.0;  hexNodesHost(3,1) =  1.0;  hexNodesHost(3,2) = -1.0;
 
-        hexNodes(8,0) =  0.0;  hexNodes(8,1) =  0.0;  hexNodes(8,2) =  0.0;
+        hexNodesHost(4,0) = -1.0;  hexNodesHost(4,1) = -1.0;  hexNodesHost(4,2) =  1.0;
+        hexNodesHost(5,0) =  1.0;  hexNodesHost(5,1) = -1.0;  hexNodesHost(5,2) =  1.0;
+        hexNodesHost(6,0) =  1.0;  hexNodesHost(6,1) =  1.0;  hexNodesHost(6,2) =  1.0;
+        hexNodesHost(7,0) = -1.0;  hexNodesHost(7,1) =  1.0;  hexNodesHost(7,2) =  1.0;
 
-        hexNodes(9,0) =  1.0;  hexNodes(9,1) =  0.0;  hexNodes(9,2) =  0.0;
-        hexNodes(10,0)= -1.0;  hexNodes(10,1)=  0.0;  hexNodes(10,2)=  0.0;
+        hexNodesHost(8,0) =  0.0;  hexNodesHost(8,1) =  0.0;  hexNodesHost(8,2) =  0.0;
 
-        hexNodes(11,0)=  0.0;  hexNodes(11,1)=  1.0;  hexNodes(11,2)=  0.0;
-        hexNodes(12,0)=  0.0;  hexNodes(12,1)= -1.0;  hexNodes(12,2)=  0.0;
+        hexNodesHost(9,0) =  1.0;  hexNodesHost(9,1) =  0.0;  hexNodesHost(9,2) =  0.0;
+        hexNodesHost(10,0)= -1.0;  hexNodesHost(10,1)=  0.0;  hexNodesHost(10,2)=  0.0;
 
-        hexNodes(13,0)=  0.0;  hexNodes(13,1)=  0.0;  hexNodes(13,2)=  1.0;
-        hexNodes(14,0)=  0.0;  hexNodes(14,1)=  0.0;  hexNodes(14,2)= -1.0;
+        hexNodesHost(11,0)=  0.0;  hexNodesHost(11,1)=  1.0;  hexNodesHost(11,2)=  0.0;
+        hexNodesHost(12,0)=  0.0;  hexNodesHost(12,1)= -1.0;  hexNodesHost(12,2)=  0.0;
+
+        hexNodesHost(13,0)=  0.0;  hexNodesHost(13,1)=  0.0;  hexNodesHost(13,2)=  1.0;
+        hexNodesHost(14,0)=  0.0;  hexNodesHost(14,1)=  0.0;  hexNodesHost(14,2)= -1.0;
+
+        auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+        Kokkos::deep_copy(hexNodes, hexNodeshost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = hexBasis.getCardinality();

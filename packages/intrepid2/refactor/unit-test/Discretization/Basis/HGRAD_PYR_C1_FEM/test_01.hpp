@@ -110,6 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -336,7 +337,7 @@ namespace Intrepid2 {
      };
 
      try {
-       DynRankView ConstructWithLabel(pyrNodesHost, 10, 3);
+       DynRankViewHost ConstructWithLabel(pyrNodesHost, 10, 3);
 
        pyrNodesHost(0,0) = -1.0;  pyrNodesHost(0,1) = -1.0;  pyrNodesHost(0,2) =  0;
        pyrNodesHost(1,0) =  1.0;  pyrNodesHost(1,1) = -1.0;  pyrNodesHost(1,2) =  0;

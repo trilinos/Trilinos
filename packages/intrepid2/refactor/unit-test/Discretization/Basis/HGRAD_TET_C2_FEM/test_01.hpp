@@ -112,6 +112,7 @@ namespace Test {
     << "===============================================================================\n";
 
     typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+    typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
     const ValueType tol = Parameters::Tolerence;
@@ -388,7 +389,7 @@ namespace Test {
   try{
     ordinal_type nthrow = 0, ncatch = 0;
 
-    DynRankView ConstructWithLabel(tetNodesHost, 10, 3);
+    DynRankViewHost ConstructWithLabel(tetNodesHost, 10, 3);
     tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;  
     tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;  
     tetNodesHost(2,0) =  0.0;  tetNodesHost(2,1) =  1.0;  tetNodesHost(2,2) =  0.0;

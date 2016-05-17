@@ -110,6 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -380,7 +381,7 @@ namespace Intrepid2 {
       }
       
       try {
-        DynRankView ConstructWithLabel(wedgeNodesHost, 18, 3);
+        DynRankViewHost ConstructWithLabel(wedgeNodesHost, 18, 3);
 
         wedgeNodesHost(0,0) =  0.0;  wedgeNodesHost(0,1) =  0.0;  wedgeNodesHost(0,2) = -1.0;  
         wedgeNodesHost(1,0) =  1.0;  wedgeNodesHost(1,1) =  0.0;  wedgeNodesHost(1,2) = -1.0;  
@@ -403,7 +404,8 @@ namespace Intrepid2 {
         wedgeNodesHost(16,0)=  0.5;  wedgeNodesHost(16,1)=  0.5;  wedgeNodesHost(16,2)=  0.0;  
         wedgeNodesHost(17,0)=  0.0;  wedgeNodesHost(17,1)=  0.5;  wedgeNodesHost(17,2)=  0.0;  
         
-        const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+        auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+        Kokkos::deep_copy(wedgeNodes, wedgeNodesHost);
 
         // Dimensions for the output arrays:
         const auto numFields = wedgeBasis.getCardinality();

@@ -110,6 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
   
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -313,7 +314,7 @@ namespace Intrepid2 {
       };
   
       try {
-        DynRankView ConstructWithLabel(tetNodesHost, 8, 3);
+        DynRankViewHost ConstructWithLabel(tetNodesHost, 8, 3);
 
         tetNodesHost(0,0) =  0.0;  tetNodesHost(0,1) =  0.0;  tetNodesHost(0,2) =  0.0;  
         tetNodesHost(1,0) =  1.0;  tetNodesHost(1,1) =  0.0;  tetNodesHost(1,2) =  0.0;  
@@ -324,7 +325,8 @@ namespace Intrepid2 {
         tetNodesHost(6,0) =  0.5;  tetNodesHost(6,1) =  0.0;  tetNodesHost(6,2) =  0.5;  
         tetNodesHost(7,0) =  0.0;  tetNodesHost(7,1) =  0.5;  tetNodesHost(7,2) =  0.5;  
 
-        const auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+        auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+        Kokkos::deep_copy(tetNodes, tetNodesHost);
 
         // Dimensions for the output arrays:
         const auto numFields = tetBasis.getCardinality();
