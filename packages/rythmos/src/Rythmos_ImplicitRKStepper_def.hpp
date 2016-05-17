@@ -530,7 +530,7 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
         // for now setCorrection just sets the rkNewtonConvergenceStatus_ in the stepControl
         // and this is used by acceptStep method of the stepControl
 
-        stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), (x_stage_bar_->getNonconstVectorBlock(stage)), rkNewtonConvergenceStatus_);
+        stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), Teuchos::null , rkNewtonConvergenceStatus_);
         bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
 
         if (!stepPass) { // stepPass = false
