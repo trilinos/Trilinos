@@ -177,9 +177,9 @@ void test_field() {
   unsigned spatialDim = 3;
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-  unsigned dimX = 100;
-  unsigned dimY = 100;
-  unsigned dimZ = 100;
+  unsigned dimX = 10;
+  unsigned dimY = 10;
+  unsigned dimZ = 10;
   std::ostringstream mesh_spec;
   mesh_spec << "generated:"<<dimX<<"x"<<dimY<<"x"<<dimZ;
   stk::unit_test_util::fill_mesh_using_stk_io(mesh_spec.str(), bulk);
