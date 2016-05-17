@@ -1406,6 +1406,12 @@ namespace Tpetra {
       getDualView ().template sync<TargetDeviceType> ();
     }
 
+    //! Whether this MultiVector needs synchronization to the given space.
+    template<class TargetDeviceType>
+    bool need_sync () {
+      return getDualView ().template need_sync<TargetDeviceType> ();
+    }
+
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
     ///
     /// If \c TargetDeviceType is the same as this MultiVector's
