@@ -77,7 +77,7 @@
 */
 
 /*** Uncomment if you would like output data for plotting ***/
-#define DUMP_DATA
+//#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
@@ -291,9 +291,13 @@ int main(int argc, char *argv[]) {
   rank=mpiSession.getRank();
   numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+  if(numProcs!=1) {printf("Error: This test only currently works in serial\n");return 1;}
 #else
   Epetra_SerialComm Comm;
 #endif
+
+
 
   int MyPID = Comm.MyPID();
   Epetra_Time Time(Comm);
@@ -449,7 +453,7 @@ int main(int argc, char *argv[]) {
    // Print mesh information
     if (MyPID == 0){
        std::cout << " Number of Global Elements: " << numElemsGlobal << " \n";
-       std::cout << "    Number of Global Nodes: " << numNodesGlobal << " \n\n";
+       std::cout << " Number of Global Nodes: " << numNodesGlobal << " \n\n";
     }
 
     long long * block_ids = new long long [numElemBlk];
@@ -632,22 +636,17 @@ int main(int argc, char *argv[]) {
       P2_nodeCoordx[i] = nodeCoord(i,0);
       P2_nodeCoordy[i] = nodeCoord(i,1);
     }
-    /*parallel info*/
-
-
 
    // Reset constants
-    //   printf("P1_numNodes = %d P2_numNode = %d\n",(int)numNodes,(int)P2_numNodes);
    numNodes = P2_numNodes;
    numNodesGlobal = numNodes;
 
-   /*
-   printf("**** P2_elemToNode ****\n");
-   for(int i=0; i<numElems; i++) {
-     for(int j=0; j<elemToNode.dimension(1); j++)
-       printf("%2d ",elemToNode(i,j));
-     printf("\n");
-     }*/
+   // Print mesh information
+   if (MyPID == 0){
+     std::cout << " Number of P2 Global Elements: " << numElemsGlobal << " \n";
+     std::cout << " Number of P2 Global Nodes: " << numNodesGlobal << " \n\n";
+   }
+
 
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
@@ -708,13 +707,7 @@ int main(int argc, char *argv[]) {
         ownedGIDs[oidx]=(int)globalNodeIds[i];
         oidx++;
       }
-
-    
-    /*    printf("**** ownedNodes = %d ****\n",ownedNodes);
-    for(int i=0;i<ownedNodes; i++)
-      printf("%2d ",ownedGIDs[i]);
-      printf("\n");*/
-
+   
     // Generate epetra map for nodes
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
 
@@ -795,13 +788,6 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    /*
-    printf("**** BCNodes (%d/%d) ****\n",numBCNodes,(int)numNodes);
-    for(int i=0; i<numBCNodes; i++) {
-      printf("%2d ",BCNodes[i]);
-    }
-    printf("\n");
-    */
     
    if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
                  << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
@@ -989,8 +975,6 @@ int main(int argc, char *argv[]) {
           int localCol  = elemToNode(cell, cellCol);
           int globalCol = globalNodeIds[localCol];
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
-
-	  //	  printf("Inserting (%d,%d)\n",globalRow,globalCol);
           StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
 
         }// *** cell col loop ***
@@ -1328,13 +1312,13 @@ template<typename Scalar>
 const Scalar exactSolution(const Scalar& x, const Scalar& y) {
 
   // Patch test: bi-linear function is in the FE space and should be recovered
-   return 1. + x + y + x*y;
+  //  return 1. + x + y + x*y;
 
   // Analytic solution with homogeneous Dirichlet boundary data
-  // return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
+  //return sin(M_PI*x)*sin(M_PI*y)**exp(x+y);
 
   // Analytic solution with inhomogeneous Dirichlet boundary data
-  // return exp(x + y )/(1. + x*y);
+  return exp(x + y )/(1. + x*y);
 }
 
 
@@ -1545,11 +1529,14 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   // ==================================================== //
   // compute difference between exact solution and ML one //
   // ==================================================== //
-  double d = 0.0, d_tot = 0.0;
-  for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
+  double d = 0.0, d_tot = 0.0 , s =0.0, s_tot=0.0;
+  for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i ) {
     d += ((*lhs)[0][i] - xexact[0][i]) * ((*lhs)[0][i] - xexact[0][i]);
+    s +=  xexact[0][i]* xexact[0][i];
+  }
 
   A.Comm().SumAll(&d,&d_tot,1);
+  A.Comm().SumAll(&s,&s_tot,1);
 
   // ================== //
   // compute ||Ax - b|| //
@@ -1565,7 +1552,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   if (A.Comm().MyPID() == 0) {
     cout << msg << endl << "......Using " << A.Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
-    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+    cout << msg << "......||x_exact - x||_2/||x_exact||_2 = " << sqrt(d_tot/s_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
 
