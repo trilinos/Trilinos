@@ -608,9 +608,13 @@ int main(int argc, char *argv[]) {
    GenerateEdgeEnumeration(elemToNode, nodeCoord, elemToEdge,elemToEdgeOrient,edgeCoord);
 
 
-   // Generate
-
-
+   // Generate higher order mesh
+   int P2_numNodes = numNodes + edgeCoord.dimension(0) + numElems;
+   FieldContainer<int>    P2_elemToNode(numElems,9); //because quads
+   FieldContainer<double> P2_nodeCoord(P2_numNodes,dim);
+   FieldContainer<int>    P2_nodeOnBoundary(P2_numNodes);
+   PromoteMesh(2,elemToNode,nodeCoord,edgeCoord,elemToEdge,elemToEdgeOrient,nodeOnBoundary,
+	       P2_elemToNode, P2_nodeCoord, P2_nodeOnBoundary);
 
 
 /**********************************************************************************/
@@ -1587,7 +1591,7 @@ void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, co
 
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
-  int P1_numEdgesperElem = P1_elemToEdge.dimension(0);
+  int P1_numEdgesperElem = P1_elemToEdge.dimension(1);
   int P2_numNodesperElem = P2_elemToNode.dimension(1);
   int P1_numNodes        = P1_nodeCoord.dimension(0);
   int P1_numEdges        = P1_edgeCoord.dimension(0);
