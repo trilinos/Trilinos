@@ -48,7 +48,9 @@ namespace Graph{
 
     case SPGEMM_CUSP:
       break;
-
+    case SPGEMM_KK4:
+    case SPGEMM_KK3:
+    case SPGEMM_KK2:
     case SPGEMM_KK1:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
@@ -107,7 +109,7 @@ namespace Graph{
           );
     }
 
-    valuesC = typename scalar_nnz_view_t_::non_const_type("valC", entriesC.dimension_0());
+    //valuesC = typename scalar_nnz_view_t_::non_const_type("valC", entriesC.dimension_0());
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
         //no op.
@@ -197,7 +199,9 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC);
       break;
-
+    case SPGEMM_KK4:
+    case SPGEMM_KK3:
+    case SPGEMM_KK2:
     case SPGEMM_KK1:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM

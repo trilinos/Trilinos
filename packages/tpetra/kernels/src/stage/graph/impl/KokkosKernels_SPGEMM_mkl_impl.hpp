@@ -120,7 +120,12 @@ namespace Impl{
           return;
         }
 
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C)){
+
+        Kokkos::Impl::Timer timer1;
+        bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        std::cout << "Actual FLOAT MKL SPMM Time:" << timer1.seconds() << std::endl;
+
+        if (success){
           std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
           return;
         }
@@ -143,9 +148,9 @@ namespace Impl{
           }
 
 
-          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
-          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
+          row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+          entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+          valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
           KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
@@ -201,7 +206,11 @@ namespace Impl{
         }
 
 
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C)){
+        Kokkos::Impl::Timer timer1;
+        bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;
+
+        if (success){
           std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
           return;
         }
@@ -223,18 +232,20 @@ namespace Impl{
             std::cerr << "C is not zero based indexed." << std::endl;
             return;
           }
+          {
+            Kokkos::Impl::Timer copy_time;
+            row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+            entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+            valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
+            idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-
-          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
-          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
-
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
-          idx nnz = row_mapC(m) =  rows_end[m - 1];
-
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
+            KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            double copy_time_d = copy_time.seconds();
+            std::cout << "MKL COPYTIME:" << copy_time_d << std::endl;
+          }
 
         }
 
