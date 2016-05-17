@@ -1,40 +1,28 @@
 // @HEADER
 // ***********************************************************************
 //
-//                           Stokhos Package
-//                 Copyright (2009) Sandia Corporation
+//                           Sacado Package
+//                 Copyright (2006) Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
 //
-// 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-// 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
+// USA
+// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+// (etphipp@sandia.gov).
 //
 // ***********************************************************************
 // @HEADER
@@ -73,6 +61,7 @@ dimension_scalar(const view_type& view) {
 
 #include "Sacado_Traits.hpp"
 #include "impl/KokkosExp_ViewMapping.hpp"
+#include "Kokkos_LayoutContiguous.hpp"
 
 #define SACADO_SUPPORT_RANK_8 0
 
@@ -102,6 +91,38 @@ struct is_ViewSpecializeSacadoFad< Kokkos::View<D,P...> , Args... > {
 } // namespace Kokkos
 
 namespace Kokkos {
+
+template <typename T, typename ... P>
+struct is_view_fad< View<T,P...> > {
+  typedef View<T,P...> view_type;
+  static const bool value =
+    std::is_same< typename view_type::specialize,
+                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
+};
+
+template <typename T, typename ... P>
+KOKKOS_INLINE_FUNCTION
+constexpr typename
+std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
+dimension_scalar(const View<T,P...>& view) {
+  return view.implementation_map().dimension_scalar();
+}
+
+template <typename ViewType, typename Enabled = void>
+struct ContiguousArrayType {
+  typedef ViewType type;
+};
+
+template <typename D, typename ... P>
+struct ContiguousArrayType< View<D,P...>,
+                            typename std::enable_if< is_view_fad< View<D,P...> >::value >::type > {
+  typedef View<D,P...> view_type;
+  typedef typename view_type::data_type data_type;
+  typedef typename view_type::array_layout layout;
+  typedef typename view_type::device_type device;
+  typedef typename view_type::memory_traits memory;
+  typedef View<data_type,LayoutContiguous<layout>,device,memory> type;
+};
 
 // Overload of deep_copy for Fad views intializing to a constant scalar
 template< class DT, class ... DP >
@@ -136,13 +157,6 @@ void deep_copy(
                   typename ViewTraits<DT,DP...>::non_const_value_type >::value
     , "Can only deep copy into non-const type" );
 
-  // static_assert(
-  //   Sacado::StaticSize< typename View<DT,DP...>::value_type >::value
-  //   ||
-  //   std::is_same< Kokkos::Impl::ActiveExecutionMemorySpace
-  //               , Kokkos::HostSpace >::value
-  //   , "Deep copy from a FAD type must be statically sized or host space" );
-
   Kokkos::Experimental::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
@@ -169,25 +183,11 @@ void deep_copy( const View<DT,DP...> & dst ,
       unsigned(ViewTraits<ST,SP...>::rank) )
     , "Deep copy destination and source must have same rank" );
 
+  typedef typename View<DT,DP...>::array_type dst_array_type;
+  typedef typename View<ST,SP...>::array_type src_array_type;
   Kokkos::deep_copy(
-    typename View<DT,DP...>::array_type( dst ) ,
-    typename View<ST,SP...>::array_type( src ) );
-}
-
-template <typename T, typename ... P>
-struct is_view_fad< View<T,P...> > {
-  typedef View<T,P...> view_type;
-  static const bool value =
-    std::is_same< typename view_type::specialize,
-                  Experimental::Impl::ViewSpecializeSacadoFad >::value;
-};
-
-template <typename T, typename ... P>
-KOKKOS_INLINE_FUNCTION
-constexpr typename
-std::enable_if< is_view_fad< View<T,P...> >::value, unsigned >::type
-dimension_scalar(const View<T,P...>& view) {
-  return view.implementation_map().dimension_scalar();
+    typename ContiguousArrayType< dst_array_type >::type( dst ) ,
+    typename ContiguousArrayType< src_array_type >::type( src ) );
 }
 
 } // namespace Kokkos
@@ -270,6 +270,42 @@ public:
   typedef typename
     ViewDataType< non_const_scalar_type , scalar_dimension >::type
       non_const_scalar_array_type ;
+};
+
+// Specialization for LayoutContiguous, where we don't allow striding within
+// the FadType.
+//
+// Currently this is implemented by choosing the default ViewMapping
+// specialization.  In the future we will provide our own.
+template< class DataType , class ArrayLayout , class ScalarType , unsigned DimFad >
+struct FadViewDataAnalysis<DataType, LayoutContiguous<ArrayLayout>, ScalarType, DimFad>
+{
+private:
+
+  typedef ViewArrayAnalysis< DataType > array_analysis ;
+
+public:
+
+  // For now use the default mapping
+  typedef void specialize ;
+
+  typedef typename array_analysis::dimension             dimension ;
+  typedef typename array_analysis::value_type            value_type ;
+  typedef typename array_analysis::const_value_type      const_value_type ;
+  typedef typename array_analysis::non_const_value_type  non_const_value_type ;
+
+  // Generate analogous multidimensional array specification type.
+  typedef typename
+    ViewDataType< value_type , dimension >::type  type ;
+  typedef typename
+    ViewDataType< const_value_type , dimension >::type  const_type ;
+  typedef typename
+    ViewDataType< non_const_value_type , dimension >::type  non_const_type ;
+
+  // Generate "flattened" multidimensional array specification type.
+  typedef type            scalar_array_type ;
+  typedef const_type      const_scalar_array_type ;
+  typedef non_const_type  non_const_scalar_array_type ;
 };
 
 } // namespace Impl
