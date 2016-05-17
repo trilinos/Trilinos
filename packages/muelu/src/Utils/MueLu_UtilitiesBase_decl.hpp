@@ -164,7 +164,7 @@ namespace MueLu {
           Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
       if(bA == Teuchos::null) {
         RCP<const Map> rowMap = rcpA->getRowMap();
-        RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
+        RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
         ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
         size_t numRows = rowMap->getNodeNumElements();
         Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -218,6 +218,7 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
+
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -229,6 +230,57 @@ namespace MueLu {
           diag[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         }
       }
+      return diag;
+    }
+
+    /*! @brief Extract Matrix Diagonal of lumped matrix
+
+    Returns Matrix diagonal of lumped matrix in ArrayRCP.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA) {
+
+      RCP<Vector> diag = Teuchos::null;
+
+      RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
+          Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
+      if(bA == Teuchos::null) {
+        RCP<const Map> rowMap = rcpA->getRowMap();
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+        ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+        Teuchos::ArrayView<const LocalOrdinal> cols;
+        Teuchos::ArrayView<const Scalar> vals;
+        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          rcpA->getLocalRowView(i, cols, vals);
+          diagVals[i] = Teuchos::ScalarTraits<Scalar>::zero();
+          for (LocalOrdinal j = 0; j < cols.size(); ++j) {
+            diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+          }
+        }
+
+      } else {
+        //TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
+        //  "UtilitiesBase::GetLumpedMatrixDiagonal(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
+
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(bA->getRangeMapExtractor()->getFullMap(),true);
+
+        for (size_t row = 0; row < bA->Rows(); ++row) {
+          for (size_t col = 0; col < bA->Cols(); ++col) {
+            if (!bA->getMatrix(row,col).is_null()) {
+              // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+              bool bThyraMode = bA->getRangeMapExtractor()->getThyraMode() && (Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA->getMatrix(row,col)) == Teuchos::null);
+              RCP<Vector> ddtemp = bA->getRangeMapExtractor()->ExtractVector(diag,row,bThyraMode);
+              RCP<const Vector> dd = GetLumpedMatrixDiagonal(bA->getMatrix(row,col));
+              ddtemp->update(Teuchos::as<Scalar>(1.0),*dd,Teuchos::as<Scalar>(1.0));
+              bA->getRangeMapExtractor()->InsertVector(ddtemp,row,diag,bThyraMode);
+            }
+          }
+        }
+
+      }
+
+      // we should never get here...
       return diag;
     }
 
