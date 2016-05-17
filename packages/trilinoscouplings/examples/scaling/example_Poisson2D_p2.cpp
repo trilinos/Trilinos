@@ -77,7 +77,7 @@
 */
 
 /*** Uncomment if you would like output data for plotting ***/
-//#define DUMP_DATA
+#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
@@ -391,11 +391,13 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Get cell topology for base hexahedron
-    shards::CellTopology cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    shards::CellTopology P1_cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    shards::CellTopology P2_cellType(shards::getCellTopologyData<shards::Quadrilateral<9> >() );
 
    // Get dimensions
-    int numNodesPerElem = cellType.getNodeCount();
-    int spaceDim = cellType.getDimension();
+    int P1_numNodesPerElem = P1_cellType.getNodeCount();
+    int P2_numNodesPerElem = P2_cellType.getNodeCount();
+    int spaceDim = P1_cellType.getDimension();
     int dim = 2;
 
 /**********************************************************************************/
@@ -479,24 +481,24 @@ int main(int argc, char *argv[]) {
 
   // Get node-element connectivity
     int telct = 0;
-    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
+    FieldContainer<int> P1_elemToNode(numElems,P1_numNodesPerElem);
     for(long long b = 0; b < numElemBlk; b++){
       for(long long el = 0; el < elements[b]; el++){
-        for (int j=0; j<numNodesPerElem; j++) {
-          elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+        for (int j=0; j<P1_numNodesPerElem; j++) {
+          P1_elemToNode(telct,j) = elmt_node_linkage[b][el*P1_numNodesPerElem + j]-1;
         }
         telct ++;
       }
     }
 
    // Read node coordinates and place in field container
-    FieldContainer<double> nodeCoord(numNodes,dim);
+    FieldContainer<double> P1_nodeCoord(numNodes,dim);
     double * nodeCoordx = new double [numNodes];
     double * nodeCoordy = new double [numNodes];
     im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,0);
     for (int i=0; i<numNodes; i++) {
-      nodeCoord(i,0)=nodeCoordx[i];
-      nodeCoord(i,1)=nodeCoordy[i];
+      P1_nodeCoord(i,0)=nodeCoordx[i];
+      P1_nodeCoord(i,1)=nodeCoordy[i];
     }
     /*parallel info*/
     long long num_internal_nodes;
@@ -552,11 +554,11 @@ int main(int argc, char *argv[]) {
     if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
     //Calculate global node ids
-    long long * globalNodeIds = new long long[numNodes];
-    bool * nodeIsOwned = new bool[numNodes];
+    long long * P1_globalNodeIds = new long long[numNodes];
+    bool * P1_nodeIsOwned = new bool[numNodes];
 
-    calc_global_node_ids(globalNodeIds,
-                         nodeIsOwned,
+    calc_global_node_ids(P1_globalNodeIds,
+                         P1_nodeIsOwned,
                          numNodes,
                          num_node_comm_maps,
                          node_cmap_node_cnts,
@@ -569,7 +571,7 @@ int main(int argc, char *argv[]) {
 
 
    // Container indicating whether a node is on the boundary (1-yes 0-no)
-    FieldContainer<int> nodeOnBoundary(numNodes);
+    FieldContainer<int> P1_nodeOnBoundary(numNodes);
 
    // Get boundary (side set) information
     long long * sideSetIds = new long long [numSideSets];
@@ -584,11 +586,11 @@ int main(int argc, char *argv[]) {
           im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
 
-             int sideNode0 = cellType.getNodeMap(1,sideSetSideList[j]-1,0);
-             int sideNode1 = cellType.getNodeMap(1,sideSetSideList[j]-1,1);
+             int sideNode0 = P1_cellType.getNodeMap(1,sideSetSideList[j]-1,0);
+             int sideNode1 = P1_cellType.getNodeMap(1,sideSetSideList[j]-1,1);
 
-             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
-             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
+             P1_nodeOnBoundary(P1_elemToNode(sideSetElemList[j]-1,sideNode0))=1;
+             P1_nodeOnBoundary(P1_elemToNode(sideSetElemList[j]-1,sideNode1))=1;
           }
           delete [] sideSetElemList;
           delete [] sideSetSideList;
@@ -602,20 +604,50 @@ int main(int argc, char *argv[]) {
 
    // Enumerate edges 
    // NOTE: Only correct in serial
-   FieldContainer<int> elemToEdge(numElems,4);// Because quads
-   FieldContainer<int> elemToEdgeOrient(numElems,4);
-   FieldContainer<double> edgeCoord(1,dim);//will be resized  
-   GenerateEdgeEnumeration(elemToNode, nodeCoord, elemToEdge,elemToEdgeOrient,edgeCoord);
+   FieldContainer<int> P1_elemToEdge(numElems,4);// Because quads
+   FieldContainer<int> P1_elemToEdgeOrient(numElems,4);
+   FieldContainer<double> P1_edgeCoord(1,dim);//will be resized  
+   GenerateEdgeEnumeration(P1_elemToNode, P1_nodeCoord, P1_elemToEdge,P1_elemToEdgeOrient,P1_edgeCoord);
 
 
    // Generate higher order mesh
-   int P2_numNodes = numNodes + edgeCoord.dimension(0) + numElems;
-   FieldContainer<int>    P2_elemToNode(numElems,9); //because quads
-   FieldContainer<double> P2_nodeCoord(P2_numNodes,dim);
-   FieldContainer<int>    P2_nodeOnBoundary(P2_numNodes);
-   PromoteMesh(2,elemToNode,nodeCoord,edgeCoord,elemToEdge,elemToEdgeOrient,nodeOnBoundary,
-	       P2_elemToNode, P2_nodeCoord, P2_nodeOnBoundary);
+   // NOTE: Only correct in serial
+   int P2_numNodes = numNodes + P1_edgeCoord.dimension(0) + numElems;
+   FieldContainer<int>    elemToNode(numElems,9); //because quads
+   FieldContainer<double> nodeCoord(P2_numNodes,dim);
+   FieldContainer<int>   nodeOnBoundary(P2_numNodes);
+   PromoteMesh(2,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
+	       elemToNode, nodeCoord, nodeOnBoundary);
 
+
+   // Only works in serial
+   std::vector<bool>nodeIsOwned(P2_numNodes,true);
+   std::vector<int>globalNodeIds(P2_numNodes);
+   for(int i=0; i<P2_numNodes; i++)
+     globalNodeIds[i]=i;
+
+   std::vector<double> P2_nodeCoordx(P2_numNodes);
+   std::vector<double> P2_nodeCoordy(P2_numNodes);
+    for (int i=0; i<P2_numNodes; i++) {
+      P2_nodeCoordx[i] = nodeCoord(i,0);
+      P2_nodeCoordy[i] = nodeCoord(i,1);
+    }
+    /*parallel info*/
+
+
+
+   // Reset constants
+    //   printf("P1_numNodes = %d P2_numNode = %d\n",(int)numNodes,(int)P2_numNodes);
+   numNodes = P2_numNodes;
+   numNodesGlobal = numNodes;
+
+   /*
+   printf("**** P2_elemToNode ****\n");
+   for(int i=0; i<numElems; i++) {
+     for(int j=0; j<elemToNode.dimension(1); j++)
+       printf("%2d ",elemToNode(i,j));
+     printf("\n");
+     }*/
 
 /**********************************************************************************/
 /********************************* GET CUBATURE ***********************************/
@@ -623,8 +655,8 @@ int main(int argc, char *argv[]) {
 
    // Get numerical integration points and weights
     DefaultCubatureFactory<double>  cubFactory;
-    int cubDegree = 2;
-    Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(cellType, cubDegree);
+    int cubDegree = 3;
+    Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(P2_cellType, cubDegree);
 
     int cubDim       = myCub->getDimension();
     int numCubPoints = myCub->getNumPoints();
@@ -644,7 +676,7 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 
    // Define basis
-     Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis;
+   Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> > myHGradBasis;
      int numFieldsG = myHGradBasis.getCardinality();
      FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
      FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
@@ -660,11 +692,12 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
 /**********************************************************************************/
-
     // Count owned nodes
     int ownedNodes=0;
     for(int i=0;i<numNodes;i++)
       if(nodeIsOwned[i]) ownedNodes++;
+
+
 
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
@@ -675,9 +708,15 @@ int main(int argc, char *argv[]) {
         ownedGIDs[oidx]=(int)globalNodeIds[i];
         oidx++;
       }
+
+    
+    /*    printf("**** ownedNodes = %d ****\n",ownedNodes);
+    for(int i=0;i<ownedNodes; i++)
+      printf("%2d ",ownedGIDs[i]);
+      printf("\n");*/
+
     // Generate epetra map for nodes
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
-
 
     // Global arrays in Epetra format
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
@@ -687,7 +726,7 @@ int main(int argc, char *argv[]) {
                  << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
 
 
-#ifdef DUMP_DATA
+#ifdef DUMP_DATA_OLD
 /**********************************************************************************/
 /**** PUT COORDINATES AND NODAL VALUES IN ARRAYS FOR OUTPUT (FOR PLOTTING ONLY) ***/
 /**********************************************************************************/
@@ -733,6 +772,8 @@ int main(int argc, char *argv[]) {
      }
   }
 
+
+
   // Vector for use in applying BCs
    Epetra_MultiVector v(globalMapG,true);
    v.PutScalar(0.0);
@@ -754,6 +795,14 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    /*
+    printf("**** BCNodes (%d/%d) ****\n",numBCNodes,(int)numNodes);
+    for(int i=0; i<numBCNodes; i++) {
+      printf("%2d ",BCNodes[i]);
+    }
+    printf("\n");
+    */
+    
    if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
                  << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
 
@@ -790,12 +839,12 @@ int main(int argc, char *argv[]) {
 
     // Now we know the actual workset size and can allocate the array for the cell nodes
      worksetSize  = worksetEnd - worksetBegin;
-     FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+     FieldContainer<double> cellWorkset(worksetSize, P2_numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
     int cellCounter = 0;
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
-      for (int node = 0; node < numNodesPerElem; node++) {
+      for (int node = 0; node < P2_numNodesPerElem; node++) {
         cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
         cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
       }
@@ -838,7 +887,7 @@ int main(int argc, char *argv[]) {
  /*                                Calculate Jacobians                             */
  /**********************************************************************************/
 
-      IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
+      IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, P2_cellType);
       IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
       IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
@@ -850,7 +899,7 @@ int main(int argc, char *argv[]) {
  /**********************************************************************************/
 
    // map cubature points to physical frame
-    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, cellType);
+    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, P2_cellType);
 
    // get A at cubature points
     evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
@@ -941,6 +990,7 @@ int main(int argc, char *argv[]) {
           int globalCol = globalNodeIds[localCol];
           double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
 
+	  //	  printf("Inserting (%d,%d)\n",globalRow,globalCol);
           StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
 
         }// *** cell col loop ***
@@ -958,6 +1008,8 @@ int main(int argc, char *argv[]) {
 
    if(MyPID==0) {std::cout << msg << "Global assembly                             "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
 
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
@@ -985,7 +1037,6 @@ int main(int argc, char *argv[]) {
    //  and add one to diagonal.
     ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
 
-
     delete [] BCNodes;
 
    if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
@@ -1006,8 +1057,8 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
   MLList.set("repartition: Zoltan dimensions",2);
-  MLList.set("x-coordinates",nodeCoordx);
-  MLList.set("y-coordinates",nodeCoordy);
+  MLList.set("x-coordinates",P2_nodeCoordx.data());
+  MLList.set("y-coordinates",P2_nodeCoordy.data());
 
 
   Epetra_FEVector exactNodalVals(globalMapG);
@@ -1035,6 +1086,13 @@ int main(int argc, char *argv[]) {
                                        StiffMatrix,          exactNodalVals,
                                        rhsVector,            femCoefficients,
                                        TotalErrorResidual,   TotalErrorExactSol);
+
+
+#ifdef DUMP_DATA
+  // Dump matrices to disk
+  EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector.dat",femCoefficients,0,0,false);
+  EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector_exact.dat",exactNodalVals,0,0,false);
+#endif
 
 /**********************************************************************************/
 /**************************** CALCULATE ERROR *************************************/
@@ -1067,8 +1125,8 @@ int main(int argc, char *argv[]) {
 
     // Get cubature points and weights for error calc (may be different from previous)
      Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
-     int cubDegErr = 3;
-     Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(cellType, cubDegErr);
+     int cubDegErr = 4;
+     Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(P2_cellType, cubDegErr);
      int cubDimErr       = cellCubatureErr->getDimension();
      int numCubPointsErr = cellCubatureErr->getNumPoints();
      Intrepid::FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
@@ -1094,14 +1152,14 @@ int main(int argc, char *argv[]) {
 
       // now we know the actual workset size and can allocate the array for the cell nodes
        worksetSize  = worksetEnd - worksetBegin;
-       Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, numNodesPerElem, spaceDim);
-       Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, numNodesPerElem);
+       Intrepid::FieldContainer<double> cellWorksetEr(worksetSize, P2_numNodesPerElem, spaceDim);
+       Intrepid::FieldContainer<double> worksetApproxSolnCoef(worksetSize, P2_numNodesPerElem);
 
       // loop over cells to fill arrays with coordinates and discrete solution coefficient
         int cellCounter = 0;
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
-            for (int node = 0; node < numNodesPerElem; node++) {
+            for (int node = 0; node < P2_numNodesPerElem; node++) {
                 cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
                 cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
 
@@ -1128,13 +1186,13 @@ int main(int argc, char *argv[]) {
        Intrepid::FieldContainer<double> uhGradsTrans(worksetSize, numFieldsG, numCubPointsErr, spaceDim);
 
       // compute cell Jacobians, their inverses and their determinants
-       IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr, cellType);
+       IntrepidCTools::setJacobian(worksetJacobianE, cubPointsErr, cellWorksetEr, P2_cellType);
        IntrepidCTools::setJacobianInv(worksetJacobInvE, worksetJacobianE );
        IntrepidCTools::setJacobianDet(worksetJacobDetE, worksetJacobianE );
 
       // map cubature points to physical frame
        Intrepid::FieldContainer<double> worksetCubPoints(worksetSize, numCubPointsErr, cubDimErr);
-       IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, cellType);
+       IntrepidCTools::mapToPhysicalFrame(worksetCubPoints, cubPointsErr, cellWorksetEr, P2_cellType);
 
       // evaluate exact solution and gradient at cubature points
        Intrepid::FieldContainer<double> worksetExactSoln(worksetSize, numCubPointsErr);
@@ -1234,8 +1292,8 @@ int main(int argc, char *argv[]) {
    delete [] elmt_node_linkage;
    delete [] ownedGIDs;
    delete [] elements;
-   delete [] globalNodeIds;
-   delete [] nodeIsOwned;
+   delete [] P1_globalNodeIds;
+   delete [] P1_nodeIsOwned;
    if(num_node_comm_maps > 0){
       delete [] node_comm_proc_ids;
       delete [] node_cmap_node_cnts;
