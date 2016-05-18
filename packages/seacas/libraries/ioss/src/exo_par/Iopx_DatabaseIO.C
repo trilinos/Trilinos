@@ -2605,9 +2605,8 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
   ssize_t     offset     = field.get_index();
 
   int64_t id              = Ioex::get_id(ge, type, &ids_);
-  int     attribute_count = ge->get_property("attribute_count").get_int();
   assert(offset > 0);
-  assert(offset - 1 + field.raw_storage()->component_count() <= attribute_count);
+  assert(offset - 1 + field.raw_storage()->component_count() <= ge->get_property("attribute_count").get_int());
 
   size_t proc_offset = 0;
   if (ge->property_exists("processor_offset"))

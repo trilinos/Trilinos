@@ -1459,7 +1459,7 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
   float           save_x, save_y;      /* used for clipping */
   int             prev_code, cur_code; /* encoded endpoints - for clipping */
   int             mode = 0, done;      /* stuff used for clipping */
-  static unsigned mask = ~(~0 << 1);   /* for masking off bits */
+  static unsigned mask = ~(~0u << 1);   /* for masking off bits */
 
   for (i = 0; i < num_surfaces; ++i) {
 
@@ -1687,7 +1687,7 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
   float           x1, y1, x2, y2;    /* line endpoints in NDC */
   int             code1, code2;      /* encoded endpoints for clipping */
   int             mode = 0, done;    /* variables used for clipping */
-  static unsigned mask = ~(~0 << 1); /* for masking off bits */
+  static unsigned mask = ~(~0u << 1); /* for masking off bits */
 
   for (i = 0; i < num_surfaces; ++i) {
 
@@ -3585,7 +3585,7 @@ static void xcqlnt(anything **params, anything **surf_list)
   static int set = FALSE;   /* flag whether values have been set */
   static int ntotal;        /* save total nbr of linestyles */
 
-  static unsigned mask = ~(~0 << 1);
+  static unsigned mask = ~(~0u << 1);
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
@@ -5298,8 +5298,8 @@ void nmtbuf();
 void     nmtbuf(numwds, outary) int *numwds; /* number of words in OUTARY, 0 = buffer flush */
 unsigned outary[];                           /* data to be buffered */
 {
-  static unsigned mask1 = ~(~0 << 8) << 8; /* mask off higher 8 bits */
-  static unsigned mask2 = ~(~0 << 8);      /* mask off lower 8 bits */
+  static unsigned mask1 = ~(~0u << 8) << 8; /* mask off higher 8 bits */
+  static unsigned mask2 = ~(~0u << 8);      /* mask off lower 8 bits */
 
   int  i;       /* loop variable */
   int  istat;   /* error reporting */
