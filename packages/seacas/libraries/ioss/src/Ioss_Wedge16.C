@@ -1,4 +1,4 @@
-// Copyright(C) 2016
+// Copyright(C) 1999-2010
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -33,33 +33,33 @@
 #include "Ioss_CodeTypes.h"           // for IntVector
 #include "Ioss_ElementTopology.h"     // for ElementTopology
 #include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Wedge21.h>
+#include <Ioss_Wedge16.h>
 #include <cassert> // for assert
 #include <cstddef> // for nullptr
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
-  class St_Wedge21 : public ElementVariableType
+  class St_Wedge16 : public ElementVariableType
   {
   public:
     static void factory();
 
   protected:
-    St_Wedge21() : ElementVariableType("wedge21", 21) {}
+    St_Wedge16() : ElementVariableType("wedge16", 16) {}
   };
 } // namespace Ioss
-void Ioss::St_Wedge21::factory() { static Ioss::St_Wedge21 registerThis; }
+void Ioss::St_Wedge16::factory() { static Ioss::St_Wedge16 registerThis; }
 
 // ========================================================================
 namespace {
   struct Constants
   {
-    static const int nnode     = 21;
+    static const int nnode     = 16;
     static const int nedge     = 9;
     static const int nedgenode = 3;
     static const int nface     = 5;
-    static const int nfacenode = 9;
+    static const int nfacenode = 8;
     static const int nfaceedge = 4;
     static int       edge_node_order[nedge][nedgenode];
     static int       face_node_order[nface][nfacenode];
@@ -76,60 +76,60 @@ int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
 
 // Face numbers are zero-based [0..number_faces)
 int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 4,  3,  6, 10, 12,  9, 20},
-     {1, 2, 5,  4,  7, 11, 13, 10, 18},
-     {0, 3, 5,  2,  9, 14, 11,  8, 19},
-     {0, 2, 1,  8,  7,  6, 15, -1, -1},
-     {3, 4, 5, 12, 13, 14, 16, -1, -1}};
+    {{0, 1, 4, 3, 6, 10, 12, 9},
+     {1, 2, 5, 4, 7, 11, 13, 10},
+     {0, 3, 5, 2, 9, 14, 11, 8},
+     {0, 2, 1, 8, 7, 6, -1, -1},
+     {3, 4, 5, 12, 13, 14, -1, -1}};
 
 int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
     {{0, 7, 3, 6}, {1, 8, 4, 7}, {6, 5, 8, 2}, {2, 1, 0, -1}, {3, 4, 5, -1}};
 
-int Constants::nodes_per_face[nface + 1] = {-1, 9, 9, 9, 7, 7};
+int Constants::nodes_per_face[nface + 1] = {-1, 8, 8, 8, 6, 6};
 
 int Constants::edges_per_face[nface + 1] = {-1, 4, 4, 4, 3, 3};
 
-void Ioss::Wedge21::factory()
+void Ioss::Wedge16::factory()
 {
-  static Ioss::Wedge21 registerThis;
-  Ioss::St_Wedge21::factory();
+  static Ioss::Wedge16 registerThis;
+  Ioss::St_Wedge16::factory();
 }
 
-Ioss::Wedge21::Wedge21() : Ioss::ElementTopology("wedge21", "Wedge_21")
+Ioss::Wedge16::Wedge16() : Ioss::ElementTopology("wedge16", "Wedge_16")
 {
-  Ioss::ElementTopology::alias("wedge21", "Solid_Wedge_21_3D");
+  Ioss::ElementTopology::alias("wedge16", "Solid_Wedge_16_3D");
 }
 
-Ioss::Wedge21::~Wedge21() = default;
+Ioss::Wedge16::~Wedge16() = default;
 
-int Ioss::Wedge21::parametric_dimension() const { return 3; }
-int Ioss::Wedge21::spatial_dimension() const { return 3; }
-int Ioss::Wedge21::order() const { return 2; }
+int Ioss::Wedge16::parametric_dimension() const { return 3; }
+int Ioss::Wedge16::spatial_dimension() const { return 3; }
+int Ioss::Wedge16::order() const { return 2; }
 
-int Ioss::Wedge21::number_corner_nodes() const { return 6; }
-int Ioss::Wedge21::number_nodes() const { return Constants::nnode; }
-int Ioss::Wedge21::number_edges() const { return Constants::nedge; }
-int Ioss::Wedge21::number_faces() const { return Constants::nface; }
+int Ioss::Wedge16::number_corner_nodes() const { return 6; }
+int Ioss::Wedge16::number_nodes() const { return Constants::nnode; }
+int Ioss::Wedge16::number_edges() const { return Constants::nedge; }
+int Ioss::Wedge16::number_faces() const { return Constants::nface; }
 
-bool Ioss::Wedge21::faces_similar() const { return false; }
+bool Ioss::Wedge16::faces_similar() const { return false; }
 
-int Ioss::Wedge21::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
+int Ioss::Wedge16::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
 
-int Ioss::Wedge21::number_nodes_face(int face) const
+int Ioss::Wedge16::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::nodes_per_face[face];
 }
 
-int Ioss::Wedge21::number_edges_face(int face) const
+int Ioss::Wedge16::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::edges_per_face[face];
 }
 
-Ioss::IntVector Ioss::Wedge21::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::Wedge16::edge_connectivity(int edge_number) const
 {
   Ioss::IntVector connectivity(number_nodes_edge(edge_number));
 
@@ -140,7 +140,7 @@ Ioss::IntVector Ioss::Wedge21::edge_connectivity(int edge_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::Wedge21::face_connectivity(int face_number) const
+Ioss::IntVector Ioss::Wedge16::face_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(number_nodes_face(face_number));
@@ -152,7 +152,7 @@ Ioss::IntVector Ioss::Wedge21::face_connectivity(int face_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::Wedge21::element_connectivity() const
+Ioss::IntVector Ioss::Wedge16::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
   for (int i = 0; i < number_nodes(); i++) {
@@ -161,27 +161,29 @@ Ioss::IntVector Ioss::Wedge21::element_connectivity() const
   return connectivity;
 }
 
-Ioss::ElementTopology *Ioss::Wedge21::face_type(int face_number) const
+Ioss::ElementTopology *Ioss::Wedge16::face_type(int face_number) const
 {
   assert(face_number >= 0 && face_number <= number_faces());
   if (face_number == 0) {
     return (Ioss::ElementTopology *)nullptr;
   }
   if (face_number <= 3) {
-    return Ioss::ElementTopology::factory("quad9");
+    //    return Ioss::ElementTopology::factory("quadface8");
+    return Ioss::ElementTopology::factory("quad8");
   }
   else {
-    return Ioss::ElementTopology::factory("tri7");
+    //    return Ioss::ElementTopology::factory("triface6");
+    return Ioss::ElementTopology::factory("tri6");
   }
 }
 
-Ioss::ElementTopology *Ioss::Wedge21::edge_type(int edge_number) const
+Ioss::ElementTopology *Ioss::Wedge16::edge_type(int edge_number) const
 {
   assert(edge_number >= 0 && edge_number <= number_edges());
   return Ioss::ElementTopology::factory("edge3");
 }
 
-Ioss::IntVector Ioss::Wedge21::face_edge_connectivity(int face_number) const
+Ioss::IntVector Ioss::Wedge16::face_edge_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= Constants::nface);
 

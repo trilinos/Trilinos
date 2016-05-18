@@ -626,7 +626,7 @@ int get_elem_info(const int req, const E_Type etype)
 
   case WEDGE15:
     switch (req) {
-    case NNODES: answer                                   = 16; break;
+    case NNODES: answer                                   = 15; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -638,7 +638,7 @@ int get_elem_info(const int req, const E_Type etype)
 
   case WEDGE16:
     switch (req) {
-    case NNODES: answer                                   = 15; break;
+    case NNODES: answer                                   = 16; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -1446,14 +1446,42 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
   };
 
   /* wedge */
-  static int wedge_table[5][9] = {
-    {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
-    {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
-    {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
-    {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
-    {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+  /* wedge 6 or 7 */
+  static int wedge6_table[5][4] = {
+    {1, 2, 5, 4}, /* Side 1 nodes -- quad     */
+    {2, 3, 6, 5}, /* Side 2 nodes -- quad     */
+    {1, 4, 6, 3}, /* Side 3 nodes -- quad     */
+    {1, 3, 2, 0}, /* Side 4 nodes -- triangle */
+    {4, 5, 6, 0}  /* Side 5 nodes -- triangle */
   };
 
+  /* wedge 15 or 16 */
+  static int wedge15_table[5][8] = {
+      {1, 2, 5,  4,  7, 11, 13, 10}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 20 */
+  static int wedge20_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 21 */
+  static int wedge21_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 21}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 19}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 20}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 17,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 18,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+  
   /* hex */
   static int hex_table[6][9] = {
     {1, 2, 6, 5,  9, 14, 17, 13, 26}, /* side 1 */
@@ -1661,12 +1689,12 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     case 3:
     case 4:
       for (i            = 0; i < 3; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 4; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1677,28 +1705,42 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     case 3:
     case 4:
       for (i            = 0; i < 6; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 8; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
       break;
     }
     break;
 
   case WEDGE20:
+    switch (side_num) {
+    case 3:
+    case 4:
+      for (i            = 0; i < 7; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
   case WEDGE21:
     switch (side_num) {
     case 3:
     case 4:
       for (i            = 0; i < 7; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 9; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
       break;
     }
     break;
