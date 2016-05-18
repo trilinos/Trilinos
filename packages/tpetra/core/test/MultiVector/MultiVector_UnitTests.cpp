@@ -2544,7 +2544,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CountDotNonTrivLDA, LO , GO , Scalar , Node )
   {
-    RCP<Node> node = getNode<Node>();
+    out << "Test dot products of MultiVectors created from an input "
+      "Teuchos::ArrayView with nontrivial LDA." << endl;
+    Teuchos::OSTab tab1 (out);
+
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
@@ -2557,7 +2560,8 @@ namespace {
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > map =
+      createContigMapWithNode<LO,GO,Node> (INVALID, numLocal, comm, getNode<Node> ());
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -2576,8 +2580,12 @@ namespace {
     values[6] = as<Scalar>(2);
     values[7] = as<Scalar>(2);
     values[8] = as<Scalar>(-1);
-    MV mvec1(map,values(),LDA,numVectors),
-       mvec2(map,values(),LDA,numVectors);
+
+    out << "Create the two MultiVectors" << endl;
+    MV mvec1(map,values(),LDA,numVectors);
+    MV mvec2(map,values(),LDA,numVectors);
+
+    out << "Do the dot products" << endl;
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
