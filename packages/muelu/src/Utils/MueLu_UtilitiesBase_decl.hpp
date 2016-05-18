@@ -260,7 +260,7 @@ namespace MueLu {
         if(Teuchos::ScalarTraits<Scalar>::magnitude(inputVals[i]) > tol)
           retVals[i] = Teuchos::ScalarTraits<Scalar>::one() / inputVals[i];
         else
-          retVals[i]=Teuchos::ScalarTraits<Scalar>::zero();
+          retVals[i] = tolReplacement;
       }
       return ret;
     }
