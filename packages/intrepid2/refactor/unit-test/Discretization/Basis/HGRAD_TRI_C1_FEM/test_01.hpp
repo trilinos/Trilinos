@@ -317,7 +317,7 @@ namespace Intrepid2 {
       };
 
       try{
-        DynRankView ConstructWithLabel(triNodesHost, 5, 2);
+        DynRankViewHost ConstructWithLabel(triNodesHost, 5, 2);
 
         triNodesHost(0,0) =  0.0;  triNodesHost(0,1) =  0.0;
         triNodesHost(1,0) =  1.0;  triNodesHost(1,1) =  0.0;

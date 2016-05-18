@@ -624,7 +624,7 @@ namespace Intrepid2 {
                 *outStream << "}  computed curl component: " << vals_host(i,j,0)
                            << " but reference curl component: " << curl_value_0 << "\n";
               }
-              if (std::abs(vals(i,j,1) - curl_value_1) > tol) {
+              if (std::abs(vals_host(i,j,1) - curl_value_1) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 // Output the multi-index of the value where the error is:
@@ -798,11 +798,16 @@ namespace Intrepid2 {
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
 
-        DynRankView ConstructWithLabel(bvals, numFields, numFields);
-        DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
+        DynRankView ConstructWithLabel(bvals_dev, numFields, numFields);
+        DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
 
-        quadBasis.getDofCoords(cvals);
-        quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+        quadBasis.getDofCoords(cvals_dev);
+        quadBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+
+        auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
+        Kokkos::deep_copy(bvals, bvals_dev);
+        auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
+        Kokkos::deep_copy(cvals, cvals_dev);
 
         // Check mathematical correctness.
         char buffer[120];

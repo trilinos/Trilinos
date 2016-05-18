@@ -351,7 +351,8 @@ namespace Intrepid2 {
        pyrNodesHost(8,0) = -0.15; pyrNodesHost(8,1) = -0.2;  pyrNodesHost(8,2) = 0.75;
        pyrNodesHost(9,0) = -0.4;  pyrNodesHost(9,1) =  0.9;  pyrNodesHost(9,2) = 0.0;
 
-       const auto pyrNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), pyrNodesHost);
+       auto pyrNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), pyrNodesHost);
+       Kokkos::deep_copy(pyrNodes, pyrNodesHost);
 
        // Dimensions for the output arrays:
        const auto numFields = pyrBasis.getCardinality();

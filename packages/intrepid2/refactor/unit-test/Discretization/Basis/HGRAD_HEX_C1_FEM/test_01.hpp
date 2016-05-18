@@ -556,16 +556,18 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints);
           hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
             for (size_type j=0;j<numPoints;++j)
-              if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
+              if (std::abs(vals_host(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
-                *outStream << "}  computed value: " << vals(i,j)
+                *outStream << "}  computed value: " << vals_host(i,j)
                            << " but reference value: " << basisValues[j][i] << "\n";
               }
         }
@@ -580,17 +582,19 @@ namespace Intrepid2 {
             const auto op = ops[h];
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
             hexBasis.getValues(vals, hexNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
               for (size_type j=0;j<numPoints;++j)
                 for (size_type k=0;k<spaceDim;++k)
-                  if (std::abs(vals(i,j,k) - basisGrads[j][i][k]) > tol) {
+                  if (std::abs(vals_host(i,j,k) - basisGrads[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Output the multi-index of the value where the error is:
                     *outStream << " At multi-index { ";
                     *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                    *outStream << "}  computed grad component: " << vals(i,j,k)
+                    *outStream << "}  computed grad component: " << vals_host(i,j,k)
                                << " but reference grad component: " << basisGrads[j][i][k] << "\n";
                   }
           }
@@ -601,17 +605,19 @@ namespace Intrepid2 {
         {
           DynRankView vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
           hexBasis.getValues(vals, hexNodes, OPERATOR_D2);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
             for (size_type j=0;j<numPoints;++j)
               for (auto k=0;k<D2Cardin;++k)
-                if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisD2[j][i][k]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                  *outStream << "}  computed D2 component: " << vals(i,j,k)
+                  *outStream << "}  computed D2 component: " << vals_host(i,j,k)
                              << " but reference D2 component: " << basisD2[j][i][k] << "\n";
                 }
         }
@@ -634,17 +640,19 @@ namespace Intrepid2 {
             DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
 
             hexBasis.getValues(vals, hexNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (auto i1=0;i1<numFields;++i1)
               for (size_type i2=0;i2<numPoints;++i2)
                 for (auto i3=0;i3<DkCardin;++i3)
-                  if (std::abs(vals(i1,i2,i3)) > tol) {
+                  if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                    *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
+                    *outStream << "}  computed D"<< ord <<" component: " << vals_host(i1,i2,i3)
                                << " but reference D" << ord << " component:  0 \n";
                   }
           }
@@ -688,12 +696,17 @@ namespace Intrepid2 {
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
 
-        DynRankView ConstructWithLabel(bvals, numFields, numFields);
-        DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
+        DynRankView ConstructWithLabel(bvals_dev, numFields, numFields);
+        DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
 
         // Check mathematical correctness.
-        hexBasis.getDofCoords(cvals);
-        hexBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+        hexBasis.getDofCoords(cvals_dev);
+        hexBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
+
+        auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
+        Kokkos::deep_copy(bvals, bvals_dev);
+        auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
+        Kokkos::deep_copy(cvals, cvals_dev);
         for (auto i=0;i<numFields;++i) {
           for (auto j=0;j<numFields;++j) {
             if (i != j && (std::abs(bvals(i,j) - 0.0) > tol)) {

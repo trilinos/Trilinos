@@ -451,7 +451,7 @@ namespace Intrepid2 {
                 
                 // basisGrads is (F,P,D), compute offset:
                 const auto l = k + j * spaceDim + i * spaceDim * numPoints;
-                if (std::abs(vals(i,j,k) - basisGrads[l]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   
@@ -478,7 +478,7 @@ namespace Intrepid2 {
 
                 // basisGrads is (F,P,D), compute offset:
                 const auto l = k + j * spaceDim + i * spaceDim * numPoints;
-                if (std::abs(vals(i,j,k) - basisGrads[l]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -506,7 +506,7 @@ namespace Intrepid2 {
 
                 // basisGrads is (F,P,D), compute offset:
                 const auto l = k + j * D2Cardin + i * D2Cardin * numPoints;
-                if (std::abs(vals(i,j,k) - basisD2[l]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisD2[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -533,7 +533,7 @@ namespace Intrepid2 {
 
                 // basisGrads is (F,P,D), compute offset:
                 const auto l = k + j * D3Cardin + i * D3Cardin * numPoints;
-                if (std::abs(vals(i,j,k) - basisD3[l]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisD3[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -560,7 +560,7 @@ namespace Intrepid2 {
 
                 // basisGrads is (F,P,D), compute offset:
                 const auto l = k + j * D4Cardin + i * D4Cardin * numPoints;
-                if (std::abs(vals(i,j,k) - basisD4[l]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisD4[l]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -602,7 +602,7 @@ namespace Intrepid2 {
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                    *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
+                    *outStream << "}  computed D"<< ord <<" component: " << vals_host(i1,i2,i3)
                                << " but reference D" << ord << " component:  0 \n";
                   }
                 }
