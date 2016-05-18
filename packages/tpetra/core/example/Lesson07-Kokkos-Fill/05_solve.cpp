@@ -403,11 +403,14 @@ int main (int argc, char* argv[]) {
   Tpetra::Vector<> x_exact (x, Teuchos::Copy);
   typedef Tpetra::Vector<>::dual_view_type dual_view_type;
   typedef dual_view_type::t_dev::execution_space execution_space;
+  typedef dual_view_type::t_dev::memory_space memory_space;
+  typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
-  x_exact.sync<execution_space> ();
-  x_exact.modify<execution_space> ();
-  dual_view_type::t_dev x_exact_lcl = x_exact.getDualView ().d_view;
-  Kokkos::parallel_for (numLclNodes, KOKKOS_LAMBDA (const LO node) {
+  x_exact.sync<memory_space> ();
+  x_exact.modify<memory_space> ();
+  auto x_exact_lcl = x_exact.template getLocalView<memory_space> ();
+  Kokkos::parallel_for (policy_type (0, numLclNodes),
+                        KOKKOS_LAMBDA (const LO& node) {
       const double x_cur = x_left + node * dx;
       x_exact_lcl(node,0) -= exactSolution (x_cur, T_left, T_right);
     });

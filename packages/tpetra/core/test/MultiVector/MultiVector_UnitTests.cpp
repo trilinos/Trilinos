@@ -1646,9 +1646,9 @@ namespace {
       // MV allocation favors host space for initial allocations and
       // defers device allocations.
 
-      auto X_local = X->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X1_local = X1->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-      auto X2_local = X2->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_local = X->template getLocalView<Kokkos::HostSpace> ();
+      auto X1_local = X1->template getLocalView<Kokkos::HostSpace> ();
+      auto X2_local = X2->template getLocalView<Kokkos::HostSpace> ();
 
       // Make sure the pointers match.  It doesn't really matter to
       // what X2_local points, as long as it has zero rows.
@@ -3145,19 +3145,18 @@ namespace {
     }
   }
 
-  // Test getDualView() and view semantics.
+  // Test Tpetra::MultiVector dual view semantics.
   //
   // Create a Tpetra::MultiVector X, and fill it with some
-  // characteristic number.  Get its Kokkos::DualView using
-  // getDualView(), modify its data (through Kokkos, not through the
-  // Tpetra::MultiVector) in either memory space (we can test both
-  // sides here -- for devices with a single memory space, that will
-  // just be a redundant test), and sync.  Then, use an independent
-  // mechanism (that doesn't involve Kokkos::DualView or Kokkos::View)
-  // to see whether the Tpetra::MultiVector saw the change.
+  // characteristic number.  Use getLocalView() to modify its data in
+  // either memory space (we can test both sides here -- for devices
+  // with a single memory space, that will just be a redundant test),
+  // and sync.  Then, use an independent mechanism (that doesn't
+  // involve Kokkos::DualView or Kokkos::View) to see whether the
+  // Tpetra::MultiVector saw the change.
   //
-  // This tests whether getDualView() actually returns a view of the
-  // data.  (It must NOT make a deep copy.)
+  // This tests ensures that getLocalView() actually returns a view of
+  // the data, NOT a deep copy.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, getDualView, LO, GO, Scalar, Node )
   {
     out << "Tpetra::MultiVector::getDualView test" << endl;
@@ -3170,6 +3169,8 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::device_type device_type;
+
     int lclSuccess = 1;
     int gblSuccess = 1;
     std::ostringstream errStrm;
@@ -3237,34 +3238,6 @@ namespace {
       return; // no sense in continuing.
     }
 
-    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
-    typedef typename MV::dual_view_type dual_view_type;
-    dual_view_type X_lcl;
-
-    try {
-      X_lcl = X->getDualView ();
-    }
-    catch (std::exception& e) {
-      errStrm << "Process " << myRank << ": MV::getDualView threw exception: "
-              << e.what () << endl;
-      lclSuccess = 0;
-    }
-    gblSuccess = 1;
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST(gblSuccess, 1);
-    if (gblSuccess != 1) {
-      out << "MV::getDualView threw an exception on one or more processes!" << endl;
-      for (int r = 0; r < numProcs; ++r) {
-        if (r == myRank) {
-          std::cerr << errStrm.str ();
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      return; // no sense in continuing.
-    }
-
     // putScalar doesn't sync afterwards, so we have to sync manually.
     // It has the option to modify the data in the last modified
     // location without sync.  (This is supposed to avoid allocation,
@@ -3278,26 +3251,26 @@ namespace {
     // always the default execution space of Kokkos::HostSpace, even
     // when ExecSpace is Kokkos::Serial.  That's why we use
     // execution_space here and not memory_space.
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
-    if (X_lcl.modified_device () > X_lcl.modified_host ()) {
+
+    if (X->template need_sync<Kokkos::HostSpace> ()) {
       out << "Sync to host" << endl;
-      X_lcl.template sync<HMS> ();
-    } else if (X_lcl.modified_device () < X_lcl.modified_host ()) {
+      X->template sync<Kokkos::HostSpace> ();
+    } else if (X->template need_sync<device_type> ()) {
       out << "Sync to device" << endl;
-      X_lcl.template sync<DMS> ();
+      X->template sync<device_type> ();
     } else {
       out << "No need to sync" << endl;
     }
 
-    out << "X_lcl.modified_device: " << X_lcl.modified_device () << endl
-        << "X_lcl.modified_host: " << X_lcl.modified_host () << endl;
-
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
-      lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
+    const bool hostAndDeviceSpacesSame =
+      std::is_same<typename device_type::memory_space,
+                   Kokkos::HostSpace>::value;
+    if (! hostAndDeviceSpacesSame) {
+      lclSuccess = (! X->template need_sync<Kokkos::HostSpace> () &&
+                    ! X->template need_sync<device_type> ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST(gblSuccess, 1);
@@ -3307,22 +3280,22 @@ namespace {
       }
     }
 
-    // Modify the data through the Kokkos::DualView, by setting all of
-    // its entries to a different number than before.  (ONE and TWO
-    // differ even in the finite field Z_2.)
-    typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
-    X_lcl.template modify<HMS> ();
+    // Modify the data through the host View, by setting all of its
+    // entries to a different number than before.  (ONE and TWO differ
+    // even in the finite field Z_2.)
+    auto X_lcl_h = X->template getLocalView<Kokkos::HostSpace> ();
+    X->template modify<Kokkos::HostSpace> ();
     Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<DMS> ();
+    X->template sync<device_type> ();
 
     // Now compute the inf-norms of the columns of X.  (We want a
     // separate mechanism from methods that return Kokkos::DualView or
     // Kokkos::View.)  All inf-norms should be ONE, not TWO.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X->normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X->normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
@@ -3341,16 +3314,18 @@ namespace {
   // make a deep copy.)
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DualViewCtor, LO, GO, Scalar, Node )
   {
-    out << "Tpetra::MultiVector DualView constructor test" << endl;
-    Teuchos::OSTab tab0 (out);
-
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
     typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
+    typedef typename MV::device_type device_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    out << "Tpetra::MultiVector DualView constructor test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
     int lclSuccess = 1;
@@ -3358,8 +3333,6 @@ namespace {
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -3370,17 +3343,21 @@ namespace {
     dual_view_type X_lcl ("X_lcl", numLclRows, numVecs);
 
     // Modify the Kokkos::DualView's data on the host.
-    typename dual_view_type::t_host X_lcl_h = X_lcl.template view<HMS> ();
-    X_lcl.template modify<HMS> ();
+    auto X_lcl_h = X_lcl.template view<Kokkos::HostSpace> ();
+    X_lcl.template modify<Kokkos::HostSpace> ();
     Kokkos::deep_copy (X_lcl_h, ONE);
-    X_lcl.template sync<DMS> ();
+    X_lcl.template sync<device_type> ();
 
     // Make sure that the DualView actually sync'd.
     //
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
+
+    const bool hostAndDeviceSpacesSame = std::is_same<
+      typename dual_view_type::t_dev::memory_space,
+      typename dual_view_type::t_host::memory_space>::value;
+    if (! hostAndDeviceSpacesSame) {
       lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -3402,27 +3379,27 @@ namespace {
     // inf-norm) that X_gbl's constructor didn't change the values in
     // X_lcl.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
 
     // Now change the values in X_lcl.  X_gbl should see them.  Just
     // for variety, we do this on the device, not on the host.
-    typename dual_view_type::t_dev X_lcl_d = X_lcl.template view<DMS> ();
-    X_lcl.template modify<DMS> ();
+    auto X_lcl_d = X_lcl.template view<device_type> ();
+    X_lcl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl_d, TWO);
-    X_lcl.template sync<HMS> ();
+    X_lcl.template sync<Kokkos::HostSpace> ();
 
     // Make sure that the DualView actually sync'd.
     //
     // mfh 01 Mar 2015: DualView doesn't actually reset the modified
     // flags if the host and device memory spaces are the same.  I
     // don't like that, but I don't want to mess with DualView.
-    if (! Kokkos::Impl::is_same<DMS, HMS>::value) {
+    if (! hostAndDeviceSpacesSame) {
       lclSuccess = (X_lcl.modified_device () == X_lcl.modified_host ()) ? 1 : 0;
       gblSuccess = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -3434,9 +3411,9 @@ namespace {
     }
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3459,9 +3436,6 @@ namespace {
   // Tpetra::MultiVector (or the underlying Kokkos::DualView).
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, ViewCtor, LO, GO, Scalar, Node )
   {
-    out << "Tpetra::MultiVector View constructor test" << endl;
-    Teuchos::OSTab tab0 (out);
-
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
@@ -3469,23 +3443,18 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename MV::device_type device_type;
+    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
+    typedef typename MV::dual_view_type dual_view_type;
+
+    out << "Tpetra::MultiVector View constructor test" << endl;
+    Teuchos::OSTab tab0 (out);
+
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
     const Scalar THREE = TWO + ONE;
     int lclSuccess = 1;
     int gblSuccess = 1;
-
-    // This typedef (a 2-D Kokkos::DualView specialization) must exist.
-    typedef typename MV::dual_view_type dual_view_type;
-    // The use of "execution_space" and not "memory_space" here
-    // ensures that Kokkos won't attempt to use a host execution space
-    // that hasn't been initialized.  For example, if Kokkos::OpenMP
-    // is disabled and Kokkos::Threads is enabled, the latter is
-    // always the default execution space of Kokkos::HostSpace, even
-    // when ExecSpace is Kokkos::Serial.  That's why we use
-    // execution_space here and not memory_space.
-    typedef typename dual_view_type::t_dev::execution_space DMS;
-    typedef typename dual_view_type::t_host::execution_space HMS;
 
     // We'll need this for error checking before we need it in Tpetra.
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -3509,17 +3478,17 @@ namespace {
     // inf-norm) that X_gbl's constructor didn't change the values in
     // X_lcl.
     typedef typename MV::mag_type mag_type;
-    Kokkos::DualView<mag_type*, DMS> norms ("norms", numVecs);
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    Kokkos::DualView<mag_type*, device_type> norms ("norms", numVecs);
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), ONE );
     }
 
     // Now change the values in X_lcl.  X_gbl should see them.  Be
     // sure to tell X_gbl that we want to modify its data on device.
-    X_gbl.template modify<DMS> ();
+    X_gbl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl, TWO);
 
     // Tpetra::MultiVector::normInf _should_ either read from the most
@@ -3528,9 +3497,9 @@ namespace {
     // before calling normInf.
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
-    norms.template modify<DMS> ();
-    X_gbl.normInf (norms.template view<DMS> ());
-    norms.template sync<HMS> ();
+    norms.template modify<device_type> ();
+    X_gbl.normInf (norms.template view<device_type> ());
+    norms.template sync<Kokkos::HostSpace> ();
     for (size_t k = 0; k < numVecs; ++k) {
       TEST_EQUALITY_CONST( norms.h_view(k), TWO );
     }
@@ -3539,12 +3508,11 @@ namespace {
     // if we modify X_gbl in host memory, and sync to device memory,
     // X_lcl should also be changed.
 
-    typename dual_view_type::t_host X_host =
-      X_gbl.template getLocalView<HMS> ();
-    X_gbl.template modify<HMS> ();
+    auto X_host = X_gbl.template getLocalView<Kokkos::HostSpace> ();
+    X_gbl.template modify<Kokkos::HostSpace> ();
 
     Kokkos::deep_copy (X_host, THREE);
-    X_gbl.template sync<DMS> ();
+    X_gbl.template sync<device_type> ();
 
     // FIXME (mfh 01 Mar 2015) We avoid writing a separate functor to
     // check the contents of X_lcl, by copying to host and checking

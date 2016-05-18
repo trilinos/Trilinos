@@ -288,6 +288,7 @@ namespace Tpetra {
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> V;
 
     const Teuchos::EVerbosityLevel vl =
       (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
@@ -316,7 +317,6 @@ namespace Tpetra {
               // VERB_HIGH and higher prints isConstantStride() and stride()
               if (vl == VERB_EXTREME && lclNumRows > 0) {
                 // VERB_EXTREME prints values
-                dual_view_type X_lcl = this->getDualView ();
 
                 // We have to be able to access the data on host in
                 // order to print it.
@@ -324,10 +324,9 @@ namespace Tpetra {
                 // FIXME (mfh 06 Mar 2015) For now, just sync to host.
                 // At some point, we might like to check whether the
                 // host execution space can access device memory, so
-                // that we can avoid the sync.
-                typedef typename dual_view_type::t_host::execution_space HES;
-                X_lcl.template sync<HES> ();
-                typename dual_view_type::t_host X_host = X_lcl.h_view;
+                // that we can avoid the sync
+                const_cast<V*> (this)->template sync<Kokkos::HostSpace> ();
+                auto X_host = this->template getLocalView<Kokkos::HostSpace> ();
                 for (size_t i = 0; i < lclNumRows; ++i) {
                   out << setw(width) << this->getMap ()->getGlobalElement (i)
                       << ": " << X_host(i,0) << endl;

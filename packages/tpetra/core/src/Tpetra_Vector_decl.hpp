@@ -250,9 +250,9 @@ public:
   /// This method affects the host memory version of the data.  If the
   /// \c DeviceType template parameter is a device that has two memory
   /// spaces, and you want to modify the non-host version of the data,
-  /// you must access the DualView directly by calling getDualView().
-  /// Please see modify(), sync(), and the discussion of DualView
-  /// semantics elsewhere in the documentation.
+  /// you must access the device View directly by calling
+  /// getLocalView().  Please see modify(), sync(), and the discussion
+  /// of DualView semantics elsewhere in the documentation.
   ///
   /// \param globalRow [in] Global row index of the entry to modify.
   ///   This <i>must</i> be a valid global row index on the calling
@@ -279,9 +279,9 @@ public:
   /// This method affects the host memory version of the data.  If the
   /// \c DeviceType template parameter is a device that has two memory
   /// spaces, and you want to modify the non-host version of the data,
-  /// you must access the DualView directly by calling getDualView().
-  /// Please see modify(), sync(), and the discussion of DualView
-  /// semantics elsewhere in the documentation.
+  /// you must access the device View directly by calling
+  /// getLocalView().  Please see modify(), sync(), and the discussion
+  /// of DualView semantics elsewhere in the documentation.
   ///
   /// \param localRow [in] Local row index of the entry to modify.
   /// \param value [in] Incoming value to add to the entry.
