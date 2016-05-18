@@ -158,8 +158,9 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 // forward declarations
 
 void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-		 FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary);
+                 FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary);
 
+void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
 void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
 /**********************************************************************************/
@@ -621,8 +622,10 @@ int main(int argc, char *argv[]) {
    FieldContainer<double> nodeCoord(P2_numNodes,dim);
    FieldContainer<int>   nodeOnBoundary(P2_numNodes);
    PromoteMesh(2,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
-	       elemToNode, nodeCoord, nodeOnBoundary);
+               elemToNode, nodeCoord, nodeOnBoundary);
 
+   FieldContainer<int> aux_P1_elemToNode(numElems*4,P1_numNodesPerElem); //4 P1 elements per P2 element
+   CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
    // Only works in serial
    std::vector<bool>nodeIsOwned(P2_numNodes,true);
@@ -644,7 +647,8 @@ int main(int argc, char *argv[]) {
    // Print mesh information
    if (MyPID == 0){
      std::cout << " Number of P2 Global Elements: " << numElemsGlobal << " \n";
-     std::cout << " Number of P2 Global Nodes: " << numNodesGlobal << " \n\n";
+     std::cout << " Number of P2 Global Nodes: " << numNodesGlobal << " \n";
+     std::cout << " Number of faux P1 Global Elements: " << aux_P1_elemToNode.dimension(0) << " \n\n";
    }
 
 
@@ -768,37 +772,37 @@ int main(int argc, char *argv[]) {
 
 
   // Vector for use in applying BCs
-   Epetra_MultiVector v(globalMapG,true);
-   v.PutScalar(0.0);
+  Epetra_MultiVector v(globalMapG,true);
+  v.PutScalar(0.0);
 
-   // Set v to boundary values on Dirichlet nodes
-    int * BCNodes = new int [numBCNodes];
-    int indbc=0;
-    int iOwned=0;
-    for (int inode=0; inode<numNodes; inode++){
-      if (nodeIsOwned[inode]){
-        if (nodeOnBoundary(inode)){
-           BCNodes[indbc]=iOwned;
-           indbc++;
-           double x  = nodeCoord(inode, 0);
-           double y  = nodeCoord(inode, 1);
-           v[0][iOwned]=exactSolution(x, y);
-        }
-         iOwned++;
+  // Set v to boundary values on Dirichlet nodes
+  int * BCNodes = new int [numBCNodes];
+  int indbc=0;
+  int iOwned=0;
+  for (int inode=0; inode<numNodes; inode++){
+    if (nodeIsOwned[inode]){
+      if (nodeOnBoundary(inode)){
+        BCNodes[indbc]=iOwned;
+        indbc++;
+        double x  = nodeCoord(inode, 0);
+        double y  = nodeCoord(inode, 1);
+        v[0][iOwned]=exactSolution(x, y);
       }
+      iOwned++;
     }
+  }
 
     
-   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
-                 << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
+  if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
+                << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
 
 
-/**********************************************************************************/
-/******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
-/**********************************************************************************/
+  /**********************************************************************************/
+  /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
+  /**********************************************************************************/
 
 
- // Define desired workset size and count how many worksets there are on this processor's mesh block
+  // Define desired workset size and count how many worksets there are on this processor's mesh block
   int desiredWorksetSize = numElems;                      // change to desired workset size!
   //int desiredWorksetSize = 100;                      // change to desired workset size!
   int numWorksets        = numElems/desiredWorksetSize;
@@ -806,7 +810,7 @@ int main(int argc, char *argv[]) {
   // When numElems is not divisible by desiredWorksetSize, increase workset count by 1
   if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
 
- if (MyPID == 0) {
+  if (MyPID == 0) {
     std::cout << "Building discretization matrix and right hand side... \n\n";
     std::cout << "\tDesired workset size:                 " << desiredWorksetSize <<"\n";
     std::cout << "\tNumber of worksets (per processor):   " << numWorksets <<"\n\n";
@@ -821,11 +825,11 @@ int main(int argc, char *argv[]) {
     int worksetEnd   = (workset + 1)*desiredWorksetSize;
 
     // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
-     worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
 
     // Now we know the actual workset size and can allocate the array for the cell nodes
-     worksetSize  = worksetEnd - worksetBegin;
-     FieldContainer<double> cellWorkset(worksetSize, P2_numNodesPerElem, spaceDim);
+    worksetSize  = worksetEnd - worksetBegin;
+    FieldContainer<double> cellWorkset(worksetSize, P2_numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
     int cellCounter = 0;
@@ -837,11 +841,11 @@ int main(int argc, char *argv[]) {
       cellCounter++;
     }
 
- /**********************************************************************************/
- /*                                Allocate arrays                                 */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                Allocate arrays                                 */
+    /**********************************************************************************/
 
-   // Containers for Jacobians, integration measure & cubature points in workset cells
+    // Containers for Jacobians, integration measure & cubature points in workset cells
     FieldContainer<double> worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobDet  (worksetSize, numCubPoints);
@@ -865,41 +869,41 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
     FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
 
-   if(MyPID==0) {std::cout << msg << "Allocate arrays                             "
+    if(MyPID==0) {std::cout << msg << "Allocate arrays                             "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
 
- /**********************************************************************************/
- /*                                Calculate Jacobians                             */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                Calculate Jacobians                             */
+    /**********************************************************************************/
 
-      IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, P2_cellType);
-      IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
-      IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
+    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, P2_cellType);
+    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
-   if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
-                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
- /**********************************************************************************/
- /*          Cubature Points to Physical Frame and Compute Data                    */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*          Cubature Points to Physical Frame and Compute Data                    */
+    /**********************************************************************************/
 
-   // map cubature points to physical frame
+    // map cubature points to physical frame
     IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, P2_cellType);
 
-   // get A at cubature points
+    // get A at cubature points
     evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
 
-   // get source term at cubature points
+    // get source term at cubature points
     evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
 
-   if(MyPID==0) {std::cout << msg << "Map to physical frame and get source term   "
+    if(MyPID==0) {std::cout << msg << "Map to physical frame and get source term   "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
 
-/**********************************************************************************/
- /*                         Compute Stiffness Matrix                               */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*                         Compute Stiffness Matrix                               */
+    /**********************************************************************************/
 
     // Transform basis gradients to physical frame:
     IntrepidFSTools::HGRADtransformGRAD<double>(worksetHGBGrads,                // DF^{-T}(grad u)
@@ -915,44 +919,44 @@ int main(int argc, char *argv[]) {
                                              worksetCubWeights, worksetHGBGrads);
 
 
-   // Compute the diffusive flux:
+    // Compute the diffusive flux:
     IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
                                                      worksetMaterialVals,
                                                      worksetHGBGrads);
 
     // Integrate to compute workset diffusion contribution to global matrix:
-    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                      // (DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
+    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                    //(DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
                                        worksetHGBGradsWeighted,
                                        worksetDiffusiveFlux, COMP_BLAS);
 
-   if(MyPID==0) {std::cout << msg << "Compute stiffness matrix                    "
-                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+    if(MyPID==0) {std::cout << msg << "Compute stiffness matrix                    "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
 
- /**********************************************************************************/
- /*                                   Compute RHS                                  */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*                                   Compute RHS                                  */
+    /**********************************************************************************/
 
-   // Transform basis values to physical frame:
+    // Transform basis values to physical frame:
     IntrepidFSTools::HGRADtransformVALUE<double>(worksetHGBValues,              // clones basis values (u)
                                                  HGBValues);
 
-   // Multiply transformed (workset) values with weighted measure
+    // Multiply transformed (workset) values with weighted measure
     IntrepidFSTools::multiplyMeasure<double>(worksetHGBValuesWeighted,          // (u)*J*w
                                              worksetCubWeights, worksetHGBValues);
 
-   // Integrate worksetSourceTerm against weighted basis function set
+    // Integrate worksetSourceTerm against weighted basis function set
     IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
                                        worksetSourceTerm,
                                        worksetHGBValuesWeighted,  COMP_BLAS);
 
 
-   if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
+    if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
                   << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
- /**********************************************************************************/
- /*                         Assemble into Global Matrix                            */
- /**********************************************************************************/
+    /**********************************************************************************/
+    /*                         Assemble into Global Matrix                            */
+    /**********************************************************************************/
 
     //"WORKSET CELL" loop: local cell ordinal is relative to numElems
     for(int cell = worksetBegin; cell < worksetEnd; cell++){
@@ -1604,12 +1608,12 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       int edge_id;
       en_map_type::iterator iter = edge_map.find(ep);      
       if(iter==edge_map.end()) {
-	edge_map[ep] = num_edges;
-	edge_id = num_edges;
-	num_edges++;
+        edge_map[ep] = num_edges;
+        edge_id = num_edges;
+        num_edges++;
       }
       else
-	edge_id = (*iter).second;
+        edge_id = (*iter).second;
       
       elemToEdge(i,j) = edge_id;
       elemToEdgeOrient(i,j) = (lo==elemToNode(i,edge_node0_id[j]))?1:-1;
@@ -1623,7 +1627,7 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
       int n0 = elemToNode(i,edge_node0_id[j]);
       int n1 = elemToNode(i,edge_node1_id[j]);
       for(int k=0; k<dim; k++)
-	edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
+        edgeCoord(elemToEdge(i,j),k) = (nodeCoord(n0,k)+nodeCoord(n1,k))/2.0;
     }
   }
   
@@ -1631,8 +1635,16 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
 
 /*********************************************************************************************************/
 
-void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-		 FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary) {
+void PromoteMesh(const int degree,
+                 const FieldContainer<int>    & P1_elemToNode,
+                 const FieldContainer<double> & P1_nodeCoord,
+                 const FieldContainer<double> & P1_edgeCoord,
+                 const FieldContainer<int>    & P1_elemToEdge,
+                 const FieldContainer<int>    & P1_elemToEdgeOrient,
+                 const FieldContainer<int>    & P1_nodeOnBoundary,
+                 FieldContainer<int>          & P2_elemToNode,
+                 FieldContainer<double>       & P2_nodeCoord,
+                 FieldContainer<int>          & P2_nodeOnBoundary) {
 
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
@@ -1688,7 +1700,7 @@ void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, co
     for(int j=0; j<dim; j++) {
       P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) =0;
       for(int k=0; k<P1_numNodesperElem; k++)
-	P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) += P1_nodeCoord(P1_elemToNode(i,k),j) / P1_numNodesperElem;
+        P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) += P1_nodeCoord(P1_elemToNode(i,k),j) / P1_numNodesperElem;
     }
   
 
@@ -1711,9 +1723,64 @@ void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, co
       int n1 = P1_elemToNode(i,edge_node1_id[j]);
 
       if(P1_nodeOnBoundary(n0) && P2_nodeOnBoundary(n1)) 
-	P2_nodeOnBoundary(P1_numNodes+P1_edge) = 1;
+        P2_nodeOnBoundary(P1_numNodes+P1_edge) = 1;
     }
   }
 }
 
+/*********************************************************************************************************/
 
+void CreateP1MeshFromP2Mesh(
+                 FieldContainer<int> const    & P2_elemToNode,
+                 FieldContainer<int>          & P1_elemToNode)
+{
+
+  /*
+    Main idea:
+    For each P2 element
+        Create four P1 elements
+        For each of those P1 elements
+          Create element to node map
+  */
+
+  int P2_numElems        = P2_elemToNode.dimension(0);
+
+  int p1ElemCtr=0;
+  for (int i=0; i<P2_numElems; ++i) {
+
+    /*
+    How "P1" elements are traversed in a P2 element
+
+    inode3 -- inode6 -- inode2    
+
+       |   3    |     2    |
+
+    inode7 -- inode8 -- inode5
+
+       |   0    |     1    |       
+
+    inode0 -- inode4 -- inode1
+    */
+
+    P1_elemToNode(p1ElemCtr,0) = P2_elemToNode(i,0);
+    P1_elemToNode(p1ElemCtr,1) = P2_elemToNode(i,4);
+    P1_elemToNode(p1ElemCtr,2) = P2_elemToNode(i,8);
+    P1_elemToNode(p1ElemCtr++,3) = P2_elemToNode(i,7);
+
+    P1_elemToNode(p1ElemCtr,0) = P2_elemToNode(i,4);
+    P1_elemToNode(p1ElemCtr,1) = P2_elemToNode(i,1);
+    P1_elemToNode(p1ElemCtr,2) = P2_elemToNode(i,5);
+    P1_elemToNode(p1ElemCtr++,3) = P2_elemToNode(i,8);
+
+    P1_elemToNode(p1ElemCtr,0) = P2_elemToNode(i,8);
+    P1_elemToNode(p1ElemCtr,1) = P2_elemToNode(i,5);
+    P1_elemToNode(p1ElemCtr,2) = P2_elemToNode(i,2);
+    P1_elemToNode(p1ElemCtr++,3) = P2_elemToNode(i,6);
+
+    P1_elemToNode(p1ElemCtr,0) = P2_elemToNode(i,7);
+    P1_elemToNode(p1ElemCtr,1) = P2_elemToNode(i,8);
+    P1_elemToNode(p1ElemCtr,2) = P2_elemToNode(i,6);
+    P1_elemToNode(p1ElemCtr++,3) = P2_elemToNode(i,3);
+
+  }
+} //CreateP1MeshFromP2Mesh
