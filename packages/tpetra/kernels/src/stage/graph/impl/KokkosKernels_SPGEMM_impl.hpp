@@ -266,7 +266,7 @@ public:
       lno_t prev_n_set_index = n >> compression_bit_divide_shift;
       lno_t prev_n_set = 1; lno_t n_mask = n & compression_bit_mask;  prev_n_set = prev_n_set << n_mask;
 
-      lno_t prev_set_begin_index = ii;
+      //lno_t prev_set_begin_index = ii;
       //set_entries_begin(prev_n_set_index) = ii++;
 
       set_entries_begin(newrowBegin) = ii++;
@@ -564,7 +564,7 @@ public:
 
       for (; row_index < row_max; ++row_index){
         c_nnz_lno_t used_index_count = 0;
-        c_nnz_lno_t next_available_entry = 0;
+        //c_nnz_lno_t next_available_entry = 0;
 
 
         //check ii is out of range. if it is, just return.
@@ -608,7 +608,7 @@ public:
       int lnot_size = sizeof (c_nnz_lno_t) * 8;
 
       int multiplier_shift = 0;
-      const c_nnz_lno_t remainder_and = lnot_size - 1;
+      //const c_nnz_lno_t remainder_and = lnot_size - 1;
 
       while (lnot_size > 1) {
         ++multiplier_shift;
@@ -1684,7 +1684,7 @@ public:
 
         c_nnz_lno_t col_begin = row_mapA[row_index];
         const c_nnz_lno_t col_end = row_mapA[row_index + 1];
-        const c_nnz_lno_t num_cols = col_end - col_begin;
+        //const c_nnz_lno_t num_cols = col_end - col_begin;
 
         //std::cout << "row:" << row_index << " num_cols :" << num_cols  << std::endl;
         c_nnz_lno_t heap_size = 0;
@@ -1897,134 +1897,6 @@ public:
 
 
     }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const MultiCoreTagCount&, const team_member_t & teamMember) const {
-      row_lno_t row_index = teamMember.league_rank() * multicore_chunk_size;
-      const int row_max = KOKKOSKERNELS_MACRO_MIN(row_index + multicore_chunk_size, m);
-      //printf("myRowMin:%d rowMax:%d\n", row_index, row_max);
-
-
-      const size_t hash_index_array_size = max_a_nnz * sizeof(c_nnz_lno_t);
-      const size_t hash_begin_array_size = hash_size * sizeof(c_nnz_lno_t);
-      c_nnz_lno_t *hash_begins = (c_nnz_lno_t *) teamMember.team_shmem().get_shmem(hash_begin_array_size);
-      c_nnz_lno_t *hash_nexts = (c_nnz_lno_t *) teamMember.team_shmem().get_shmem(hash_index_array_size);
-      c_nnz_lno_t *hash_indices = (c_nnz_lno_t *) teamMember.team_shmem().get_shmem(hash_index_array_size);
-      c_nnz_lno_t *hash_values = (c_nnz_lno_t *) teamMember.team_shmem().get_shmem(hash_index_array_size);
-      c_nnz_lno_t *used_hash_indices = (c_nnz_lno_t *) teamMember.team_shmem().get_shmem(hash_begin_array_size);
-
-      for (size_t i = 0; i < max_a_nnz; ++i){
-        hash_nexts[i] = -1;
-      }
-
-      for (size_t i = 0; i < hash_size; ++i){
-        hash_begins[i] = -1;
-      }
-#ifdef HASHTRACK
-      size_t numhashes = 0;
-      size_t numpoints = 0;
-      size_t num_comp = 0;
-      size_t num_mul = 0;
-#endif
-      for (; row_index < row_max; ++row_index){
-        c_nnz_lno_t used_hash_counts = 0;
-        c_nnz_lno_t next_available_entry = 0;
-
-        //check ii is out of range. if it is, just return.
-        row_lno_t col_begin = row_mapA[row_index];
-        const row_lno_t col_end = row_mapA[row_index + 1];
-        for (; col_begin < col_end; ++col_begin){
-          //printf("col_begin:%d\n", col_begin);
-          const nnz_lno_t rowb = entriesA[col_begin];
-
-          //std::cout << "  for column:" << rowb << std::endl;
-          row_lno_t colb_ind = row_mapB[rowb];
-          const row_lno_t col_b_end = row_mapB[rowb + 1];
-          for (; colb_ind < col_b_end; ){
-            //printf("colb_ind:%d\n", colb_ind);
-            const c_nnz_lno_t b_col_set_index = entriesSetIndicesB[colb_ind];
-            const c_nnz_lno_t b_col_set = entriesSetsB[colb_ind];
-            {
-              //printf("b_col_set_index:%d", b_col_set_index)
-              const c_nnz_lno_t hash = b_col_set_index & pow2_hash_func;
-              //std::cout << "\tinserting:" << b_col_set_index << " hash:" << hash << std::endl;
-              c_nnz_lno_t hash_ind = hash_begins[hash];
-              //std::cout << "\t\thash begin:" << hash_ind << std::endl;
-#ifdef HASHTRACK
-              ++num_mul;
-#endif
-              if (hash_ind == -1){
-                //std::cout << "\t\tinserting for the first time" << std::endl;
-                hash_begins[hash] = next_available_entry;
-                hash_indices[next_available_entry] = b_col_set_index;
-                hash_values[next_available_entry++] = b_col_set;
-                used_hash_indices[used_hash_counts++] = hash;
-              }
-              else {
-                while (hash_nexts[hash_ind] != -1){
-                  if(b_col_set_index ^ hash_indices[hash_ind]){ //if they are not equal
-                    hash_ind = hash_nexts[hash_ind];
-#ifdef HASHTRACK
-                    ++num_comp;
-#endif
-                  }
-                  else {
-                    hash_values[hash_ind] = hash_values[hash_ind] | b_col_set;
-                    goto endloop; //break;
-                  }
-                }
-                if(b_col_set_index ^ hash_indices[hash_ind]){ //if they are not equal
-                  hash_nexts[hash_ind] = next_available_entry;
-                  hash_indices[next_available_entry] = b_col_set_index;
-                  hash_values[next_available_entry++] = b_col_set;
-                }
-                else {
-                  hash_values[hash_ind] = hash_values[hash_ind] | b_col_set;
-                }
-              }
-            }
-            endloop:
-            ++colb_ind;
-          }
-        }
-        c_nnz_lno_t  my_nonzeros = 0;
-        for (c_nnz_lno_t i = 0; i < used_hash_counts; ++i){
-#ifdef HASHTRACK
-          ++numhashes;
-#endif
-          const int hash = used_hash_indices[i];
-          c_nnz_lno_t hash_ind = hash_begins[hash];
-
-          hash_begins[hash] = -1;
-          do {
-#ifdef HASHTRACK
-            ++numpoints;
-#endif
-            if (hash_ind >= max_a_nnz){
-              std::cout << "HASHVALS SIZE MaxRoughNonZero:" << max_a_nnz << " hash_ind:" << hash_ind << std::endl;
-            }
-            c_nnz_lno_t c_rows = hash_values[hash_ind];
-            c_nnz_lno_t newhash_ind = hash_nexts[hash_ind];
-
-            hash_nexts[hash_ind] = -1;
-            hash_ind = newhash_ind;
-            for (; c_rows; my_nonzeros++)
-            {
-              c_rows &= c_rows - 1; // clear the least significant bit set
-            }
-          }
-          while (hash_ind != -1);
-        }
-        rowmapC(row_index) = my_nonzeros;
-      }
-#ifdef HASHTRACK
-      printf("numhash:%ld np:%ld numComparison:%ld numOP:%ld\n", numhashes, numpoints, num_comp, num_mul);
-#endif
-
-    }
-
-
-
 
     // Provide the shared memory capacity.
     // This function takes the team_size as an argument ,
@@ -2368,7 +2240,7 @@ public:
       }
     }
 #endif
-    bool used_dense_accumulator = true;
+    //bool used_dense_accumulator = true;
     size_t min_pow2_hash_size = 1;
 
     if (this->handle->get_spgemm_handle()->get_algorithm_type() == KokkosKernels::Experimental::Graph::SPGEMM_KK2){

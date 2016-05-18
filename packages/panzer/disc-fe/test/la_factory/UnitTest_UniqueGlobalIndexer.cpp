@@ -267,9 +267,9 @@ const std::vector<int> & UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getB
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
 {
-   vertices.resize(1,4,2);
+  Kokkos::realloc(vertices,1,4,2);
    switch(procRank_) {
    case 0:
       vertices(0,0,0) = 0.0; vertices(0,0,1) = 0.0;
@@ -488,9 +488,9 @@ const std::vector<int> & UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinal
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & vertices)
+void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & vertices)
 {
-   vertices.resize(1,1,2);
+  Kokkos::realloc(vertices,1,1,2);
    switch(procRank_) {
    case 0:
       vertices(0,0,0) = 0.5; vertices(0,0,1) = 0.5;

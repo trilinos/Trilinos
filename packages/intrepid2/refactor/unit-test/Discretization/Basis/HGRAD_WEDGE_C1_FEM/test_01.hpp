@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                      \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -109,6 +109,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
         typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+        typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -215,7 +216,7 @@ namespace Intrepid2 {
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
         }
-      } catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -228,7 +229,7 @@ namespace Intrepid2 {
         << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
         << "===============================================================================\n";
   
-      try{
+      try {
         const auto numFields = wedgeBasis.getCardinality();
         const auto allTags = wedgeBasis.getAllDofTags();
 
@@ -353,7 +354,7 @@ namespace Intrepid2 {
       };
       
       try {
-        DynRankView ConstructWithLabel(wedgeNodesHost, 12, 3);
+        DynRankViewHost ConstructWithLabel(wedgeNodesHost, 12, 3);
 
         wedgeNodesHost(0,0) =  0.0;  wedgeNodesHost(0,1) =  0.0;  wedgeNodesHost(0,2) = -1.0;  
         wedgeNodesHost(1,0) =  1.0;  wedgeNodesHost(1,1) =  0.0;  wedgeNodesHost(1,2) = -1.0;  
@@ -369,7 +370,8 @@ namespace Intrepid2 {
         wedgeNodesHost(10,0)=  0.0;  wedgeNodesHost(10,1)=  0.44; wedgeNodesHost(10,2)= -0.23;  
         wedgeNodesHost(11,0)=  0.4;  wedgeNodesHost(11,1)=  0.6;  wedgeNodesHost(11,2)=  0.0;  
 
-        const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+        auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+        Kokkos::deep_copy(wedgeNodes, wedgeNodesHost);
 
         // Dimensions for the output arrays:
         const auto numFields = wedgeBasis.getCardinality();
@@ -510,7 +512,7 @@ namespace Intrepid2 {
                 }
           }
         }
-      } catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       }

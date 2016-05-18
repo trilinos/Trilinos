@@ -67,11 +67,8 @@ int elem_info(int info, int ielem_type, int supp)
  * about element type, ielem_type:
  *
  *	NNODES     = Number of nodes in the element
- *	NQUAD      = Number of volume quadrature points
  *	NDIM	   = Dimension of the element
- *	NQUAD_SURF = Number of surface quadrature points
  *      NN_SIDE    = Number of nodes on a side/face of the element.
- *      CHILD      = Child element of the current element.
  */
 
 {
@@ -173,13 +170,9 @@ int elem_info(int info, int ielem_type, int supp)
   case BAR2:
   case SHELL2:
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 2; break;
-    case NQUAD: /* number of quadrature points */ answer        = 2; break;
-    case NDIM: /* number of physical dimensions */ answer       = 1; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 0; break;
-    case NINTERP: /* highest order of interpolation */ answer   = LINEAR; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 1; break;
-    case CHILD: /* child element */ exit(1);
+    case NNODES:  answer                   = 2; break;
+    case NDIM:  answer       = 1; break;
+    case NN_SIDE:  answer   = 1; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
@@ -187,155 +180,126 @@ int elem_info(int info, int ielem_type, int supp)
   case BAR3:
   case SHELL3:
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 3; break;
-    case NQUAD: /* number of quadrature points */ answer        = 3; break;
-    case NDIM: /* number of physical dimensions */ answer       = 1; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 0; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 1; break;
-    case CHILD: /* child element */ exit(1);
+    case NNODES:  answer                   = 3; break;
+    case NDIM:  answer       = 1; break;
+    case NN_SIDE:  answer   = 1; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD4:       /* bilinear quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 4; break;
-    case NQUAD: /* number of quadrature points */ answer        = 4; break;
-    case NDIM: /* number of physical dimensions */ answer       = 2; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 2; break;
-    case NINTERP: /* highest order of interpolation */ answer   = LINEAR; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 2; break;
-    case CHILD: /* child element */ answer                      = BAR2; break;
+    case NNODES:  answer                   = 4; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 2; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD8:       /* biquadratic serendipity quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 8; break;
-    case NQUAD: /* number of quadrature points */ answer        = 9; break;
-    case NDIM: /* number of physical dimensions */ answer       = 2; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 3; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 3; break;
-    case CHILD: /* child element */ answer                      = BAR3; break;
+    case NNODES:  answer                   = 8; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD9:       /* biquadratic quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 9; break;
-    case NQUAD: /* number of quadrature points */ answer        = 9; break;
-    case NDIM: /* number of physical dimensions */ answer       = 2; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 3; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 3; break;
-    case CHILD: /* child element */ answer                      = BAR3; break;
+    case NNODES:  answer                   = 9; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI3:
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 3; break;
-    case NQUAD: /* number of quadrature points */ answer        = 4; break;
-    case NDIM: /* number of physical dimensions */ answer       = 2; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 2; break;
-    case NINTERP: /* highest order of interpolation */ answer   = LINEAR; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 2; break;
-    case CHILD: /* child element */ answer                      = LINEAR; break;
+    case NNODES:  answer                   = 3; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 2; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI6:
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 6; break;
-    case NQUAD: /* number of quadrature points */ answer        = 7; break;
-    case NDIM: /* number of physical dimensions */ answer       = 2; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 3; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 3; break;
-    case CHILD: /* child element */ answer                      = QUADRATIC; break;
+    case NNODES:  answer                   = 6; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX8:        /* trilinear hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 8; break;
-    case NQUAD: /* number of quadrature points */ answer        = 8; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 4; break;
-    case NINTERP: /* highest order of interpolation */ answer   = LINEAR; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 4; break;
-    case CHILD: /* child element */ answer                      = QUAD4; break;
+    case NNODES:  answer                   = 8; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 4; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX20:       /* serendipity triquadratic hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 20; break;
-    case NQUAD: /* number of quadrature points */ answer        = 27; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 9; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 8; break;
-    case CHILD: /* child element */ answer                      = QUAD8; break;
+    case NNODES:  answer                   = 20; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 8; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX27:       /* triquadratic hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 27; break;
-    case NQUAD: /* number of quadrature points */ answer        = 27; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 9; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 9; break;
-    case CHILD: /* child element */ answer                      = QUAD9; break;
+    case NNODES:  answer                   = 27; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 9; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET4:        /* trilinear tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 4; break;
-    case NQUAD: /* number of quadrature points */ answer        = 5; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 4; break;
-    case NINTERP: /* highest order of interpolation */ answer   = LINEAR; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 3; break;
-    case CHILD: /* child element */ answer                      = TRI3; break;
+    case NNODES:  answer                   = 4; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TET10:       /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 10; break;
-    case NQUAD: /* number of quadrature points */ answer        = 15; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 7; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 6; break;
-    case CHILD: /* child element */ answer                      = TRI6; break;
+    case NNODES:  answer                   = 10; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 6; break;
+    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    }
+    break;
+
+  case TET14:       /* triquadradic tetrahedron */
+    switch (info) { /* select type of information required */
+    case NNODES:  answer                   = 14; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 7; break;
+    default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
+    }
+    break;
+
+  case TET15:       /* triquadradic tetrahedron */
+    switch (info) { /* select type of information required */
+    case NNODES:  answer                   = 15; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 7; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET8:        /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES: /* number of nodes */ answer                   = 8; break;
-    case NQUAD: /* number of quadrature points */ answer        = 15; break;
-    case NDIM: /* number of physical dimensions */ answer       = 3; break;
-    case NQUAD_SURF: /* number of surface quad points */ answer = 7; break;
-    case NINTERP: /* highest order of interpolation */ answer   = QUADRATIC; break;
-    case NN_SIDE: /* number of nodes on a side/face */ answer   = 4; break;
+    case NNODES:  answer                   = 8; break;
+    case NDIM:  answer       = 3; break;
+    case NN_SIDE:  answer   = 4; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
@@ -382,6 +346,40 @@ int elem_info(int info, int ielem_type, int supp)
       case 5: answer = 6; break;
 
       default: answer = 8; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case WEDGE20:
+    switch (info) {
+    case NNODES: answer = 20; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 4:
+      case 5: answer = 7; break;
+
+      default: answer = 9; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case WEDGE21:
+    switch (info) {
+    case NNODES: answer = 21; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 4:
+      case 5: answer = 7; break;
+
+      default: answer = 9; break;
       }
       break;
 

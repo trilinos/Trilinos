@@ -49,111 +49,340 @@
 // 4. Deep copy host view to device view
 // Note: Kokkos::parallel_for() initializations were removed to initialize on host
 
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 
+#include <stk_mesh/base/Field.hpp>
+#include <stk_unit_test_utils/getOption.h>
+#include <stk_unit_test_utils/ioUtils.hpp>
 #include "mtk_kokkos.h"
+#include <stk_util/stk_config.h>
+
+#if KOKKOS_HAVE_CUDA
+typedef double my_double;
+#else
+typedef long double my_double;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+typedef Kokkos::OpenMP   ExecSpace ;
+#elif KOKKOS_HAVE_CUDA
+typedef Kokkos::Cuda     ExecSpace ;
+#else
+typedef Kokkos::Serial   ExecSpace ;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+typedef Kokkos::OpenMP       MemSpace;
+#elif KOKKOS_HAVE_CUDA
+typedef Kokkos::CudaSpace    MemSpace;
+#else
+typedef Kokkos::HostSpace    MemSpace;
+#endif
 
 
-void calculate_centroid(int N, int M, int nrepeat) {
-  
-  //EXERCISE: Create two types of views, one for device
-  //  the other a mirror to host view
-  
-  // 1. Device Views
-  // typedef Kokkos::View<double*>   ViewVectorType;
-  // typedef Kokkos::View<double**>   ViewMatrixType;
-  // ViewVectorType devy("devy", N);
-  // ViewVectorType devx("devx", M);
-  // ViewMatrixType devA("devA", N, M);
+// typedef Kokkos::LayoutLeft   Layout ;
 
-  // 2. Host View (mirrors)
-  // ViewVectorType::HostMirror y =  Kokkos::create_mirror_view(devy);
-  // ViewVectorType::HostMirror x =  Kokkos::create_mirror_view(devx);
-  // ViewMatrixType::HostMirror A =  Kokkos::create_mirror_view(devA);
+typedef Kokkos::RangePolicy<ExecSpace> range_policy ;
 
-  //EXERCISE: This no longer needs allocation after views introduced...
-  // Hint: If arrays are not allocated, they also do not need to be deallocated below
-  // Allocate y, x vectors and Matrix A:
-  double * const y = new double[ N ];
-  double * const x = new double[ M ];
-  double * const A = new double[ N * M ];
+typedef Kokkos::View<my_double*, MemSpace>   DeviceViewVectorType;
+typedef Kokkos::View<my_double*, Kokkos::HostSpace>   HostViewVectorType;
 
-  // Initialize y vector on host
-  // EXERCISE: Convert y to 1D View's member access API: y(i)
-  for (int i = 0; i < N; ++i) {
-    y[i] = 1;
-  }
+typedef Kokkos::TeamPolicy<ExecSpace>               team_policy ;
+typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
-  // Initialize x vector on host
-  // EXERCISE: Convert x to 1D View's member access API: x(i)
-  for (int i = 0; i < M; ++i) {
-    x[i] = 1;
-  }
+typedef Kokkos::LayoutLeft   Layout ;
 
-  // Initialize A matrix on host
-  // EXERCISE: convert 'A' to use View's member access API: A(j,i)
-  for (int j = 0; j < N; ++j) {
-    for ( int i = 0 ; i < M ; ++i ) {
-      A[ j * M + i ] = 1; 
-    }
-  }
+typedef Kokkos::View<double**, Layout, Kokkos::HostSpace>   HostViewMatrixType;
+typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewMatrixType;
 
-  //EXERCISE: Perform deep copy of host views to device views
-
-  // Timer products
-  struct timeval begin,end;
-
-  gettimeofday(&begin,NULL);
-
-  for ( int repeat = 0; repeat < nrepeat; repeat++) {
-
-    //Application: <y,Ax> = y^T*A*x
-    double result = 0;
-    Kokkos::parallel_reduce( N, KOKKOS_LAMBDA ( int j, double &update ) {
-      double temp2 = 0;
-      //EXERCISE: Replace host variables with device variables
-      for ( int i = 0 ; i < M ; ++i ) {
-        temp2 += A[ j * M + i ] * x[ i ];
-      }
-      update += y[ j ] * temp2;
-    }, result );
-
-    //Output result
-    if ( repeat == (nrepeat - 1) )
-      printf("  Computed result for %d x %d is %lf\n", N, M, result);
-    const double solution = (double)N *(double)M;
-
-    if ( result != solution ) {
-      printf("  Error: result( %lf ) != solution( %lf )\n",result,solution);
-    }
-  }
-
-  gettimeofday(&end,NULL);
-
-  // Calculate time
-  double time = 1.0*(end.tv_sec-begin.tv_sec) +
-                1.0e-6*(end.tv_usec-begin.tv_usec);
-
-  // Calculate bandwidth.
-  // Each matrix A row (each of length M) is read once.
-  // The x vector (of length M) is read N times.
-  // The y vector (of length N) is read once.
-  // double Gbytes = 1.0e-9 * double(sizeof(double) * ( 2 * M * N + N ));
-  double Gbytes = 1.0e-9 * double(sizeof(double) * ( M + M * N + N )) ;
-
-  // Print results (problem size, time and bandwidth in GB/s)
-  printf("  M( %d ) N( %d ) nrepeat ( %d ) problem( %g MB ) time( %g s ) bandwidth( %g GB/s )\n",
-         M , N, nrepeat, Gbytes * 1000, time, Gbytes * nrepeat / time );
-
-  delete [] y; //EXERCISE hint: ...
-  delete [] x; //EXERCISE hint: ...
-  delete [] A; //EXERCISE hint: ...
-
+STK_FUNCTION void get_value(DeviceViewVectorType data, size_t index, my_double& value)
+{
+    value = data(index);
 }
 
-TEST_F(MTK_Kokkos, CentroidCalculation) {
-  int N = std::pow(2, 12);
-  int M = std::pow(2, 10);
-  int nrepeat = 100;
-  calculate_centroid(N, M, nrepeat);
+my_double get_average(const std::vector<my_double>& data, int num_repeat)
+{
+    HostViewVectorType host_data("host_data", data.size());
+    DeviceViewVectorType device_data("device_data", data.size());
+
+    for(size_t i=0;i<data.size();++i)
+    {
+        host_data(i) = data[i];
+    }
+
+    Kokkos::deep_copy(device_data, host_data);
+
+    my_double sum = 0;
+    for(int j=0;j<num_repeat;++j)
+    {
+        sum = 0;
+        Kokkos::parallel_reduce( data.size(), KOKKOS_LAMBDA ( size_t i, my_double &local_sum )
+        {
+            my_double value = 0;
+            get_value(device_data, i, value);
+            local_sum += value;
+        },
+        sum );
+    }
+
+    my_double num = data.size();
+    return sum/num;
 }
 
+TEST_F(MTK_Kokkos, calculate_average)
+{
+    size_t size_data = unitTestUtils::get_command_line_option<size_t>("-s", "2");
+    std::vector<my_double> data(size_data);
+    for(size_t i=0;i<data.size();++i)
+        data[i]=i;
+    int num_repeat = unitTestUtils::get_command_line_option<size_t>("-n", "1");
+
+    struct timeval begin,end;
+    gettimeofday(&begin,NULL);
+
+    my_double average = get_average(data, num_repeat);
+
+    gettimeofday(&end,NULL);
+
+    double time = 1.0*(end.tv_sec-begin.tv_sec) +
+                  1.0e-6*(end.tv_usec-begin.tv_usec);
+    double Gbytes = 1.0e-9 * double(sizeof(my_double) * ( data.size() )) ;
+    printf("bandwidth( %g GB/s )\n", Gbytes * num_repeat / time );
+
+    my_double num_items = data.size();
+    my_double sum = (num_items*(num_items-1))/2.0;
+    my_double gold_ave = sum/data.size();
+    EXPECT_NEAR(gold_ave, average, 0.0000001);
+}
+
+typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
+
+void calculate_centroids(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid)
+{
+    const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
+    for(size_t i=0;i<buckets.size();++i)
+    {
+        const stk::mesh::Bucket& bucket = *buckets[i];
+        for(size_t j=0;j<bucket.size();++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+
+            unsigned num_nodes = bulkData.num_nodes(element);
+            const stk::mesh::Entity* nodes = bulkData.begin_nodes(element);
+            double xave = 0, yave = 0, zave = 0;
+            for(unsigned k=0;k<num_nodes;++k)
+            {
+                double *node_coords = stk::mesh::field_data(coordinates, nodes[k]);
+                xave += node_coords[0];
+                yave += node_coords[1];
+                zave += node_coords[2];
+            }
+            xave /= num_nodes;
+            yave /= num_nodes;
+            zave /= num_nodes;
+            double *centroid_values = stk::mesh::field_data(centroid, element);
+            centroid_values[0] = xave;
+            centroid_values[1] = yave;
+            centroid_values[2] = zave;
+        }
+    }
+}
+
+TEST_F(MTK_Kokkos, calculate_centroid_field_on_host)
+{
+    int num_repeat = unitTestUtils::get_command_line_option<size_t>("-n", "1");
+    size_t dim = unitTestUtils::get_command_line_option<size_t>("-d", "10");
+    std::ostringstream os;
+    os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;
+
+    stk::mesh::MetaData meta(3);
+
+    CoordFieldType& centroid = meta.declare_field<CoordFieldType>(stk::topology::ELEM_RANK, "centroid");
+    std::vector<double> init_vec = {0,0,0};
+    stk::mesh::put_field(centroid, meta.universal_part(), init_vec.data());
+
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+    stk::unit_test_util::fill_mesh_using_stk_io(os.str(), bulk);
+
+    CoordFieldType *coords = meta.get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
+
+    struct timeval begin,end;
+    gettimeofday(&begin,NULL);
+
+    calculate_centroids(bulk, *coords, centroid);
+
+    gettimeofday(&end,NULL);
+
+    double time = 1.0*(end.tv_sec-begin.tv_sec) +
+                  1.0e-6*(end.tv_usec-begin.tv_usec);
+
+    size_t num_coords = (dim+1)*(dim+1)*(dim+1)*3;
+    double Gbytes = 1.0e-9 * double(sizeof(my_double) * ( num_coords )) ;
+    std::cerr << "For mesh with " << num_coords << " coordinates.\n";
+    printf("bandwidth( %g GB/s )\n", Gbytes * num_repeat / time );
+
+    stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+    double *centroid_values = stk::mesh::field_data(centroid, element1);
+    EXPECT_NEAR(0.5, centroid_values[0], 0.000001);
+    EXPECT_NEAR(0.5, centroid_values[1], 0.000001);
+    EXPECT_NEAR(0.5, centroid_values[2], 0.000001);
+}
+
+struct ScratchData
+{
+    struct my_first_operator{};
+    struct my_second_operator{};
+
+    ScratchData()
+    {
+    }
+
+    void initialize(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, CoordFieldType& centroid, const stk::mesh::Selector& selector)
+    {
+        stk::mesh::EntityVector nodes;
+        stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), nodes);
+        stk::mesh::EntityVector elements;
+        stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
+        unsigned numElements = elements.size();
+
+        elementNodes = DeviceViewMatrixType("DElementsNumNodes", numElements, 8, bulk.mesh_meta_data().spatial_dimension());
+        hostElementNodes =  Kokkos::create_mirror_view(elementNodes);
+
+        for (unsigned elemIndex = 0; elemIndex < numElements; ++elemIndex)
+        {
+            stk::mesh::Entity element = elements[elemIndex];
+            const stk::mesh::Entity * nodes = bulk.begin_nodes(element);
+            const unsigned numNodesThisElem = bulk.num_nodes(element);
+            for(unsigned iNode = 0; iNode < numNodesThisElem; ++iNode)
+            {
+                stk::mesh::Entity node = nodes[iNode];
+                double *node_coords = stk::mesh::field_data(coords, node);
+                for(unsigned k=0;k<bulk.mesh_meta_data().spatial_dimension();k++)
+                {
+                    hostElementNodes(elemIndex, iNode, k) = node_coords[k];
+                }
+            }
+        }
+
+        Kokkos::deep_copy(elementNodes, hostElementNodes);
+
+        elementCentroids = DeviceViewMatrixType("Centroids", numElements, bulk.mesh_meta_data().spatial_dimension());
+        hostElementCentroids =  Kokkos::create_mirror_view(elementCentroids);
+    }
+
+    void test_centroid_of_element_1()
+    {
+        for (unsigned k=0 ; k < hostElementCentroids.extent(1) ; ++k)
+            EXPECT_NEAR(0.5, hostElementCentroids(0, k), 0.000001);
+    }
+
+    void calculate_centroids(int num_repeat, int choice)
+    {
+        for (int repeat=0 ; repeat<num_repeat ; ++repeat)
+        {
+            const unsigned num_elements = elementCentroids.extent(0);
+            if (choice == 0)
+            {
+                Kokkos::parallel_for("first op", Kokkos::RangePolicy<my_first_operator>(0,num_elements), *this);
+                //Kokkos::parallel_for("second op", Kokkos::RangePolicy<my_second_operator>(0,num_elements), *this);
+            }
+            else
+            {
+//                Kokkos::parallel_for("new op", team_policy(num_elements, Kokkos::AUTO), *this);
+                //Kokkos::parallel_for("second op", Kokkos::RangePolicy<my_second_operator>(0,num_elements), *this);
+            }
+        }
+    }
+
+    KOKKOS_INLINE_FUNCTION void operator()(my_first_operator, const int element) const
+    {
+        const unsigned dim = elementCentroids.extent(1);
+        for(unsigned k=0;k<dim;++k) // loop over x y z coordinates
+        {
+            double temp = elementCentroids(element, k);
+            for(unsigned node=0;node<8;++node) // loop over every node of this element
+                temp += elementNodes(element, node, k); // sum the coordinates
+            elementCentroids(element, k) = temp * 0.125;
+        }
+    }
+
+    KOKKOS_INLINE_FUNCTION void operator()(my_second_operator, const int i) const
+    {
+        const unsigned dim = elementCentroids.extent(1);
+        for (unsigned k=0 ; k<dim ; ++k)
+          elementCentroids(i, k) *= 0.125; // divide by num nodes to get centroid
+    }
+
+//    KOKKOS_INLINE_FUNCTION void operator()(const member_type &teamMember) const
+//    {
+//        unsigned i = teamMember.league_rank();
+//        Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, 8), [=] (int j)
+//        {
+//            const unsigned dim = elementCentroids.extent(1);
+//            double temp = elementCentroids(i, j);
+//            for(unsigned k=0;k<dim;++k) // loop over x y z coordinates
+//                temp += elementNodes(i, j, k); // sum the coordinates
+//            elementCentroids(i, j) = temp * 0.125;
+//        });
+//    }
+
+    void copy_centroids_from_host()
+    {
+        Kokkos::deep_copy(hostElementCentroids, elementCentroids);
+    }
+
+    DeviceViewMatrixType elementNodes;
+    DeviceViewMatrixType elementCentroids;
+
+    HostViewMatrixType::HostMirror hostElementNodes;
+    HostViewMatrixType::HostMirror hostElementCentroids;
+};
+
+
+TEST_F(MTK_Kokkos, calculate_centroid_field_on_device)
+{
+    int num_repeat = unitTestUtils::get_command_line_option<int>("-n", "1");
+    size_t dim = unitTestUtils::get_command_line_option<size_t>("-d", "10");
+    int choice = unitTestUtils::get_command_line_option<int>("-c", "0");
+
+    std::ostringstream os;
+    os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;
+
+    stk::mesh::MetaData meta(3);
+
+    CoordFieldType& centroid = meta.declare_field<CoordFieldType>(stk::topology::ELEM_RANK, "centroid");
+    std::vector<double> init_vec = {0,0,0};
+    stk::mesh::put_field(centroid, meta.universal_part(), init_vec.data());
+
+    stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+    stk::unit_test_util::fill_mesh_using_stk_io(os.str(), bulk);
+
+    CoordFieldType *coords = meta.get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
+
+    ScratchData scratch;
+    scratch.initialize(bulk, *coords, centroid, meta.locally_owned_part());
+
+    struct timeval begin,end;
+    gettimeofday(&begin,NULL);
+
+    scratch.calculate_centroids(num_repeat, choice);
+
+    gettimeofday(&end,NULL);
+
+    double time = 1.0*(end.tv_sec-begin.tv_sec) +
+                  1.0e-6*(end.tv_usec-begin.tv_usec);
+
+    size_t num_coords = (dim)*(dim)*(dim)*10*3;
+    double Gbytes = 1.0e-9 * double(sizeof(my_double) * ( num_coords )) ;
+    std::cerr << "For mesh with " << num_coords << " coordinates.\n";
+    printf("bandwidth( %g GB/s )\n", Gbytes * num_repeat / time );
+
+    scratch.copy_centroids_from_host();
+    scratch.test_centroid_of_element_1();
+}

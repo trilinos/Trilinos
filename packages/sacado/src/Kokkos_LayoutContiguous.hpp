@@ -86,7 +86,25 @@ template < class Dimension , class Layout >
 struct ViewOffset<Dimension, LayoutContiguous<Layout>, void>
   : public ViewOffset<Dimension,Layout> {
 public:
-  using ViewOffset<Dimension,Layout>::ViewOffset;
+
+  // Would like to use inherited constructors, but gcc 4.7 doesn't support it
+  //using ViewOffset<Dimension,Layout>::ViewOffset;
+
+  typedef ViewOffset<Dimension,Layout> Base;
+
+  ViewOffset() = default ;
+  ViewOffset( const ViewOffset & ) = default ;
+  ViewOffset & operator = ( const ViewOffset & ) = default ;
+
+  // All constructors take one or two arguments
+
+  template <typename Arg1>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ViewOffset(const Arg1& arg1) : Base(arg1) {}
+
+  template <typename Arg1, typename Arg2>
+  KOKKOS_INLINE_FUNCTION
+  constexpr ViewOffset(const Arg1& arg1, const Arg2& arg2) : Base(arg1,arg2) {}
 };
 
 } // namespace Impl

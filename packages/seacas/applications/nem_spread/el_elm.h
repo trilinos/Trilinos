@@ -35,10 +35,6 @@
 
 /*
  * Define element types.
- * The idea here is that the last digit of each element type will indicate the
- * order of interpolation for that type, i.e.,
- *
- *     order of element = last digit + 1
  */
 
 /* 1-d elements */
@@ -50,42 +46,43 @@
 
 /* 2-d elements */
 
-#define QUAD4 10
-#define QUAD8 21
-#define QUAD9 31
-#define TRI3 40
-#define TRI6 51
+#define QUAD4 14
+#define QUAD8 18
+#define QUAD9 19
+#define TRI3 23
+#define TRI6 26
 
 /* 3-d elements */
 
-#define HEX8 100
-#define HEX20 201
-#define HEX27 301
-#define TET4 400
-#define TET10 501
-#define TET8 511
-#define SHELL4 505
-#define SHELL8 510
-#define SHELL9 512
-#define SPHERE 515
-#define WEDGE6 520
-#define WEDGE15 521
-#define WEDGE16 525
-#define HEXSHELL 550
-#define TSHELL3 530
-#define TSHELL6 535
-#define PYRAMID5 560
-#define PYRAMID13 561
+#define HEX8 108
+#define HEX20 120
+#define HEX27 127
+#define TET4 204
+#define TET10 210
+#define TET8 208
+#define TET14 214
+#define TET15 215
+#define SHELL4 304
+#define SHELL8 308
+#define SHELL9 309
+#define SPHERE 401
+#define WEDGE6 506
+#define WEDGE15 515
+#define WEDGE16 516
+#define WEDGE20 520
+#define WEDGE21 521
+#define HEXSHELL 608
+#define TSHELL3 703
+#define TSHELL6 706
+#define PYRAMID5 805
+#define PYRAMID13 813
 
 /* define element data "request for information" types */
 
 #define NNODES 1
-#define NQUAD 2
 #define NDIM 3
-#define NQUAD_SURF 4
 #define NINTERP 5
 #define NN_SIDE 6
-#define CHILD 7
 
 /******************************* PROTOTYPES FOR el_elm_info.c ****************/
 

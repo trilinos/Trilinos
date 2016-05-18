@@ -57,7 +57,7 @@
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 namespace panzer {
 namespace unit_test {
@@ -168,7 +168,7 @@ public:
      */
    virtual void ownedIndices(const std::vector<int> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(int localElementId,Intrepid2::FieldContainer<double> & points);
+   void getCoordinates(int localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
 
    void buildGlobalUnknowns()
    { buildLocalIds(); }

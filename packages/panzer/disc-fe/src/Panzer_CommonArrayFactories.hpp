@@ -43,7 +43,7 @@
 #ifndef PANZER_COMMON_ARRAY_FACTORIES_HPP
 #define PANZER_COMMON_ARRAY_FACTORIES_HPP
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Phalanx_MDField.hpp"
 
 #include <string>
@@ -68,15 +68,15 @@ namespace panzer {
   class Intrepid2FieldContainerFactory {
   public:
      template <typename Scalar,typename T0>
-     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0) const;
+     Kokkos::DynRankView<Scalar,PHX::Device> buildArray(const std::string & str,int d0) const;
      template <typename Scalar,typename T0,typename T1>
-     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1) const;
+     Kokkos::DynRankView<Scalar,PHX::Device> buildArray(const std::string & str,int d0,int d1) const;
      template <typename Scalar,typename T0,typename T1,typename T2>
-     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2) const;
+     Kokkos::DynRankView<Scalar,PHX::Device> buildArray(const std::string & str,int d0,int d1,int d2) const;
      template <typename Scalar,typename T0,typename T1,typename T2,typename T3>
-     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
+     Kokkos::DynRankView<Scalar,PHX::Device> buildArray(const std::string & str,int d0,int d1,int d2,int d3) const;
      template <typename Scalar,typename T0,typename T1,typename T2,typename T3,typename T4>
-     Intrepid2::FieldContainer<Scalar> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
+     Kokkos::DynRankView<Scalar,PHX::Device> buildArray(const std::string & str,int d0,int d1,int d2,int d3,int d4) const;
   };
 
   /** Implementation for MDField array factory. This

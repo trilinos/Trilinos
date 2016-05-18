@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                      \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -109,6 +109,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -216,7 +217,7 @@ namespace Intrepid2 {
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
 
       } catch (std::logic_error err) {
@@ -333,37 +334,39 @@ namespace Intrepid2 {
 
 
         // Define array containing the 4 vertices of the reference QUAD and its center.
-        DynRankView ConstructWithLabel(quadNodes, 5, 2);
-        quadNodes(0,0) = -1.0;  quadNodes(0,1) = -1.0;
-        quadNodes(1,0) =  1.0;  quadNodes(1,1) = -1.0;
-        quadNodes(2,0) =  1.0;  quadNodes(2,1) =  1.0;
-        quadNodes(3,0) = -1.0;  quadNodes(3,1) =  1.0;
-        quadNodes(4,0) =  0.0;  quadNodes(4,1) =  0.0;
+        DynRankViewHost ConstructWithLabel(quadNodesHost, 5, 2);
+
+        quadNodesHost(0,0) = -1.0;  quadNodesHost(0,1) = -1.0;
+        quadNodesHost(1,0) =  1.0;  quadNodesHost(1,1) = -1.0;
+        quadNodesHost(2,0) =  1.0;  quadNodesHost(2,1) =  1.0;
+        quadNodesHost(3,0) = -1.0;  quadNodesHost(3,1) =  1.0;
+        quadNodesHost(4,0) =  0.0;  quadNodesHost(4,1) =  0.0;
+
+        auto quadNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+        Kokkos::deep_copy(quadNodes, quadNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const auto numFields = quadBasis.getCardinality();
         const auto numPoints = quadNodes.dimension(0);
         const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
         const auto D2Cardin  = getDkCardinality(OPERATOR_D2, spaceDim);
-        const auto D10Cardin = getDkCardinality(OPERATOR_D10, spaceDim);
-
-        const auto workSize  = numFields*numPoints*D10Cardin;
-        DynRankView ConstructWithLabel(work, workSize);
 
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
-          DynRankView vals = DynRankView(work.data(), numFields, numPoints);
+          DynRankView ConstructWithLabel(vals, numFields, numPoints);
           quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
             for (auto j=0;j<numPoints;++j)
-              if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
+              if (std::abs(vals_host(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
-                *outStream << "}  computed value: " << vals(i,j)
+                *outStream << "}  computed value: " << vals_host(i,j)
                            << " but reference value: " << basisValues[j][i] << "\n";
               }
         }
@@ -375,19 +378,21 @@ namespace Intrepid2 {
                                     OPERATOR_MAX };
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
-            DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
+            DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
             quadBasis.getValues(vals, quadNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
               for (auto j=0;j<numPoints;++j)
                 for (auto k=0;k<spaceDim;++k)
-                  if (std::abs(vals(i,j,k) - basisGrads[j][i][k]) > tol) {
+                  if (std::abs(vals_host(i,j,k) - basisGrads[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Output the multi-index of the value where the error is:
                     *outStream << " At multi-index { ";
                     *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                    *outStream << "}  computed grad component: " << vals(i,j,k)
+                    *outStream << "}  computed grad component: " << vals_host(i,j,k)
                                << " but reference grad component: " << basisGrads[j][i][k] << "\n";
                   }
           }
@@ -395,19 +400,21 @@ namespace Intrepid2 {
 
         // Check CURL of basis function: resize vals just for illustration!
         {
-          DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
+          DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
           quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
             for (auto j=0;j<numPoints;++j)
               for (auto k=0;k<spaceDim;++k)
-                if (std::abs(vals(i,j,k) - basisCurls[j][i][k]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisCurls[j][i][k]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                  *outStream << "}  computed curl component: " << vals(i,j,k)
+                  *outStream << "}  computed curl component: " << vals_host(i,j,k)
                              << " but reference curl component: " << basisCurls[j][i][k] << "\n";
                 }
         }
@@ -415,19 +422,21 @@ namespace Intrepid2 {
 
         // Check D2 of basis function
         {
-          DynRankView vals = DynRankView(work.data(), numFields, numPoints, D2Cardin);
+          DynRankView ConstructWithLabel(vals, numFields, numPoints, D2Cardin);
           quadBasis.getValues(vals, quadNodes, OPERATOR_D2);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (auto i=0;i<numFields;++i)
             for (auto j=0;j<numPoints;++j)
               for (auto k=0;k<D2Cardin;++k)
-                if (std::abs(vals(i,j,k) - basisD2[j][i][k]) > tol) {
+                if (std::abs(vals_host(i,j,k) - basisD2[j][i][k]) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                   // Output the multi-index of the value where the error is:
                   *outStream << " At multi-index { ";
                   *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                  *outStream << "}  computed D2 component: " << vals(i,j,k)
+                  *outStream << "}  computed D2 component: " << vals_host(i,j,k)
                              << " but reference D2 component: " << basisD2[j][i][k] << "\n";
                 }
         }
@@ -447,20 +456,21 @@ namespace Intrepid2 {
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
             const auto DkCardin  = getDkCardinality(op, spaceDim);
-            DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
-
+            DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
             quadBasis.getValues(vals, quadNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (auto i1=0;i1<numFields;++i1)
               for (auto i2=0;i2<numPoints;++i2)
                 for (auto i3=0;i3<DkCardin;++i3)
-                  if (std::abs(vals(i1,i2,i3)) > tol) {
+                  if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                    *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
+                    *outStream << "}  computed D"<< ord <<" component: " << vals_host(i1,i2,i3)
                                << " but reference D" << ord << " component:  0 \n";
                   }
           }
@@ -512,18 +522,25 @@ namespace Intrepid2 {
         // Check mathematical correctness.
         quadBasis.getDofCoords(cvals);
         quadBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+
+        auto bvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals);
+        Kokkos::deep_copy(bvals_host, bvals);
+
+        auto cvals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals);
+        Kokkos::deep_copy(cvals_host, cvals);
+
         for (auto i=0;i<numFields;++i) {
           for (auto j=0;j<numFields;++j) {
-            if (i != j && (std::abs(bvals(i,j) - 0.0) > tol)) {
+            if (i != j && (std::abs(bvals_host(i,j) - 0.0) > tol)) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\n Value of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << bvals(i,j) << " but should be 0.0\n";
+              ss << "\n Value of basis function " << i << " at (" << cvals_host(i,0) << ", " << cvals_host(i,1) << ") is " << bvals_host(i,j) << " but should be 0.0\n";
               *outStream << ss.str();
             }
-            else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > tol)) {
+            else if ((i == j) && (std::abs(bvals_host(i,j) - 1.0) > tol)) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\n Value of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << bvals(i,j) << " but should be 1.0\n";
+              ss << "\n Value of basis function " << i << " at (" << cvals_host(i,0) << ", " << cvals_host(i,1) << ") is " << bvals_host(i,j) << " but should be 1.0\n";
               *outStream << ss.str();
             }
           }

@@ -51,14 +51,13 @@
 #include "Panzer_PointValues2.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Intrepid2::FieldContainer;
 
 namespace panzer {
 

@@ -124,7 +124,8 @@ namespace Intrepid2 {
                                  1, 3, 0, 1 };
       
       // when exec space is device, this wrapping relies on uvm.
-      Kokkos::View<ordinal_type[16], SpT> tagView(tags);
+      //Kokkos::View<ordinal_type[16], SpT> tagView(tags);
+      ordinal_type_array_1d_host tagView(&tags[0], 16);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       this->setOrdinalTagData(this->tagToOrdinal_,
@@ -136,6 +137,19 @@ namespace Intrepid2 {
                               posScOrd,
                               posDfOrd);
     }
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+    
+    dofCoords(0,0) =  0.0;   dofCoords(0,1) = -1.0;
+    dofCoords(1,0) =  1.0;   dofCoords(1,1) =  0.0;
+    dofCoords(2,0) =  0.0;   dofCoords(2,1) =  1.0;
+    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  0.0;
+
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
   }
   
   
@@ -245,10 +259,7 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
                                   ">>> ERROR: (Intrepid2::Basis_HCURL_QUAD_I1_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
-    dofCoords(0,0) =  0.0;   dofCoords(0,1) = -1.0;
-    dofCoords(1,0) =  1.0;   dofCoords(1,1) =  0.0;
-    dofCoords(2,0) =  0.0;   dofCoords(2,1) =  1.0;
-    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  0.0;
+    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
   }
 
 }// namespace Intrepid2

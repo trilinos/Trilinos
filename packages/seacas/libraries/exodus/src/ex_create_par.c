@@ -140,12 +140,14 @@ exoid = ex_create ("test.exo"       \comment{filename path}
 \endcode
 
 */
+
+/* Determine whether compiling against a parallel netcdf... */
+#include "exodusII.h"
+#if defined(PARALLEL_AWARE_EXODUS)
+
+#include "exodusII_int.h"
 #include <mpi.h>
 #include <stdlib.h>
-
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include "netcdf_par.h"
 
 static int warning_output = 0;
 
@@ -588,3 +590,10 @@ int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws, MPI
 
   return (exoid);
 }
+#else
+/*
+ * Prevent warning in some versions of ranlib(1) because the object
+ * file has no symbols.
+ */
+const char exodus_unused_symbol_dummy_1;
+#endif

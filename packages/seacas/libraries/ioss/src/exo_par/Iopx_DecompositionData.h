@@ -48,7 +48,7 @@
 #include <Ioss_Decomposition.h>
 #include <Ioss_Map.h>
 #include <Ioss_PropertyManager.h>
-#include <exodusII_par.h>
+#include <exodusII.h>
 
 namespace Ioss {
   class Field;

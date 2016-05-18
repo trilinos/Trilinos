@@ -220,8 +220,8 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
       = stk::mesh::get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
 
-    EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]);
-    EXPECT_EQ(ordinalAndPermutation.first, i);
+    EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]) << topo;
+    EXPECT_EQ(ordinalAndPermutation.first, i) << topo;
   }
 
   if (edge_ids.empty()) {
@@ -249,8 +249,8 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
       = stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
 
-    EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]);
-    EXPECT_EQ(ordinalAndPermutation.first, i);
+    EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]) << topo;
+    EXPECT_EQ(ordinalAndPermutation.first, i) << topo;
   }
 
   bulk.modification_end();

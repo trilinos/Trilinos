@@ -45,21 +45,22 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
-
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
+#include "Panzer_ViewFactory.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #ifdef PANZER_HAVE_IOSS
 
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 namespace panzer_stk_classic {
 
@@ -89,9 +90,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = panzer::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = panzer::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = panzer::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -122,9 +123,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, cell_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = panzer::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = panzer::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = panzer::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
    out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
@@ -157,9 +158,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
    mesh->getElementVertices(*localIds["block_2"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["block_1"]->size(),4);
-   tblock0.resize(localIds["block_1"]->size(),4);
-   tblock1.resize(localIds["block_2"]->size(),4);
+   ublock0 = panzer::createDynRankView(ublock0,"ublock0",localIds["block_1"]->size(),4);
+   tblock0 = panzer::createDynRankView(tblock0,"tblock0",localIds["block_1"]->size(),4);
+   tblock1 = panzer::createDynRankView(tblock1,"tblock1",localIds["block_2"]->size(),4);
 
    mesh->setupTransientExodusFile("transient_exo.exo");
 
@@ -191,9 +192,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
    FieldContainer ublock0, tblock0, tblock1;
-   ublock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock0.resize(localIds["eblock-0_0"]->size(),4);
-   tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   ublock0 = panzer::createDynRankView(ublock0,"ublock0",localIds["eblock-0_0"]->size(),4);
+   tblock0 = panzer::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
+   tblock1 = panzer::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
 
    mesh->setupTransientExodusFile("transient.exo");
 

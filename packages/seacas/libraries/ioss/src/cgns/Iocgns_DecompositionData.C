@@ -5,6 +5,7 @@
 #include <cgns/Iocgns_Utils.h>
 
 #include <algorithm>
+#include <numeric>
 
 #include <assert.h>
 #include <mpi.h>

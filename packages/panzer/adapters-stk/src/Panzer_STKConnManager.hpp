@@ -48,6 +48,9 @@
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
+// Kokkos includes
+#include "Kokkos_DynRankView.hpp"
+
 // Panzer includes
 #include "Panzer_ConnManager.hpp"
 
@@ -156,7 +159,7 @@ public:
    virtual void getDofCoords(const std::string & blockId,
                              const panzer::Intrepid2FieldPattern & coordProvider,
                              std::vector<std::size_t> & localCellIds,
-                             Intrepid2::FieldContainer<double> & points) const;
+                             Kokkos::DynRankView<double,PHX::Device> & points) const;
 
     /** Get STK interface that this connection manager is built on.
       */

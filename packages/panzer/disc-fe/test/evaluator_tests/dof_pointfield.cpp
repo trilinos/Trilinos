@@ -82,7 +82,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-typedef Intrepid2::FieldContainer<double> FieldArray;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldArray;
 
 //**********************************************************************
 PHX_EVALUATOR_CLASS(DummyFieldEvaluator)
@@ -206,8 +206,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   basisValues->evaluateValues(quadValues->cub_points,quadValues->jac,quadValues->jac_det,quadValues->jac_inv,quadValues->weighted_measure,coords);
 
   {
-    Intrepid2::FieldContainer<double> coords;
-    coords.resize(numCells,numVerts,dim);
+    Kokkos::DynRankView<double,PHX::Device> coords("coords",numCells,numVerts,dim);
 
     coords(0,0,0) = 1.0; coords(0,0,1) = 0.0;
     coords(0,1,0) = 1.0; coords(0,1,1) = 1.0;

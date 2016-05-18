@@ -79,9 +79,9 @@ void DOF_PointField<EvalT,TRAITST>::initialize(const std::string & fieldName,
   this->addEvaluatedField(dof_field);
 
   // build data storage for temporary conversion
-  basisRef    = Intrepid2::FieldContainer<double>(coeffCount,pointCount);
-  basis       = Intrepid2::FieldContainer<double>(cellCount,coeffCount,pointCount);
-  intrpCoords = Intrepid2::FieldContainer<double>(pointCount,dimCount);
+  basisRef    = Kokkos::DynRankView<double,PHX::Device>("basisRef",coeffCount,pointCount);
+  basis       = Kokkos::DynRankView<double,PHX::Device>("basis",cellCount,coeffCount,pointCount);
+  intrpCoords = Kokkos::DynRankView<double,PHX::Device>("intrpCoords",pointCount,dimCount);
   
   std::string n = "DOF_PointField: " + dof_field.fieldTag().name();
   this->setName(n);

@@ -66,7 +66,7 @@
 
 #include "Epetra_Map.h"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
 
 using Teuchos::rcp;
@@ -74,7 +74,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 namespace panzer {
 

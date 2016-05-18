@@ -65,7 +65,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -110,6 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -216,10 +217,8 @@ namespace Intrepid2 {
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
-
-
       } catch (std::logic_error err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
@@ -315,41 +314,43 @@ namespace Intrepid2 {
         Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
-        DynRankView ConstructWithLabel(lineNodes, 4, 1);
-        lineNodes(0,0) =  -1.0;
-        lineNodes(1,0) =   1.0;
-        lineNodes(2,0) =   0.0;
-        lineNodes(3,0) =   0.5;
+        DynRankViewHost ConstructWithLabel(lineNodesHost, 4, 1);
+        lineNodesHost(0,0) =  -1.0;
+        lineNodesHost(1,0) =   1.0;
+        lineNodesHost(2,0) =   0.0;
+        lineNodesHost(3,0) =   0.5;
+
+        const auto lineNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lineNodesHost);
+        Kokkos::deep_copy(lineNodes, lineNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type
         const ordinal_type numFields = lineBasis.getCardinality();
         const ordinal_type numPoints = lineNodes.dimension(0);
         const ordinal_type spaceDim  = lineBasis.getBaseCellTopology().getDimension();
 
-        const auto workSize  = numFields*numPoints*spaceDim;
-        DynRankView ConstructWithLabel(work, workSize);
-
         // Check VALUE of basis functions: resize vals to rank-2 container:
         {
-          DynRankView vals = DynRankView(work.data(), numFields, numPoints);
+          DynRankView ConstructWithLabel(vals, numFields, numPoints);
           lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
+          auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+          Kokkos::deep_copy(vals_host, vals);
           for (ordinal_type i=0;i<numFields;++i)
             for (ordinal_type j=0;j<numPoints;++j)
-              if (std::abs(vals(i,j) - basisValues[j][i]) > tol) {
+              if (std::abs(vals_host(i,j) - basisValues[j][i]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";
-                *outStream << "}  computed value: " << vals(i,j)
+                *outStream << "}  computed value: " << vals_host(i,j)
                            << " but reference value: " << basisValues[j][i] << "\n";
               }
         }
 
         // Check derivatives of basis function: resize vals to rank-3 container
         {
-          DynRankView vals = DynRankView(work.data(), numFields, numPoints, spaceDim);
+          DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
           const EOperator ops[] = { OPERATOR_GRAD,
                                     OPERATOR_DIV,
                                     OPERATOR_CURL,
@@ -358,17 +359,19 @@ namespace Intrepid2 {
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
             lineBasis.getValues(vals, lineNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (auto i=0;i<numFields;++i)
               for (auto j=0;j<numPoints;++j)
                 for (auto k=0;k<spaceDim;++k)
-                  if (std::abs(vals(i,j,k) - basisDerivs[j][i][k]) > tol) {
+                  if (std::abs(vals_host(i,j,k) - basisDerivs[j][i][k]) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Output the multi-index of the value where the error is:
                     *outStream << " At multi-index { ";
                     *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                    *outStream << "}  computed grad component: " << vals(i,j,k)
+                    *outStream << "}  computed grad component: " << vals_host(i,j,k)
                                << " but reference grad component: " << basisDerivs[j][i][k] << "\n";
                   }
           }
@@ -389,20 +392,21 @@ namespace Intrepid2 {
           for (auto h=0;ops[h]!=OPERATOR_MAX;++h) {
             const auto op = ops[h];
             const auto DkCardin  = getDkCardinality(op, spaceDim);
-            DynRankView vals = DynRankView(work.data(), numFields, numPoints, DkCardin);
-
+            DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
             lineBasis.getValues(vals, lineNodes, op);
+            auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            Kokkos::deep_copy(vals_host, vals);
             for (ordinal_type i1=0;i1<numFields;++i1)
               for (ordinal_type i2=0;i2<numPoints;++i2)
                 for (ordinal_type i3=0;i3<DkCardin;++i3)
-                  if (std::abs(vals(i1,i2,i3)) > tol) {
+                  if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
                     // Get the multi-index of the value where the error is and the operator order
                     const auto ord = Intrepid2::getOperatorOrder(op);
                     *outStream << " At multi-index { "<<i1<<" "<<i2 <<" "<<i3;
-                    *outStream << "}  computed D"<< ord <<" component: " << vals(i1,i2,i3)
+                    *outStream << "}  computed D"<< ord <<" component: " << vals_host(i1,i2,i3)
                                << " but reference D" << ord << " component:  0 \n";
                   }
           }

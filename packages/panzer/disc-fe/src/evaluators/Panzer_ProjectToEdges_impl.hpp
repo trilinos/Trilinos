@@ -106,8 +106,8 @@ evaluateFields(typename Traits::EvalData workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int intDegree = basis->order();
   TEUCHOS_ASSERT(intDegree == 1);
-  Intrepid2::DefaultCubatureFactory<double> quadFactory;
-  Teuchos::RCP< Intrepid2::Cubature<double> > edgeQuad;
+  Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;
+  Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > edgeQuad;
 
   // Collect the reference edge information. For now, do nothing with the quadPts.
   const unsigned num_edges = parentCell.getEdgeCount();
@@ -115,8 +115,8 @@ evaluateFields(typename Traits::EvalData workset)
   for (unsigned e=0; e<num_edges; e++) {
     edgeQuad = quadFactory.create(parentCell.getCellTopologyData(1,e), intDegree);
     const int numQPoints = edgeQuad->getNumPoints();
-    Intrepid2::FieldContainer<double> quadWts(numQPoints);
-    Intrepid2::FieldContainer<double> quadPts(numQPoints,num_dim);
+    Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
+    Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
     edgeQuad->getCubature(quadPts,quadWts);
     for (int q=0; q<numQPoints; q++)
       refEdgeWt[e] += quadWts(q);
