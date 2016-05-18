@@ -514,7 +514,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                     if (par_dimen == 1) {
                         if(bulk.mesh_meta_data().spatial_dimension()==2 && behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
                         {
-                            stk::mesh::declare_element_side_using_graph(bulk, side_id, elem, side_ordinal, add_parts);
+                            stk::mesh::declare_element_side(bulk, elem, side_ordinal, add_parts);
                         }
                         else
                         {
@@ -532,7 +532,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
-                            stk::mesh::declare_element_side_using_graph(bulk, side_id, elem, side_ordinal, add_parts);
+                            stk::mesh::declare_element_side(bulk, elem, side_ordinal, add_parts);
                         }
                     }
                 }

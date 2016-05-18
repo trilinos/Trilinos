@@ -223,7 +223,7 @@ Entity declare_element_side(
     return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
 }
 
-Entity declare_element_side_using_graph(BulkData& bulkData, const stk::mesh::EntityId global_side_id, Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
+Entity declare_element_side(BulkData& bulkData, Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
 {
     stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(bulkData, elem, side_ordinal);
     if(bulkData.is_valid(sideEntity))
@@ -234,6 +234,7 @@ Entity declare_element_side_using_graph(BulkData& bulkData, const stk::mesh::Ent
     {
         stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
         stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+        stk::mesh::EntityId global_side_id = 10*bulkData.identifier(elem)+side_ordinal+1;
         sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);
         sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
     }
