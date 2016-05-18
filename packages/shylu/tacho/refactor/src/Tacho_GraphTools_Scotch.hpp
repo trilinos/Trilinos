@@ -42,7 +42,7 @@ namespace Tacho {
     ordinal_type_array _perm,_peri,_range,_tree;
 
     // status flag
-    bool _is_ordered;
+    bool _is_ordered, _verbose;
 
   public:
 
@@ -81,6 +81,8 @@ namespace Tacho {
       SCOTCH_graphFree(&_graph);
     }
     
+    void setVerbose(const bool verbose) { _verbose = verbose; }
+
     void setGraph(const ordinal_type m,
                   const size_type_array rptr,
                   const ordinal_type_array cidx) {
@@ -172,13 +174,14 @@ namespace Tacho {
 
         // if both are zero, do not build strategy
         if (_strat || _level) {
-          std::cout << "GraphTools_Scotch:: User provide a strategy and/or level" << std::endl
-                    << "                    strategy = " << _strat << ", level =  " << _level << ", treecut = " << treecut << std::endl
-                    << "                    strategy & SCOTCH_STRATLEVELMAX   = " << (_strat & SCOTCH_STRATLEVELMAX) << std::endl
-                    << "                    strategy & SCOTCH_STRATLEVELMIN   = " << (_strat & SCOTCH_STRATLEVELMIN) << std::endl
-                    << "                    strategy & SCOTCH_STRATLEAFSIMPLE = " << (_strat & SCOTCH_STRATLEAFSIMPLE) << std::endl
-                    << "                    strategy & SCOTCH_STRATSEPASIMPLE = " << (_strat & SCOTCH_STRATSEPASIMPLE) << std::endl
-                    << std::endl;
+          if (_verbose)
+            std::cout << "GraphTools_Scotch:: User provide a strategy and/or level" << std::endl
+                      << "                    strategy = " << _strat << ", level =  " << _level << ", treecut = " << treecut << std::endl
+                      << "                    strategy & SCOTCH_STRATLEVELMAX   = " << (_strat & SCOTCH_STRATLEVELMAX) << std::endl
+                      << "                    strategy & SCOTCH_STRATLEVELMIN   = " << (_strat & SCOTCH_STRATLEVELMIN) << std::endl
+                      << "                    strategy & SCOTCH_STRATLEAFSIMPLE = " << (_strat & SCOTCH_STRATLEAFSIMPLE) << std::endl
+                      << "                    strategy & SCOTCH_STRATSEPASIMPLE = " << (_strat & SCOTCH_STRATSEPASIMPLE) << std::endl
+                      << std::endl;
           ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, level, 0.2);
           TACHO_TEST_FOR_ABORT(ierr, "Failed in SCOTCH_stratGraphOrderBuild");  
         }
@@ -200,9 +203,10 @@ namespace Tacho {
           nroot += (_tree[i] == -1);
 
         if (nroot > 1) {
-          std::cout << "GraphTools_Scotch:: # of roots " << nroot << std::endl
-                    << "                    a fake root is created to complete the tree" << std::endl
-                    << std::endl;
+          if (_verbose)
+            std::cout << "GraphTools_Scotch:: # of roots " << nroot << std::endl
+                      << "                    a fake root is created to complete the tree" << std::endl
+                      << std::endl;
           _tree [_cblk]   = -1;          // dummy root
           _range[_cblk+1] = _range[_cblk]; // zero range for the dummy root
           

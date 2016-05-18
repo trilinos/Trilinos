@@ -38,7 +38,14 @@ namespace Tacho {
   if ((ierr) != 0) {                                                    \
     fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
     fprintf(stderr, "   %s\n", msg);                                    \
-    Kokkos::abort(">> Tacho abort\n");                                    \
+    Kokkos::abort(">> Tacho abort\n");                                  \
+  }
+
+#define TACHO_TEST_FOR_EXCEPTION(ierr, x, msg)                           \
+  if ((ierr) != 0) {                                                    \
+    fprintf(stderr, ">> Error in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
+    fprintf(stderr, "   %s\n", msg);                                    \
+    throw x(msg);                                                       \
   }
 
   /// \brief Control parameter decomposition.
@@ -197,13 +204,12 @@ namespace Tacho {
       T c(a); a = b; b = c;
     }
 
-    template<typename ValueType,
-             typename IndexType,
-             typename OrdinalType,
-             typename SpaceType>
+    template<typename dataValueType, class ... dataProperties,
+             typename idxValueType, class ... idxProperties,
+             typename OrdinalType>
     KOKKOS_INLINE_FUNCTION
-    static void sort(Kokkos::View<ValueType*,SpaceType> data,
-                     Kokkos::View<IndexType*,SpaceType> idx,
+    static void sort(/**/  Kokkos::View<dataValueType*,dataProperties...> data,
+                     /**/  Kokkos::View<idxValueType*,idxProperties...> idx,
                      const OrdinalType begin,
                      const OrdinalType end) {
       if (begin + 1 < end) {
@@ -229,11 +235,10 @@ namespace Tacho {
       }
     }
 
-    template<typename ValueType,
-             typename OrdinalType,
-             typename SpaceType>
+    template<typename dataValueType, class ...dataProperties,
+             typename OrdinalType>
     KOKKOS_INLINE_FUNCTION
-    static void sort(Kokkos::View<ValueType*,SpaceType> data,
+    static void sort(/**/  Kokkos::View<dataValueType*,dataProperties...> data,
                      const OrdinalType begin,
                      const OrdinalType end) {
       if (begin + 1 < end) {
