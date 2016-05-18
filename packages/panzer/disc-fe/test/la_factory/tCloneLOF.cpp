@@ -52,8 +52,10 @@
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_LinearObjFactory_Utilities.hpp"
 
 #include "UnitTest_ConnManager.hpp"
@@ -131,5 +133,113 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    TEST_ASSERT(ep_control_lof->getMap()->SameAs(*ep_lof->getMap()));
    TEST_EQUALITY(ep_control_lof->getColMap()->NumMyElements(),Teuchos::as<int>(control_owned.size()));
 }
+
+TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
+{
+
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+
+   RCP<const FieldPattern> patternC1
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   indexer->setConnManager(connManager,MPI_COMM_WORLD);
+   indexer->addField("U",patternC1);
+   indexer->addField("V",patternC1);
+
+   std::vector<std::vector<std::string> > fieldOrder(2);
+   fieldOrder[0].push_back("U");
+   fieldOrder[1].push_back("V");
+   indexer->setFieldOrder(fieldOrder);
+   indexer->buildGlobalUnknowns();
+
+   RCP<panzer::BlockedDOFManager<int,int> > control_indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
+   control_indexer->addField("Z",patternC1);
+   fieldOrder[0][0] = "Z";
+   control_indexer->buildGlobalUnknowns();
+ 
+   // setup factory
+   RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
+         = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm,indexer));
+   
+   // this is the member we are testing!
+   RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+       = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
+
+/*
+   TEST_ASSERT(ep_control_lof->getMap()->SameAs(*ep_lof->getMap()));
+   TEST_EQUALITY(ep_control_lof->getColMap()->NumMyElements(),Teuchos::as<int>(control_owned.size()));
+*/
+}
+
+/*
+TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
+{
+
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+   #else
+      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+   #endif
+
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
+
+   int myRank = eComm->MyPID();
+   int numProc = eComm->NumProc();
+
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+
+   RCP<const FieldPattern> patternC1
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
+
+   RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+   indexer->setConnManager(connManager,MPI_COMM_WORLD);
+   indexer->addField("U",patternC1);
+   indexer->addField("V",patternC1);
+
+   std::vector<std::vector<std::string> > fieldOrder(2);
+   fieldOrder[0].push_back("U");
+   fieldOrder[1].push_back("V");
+   indexer->setFieldOrder(fieldOrder);
+   indexer->buildGlobalUnknowns();
+
+   RCP<panzer::DOFManager<int,int> > control_indexer = rcp(new panzer::DOFManager<int,int>());
+   control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
+   control_indexer->addField("Z",patternC1);
+   control_indexer->buildGlobalUnknowns();
+ 
+   // setup factory
+   RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
+         = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm,indexer));
+   
+   // this is the member we are testing!
+   RCP<const LinearObjFactory<Traits> > control_lof = cloneWithNewDomain(*ep_lof,control_indexer);
+   RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
+       = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
+
+   std::vector<int> control_owned;
+   control_indexer->getOwnedIndices(control_owned);
+
+   // TEST_ASSERT(ep_control_lof->getMap()->SameAs(*ep_lof->getMap()));
+   // TEST_EQUALITY(ep_control_lof->getColMap()->NumMyElements(),Teuchos::as<int>(control_owned.size()));
+}
+*/
 
 }
