@@ -1408,7 +1408,7 @@ namespace Tpetra {
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
-    bool need_sync () {
+    bool need_sync () const {
       return getDualView ().template need_sync<TargetDeviceType> ();
     }
 
