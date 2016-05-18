@@ -121,6 +121,32 @@ struct ViewFactory {
 
 };
 
+template< class > struct is_dyn_rank_view : public std::false_type {};
+
+template< class D, class ... P >
+struct is_dyn_rank_view< DynRankView<D,P...> > : public std::true_type {};
+
+//! Wrapper to simplify use of Sacado ViewFactory
+template <typename InputViewType, typename CtorProp, typename ... Dims>
+typename std::enable_if<
+  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  Kokkos::DynRankView<typename InputViewType::non_const_value_type,
+                      typename InputViewType::array_layout,
+                      typename InputViewType::device_type,
+                      typename InputViewType::memory_traits> >::type
+createDynRankView(const InputViewType& a,
+                  const CtorProp& prop,
+                  const Dims... dims)
+{
+  using view_factory = Kokkos::ViewFactory<InputViewType>;
+  using return_type =
+    Kokkos::DynRankView<typename InputViewType::non_const_value_type,
+                        typename InputViewType::array_layout,
+                        typename InputViewType::device_type,
+                        typename InputViewType::memory_traits>;
+  return view_factory::template create_view<return_type>(a,prop,dims...);
+}
+
 }
 
 #endif
