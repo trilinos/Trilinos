@@ -244,8 +244,6 @@ struct ScratchData
 
     void initialize(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, CoordFieldType& centroid, const stk::mesh::Selector& selector)
     {
-        stk::mesh::EntityVector nodes;
-        stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::NODE_RANK), nodes);
         stk::mesh::EntityVector elements;
         stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
         unsigned numElements = elements.size();
@@ -256,11 +254,11 @@ struct ScratchData
         for (unsigned elemIndex = 0; elemIndex < numElements; ++elemIndex)
         {
             stk::mesh::Entity element = elements[elemIndex];
-            const stk::mesh::Entity * nodes = bulk.begin_nodes(element);
+            const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
             const unsigned numNodesThisElem = bulk.num_nodes(element);
             for(unsigned iNode = 0; iNode < numNodesThisElem; ++iNode)
             {
-                stk::mesh::Entity node = nodes[iNode];
+                stk::mesh::Entity node = elemNodes[iNode];
                 double *node_coords = stk::mesh::field_data(coords, node);
                 for(unsigned k=0;k<bulk.mesh_meta_data().spatial_dimension();k++)
                 {
