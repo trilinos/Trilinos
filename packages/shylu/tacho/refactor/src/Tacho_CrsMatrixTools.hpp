@@ -23,6 +23,7 @@ namespace Tacho {
     static void
     sortColumnsPerRow(CrsMatBaseType &A) {
       typedef typename CrsMatBaseType::ordinal_type       ordinal_type;
+      typedef typename CrsMatBaseType::size_type          size_type;
       typedef typename CrsMatBaseType::ordinal_type_array ordinal_type_array;
       typedef typename CrsMatBaseType::value_type_array   value_type_array;
 
