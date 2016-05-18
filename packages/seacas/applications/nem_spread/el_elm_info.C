@@ -151,6 +151,22 @@ int elem_info(int info, int ielem_type, int supp)
     }
     break;
 
+  case TSHELL4:
+    switch (info) {
+    case NNODES: answer = 4; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 1:
+      case 2: answer  = 4; break;
+      default: answer = 2; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
   case TSHELL6:
     switch (info) {
     case NNODES: answer = 6; break;
@@ -159,6 +175,22 @@ int elem_info(int info, int ielem_type, int supp)
       switch (supp) {
       case 1:
       case 2: answer  = 6; break;
+      default: answer = 3; break;
+      }
+      break;
+
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case TSHELL7:
+    switch (info) {
+    case NNODES: answer = 7; break;
+    case NDIM: answer   = 3; break;
+    case NN_SIDE:
+      switch (supp) {
+      case 1:
+      case 2: answer  = 7; break;
       default: answer = 3; break;
       }
       break;
@@ -223,9 +255,27 @@ int elem_info(int info, int ielem_type, int supp)
     }
     break;
 
+  case TRI4:
+    switch (info) { /* select type of information required */
+    case NNODES:  answer                   = 4; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 2; break;
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
   case TRI6:
     switch (info) { /* select type of information required */
     case NNODES:  answer                   = 6; break;
+    case NDIM:  answer       = 2; break;
+    case NN_SIDE:  answer   = 3; break;
+    default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
+    }
+    break;
+
+  case TRI7:
+    switch (info) { /* select type of information required */
+    case NNODES:  answer                   = 7; break;
     case NDIM:  answer       = 2; break;
     case NN_SIDE:  answer   = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
@@ -545,11 +595,23 @@ int get_type(char string[], int nodes, int num_dim)
         else
           answer = TSHELL3;
         break;
+      case 4:                                  /* bilinear triangle */
+        if (num_dim == 2)
+          answer = TRI4;
+        else
+          answer = TSHELL4;
+        break;
       case 6: /* biquadratic triangle */
         if (num_dim == 2)
           answer = TRI6;
         else
           answer = TSHELL6;
+        break;
+      case 7: /* biquadratic triangle */
+        if (num_dim == 2)
+          answer = TRI7;
+        else
+          answer = TSHELL7;
         break;
       default:
         if (num_dim == 2)

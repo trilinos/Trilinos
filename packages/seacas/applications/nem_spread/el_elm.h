@@ -50,7 +50,9 @@
 #define QUAD8 18
 #define QUAD9 19
 #define TRI3 23
+#define TRI4 24
 #define TRI6 26
+#define TRI7 27
 
 /* 3-d elements */
 
@@ -73,7 +75,9 @@
 #define WEDGE21 521
 #define HEXSHELL 608
 #define TSHELL3 703
+#define TSHELL4 704
 #define TSHELL6 706
+#define TSHELL7 707
 #define PYRAMID5 805
 #define PYRAMID13 813
 
