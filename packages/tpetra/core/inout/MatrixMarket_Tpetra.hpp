@@ -186,7 +186,9 @@ namespace Tpetra {
       typedef typename SparseMatrixType::node_type node_type;
 
       //! The CrsGraph specialization associated with SparseMatrixType.
-      typedef typename SparseMatrixType::crs_graph_type sparse_graph_type;
+      typedef CrsGraph<local_ordinal_type,
+                       global_ordinal_type,
+                       node_type> sparse_graph_type;
 
       //! The MultiVector specialization associated with SparseMatrixType.
       typedef MultiVector<scalar_type,
@@ -5701,6 +5703,8 @@ namespace Tpetra {
                           node_type> multivector_type;
       //! Specialization of Tpetra::Map that matches SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      //! Specialization of Tpetra::CrsGraph that matches SparseMatrixType.
+      typedef CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
 
       typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>            operator_type;
       typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>         mv_type;
@@ -6121,7 +6125,7 @@ namespace Tpetra {
       ///   on one process.  This will be fixed in the future.
       static void
       writeSparseGraph (std::ostream& out,
-                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const crs_graph_type& graph,
                         const std::string& graphName,
                         const std::string& graphDescription,
                         const bool debug=false)
@@ -6136,7 +6140,6 @@ namespace Tpetra {
         using std::endl;
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef typename sparse_matrix_type::crs_graph_type crs_graph_type;
 
         // Get the graph's communicator.  Processes on which the
         // graph's Map or communicator is null don't participate in
@@ -6364,7 +6367,7 @@ namespace Tpetra {
       /// full documentation.
       static void
       writeSparseGraph (std::ostream& out,
-                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const crs_graph_type& graph,
                         const bool debug=false)
       {
         writeSparseGraph (out, graph, "", "", debug);
@@ -6406,7 +6409,7 @@ namespace Tpetra {
       ///   on one process.  This will be fixed in the future.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const crs_graph_type& graph,
                             const std::string& graphName,
                             const std::string& graphDescription,
                             const bool debug=false)
@@ -6439,7 +6442,7 @@ namespace Tpetra {
       /// See the above five-argument overload for full documentation.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const crs_graph_type& graph,
                             const bool debug=false)
       {
         writeSparseGraphFile (filename, graph, "", "", debug);
@@ -6455,7 +6458,7 @@ namespace Tpetra {
       /// Teuchos::RCP.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const Teuchos::RCP<const crs_graph_type>& pGraph,
                             const std::string& graphName,
                             const std::string& graphDescription,
                             const bool debug=false)
@@ -6474,7 +6477,7 @@ namespace Tpetra {
       /// Teuchos::RCP.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const Teuchos::RCP<const crs_graph_type>& pGraph,
                             const bool debug=false)
       {
         writeSparseGraphFile (filename, *pGraph, "", "", debug);
