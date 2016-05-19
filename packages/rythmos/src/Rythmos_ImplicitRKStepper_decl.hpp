@@ -229,6 +229,9 @@ public:
 
   //@}
 
+  /** \brief . */
+  bool isEmbeddedRK_ = false; // Sidafa
+
 private:
 
   // ///////////////////////
