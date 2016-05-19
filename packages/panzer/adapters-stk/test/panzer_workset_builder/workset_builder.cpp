@@ -64,7 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 

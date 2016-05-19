@@ -51,7 +51,7 @@
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "Kokkos_DynRankView.hpp"
 

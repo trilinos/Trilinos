@@ -43,7 +43,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Sacado.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_MDField.hpp"
 

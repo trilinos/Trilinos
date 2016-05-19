@@ -46,7 +46,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {

@@ -60,7 +60,7 @@
 #include <Shards_CellTopologyData.h>
 
 #include <PanzerAdaptersSTK_config.hpp>
-#include <KokkosExp_ViewFactory.hpp>
+#include <Kokkos_ViewFactory.hpp>
 
 #include <unordered_map>
 

@@ -50,7 +50,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
