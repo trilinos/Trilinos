@@ -247,6 +247,7 @@ private:
   RCP<Thyra::VectorBase<Scalar> > oldSolution_; // Sidafa
   EStepLETStatus stepLETStatus_; // Local Error Test Status (Sidafa)
   RCP<Thyra::VectorBase<Scalar> > xhat_; // Embedded solution (Sidafa)
+  RCP<Thyra::VectorBase<Scalar> > ee_; // error (Sidafa) 
 
   TimeRange<Scalar> timeRange_;
 

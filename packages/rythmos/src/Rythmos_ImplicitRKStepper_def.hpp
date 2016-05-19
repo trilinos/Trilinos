@@ -290,6 +290,10 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
 
   x_ = x_init->clone_v();
 
+ // for the embedded RK method
+  xhat_ = x_init->clone_v();
+  ee_ = x_init->clone_v();
+
   // x_dot
 
   x_dot_ = createMember(x_->space());
@@ -562,6 +566,27 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
      assembleIRKSolution( irkButcherTableau_->b(), current_dt, *x_old_, *x_stage_bar_,
        outArg(*x_)
        );
+    
+        std::cout << "SIDAFA-Embedded" << irkButcherTableau_->isEmbeddedMethod()   << std::endl;
+     //if using embedded method, estimate LTE
+     if (irkButcherTableau_->isEmbeddedMethod() ){
+        std::cout << "SIDAFA-Embedded" << std::endl;
+
+        if (irkButcherTableau_->bhat() == Teuchos::null){
+        std::cout << "SIDAFA-Embedded: bhat is null" << std::endl;
+        }
+         
+        //V_V(xhat_.ptr(), *x_);
+        // getting Segmentation fault here
+        assembleIRKSolution( irkButcherTableau_->bhat(), current_dt, *x_old_, *x_stage_bar_,
+          outArg(*xhat_)
+          ); 
+        // ee_ = (x_ - xhat_)
+        Thyra::V_VmV(ee_.ptr(), *x_, *xhat_);
+        //Thyra::V_VmV(x_.ptr(), *x_, *xhat_);
+        //stepControl_->setCorrection(*this, x_, ee_ , rkNewtonConvergenceStatus_);
+        //stepControl_->setCorrection(*this, x_, x_, rkNewtonConvergenceStatus_);
+     }
 
      // Update time range
      timeRange_ = timeRange(t,t+current_dt);

@@ -117,7 +117,7 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& b() const { return b_; }
     /** \brief . */
-    virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const { return (isEmbedded_ ) ? bhat_ : b_; }
+    virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const { return bhat_ ; }
     /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const { return c_; }
     /** \brief . */
@@ -134,7 +134,7 @@ class RKButcherTableauDefaultBase :
         const Teuchos::SerialDenseVector<int,Scalar>& c_in,
         const int order_in,
         const std::string& longDescription_in,
-        const bool isEmbedded = false, /* (default) tell the stepper the RK is an embedded method  */
+        bool isEmbedded = false, /* (default) tell the stepper the RK is an embedded method  */
         const Teuchos::SerialDenseVector<int,Scalar>& bhat_in =  Teuchos::SerialDenseVector<int,Scalar>() /* (default) */
         )
     {
@@ -230,7 +230,7 @@ class RKButcherTableauDefaultBase :
 
     /* Sidafa - Embedded method parameters */
     Teuchos::SerialDenseVector<int,Scalar> bhat_; 
-    bool isEmbedded_;
+    bool isEmbedded_ = false;
 };
 
 
