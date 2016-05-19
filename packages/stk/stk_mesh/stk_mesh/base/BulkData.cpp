@@ -7413,6 +7413,11 @@ const stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph() cons
     return *m_elemElemGraph;
 }
 
+bool BulkData::has_face_adjacent_element_graph() const
+{
+    return m_elemElemGraph != nullptr;
+}
+
 #ifdef SIERRA_MIGRATION
 EntityLess::EntityLess(const BulkData& mesh)
   : m_mesh(&mesh),

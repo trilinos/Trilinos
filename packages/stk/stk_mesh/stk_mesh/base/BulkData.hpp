@@ -759,6 +759,7 @@ public:
   void delete_face_adjacent_element_graph();
   stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
   const stk::mesh::ElemElemGraph& get_face_adjacent_element_graph() const;
+  bool has_face_adjacent_element_graph() const;
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
   unsigned get_mesh_diagnostic_error_count() const ;

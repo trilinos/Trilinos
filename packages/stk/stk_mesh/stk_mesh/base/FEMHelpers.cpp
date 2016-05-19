@@ -223,6 +223,12 @@ Entity declare_element_side(
     return declare_element_to_entity(mesh, elem, side, local_side_id, parts, side_top);
 }
 
+stk::mesh::EntityId side_id_formula(const stk::mesh::BulkData& bulkData, stk::mesh::Entity elem, unsigned sideOrdinal)
+{
+    //this is the side-id formula used by IO. the "+1" is because IO always uses one-based side ordinals
+    return 10*bulkData.identifier(elem) + sideOrdinal+1;
+}
+
 Entity declare_element_side(BulkData& bulkData, Entity elem, const unsigned side_ordinal, const stk::mesh::PartVector& add_parts)
 {
     stk::mesh::Entity sideEntity = stk::mesh::impl::get_side_for_element(bulkData, elem, side_ordinal);
@@ -232,11 +238,13 @@ Entity declare_element_side(BulkData& bulkData, Entity elem, const unsigned side
     }
     else
     {
-        stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
-        stk::mesh::SideConnector sideConnector = graph.get_side_connector();
-        stk::mesh::EntityId global_side_id = 10*bulkData.identifier(elem)+side_ordinal+1;
+        stk::mesh::EntityId global_side_id = side_id_formula(bulkData, elem, side_ordinal);
         sideEntity = stk::mesh::declare_element_side(bulkData, global_side_id, elem, side_ordinal, add_parts);
-        sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
+        if (bulkData.has_face_adjacent_element_graph()) {
+            stk::mesh::ElemElemGraph &graph = bulkData.get_face_adjacent_element_graph();
+            stk::mesh::SideConnector sideConnector = graph.get_side_connector();
+            sideConnector.connect_side_to_all_elements(sideEntity, elem, side_ordinal);
+        }
     }
     return sideEntity;
 }

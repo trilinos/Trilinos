@@ -64,7 +64,7 @@ Entity declare_element( BulkData & mesh ,
 Entity declare_element_side(BulkData& bulkData,
                             Entity elem,
                             const unsigned side_ordinal,
-                            const stk::mesh::PartVector& add_parts);
+                            const stk::mesh::PartVector& add_parts = stk::mesh::PartVector());
 
 /** \brief  Create (or find) an element side.
  *
