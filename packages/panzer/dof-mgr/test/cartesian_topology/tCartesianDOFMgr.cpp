@@ -74,8 +74,8 @@ namespace unit_test {
 
 typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
-// typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
+
 template <typename Intrepid2Type>
 RCP<const panzer::FieldPattern> buildFieldPattern()
 {
