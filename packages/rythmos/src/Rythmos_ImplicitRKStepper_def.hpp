@@ -567,20 +567,13 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
        outArg(*x_)
        );
     
-        //std::cout << "SIDAFA-Embedded" << irkButcherTableau_->isEmbeddedMethod()   << std::endl;
      //if using embedded method, estimate LTE
      if (irkButcherTableau_->isEmbeddedMethod() ){
-        //std::cout << "SIDAFA-Embedded" << std::endl;
-/*
-        if (irkButcherTableau_->bhat() == Teuchos::null){
-        std::cout << "SIDAFA-Embedded: bhat is null" << std::endl;
-        }
-  */       
-        //V_V(xhat_.ptr(), *x_);
-        // getting Segmentation fault here
+
         assembleIRKSolution( irkButcherTableau_->bhat(), current_dt, *x_old_, *x_stage_bar_,
           outArg(*xhat_)
           ); 
+
         // ee_ = (x_ - xhat_)
         Thyra::V_VmV(ee_.ptr(), *x_, *xhat_);
         stepControl_->setCorrection(*this, x_, ee_ , rkNewtonConvergenceStatus_);
