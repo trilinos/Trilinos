@@ -71,6 +71,8 @@ using Teuchos::rcpFromRef;
 namespace panzer {
 namespace unit_test {
 
+typedef CartesianConnManager<int,Ordinal64>::Triplet<Ordinal64> Triplet;
+
 typedef Intrepid2::FieldContainer<double> FieldContainer;
 // typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 template <typename Intrepid2Type>
@@ -80,6 +82,14 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
   RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
   RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
   return pattern;
+}
+
+std::string getElementBlock(const Triplet & element,
+                                    const CartesianConnManager<int,Ordinal64> & connManager)
+                                    
+{
+  int localElmtId = connManager.computeLocalElementIndex(element); 
+  return connManager.getBlockId(localElmtId);
 }
 
 TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
@@ -132,6 +142,14 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   dofManager->addField("eblock-0_1_0","UY",pattern_U);
   dofManager->addField("eblock-0_1_0","UZ",pattern_U);
 
+  int temp_num = dofManager->getFieldNum("TEMPERATURE");
+  int ux_num   = dofManager->getFieldNum("UX");
+  int uy_num   = dofManager->getFieldNum("UX");
+  int uz_num   = dofManager->getFieldNum("UX");
+  int p_num    = dofManager->getFieldNum("PRESSURE");
+  int b_num    = dofManager->getFieldNum("B");
+  int e_num    = dofManager->getFieldNum("E");
+
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
  
@@ -144,9 +162,109 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
 
   out << std::endl << "Mesh Topology: " << std::endl;
   printMeshTopology(out,*dofManager);
-}
 
+  auto myOffset   = connManager->getMyOffsetTriplet();
+  auto myElements = connManager->getMyElementsTriplet();
+
+  out << "My Offset   = " << myOffset.x << " " << myOffset.y << " " << myOffset.z << std::endl;
+  out << "My myElements = " << myElements.x << " " << myElements.y << " " << myElements.z << std::endl;
+
+  // check sharing locally on this processor
+  {
+    // choose an element in the middle of the day
+    Triplet element;
+    element.x = myOffset.x + myElements.x/2-1;
+    element.y = myOffset.y + myElements.y/2-1;
+    element.z = myOffset.z + myElements.z/2-1;
+
+    out << "Root element = " << element.x << " " << element.y << " " << element.z << std::endl;
+
+    int localElmtId    = connManager->computeLocalElementIndex(element);
+    int localElmtId_px = connManager->computeLocalElementIndex(Triplet(element.x+1,element.y,element.z));
+    int localElmtId_py = connManager->computeLocalElementIndex(Triplet(element.x,element.y+1,element.z));
+    int localElmtId_pz = connManager->computeLocalElementIndex(Triplet(element.x,element.y,element.z+1));
+
+    TEST_ASSERT(localElmtId>=0);
+    TEST_ASSERT(localElmtId_px>=0);
+    TEST_ASSERT(localElmtId_py>=0);
+    TEST_ASSERT(localElmtId_pz>=0);
+
+    std::string eblock    = getElementBlock(element,*connManager);
+    std::string eblock_px = getElementBlock(Triplet(element.x+1,element.y,element.z),*connManager);
+    std::string eblock_py = getElementBlock(Triplet(element.x,element.y+1,element.z),*connManager);
+    std::string eblock_pz = getElementBlock(Triplet(element.x,element.y,element.z+1),*connManager);
+
+    std::vector<Ordinal64> gids, gids_px, gids_py, gids_pz;
+
+    dofManager->getElementGIDs(   localElmtId,   gids);
+    dofManager->getElementGIDs(localElmtId_px,gids_px);
+    dofManager->getElementGIDs(localElmtId_py,gids_py);
+    dofManager->getElementGIDs(localElmtId_pz,gids_pz);
+
+    {
+      out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
+      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,1); // +x
+      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_px,ux_num,2,3); // -x
+
+      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
+
+      std::vector<Ordinal64> gid_sub, gid_sub_px;
+      for(std::size_t i=0;i<offsets.first.size();i++) {
+        gid_sub.push_back(gids[offsets.first[i]]);
+        gid_sub_px.push_back(gids_px[offsets_n.first[i]]);
+      }
+
+      std::sort(gid_sub.begin(),gid_sub.end());
+      std::sort(gid_sub_px.begin(),gid_sub_px.end());
+
+      for(std::size_t i=0;i<gid_sub.size();i++)
+        TEST_EQUALITY(gid_sub[i],gid_sub_px[i]);
+    }
+
+    {
+      out << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
+      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,2); // +y
+      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_py,ux_num,2,0); // -y
+
+      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
+
+      std::vector<Ordinal64> gid_sub, gid_sub_py;
+      for(std::size_t i=0;i<offsets.first.size();i++) {
+        gid_sub.push_back(gids[offsets.first[i]]);
+        gid_sub_py.push_back(gids_py[offsets_n.first[i]]);
+      }
+
+      std::sort(gid_sub.begin(),gid_sub.end());
+      std::sort(gid_sub_py.begin(),gid_sub_py.end());
+
+      for(std::size_t i=0;i<gid_sub.size();i++)
+        TEST_EQUALITY(gid_sub[i],gid_sub_py[i]);
+    }
+
+    {
+      out << "Elements " << localElmtId << " " << localElmtId_pz << std::endl;
+      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,ux_num,2,5); // +z
+      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_pz,ux_num,2,4); // -z
+
+      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
+
+      std::vector<Ordinal64> gid_sub, gid_sub_pz;
+      for(std::size_t i=0;i<offsets.first.size();i++) {
+        gid_sub.push_back(gids[offsets.first[i]]);
+        gid_sub_pz.push_back(gids_pz[offsets_n.first[i]]);
+      }
+
+      std::sort(gid_sub.begin(),gid_sub.end());
+      std::sort(gid_sub_pz.begin(),gid_sub_pz.end());
+
+      for(std::size_t i=0;i<gid_sub.size();i++)
+        TEST_EQUALITY(gid_sub[i],gid_sub_pz[i]);
+    }
+  }
+
+  // assuming a 1d partition, check shared boundaries between processors
+    
+}
 
 } // end unit test
 } // end panzer
-

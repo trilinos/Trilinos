@@ -163,9 +163,10 @@ buildConnectivity(const panzer::FieldPattern & fp)
       std::vector<GlobalOrdinal> & conn = connectivity_[element];
       
       // loop over each dimension, add in coefficients
-      int ordered_dim[4] = { 0, 1, 3, 2 }; // this is the order of creation
+      //int ordered_dim[4] = { 0, 1, 3, 2 }; // this is the order of creation
                                            // because of the way shards orders
                                            // 3D elements
+      int ordered_dim[4] = { 0, 1, 2, 3 }; // this is the order of creation
       for(int d=0;d<4;d++) {
         int od = ordered_dim[d];
         if(dim_==2) {
@@ -273,9 +274,6 @@ getBlockId(LocalOrdinal localElmtId) const
 {
   auto globalTriplet = computeLocalElementGlobalTriplet(localElmtId,myElements_,myOffset_);
 
-  // int i = Teuchos::as<int>(globalTriplet.x/blocks_.x);
-  // int j = Teuchos::as<int>(globalTriplet.y/blocks_.y);
-  // int k = Teuchos::as<int>(globalTriplet.z/blocks_.z);
   int i = Teuchos::as<int>(globalTriplet.x/elements_.x);
   int j = Teuchos::as<int>(globalTriplet.y/elements_.y);
   int k = Teuchos::as<int>(globalTriplet.z/elements_.z);
@@ -488,9 +486,11 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
     }
     else if(subcellDim==1) {
       GlobalOrdinal basePoint = index.x+index.y*(2*totalElements_.x+1)+
-                                index.z*(totalElements_.x+1)*(totalElements_.y+1)+
-                                index.z*(2*totalElements_.x+1)*totalElements_.y;
-      GlobalOrdinal kshift = (totalElements_.x+totalElements_.y*(2*totalElements_.x+1))+
+                                index.z*(totalElements_.x+1)*totalElements_.y +
+                                index.z*totalElements_.x*(totalElements_.y+1) +
+                                index.z*(totalElements_.x+1)*(totalElements_.y+1);
+      GlobalOrdinal kshift = (totalElements_.x+1)*totalElements_.y +
+                             totalElements_.x*(totalElements_.y+1) +
                              (totalElements_.x+1)*(totalElements_.y+1);
       GlobalOrdinal edge =  totalNodes_ + basePoint;
 
@@ -508,7 +508,8 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
 
       // vertical edges
       if(c==8 || c==9 || c==10 || c==11)
-        edge += (totalElements_.x+totalElements_.y*(2*totalElements_.x+1));
+        edge +=  (totalElements_.x+1)*totalElements_.y + totalElements_.x*(totalElements_.y+1) 
+                - index.y*totalElements_.x;
 
       if(c== 8) edge += 0;
       if(c== 9) edge += 1;
@@ -524,10 +525,14 @@ updateConnectivity_3d(const panzer::FieldPattern & fp,
       GlobalOrdinal basePoint = index.x+index.y*totalElements_.x+index.z*kshift;
       GlobalOrdinal face = totalNodes_+totalEdges_+basePoint;
 
-      if(c==0) face += totalElements_.x*totalElements_.y;
-      if(c==1) face += totalElements_.x*totalElements_.y+ 1 +   totalElements_.x;
-      if(c==2) face += totalElements_.x*totalElements_.y+ 2*totalElements_.x+1;
-      if(c==3) face += totalElements_.x*totalElements_.y+       totalElements_.x;
+      // vertical faces
+      if(c==0 || c==1 || c==2 || c==3)
+        face += totalElements_.x*totalElements_.y + (index.y+1)*(totalElements_.x+1);
+
+      if(c==0) face += -totalElements_.x-1;
+      if(c==1) face += 0;
+      if(c==2) face += totalElements_.x;
+      if(c==3) face += -1;
       if(c==4) face += 0;
       if(c==5) face += kshift; // move it up a level
 
