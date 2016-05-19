@@ -1081,6 +1081,17 @@ namespace Xpetra {
     /// number of column blocks
     virtual size_t Cols() const                                       { return domainmaps_->NumMaps(); }
 
+    /// return unwrap 1x1 blocked operators
+    Teuchos::RCP<Matrix> getCrsMatrix() const {
+      TEUCHOS_TEST_FOR_EXCEPTION(Rows()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Rows() << " block rows, though.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Cols()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Cols() << " block columns, though.");
+
+      RCP<Matrix> mat = getMatrix(0,0);
+      RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+      if (bmat == Teuchos::null) return mat;
+      return bmat->getCrsMatrix();
+    }
+
     /// return block (r,c)
     Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       {
       TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
