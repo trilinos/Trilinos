@@ -45,6 +45,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 // #include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_FieldContainer.hpp"
@@ -105,6 +106,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   #endif
 
   int np = comm.getSize(); // number of processors
+  int rank = comm.getRank(); // number of processors
 
   // mesh description
   Ordinal64 nx = 10, ny = 7, nz = 4;
@@ -142,13 +144,13 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   dofManager->addField("eblock-0_1_0","UY",pattern_U);
   dofManager->addField("eblock-0_1_0","UZ",pattern_U);
 
-  int temp_num = dofManager->getFieldNum("TEMPERATURE");
+  // int temp_num = dofManager->getFieldNum("TEMPERATURE");
   int ux_num   = dofManager->getFieldNum("UX");
-  int uy_num   = dofManager->getFieldNum("UX");
-  int uz_num   = dofManager->getFieldNum("UX");
-  int p_num    = dofManager->getFieldNum("PRESSURE");
-  int b_num    = dofManager->getFieldNum("B");
-  int e_num    = dofManager->getFieldNum("E");
+  int uy_num   = dofManager->getFieldNum("UY");
+  // int uz_num   = dofManager->getFieldNum("UZ");
+  // int p_num    = dofManager->getFieldNum("PRESSURE");
+  // int b_num    = dofManager->getFieldNum("B");
+  // int e_num    = dofManager->getFieldNum("E");
 
   // build global unknowns (useful comment!)
   dofManager->buildGlobalUnknowns();
@@ -263,6 +265,59 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   }
 
   // assuming a 1d partition, check shared boundaries between processors
+  {
+    Triplet element_l;
+    element_l.x = myOffset.x;
+    element_l.y = myOffset.y + myElements.y/2;
+    element_l.z = myOffset.z + myElements.z/2;
+
+    Triplet element_r;
+    element_r.x = myOffset.x + myElements.x-1;
+    element_r.y = myOffset.y + myElements.y/2;
+    element_r.z = myOffset.z + myElements.z/2;
+
+    int localElmtId_l    = connManager->computeLocalElementIndex(element_l);
+    int localElmtId_r    = connManager->computeLocalElementIndex(element_r);
+
+    TEST_ASSERT(localElmtId_l>=0);
+    TEST_ASSERT(localElmtId_r>=0);
+
+    std::vector<Ordinal64> gids_l, gids_r;
+    dofManager->getElementGIDs(   localElmtId_l,   gids_l);
+    dofManager->getElementGIDs(   localElmtId_r,   gids_r);
+
+    std::string eblock_l = getElementBlock(element_l,*connManager);
+    std::string eblock_r = getElementBlock(element_r,*connManager);
+
+    auto offsets_l   = dofManager->getGIDFieldOffsets_closure(   eblock_l,uy_num,2,3); // -x
+    auto offsets_r   = dofManager->getGIDFieldOffsets_closure(   eblock_r,uy_num,2,1); // +x
+
+    TEST_EQUALITY(offsets_l.first.size(),offsets_r.first.size());
+
+    out << "Elements L/R " << localElmtId_l << " " << localElmtId_r << std::endl;
+    std::vector<Ordinal64> gid_sub_l, gid_sub_r;
+    for(std::size_t i=0;i<offsets_l.first.size();i++) {
+      gid_sub_l.push_back(gids_l[offsets_l.first[i]]);
+      gid_sub_r.push_back(gids_r[offsets_r.first[i]]);
+    }
+
+    std::sort(gid_sub_l.begin(),gid_sub_l.end());
+    std::sort(gid_sub_r.begin(),gid_sub_r.end());
+
+    // send left
+    if(rank!=0) {
+      Teuchos::send(comm,Teuchos::as<int>(gid_sub_l.size()),&gid_sub_l[0],rank-1);
+    }
+
+    // recieve right, check 
+    if(rank!=np-1) {
+      std::vector<Ordinal64> gid_remote(gid_sub_r.size(),-1);
+      Teuchos::receive(comm,rank+1,Teuchos::as<int>(gid_sub_r.size()),&gid_remote[0]);
+
+      for(std::size_t i=0;i<gid_sub_r.size();i++)
+        TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
+    }
+  }
     
 }
 
