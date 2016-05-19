@@ -1787,12 +1787,12 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
 #ifdef HAVE_TPETRA_DEBUG
-    typename MV::dual_view_type X_colMap_view = X_colMap->getDualView ();
-    typename MV::dual_view_type X_domainMap_view = X_domainMap->getDualView ();
+    auto X_colMap_host_view = X_colMap->template getLocalView<Kokkos::HostSpace> ();
+    auto X_domainMap_host_view = X_domainMap->template getLocalView<Kokkos::HostSpace> ();
 
     if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_view.h_view.ptr_on_device () != X_domainMap_view.h_view.ptr_on_device (),
+        X_colMap_host_view.ptr_on_device () != X_domainMap_host_view.h_view.ptr_on_device (),
         std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
         "Pointer to start of column Map view of X is not equal to pointer to "
         "start of (domain Map view of) X.  This may mean that "
@@ -1801,13 +1801,13 @@ void Relaxation<MatrixType>::MTGaussSeidel (
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      X_colMap_view.dimension_0 () < X_domainMap_view.dimension_0 () ||
+      X_colMap_host_view.dimension_0 () < X_domainMap_host_view.dimension_0 () ||
       X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
       std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
       "X_colMap has fewer local rows than X_domainMap.  "
-      "X_colMap_view.dimension_0() = " << X_colMap_view.dimension_0 ()
-      << ", X_domainMap_view.dimension_0() = "
-      << X_domainMap_view.dimension_0 ()
+      "X_colMap_host_view.dimension_0() = " << X_colMap_host_view.dimension_0 ()
+      << ", X_domainMap_host_view.dimension_0() = "
+      << X_domainMap_host_view.dimension_0 ()
       << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
       << ", and X_domainMap->getLocalLength() = "
       << X_domainMap->getLocalLength ()
