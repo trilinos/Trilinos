@@ -618,9 +618,9 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
         TEST_EQUALITY(conn[7], nodeBasePoint + 0 + (nx*bx+1) + (nx*bx+1)*(ny*by+1));
 
         // edges
-        auto edgeBasePoint = totalNodes + global.x + global.y *(2*bx*nx+1) + global.z*(by*ny*(2*bx*nx+1) + (nx*bx+1)*(ny*by+1));
-        auto kshift_ht = bx*nx+by*ny*(2*bx*nx+1) + (nx*bx+1)*(ny*by+1); // horizontal: top
-        auto kshift_v  = bx*nx+by*ny*(2*bx*nx+1);                       // vertical
+        auto e_ks = (bx*nx+1)*by*ny + bx*nx*(by*ny+1) + (nx*bx+1)*(ny*by+1);
+        auto e_kp = (bx*nx+1)*by*ny + bx*nx*(by*ny+1);
+        auto edgeBasePoint = totalNodes + global.x + global.y *(2*bx*nx+1) + global.z*e_ks;
 
         // horizontal edges: bottom 
         TEST_EQUALITY(conn[ 8], edgeBasePoint +           0);
@@ -629,29 +629,30 @@ TEUCHOS_UNIT_TEST(tCartesianTop, connmanager_3d_1dpart)
         TEST_EQUALITY(conn[11], edgeBasePoint +   bx*nx + 0);
 
         // horizontal edges: top
-        TEST_EQUALITY(conn[12], edgeBasePoint + kshift_ht +           0);
-        TEST_EQUALITY(conn[13], edgeBasePoint + kshift_ht +   bx*nx + 1);
-        TEST_EQUALITY(conn[14], edgeBasePoint + kshift_ht + 2*bx*nx + 1);
-        TEST_EQUALITY(conn[15], edgeBasePoint + kshift_ht +   bx*nx + 0);
+        TEST_EQUALITY(conn[12], edgeBasePoint + e_ks +           0);
+        TEST_EQUALITY(conn[13], edgeBasePoint + e_ks +   bx*nx + 1);
+        TEST_EQUALITY(conn[14], edgeBasePoint + e_ks + 2*bx*nx + 1);
+        TEST_EQUALITY(conn[15], edgeBasePoint + e_ks +   bx*nx + 0);
 
         // vertical edges
-        TEST_EQUALITY(conn[16], edgeBasePoint + kshift_v +         0);
-        TEST_EQUALITY(conn[17], edgeBasePoint + kshift_v +         1);
-        TEST_EQUALITY(conn[18], edgeBasePoint + kshift_v + bx*nx + 2);
-        TEST_EQUALITY(conn[19], edgeBasePoint + kshift_v + bx*nx + 1);
+        TEST_EQUALITY(conn[16], edgeBasePoint + e_kp - global.y*bx*nx);
+        TEST_EQUALITY(conn[17], edgeBasePoint + e_kp - global.y*bx*nx     + 1);
+        TEST_EQUALITY(conn[18], edgeBasePoint + e_kp - (global.y-1)*bx*nx + 2);
+        TEST_EQUALITY(conn[19], edgeBasePoint + e_kp - (global.y-1)*bx*nx + 1);
 
         // cells
-        TEST_EQUALITY(conn[20], totalNodes + totalEdges + totalFaces + global.x + nx*bx*global.y + nx*bx*ny*by*global.z);
+        TEST_EQUALITY(conn[26], totalNodes + totalEdges + totalFaces + global.x + nx*bx*global.y + nx*bx*ny*by*global.z);
 
         // faces
-        auto kshift = nx*bx*ny*by + (nx*bx+1)*ny*by + nx*bx*(ny*by+1);
-        auto faceBasePoint = totalNodes + totalEdges + global.x + global.y*nx*bx + global.z*kshift;
-        TEST_EQUALITY(conn[21], faceBasePoint + nx*bx*ny*by +       0 + 0);
-        TEST_EQUALITY(conn[22], faceBasePoint + nx*bx*ny*by +   nx*bx + 1);
-        TEST_EQUALITY(conn[23], faceBasePoint + nx*bx*ny*by + 2*nx*bx + 1);
-        TEST_EQUALITY(conn[24], faceBasePoint + nx*bx*ny*by +   nx*bx + 0);
-        TEST_EQUALITY(conn[25], faceBasePoint +           0 +       0 + 0);
-        TEST_EQUALITY(conn[26], faceBasePoint +     kshift  +       0 + 0);
+        auto f_ks = nx*bx*ny*by + (nx*bx+1)*ny*by + nx*bx*(ny*by+1);
+        auto f_kp = nx*bx*ny*by;
+        auto faceBasePoint = totalNodes + totalEdges + global.x + global.y*nx*bx + global.z*f_ks;
+        TEST_EQUALITY(conn[20], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) - nx*bx -1);
+        TEST_EQUALITY(conn[21], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1));
+        TEST_EQUALITY(conn[22], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) + nx*bx);
+        TEST_EQUALITY(conn[23], faceBasePoint + f_kp + (global.y+1)*(nx*bx+1) - 1);
+        TEST_EQUALITY(conn[24], faceBasePoint);
+        TEST_EQUALITY(conn[25], faceBasePoint + f_ks);
       }
     }
   }
