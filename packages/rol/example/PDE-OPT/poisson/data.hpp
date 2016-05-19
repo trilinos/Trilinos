@@ -762,17 +762,16 @@ public:
 
   void outputTpetraData() const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> >   matWriter;
-    Tpetra::MatrixMarket::Writer< Tpetra::MultiVector<> > vecWriter;
     matWriter.writeSparseFile("stiffness_mat", matA_);
     matWriter.writeSparseFile("dirichlet_mat", matA_dirichlet_);
     matWriter.writeSparseFile("mass_mat", matM_);
-    vecWriter.writeDenseFile("Ud_vec", vecUd_);
+    matWriter.writeDenseFile("Ud_vec", vecUd_);
   }
 
 
   void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,
                           const std::string &filename) const {
-    Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<> > vecWriter;
+    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
   }
 
