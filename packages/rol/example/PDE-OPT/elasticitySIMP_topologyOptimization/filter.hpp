@@ -516,7 +516,7 @@ public:
 
   void outputTpetraVector(const Teuchos::RCP<const Tpetra::MultiVector<> > &vec,
                           const std::string &filename) const {
-    Tpetra::MatrixMarket::Writer<Tpetra::MultiVector<> > vecWriter;
+    Tpetra::MatrixMarket::Writer<Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);
   }
 
