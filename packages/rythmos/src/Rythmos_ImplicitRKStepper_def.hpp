@@ -567,15 +567,15 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
        outArg(*x_)
        );
     
-        std::cout << "SIDAFA-Embedded" << irkButcherTableau_->isEmbeddedMethod()   << std::endl;
+        //std::cout << "SIDAFA-Embedded" << irkButcherTableau_->isEmbeddedMethod()   << std::endl;
      //if using embedded method, estimate LTE
      if (irkButcherTableau_->isEmbeddedMethod() ){
-        std::cout << "SIDAFA-Embedded" << std::endl;
-
+        //std::cout << "SIDAFA-Embedded" << std::endl;
+/*
         if (irkButcherTableau_->bhat() == Teuchos::null){
         std::cout << "SIDAFA-Embedded: bhat is null" << std::endl;
         }
-         
+  */       
         //V_V(xhat_.ptr(), *x_);
         // getting Segmentation fault here
         assembleIRKSolution( irkButcherTableau_->bhat(), current_dt, *x_old_, *x_stage_bar_,
@@ -583,10 +583,21 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
           ); 
         // ee_ = (x_ - xhat_)
         Thyra::V_VmV(ee_.ptr(), *x_, *xhat_);
-        //Thyra::V_VmV(x_.ptr(), *x_, *xhat_);
-        //stepControl_->setCorrection(*this, x_, ee_ , rkNewtonConvergenceStatus_);
-        //stepControl_->setCorrection(*this, x_, x_, rkNewtonConvergenceStatus_);
+        stepControl_->setCorrection(*this, x_, ee_ , rkNewtonConvergenceStatus_);
+
+        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
+
+        if (!stepPass) { // stepPass = false
+           stepLETStatus_ = STEP_LET_STATUS_FAILED;
+           rkNewtonConvergenceStatus_ = -1; // just making sure here
+        } else { // stepPass = true
+           stepLETStatus_ = STEP_LET_STATUS_PASSED;
+           rkNewtonConvergenceStatus_ = 0; // just making sure here
+        }
      }
+   }
+
+   if (rkNewtonConvergenceStatus_ == 0) {
 
      // Update time range
      timeRange_ = timeRange(t,t+current_dt);
@@ -822,6 +833,8 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   if (isVariableStep_ ) {
   // Initialize StepControl
+
+    isEmbeddedRK_ = irkButcherTableau_->isEmbeddedMethod(); // determine if RK method is an embedded method
   if (stepControl_ == Teuchos::null) {
      RCP<ImplicitBDFStepperRampingStepControl<Scalar> > rkStepControl =
      Teuchos::rcp(new ImplicitBDFStepperRampingStepControl<Scalar>());
