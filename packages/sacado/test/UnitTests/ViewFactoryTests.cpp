@@ -42,6 +42,8 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   using Kokkos::View;
   using Kokkos::DynRankView;
   using Kokkos::createDynRankView;
+  using Kokkos::createDynRankViewWithType;
+  using Kokkos::createViewWithType;
   using Kokkos::dimension_scalar;
   using Kokkos::Experimental::view_alloc;
   using Kokkos::Experimental::WithoutInitializing;
@@ -51,20 +53,74 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
   {
     DynRankView<FadType> a("a",10,4,13,derivative_dim_plus_one);
     TEST_EQUALITY(dimension_scalar(a),derivative_dim_plus_one);
+    TEST_EQUALITY(a.rank(),3);
+
     auto b = createDynRankView(a,"b",5,3,8);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+    TEST_EQUALITY(b.rank(),3);
+
     auto c = createDynRankView(a,view_alloc("c",WithoutInitializing),5,3,8);
     TEST_EQUALITY(dimension_scalar(c),derivative_dim_plus_one);
+    TEST_EQUALITY(c.rank(),3);
+
+    using d_type = Kokkos::DynRankView<FadType,Kokkos::LayoutRight>;
+    d_type d = createDynRankViewWithType<d_type>(a,"d",5,3,8);
+    TEST_EQUALITY(dimension_scalar(d),derivative_dim_plus_one);
+    TEST_EQUALITY(d.rank(),3);
   }
 
   // Test a DynRankView from a View
   {
     View<FadType*> a("a",8,derivative_dim_plus_one);
     TEST_EQUALITY(dimension_scalar(a),derivative_dim_plus_one);
+
     auto b = createDynRankView(a,"b",5,3,8);
     TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+    TEST_EQUALITY(b.rank(),3);
+
     auto c = createDynRankView(a,view_alloc("c",WithoutInitializing),5,3,8);
     TEST_EQUALITY(dimension_scalar(c),derivative_dim_plus_one);
+    TEST_EQUALITY(c.rank(),3);
+
+    using d_type = Kokkos::DynRankView<FadType,Kokkos::LayoutRight>;
+    d_type d = createDynRankViewWithType<d_type>(a,"d",5,3,8);
+    TEST_EQUALITY(dimension_scalar(d),derivative_dim_plus_one);
+    TEST_EQUALITY(d.rank(),3);
+  }
+
+  // Test a View from a View
+  {
+    View<FadType*> a("a",8,derivative_dim_plus_one);
+    TEST_EQUALITY(dimension_scalar(a),derivative_dim_plus_one);
+
+    using b_type = Kokkos::View<FadType***>;
+    b_type b = createViewWithType<b_type>(a,"b",5,3,8);
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+
+    b_type c = createViewWithType<b_type>(a,view_alloc("c",WithoutInitializing),5,3,8);
+    TEST_EQUALITY(dimension_scalar(c),derivative_dim_plus_one);
+
+    using d_type = Kokkos::View<FadType***,Kokkos::LayoutRight>;
+    d_type d = createViewWithType<d_type>(a,"d",5,3,8);
+    TEST_EQUALITY(dimension_scalar(d),derivative_dim_plus_one);
+  }
+
+  // Test a View from a DynRankView
+  {
+    DynRankView<FadType> a("a",10,4,13,derivative_dim_plus_one);
+    TEST_EQUALITY(dimension_scalar(a),derivative_dim_plus_one);
+    TEST_EQUALITY(a.rank(),3);
+
+    using b_type = Kokkos::View<FadType***>;
+    b_type b = createViewWithType<b_type>(a,"b",5,3,8);
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+
+    b_type c = createViewWithType<b_type>(a,view_alloc("c",WithoutInitializing),5,3,8);
+    TEST_EQUALITY(dimension_scalar(c),derivative_dim_plus_one);
+
+    using d_type = Kokkos::View<FadType***,Kokkos::LayoutRight>;
+    d_type d = createViewWithType<d_type>(a,"d",5,3,8);
+    TEST_EQUALITY(dimension_scalar(d),derivative_dim_plus_one);
   }
 
 }

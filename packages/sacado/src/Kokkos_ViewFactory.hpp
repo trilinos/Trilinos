@@ -127,24 +127,49 @@ template< class D, class ... P >
 struct is_dyn_rank_view< DynRankView<D,P...> > : public std::true_type {};
 
 //! Wrapper to simplify use of Sacado ViewFactory
-template <typename InputViewType, typename CtorProp, typename ... Dims>
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename ... Dims>
+typename std::enable_if<
+  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createDynRankViewWithType(const InputViewType& a,
+                          const CtorProp& prop,
+                          const Dims... dims)
+{
+  using view_factory = Kokkos::ViewFactory<InputViewType>;
+  return view_factory::template create_view<ResultViewType>(a,prop,dims...);
+}
+
+//! Wrapper to simplify use of Sacado ViewFactory
+template <typename InputViewType, typename CtorProp, typename ... Dims >
 typename std::enable_if<
   is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
   Kokkos::DynRankView<typename InputViewType::non_const_value_type,
                       typename InputViewType::array_layout,
-                      typename InputViewType::device_type,
-                      typename InputViewType::memory_traits> >::type
+                      typename InputViewType::device_type> >::type
 createDynRankView(const InputViewType& a,
                   const CtorProp& prop,
                   const Dims... dims)
 {
-  using view_factory = Kokkos::ViewFactory<InputViewType>;
-  using return_type =
+  using ResultViewType =
     Kokkos::DynRankView<typename InputViewType::non_const_value_type,
                         typename InputViewType::array_layout,
-                        typename InputViewType::device_type,
-                        typename InputViewType::memory_traits>;
-  return view_factory::template create_view<return_type>(a,prop,dims...);
+                        typename InputViewType::device_type>;
+  return createDynRankViewWithType<ResultViewType>(a, prop, dims...);
+}
+
+//! Wrapper to simplify use of Sacado ViewFactory
+template <typename ResultViewType, typename InputViewType, typename CtorProp,
+          typename ... Dims>
+typename std::enable_if<
+  is_view<InputViewType>::value || is_dyn_rank_view<InputViewType>::value,
+  ResultViewType>::type
+createViewWithType(const InputViewType& a,
+                   const CtorProp& prop,
+                   const Dims... dims)
+{
+  using view_factory = Kokkos::ViewFactory<InputViewType>;
+  return view_factory::template create_view<ResultViewType>(a,prop,dims...);
 }
 
 }
