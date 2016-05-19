@@ -134,7 +134,8 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & colGidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
+   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), colBlockedDOFManager_(colGidProvider)
+   , comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
    comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
@@ -262,7 +263,7 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::buildLinearObjContainer() const
 {
    std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps;
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = getBlockRowCount();
    for(std::size_t i=0;i<blockDim;i++)
       blockMaps.push_back(getMap(i));
 
@@ -276,7 +277,7 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<LinearObjContainer> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::buildGhostedLinearObjContainer() const
 {
    std::vector<Teuchos::RCP<const Epetra_Map> > blockMaps;
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t blockDim = getBlockRowCount();
    for(std::size_t i=0;i<blockDim;i++)
       blockMaps.push_back(getGhostedMap(i));
 
@@ -350,7 +351,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    using Thyra::get_Epetra_Vector;
    using Thyra::get_Epetra_Operator;
 
-   std::size_t blockDim = gidProviders_.size();
+   int rBlockDim = getBlockRowCount();
+   int cBlockDim = getBlockRowCount();
 
    // first cast to block LOCs
    const BLOC & b_localBCRows = Teuchos::dyn_cast<const BLOC>(localBCRows); 
@@ -371,13 +373,13 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
    if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<double> >(b_ghosted.get_x());
 
    // sanity check!
-   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);
-   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productDomain()->numBlocks()==(int) blockDim);
-   if(f!=Teuchos::null) TEUCHOS_ASSERT(f->productSpace()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(local_bcs->productSpace()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==(int) blockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==rBlockDim);
+   if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productDomain()->numBlocks()==cBlockDim);
+   if(f!=Teuchos::null) TEUCHOS_ASSERT(f->productSpace()->numBlocks()==rBlockDim);
+   TEUCHOS_ASSERT(local_bcs->productSpace()->numBlocks()==rBlockDim);
+   TEUCHOS_ASSERT(global_bcs->productSpace()->numBlocks()==rBlockDim);
 
-   for(std::size_t i=0;i<blockDim;i++) {
+   for(int i=0;i<rBlockDim;i++) {
       // grab epetra vector
       RCP<const Epetra_Vector> e_local_bcs = get_Epetra_Vector(*getGhostedMap(i),local_bcs->getVectorBlock(i));
       RCP<const Epetra_Vector> e_global_bcs = get_Epetra_Vector(*getGhostedMap(i),global_bcs->getVectorBlock(i));
@@ -390,7 +392,7 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
       else
         e_f = get_Epetra_Vector(*getGhostedMap(i),th_f);
 
-      for(std::size_t j=0;j<blockDim;j++) {
+      for(int j=0;j<cBlockDim;j++) {
 
          // pull out epetra values
          RCP<LinearOpBase<double> > th_A = (A== Teuchos::null)? Teuchos::null : A->getNonconstBlock(i,j);
@@ -599,25 +601,6 @@ getColGlobalIndexer(int i) const
 }
 
 template <typename Traits,typename LocalOrdinalT>
-std::size_t
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getGidProviderCount() const
-{
-   return gidProviders_.size();
-}
-
-template <typename Traits,typename LocalOrdinalT>
-std::size_t
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-getColGidProviderCount() const
-{
-   if(not useColGidProviders_)
-     return getGidProviderCount();
-
-   return colGidProviders_.size();
-}
-
-template <typename Traits,typename LocalOrdinalT>
 void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt)
 {
@@ -644,7 +627,7 @@ getThyraDomainSpace() const
    if(domainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)  
+      for(int i=0;i<getBlockColCount();i++)  
          vsArray.push_back(Thyra::create_VectorSpace(getColMap(i)));
 
       domainSpace_ = Thyra::productVectorSpace<double>(vsArray);
@@ -660,7 +643,7 @@ getThyraRangeSpace() const
    if(rangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)  
+      for(int i=0;i<getBlockRowCount();i++)  
          vsArray.push_back(Thyra::create_VectorSpace(getMap(i)));
 
       rangeSpace_ = Thyra::productVectorSpace<double>(vsArray);
@@ -676,13 +659,6 @@ getThyraDomainVector() const
    Teuchos::RCP<Thyra::VectorBase<double> > vec =
       Thyra::createMember<double>(*getThyraDomainSpace());
    Thyra::assign(vec.ptr(),0.0);
-
-/*
-   Teuchos::RCP<Thyra::ProductVectorBase<double> > p_vec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(vec);
-   for(std::size_t i=0;i<gidProviders_.size();i++) {
-      TEUCHOS_ASSERT(Teuchos::rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(p_vec->getNonconstVectorBlock(i))->spmdSpace()->localSubDim()==getMap(i)->NumMyElements());
-   }
-*/
 
    return vec;
 }
@@ -705,14 +681,15 @@ getThyraMatrix() const
    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockedOp = Thyra::defaultBlockedLinearOp<double>();
 
    // get the block dimension
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rBlockDim = getBlockRowCount();
+   std::size_t cBlockDim = getBlockColCount();
 
    // this operator will be square
-   blockedOp->beginBlockFill(blockDim,blockDim);
+   blockedOp->beginBlockFill(rBlockDim,cBlockDim);
 
    // loop over each block
-   for(std::size_t i=0;i<blockDim;i++) { 
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rBlockDim;i++) { 
+      for(std::size_t j=0;j<cBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
             Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getEpetraMatrix(i,j));
@@ -734,8 +711,8 @@ getGhostedThyraDomainSpace() const
    if(ghostedDomainSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)  
-         vsArray.push_back(Thyra::create_VectorSpace(getGhostedMap(i)));
+      for(int i=0;i<getBlockColCount();i++)  
+         vsArray.push_back(Thyra::create_VectorSpace(getColGhostedMap(i)));
 
       ghostedDomainSpace_ = Thyra::productVectorSpace<double>(vsArray);
    }
@@ -750,7 +727,7 @@ getGhostedThyraRangeSpace() const
    if(ghostedRangeSpace_==Teuchos::null) {
       // loop over all vectors and build the vector space
       std::vector<Teuchos::RCP<const Thyra::VectorSpaceBase<double> > > vsArray;
-      for(std::size_t i=0;i<gidProviders_.size();i++)  
+      for(int i=0;i<getBlockRowCount();i++)  
          vsArray.push_back(Thyra::create_VectorSpace(getGhostedMap(i)));
 
       ghostedRangeSpace_ = Thyra::productVectorSpace<double>(vsArray);
@@ -788,14 +765,15 @@ getGhostedThyraMatrix() const
    Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockedOp = Thyra::defaultBlockedLinearOp<double>();
 
    // get the block dimension
-   std::size_t blockDim = gidProviders_.size();
+   std::size_t rBlockDim = getBlockRowCount();
+   std::size_t cBlockDim = getBlockColCount();
 
    // this operator will be square
-   blockedOp->beginBlockFill(blockDim,blockDim);
+   blockedOp->beginBlockFill(rBlockDim,cBlockDim);
 
    // loop over each block
-   for(std::size_t i=0;i<blockDim;i++) { 
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rBlockDim;i++) { 
+      for(std::size_t j=0;j<cBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // build (i,j) block matrix and add it to blocked operator
             Teuchos::RCP<Thyra::LinearOpBase<double> > block = Thyra::nonconstEpetraLinearOp(getGhostedEpetraMatrix(i,j));
@@ -820,7 +798,7 @@ ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & 
    using Thyra::ProductVectorBase;
    using Thyra::get_Epetra_Vector;
 
-   std::size_t blockDim = col ? getColGidProviderCount() : getGidProviderCount();
+   std::size_t blockDim = col ? getBlockColCount() : getBlockRowCount();
 
    // get product vectors
    RCP<const ProductVectorBase<double> > prod_in = rcp_dynamic_cast<const ProductVectorBase<double> >(in,true);
@@ -858,19 +836,21 @@ ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<double> & in,Thyra::LinearOpB
    using Thyra::PhysicallyBlockedLinearOpBase;
    using Thyra::get_Epetra_Operator;
 
-   std::size_t blockDim = gidProviders_.size();
+   // get the block dimension
+   std::size_t rBlockDim = getBlockRowCount();
+   std::size_t cBlockDim = getBlockColCount();
 
    // get product vectors
    const PhysicallyBlockedLinearOpBase<double> & prod_in = dyn_cast<const PhysicallyBlockedLinearOpBase<double> >(in);
    PhysicallyBlockedLinearOpBase<double> & prod_out      = dyn_cast<PhysicallyBlockedLinearOpBase<double> >(out);
 
-   TEUCHOS_ASSERT(prod_in.productRange()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_in.productDomain()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_out.productRange()->numBlocks()==(int) blockDim);
-   TEUCHOS_ASSERT(prod_out.productDomain()->numBlocks()==(int) blockDim);
+   TEUCHOS_ASSERT(prod_in.productRange()->numBlocks()==(int) rBlockDim);
+   TEUCHOS_ASSERT(prod_in.productDomain()->numBlocks()==(int) cBlockDim);
+   TEUCHOS_ASSERT(prod_out.productRange()->numBlocks()==(int) rBlockDim);
+   TEUCHOS_ASSERT(prod_out.productDomain()->numBlocks()==(int) cBlockDim);
 
-   for(std::size_t i=0;i<blockDim;i++) {
-      for(std::size_t j=0;j<blockDim;j++) {
+   for(std::size_t i=0;i<rBlockDim;i++) {
+      for(std::size_t j=0;j<cBlockDim;j++) {
          if(excludedPairs_.find(std::make_pair(i,j))==excludedPairs_.end()) {
             // extract the blocks
             RCP<const LinearOpBase<double> > th_in = prod_in.getBlock(i,j);
@@ -901,7 +881,7 @@ globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & 
    using Thyra::ProductVectorBase;
    using Thyra::get_Epetra_Vector;
 
-   std::size_t blockDim = col ? getColGidProviderCount() : getGidProviderCount();
+   std::size_t blockDim = col ? getBlockColCount() : getBlockRowCount();
 
    // get product vectors
    RCP<const ProductVectorBase<double> > prod_in = rcp_dynamic_cast<const ProductVectorBase<double> >(in,true);
@@ -1016,7 +996,7 @@ getColGhostedMap(int i) const
    if(colGhostedMaps_[i]==Teuchos::null) 
       colGhostedMaps_[i] = buildEpetraColGhostedMap(i);
 
-   return ghostedMaps_[i];
+   return colGhostedMaps_[i];
 }
 
 // get the graph of the crs matrix
@@ -1043,7 +1023,7 @@ template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_CrsGraph> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGhostedGraph(int i,int j) const
 {
-  typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> GraphMap;
+   typedef std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> GraphMap;
    
    GraphMap::const_iterator itr = ghostedGraphs_.find(std::make_pair(i,j));
    Teuchos::RCP<Epetra_CrsGraph> ghostedGraph;
@@ -1277,7 +1257,10 @@ template <typename Traits,typename LocalOrdinalT>
 int BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getBlockColCount() const
 {
-   return gidProviders_.size();
+   if(not useColGidProviders_)
+     return gidProviders_.size();
+
+   return colGidProviders_.size();
 }
 
 }

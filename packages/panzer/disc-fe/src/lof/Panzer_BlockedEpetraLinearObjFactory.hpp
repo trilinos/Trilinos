@@ -159,7 +159,9 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
-   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
+   { if(useColGidProviders_!=Teuchos::null)
+       return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(colBlockedDOFManager_));
+     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -306,17 +308,12 @@ protected:
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > getColGlobalIndexer(int i) const;
 
-   //! How many gid providers are there?
-   std::size_t getGidProviderCount() const;
-
-   //! How many column gid providers are there?
-   std::size_t getColGidProviderCount() const;
-
    //! Allocate the space in the std::vector objects so we can fill with appropriate Epetra data
    void makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt=0);
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > blockProvider_;
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
+   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > colBlockedDOFManager_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > colGidProviders_;
 
