@@ -266,6 +266,7 @@ SET(HEADERS ${HEADERS}
   Kokkos_AnalyzeSacadoShape.hpp
   Kokkos_LayoutContiguous.hpp
   KokkosExp_View_Fad.hpp
+  Kokkos_ViewFactory.hpp
   KokkosExp_ViewFactory.hpp
   Sacado_DisableKokkosCuda.hpp
   Sacado_MathFunctions.hpp

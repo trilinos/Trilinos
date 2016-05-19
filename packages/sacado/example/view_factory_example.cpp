@@ -44,7 +44,7 @@
 // This only works with the experimental view enabled
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) && !defined(__CUDACC__)
 #include "Kokkos_DynRankView_Fad.hpp"
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 // Example to demonstrate the use of Kokkos::ViewFactory for constructing
 // view's of Fad's without explicitly referencing the sacado dimension

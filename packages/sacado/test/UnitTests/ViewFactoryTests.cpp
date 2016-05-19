@@ -34,7 +34,7 @@
 
 #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
 {
