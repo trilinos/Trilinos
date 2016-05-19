@@ -65,6 +65,8 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   TEUCHOS_ASSERT(0<nx*ny);
   TEUCHOS_ASSERT(comm.getSize()==px*py);
   TEUCHOS_ASSERT(0<bx*by);
+  TEUCHOS_ASSERT(nx/px>=1.0);
+  TEUCHOS_ASSERT(ny/py>=1.0);
 
   numProc_ = comm.getSize();
   myRank_ = comm.getRank();
@@ -105,6 +107,9 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   TEUCHOS_ASSERT(0<nx*ny*nz);
   TEUCHOS_ASSERT(comm.getSize()==px*py*pz);
   TEUCHOS_ASSERT(0<bx*by*bz);
+  TEUCHOS_ASSERT(nx/px>=1.0);
+  TEUCHOS_ASSERT(ny/py>=1.0);
+  TEUCHOS_ASSERT(nz/pz>=1.0);
 
   numProc_ = comm.getSize();
   myRank_ = comm.getRank();
@@ -127,7 +132,7 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
   totalElements_.y = ny*by;
   totalElements_.z = nz*bz;
 
-  totalNodes_ = (bx*nx+1)*(by*ny+1)*(bz*nx+1);
+  totalNodes_ = (bx*nx+1)*(by*ny+1)*(bz*nz+1);
   totalEdges_ = (bx*nx+1)*(by*ny)*(bz*nz+1)+(bx*nx)*(by*ny+1)*(bz*nz+1)+(bx*nx+1)*(by*ny+1)*(bz*nz);
   totalFaces_ = (bx*nx)*(by*ny)*(bz*nz+1) + (bx*nx)*(by*ny+1)*(bz*nz) + (bx*nx+1)*(by*ny)*(bz*nz);
   totalCells_ = (bx*nx)*(by*ny)*(bz*nz);
@@ -140,7 +145,6 @@ void
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
 buildConnectivity(const panzer::FieldPattern & fp)
 {
-  int dim = fp.getDimension();
   int numIds = fp.numberIds();
 
   connectivity_.clear();
@@ -159,11 +163,21 @@ buildConnectivity(const panzer::FieldPattern & fp)
       std::vector<GlobalOrdinal> & conn = connectivity_[element];
       
       // loop over each dimension, add in coefficients
-      // ASSUME: Field pattern has logical ordering nodes, edges, faces, cells
-      for(int d=0;d<=dim;d++)
-        updateConnectivity(fp,d,element,conn);
+      //int ordered_dim[4] = { 0, 1, 3, 2 }; // this is the order of creation
+                                           // because of the way shards orders
+                                           // 3D elements
+      int ordered_dim[4] = { 0, 1, 2, 3 }; // this is the order of creation
+      for(int d=0;d<4;d++) {
+        int od = ordered_dim[d];
+        if(dim_==2) {
+          if(od!=3) // ordered dimension in 2D is incorrect
+            updateConnectivity_2d(fp,od,element,conn);
+        }
+        else
+          updateConnectivity_3d(fp,od,element,conn);
+      }
 
-      TEUCHOS_ASSERT(numIds==Teuchos::as<int>(conn.size()));
+      TEUCHOS_ASSERT_EQUALITY(numIds,Teuchos::as<int>(conn.size()));
     }
   }
 }
@@ -260,9 +274,6 @@ getBlockId(LocalOrdinal localElmtId) const
 {
   auto globalTriplet = computeLocalElementGlobalTriplet(localElmtId,myElements_,myOffset_);
 
-  // int i = Teuchos::as<int>(globalTriplet.x/blocks_.x);
-  // int j = Teuchos::as<int>(globalTriplet.y/blocks_.y);
-  // int k = Teuchos::as<int>(globalTriplet.z/blocks_.z);
   int i = Teuchos::as<int>(globalTriplet.x/elements_.x);
   int j = Teuchos::as<int>(globalTriplet.y/elements_.y);
   int k = Teuchos::as<int>(globalTriplet.z/elements_.z);
@@ -410,10 +421,10 @@ buildLocalElements()
 template <typename LocalOrdinal,typename GlobalOrdinal>
 void 
 CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
-updateConnectivity(const panzer::FieldPattern & fp,
-                   int subcellDim,
-                   int localElementId,
-                   std::vector<GlobalOrdinal> & conn) const
+updateConnectivity_2d(const panzer::FieldPattern & fp,
+                      int subcellDim,
+                      int localElementId,
+                      std::vector<GlobalOrdinal> & conn) const
 {
   Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
  
@@ -441,6 +452,98 @@ updateConnectivity(const panzer::FieldPattern & fp,
     } 
     else if(subcellDim==2)
       conn.push_back(totalNodes_+totalEdges_+computeGlobalElementIndex(index));
+    else {
+      TEUCHOS_ASSERT(false);
+    }
+  }
+}
+
+template <typename LocalOrdinal,typename GlobalOrdinal>
+void 
+CartesianConnManager<LocalOrdinal,GlobalOrdinal>::
+updateConnectivity_3d(const panzer::FieldPattern & fp,
+                      int subcellDim,
+                      int localElementId,
+                      std::vector<GlobalOrdinal> & conn) const
+{
+  Triplet<GlobalOrdinal> index = computeLocalElementGlobalTriplet(localElementId,myElements_,myOffset_);
+ 
+  for(int c=0;c<fp.getSubcellCount(subcellDim);c++) {
+    std::size_t num = fp.getSubcellIndices(subcellDim,c).size();
+    TEUCHOS_ASSERT(num==1 || num==0);
+ 
+    if(num==0) continue;
+ 
+    // there is an index to add here
+    if(subcellDim==0) {
+      // node number     =  Number for the lower left          
+      GlobalOrdinal node =  (totalElements_.x+1)*(totalElements_.y+1)*index.z + (totalElements_.x+1)*index.y + index.x
+                           + (c==1 || c==2 || c==5 || c==6) * 1                                          // shift for i+1
+                           + (c==3 || c==2 || c==6 || c==7) * (totalElements_.x+1)                       // shift for j+1
+                           + (c==4 || c==5 || c==6 || c==7) * (totalElements_.y+1)*(totalElements_.x+1); // shift for k+1
+
+      conn.push_back(node);
+    }
+    else if(subcellDim==1) {
+      GlobalOrdinal basePoint = index.x+index.y*(2*totalElements_.x+1)+
+                                index.z*(totalElements_.x+1)*totalElements_.y +
+                                index.z*totalElements_.x*(totalElements_.y+1) +
+                                index.z*(totalElements_.x+1)*(totalElements_.y+1);
+      GlobalOrdinal kshift = (totalElements_.x+1)*totalElements_.y +
+                             totalElements_.x*(totalElements_.y+1) +
+                             (totalElements_.x+1)*(totalElements_.y+1);
+      GlobalOrdinal edge =  totalNodes_ + basePoint;
+
+      // horizontal edges: bottom
+      if(c== 0) edge += 0;
+      if(c== 1) edge += totalElements_.x+1;
+      if(c== 2) edge += 2*totalElements_.x+1;
+      if(c== 3) edge += totalElements_.x;
+
+      // horizontal edges: top
+      if(c== 4) edge += kshift + 0;
+      if(c== 5) edge += kshift + totalElements_.x+1;
+      if(c== 6) edge += kshift + 2*totalElements_.x+1;
+      if(c== 7) edge += kshift + totalElements_.x;
+
+      // vertical edges
+      if(c==8 || c==9 || c==10 || c==11)
+        edge +=  (totalElements_.x+1)*totalElements_.y + totalElements_.x*(totalElements_.y+1) 
+                - index.y*totalElements_.x;
+
+      if(c== 8) edge += 0;
+      if(c== 9) edge += 1;
+      if(c==10) edge += totalElements_.x+2;
+      if(c==11) edge += totalElements_.x+1;
+
+      conn.push_back(edge);
+    } 
+    else if(subcellDim==2) {
+      GlobalOrdinal kshift =  totalElements_.x*totalElements_.y
+                             +(totalElements_.x+1)*totalElements_.y
+                             +totalElements_.x*(totalElements_.y+1);
+      GlobalOrdinal basePoint = index.x+index.y*totalElements_.x+index.z*kshift;
+      GlobalOrdinal face = totalNodes_+totalEdges_+basePoint;
+
+      // vertical faces
+      if(c==0 || c==1 || c==2 || c==3)
+        face += totalElements_.x*totalElements_.y + (index.y+1)*(totalElements_.x+1);
+
+      if(c==0) face += -totalElements_.x-1;
+      if(c==1) face += 0;
+      if(c==2) face += totalElements_.x;
+      if(c==3) face += -1;
+      if(c==4) face += 0;
+      if(c==5) face += kshift; // move it up a level
+
+      conn.push_back(face);
+    }
+    else if(subcellDim==3) {
+      conn.push_back(totalNodes_+totalEdges_+totalFaces_+computeGlobalElementIndex(index));
+    }
+    else {
+      TEUCHOS_ASSERT(false);
+    }
   }
 }
 

@@ -48,7 +48,7 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
@@ -101,7 +101,7 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > 
+    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
     getIntrepid2Basis() const;
 
     template <typename ScalarT,typename ArrayT>
@@ -158,7 +158,7 @@ namespace panzer {
   private:
 
     Teuchos::RCP<const shards::CellTopology> topology_;
-    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > intrepid_basis_;
+    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepid_basis_;
 
     std::string basis_type_;
     std::string basis_name_;

@@ -59,7 +59,9 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
+#include "Teuchos_MatrixMarket_Raw_Graph_Adder.hpp"
 #include "Teuchos_MatrixMarket_SymmetrizingAdder.hpp"
+#include "Teuchos_MatrixMarket_SymmetrizingGraphAdder.hpp"
 #include "Teuchos_MatrixMarket_assignScalar.hpp"
 #include "Teuchos_MatrixMarket_Banner.hpp"
 #include "Teuchos_MatrixMarket_CoordDataReader.hpp"
@@ -182,6 +184,11 @@ namespace Tpetra {
         global_ordinal_type;
       //! The fourth template parameter of CrsMatrix and MultiVector.
       typedef typename SparseMatrixType::node_type node_type;
+
+      //! The CrsGraph specialization associated with SparseMatrixType.
+      typedef CrsGraph<local_ordinal_type,
+                       global_ordinal_type,
+                       node_type> sparse_graph_type;
 
       //! The MultiVector specialization associated with SparseMatrixType.
       typedef MultiVector<scalar_type,
@@ -1037,7 +1044,8 @@ namespace Tpetra {
       readBanner (std::istream& in,
                   size_t& lineNumber,
                   const bool tolerant=false,
-                  const bool debug=false)
+                  const bool debug=false,
+                  const bool isGraph=false)
       {
         using Teuchos::MatrixMarket::Banner;
         using std::cerr;
@@ -1078,6 +1086,7 @@ namespace Tpetra {
           "valued Scalar type \""
           << Teuchos::TypeNameTraits<scalar_type>::name() << "\".");
         TEUCHOS_TEST_FOR_EXCEPTION(
+          !isGraph &&
           pBanner->dataType() != "real" &&
           pBanner->dataType() != "complex" &&
           pBanner->dataType() != "integer",
@@ -1086,6 +1095,13 @@ namespace Tpetra {
           "Matrix Market file may not contain a \"pattern\" matrix.  A "
           "pattern matrix is really just a graph with no weights.  It "
           "should be stored in a CrsGraph, not a CrsMatrix.");
+
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          isGraph &&
+          pBanner->dataType() != "pattern",
+          std::invalid_argument,
+          "When reading Matrix Market data into a Tpetra::CrsGraph, the "
+          "Matrix Market file must contain a \"pattern\" matrix.");
 
         return pBanner;
       }
@@ -1189,6 +1205,8 @@ namespace Tpetra {
       /// type) if entry A(i,j) is seen.
       typedef Teuchos::MatrixMarket::SymmetrizingAdder<Teuchos::MatrixMarket::Raw::Adder<scalar_type, global_ordinal_type> > adder_type;
 
+      typedef Teuchos::MatrixMarket::SymmetrizingGraphAdder<Teuchos::MatrixMarket::Raw::GraphAdder<global_ordinal_type> > graph_adder_type;
+
       /// \brief Make an "adder" object for processing matrix data.
       ///
       /// \param pComm [in] Communicator (across whose MPI ranks
@@ -1235,7 +1253,730 @@ namespace Tpetra {
         }
       }
 
+      /// \brief Make an "adder" object for processing graph data.
+      ///
+      /// \param pComm [in] Communicator (across whose MPI ranks
+      ///   the sparse matrix will be distributed)
+      ///
+      /// \param banner [in, nonnull and valid on Rank 0 only]
+      ///   Object describing the type and symmetry of matrix data.
+      ///
+      /// \param dims [in] (numRows, numCols, numEntries).  These are
+      ///   the "expected" values as read from the top of the Matrix
+      ///   Market input stream.  Whether they are the final values
+      ///   depends on the "tolerant" parameter and the actual graph
+      ///   data read from the input stream.
+      ///
+      /// \param tolerant [in] Whether the adder should be "tolerant"
+      ///   of syntax errors and missing/incorrect metadata.  (In
+      ///   particular, this refers to the number of rows, columns,
+      ///   and entries in the graph.)
+      /// \param debug [in] Whether to print verbose debug output
+      ///   to stderr on Rank 0.
+      ///
+      /// \return An adder_type object [nonnull and valid on Rank 0
+      ///   only] that optionally symmetrizes the entries of the
+      ///   sparse matrix.
+      ///
+      static RCP<graph_adder_type>
+      makeGraphAdder (const Teuchos::RCP<const Comm<int> >& pComm,
+                 Teuchos::RCP<const Teuchos::MatrixMarket::Banner>& pBanner,
+                 const Teuchos::Tuple<global_ordinal_type, 3>& dims,
+                 const bool tolerant=false,
+                 const bool debug=false)
+      {
+        if (pComm->getRank () == 0) {
+          typedef Teuchos::MatrixMarket::Raw::GraphAdder<global_ordinal_type> raw_adder_type;
+          Teuchos::RCP<raw_adder_type> pRaw =
+            Teuchos::rcp (new raw_adder_type (dims[0], dims[1], dims[2],
+                                              tolerant, debug));
+          return Teuchos::rcp (new graph_adder_type (pRaw, pBanner->symmType ()));
+        }
+        else {
+          return Teuchos::null;
+        }
+      }
+
+      /// \brief Read sparse graph from the given Matrix Market input stream.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphHelper (std::istream& in,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const RCP<node_type>& pNode,
+                  const Teuchos::RCP<const map_type>& rowMap,
+                  Teuchos::RCP<const map_type>& colMap,
+                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        using Teuchos::MatrixMarket::Banner;
+        using Teuchos::RCP;
+        using Teuchos::ptr;
+        using std::cerr;
+        using std::endl;
+
+        const int myRank = pComm->getRank ();
+        const int rootRank = 0;
+
+        // Current line number in the input stream.  Various calls
+        // will modify this depending on the number of lines that are
+        // read from the input stream.  Only Rank 0 modifies this.
+        size_t lineNumber = 1;
+
+        if (debug && myRank == rootRank) {
+          cerr << "Matrix Market reader: readGraph:" << endl
+               << "-- Reading banner line" << endl;
+        }
+
+        // The "Banner" tells you whether the input stream represents
+        // a sparse matrix, the symmetry type of the matrix, and the
+        // type of the data it contains.
+        //
+        // pBanner will only be nonnull on MPI Rank 0.  It will be
+        // null on all other MPI processes.
+        RCP<const Banner> pBanner;
+        {
+          // We read and validate the Banner on Proc 0, but broadcast
+          // the validation result to all processes.
+          // Teuchos::broadcast doesn't currently work with bool, so
+          // we use int (true -> 1, false -> 0).
+          int bannerIsCorrect = 1;
+          std::ostringstream errMsg;
+
+          if (myRank == rootRank) {
+            // Read the Banner line from the input stream.
+            try {
+              pBanner = readBanner (in, lineNumber, tolerant, debug, true);
+            }
+            catch (std::exception& e) {
+              errMsg << "Attempt to read the Matrix Market file's Banner line "
+                  "threw an exception: " << e.what();
+              bannerIsCorrect = 0;
+            }
+
+            if (bannerIsCorrect) {
+              // Validate the Banner for the case of a sparse graph.
+              // We validate on Proc 0, since it reads the Banner.
+
+              // In intolerant mode, the matrix type must be "coordinate".
+              if (! tolerant && pBanner->matrixType() != "coordinate") {
+                bannerIsCorrect = 0;
+                errMsg << "The Matrix Market input file must contain a "
+                    "\"coordinate\"-format sparse graph in order to create a "
+                    "Tpetra::CrsGraph object from it, but the file's matrix "
+                    "type is \"" << pBanner->matrixType() << "\" instead.";
+              }
+              // In tolerant mode, we allow the matrix type to be
+              // anything other than "array" (which would mean that
+              // the file contains a dense matrix).
+              if (tolerant && pBanner->matrixType() == "array") {
+                bannerIsCorrect = 0;
+                errMsg << "Matrix Market file must contain a \"coordinate\"-"
+                    "format sparse graph in order to create a Tpetra::CrsGraph "
+                    "object from it, but the file's matrix type is \"array\" "
+                    "instead.  That probably means the file contains dense matrix "
+                    "data.";
+              }
+            }
+          } // Proc 0: Done reading the Banner, hopefully successfully.
+
+          // Broadcast from Proc 0 whether the Banner was read correctly.
+          broadcast (*pComm, rootRank, ptr (&bannerIsCorrect));
+
+          // If the Banner is invalid, all processes throw an
+          // exception.  Only Proc 0 gets the exception message, but
+          // that's OK, since the main point is to "stop the world"
+          // (rather than throw an exception on one process and leave
+          // the others hanging).
+          TEUCHOS_TEST_FOR_EXCEPTION(bannerIsCorrect == 0,
+              std::invalid_argument, errMsg.str ());
+        } // Done reading the Banner line and broadcasting success.
+        if (debug && myRank == rootRank) {
+          cerr << "-- Reading dimensions line" << endl;
+        }
+
+        // Read the graph dimensions from the Matrix Market metadata.
+        // dims = (numRows, numCols, numEntries).  Proc 0 does the
+        // reading, but it broadcasts the results to all MPI
+        // processes.  Thus, readCoordDims() is a collective
+        // operation.  It does a collective check for correctness too.
+        Tuple<global_ordinal_type, 3> dims =
+          readCoordDims (in, lineNumber, pBanner, pComm, tolerant, debug);
+
+        if (debug && myRank == rootRank) {
+          cerr << "-- Making Adder for collecting graph data" << endl;
+        }
+
+        // "Adder" object for collecting all the sparse graph entries
+        // from the input stream.  This is only nonnull on Proc 0.
+        // The Adder internally converts the one-based indices (native
+        // Matrix Market format) into zero-based indices.
+        RCP<graph_adder_type> pAdder =
+          makeGraphAdder (pComm, pBanner, dims, tolerant, debug);
+
+        if (debug && myRank == rootRank) {
+          cerr << "-- Reading graph data" << endl;
+        }
+        //
+        // Read the graph entries from the input stream on Proc 0.
+        //
+        {
+          // We use readSuccess to broadcast the results of the read
+          // (succeeded or not) to all MPI processes.  Since
+          // Teuchos::broadcast doesn't currently know how to send
+          // bools, we convert to int (true -> 1, false -> 0).
+          int readSuccess = 1;
+          std::ostringstream errMsg; // Exception message (only valid on Proc 0)
+          if (myRank == rootRank) {
+            try {
+              // Reader for "coordinate" format sparse graph data.
+              typedef Teuchos::MatrixMarket::CoordPatternReader<graph_adder_type,
+                global_ordinal_type> reader_type;
+              reader_type reader (pAdder);
+
+              // Read the sparse graph entries.
+              std::pair<bool, std::vector<size_t> > results =
+                reader.read (in, lineNumber, tolerant, debug);
+              readSuccess = results.first ? 1 : 0;
+            }
+            catch (std::exception& e) {
+              readSuccess = 0;
+              errMsg << e.what();
+            }
+          }
+          broadcast (*pComm, rootRank, ptr (&readSuccess));
+
+          // It would be nice to add a "verbose" flag, so that in
+          // tolerant mode, we could log any bad line number(s) on
+          // Proc 0.  For now, we just throw if the read fails to
+          // succeed.
+          //
+          // Question: If we're in tolerant mode, and if the read did
+          // not succeed, should we attempt to call fillComplete()?
+          TEUCHOS_TEST_FOR_EXCEPTION(readSuccess == 0, std::runtime_error,
+            "Failed to read the Matrix Market sparse graph file: "
+            << errMsg.str());
+        } // Done reading the graph entries (stored on Proc 0 for now)
+
+        if (debug && myRank == rootRank) {
+          cerr << "-- Successfully read the Matrix Market data" << endl;
+        }
+
+        // In tolerant mode, we need to rebroadcast the graph
+        // dimensions, since they may be different after reading the
+        // actual graph data.  We only need to broadcast the number
+        // of rows and columns.  Only Rank 0 needs to know the actual
+        // global number of entries, since (a) we need to merge
+        // duplicates on Rank 0 first anyway, and (b) when we
+        // distribute the entries, each rank other than Rank 0 will
+        // only need to know how many entries it owns, not the total
+        // number of entries.
+        if (tolerant) {
+          if (debug && myRank == rootRank) {
+            cerr << "-- Tolerant mode: rebroadcasting graph dimensions"
+                 << endl
+                 << "----- Dimensions before: "
+                 << dims[0] << " x " << dims[1]
+                 << endl;
+          }
+          // Packed coordinate graph dimensions (numRows, numCols).
+          Tuple<global_ordinal_type, 2> updatedDims;
+          if (myRank == rootRank) {
+            // If one or more bottom rows of the graph contain no
+            // entries, then the Adder will report that the number
+            // of rows is less than that specified in the
+            // metadata.  We allow this case, and favor the
+            // metadata so that the zero row(s) will be included.
+            updatedDims[0] =
+              std::max (dims[0], pAdder->getAdder()->numRows());
+            updatedDims[1] = pAdder->getAdder()->numCols();
+          }
+          broadcast (*pComm, rootRank, updatedDims);
+          dims[0] = updatedDims[0];
+          dims[1] = updatedDims[1];
+          if (debug && myRank == rootRank) {
+            cerr << "----- Dimensions after: " << dims[0] << " x "
+                 << dims[1] << endl;
+          }
+        }
+        else {
+          // In strict mode, we require that the graph's metadata and
+          // its actual data agree, at least somewhat.  In particular,
+          // the number of rows must agree, since otherwise we cannot
+          // distribute the graph correctly.
+
+          // Teuchos::broadcast() doesn't know how to broadcast bools,
+          // so we use an int with the standard 1 == true, 0 == false
+          // encoding.
+          int dimsMatch = 1;
+          if (myRank == rootRank) {
+            // If one or more bottom rows of the graph contain no
+            // entries, then the Adder will report that the number of
+            // rows is less than that specified in the metadata.  We
+            // allow this case, and favor the metadata, but do not
+            // allow the Adder to think there are more rows in the
+            // graph than the metadata says.
+            if (dims[0] < pAdder->getAdder ()->numRows ()) {
+              dimsMatch = 0;
+            }
+          }
+          broadcast (*pComm, 0, ptr (&dimsMatch));
+          if (dimsMatch == 0) {
+            // We're in an error state anyway, so we might as well
+            // work a little harder to print an informative error
+            // message.
+            //
+            // Broadcast the Adder's idea of the graph dimensions
+            // from Proc 0 to all processes.
+            Tuple<global_ordinal_type, 2> addersDims;
+            if (myRank == rootRank) {
+              addersDims[0] = pAdder->getAdder()->numRows();
+              addersDims[1] = pAdder->getAdder()->numCols();
+            }
+            broadcast (*pComm, 0, addersDims);
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              dimsMatch == 0, std::runtime_error,
+              "The graph metadata says that the graph is " << dims[0] << " x "
+              << dims[1] << ", but the actual data says that the graph is "
+              << addersDims[0] << " x " << addersDims[1] << ".  That means the "
+              "data includes more rows than reported in the metadata.  This "
+              "is not allowed when parsing in strict mode.  Parse the graph in "
+              "tolerant mode to ignore the metadata when it disagrees with the "
+              "data.");
+          }
+        } // Matrix dimensions (# rows, # cols, # entries) agree.
+
+        // Create a map describing a distribution where the root owns EVERYTHING
+        RCP<map_type> proc0Map;
+        global_ordinal_type indexBase;
+        if(Teuchos::is_null(rowMap)) {
+          indexBase = 0;
+        }
+        else {
+          indexBase = rowMap->getIndexBase();
+        }
+        if(myRank == rootRank) {
+          proc0Map = rcp(new map_type(dims[0],dims[0],indexBase,pComm,pNode));
+        }
+        else {
+          proc0Map = rcp(new map_type(dims[0],0,indexBase,pComm,pNode));
+        }
+
+        // Create the graph where the root owns EVERYTHING
+        RCP<sparse_graph_type> proc0Graph =
+            rcp(new sparse_graph_type(proc0Map,0,DynamicProfile,constructorParams));
+        if(myRank == rootRank) {
+          typedef Teuchos::MatrixMarket::Raw::GraphElement<global_ordinal_type> element_type;
+
+          // Get the entries
+          const std::vector<element_type>& entries =
+            pAdder->getAdder()->getEntries();
+
+          // Insert them one at a time
+          for(size_t curPos=0; curPos<entries.size(); curPos++) {
+            const element_type& curEntry = entries[curPos];
+            const global_ordinal_type curRow = curEntry.rowIndex()+indexBase;
+            const global_ordinal_type curCol = curEntry.colIndex()+indexBase;
+            Teuchos::ArrayView<const global_ordinal_type> colView(&curCol,1);
+            proc0Graph->insertGlobalIndices(curRow,colView);
+          }
+        }
+        proc0Graph->fillComplete();
+
+        RCP<sparse_graph_type> distGraph;
+        if(Teuchos::is_null(rowMap))
+        {
+          // Create a map describing the distribution we actually want
+          RCP<map_type> distMap =
+              rcp(new map_type(dims[0],0,pComm,GloballyDistributed,pNode));
+
+          // Create the graph with that distribution too
+          distGraph = rcp(new sparse_graph_type(distMap,colMap,0,DynamicProfile,constructorParams));
+
+          // Create an importer/exporter/vandelay to redistribute the graph
+          typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+          import_type importer (proc0Map, distMap);
+
+          // Import the data
+          distGraph->doImport(*proc0Graph,importer,INSERT);
+        }
+        else {
+          distGraph = rcp(new sparse_graph_type(rowMap,colMap,0,DynamicProfile,constructorParams));
+
+          // Create an importer/exporter/vandelay to redistribute the graph
+          typedef Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+          import_type importer (proc0Map, rowMap);
+
+          // Import the data
+          distGraph->doImport(*proc0Graph,importer,INSERT);
+        }
+
+        return distGraph;
+      }
+
     public:
+      /// \brief Read sparse graph from the given Matrix Market file.
+      ///
+      /// Open the given file on MPI Rank 0 (with respect to the given
+      /// communicator).  The file should contain Matrix Market
+      /// "coordinate" format sparse matrix data.  Read that data on
+      /// Rank 0, and distribute it to all processors.  Return the
+      /// resulting distributed CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Rank 0 opens the
+      ///   file and reads data from it, but all ranks participate and
+      ///   wait for the final result.
+      ///
+      /// \param filename [in] Name of the Matrix Market file.
+      /// \param pComm [in] Communicator containing all processor(s)
+      ///   over which the sparse matrix will be distributed.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsMatrix, after adding all the entries
+      ///   read in from the input stream.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphFile (const std::string& filename,
+                       const RCP<const Comm<int> >& pComm,
+                       const bool callFillComplete=true,
+                       const bool tolerant=false,
+                       const bool debug=false)
+      {
+        return readSparseGraph (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparseGraph that takes a Node object.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphFile (const std::string& filename,
+                      const RCP<const Comm<int> >& pComm,
+                      const RCP<node_type>& pNode,
+                      const bool callFillComplete=true,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        const int myRank = pComm->getRank ();
+        std::ifstream in;
+
+        // Only open the file on Rank 0.
+        if (myRank == 0) {
+          in.open (filename.c_str ());
+        }
+        // FIXME (mfh 16 Jun 2015) Do a broadcast to make sure that
+        // opening the file succeeded, before continuing.  That will
+        // avoid hangs if the read doesn't work.  On the other hand,
+        // readSparse could do that too, by checking the status of the
+        // std::ostream.
+
+        return readSparseGraph (in, pComm, pNode, callFillComplete, tolerant, debug);
+        // We can rely on the destructor of the input stream to close
+        // the file on scope exit, even if readSparse() throws an
+        // exception.
+      }
+
+      /// \brief Read sparse graph from the given Matrix Market file.
+      ///
+      /// This is a variant of readSparseGraph() that lets you pass
+      /// parameters to the CrsGraph's constructor and to its
+      /// fillComplete() method.
+      ///
+      /// Open the given file on Process 0 in the given communicator.
+      /// The file must contain Matrix Market "coordinate" format
+      /// sparse matrix data.  Read that data on Process 0, and
+      /// distribute it to all processes.  Return the resulting
+      /// distributed CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Process 0 opens
+      ///   the file and reads data from it, but all processes
+      ///   participate and wait for the final result.
+      ///
+      /// \param filename [in] Name of the Matrix Market file.
+      /// \param pComm [in] Communicator containing all process(es)
+      ///   over which the sparse matrix will be distributed.
+      /// \param constructorParams [in/out] Parameters for the
+      ///   CrsMatrix constructor.
+      /// \param fillCompleteParams [in/out] Parameters for
+      ///   CrsMatrix's fillComplete call.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphFile (const std::string& filename,
+                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                       const bool tolerant=false,
+                       const bool debug=false)
+      {
+        return readSparseGraph (filename, pComm, Teuchos::null,
+                                constructorParams, fillCompleteParams,
+                                tolerant, debug);
+      }
+
+      //! Variant of readSparseFile above that takes a Node object.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphFile (const std::string& filename,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<node_type>& pNode,
+                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        std::ifstream in;
+        if (pComm->getRank () == 0) { // only open on Process 0
+          in.open (filename.c_str ());
+        }
+        return readSparseGraph (in, pComm, pNode, constructorParams,
+                           fillCompleteParams, tolerant, debug);
+      }
+
+      /// \brief Read sparse graph from the given Matrix Market file,
+      ///   with provided Maps.
+      ///
+      /// This version of readSparseGraph() requires you to provide a
+      /// row Map, domain Map, and range Map.  You may, if you wish,
+      /// provide a column Map as well, but this is not required.
+      ///
+      /// Open the given file on Process 0 (with respect to the given
+      /// Maps' communicator).  The file should contain Matrix Market
+      /// "coordinate" format sparse matrix data.  Read that data on
+      /// Process 0, and distribute it to all processors.  Return the
+      /// resulting distributed CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Process 0 opens
+      ///   the file and reads data from it, but all ranks participate
+      ///   and wait for the final result.
+      ///
+      /// \param filename [in] Name of the Matrix Market file.
+      /// \param rowMap [in] The Map over which to distribute rows
+      ///   of the sparse matrix.  This must be nonnull.
+      /// \param colMap [in/out] If nonnull: the Map over which to
+      ///   distribute columns of the sparse matrix.  If null and if
+      ///   callFillComplete is true, we create this for you.
+      /// \param domainMap [in] The sparse matrix's domain Map.  This
+      ///   must be nonnull.  It may equal (pointer equality) the row
+      ///   Map, if that would be appropriate for this matrix.
+      /// \param rangeMap [in] The sparse matrix's range Map.  This
+      ///   must be nonnull.  It may equal (pointer equality) the row
+      ///   Map, if that would be appropriate for this matrix.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsGraph, after adding all the entries
+      ///   read in from the input stream.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraphFile (const std::string& filename,
+                       const RCP<const map_type>& rowMap,
+                       RCP<const map_type>& colMap,
+                       const RCP<const map_type>& domainMap,
+                       const RCP<const map_type>& rangeMap,
+                       const bool callFillComplete=true,
+                       const bool tolerant=false,
+                       const bool debug=false)
+      {
+        using Teuchos::broadcast;
+        using Teuchos::outArg;
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          rowMap.is_null (), std::invalid_argument,
+          "Row Map must be nonnull.");
+
+        RCP<const Comm<int> > comm = rowMap->getComm ();
+        const int myRank = comm->getRank ();
+
+        // Only open the file on Process 0.  Test carefully to make
+        // sure that the file opened successfully (and broadcast that
+        // result to all processes to prevent a hang on exception
+        // throw), since it's a common mistake to misspell a filename.
+        std::ifstream in;
+        int opened = 0;
+        if (myRank == 0) {
+          try {
+            in.open (filename.c_str ());
+            opened = 1;
+          }
+          catch (...) {
+            opened = 0;
+          }
+        }
+        broadcast<int, int> (*comm, 0, outArg (opened));
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          opened == 0, std::runtime_error,
+          "readSparseGraph: Failed to open file \"" << filename << "\" on "
+          "Process 0.");
+        return readSparseGraph (in, rowMap, colMap, domainMap, rangeMap,
+                           callFillComplete, tolerant, debug);
+      }
+
+      /// \brief Read sparse graph from the given Matrix Market input stream.
+      ///
+      /// The given input stream need only be readable by MPI Rank 0
+      /// (with respect to the given communicator).  The input stream
+      /// should contain Matrix Market "coordinate" format sparse
+      /// matrix data.  Read that data on Rank 0, and distribute it to
+      /// all processors.  Return the resulting distributed CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Rank 0 reads
+      ///   data from the input stream, but all ranks participate and
+      ///   wait for the final result.
+      ///
+      /// \param in [in] The input stream from which to read.
+      /// \param pComm [in] Communicator containing all processor(s)
+      ///   over which the sparse matrix will be distributed.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsMatrix, after adding all the entries
+      ///   read in from the input stream.  (Not calling
+      ///   fillComplete() may be useful if you want to change the
+      ///   matrix after reading it from a file.)
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraph (std::istream& in,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const bool callFillComplete=true,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparseGraph (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparseGraph() above that takes a Node object.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraph (std::istream& in,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const Teuchos::RCP<node_type>& pNode,
+                  const bool callFillComplete=true,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode, Teuchos::null, Teuchos::null, Teuchos::null,tolerant,debug);
+        if(callFillComplete)
+          graph->FillComplete();
+        return graph;
+      }
+
+      /// \brief Read sparse graph from the given Matrix Market input stream.
+      ///
+      /// This is a variant of readSparse() that lets you pass
+      /// parameters to the CrsMatrix's constructor and to its
+      /// fillComplete() method.
+      ///
+      /// The given input stream need only be readable by Process 0 in
+      /// the given communicator.  The input stream must contain
+      /// Matrix Market "coordinate" format sparse matrix data.  Read
+      /// that data on Process 0, and distribute it to all Processes.
+      /// Return the resulting distributed CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Proces 0 reads
+      ///   data from the input stream, but all processes participate
+      ///   and wait for the final result.
+      ///
+      /// \param in [in] The input stream from which to read.
+      /// \param pComm [in] Communicator containing all process(es)
+      ///   over which the sparse matrix will be distributed.
+      /// \param constructorParams [in/out] Parameters for the
+      ///   CrsMatrix constructor.
+      /// \param fillCompleteParams [in/out] Parameters for
+      ///   CrsMatrix's fillComplete call.
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraph (std::istream& in,
+                  const RCP<const Comm<int> >& pComm,
+                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparseGraph (in, pComm, Teuchos::null, constructorParams,
+                           fillCompleteParams, tolerant, debug);
+      }
+
+      //! Variant of the above readSparseGraph() method that takes a Kokkos Node.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraph (std::istream& in,
+                  const RCP<const Comm<int> >& pComm,
+                  const RCP<node_type>& pNode,
+                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode,
+            Teuchos::null, Teuchos::null, constructorParams, tolerant, debug);
+        graph->FillComplete(fillCompleteParams);
+        return graph;
+      }
+
+      /// \brief Read sparse matrix from the given Matrix Market input
+      ///   stream, with provided Maps.
+      ///
+      /// This version of readSparse() requires you to provide a row
+      /// Map, domain Map, and range Map.  You may, if you wish,
+      /// provide a column Map as well, but this is not required.
+      ///
+      /// The given input stream need only be readable by Process 0
+      /// (with respect to the given Maps' communicator).  The input
+      /// stream must contain Matrix Market "coordinate" format sparse
+      /// matrix data.  Read that data on Process 0, and distribute it
+      /// to all processors.  Return the resulting distributed
+      /// CrsMatrix.
+      ///
+      /// \note This is a collective operation.  Only Process 0 reads
+      ///   data from the input stream, but all processes participate
+      ///   and wait for the final result.
+      ///
+      /// \param in [in/out] The input stream from which to read.
+      /// \param rowMap [in] The Map over which to distribute rows
+      ///   of the sparse matrix.  This must be nonnull.
+      /// \param colMap [in/out] If nonnull: the Map over which to
+      ///   distribute columns of the sparse matrix.  If null and if
+      ///   callFillComplete is true, we create this for you.
+      /// \param domainMap [in] The sparse matrix's domain Map.  This
+      ///   must be nonnull.  It may equal (pointer equality) the row
+      ///   Map, if that would be appropriate for this matrix.
+      /// \param rangeMap [in] The sparse matrix's range Map.  This
+      ///   must be nonnull.  It may equal (pointer equality) the row
+      ///   Map, if that would be appropriate for this matrix.
+      /// \param callFillComplete [in] Whether to call fillComplete()
+      ///   on the Tpetra::CrsMatrix, after adding all the entries
+      ///   read in from the input stream.  (Not calling
+      ///   fillComplete() may be useful if you want to change the
+      ///   matrix after reading it from a file.)
+      /// \param tolerant [in] Whether to read the data tolerantly
+      ///   from the file.
+      /// \param debug [in] Whether to produce copious status output
+      ///   useful for Tpetra developers, but probably not useful for
+      ///   anyone else.
+      static Teuchos::RCP<sparse_graph_type>
+      readSparseGraph (std::istream& in,
+                  const Teuchos::RCP<const map_type>& rowMap,
+                  Teuchos::RCP<const map_type>& colMap,
+                  const Teuchos::RCP<const map_type>& domainMap,
+                  const Teuchos::RCP<const map_type>& rangeMap,
+                  const bool callFillComplete=true,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, rowMap->getComm(),
+            rowMap->getNode(), rowMap, colMap, Teuchos::null, tolerant, debug);
+        if(callFillComplete)
+          graph->fillComplete();
+        return graph;
+      }
+
       /// \brief Read sparse matrix from the given Matrix Market file.
       ///
       /// Open the given file on MPI Rank 0 (with respect to the given
@@ -4962,6 +5703,8 @@ namespace Tpetra {
                           node_type> multivector_type;
       //! Specialization of Tpetra::Map that matches SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+      //! Specialization of Tpetra::CrsGraph that matches SparseMatrixType.
+      typedef CrsGraph<local_ordinal_type, global_ordinal_type, node_type> crs_graph_type;
 
       typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>            operator_type;
       typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>         mv_type;
@@ -5382,7 +6125,7 @@ namespace Tpetra {
       ///   on one process.  This will be fixed in the future.
       static void
       writeSparseGraph (std::ostream& out,
-                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const crs_graph_type& graph,
                         const std::string& graphName,
                         const std::string& graphDescription,
                         const bool debug=false)
@@ -5397,7 +6140,6 @@ namespace Tpetra {
         using std::endl;
         typedef local_ordinal_type LO;
         typedef global_ordinal_type GO;
-        typedef typename sparse_matrix_type::crs_graph_type crs_graph_type;
 
         // Get the graph's communicator.  Processes on which the
         // graph's Map or communicator is null don't participate in
@@ -5625,7 +6367,7 @@ namespace Tpetra {
       /// full documentation.
       static void
       writeSparseGraph (std::ostream& out,
-                        const typename sparse_matrix_type::crs_graph_type& graph,
+                        const crs_graph_type& graph,
                         const bool debug=false)
       {
         writeSparseGraph (out, graph, "", "", debug);
@@ -5667,7 +6409,7 @@ namespace Tpetra {
       ///   on one process.  This will be fixed in the future.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const crs_graph_type& graph,
                             const std::string& graphName,
                             const std::string& graphDescription,
                             const bool debug=false)
@@ -5700,7 +6442,7 @@ namespace Tpetra {
       /// See the above five-argument overload for full documentation.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const typename sparse_matrix_type::crs_graph_type& graph,
+                            const crs_graph_type& graph,
                             const bool debug=false)
       {
         writeSparseGraphFile (filename, graph, "", "", debug);
@@ -5716,7 +6458,7 @@ namespace Tpetra {
       /// Teuchos::RCP.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const Teuchos::RCP<const crs_graph_type>& pGraph,
                             const std::string& graphName,
                             const std::string& graphDescription,
                             const bool debug=false)
@@ -5735,7 +6477,7 @@ namespace Tpetra {
       /// Teuchos::RCP.
       static void
       writeSparseGraphFile (const std::string& filename,
-                            const Teuchos::RCP<const typename sparse_matrix_type::crs_graph_type>& pGraph,
+                            const Teuchos::RCP<const crs_graph_type>& pGraph,
                             const bool debug=false)
       {
         writeSparseGraphFile (filename, *pGraph, "", "", debug);

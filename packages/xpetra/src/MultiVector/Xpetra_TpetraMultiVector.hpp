@@ -363,12 +363,12 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
@@ -704,13 +704,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }
@@ -973,13 +973,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }

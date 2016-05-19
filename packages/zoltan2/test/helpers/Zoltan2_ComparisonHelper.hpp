@@ -88,6 +88,8 @@ public:
    */
   ~ComparisonSource()
   {
+    // KDD Why are these deletes here?  Very odd.  Why would we change the 
+    // KDD adapters in the comparison source?
     if(adapter_kind == "XpetraCrsGraph")
       delete reinterpret_cast<xcrsGraph_adapter *>(adapter.getRawPtr())->getCoordinateInput();
     if(adapter_kind == "XpetraCrsMatrix")

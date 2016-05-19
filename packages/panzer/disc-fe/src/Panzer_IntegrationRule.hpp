@@ -53,7 +53,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_CubatureControlVolume.hpp"
 #include "Intrepid2_CubatureControlVolumeSide.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 namespace panzer {
 
@@ -87,7 +87,7 @@ namespace panzer {
     virtual void print(std::ostream & os);
 
     //! Construct an array containing the reference coordinates 
-    void referenceCoordinates(Intrepid2::FieldContainer<double> & container);
+    void referenceCoordinates(Kokkos::DynRankView<double,PHX::Device> & container);
   
   private:
 

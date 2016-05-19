@@ -57,7 +57,7 @@
    #include "Teuchos_DefaultSerialComm.hpp"
 #endif
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 namespace panzer {
 namespace unit_test {
@@ -169,7 +169,7 @@ public:
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & points);
+   void getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
@@ -294,7 +294,7 @@ public:
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
 
-   void getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & points);
+   void getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & points);
 
    int getElementBlockGIDCount(const std::string &) const;
    int getElementBlockGIDCount(const std::size_t &) const;
@@ -417,7 +417,7 @@ public:
    virtual void ownedIndices(const std::vector<std::pair<int,GlobalOrdinalT> > & indices,std::vector<bool> & isOwned) const
    { TEUCHOS_ASSERT(false); }
 
-   void getCoordinates(LocalOrdinalT localElementId,Intrepid2::FieldContainer<double> & points)
+   void getCoordinates(LocalOrdinalT localElementId,Kokkos::DynRankView<double,PHX::Device> & points)
    { TEUCHOS_ASSERT(false); }
 
    int getElementBlockGIDCount(const std::string &) const { TEUCHOS_ASSERT(false); }

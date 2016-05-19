@@ -1,31 +1,29 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -40,9 +38,9 @@
 
 namespace Sacado {
 
-  /*! 
+  /*!
    * \brief A class to store the active parameters in a code in an ordered
-   * fashion, along with their "base" values, i.e., the floating point 
+   * fashion, along with their "base" values, i.e., the floating point
    * value upon which the templated values are based.
    */
   template <typename FamilyType, typename BaseValueType>
@@ -77,12 +75,12 @@ namespace Sacado {
 
     //! Const iterator typename
     typedef typename EntryVector::const_iterator const_iterator;
-  
+
     //! Default constructor
     ParameterVectorBase() {}
 
     //! Copy constructor
-    ParameterVectorBase(const ParameterVectorBase& source) : 
+    ParameterVectorBase(const ParameterVectorBase& source) :
       params(source.params) {}
 
     //! Destructor
@@ -94,7 +92,7 @@ namespace Sacado {
 
     //! Add entry
     void addParam(const Teuchos::RCP<FamilyType>& family,
-                  BaseValueType baseValue) { 
+                  BaseValueType baseValue) {
       params.push_back(Entry(family, baseValue));
     }
 
@@ -130,7 +128,7 @@ namespace Sacado {
       index_ad.resize(0);
       index_analytic.resize(0);
       index_other.resize(0);
-      
+
       typename EntryVector::iterator it;
       int i;
       for (it = params.begin(), i=0; it != params.end(); ++it, ++i) {

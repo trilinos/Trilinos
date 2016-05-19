@@ -269,6 +269,10 @@ exe stk_learning_kokkos_utest
     /tpl/gtest//gtest
     /sierra/stk_util//stk_util_environment
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/stk_mesh//stk_mesh_base
+    /sierra/stk_util//stk_util_parallel
+    /sierra/stk_util//stk_util_util
+    /sierra/stk_topology//stk_topology
   :
     <tag>@sierra-exec-tag
   ;

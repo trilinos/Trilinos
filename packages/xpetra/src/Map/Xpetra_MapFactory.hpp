@@ -146,6 +146,7 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> >
     Build (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
            LocalOrdinal numDofPerNode)
@@ -355,6 +356,7 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
       XPETRA_MONITOR("MapFactory::Build");
 
@@ -620,6 +622,7 @@ namespace Xpetra {
     }
 
     //! Map constructor transforming degrees of freedom
+    //! for numDofPerNode this acts like a deep copy
     static Teuchos::RCP<Map<LocalOrdinal,GlobalOrdinal, Node> > Build(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map, LocalOrdinal numDofPerNode) {
       XPETRA_MONITOR("MapFactory::Build");
 

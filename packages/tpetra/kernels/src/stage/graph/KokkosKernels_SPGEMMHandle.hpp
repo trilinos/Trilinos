@@ -18,7 +18,7 @@ namespace Experimental{
 
 namespace Graph{
 
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_KK1};
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4};
 
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
@@ -166,20 +166,61 @@ private:
 
   int suggested_vector_size;
   int suggested_team_size;
-  row_lno_t num_result_nnz;
+  row_lno_t max_nnz_inresult;
+  row_lno_t max_nnz_compressed_result;
 
+  row_lno_temp_work_view_t compressed_b_rowmap, compressed_b_set_indices, compressed_b_sets, compressed_b_set_begins, compressed_b_set_nexts;
+  row_lno_temp_work_view_t compressed_c_rowmap;
 
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
+
+  void set_compressed_c(
+      row_lno_temp_work_view_t compressed_c_rowmap_){
+    compressed_c_rowmap = compressed_c_rowmap_;
+  }
+
+  void get_compressed_c(
+      row_lno_temp_work_view_t &compressed_c_rowmap_){
+    compressed_c_rowmap_ = compressed_c_rowmap;
+  }
+
+
+  void set_compressed_b(
+      row_lno_temp_work_view_t compressed_b_rowmap_,
+      row_lno_temp_work_view_t compressed_b_set_indices_,
+      row_lno_temp_work_view_t compressed_b_sets_,
+      row_lno_temp_work_view_t compressed_b_set_begins_,
+      row_lno_temp_work_view_t compressed_b_set_nexts_){
+    compressed_b_rowmap = compressed_b_rowmap_;
+    compressed_b_set_indices = compressed_b_set_indices_;
+    compressed_b_sets = compressed_b_sets_;
+    compressed_b_set_begins = compressed_b_set_begins_;
+    compressed_b_set_nexts = compressed_b_set_nexts_;
+  }
+
+  void get_compressed_b(
+      row_lno_temp_work_view_t &compressed_b_rowmap_,
+      row_lno_temp_work_view_t &compressed_b_set_indices_,
+      row_lno_temp_work_view_t &compressed_b_sets_,
+      row_lno_temp_work_view_t &compressed_b_set_begins_,
+      row_lno_temp_work_view_t &compressed_b_set_nexts_){
+    compressed_b_rowmap_ = compressed_b_rowmap;
+    compressed_b_set_indices_ = compressed_b_set_indices;
+    compressed_b_sets_ = compressed_b_sets;
+    compressed_b_set_begins_ = compressed_b_set_begins;
+    compressed_b_set_nexts_ = compressed_b_set_nexts;
+  }
+
   /**
    * \brief Default constructor.
    */
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
     algorithm_type(gs),
     called_symbolic(false), called_numeric(false),
-    suggested_vector_size(0), suggested_team_size(0), num_result_nnz(0)
+    suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -263,6 +304,8 @@ private:
   }
 
 
+
+
   //getters
   SPGEMMAlgorithm get_algorithm_type() const {return this->algorithm_type;}
 
@@ -270,18 +313,28 @@ private:
   bool is_numeric_called(){return this->called_numeric;}
 
 
-  row_lno_t get_num_result_nnz() const{
-    return this->num_result_nnz ;
+  row_lno_t get_max_result_nnz() const{
+    return this->max_nnz_inresult ;
   }
+
+  row_lno_t get_max_compresed_result_nnz() const{
+    return this->max_nnz_compressed_result ;
+  }
+
 
   //setters
   void set_algorithm_type(const SPGEMMAlgorithm &sgs_algo){this->algorithm_type = sgs_algo;}
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
   void set_call_numeric(bool call = true){this->called_numeric = call;}
 
-  void set_num_result_nnz(row_lno_t num_result_nnz_){
-    this->num_result_nnz = num_result_nnz_;
+  void set_max_result_nnz(row_lno_t num_result_nnz_){
+    this->max_nnz_inresult = num_result_nnz_;
   }
+
+  void set_max_compresed_result_nnz(row_lno_t num_result_nnz_){
+    this->max_nnz_compressed_result = num_result_nnz_;
+  }
+
   void vector_team_size(
       int max_allowed_team_size,
       int &suggested_vector_size_,

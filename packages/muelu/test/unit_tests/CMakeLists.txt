@@ -52,6 +52,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
     SubBlockAFactory.cpp
+    Smoothers/BlockedSmoother.cpp
   )
 ENDIF()
 

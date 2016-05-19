@@ -150,6 +150,18 @@ namespace Tacho {
     size_type NumNonZeros() const { return _nnz; }
 
     KOKKOS_INLINE_FUNCTION
+    size_type_array RowPtrBegin() { return _ap_begin; }
+
+    KOKKOS_INLINE_FUNCTION
+    size_type_array RowPtrEnd() { return _ap_end; }
+
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type_array Cols() const { return _aj; }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type_array Values() const { return _ax; }
+
+    KOKKOS_INLINE_FUNCTION
     ordinal_type NumNonZerosInRow(const ordinal_type i) const { return (_ap_end[i] - _ap_begin[i]); } 
 
     KOKKOS_INLINE_FUNCTION

@@ -1017,7 +1017,6 @@ bool oct_tree_proximity_search(
     std::set< std::pair<DomainKey, RangeKey> > local_relation ;
 
     {
-      //WTF???
       const double tolerance = 0.001 ;
 
       std::vector< stk::OctTreeKey > cuts ;

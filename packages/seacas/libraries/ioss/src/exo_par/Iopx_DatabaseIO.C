@@ -52,7 +52,7 @@
 #include <exo_par/Iopx_DecompositionData.h>
 #include <exodus/Ioex_Internals.h>
 #include <exodus/Ioex_Utils.h>
-#include <exodusII_par.h>
+#include <exodusII.h>
 #include <float.h>
 #include <functional>
 #include <iostream>

@@ -466,15 +466,15 @@ int main(int argc, char *argv[]) {
         if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
       } else {
         // use Thyra style GIDs
-        RCP<MultiVector> nsp1shrinked   = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace1);
-        RCP<MultiVector> nsp2shrinked   = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace2);
-        RCP<MultiVector> coordsshrinked = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*coordinates);
+        RCP<MultiVector> nsp1shrinked   = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace1);
+        RCP<MultiVector> nsp2shrinked   = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*nullspace2);
+        RCP<MultiVector> coordsshrinked = Xpetra::MatrixUtils<Scalar,LocalOrdinal, GlobalOrdinal, Node>::xpetraGidNumbering2ThyraGidNumbering(*coordinates);
         H->GetLevel(0)->Set("A",           Teuchos::rcp_dynamic_cast<Matrix>(bOp));
         H->GetLevel(0)->Set("Nullspace1",  nsp1shrinked);
         H->GetLevel(0)->Set("Nullspace2",  nsp2shrinked);
         H->GetLevel(0)->Set("Coordinates", coordsshrinked);  // TODO split coordinates for rebalancing! (or provide the full vector in the right map and split it in the factories!)
         if(mySpecialMap!=Teuchos::null) {
-          RCP<const Map> specialmapshrinked = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::shrinkMapGIDs(*mySpecialMap,*mySpecialMap);
+          RCP<const Map> specialmapshrinked = Xpetra::MapUtils<LocalOrdinal, GlobalOrdinal, Node>::shrinkMapGIDs(*mySpecialMap,*mySpecialMap);
           H->GetLevel(0)->Set("map SpecialMap", Teuchos::rcp_const_cast<Map>(specialmapshrinked));
         }
 

@@ -2395,6 +2395,8 @@ namespace Tpetra {
       const range_impl_scalar_type theBeta = static_cast<range_impl_scalar_type> (beta);
       const bool conjugate = (mode == Teuchos::CONJ_TRANS);
       const bool transpose = (mode != Teuchos::NO_TRANS);
+      auto X_lcl = X.template getLocalView<device_type> ();
+      auto Y_lcl = Y.template getLocalView<device_type> ();
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2434,8 +2436,8 @@ namespace Tpetra {
       // If the two pointers are NULL, then they don't alias one
       // another, even though they are equal.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        X.getDualView ().d_view.ptr_on_device () == Y.getDualView ().d_view.ptr_on_device () &&
-        X.getDualView ().d_view.ptr_on_device () != NULL,
+        X_lcl.ptr_on_device () == Y_lcl.ptr_on_device () &&
+        X_lcl.ptr_on_device () != NULL,
         std::runtime_error, "X and Y may not alias one another.");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -2667,12 +2669,6 @@ namespace Tpetra {
       using Teuchos::CONJ_TRANS;
       using Teuchos::NO_TRANS;
       using Teuchos::TRANS;
-      typedef LocalOrdinal LO;
-      typedef GlobalOrdinal GO;
-      typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node, classic> DMV;
-      typedef Tpetra::MultiVector<RangeScalar, LO, GO, Node, classic> RMV;
-      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
-
       const char tfecfFuncName[] = "localSolve: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -2691,6 +2687,13 @@ namespace Tpetra {
         (STS::isComplex && mode == TRANS, std::logic_error, "This method does "
          "not currently support non-conjugated transposed solve (mode == "
          "Teuchos::TRANS) for complex scalar types.");
+
+      // FIXME (mfh 19 May 2016) This makes some Ifpack2 tests fail.
+      //
+      // TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      //   (Y.template need_sync<device_type> () && !
+      //    Y.template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+      //    "Y must be sync'd to device memory before you may call this method.");
 
       // FIXME (mfh 27 Aug 2014) Tpetra has always made the odd decision
       // that if _some_ diagonal entries are missing locally, then it
@@ -2713,27 +2716,23 @@ namespace Tpetra {
         (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
       local_matrix_type A_lcl = this->getLocalMatrix ();
-
-      // FIXME (mfh 23 Apr 2015) We currently only have a host,
-      // sequential kernel for local sparse triangular solve.
-
-      Y.getDualView ().template sync<HMDT> (); // Y is read-only
-      X.getDualView ().template sync<HMDT> ();
-      X.getDualView ().template modify<HMDT> (); // we will write to X
+      X.template modify<device_type> (); // we will write to X
 
       if (X.isConstantStride () && Y.isConstantStride ()) {
-        typename DMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-        typename RMV::dual_view_type::t_host Y_lcl = Y.template getLocalView<HMDT> ();
-        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+        auto X_lcl = X.template getLocalView<device_type> ();
+        auto Y_lcl = Y.template getLocalView<device_type> ();
+        KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
+                            A_lcl, Y_lcl, X_lcl);
       }
       else {
         const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
         for (size_t j = 0; j < numVecs; ++j) {
           auto X_j = X.getVector (j);
           auto Y_j = X.getVector (j);
-          auto X_lcl = X_j->template getLocalView<HMDT> ();
-          auto Y_lcl = Y_j->template getLocalView<HMDT> ();
-          KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (), A_lcl, Y_lcl, X_lcl);
+          auto X_lcl = X_j->template getLocalView<device_type> ();
+          auto Y_lcl = Y_j->template getLocalView<device_type> ();
+          KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
+                              diag.c_str (), A_lcl, Y_lcl, X_lcl);
         }
       }
     }

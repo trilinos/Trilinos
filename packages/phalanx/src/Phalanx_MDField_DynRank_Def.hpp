@@ -55,11 +55,6 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_Print_Utilities.hpp"
 
-#ifdef Phalanx_ENABLE_Intrepid2
-#include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
-#include "Intrepid2_KokkosRank.hpp"
-#endif
-
 //**********************************************************************
 //**********************************************************************
 // Runtime (Dynamic Rank) Version

@@ -3,17 +3,26 @@
 # the sparse matrix to be read in has enough rows that it may be
 # distributed over all of them, and as long as Proc 0 has enough
 # memory to handle all the sparse matrix's data.
-IF(Tpetra_INST_INT_LONG)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MatrixMarket_Tpetra_CrsMatrix_InOutTest
-    SOURCES
-      MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsMatrix_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsMatrix_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MatrixMarket_Tpetra_CrsGraph_InOutTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_InOutTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     MatrixMarket_Operator_Test
@@ -71,6 +80,14 @@ TRIBITS_ADD_EXECUTABLE(
   MatrixMarket_Tpetra_CrsMatrix_FileTest
   SOURCES
     MatrixMarket_Tpetra_CrsMatrix_FileTest.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_EXECUTABLE(
+  MatrixMarket_Tpetra_CrsGraph_FileTest
+  SOURCES
+    MatrixMarket_Tpetra_CrsGraph_FileTest.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM serial mpi
   )

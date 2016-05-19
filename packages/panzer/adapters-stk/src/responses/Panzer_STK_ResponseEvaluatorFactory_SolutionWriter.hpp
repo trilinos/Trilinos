@@ -111,7 +111,7 @@ public:
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                                  int baseDimension,
-                                 Intrepid2::FieldContainer<double> & centroid) const;
+                                 Kokkos::DynRankView<double,PHX::Device> & centroid) const;
 
    //! Delete from the argument all the fields that are in the removedFields array
    void deleteRemovedFields(const std::vector<std::string> & removedFields,

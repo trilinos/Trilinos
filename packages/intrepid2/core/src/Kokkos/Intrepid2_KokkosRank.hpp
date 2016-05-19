@@ -45,6 +45,7 @@
 #ifndef INTREPID2_KOKKOS_RANK_HPP
 #define INTREPID2_KOKKOS_RANK_HPP
 #include "Kokkos_Core.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Sacado.hpp"
 
 namespace Intrepid2{
@@ -81,12 +82,13 @@ struct conditional_eSpace<T, typename Intrepid2::Void<typename T::execution_spac
   //typedef typename T::execution_space execution_space;
   typedef Kokkos::HostSpace::execution_space execution_space;
 };
+
 template<class A>
 struct CheckType{static const bool value = false; };
 
-
 template<class A>
 struct Rank{static const int value = -1;};
+
 template<class Array, class ... Params>
 struct Rank<Kokkos::View<Array,Params...> >{
   static const index_type value=Kokkos::View<Array,Params...>::Rank;
@@ -94,34 +96,84 @@ struct Rank<Kokkos::View<Array,Params...> >{
 
 template<class Array, class ... Params>
 struct Rank<const Kokkos::View<Array,Params...> >{
-static const index_type value=Kokkos::View<Array,Params...>::Rank;
+  static const index_type value=Kokkos::View<Array,Params...>::Rank;
 };
 
-template<class arg1, class arg2, class arg3, class arg4, class arg5>
-struct CheckType<Kokkos::View<arg1,arg2,arg3,arg4,arg5> >{
-static const bool value = true;
+template<class Array, class ... Params>
+struct CheckType<Kokkos::View<Array,Params...> >{
+  static const bool value = true;
+};
+
+template<class Array, class ... Params>
+struct CheckType<const Kokkos::View<Array,Params...> >{
+  static const bool value = true;
 };
 
 template<class A,class Scalar>
 struct Return_Type{
-    typedef Scalar& return_type;
-    typedef Scalar const_return_type;
-    };
-
-
-template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
-struct Return_Type<const Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
-      typedef Kokkos::View<arg1,arg2,arg3,arg4,arg5> ViewType;
-      typedef typename ViewType::reference_type return_type;
-      typedef typename ViewType::reference_type const_return_type;
+  typedef Scalar& return_type;
+  typedef Scalar const_return_type;
 };
 
-template<class arg1, class arg2, class arg3, class arg4, class arg5, class Scalar>
-struct Return_Type< Kokkos::View<arg1,arg2,arg3,arg4,arg5>, Scalar>{
-      typedef Kokkos::View<arg1,arg2,arg3,arg4,arg5> ViewType;
-      typedef typename ViewType::reference_type return_type;
-      typedef typename ViewType::reference_type const_return_type;
+template<class Array, class ... Params, class Scalar>
+struct Return_Type<const Kokkos::View<Array,Params...>, Scalar>{
+  typedef Kokkos::View<Array,Params...> ViewType;
+  typedef typename ViewType::reference_type return_type;
+  typedef typename ViewType::reference_type const_return_type;
 };
+
+template<class Array, class ... Params,class Scalar>
+struct Return_Type< Kokkos::View<Array,Params...>, Scalar>{
+  typedef Kokkos::View<Array,Params...> ViewType;
+  typedef typename ViewType::reference_type return_type;
+  typedef typename ViewType::reference_type const_return_type;
+};
+
+
+  // Kokkos::DynRankView specializations
+  template<class Array, class ... Params>
+  struct Rank<Kokkos::DynRankView<Array,Params...> >{
+    static const int value = -1;
+  };
+  
+  template<class Array, class ... Params>
+  struct Rank<const Kokkos::DynRankView<Array,Params...> >{
+    static const int value = -1;
+  };
+
+  template<class Array, class ... Params, class Scalar>
+  struct Return_Type<const Kokkos::DynRankView<Array,Params...>, Scalar>{
+    typedef Kokkos::DynRankView<Array,Params...> ViewType;
+    typedef typename ViewType::reference_type return_type;
+    typedef typename ViewType::reference_type const_return_type;
+  };
+  
+  template<class Array, class ... Params, class Scalar>
+  struct Return_Type< Kokkos::DynRankView<Array,Params...>, Scalar>{
+    typedef Kokkos::DynRankView<Array,Params...> ViewType;
+    typedef typename ViewType::reference_type return_type;
+    typedef typename ViewType::reference_type const_return_type;
+  };
+
+  template<class Array, class ... Params>
+  struct CheckType<Kokkos::DynRankView<Array,Params...> >{
+    static const bool value = true;
+  };
+
+  template<class Array, class ... Params>
+  struct CheckType<const Kokkos::DynRankView<Array,Params...> >{
+    static const bool value = true;
+  };
+
+  // for array wrapper below
+  template<typename field>
+  struct is_mdfield;
+
+  template<class Array, class ... Params>
+  struct is_mdfield<Kokkos::DynRankView<Array,Params...>>{ 
+    enum {value=true};
+  };
+
 
 /*
 

@@ -91,7 +91,7 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
   }
   // End deprecated basis support
 
-  intrepid_basis_ = panzer::createIntrepid2Basis<double,Intrepid2::FieldContainer<double> >(basis_type, basis_order, topology_);
+  intrepid_basis_ = panzer::createIntrepid2Basis<double,Kokkos::DynRankView<double,PHX::Device> >(basis_type, basis_order, topology_);
 
   basis_type_ = basis_type;
 
@@ -199,7 +199,7 @@ std::string panzer::PureBasis::fieldNameD2() const
   return field_basis_name_D2_;
 }    
 
-Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > 
+Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
 panzer::PureBasis::getIntrepid2Basis() const
 {
    return intrepid_basis_;
@@ -208,7 +208,7 @@ panzer::PureBasis::getIntrepid2Basis() const
 bool 
 panzer::PureBasis::supportsBasisCoordinates() const
 {
-  typedef Intrepid2::FieldContainer<double> Array;
+  typedef Kokkos::DynRankView<double,PHX::Device> Array;
   Teuchos::RCP<const Intrepid2::DofCoordsInterface<Array> > coord_interface 
       = Teuchos::rcp_dynamic_cast<const Intrepid2::DofCoordsInterface<Array> >(getIntrepid2Basis());
 

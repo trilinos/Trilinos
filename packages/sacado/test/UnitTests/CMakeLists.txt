@@ -88,6 +88,15 @@ IF (Sacado_ENABLE_Teuchos)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadFadKokkosTests_Serial
+        SOURCES Fad_Fad_KokkosTests.hpp
+                Fad_Fad_KokkosTests_Serial.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        )
     ENDIF ()
 
     IF (Kokkos_ENABLE_Pthread)
@@ -105,6 +114,16 @@ IF (Sacado_ENABLE_Teuchos)
         FadKokkosTests_NoViewSpec_Threads
         SOURCES Fad_KokkosTests.hpp
                 Fad_KokkosTests_NoViewSpec_Threads.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadFadKokkosTests_Threads
+        SOURCES Fad_Fad_KokkosTests.hpp
+                Fad_Fad_KokkosTests_Threads.cpp
         COMM serial mpi
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 1
@@ -132,6 +151,16 @@ IF (Sacado_ENABLE_Teuchos)
         NUM_MPI_PROCS 1
         RUN_SERIAL
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadFadKokkosTests_OpenMP
+        SOURCES Fad_Fad_KokkosTests.hpp
+                Fad_Fad_KokkosTests_OpenMP.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
     ENDIF()
 
     IF (Kokkos_ENABLE_Cuda)
@@ -154,7 +183,26 @@ IF (Sacado_ENABLE_Teuchos)
         NUM_MPI_PROCS 1
         RUN_SERIAL
         )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        FadFadKokkosTests_Cuda
+        SOURCES Fad_Fad_KokkosTests.hpp
+                Fad_Fad_KokkosTests_Cuda.cpp
+        COMM serial mpi
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        RUN_SERIAL
+        )
     ENDIF()
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      ViewFactoryTests
+      SOURCES ViewFactoryTests.cpp
+      COMM serial mpi
+      STANDARD_PASS_OUTPUT
+      NUM_MPI_PROCS 1
+      RUN_SERIAL
+      )
 
   ENDIF()
 

@@ -9,14 +9,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
-IF(Trilinos_ENABLE_SEACAS)
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson
     SOURCES example_Poisson.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
-ENDIF()
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson_BlockMaterials
@@ -30,6 +29,14 @@ ENDIF()
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
     )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson2D_p2
+    SOURCES example_Poisson2D_p2.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    NUM_MPI_PROCS 1
+    )
+
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell

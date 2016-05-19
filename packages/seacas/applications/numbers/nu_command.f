@@ -308,26 +308,33 @@ C-----------------------------------------------------------------------
          NUMCAV = 0
    60    CONTINUE
          IF (FFNUMB (IFLD, KV)) THEN
-            NUMCAV = MIN(NUMCAV + 1, MAXCAV)
-            CALL FFINTG (IFLD, KV, IVAL,
-     *         'cavity boundary flag', 0, ICAV(NUMCAV), *20)
-            GO TO 60
+           NUMCAV = MIN(NUMCAV + 1, MAXCAV)
+           CALL FFINTG (IFLD, KV, IVAL,
+     *       'cavity boundary flag', 0, ICAV(NUMCAV), *20)
+           GO TO 60
          END IF
-         IF (FFMATC (IFLD, KV, CV, 'CENTER', 1)) THEN
-            CALL FFREAL (IFLD, KV, RV, 'X coordinate of center',
-     *         0.0, CENT(1), *20)
-            CALL FFREAL (IFLD, KV, RV, 'Y coordinate of center',
-     *         0.0, CENT(2), *20)
-            IF (NDIM .EQ. 3) THEN
-               CALL FFREAL (IFLD, KV, RV, 'Z coordinate of center',
-     *            0.0, CENT(3), *20)
-            END IF
-            CENTER = .TRUE.
+
+         CENT(1) = 0.0
+         CENT(2) = 0.0
+         CENT(3) = 0.0
+         CENTER = .FALSE.
+C ... For 3d, if no center specified use 0,0,0 unless user enters 'centroid'
+         IF (NDIM .eq. 3) then
+           center = .true.
+         end if
+         IF (FFMATC (IFLD, KV, CV, 'CENTROID', 5)) THEN
+           CENTER = .FALSE.
+         ELSE IF (FFMATC (IFLD, KV, CV, 'CENTER', 1)) THEN
+           CALL FFREAL (IFLD, KV, RV, 'X coordinate of center',
+     *       0.0, CENT(1), *20)
+           CALL FFREAL (IFLD, KV, RV, 'Y coordinate of center',
+     *       0.0, CENT(2), *20)
+           IF (NDIM .EQ. 3) THEN
+             CALL FFREAL (IFLD, KV, RV, 'Z coordinate of center',
+     *         0.0, CENT(3), *20)
+           END IF
+           CENTER = .TRUE.
          ELSE
-            CENT(1) = 0.0
-            CENT(2) = 0.0
-            CENT(3) = 0.0
-            CENTER = .FALSE.
          END IF
          CALL CAVITY (A, CRD, A(IBC1), A(IBC2), A(IBC3), A(IBC4),
      *      A(IBC5),A(IBC6), A(IBC7), A(IBC8), DISP, NUMNP, NDIM,

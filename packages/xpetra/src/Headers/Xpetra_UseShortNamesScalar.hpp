@@ -93,6 +93,10 @@ typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif
 
+#ifdef XPETRA_REORDEREDBLOCKEDCRSMATRIX_SHORT
+typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
+#endif
+
 #ifdef HAVE_XPETRA_THYRA
 #ifdef XPETRA_THYRAUTILS_SHORT
 typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraUtils;

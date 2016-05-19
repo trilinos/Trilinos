@@ -54,9 +54,13 @@
 #include "Phalanx_Print_Utilities.hpp"
 
 #ifdef Phalanx_ENABLE_Intrepid2
+#ifdef PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+// no more intrepid dependencies!
+#else
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
-#endif
+#endif // PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+#endif //Phalanx_ENABLE_Intrepid2
 
 //**********************************************************************
 #ifdef PHX_DEBUG
@@ -1161,6 +1165,9 @@ std::ostream& PHX::operator<<(std::ostream& os,
 //template<class A>
 //struct Rank{static const int value = -1;};
 #ifdef Phalanx_ENABLE_Intrepid2
+#ifdef PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+// no more intrepid dependencies!
+#else
 
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
@@ -1252,6 +1259,7 @@ static const bool value = true;
 
 }
 
+#endif //PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
 #endif // Phalanx_ENABLE_IntrepidIntrepid2
 //********************************************************************************************
 #endif

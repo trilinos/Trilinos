@@ -50,7 +50,7 @@
 #include "Phalanx_MDField_Utilities.hpp"
 
 //#define PANZER_USE_FAST_SUM 1
-#define PANZER_USE_FAST_SUM 1
+#define PANZER_USE_FAST_SUM 0
 
 namespace panzer {
 
@@ -63,27 +63,41 @@ PHX_EVALUATOR_CTOR(Sum,p)
   Teuchos::RCP<PHX::DataLayout> data_layout = 
     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
 
+  TEUCHOS_ASSERT(value_names->size()<MAX_VALUES);
+
   // check if the user wants to scale each term independently
+  auto local_scalars = Kokkos::View<double *,PHX::Device>("scalars",value_names->size());
   if(p.isType<Teuchos::RCP<const std::vector<double> > >("Scalars")) {
-    scalars = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
+    auto scalars_v = *p.get<Teuchos::RCP<const std::vector<double> > >("Scalars");
 
     // safety/sanity check
-    TEUCHOS_ASSERT(scalars.size()==value_names->size());
+    TEUCHOS_ASSERT(scalars_v.size()==value_names->size());
+
+    for (std::size_t i=0; i < value_names->size(); ++i)
+      local_scalars(i) = scalars_v[i];
   }
   else {
-    // otherwise use all ones (a simple sum)
-    scalars = std::vector<double>(value_names->size(),1.0);
+    for (std::size_t i=0; i < value_names->size(); ++i)
+      local_scalars(i) = 1.0;
   }
+
+  scalars = local_scalars; 
   
   sum = PHX::MDField<ScalarT>(sum_name, data_layout);
   
   this->addEvaluatedField(sum);
  
+  for (std::size_t i=0; i < value_names->size(); ++i) {
+    values[i] = PHX::MDField<const ScalarT>( (*value_names)[i], data_layout);
+    this->addDependentField(values[i]);
+  }
+  /*
   values.resize(value_names->size());
   for (std::size_t i=0; i < value_names->size(); ++i) {
     values[i] = PHX::MDField<const ScalarT>( (*value_names)[i], data_layout);
     this->addDependentField(values[i]);
   }
+  */
  
   std::string n = "Sum Evaluator";
   this->setName(n);
@@ -93,7 +107,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
 PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
 {
   this->utils.setFieldData(sum,fm);
-  for (std::size_t i=0; i < values.size(); ++i)
+  for (std::size_t i=0; i < scalars.dimension_0(); ++i)
     this->utils.setFieldData(values[i],fm);
 
   cell_data_size = sum.size() / sum.fieldTag().dataLayout().dimension(0);
@@ -105,20 +119,20 @@ template<typename EvalT, typename TRAITS>
 template<unsigned int RANK>
 KOKKOS_INLINE_FUNCTION
 void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
-  const size_t num_vals = values.size();
+  auto num_vals = scalars.dimension_0();
 
 
   if (RANK == 1 )
   {
     for (std::size_t iv = 0; iv < num_vals; ++iv)
-      sum(i) += scalars[iv]*(values[iv](i));
+      sum(i) += scalars(iv)*(values[iv](i));
   }
   else if (RANK == 2)
   {
     const size_t dim_1 = sum.dimension(1);
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t iv = 0; iv < num_vals; ++iv)
-        sum(i,j) += scalars[iv]*(values[iv](i,j));
+        sum(i,j) += scalars(iv)*(values[iv](i,j));
   }
   else if (RANK == 3)
   {
@@ -126,7 +140,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
     for (std::size_t j = 0; j < dim_1; ++j)
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t iv = 0; iv < num_vals; ++iv)
-          sum(i,j,k) += scalars[iv]*(values[iv](i,j,k));
+          sum(i,j,k) += scalars(iv)*(values[iv](i,j,k));
   }
   else if (RANK == 4)
   {
@@ -135,7 +149,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
       for (std::size_t k = 0; k < dim_2; ++k)
         for (std::size_t l = 0; l < dim_3; ++l)
           for (std::size_t iv = 0; iv < num_vals; ++iv)
-            sum(i,j,k,l) += scalars[iv]*(values[iv](i,j,k,l));
+            sum(i,j,k,l) += scalars(iv)*(values[iv](i,j,k,l));
   }
   else if (RANK == 5)
   {
@@ -145,7 +159,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
         for (std::size_t l = 0; l < dim_3; ++l)
           for (std::size_t m = 0; m < dim_4; ++m)
             for (std::size_t iv = 0; iv < num_vals; ++iv)
-              sum(i,j,k,l,m) += scalars[iv]*(values[iv](i,j,k,l,m));
+              sum(i,j,k,l,m) += scalars(iv)*(values[iv](i,j,k,l,m));
   }
   else if (RANK == 6)
   {
@@ -156,7 +170,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
           for (std::size_t m = 0; m < dim_4; ++m)
             for (std::size_t n = 0; n < dim_5; ++n)
               for (std::size_t iv = 0; iv < num_vals; ++iv)
-                sum(i,j,k,l,m,n) += scalars[iv]*(values[iv](i,j,k,l,m,n));
+                sum(i,j,k,l,m,n) += scalars(iv)*(values[iv](i,j,k,l,m,n));
   }
 }
 
@@ -180,7 +194,6 @@ PHX_EVALUATE_FIELDS(Sum,workset)
   }
 #else
   size_t rank = sum.rank();
-  const size_t num_vals = values.size();
   const size_t length = sum.dimension(0);
   if (rank == 1 )
   {

@@ -43,15 +43,16 @@
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include <iostream>
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 void getNodeIds(const stk_classic::mesh::Entity * element,stk_classic::mesh::EntityRank nodeRank,std::vector<stk_classic::mesh::EntityId> & nodeIds);
 
@@ -63,6 +64,8 @@ int main( int argc, char **argv )
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+
+  Kokkos::initialize(argc,argv);
 
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -90,8 +93,7 @@ int main( int argc, char **argv )
      std::vector<std::size_t> localIds;
      mesh->getMyElements(blockName,elements);
 
-     FieldContainer vertices;
-     vertices.resize(elements.size(),4,dim);  
+     FieldContainer vertices("vertices",elements.size(),4,dim);  
 
      // loop over elements of this block
      for(std::size_t elm=0;elm<elements.size();++elm) {
@@ -111,6 +113,8 @@ int main( int argc, char **argv )
         }
      }
   }
+
+  Kokkos::finalize();
 
   return 0;
 }

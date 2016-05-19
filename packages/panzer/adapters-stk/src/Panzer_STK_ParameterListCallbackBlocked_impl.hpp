@@ -152,7 +152,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArray
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field)
 {
-   std::map<std::string,Intrepid2::FieldContainer<double> > data;
+   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
    Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field);
 
@@ -163,8 +163,8 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
-      fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
+      realloc(fieldData,connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
          // get degree of freedom coordiantes

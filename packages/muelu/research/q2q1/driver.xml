@@ -3,7 +3,7 @@
   <Parameter name="coarse: max size"            type="int"      value="1"/>
 
   <Parameter name="multigrid algorithm"         type="string"   value="emin"/>
-  <Parameter name="emin: num iterations"        type="int"      value="2"/>
+  <Parameter name="emin: num iterations"        type="int"      value="1"/>
 
   <!-- <Parameter name="smoother: type"              type="string"   value="vanka"/> -->
   <!-- <ParameterList name="smoother: params"> -->

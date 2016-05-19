@@ -31,18 +31,19 @@ struct compare{
 
 
 enum { CMD_USE_THREADS = 0
-     , CMD_USE_NUMA
-     , CMD_USE_CORE_PER_NUMA
-     , CMD_USE_CUDA
-     , CMD_USE_OPENMP
-     , CMD_USE_CUDA_DEV
-     , CMD_SPGEMM_ALGO
-     , CMD_BIN_AMTX
-     , CMD_BIN_RMTX
-     , CMD_BIN_PMTX
-     , CMD_MM_MODE
-     , CMD_ERROR
-     , CMD_COUNT };
+  , CMD_USE_NUMA
+  , CMD_USE_CORE_PER_NUMA
+  , CMD_USE_CUDA
+  , CMD_USE_OPENMP
+  , CMD_USE_CUDA_DEV
+  , CMD_SPGEMM_ALGO
+  , CMD_BIN_AMTX
+  , CMD_BIN_RMTX
+  , CMD_BIN_PMTX
+  , CMD_MM_MODE
+  , CMD_REPEAT
+  , CMD_ERROR
+  , CMD_COUNT };
 
 int main (int argc, char ** argv){
 
@@ -52,6 +53,7 @@ int main (int argc, char ** argv){
   char *r_mtx_bin_file = NULL;
   char *a_mtx_bin_file = NULL;
   char *p_mtx_bin_file = NULL;
+  cmdline[ CMD_REPEAT ] = 1;
 
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
 
@@ -63,10 +65,13 @@ int main (int argc, char ** argv){
     else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
       cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
     }
+    else if ( 0 == strcasecmp( argv[i] , "repeat" ) ) {
+      cmdline[ CMD_REPEAT ] = atoi( argv[++i] );
+    }
     else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
       sscanf( argv[++i] , "%dx%d" ,
-              cmdline + CMD_USE_NUMA ,
-              cmdline + CMD_USE_CORE_PER_NUMA );
+          cmdline + CMD_USE_NUMA ,
+          cmdline + CMD_USE_CORE_PER_NUMA );
     }
     else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
@@ -102,6 +107,15 @@ int main (int argc, char ** argv){
       }
       else if ( 0 == strcasecmp( argv[i] , "CUSP" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 3;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "DKK" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 4;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "CKK" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 5;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "SKK" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 6;
       }
       else {
         cmdline[ CMD_ERROR ] = 1 ;
@@ -188,7 +202,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
 
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
@@ -217,7 +231,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -244,7 +258,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -273,7 +287,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -301,7 +315,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
     }
 
@@ -360,12 +374,12 @@ int main (int argc, char ** argv){
 
 
     std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
-    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], 1);
+    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ]);
     std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ]);
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
     }else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
@@ -392,7 +406,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
 
         /*
         char *file = "AP.mtx";
@@ -402,7 +416,7 @@ int main (int argc, char ** argv){
             ( const idx *)crsmat.graph.entries.ptr_on_device(),
             ( const wt *)crsmat.values.ptr_on_device(),
             ( const char *)file);
-            */
+         */
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -433,7 +447,7 @@ int main (int argc, char ** argv){
         delete [] ew;
 
         //cmdline[ CMD_SPGEMM_ALGO ] = 1;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
 
     }
@@ -463,7 +477,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -490,7 +504,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 3){
@@ -538,7 +552,21 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+
+
+        if (0)
+        {
+
+          int *c_xadj = (int *)crsmat.graph.row_map.ptr_on_device();
+          int *c_adj = (int *)crsmat.graph.entries.ptr_on_device();
+          double *c_ew = (double *) crsmat.values.ptr_on_device();
+          int m = crsmat.graph.row_map.dimension_0() - 1;
+          int nnzA = crsmat.values.dimension_0();
+          KokkosKernels::Experimental::Graph::Utils::write_graph_bin<int, double>
+          (m, nnzA, c_xadj, c_adj, c_ew, "result.bin");
+        }
+
       }
     }
 
@@ -605,7 +633,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
 
@@ -648,7 +676,8 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        return;
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -690,7 +719,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -740,7 +769,8 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        return;
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -790,7 +820,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
       }
     }
 
@@ -853,6 +883,15 @@ crsMat_t run_experiment(
   case 3:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_CUSP);
     break;
+  case 4:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK2);
+    break;
+  case 5:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK3);
+    break;
+  case 6:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK4);
+    break;
   default:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
     break;
@@ -877,7 +916,7 @@ crsMat_t run_experiment(
 
     ExecSpace::fence();
     double symbolic_time = timer1.seconds();
-    std::cout << "symbolic_time:" << symbolic_time << std::endl;
+
     Kokkos::Impl::Timer timer2;
     KokkosKernels::Experimental::Graph::spgemm_numeric(
         &kh,

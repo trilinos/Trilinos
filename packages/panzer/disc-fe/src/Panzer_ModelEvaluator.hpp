@@ -646,7 +646,7 @@ addResponse(const std::string & responseName,
 
       // setup the vector (register response as epetra)
       if(resp->supportsDerivative())
-         resp->setDerivative(resp->buildEpetraDerivative());
+         resp->setDerivative(resp->buildDerivative());
    }
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT

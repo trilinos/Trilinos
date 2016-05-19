@@ -71,7 +71,7 @@
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
@@ -79,7 +79,7 @@
 
 #include <string>
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;

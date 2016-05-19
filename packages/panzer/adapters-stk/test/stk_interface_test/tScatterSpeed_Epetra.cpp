@@ -45,7 +45,7 @@ using Teuchos::ArrayView;
 using Teuchos::TimeMonitor;
 using Teuchos::Time;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 typedef Epetra_Map Map;
 typedef Epetra_CrsMatrix CrsMatrix;
 typedef Epetra_CrsGraph CrsGraph;

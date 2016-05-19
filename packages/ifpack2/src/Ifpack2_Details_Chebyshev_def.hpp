@@ -164,16 +164,15 @@ struct GlobalReciprocalThreshold<TpetraVectorType, false> {
   compute (TpetraVectorType& X,
            const typename TpetraVectorType::scalar_type& minVal)
   {
-    typedef typename TpetraVectorType::dual_view_type::non_const_value_type value_type;
-    typedef typename TpetraVectorType::execution_space::memory_space memory_space;
+    typedef typename TpetraVectorType::impl_scalar_type value_type;
+    typedef typename TpetraVectorType::device_type::memory_space memory_space;
 
-    auto X_lcl = X.getDualView ();
-    X_lcl.template sync<memory_space> ();
-    X_lcl.template modify<memory_space> ();
+    X.template sync<memory_space> ();
+    X.template modify<memory_space> ();
 
     const value_type minValS = static_cast<value_type> (minVal);
-
-    auto X_0 = Kokkos::subview (X_lcl.d_view, Kokkos::ALL (), 0);
+    auto X_0 = Kokkos::subview (X.template getLocalView<memory_space> (),
+                                Kokkos::ALL (), 0);
     LocalReciprocalThreshold<decltype (X_0) >::compute (X_0, minValS);
   }
 };

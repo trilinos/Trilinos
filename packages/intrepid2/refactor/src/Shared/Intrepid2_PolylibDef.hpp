@@ -305,7 +305,7 @@ namespace Intrepid2 {
       for (auto i = 0; i < np; ++i) 
         for (auto j = 0; j < np; ++j) 
           if (i != j)
-            D(i*np+j) = pd(i)/(pd(j)*(z(i)-z(j)));
+            D(i,j) = pd(i)/(pd(j)*(z(i)-z(j)));
           else 
             if (j == 0)
               D(i,j) = -(np + alpha + beta + one)*(np - one)/
@@ -421,20 +421,21 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = epsilon<ValueType>();
+    const ValueType tol = tolerence<ValueType>();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), null;
+      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
+      zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
     if (Util::abs(dz) < tol) 
       return 1.0;
 
     JacobiPolynomialDerivative(1, zi, pd, np, alpha, beta);
-    JacobiPolynomial(1, z, p, null , np, alpha, beta);
+    JacobiPolynomial(1, zv, p, null , np, alpha, beta);
 
-    h = p/(pd*dz);
+    h = p(0)/(pd(0)*dz);
 
     return h;
   }
@@ -451,11 +452,12 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = epsilon<ValueType>();
+    const ValueType tol = tolerence<ValueType>();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), null;
+      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
+      zv(const_cast<ValueType*>(&z), 1), null;
     
     const auto dz  = z - zi(0);
     if (Util::abs(dz) < tol) 
@@ -467,7 +469,7 @@ namespace Intrepid2 {
     JacobiPolynomialDerivative(1, zi, pd, np-1, alpha, beta + 1);
     h = (1.0 + zi(0))*pd(0) + p(0);
 
-    JacobiPolynomial(1, z, p, null,  np-1, alpha, beta + 1);
+    JacobiPolynomial(1, zv, p, null,  np-1, alpha, beta + 1);
     h = (1.0 + z)*p(0)/(h*dz);
 
     return h;
@@ -486,11 +488,12 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = epsilon<ValueType>();
+    const ValueType tol = tolerence<ValueType>();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), null;
+      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
+      zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz  = z - zi(0);
     if (Util::abs(dz) < tol) 
@@ -502,7 +505,7 @@ namespace Intrepid2 {
     JacobiPolynomialDerivative(1, zi, pd, np-1, alpha+1, beta);
     h = (1.0 - zi(0))*pd(0) - p(0);
 
-    JacobiPolynomial (1, z, p, null,  np-1, alpha+1, beta);
+    JacobiPolynomial (1, zv, p, null,  np-1, alpha+1, beta);
     h = (1.0 - z)*p(0)/(h*dz);
 
     return h;
@@ -521,11 +524,12 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType one = 1.0, two = 2.0, tol = epsilon<ValueType>();
+    const ValueType one = 1.0, two = 2.0, tol = tolerence<ValueType>();
 
     ValueType h, p_buf, pd_buf, zi_buf = zglj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
-      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), null;
+      p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
+      zv(const_cast<ValueType*>(&z), 1), null;
 
     const auto dz = z - zi(0);
     if (Util::abs(dz) < tol) 
@@ -537,7 +541,7 @@ namespace Intrepid2 {
     JacobiPolynomialDerivative(1, zi, pd, np-2, alpha + one, beta + one);
     h = (one - zi(0)*zi(0))*pd(0) - two*zi(0)*p(0);
 
-    JacobiPolynomial(1, z, p, null, np-2, alpha + one, beta + one);
+    JacobiPolynomial(1, zv, p, null, np-2, alpha + one, beta + one);
     h = (one - z*z)*p(0)/(h*dz);
 
     return h;
@@ -562,10 +566,10 @@ namespace Intrepid2 {
             const ordinal_type mz,
             const ValueType alpha,
             const ValueType beta) {
-    for (auto i = 0; i < mz; ++i) {
+    for (ordinal_type i = 0; i < mz; ++i) {
       const auto zp = zm(i);
-      for (auto j = 0; j < nz; ++j)
-        im(i, j) = Serial::LagrangianInterpolant<polyType>(j, zp, zgrj, nz, alpha, beta);
+      for (ordinal_type j = 0; j < nz; ++j)
+        im(i, j) = Serial::LagrangianInterpolant<polyType>::getValue(j, zp, zgrj, nz, alpha, beta);
     }
   }
 
@@ -714,7 +718,7 @@ namespace Intrepid2 {
 
     const ValueType dth = M_PI/(2.0*(ValueType)n);
     const ValueType one = 1.0, two = 2.0;
-    const ValueType tol = epsilon<ValueType>();
+    const ValueType tol = tolerence<ValueType>();
 
     ValueType r_buf, poly_buf, pder_buf;
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 

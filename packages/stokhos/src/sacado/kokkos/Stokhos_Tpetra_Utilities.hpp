@@ -87,8 +87,9 @@ namespace Stokhos {
 
     GetMeanValsFunc(const ViewType& vals_) : vals(vals_) {
       const size_type nnz = vals.dimension_0();
-      mean_vals =
-        Kokkos::make_view<ViewType>("mean-values", Kokkos::cijk(vals), nnz, 1);
+      typename Scalar::cijk_type mean_cijk =
+        Stokhos::create_mean_based_product_tensor<execution_space, typename Storage::ordinal_type, typename Storage::value_type>();
+      mean_vals = Kokkos::make_view<ViewType>("mean-values", mean_cijk, nnz, 1);
       Kokkos::parallel_for( nnz, *this );
     }
 

@@ -36,8 +36,8 @@ C
       QAINFO(2) = '        '
       QAINFO(3) = '        '
       
-      QAINFO(2)(:8) = '20160509'
-      QAINFO(3)(:8) = '    1.26'
+      QAINFO(2)(:8) = '20160510'
+      QAINFO(3)(:8) = '    1.27'
 
 C ... Added esum and eaverage commands
 c ... Fixed cavity volume output
@@ -59,3 +59,4 @@ c ...
 c ... check whether there are valid displacements for all comamnds calling getdsp
 c ... Fix handling of empty sidesets
 c ... increase output precision
+c ... Add centroid option for 3d cavity

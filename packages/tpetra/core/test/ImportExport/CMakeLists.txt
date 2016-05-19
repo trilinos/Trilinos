@@ -111,3 +111,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 2
   )
+
+IF (Tpetra_INST_INT_INT)
+  # mfh 17 May 2016: Test for Github Issue #114.
+  # Test originally written by Chris Siefert.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Issue_114
+    SOURCES Issue_114.cpp
+    COMM mpi
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 4
+    )
+ENDIF ()

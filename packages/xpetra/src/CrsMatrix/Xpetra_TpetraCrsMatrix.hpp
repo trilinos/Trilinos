@@ -412,6 +412,18 @@ namespace Xpetra {
       mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
     }
 
+    //! Left scale operator with given vector values
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      XPETRA_MONITOR("TpetraCrsMatrix::leftScale");
+      mtx_->leftScale(*(toTpetra(x)));
+    }
+
+    //! Right scale operator with given vector values
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+      XPETRA_MONITOR("TpetraCrsMatrix::rightScale");
+      mtx_->rightScale(*(toTpetra(x)));
+    }
+
     //! Implements DistObject interface
     //{@
 
@@ -793,6 +805,12 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
 
+    //! Left scale operator with given vector values
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+
+    //! Right scale operator with given vector values
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+
     //! Implements DistObject interface
     //{@
 
@@ -1133,6 +1151,12 @@ namespace Xpetra {
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {  }
+
+    //! Left scale operator with given vector values
+    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
+
+    //! Right scale operator with given vector values
+    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { }
 
     //! Implements DistObject interface
     //{@

@@ -44,7 +44,7 @@
 
 #include "Shards_CellTopology.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
@@ -61,7 +61,7 @@
 
 namespace panzer {
   
-  // * Specialization for Intrepid2::FieldContainer<double>
+  // * Specialization for Kokkos::DynRankView<double,PHX::Device>
   template <typename Scalar>
   void IntegrationValues2<Scalar>::
   setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir)

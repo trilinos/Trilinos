@@ -65,7 +65,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
