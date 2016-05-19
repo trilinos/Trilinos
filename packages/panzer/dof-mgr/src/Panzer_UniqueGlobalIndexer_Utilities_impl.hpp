@@ -105,13 +105,13 @@ printMeshTopology(std::ostream & os,const panzer::UniqueGlobalIndexer<LocalOrdin
     // loop over element in this element block, write out to 
     for(std::size_t e=0;e<elements.size();e++) {
       // extract LIDs, this is returned by reference nominally for performance
-      const std::vector<LocalOrdinalT> & lids = ugi.getElementLIDs(e);
+      const std::vector<LocalOrdinalT> & lids = ugi.getElementLIDs(elements[e]);
 
       // extract GIDs, this array is filled
       std::vector<GlobalOrdinalT> gids;
-      ugi.getElementGIDs(e,gids);
+      ugi.getElementGIDs(elements[e],gids);
 
-      os << "   local element id = " << e << ", ";
+      os << "   local element id = " << elements[e] << ", ";
 
       os << "  gids =";
       for(std::size_t i=0;i<gids.size();i++)

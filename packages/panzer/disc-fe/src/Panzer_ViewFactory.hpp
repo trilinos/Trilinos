@@ -1,7 +1,7 @@
 #ifndef PANZER_VIEW_FACTORY_HPP
 #define PANZER_VIEW_FACTORY_HPP
 
-#include "KokkosExp_ViewFactory.hpp"
+#include "Kokkos_ViewFactory.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer {

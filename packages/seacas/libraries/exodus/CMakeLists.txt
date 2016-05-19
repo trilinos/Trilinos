@@ -26,6 +26,10 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
 )
 
+if (${TPL_Netcdf_PARALLEL})
+   add_definitions(-DPARALLEL_AWARE_EXODUS)
+endif()
+
 if (${CMAKE_PROJECT_NAME} STREQUAL "SEACASProj")
    # Many users of the SEACAS installations still want a static exodus library...
    if (BUILD_SHARED_LIBS)
