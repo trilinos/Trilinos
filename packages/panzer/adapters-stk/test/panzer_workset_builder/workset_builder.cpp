@@ -64,7 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 
@@ -489,7 +489,7 @@ namespace panzer {
 		      sideEntities,local_side_ids,elements);
 
       Kokkos::DynRankView<double,PHX::Device> vertices = 
-	panzer::createDynRankView(vertices,"vertices",elements.size(),4,dim);  
+	Kokkos::createDynRankView(vertices,"vertices",elements.size(),4,dim);  
       
       // loop over elements of this block
       for(std::size_t elm=0;elm<elements.size();++elm) {

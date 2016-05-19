@@ -50,7 +50,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -116,7 +116,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  edgeTan = panzer::createDynRankView(residual.get_kokkos_view(),"edgeTan",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  edgeTan = Kokkos::createDynRankView(residual.get_kokkos_view(),"edgeTan",dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -147,7 +147,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     int cellDim = parentCell.getDimension();
     int numEdges = dof.dimension(1);
 
-    refEdgeTan = panzer::createDynRankView(residual.get_kokkos_view(),"refEdgeTan",numEdges,cellDim);
+    refEdgeTan = Kokkos::createDynRankView(residual.get_kokkos_view(),"refEdgeTan",numEdges,cellDim);
 
     for(int i=0;i<numEdges;i++) {
       Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);

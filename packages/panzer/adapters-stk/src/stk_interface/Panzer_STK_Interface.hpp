@@ -60,7 +60,7 @@
 #include <Shards_CellTopologyData.h>
 
 #include <PanzerAdaptersSTK_config.hpp>
-#include <Panzer_ViewFactory.hpp>
+#include <KokkosExp_ViewFactory.hpp>
 
 #include <unordered_map>
 
@@ -962,7 +962,7 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 {
    const std::vector<stk_classic::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
-   solutionValues = panzer::createDynRankView(solutionValues,
+   solutionValues = Kokkos::createDynRankView(solutionValues,
 					      "solutionValues",
 					      localElementIds.size(),
 					      elements[localElementIds[0]]->relations(getNodeRank()).size());
@@ -1140,7 +1140,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk_classic:
 {
    // nothing to do! silently return
    if(elements.size()==0) {
-     vertices = panzer::createDynRankView(vertices,"vertices",0,0,0);
+     vertices = Kokkos::createDynRankView(vertices,"vertices",0,0,0);
       return;
    }
 
@@ -1153,7 +1153,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk_classic:
       = stk_classic::mesh::fem::get_cell_topology(elements[0]->bucket()).getCellTopologyData()->vertex_count;
 
    // allocate space
-   vertices = panzer::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
+   vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
 
    // loop over each requested element
    unsigned dim = getDimension();
@@ -1232,7 +1232,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk_classic::
 
    // nothing to do! silently return
    if(elements.size()==0) {
-     vertices = panzer::createDynRankView(vertices,"vertices",0,0,0);
+     vertices = Kokkos::createDynRankView(vertices,"vertices",0,0,0);
       return;
    }
 
@@ -1241,7 +1241,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk_classic::
       = stk_classic::mesh::fem::get_cell_topology(elements[0]->bucket()).getCellTopologyData()->vertex_count;
 
    // allocate space
-   vertices = panzer::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
+   vertices = Kokkos::createDynRankView(vertices,"vertices",elements.size(),masterVertexCount,getDimension());
 
    std::map<std::string,std::vector<std::string> >::const_iterator itr = meshCoordFields_.find(eBlock);
    if(itr==meshCoordFields_.end()) {

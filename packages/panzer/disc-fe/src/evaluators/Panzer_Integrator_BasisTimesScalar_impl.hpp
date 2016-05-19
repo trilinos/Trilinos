@@ -47,7 +47,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 
 #define PANZER_USE_FAST_QUAD 1
 // #define PANZER_USE_FAST_QUAD 0
@@ -119,7 +119,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = panzer::createDynRankView(scalar.get_kokkos_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(scalar.get_kokkos_view(),"tmp",scalar.dimension(0), num_qp); 
 }
 
 //**********************************************************************

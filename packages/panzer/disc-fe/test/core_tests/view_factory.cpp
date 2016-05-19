@@ -43,7 +43,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Sacado.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_MDField.hpp"
 
@@ -58,7 +58,7 @@ namespace panzer_test {
     {
       Kokkos::DynRankView<FadType,PHX::Device> a("a",10,4,13,derivative_dim_plus_one);
       TEST_EQUALITY(Kokkos::dimension_scalar(a),derivative_dim_plus_one);
-      auto b = panzer::createDynRankView(a,"b",5,3,8);
+      auto b = Kokkos::createDynRankView(a,"b",5,3,8);
       TEST_EQUALITY(Kokkos::dimension_scalar(b),derivative_dim_plus_one);
     }
 
@@ -66,7 +66,7 @@ namespace panzer_test {
     {
       Kokkos::View<FadType*,PHX::Device> a("a",8,derivative_dim_plus_one);
       TEST_EQUALITY(Kokkos::dimension_scalar(a),derivative_dim_plus_one);
-      auto b = panzer::createDynRankView(a,"b",5,3,8);
+      auto b = Kokkos::createDynRankView(a,"b",5,3,8);
       TEST_EQUALITY(Kokkos::dimension_scalar(b),derivative_dim_plus_one);
     }
 

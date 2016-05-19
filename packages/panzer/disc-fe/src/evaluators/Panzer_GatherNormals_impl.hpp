@@ -48,7 +48,7 @@
 
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -103,7 +103,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  faceNormal = panzer::createDynRankView(gatherFieldNormals.get_kokkos_view(),
+  faceNormal = Kokkos::createDynRankView(gatherFieldNormals.get_kokkos_view(),
 					 "faceNormal",
 					 gatherFieldNormals.dimension(0),
 					 gatherFieldNormals.dimension(1),
@@ -126,8 +126,8 @@ evaluateFields(typename Traits::EvalData workset)
   // Collect the tangents for the element faces in reference space.
   // These are scaled such that U x V returns a unit normal,
   // **contrary to the Intrepid documentation**.
-  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanU = panzer::createDynRankView(gatherFieldNormals.get_kokkos_view(),"refFaceTanU",numFaces,cellDim);
-  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanV = panzer::createDynRankView(gatherFieldNormals.get_kokkos_view(),"refFaceTanV",numFaces,cellDim);
+  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanU = Kokkos::createDynRankView(gatherFieldNormals.get_kokkos_view(),"refFaceTanU",numFaces,cellDim);
+  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanV = Kokkos::createDynRankView(gatherFieldNormals.get_kokkos_view(),"refFaceTanV",numFaces,cellDim);
   for(int i=0;i<numFaces;i++) {
     Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",cellDim);
     Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",cellDim);

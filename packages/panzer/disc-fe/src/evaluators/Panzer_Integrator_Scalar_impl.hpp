@@ -46,7 +46,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-#include "Panzer_ViewFactory.hpp"
+#include "KokkosExp_ViewFactory.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -103,7 +103,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   num_qp = scalar.dimension(1);
 
-  tmp = panzer::createDynRankView(scalar.get_kokkos_view(),"tmp", scalar.dimension(0), num_qp);
+  tmp = Kokkos::createDynRankView(scalar.get_kokkos_view(),"tmp", scalar.dimension(0), num_qp);
 
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
