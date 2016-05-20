@@ -4473,7 +4473,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& src)
   {
-    using Kokkos::parallel_for;
     typedef LocalOrdinal LO;
     typedef device_type DT;
     typedef typename dual_view_type::host_mirror_space::device_type HMDT;
