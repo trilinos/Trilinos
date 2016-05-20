@@ -226,26 +226,16 @@ namespace MueLu {
     D_ = bA->getMatrix(1, 0);
     Z_ = bA->getMatrix(1, 1);
 
-    // TODO move this to BlockedCrsMatrix->getMatrix routine...
-    /*if (F_->IsView("stridedMaps") == false)
-      F_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(0));
-    if (G_->IsView("stridedMaps") == false)
-      G_->CreateView("stridedMaps", bA->getRangeMap(0), bA->getDomainMap(1));
-    if (D_->IsView("stridedMaps") == false)
-      D_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(0));
-    if (Z_->IsView("stridedMaps") == false)
-      Z_->CreateView("stridedMaps", bA->getRangeMap(1), bA->getDomainMap(1));*/
-
     const ParameterList & pL = Factory::GetParameterList();
     bool bSIMPLEC = pL.get<bool>("UseSIMPLEC");
 
     // Create the inverse of the diagonal of F
+    // TODO add safety check for zeros on diagonal of F!
     RCP<Vector> diagFVector = VectorFactory::Build(F_->getRowMap());
     if(!bSIMPLEC) {
       F_->getLocalDiagCopy(*diagFVector);       // extract diagonal of F
-      diagFVector->reciprocal(*diagFVector);    // build reciprocal
     } else {
-      const RCP<const Map> rowmap = F_->getRowMap();
+      /*const RCP<const Map> rowmap = F_->getRowMap();
       size_t locSize = rowmap->getNodeNumElements();
       Teuchos::ArrayRCP<SC> diag = diagFVector->getDataNonConst(0);
       Teuchos::ArrayView<const LO> cols;
@@ -257,10 +247,10 @@ namespace MueLu {
           absRowSum += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         }
         diag[i] = absRowSum;
-      }
-      diagFVector->reciprocal(*diagFVector);    // build reciprocal
+      }*/
+      diagFVector = Utilities::GetLumpedMatrixDiagonal(F_);
     }
-    diagFinv_ = diagFVector;
+    diagFinv_ = Utilities::GetInverse(diagFVector);
 
     // Set the Smoother
     // carefully switch to the SubFactoryManagers (defined by the users)
@@ -282,6 +272,8 @@ namespace MueLu {
   void SimpleSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::SimpleSmoother::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::SimpleSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
+    TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::SimpleSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
 
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
@@ -291,6 +283,31 @@ namespace MueLu {
     const ParameterList & pL = Factory::GetParameterList();
     LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
     Scalar omega = pL.get<Scalar>("Damping factor");
+
+    // The boolean flags check whether we use Thyra or Xpetra style GIDs
+    // However, assuming that SIMPLE always only works for 2x2 blocked operators, we
+    // most often have to use the ReorderedBlockedCrsOperator as input. If either the
+    // F or Z (or SchurComplement block S) are 1x1 blocked operators with Thyra style
+    // GIDs we need an extra transformation of vectors
+    // In this case, we use the Xpetra (offset) GIDs for all operations and only transform
+    // the input/output vectors before and after the subsolver calls!
+    bool bRangeThyraModePredict  = rangeMapExtractor_->getThyraMode()  && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_) == Teuchos::null);
+    bool bDomainThyraModePredict = domainMapExtractor_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_) == Teuchos::null);
+    bool bRangeThyraModeSchur    = rangeMapExtractor_->getThyraMode()  && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Z_) == Teuchos::null);
+    bool bDomainThyraModeSchur   = domainMapExtractor_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Z_) == Teuchos::null);
+
+    // The following boolean flags catch the case where we need special transformation
+    // for the GIDs when calling the subsmoothers.
+    RCP<BlockedCrsMatrix> bF = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(F_);
+    RCP<BlockedCrsMatrix> bZ = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Z_);
+    bool bFThyraSpecialTreatment = false;
+    bool bZThyraSpecialTreatment = false;
+    if (bF != Teuchos::null) {
+      if(bF->Rows() == 1 && bF->Cols() == 1 && rangeMapExtractor_->getThyraMode() == true) bFThyraSpecialTreatment = true;
+    }
+    if (bZ != Teuchos::null) {
+      if(bZ->Rows() == 1 && bZ->Cols() == 1 && rangeMapExtractor_->getThyraMode() == true) bZThyraSpecialTreatment = true;
+    }
 
     // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -304,54 +321,97 @@ namespace MueLu {
       // 1) calculate current residual
       residual->update(one,B,zero); // residual = B
       A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -one, one);
-
       // split residual vector
-      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0);
-      Teuchos::RCP<MultiVector> r2 = rangeMapExtractor_->ExtractVector(residual, 1);
+      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0, bRangeThyraModePredict);
+      Teuchos::RCP<MultiVector> r2 = rangeMapExtractor_->ExtractVector(residual, 1, bRangeThyraModeSchur);
 
       // 2) solve F * \Delta \tilde{x}_1 = r_1
       //    start with zero guess \Delta \tilde{x}_1
-      RCP<MultiVector> xtilde1 = MultiVectorFactory::Build(F_->getRowMap(),1);
+      RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
       xtilde1->putScalar(zero);
-      velPredictSmoo_->Apply(*xtilde1,*r1);
+
+      // Special handling in case that F block is a 1x1 blocked operator in Thyra mode
+      // Then we have to feed the smoother with real Thyra-based vectors
+      if(bFThyraSpecialTreatment == true) {
+        // create empty solution vector based on Thyra GIDs
+        RCP<MultiVector> xtilde1_thyra = domainMapExtractor_->getVector(0, X.getNumVectors(), true);
+        // create new RHS vector based on Thyra GIDs
+        Teuchos::RCP<MultiVector> r1_thyra = rangeMapExtractor_->ExtractVector(residual, 0, true);
+        velPredictSmoo_->Apply(*xtilde1_thyra,*r1_thyra);
+        for(size_t k=0; k < xtilde1_thyra->getNumVectors(); k++) {
+          Teuchos::ArrayRCP<Scalar> xpetraVecData  = xtilde1->getDataNonConst(k);
+          Teuchos::ArrayRCP<const Scalar> thyraVecData = xtilde1_thyra->getData(k);
+          for(size_t i=0; i < xtilde1_thyra->getLocalLength(); i++) {
+            xpetraVecData[i] = thyraVecData[i];
+          }
+        }
+      } else {
+        velPredictSmoo_->Apply(*xtilde1,*r1);
+      }
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
-      RCP<MultiVector> schurCompRHS = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, B.getNumVectors(), bRangeThyraModeSchur);
       D_->apply(*xtilde1,*schurCompRHS);
       schurCompRHS->update(one,*r2,-one);
 
       // 4) solve SchurComp equation
       //    start with zero guess \Delta \tilde{x}_2
-      RCP<MultiVector> xtilde2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      RCP<MultiVector> xtilde2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
       xtilde2->putScalar(zero);
-      schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+
+      // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
+      // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
+      if(bZThyraSpecialTreatment == true) {
+        // create empty solution vector based on Thyra GIDs
+        RCP<MultiVector> xtilde2_thyra = domainMapExtractor_->getVector(1, X.getNumVectors(), true);
+        // create new RHS vector based on Thyra GIDs
+        RCP<MultiVector> schurCompRHS_thyra = rangeMapExtractor_->getVector(1, B.getNumVectors(), true);
+        // transform vector
+        for(size_t k=0; k < schurCompRHS->getNumVectors(); k++) {
+          Teuchos::ArrayRCP<const Scalar> xpetraVecData  = schurCompRHS->getData(k);
+          Teuchos::ArrayRCP<Scalar> thyraVecData = schurCompRHS_thyra->getDataNonConst(k);
+          for(size_t i=0; i < schurCompRHS->getLocalLength(); i++) {
+            thyraVecData[i] = xpetraVecData[i];
+          }
+        }
+
+        schurCompSmoo_->Apply(*xtilde2_thyra,*schurCompRHS_thyra);
+
+        for(size_t k=0; k < xtilde2_thyra->getNumVectors(); k++) {
+          Teuchos::ArrayRCP<Scalar> xpetraVecData  = xtilde2->getDataNonConst(k);
+          Teuchos::ArrayRCP<const Scalar> thyraVecData = xtilde2_thyra->getData(k);
+          for(size_t i=0; i < xtilde2_thyra->getLocalLength(); i++) {
+            xpetraVecData[i] = thyraVecData[i];
+          }
+        }
+      } else {
+        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+      }
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
-      RCP<MultiVector> xhat2 = MultiVectorFactory::Build(Z_->getRowMap(),1);
+      RCP<MultiVector> xhat2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
       xhat2->update(omega,*xtilde2,zero);
 
       // 6) calculate xhat1
-      RCP<MultiVector> xhat1      = MultiVectorFactory::Build(F_->getRowMap(),1);
-      RCP<MultiVector> xhat1_temp = MultiVectorFactory::Build(F_->getRowMap(),1);
+      RCP<MultiVector> xhat1      = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
+      RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
       G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
       xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
       xhat1->update(one,*xtilde1,-one);
 
       // 7) extract parts of solution vector X
-      Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(rcpX, 0);
-      Teuchos::RCP<MultiVector> x2 = domainMapExtractor_->ExtractVector(rcpX, 1);
+      Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(rcpX, 0, bDomainThyraModePredict);
+      Teuchos::RCP<MultiVector> x2 = domainMapExtractor_->ExtractVector(rcpX, 1, bDomainThyraModeSchur);
 
       // 8) update solution vector with increments xhat1 and xhat2
       //    rescale increment for x2 with omega_
       x1->update(one,*xhat1,one);    // x1 = x1_old + xhat1
       x2->update(/*omega*/ one,*xhat2,one); // x2 = x2_old + omega xhat2
-
       // write back solution in global vector X
-      domainMapExtractor_->InsertVector(x1, 0, rcpX);
-      domainMapExtractor_->InsertVector(x2, 1, rcpX);
-
+      domainMapExtractor_->InsertVector(x1, 0, rcpX, bDomainThyraModePredict);
+      domainMapExtractor_->InsertVector(x2, 1, rcpX, bDomainThyraModeSchur);
     }
   }
 
