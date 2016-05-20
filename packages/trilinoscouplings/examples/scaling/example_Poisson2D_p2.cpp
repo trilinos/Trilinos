@@ -160,9 +160,26 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
                  FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary);
 
+void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
+
 void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
 
-void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
+void CreateLinearSystem(int numWorkSets,
+                        int desiredWorksetSize,
+                        FieldContainer<int> const &elemToNode,
+                        FieldContainer<double> const &nodeCoord,
+                        FieldContainer<double> const &cubPoints,
+                        FieldContainer<double> const &cubWeights,
+                        FieldContainer<double> const &HGBGrads,
+                        FieldContainer<double> const &HGBValues,
+                        std::vector<int>       const &globalNodeIds,
+                        shards::CellTopology const &cellType,
+                        Epetra_FECrsMatrix &StiffMatrix,
+                        Epetra_FEVector &rhsVector,
+                        std::string &msg,
+                        Epetra_Time &Time
+                       );
+
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
 /**********************************************************************************/
@@ -398,6 +415,7 @@ int main(int argc, char *argv[]) {
    // Get cell topology for base hexahedron
     shards::CellTopology P1_cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     shards::CellTopology P2_cellType(shards::getCellTopologyData<shards::Quadrilateral<9> >() );
+    assert(P1_cellType.getDimension() == P2_cellType.getDimension());
 
    // Get dimensions
     int P1_numNodesPerElem = P1_cellType.getNodeCount();
@@ -746,13 +764,13 @@ int main(int argc, char *argv[]) {
 
     // Put element to node mapping in multivector for output
      Epetra_Map   globalMapElem(numElemsGlobal, numElems, 0, Comm);
-     Epetra_MultiVector elem2node(globalMapElem, numNodesPerElem);
+     Epetra_MultiVector elem2nodeMV(globalMapElem, numNodesPerElem);
      for (int ielem=0; ielem<numElems; ielem++) {
         for (int inode=0; inode<numNodesPerElem; inode++) {
-          elem2node[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
+          elem2nodeMV[inode][ielem]=globalNodeIds[elemToNode(ielem,inode)];
         }
       }
-     EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2node,0,0,false);
+     EpetraExt::MultiVectorToMatrixMarketFile("elem2node.dat",elem2nodeMV,0,0,false);
 
     if(MyPID==0) {Time.ResetStartTime();}
 
@@ -796,11 +814,9 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
                 << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
 
-
-  /**********************************************************************************/
-  /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
-  /**********************************************************************************/
-
+/**********************************************************************************/
+/******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
+/**********************************************************************************/
 
   // Define desired workset size and count how many worksets there are on this processor's mesh block
   int desiredWorksetSize = numElems;                      // change to desired workset size!
@@ -817,174 +833,21 @@ int main(int argc, char *argv[]) {
     Time.ResetStartTime();
   }
 
-  for(int workset = 0; workset < numWorksets; workset++){
-
-    // Compute cell numbers where the workset starts and ends
-    int worksetSize  = 0;
-    int worksetBegin = (workset + 0)*desiredWorksetSize;
-    int worksetEnd   = (workset + 1)*desiredWorksetSize;
-
-    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
-    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
-
-    // Now we know the actual workset size and can allocate the array for the cell nodes
-    worksetSize  = worksetEnd - worksetBegin;
-    FieldContainer<double> cellWorkset(worksetSize, P2_numNodesPerElem, spaceDim);
-
-    // Copy coordinates into cell workset
-    int cellCounter = 0;
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-      for (int node = 0; node < P2_numNodesPerElem; node++) {
-        cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
-        cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
-      }
-      cellCounter++;
-    }
-
-    /**********************************************************************************/
-    /*                                Allocate arrays                                 */
-    /**********************************************************************************/
-
-    // Containers for Jacobians, integration measure & cubature points in workset cells
-    FieldContainer<double> worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetJacobDet  (worksetSize, numCubPoints);
-    FieldContainer<double> worksetCubWeights(worksetSize, numCubPoints);
-    FieldContainer<double> worksetCubPoints (worksetSize, numCubPoints, cubDim);
-
-    // Containers for basis values transformed to workset cells and them multiplied by cubature weights
-    FieldContainer<double> worksetHGBValues        (worksetSize, numFieldsG, numCubPoints);
-    FieldContainer<double> worksetHGBValuesWeighted(worksetSize, numFieldsG, numCubPoints);
-    FieldContainer<double> worksetHGBGrads         (worksetSize, numFieldsG, numCubPoints, spaceDim);
-    FieldContainer<double> worksetHGBGradsWeighted (worksetSize, numFieldsG, numCubPoints, spaceDim);
-
-    // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
-    FieldContainer<double> worksetDiffusiveFlux(worksetSize, numFieldsG, numCubPoints, spaceDim);
-
-    // Containers for material values and source term. Require user-defined functions
-    FieldContainer<double> worksetMaterialVals (worksetSize, numCubPoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetSourceTerm   (worksetSize, numCubPoints);
-
-    // Containers for workset contributions to the discretization matrix and the right hand side
-    FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
-    FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
-
-    if(MyPID==0) {std::cout << msg << "Allocate arrays                             "
-                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
-
-
-    /**********************************************************************************/
-    /*                                Calculate Jacobians                             */
-    /**********************************************************************************/
-
-    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, P2_cellType);
-    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
-    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
-
-    if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
-                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
-
-    /**********************************************************************************/
-    /*          Cubature Points to Physical Frame and Compute Data                    */
-    /**********************************************************************************/
-
-    // map cubature points to physical frame
-    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, P2_cellType);
-
-    // get A at cubature points
-    evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
-
-    // get source term at cubature points
-    evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
-
-    if(MyPID==0) {std::cout << msg << "Map to physical frame and get source term   "
-                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
-
-
-    /**********************************************************************************/
-    /*                         Compute Stiffness Matrix                               */
-    /**********************************************************************************/
-
-    // Transform basis gradients to physical frame:
-    IntrepidFSTools::HGRADtransformGRAD<double>(worksetHGBGrads,                // DF^{-T}(grad u)
-                                                worksetJacobInv,   HGBGrads);
-
-    // Compute integration measure for workset cells:
-    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              // Det(DF)*w = J*w
-                                                worksetJacobDet, cubWeights);
-
-
-    // Multiply transformed (workset) gradients with weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,           // DF^{-T}(grad u)*J*w
-                                             worksetCubWeights, worksetHGBGrads);
-
-
-    // Compute the diffusive flux:
-    IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
-                                                     worksetMaterialVals,
-                                                     worksetHGBGrads);
-
-    // Integrate to compute workset diffusion contribution to global matrix:
-    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                    //(DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
-                                       worksetHGBGradsWeighted,
-                                       worksetDiffusiveFlux, COMP_BLAS);
-
-    if(MyPID==0) {std::cout << msg << "Compute stiffness matrix                    "
-                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
-
-
-    /**********************************************************************************/
-    /*                                   Compute RHS                                  */
-    /**********************************************************************************/
-
-    // Transform basis values to physical frame:
-    IntrepidFSTools::HGRADtransformVALUE<double>(worksetHGBValues,              // clones basis values (u)
-                                                 HGBValues);
-
-    // Multiply transformed (workset) values with weighted measure
-    IntrepidFSTools::multiplyMeasure<double>(worksetHGBValuesWeighted,          // (u)*J*w
-                                             worksetCubWeights, worksetHGBValues);
-
-    // Integrate worksetSourceTerm against weighted basis function set
-    IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
-                                       worksetSourceTerm,
-                                       worksetHGBValuesWeighted,  COMP_BLAS);
-
-
-    if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
-                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
-
-    /**********************************************************************************/
-    /*                         Assemble into Global Matrix                            */
-    /**********************************************************************************/
-
-    //"WORKSET CELL" loop: local cell ordinal is relative to numElems
-    for(int cell = worksetBegin; cell < worksetEnd; cell++){
-
-      // Compute cell ordinal relative to the current workset
-      int worksetCellOrdinal = cell - worksetBegin;
-
-      // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
-      for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
-
-        int localRow  = elemToNode(cell, cellRow);
-        int globalRow = globalNodeIds[localRow];
-        double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
-
-        rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
-
-        // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
-        for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
-
-          int localCol  = elemToNode(cell, cellCol);
-          int globalCol = globalNodeIds[localCol];
-          double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
-          StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
-
-        }// *** cell col loop ***
-      }// *** cell row loop ***
-    }// *** workset cell loop **
-  }// *** workset loop ***
+  CreateLinearSystem(numWorksets,
+                     desiredWorksetSize,
+                     elemToNode,
+                     nodeCoord,
+                     cubPoints,
+                     cubWeights,
+                     HGBGrads,
+                     HGBValues,
+                     globalNodeIds,
+                     P2_cellType,
+                     StiffMatrix,
+                     rhsVector,
+                     msg,
+                     Time
+                    );
 
 /**********************************************************************************/
 /********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
@@ -1784,3 +1647,200 @@ void CreateP1MeshFromP2Mesh(
 
   }
 } //CreateP1MeshFromP2Mesh
+
+/*********************************************************************************************************/
+
+void CreateLinearSystem(int numWorksets,
+                        int desiredWorksetSize,
+                        FieldContainer<int>    const &elemToNode,
+                        FieldContainer<double> const &nodeCoord,
+                        FieldContainer<double> const &cubPoints,
+                        FieldContainer<double> const &cubWeights,
+                        FieldContainer<double> const &HGBGrads,
+                        FieldContainer<double> const &HGBValues,
+                        std::vector<int>       const &globalNodeIds,
+                        shards::CellTopology const &cellType,
+                        Epetra_FECrsMatrix &StiffMatrix,
+                        Epetra_FEVector &rhsVector,
+                        std::string &msg,
+                        Epetra_Time &Time
+                       )
+{
+  int MyPID = StiffMatrix.Comm().MyPID();
+  int numCubPoints = cubPoints.dimension(0);
+  int cubDim = cubPoints.dimension(1);
+  int spaceDim = cellType.getDimension();
+  int numFieldsG = HGBGrads.dimension(0);
+  long long numElems = elemToNode.dimension(0);
+  int numNodesPerElem = cellType.getNodeCount();
+  for(int workset = 0; workset < numWorksets; workset++){
+
+    // Compute cell numbers where the workset starts and ends
+    int worksetSize  = 0;
+    int worksetBegin = (workset + 0)*desiredWorksetSize;
+    int worksetEnd   = (workset + 1)*desiredWorksetSize;
+
+    // When numElems is not divisible by desiredWorksetSize, the last workset ends at numElems
+    worksetEnd   = (worksetEnd <= numElems) ? worksetEnd : numElems;
+
+    // Now we know the actual workset size and can allocate the array for the cell nodes
+    worksetSize  = worksetEnd - worksetBegin;
+    FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
+
+    // Copy coordinates into cell workset
+    int cellCounter = 0;
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+      for (int node = 0; node < numNodesPerElem; node++) {
+        cellWorkset(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
+        cellWorkset(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
+      }
+      cellCounter++;
+    }
+
+    /**********************************************************************************/
+    /*                                Allocate arrays                                 */
+    /**********************************************************************************/
+
+    // Containers for Jacobians, integration measure & cubature points in workset cells
+    FieldContainer<double> worksetJacobian  (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobInv  (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobDet  (worksetSize, numCubPoints);
+    FieldContainer<double> worksetCubWeights(worksetSize, numCubPoints);
+    FieldContainer<double> worksetCubPoints (worksetSize, numCubPoints, cubDim);
+
+    // Containers for basis values transformed to workset cells and them multiplied by cubature weights
+    FieldContainer<double> worksetHGBValues        (worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> worksetHGBValuesWeighted(worksetSize, numFieldsG, numCubPoints);
+    FieldContainer<double> worksetHGBGrads         (worksetSize, numFieldsG, numCubPoints, spaceDim);
+    FieldContainer<double> worksetHGBGradsWeighted (worksetSize, numFieldsG, numCubPoints, spaceDim);
+
+    // Containers for diffusive & advective fluxes & non-conservative adv. term and reactive terms
+    FieldContainer<double> worksetDiffusiveFlux(worksetSize, numFieldsG, numCubPoints, spaceDim);
+
+    // Containers for material values and source term. Require user-defined functions
+    FieldContainer<double> worksetMaterialVals (worksetSize, numCubPoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetSourceTerm   (worksetSize, numCubPoints);
+
+    // Containers for workset contributions to the discretization matrix and the right hand side
+    FieldContainer<double> worksetStiffMatrix (worksetSize, numFieldsG, numFieldsG);
+    FieldContainer<double> worksetRHS         (worksetSize, numFieldsG);
+
+    if(MyPID==0) {std::cout << msg << "Allocate arrays                             "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+    /**********************************************************************************/
+    /*                                Calculate Jacobians                             */
+    /**********************************************************************************/
+
+    IntrepidCTools::setJacobian(worksetJacobian, cubPoints, cellWorkset, cellType);
+    IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
+    IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
+
+    if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+    /**********************************************************************************/
+    /*          Cubature Points to Physical Frame and Compute Data                    */
+    /**********************************************************************************/
+
+    // map cubature points to physical frame
+    IntrepidCTools::mapToPhysicalFrame (worksetCubPoints, cubPoints, cellWorkset, cellType);
+
+    // get A at cubature points
+    evaluateMaterialTensor (worksetMaterialVals, worksetCubPoints);
+
+    // get source term at cubature points
+    evaluateSourceTerm (worksetSourceTerm, worksetCubPoints);
+
+    if(MyPID==0) {std::cout << msg << "Map to physical frame and get source term   "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+    /**********************************************************************************/
+    /*                         Compute Stiffness Matrix                               */
+    /**********************************************************************************/
+
+    // Transform basis gradients to physical frame:
+    IntrepidFSTools::HGRADtransformGRAD<double>(worksetHGBGrads,                // DF^{-T}(grad u)
+                                                worksetJacobInv,   HGBGrads);
+
+    // Compute integration measure for workset cells:
+    IntrepidFSTools::computeCellMeasure<double>(worksetCubWeights,              // Det(DF)*w = J*w
+                                                worksetJacobDet, cubWeights);
+
+
+    // Multiply transformed (workset) gradients with weighted measure
+    IntrepidFSTools::multiplyMeasure<double>(worksetHGBGradsWeighted,           // DF^{-T}(grad u)*J*w
+                                             worksetCubWeights, worksetHGBGrads);
+
+
+    // Compute the diffusive flux:
+    IntrepidFSTools::tensorMultiplyDataField<double>(worksetDiffusiveFlux,      //  A*(DF^{-T}(grad u)
+                                                     worksetMaterialVals,
+                                                     worksetHGBGrads);
+
+    // Integrate to compute workset diffusion contribution to global matrix:
+    IntrepidFSTools::integrate<double>(worksetStiffMatrix,                    //(DF^{-T}(grad u)*J*w)*(A*DF^{-T}(grad u))
+                                       worksetHGBGradsWeighted,
+                                       worksetDiffusiveFlux, COMP_BLAS);
+
+    if(MyPID==0) {std::cout << msg << "Compute stiffness matrix                    "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+
+    /**********************************************************************************/
+    /*                                   Compute RHS                                  */
+    /**********************************************************************************/
+
+    // Transform basis values to physical frame:
+    IntrepidFSTools::HGRADtransformVALUE<double>(worksetHGBValues,              // clones basis values (u)
+                                                 HGBValues);
+
+    // Multiply transformed (workset) values with weighted measure
+    IntrepidFSTools::multiplyMeasure<double>(worksetHGBValuesWeighted,          // (u)*J*w
+                                             worksetCubWeights, worksetHGBValues);
+
+    // Integrate worksetSourceTerm against weighted basis function set
+    IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
+                                       worksetSourceTerm,
+                                       worksetHGBValuesWeighted,  COMP_BLAS);
+
+
+    if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
+                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+    /**********************************************************************************/
+    /*                         Assemble into Global Matrix and RHS                    */
+    /**********************************************************************************/
+
+    //"WORKSET CELL" loop: local cell ordinal is relative to numElems
+    for(int cell = worksetBegin; cell < worksetEnd; cell++){
+
+      // Compute cell ordinal relative to the current workset
+      int worksetCellOrdinal = cell - worksetBegin;
+
+      // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
+      for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
+
+        int localRow  = elemToNode(cell, cellRow);
+        int globalRow = globalNodeIds[localRow];
+        double sourceTermContribution =  worksetRHS(worksetCellOrdinal, cellRow);
+
+        rhsVector.SumIntoGlobalValues(1, &globalRow, &sourceTermContribution);
+
+        // "CELL VARIABLE" loop for the workset cell: cellCol is relative to the cell DoF numbering
+        for (int cellCol = 0; cellCol < numFieldsG; cellCol++){
+
+          int localCol  = elemToNode(cell, cellCol);
+          int globalCol = globalNodeIds[localCol];
+          double operatorMatrixContribution = worksetStiffMatrix(worksetCellOrdinal, cellRow, cellCol);
+          StiffMatrix.InsertGlobalValues(1, &globalRow, 1, &globalCol, &operatorMatrixContribution);
+
+        }// *** cell col loop ***
+      }// *** cell row loop ***
+    }// *** workset cell loop **
+
+  }// *** workset loop ***
+
+} //CreateLinearSystem
