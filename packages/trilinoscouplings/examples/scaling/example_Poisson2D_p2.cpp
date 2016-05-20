@@ -701,6 +701,7 @@ int main(int argc, char *argv[]) {
    // Define basis
    Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> > myHGradBasis;
      int numFieldsG = myHGradBasis.getCardinality();
+     std::cout << ">>>>>>>>>>>>>>>>>>> numFieldsG = " << numFieldsG << std::endl;
      FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
      FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
@@ -889,18 +890,21 @@ int main(int argc, char *argv[]) {
 
   // Define basis
   Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
-  numFieldsG = myHGradBasis_aux.getCardinality();
-  HGBValues(numFieldsG, numCubPoints);
-  HGBGrads(numFieldsG, numCubPoints, spaceDim);
+  int numFieldsG_aux = myHGradBasis_aux.getCardinality();
+  std::cout << ">>>>>>>>>>>>>>>>>>> numFieldsG_aux (aux) = " << numFieldsG_aux << std::endl;
+  FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints);
+  FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints, spaceDim);
+  HGBValues_aux(numFieldsG_aux, numCubPoints);
+  HGBGrads_aux(numFieldsG_aux, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  myHGradBasis_aux.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
-  myHGradBasis_aux.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
+  myHGradBasis_aux.getValues(HGBValues_aux, cubPoints, OPERATOR_VALUE);
+  myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints, OPERATOR_GRAD);
 
   if(MyPID==0) {std::cout << "Getting basis for auxiliary P1 mesh         "
                 << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
-  Epetra_FECrsMatrix StiffMatrix_aux(Copy, globalMapG, 20*numFieldsG);
+  Epetra_FECrsMatrix StiffMatrix_aux(Copy, globalMapG, 20*numFieldsG_aux);
   Epetra_FEVector rhsVector_aux(globalMapG);
 
   desiredWorksetSize = numElems;
@@ -912,8 +916,8 @@ int main(int argc, char *argv[]) {
                      nodeCoord,
                      cubPoints,
                      cubWeights,
-                     HGBGrads,
-                     HGBValues,
+                     HGBGrads_aux,
+                     HGBValues_aux,
                      globalNodeIds,
                      P1_cellType,
                      StiffMatrix_aux,
@@ -933,40 +937,65 @@ int main(int argc, char *argv[]) {
    if(MyPID==0) {std::cout << msg << "Global assembly (auxiliary system)          "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-  /*
-    TODO
-      1) Apply correct bc's to auxiliary matrix.
-  */
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
 /**********************************************************************************/
 
   // Apply stiffness matrix to v
-   Epetra_MultiVector rhsDir(globalMapG,true);
-   StiffMatrix.Apply(v,rhsDir);
+  Epetra_MultiVector rhsDir(globalMapG,true);
+  StiffMatrix.Apply(v,rhsDir);
 
   // Update right-hand side
-   rhsVector.Update(-1.0,rhsDir,1.0);
+  rhsVector.Update(-1.0,rhsDir,1.0);
 
-    // Adjust rhs due to Dirichlet boundary conditions
-   iOwned=0;
-   for (int inode=0; inode<numNodes; inode++){
-      if (nodeIsOwned[inode]){
-        if (nodeOnBoundary(inode)){
-           rhsVector[0][iOwned]=v[0][iOwned];
-        }
-        iOwned++;
+  // Adjust rhs due to Dirichlet boundary conditions
+  iOwned=0;
+  for (int inode=0; inode<numNodes; inode++){
+    if (nodeIsOwned[inode]){
+      if (nodeOnBoundary(inode)){
+        rhsVector[0][iOwned]=v[0][iOwned];
       }
+      iOwned++;
     }
+  }
 
-   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
-   //  and add one to diagonal.
-    ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
+  // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+  //  and add one to diagonal.
+  ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
 
-    delete [] BCNodes;
+  ///////////////////////////////////////////
+  // Apply BCs to auxiliary P1 matrix
+  ///////////////////////////////////////////
+#ifdef BUSTED_AND_I_DONT_KNOW_WHY
+  // Apply stiffness matrix to v
+  StiffMatrix_aux.Apply(v,rhsDir);
 
-   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
-                  << " sec \n"; Time.ResetStartTime();}
+  // Update right-hand side
+  rhsVector_aux.Update(-1.0,rhsDir,1.0);
+
+  // Adjust rhs due to Dirichlet boundary conditions
+  iOwned=0;
+  for (int inode=0; inode<numNodes; inode++){
+    if (nodeIsOwned[inode]){
+      if (nodeOnBoundary(inode)){
+        rhsVector_aux[0][iOwned]=v[0][iOwned];
+      }
+      iOwned++;
+    }
+  }
+
+  // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+  //  and add one to diagonal.
+  std::cout << "numBCNodes = " << numBCNodes << std::endl;
+  std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
+  ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix_aux);
+
+#endif
+
+  delete [] BCNodes;
+
+  if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
+                << " sec \n"; Time.ResetStartTime();}
 
 
 #ifdef DUMP_DATA
@@ -979,7 +1008,7 @@ int main(int argc, char *argv[]) {
 /*********************************** SOLVE ****************************************/
 /**********************************************************************************/
 
- // Run the solver
+  // Run the solver
   Teuchos::ParameterList MLList = inputSolverList;
   ML_Epetra::SetDefaults("SA", MLList, 0, 0, false);
   MLList.set("repartition: Zoltan dimensions",2);
