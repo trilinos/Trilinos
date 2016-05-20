@@ -592,6 +592,7 @@ int main(int argc, char *argv[]) {
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
+    std::cout << ">>>>>>>>>>>>>>> numNodes = " << numNodes << std::endl;
 
    // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> P1_nodeOnBoundary(numNodes);
@@ -636,6 +637,7 @@ int main(int argc, char *argv[]) {
    // Generate higher order mesh
    // NOTE: Only correct in serial
    int P2_numNodes = numNodes + P1_edgeCoord.dimension(0) + numElems;
+   std::cout << ">>>>>>>>>>>>>>>>>>>> P2_numNodes = " << P2_numNodes << std::endl;
    FieldContainer<int>    elemToNode(numElems,9); //because quads
    FieldContainer<double> nodeCoord(P2_numNodes,dim);
    FieldContainer<int>   nodeOnBoundary(P2_numNodes);
@@ -722,6 +724,7 @@ int main(int argc, char *argv[]) {
 
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
+    std::cout << ">>>>>>>>>>>>>>>>>> ownedNodes = " << ownedNodes << std::endl;
     int *ownedGIDs=new int[ownedNodes];
     int oidx=0;
     for(int i=0;i<numNodes;i++)
@@ -833,6 +836,7 @@ int main(int argc, char *argv[]) {
     Time.ResetStartTime();
   }
 
+  // Create P2 matrix and RHS
   CreateLinearSystem(numWorksets,
                      desiredWorksetSize,
                      elemToNode,
@@ -860,8 +864,79 @@ int main(int argc, char *argv[]) {
    if(MyPID==0) {std::cout << msg << "Global assembly                             "
                  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
+  /////////////////////////////////////////////////////////////////////
+  // Create P1 matrix and RHS to be used in preconditioner
+  /////////////////////////////////////////////////////////////////////
 
+  //Cubature
 
+  // Get numerical integration points and weights
+  cubDegree = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
+  myCub = cubFactory.create(P1_cellType, cubDegree);
+
+  cubDim       = myCub->getDimension();
+  numCubPoints = myCub->getNumPoints();
+
+  cubPoints(numCubPoints, cubDim);
+  cubWeights(numCubPoints);
+
+  myCub->getCubature(cubPoints, cubWeights);
+
+  if(MyPID==0) {std::cout << "Getting cubature for auxiliary P1 mesh      "
+                << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+  //Basis
+
+  // Define basis
+  Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
+  numFieldsG = myHGradBasis_aux.getCardinality();
+  HGBValues(numFieldsG, numCubPoints);
+  HGBGrads(numFieldsG, numCubPoints, spaceDim);
+
+  // Evaluate basis values and gradients at cubature points
+  myHGradBasis_aux.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
+  myHGradBasis_aux.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
+
+  if(MyPID==0) {std::cout << "Getting basis for auxiliary P1 mesh         "
+                << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
+
+  Epetra_FECrsMatrix StiffMatrix_aux(Copy, globalMapG, 20*numFieldsG);
+  Epetra_FEVector rhsVector_aux(globalMapG);
+
+  desiredWorksetSize = numElems;
+  numWorksets        = numElems/desiredWorksetSize;
+  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+  CreateLinearSystem(numWorksets,
+                     desiredWorksetSize,
+                     aux_P1_elemToNode,
+                     nodeCoord,
+                     cubPoints,
+                     cubWeights,
+                     HGBGrads,
+                     HGBValues,
+                     globalNodeIds,
+                     P1_cellType,
+                     StiffMatrix_aux,
+                     rhsVector_aux,
+                     msg,
+                     Time
+                    );
+
+/**********************************************************************************/
+/********************* ASSEMBLE OVER MULTIPLE PROCESSORS **************************/
+/**********************************************************************************/
+
+  StiffMatrix_aux.GlobalAssemble();
+  StiffMatrix_aux.FillComplete();
+  rhsVector_aux.GlobalAssemble();
+
+   if(MyPID==0) {std::cout << msg << "Global assembly (auxiliary system)          "
+                 << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
+
+  /*
+    TODO
+      1) Apply correct bc's to auxiliary matrix.
+  */
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
 /**********************************************************************************/
