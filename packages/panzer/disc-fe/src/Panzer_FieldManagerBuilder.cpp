@@ -43,6 +43,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 #include "Panzer_FieldManagerBuilder.hpp"
 
@@ -348,7 +349,7 @@ writeVolumeGraphvizDependencyFiles(std::string filename_prefix,
   int index = 0;
   for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr,++index) {
     std::string blockId = (*blkItr)->elementBlockID();
-    phx_volume_field_managers_[index]->writeGraphvizFile(filename_prefix+blockId);
+    phx_volume_field_managers_[index]->writeGraphvizFile(filename_prefix+"_VOLUME_"+blockId);
   }
 
 }
@@ -361,24 +362,91 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
   typedef std::map<panzer::BC,std::map<unsigned,PHX::FieldManager<panzer::Traits> >,panzer::LessBC> FMMap;
 
   FMMap::const_iterator blkItr;
-  for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr) {
+  int bc_index = 0;
+  for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr,++bc_index) {
     panzer::BC bc = blkItr->first;
     const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
 
     BCType bc_type = bc.bcType();
     std::string type;
     if (bc_type == BCT_Dirichlet)
-	type = "_Dirichlet";
+	type = "_Dirichlet_";
     else if (bc_type == BCT_Neumann)
-        type = "_Neumann";
+        type = "_Neumann_";
     else if (bc_type == BCT_Interface)
-        type = "_Interface";
+        type = "_Interface_";
     else
         TEUCHOS_ASSERT(false);
 
     std::string blockId = bc.elementBlockID();
     std::string sideId = bc.sidesetID();
-    fm.writeGraphvizFile(filename_prefix+blockId+"_"+sideId+type);
+    fm.writeGraphvizFile(filename_prefix+"_BC_"+std::to_string(bc_index)+type+sideId+"_"+blockId);
+  }
+
+}
+
+//=======================================================================
+//=======================================================================
+void panzer::FieldManagerBuilder::
+writeVolumeTextDependencyFiles(std::string filename_prefix,
+			       const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks) const
+{  
+  if(phx_volume_field_managers_.size()<1)
+    return; // nothing to see here folks
+
+  TEUCHOS_ASSERT(phx_volume_field_managers_.size()==physicsBlocks.size());
+
+  std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator blkItr;
+  int index = 0;
+  for (blkItr=physicsBlocks.begin();blkItr!=physicsBlocks.end();++blkItr,++index) {
+
+    std::string blockId = (*blkItr)->elementBlockID();
+
+    std::string filename = filename_prefix+"_VOLUME_"+blockId+".txt";
+    std::ofstream ofs;
+    ofs.open(filename.c_str());
+
+    ofs << phx_volume_field_managers_[index] << std::endl;
+
+    ofs.close();
+  }
+
+}
+
+//=======================================================================
+//=======================================================================
+void panzer::FieldManagerBuilder::
+writeBCTextDependencyFiles(std::string filename_prefix) const
+{  
+  typedef std::map<panzer::BC,std::map<unsigned,PHX::FieldManager<panzer::Traits> >,panzer::LessBC> FMMap;
+
+  FMMap::const_iterator blkItr;
+  int bc_index = 0;
+  for (blkItr=bc_field_managers_.begin();blkItr!=bc_field_managers_.end();++blkItr,++bc_index) {
+    panzer::BC bc = blkItr->first;
+    const PHX::FieldManager<panzer::Traits> & fm = blkItr->second.begin()->second; // get the first field manager 
+
+    BCType bc_type = bc.bcType();
+    std::string type;
+    if (bc_type == BCT_Dirichlet)
+	type = "_Dirichlet_";
+    else if (bc_type == BCT_Neumann)
+        type = "_Neumann_";
+    else if (bc_type == BCT_Interface)
+        type = "_Interface_";
+    else
+        TEUCHOS_ASSERT(false);
+
+    std::string blockId = bc.elementBlockID();
+    std::string sideId = bc.sidesetID();
+
+    std::string filename = filename_prefix+"_BC_"+std::to_string(bc_index)+type+sideId+"_"+blockId+".txt";
+    std::ofstream ofs;
+    ofs.open(filename.c_str());
+
+    ofs << fm << std::endl;
+
+    ofs.close();
   }
 
 }

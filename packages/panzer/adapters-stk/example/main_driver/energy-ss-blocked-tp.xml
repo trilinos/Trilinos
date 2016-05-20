@@ -196,7 +196,7 @@
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="false"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss_"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss"/> 
     </ParameterList>
 
     <ParameterList name="Active Parameters">
