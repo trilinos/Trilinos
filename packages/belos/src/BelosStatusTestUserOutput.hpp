@@ -361,8 +361,13 @@ class StatusTestUserOutput : public StatusTestOutput<ScalarType,MV,OP> {
           Teuchos::RCP<StatusTestResNorm_t> tempResTest = Teuchos::rcp_dynamic_cast<StatusTestResNorm_t>(resTestVec_[j]);
           if(tempResTest != Teuchos::null)
             os << std::setw(15) << (*tempResTest->getTestValue())[currIdx_[i]];
-          else
-            os << std::setw(15) << (resTestVec_[j]->getStatus() == Belos::Passed) ? "Passed" : (resTestVec_[j]->getStatus() == Belos::Failed) ? "Failed" : "Undefined";
+          else {
+            if(resTestVec_[j]->getStatus() == Belos::Passed)
+              os << std::setw(15) << "Passed";
+            else if(resTestVec_[j]->getStatus() == Belos::Failed)
+              os << std::setw(15) << "Failed";
+            else os << std::setw(15) << "Undefined";
+          }
         } else {
           os << std::setw(15) << "---";
         }
