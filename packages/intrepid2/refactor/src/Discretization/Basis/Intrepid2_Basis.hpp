@@ -237,6 +237,9 @@ namespace Intrepid2 {
     virtual~Basis() = default;
 
     // receives input arguements
+    outputValueType getDummyOutputValue() { return outputValueType(); }
+    pointValueType getDummyPointValue() { return pointValueType(); }
+
     typedef Kokkos::DynRankView<outputValueType,Kokkos::LayoutStride,ExecSpaceType> outputViewType;
     typedef Kokkos::DynRankView<pointValueType,Kokkos::LayoutStride,ExecSpaceType>  pointViewType;
 

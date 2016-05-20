@@ -128,14 +128,17 @@ namespace Intrepid2 {
     const auto basisCardinality = basis->getCardinality();    
 
     typedef Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobianViewType;
-    typedef Kokkos::DynRankView<jacobianValueType,SpT>                   jacobianViewSpType;
     
-    jacobianViewSpType grads;
+    // the following does not work for RCP; its * operator returns reference not the object
+    //typedef typename decltype(*basis)::output_value_type gradValueType;
+    typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    
+    gradViewType grads;
 
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = jacobianViewSpType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = gradViewType("CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -143,7 +146,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = jacobianViewSpType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = gradViewType("CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
       for (size_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subdynrankview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subdynrankview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  
@@ -153,7 +156,7 @@ namespace Intrepid2 {
     }
 
     typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
-    typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,jacobianViewSpType> FunctorType;
+    typedef FunctorCellTools::F_setJacobian<jacobianViewType,worksetCellViewType,gradViewType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
       
     const auto loopSize = jacobian.dimension(0)*jacobian.dimension(1);

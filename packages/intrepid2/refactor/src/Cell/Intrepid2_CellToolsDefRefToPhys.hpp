@@ -125,14 +125,14 @@ namespace Intrepid2 {
     const auto basisCardinality = basis->getCardinality();
 
     typedef Kokkos::DynRankView<physPointValueType,physPointProperties...> physPointViewType;
-    typedef Kokkos::DynRankView<physPointValueType,SpT> physPointViewSpType;
+    typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> valViewType;
 
-    physPointViewSpType vals;
+    valViewType vals;
 
     switch (refPointRank) {
     case 2: {
       // refPoints is (P,D): single set of ref. points is mapped to one or multiple physical cells
-      vals = physPointViewSpType("CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
+      vals = valViewType("CellTools::mapToPhysicalFrame::vals", basisCardinality, numPoints);
       basis->getValues(vals,
                        refPoints,
                        OPERATOR_VALUE);
@@ -140,7 +140,7 @@ namespace Intrepid2 {
     }
     case 3: {
       // refPoints is (C,P,D): multiple sets of ref. points are mapped to matching number of physical cells.
-      vals = physPointViewSpType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
+      vals = valViewType("CellTools::mapToPhysicalFrame::vals", numCells, basisCardinality, numPoints);
       for (size_type cell=0;cell<numCells;++cell)
         basis->getValues(Kokkos::subdynrankview( vals,      cell, Kokkos::ALL(), Kokkos::ALL() ),
                          Kokkos::subdynrankview( refPoints, cell, Kokkos::ALL(), Kokkos::ALL() ),
@@ -150,7 +150,7 @@ namespace Intrepid2 {
     }
 
     typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
-    typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,physPointViewSpType> FunctorType;
+    typedef FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,worksetCellViewType,valViewType> FunctorType;
     typedef typename ExecSpace<typename worksetCellViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
     const auto loopSize = physPoints.dimension(0)*physPoints.dimension(1);
