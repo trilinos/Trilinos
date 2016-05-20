@@ -17,10 +17,9 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_NonlinearSolver_NOX_2Dsim
-    SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp
+    SOURCES ${UNIT_TEST_DRIVER} ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp
             Thyra_NonlinearSolver_NOX_2Dsim.C
     NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "Test passed!"
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
