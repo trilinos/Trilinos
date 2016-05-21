@@ -652,9 +652,6 @@ addResponse(const std::string & responseName,
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
    // handle panzer::Traits::Hessian (do a quick safety check, response is null or appropriate for jacobian)
    Teuchos::RCP<panzer::ResponseBase> respHesBase = responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName);
-   std::cout << "******************************************************" << std::endl;
-   std::cout << "\nTHYRA IS DOING IT: " << respHesBase << std::endl;
-   std::cout << "******************************************************" << std::endl;
    if(respHesBase!=Teuchos::null) {
       typedef panzer::Traits::Hessian RespEvalT;
 

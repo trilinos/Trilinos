@@ -79,6 +79,7 @@ GatherSolution_Epetra(
   , globalDataKey_("Solution Gather Container")
   , gatherSeedIndex_(-1)
 {
+  std::string namePostfix = "Epetra";
 
   const std::vector<std::string>& names =
     *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
@@ -117,20 +118,38 @@ GatherSolution_Epetra(
      sensitivitiesName_ = p.get<std::string>("Sensitivities Name");
   }
 
+  if (p.isType<bool>("Enable Second Derivative Sensitivities")) {
+    enable2ndSensitivities_ = p.get<bool>("Enable Second Derivative Sensitivities");
+    
+    if(enable2ndSensitivities_) {
+      TEUCHOS_ASSERT(p.isType<std::string>("Second Derivative Sensitivities Prefix")); 
+      sensitivities2ndPrefix_ = p.get<std::string>("Second Derivative Sensitivities Prefix");
+    }
+  }
+
+  if(enable2ndSensitivities_) {
+    sensFields_.resize(names.size());
+    for (std::size_t fd = 0; fd < names.size(); ++fd) {
+      PHX::MDField<ScalarT,Cell,NODE> f(sensitivities2ndPrefix_+names[fd],dl);
+      sensFields_[fd] = f;
+      this->addDependentField(sensFields_[fd]);
+    }
+  }
+
   // figure out what the first active name is
   std::string firstName = "<none>";
   if(names.size()>0)
     firstName = names[0];
 
+  if(disableSensitivities_)
+    namePostfix = namePostfix + ", No Sensitivities";
+
+  if(enable2ndSensitivities_)
+    namePostfix = namePostfix + ", Second Sensitivities";
+
   // print out convenience
-  if(disableSensitivities_) {
-    std::string n = "GatherSolution (Epetra, No Sensitivities): "+firstName+" ()";
-    this->setName(n);
-  }
-  else {
-    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
-    this->setName(n);
-  }
+  std::string n = "GatherSolution ("+namePostfix+"): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+  this->setName(n);
 }
 
 // **********************************************************************
@@ -158,6 +177,9 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
+
+    if(enable2ndSensitivities_)
+      this->utils.setFieldData(sensFields_[fd],fm);
   }
 
   indexerNames_ = Teuchos::null;  // Don't need this anymore
@@ -308,6 +330,15 @@ evaluateFields(typename TRAITS::EvalData workset)
              // set the value and seed the FAD object
              field(worksetCellIndex,basis).val() = x[lid];
              field(worksetCellIndex,basis).fastAccessDx(dos + offset) = seed_value;
+           }
+         }
+
+         // this is the direction to use for the second derivative
+         if(enable2ndSensitivities_) {
+           PHX::MDField<ScalarT,Cell,NODE> & sField = sensFields_[fieldIndex];
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             field(worksetCellIndex,basis).val().fastAccessDx(0) 
+                 = sField(worksetCellIndex,basis).val().val();
            }
          }
       }

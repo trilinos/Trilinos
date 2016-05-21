@@ -89,6 +89,7 @@ private:
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
+  std::vector< PHX::MDField<ScalarT,Cell,NODE> > sensFields_;
 
   Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
@@ -100,6 +101,11 @@ private:
   int gatherSeedIndex_; // what gather seed in the workset to use
                         // if less than zero then use alpha or beta
                         // as appropriate
+                        
+  // handle second derivatives                         
+  bool enable2ndSensitivities_;        // Turn on the second derivative sensitivities 
+  std::string sensitivities2ndPrefix_; // Prefix for field containing the sensitivities
+
 
   Teuchos::RCP<Epetra_Vector> x_;
 

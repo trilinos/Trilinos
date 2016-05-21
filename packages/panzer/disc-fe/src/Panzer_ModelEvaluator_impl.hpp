@@ -907,18 +907,13 @@ evalModel_D2gDx2(int respIndex,
   // set model parameters from supplied inArgs
   setParameters(inArgs);
 
-  std::cout << "Setting derivative A" << std::endl;
   {
     std::string responseName = responses_[respIndex]->name;
-  std::cout << "Setting derivativeB " << std::endl;
     Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Hessian> > resp
         = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Hessian> >(
             responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName));
-  std::cout << "Setting derivative C; " << resp<< std::endl;
     resp->setDerivative(D2gDx2);
   }
-
-  std::cout << "Setting derivative" << std::endl;
 
   // setup all the assembly in arguments (this is parameters and
   // x/x_dot). At this point with the exception of the one time dirichlet

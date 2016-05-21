@@ -43,11 +43,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   )
 
-# IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
-#   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#     model_evaluator_hessians
-#     SOURCES model_evaluator_hessians.cpp ${UNIT_TEST_DRIVER}
-#     COMM serial mpi
-#     NUM_MPI_PROCS 4
-#     )
-# ENDIF()
+IF(${PARENT_PACKAGE_NAME}_BUILD_HESSIAN_SUPPORT)
+   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+     model_evaluator_hessians
+     SOURCES model_evaluator_hessians.cpp ${UNIT_TEST_DRIVER}
+     COMM serial mpi
+     NUM_MPI_PROCS 4
+     )
+ENDIF()
