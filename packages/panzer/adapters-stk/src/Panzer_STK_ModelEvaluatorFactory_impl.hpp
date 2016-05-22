@@ -662,14 +662,15 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;
     {
-      bool write_dot_files = false;
-      std::string prefix = "Panzer_AssemblyGraph_";
-      write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",write_dot_files);
-      prefix = p.sublist("Options").get("Volume Assembly Graph Prefix",prefix);
+      bool write_dot_files = p.sublist("Options").get("Write Volume Assembly Graphs",false);
+      std::string dot_file_prefix = p.sublist("Options").get("Volume Assembly Graph Prefix","Panzer_AssemblyGraph");
+      bool write_fm_files = p.sublist("Options").get("Write Field Manager Files",false);
+      std::string fm_file_prefix = p.sublist("Options").get("Field Manager File Prefix","Panzer_AssemblyGraph");
 
       fmb = buildFieldManagerBuilder(wkstContainer,physicsBlocks,bcs,*eqset_factory,bc_factory,cm_factory,
                                      user_cm_factory,p.sublist("Closure Models"),*linObjFactory,user_data_params,
-                                     write_dot_files,prefix);
+                                     write_dot_files,dot_file_prefix,
+				     write_fm_files,fm_file_prefix);
     }
 
     // build response library
@@ -1246,7 +1247,8 @@ namespace panzer_stk_classic {
                            const Teuchos::ParameterList& closure_models,
                            const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                            const Teuchos::ParameterList& user_data,
-                           bool writeGraph,const std::string & graphPrefix) const
+                           bool writeGraph,const std::string & graphPrefix,
+			   bool write_field_managers,const std::string & field_manager_prefix) const
   {
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb = Teuchos::rcp(new panzer::FieldManagerBuilder);
     fmb->setWorksetContainer(wc);
@@ -1256,8 +1258,13 @@ namespace panzer_stk_classic {
     // Print Phalanx DAGs
     if (writeGraph){
       fmb->writeVolumeGraphvizDependencyFiles(graphPrefix, physicsBlocks);
-      fmb->writeBCGraphvizDependencyFiles(graphPrefix+"BC_");
+      fmb->writeBCGraphvizDependencyFiles(graphPrefix);
     }
+    if (write_field_managers){
+      fmb->writeVolumeTextDependencyFiles(graphPrefix, physicsBlocks);
+      fmb->writeBCTextDependencyFiles(field_manager_prefix);
+    }
+    
     return fmb;
   }
 
@@ -1338,7 +1345,8 @@ namespace panzer_stk_classic {
                                      p.sublist("Closure Models"),
                                      *m_lin_obj_factory,
                                      user_data_params,
-                                     write_dot_files,prefix);
+                                     write_dot_files,prefix,
+				     write_dot_files,prefix);
     }
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > response_library

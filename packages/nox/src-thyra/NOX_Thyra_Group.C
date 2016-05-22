@@ -95,6 +95,8 @@ Group(const NOX::Thyra::Vector& initial_guess,
   // create jacobian operator
   lows_factory_ = model->get_W_factory();
 
+  TEUCHOS_ASSERT(nonnull(lows_factory_));
+
   // Create jacobian with solver
   shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(lows_factory_->createOp()));
 

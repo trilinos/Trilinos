@@ -59,7 +59,8 @@
 // ****************************************************************
 Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
   do_row_sum_scaling_(false),
-  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve)
+  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve),
+  rebuild_solver_(true)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
@@ -75,7 +76,8 @@ Thyra::NOXNonlinearSolver::~NOXNonlinearSolver()
 void Thyra::NOXNonlinearSolver::
 setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& p)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(p));
+  //TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(p));
+  rebuild_solver_ = true;
   param_list_ = p;
   this->resetSolver();
 }
@@ -119,7 +121,8 @@ Thyra::NOXNonlinearSolver::getValidParameters() const
 void Thyra::NOXNonlinearSolver::
 setModel(const Teuchos::RCP<const ModelEvaluator<double> >& model)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
+  //TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
+  rebuild_solver_ = true;
   model_ = model;
   basePoint_ = model_->createInArgs();
 }
@@ -158,16 +161,17 @@ solve(VectorBase<double> *x,
 
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
-  if (Teuchos::is_null(solver_)) {
+  if (Teuchos::is_null(solver_) || rebuild_solver_) {
 
+    rebuild_solver_ = false;
 
     this->validateAndParseThyraGroupOptions(param_list_->sublist("Thyra Group Options"));
 
     if (function_scaling_ != "None") {
 
       if (function_scaling_ == "Row Sum")
-    this->setupRowSumScalingObjects();
-
+	this->setupRowSumScalingObjects();
+      
       TEUCHOS_ASSERT(nonnull(scaling_vector_));
     }
     else {
@@ -187,7 +191,7 @@ solve(VectorBase<double> *x,
   }
 
   NOX::StatusTest::StatusType solvStatus = solver_->solve();
-
+  
   Thyra::SolveStatus<double> t_status;
 
   if (solvStatus == NOX::StatusTest::Converged)
