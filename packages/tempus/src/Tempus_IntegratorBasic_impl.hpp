@@ -55,7 +55,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 {
 
   // Create classes from nested blocks prior to setParameters call.
-  RCP<ParameterList> tmpiPL = Teuchos::sublist(pList_,"Integrator",true);
+  RCP<ParameterList> tmpiPL = Teuchos::sublist(pList_,"Integrator Basic",true);
 
   //    Create solution history
   RCP<ParameterList> shPL = Teuchos::sublist(tmpiPL, SolutionHistory_name,true);
@@ -327,7 +327,7 @@ void IntegratorBasic<Scalar>::setParameterList(
   if (pList_ == Teuchos::null)
     pList->validateParametersAndSetDefaults(*this->getValidParameters());
   else {
-    pList = Teuchos::sublist(pList_,"Integrator",true);
+    pList = Teuchos::sublist(pList_,"Integrator Basic",true);
     pList->validateParameters(*this->getValidParameters());
   }
 

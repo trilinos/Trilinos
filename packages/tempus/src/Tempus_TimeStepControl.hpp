@@ -6,7 +6,7 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 // Tempus
-#include "Tempus_StepType.hpp"
+#include "Tempus_Types.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 namespace Tempus {
@@ -83,7 +83,7 @@ public:
   int orderMin;           ///< Minimum time integration order
   int orderMax;           ///< Maximum time integration order
 
-  StepType stepType;      ///< Step type for step control
+  StepType stepType;      ///< Integrator step type for step control
   Scalar dtConstant;      ///< Constant time step if stepType=CONSTANT_STEP_SIZE
 
   std::vector<int>    outputIndices;  ///< Vector of output indices.

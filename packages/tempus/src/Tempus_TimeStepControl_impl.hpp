@@ -44,21 +44,21 @@ namespace {
 
   static std::string Constant_name    = "Constant";
   static std::string Variable_name    = "Variable";
-  static std::string StepType_name    = "Step Type";
-  static std::string StepType_default = Variable_name;
+  static std::string stepType_name    = "Integrator Step Type";
+  static std::string stepType_default = Variable_name;
 
-  Teuchos::Array<std::string> StepType_names = Teuchos::tuple<std::string>(
+  Teuchos::Array<std::string> stepType_names = Teuchos::tuple<std::string>(
       Constant_name,
       Variable_name);
 
   const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
-    StepTypeValidator = Teuchos::rcp(
+    stepTypeValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType>(
-          StepType_names,
+          stepType_names,
           Teuchos::tuple<Tempus::StepType>(
             Tempus::CONSTANT_STEP_SIZE,
             Tempus::VARIABLE_STEP_SIZE),
-          StepType_name));
+          stepType_name));
 
   static std::string outputTimeList_name         = "Output Time List";
   static std::string outputTimeList_default      = "";
@@ -147,7 +147,6 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   const Scalar errorRel = metaData->errorRel;
   int & order = metaData->order;
   Scalar & dt = metaData->dt;
-  Scalar & suggestedDt = metaData->suggestedDt;
   bool & output = metaData->output;
 
   output = false;
@@ -309,7 +308,6 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
   }
 
-  suggestedDt = dt;
   return;
 }
 
@@ -422,8 +420,8 @@ void TimeStepControl<Scalar>::setParameterList(
     "Error - Inconsistent order range.\n"
     "    (orderMin = "<<orderMin<<") > (orderMax = "<<orderMax<<")\n");
 
-  stepType = StepTypeValidator->getIntegralValue(
-      *pList, StepType_name, StepType_default);
+  stepType = stepTypeValidator->getIntegralValue(
+      *pList, stepType_name, stepType_default);
 
 
   // Parse output times
@@ -514,16 +512,16 @@ RCP<const ParameterList> TimeStepControl<Scalar>::getValidParameters() const
     pl->set(orderMin_name, orderMin_default, "Minimum time integration order");
     pl->set(orderMax_name, orderMax_default, "Maximum time integration order");
 
-    pl->set(StepType_name, StepType_default,
-      "Step Type indicates whether the Integrator will allow the time step "
-      "to be modified the Stepper.\n"
+    pl->set(stepType_name, stepType_default,
+      "'Integrator Step Type' indicates whether the Integrator will allow "
+      "the time step to be modified.\n"
       "  'Constant' - Integrator will take constant time step sizes.\n"
       "  'Variable' - Integrator will allow changes to the time step size.\n",
-//      "'Unmodifiable' - Integrator will not allow the Stepper to take a "
-//                     "time step different than one requested.\n"
-//      "'Modifiable' - Integrator will use a time step size from the Stepper "
-//                     "that is different than the one requested.\n"
-      StepTypeValidator);
+//      "  'Unmodifiable' - Integrator will not allow the Stepper to take a "
+//                         "time step different than one requested.\n"
+//      "  'Modifiable' - Integrator will use a time step size from the "
+//                       "Stepper that is different than the one requested.\n"
+      stepTypeValidator);
 
     pl->set(outputTimeList_name, outputTimeList_default,
       "Comma deliminated list of output times");

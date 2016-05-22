@@ -10,7 +10,6 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
   :time          (0.0),
    iStep         (0),
    dt            (0.0),
-   suggestedDt   (0.0),
    errorAbs      (0.0),
    errorRel      (0.0),
    order         (1),
@@ -29,7 +28,6 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Scalar time_,
   const int    iStep_,
   const Scalar dt_,
-  const Scalar suggestedDt_,
   const Scalar errorAbs_,
   const Scalar errorRel_,
   const int    order_,
@@ -44,7 +42,6 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   :time          (time_),
    iStep         (iStep_),
    dt            (dt_),
-   suggestedDt   (suggestedDt_),
    errorAbs      (errorAbs_),
    errorRel      (errorRel_),
    order         (order_),
@@ -63,7 +60,6 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
   :time          (ssmd_.time),
    iStep         (ssmd_.iStep),
    dt            (ssmd_.dt),
-   suggestedDt   (ssmd_.suggestedDt),
    errorAbs      (ssmd_.errorAbs),
    errorRel      (ssmd_.errorRel),
    order         (ssmd_.order),
@@ -86,7 +82,6 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       time,
       iStep,
       dt,
-      suggestedDt,
       errorAbs,
       errorRel,
       order,
@@ -121,7 +116,6 @@ void SolutionStateMetaData<Scalar>::describe(
         << "time           = " << time << std::endl
         << "iStep          = " << iStep << std::endl
         << "dt             = " << dt << std::endl
-        << "suggestedDt    = " << suggestedDt << std::endl
         << "errorAbs       = " << errorAbs << std::endl
         << "errorRel       = " << errorRel << std::endl
         << "order          = " << order << std::endl

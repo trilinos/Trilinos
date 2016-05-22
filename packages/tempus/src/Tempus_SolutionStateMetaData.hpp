@@ -5,7 +5,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 // Tempus
-#include "Tempus_StepType.hpp"
+#include "Tempus_Types.hpp"
 
 
 namespace Tempus {
@@ -27,7 +27,6 @@ public:
     const Scalar time_,
     const int    iStep_,
     const Scalar dt_,
-    const Scalar suggestedDt_,
     const Scalar errorAbs_,
     const Scalar errorRel_,
     const int    order_,
@@ -52,7 +51,6 @@ public:
   Scalar time;            ///< Time of solution
   int    iStep;           ///< Time step index for this solution
   Scalar dt;              ///< Time step for this solution
-  Scalar suggestedDt;     ///< Time step suggested to the Stepper
   Scalar errorAbs;        ///< Absolute local truncation error
   Scalar errorRel;        ///< Relative local truncation error
   int order;              ///< Order of this solution
