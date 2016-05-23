@@ -72,7 +72,7 @@ public:
   // hessian
   
   //! Are second derivative sensitivies enabled or disabled (Hessian only)
-  bool secondSensitiviitiesAvailable() { return secondSensAvail_; }
+  bool secondSensitivitiesAvailable() { return secondSensAvail_; }
 
   //! What prefix to use for the GEDC for second derivative sensitivity direction (Hessian only)
   std::string getSecondSensitivityDataKeyPrefix() { return secondSensDataKeyPrefix_; }

@@ -527,7 +527,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   // manage sensitivities
   ////////////////////////////////////////////////////////////
   if(!disableSensitivities_) {
-    if(d.sensitivities_name==sensitivitiesName_)
+    if(d.first_sensitivities_name==sensitivitiesName_)
       applySensitivities_ = true;
     else
       applySensitivities_ = false;

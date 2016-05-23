@@ -403,7 +403,7 @@ namespace panzer {
       ae_inargs.alpha = alpha;
       ae_inargs.beta = beta;
       ae_inargs.evaluate_transient_terms = true;
-      ae_inargs.sensitivities_name = "DENSITY";
+      ae_inargs.first_sensitivities_name = "DENSITY";
       ae_inargs.gather_seeds.push_back(1.0); // gather seed index 0 (see closure model)
       rLibrary->addResponsesToInArgs<Traits::Jacobian>(ae_inargs);
 

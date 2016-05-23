@@ -73,67 +73,32 @@ GatherSolution_Epetra(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
   : globalIndexer_(indexer)
-  , useTimeDerivativeSolutionVector_(false)
-  , disableSensitivities_(false)
-  , sensitivitiesName_("")
-  , globalDataKey_("Solution Gather Container")
-  , gatherSeedIndex_(-1)
 {
-  std::string namePostfix = "Epetra";
+  typedef std::vector< std::vector<std::string> > vvstring;
 
-  const std::vector<std::string>& names =
-    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+  GatherSolution_Input input;
+  input.setParameterList(p);
 
-  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+  const std::vector<std::string> & names      = input.getDofNames();
+  Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
 
-  // this is being to fix the issues with incorrect use of const
-  Teuchos::RCP<const panzer::PureBasis> basis;
-  if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
-    basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
-  else
-    basis = p.get< Teuchos::RCP<const panzer::PureBasis> >("Basis");
-  Teuchos::RCP<PHX::DataLayout> dl = basis->functional;
+  indexerNames_                    = input.getIndexerNames();
+  useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
+  globalDataKey_                   = input.getGlobalDataKey();
 
+  gatherSeedIndex_                 = input.getGatherSeedIndex();
+  sensitivitiesName_               = input.getSensitivitiesName();
+  firstSensitivitiesAvailable_     = input.firstSensitivitiesAvailable();
+
+  secondSensitivitiesAvailable_    = input.secondSensitivitiesAvailable();
+  sensitivities2ndPrefix_          = input.getSecondSensitivityDataKeyPrefix();
+
+  // allocate fields
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],dl);
+    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
-  }
-
-  if (p.isType<bool>("Use Time Derivative Solution Vector"))
-    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
-
-  if (p.isType<bool>("Disable Sensitivities"))
-    disableSensitivities_ = p.get<bool>("Disable Sensitivities");
-
-  if (p.isType<std::string>("Global Data Key"))
-     globalDataKey_ = p.get<std::string>("Global Data Key");
-
-  if (p.isType<int>("Gather Seed Index")) {
-     gatherSeedIndex_ = p.get<int>("Gather Seed Index");
-  }
-
-  if (p.isType<std::string>("Sensitivities Name")) {
-     sensitivitiesName_ = p.get<std::string>("Sensitivities Name");
-  }
-
-  if (p.isType<bool>("Enable Second Derivative Sensitivities")) {
-    enable2ndSensitivities_ = p.get<bool>("Enable Second Derivative Sensitivities");
-    
-    if(enable2ndSensitivities_) {
-      TEUCHOS_ASSERT(p.isType<std::string>("Second Derivative Sensitivities Prefix")); 
-      sensitivities2ndPrefix_ = p.get<std::string>("Second Derivative Sensitivities Prefix");
-    }
-  }
-
-  if(enable2ndSensitivities_) {
-    sensFields_.resize(names.size());
-    for (std::size_t fd = 0; fd < names.size(); ++fd) {
-      PHX::MDField<ScalarT,Cell,NODE> f(sensitivities2ndPrefix_+names[fd],dl);
-      sensFields_[fd] = f;
-      this->addDependentField(sensFields_[fd]);
-    }
   }
 
   // figure out what the first active name is
@@ -141,15 +106,15 @@ GatherSolution_Epetra(
   if(names.size()>0)
     firstName = names[0];
 
-  if(disableSensitivities_)
-    namePostfix = namePostfix + ", No Sensitivities";
-
-  if(enable2ndSensitivities_)
-    namePostfix = namePostfix + ", Second Sensitivities";
-
   // print out convenience
-  std::string n = "GatherSolution ("+namePostfix+"): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
-  this->setName(n);
+  if(!firstSensitivitiesAvailable_) {
+    std::string n = "GatherSolution (Epetra, No First Sensitivities): "+firstName+" (Hessian)";
+    this->setName(n);
+  }
+  else {
+    std::string n = "GatherSolution (Epetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    this->setName(n);
+  }
 }
 
 // **********************************************************************
@@ -159,13 +124,13 @@ postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& fm)
 {
   // globalIndexer_ = d.globalIndexer_;
-  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    const std::string& fieldName = (*indexerNames_)[fd];
+    const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // this is the error return code, raise the alarm
@@ -177,12 +142,9 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
-
-    if(enable2ndSensitivities_)
-      this->utils.setFieldData(sensFields_[fd],fm);
   }
 
-  indexerNames_ = Teuchos::null;  // Don't need this anymore
+  indexerNames_.clear();  // Don't need this anymore
 }
 
 // **********************************************************************
@@ -195,14 +157,23 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // manage sensitivities
   ////////////////////////////////////////////////////////////
-  if(!disableSensitivities_) {
-    if(d.sensitivities_name==sensitivitiesName_)
-      applySensitivities_ = true;
+  if(firstSensitivitiesAvailable_) {
+    if(d.first_sensitivities_name==sensitivitiesName_)
+      firstApplySensitivities_ = true;
     else
-      applySensitivities_ = false;
+      firstApplySensitivities_ = false;
   }
   else
-    applySensitivities_ = false;
+    firstApplySensitivities_ = false;
+
+  if(secondSensitivitiesAvailable_) {
+    if(d.second_sensitivities_name==sensitivitiesName_)
+      secondApplySensitivities_ = true;
+    else
+      secondApplySensitivities_ = false;
+  }
+  else
+    secondApplySensitivities_ = false;
 
   ////////////////////////////////////////////////////////////
 
@@ -216,39 +187,69 @@ preEvaluate(typename TRAITS::PreEvalData d)
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
 
     x_ = ro_ged->getGhostedVector_Epetra();
-
-    return;
   }
+  else if(d.gedc.containsDataObject(globalDataKey_)) {
 
-  ged = d.gedc.getDataObject(globalDataKey_);
-
-  // try to extract linear object container
-  {
+    ged = d.gedc.getDataObject(globalDataKey_);
+  
+    // try to extract linear object container
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged);
     RCP<EpetraLinearObjContainer> epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(ged);
-    RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
 
-    if(loc_pair!=Teuchos::null) {
-      Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
-      // extract linear object container
-      epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+    // handle LOCPair case
+    {
+      RCP<LOCPair_GlobalEvaluationData> loc_pair = rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
+
+      if(loc_pair!=Teuchos::null) {
+        Teuchos::RCP<LinearObjContainer> loc = loc_pair->getGhostedLOC();
+        // extract linear object container
+        epetraContainer = rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+      }
     }
 
-    if(epetraContainer!=Teuchos::null) {
+    if(ro_ged!=Teuchos::null) {
+      RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+  
+      x_ = ro_ged->getGhostedVector_Epetra();
+    }
+    else if(epetraContainer!=Teuchos::null) {
       if (useTimeDerivativeSolutionVector_)
         x_ = epetraContainer->get_dxdt();
       else
         x_ = epetraContainer->get_x();
-
-      return; // epetraContainer was found
     }
+  } // end "else if" contains(globalDataKey)
+
+  // post condition
+  TEUCHOS_ASSERT(x_!=Teuchos::null); // someone has to find the x_ vector
+
+  // don't try to extract the dx, if its not required
+  if(!secondApplySensitivities_) {
+    dx_ = Teuchos::null; // do set it to null though!
+    return;
   }
 
-  // try to extract an EpetraVector_ReadOnly object (this is the last resort!, it throws if not found)
-  {
+  // get second derivative perturbation
+  ////////////////////////////////////////////////////////////
+ 
+  // now parse the second derivative direction
+  if(d.gedc.containsDataObject(sensitivities2ndPrefix_+globalDataKey_+post)) {
+    ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_+post);
+
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
 
-    x_ = ro_ged->getGhostedVector_Epetra();
+    dx_ = ro_ged->getGhostedVector_Epetra();
   }
+  else if(d.gedc.containsDataObject(globalDataKey_)) {
+    ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_+post);
+
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
+
+    dx_ = ro_ged->getGhostedVector_Epetra();
+  }
+
+  // post conditions
+  TEUCHOS_ASSERT(dx_!=Teuchos::null); // someone has to find the dx_ vector
 }
 
 // **********************************************************************
@@ -261,7 +262,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    double seed_value = 0.0;
-   if(applySensitivities_) {
+   if(firstApplySensitivities_) {
      if (useTimeDerivativeSolutionVector_ && gatherSeedIndex_<0) {
        seed_value = workset.alpha;
      }
@@ -281,13 +282,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    // turn off sensitivies: this may be faster if we don't expand the term
    // but I suspect not because anywhere it is used the full complement of
    // sensitivies will be needed anyway.
-   if(!applySensitivities_)
+   if(!firstApplySensitivities_)
       seed_value = 0.0;
-
-   // NOTE: A reordering of these loops will likely improve performance
-   //       The "getGIDFieldOffsets may be expensive.  However the
-   //       "getElementGIDs" can be cheaper. However the lookup for LIDs
-   //       may be more expensive!
 
    // Interface worksets handle DOFs from two element blocks. The derivative
    // offset for the other element block must be shifted by the derivative side
@@ -311,7 +307,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
          const std::vector<int> & LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
-         if(!applySensitivities_) {
+         if(!firstApplySensitivities_) {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
              int offset = elmtOffset[basis];
@@ -334,11 +330,11 @@ evaluateFields(typename TRAITS::EvalData workset)
          }
 
          // this is the direction to use for the second derivative
-         if(enable2ndSensitivities_) {
-           PHX::MDField<ScalarT,Cell,NODE> & sField = sensFields_[fieldIndex];
+         if(secondApplySensitivities_) {
            for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-             field(worksetCellIndex,basis).val().fastAccessDx(0) 
-                 = sField(worksetCellIndex,basis).val().val();
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+             field(worksetCellIndex,basis).val().fastAccessDx(0) = (*dx_)[lid];
            }
          }
       }

@@ -518,7 +518,6 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     }
   }
 
-  //ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
@@ -1309,7 +1308,7 @@ evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     panzer::AssemblyEngineInArgs ae_inargs;
     setupAssemblyInArgs(inArgs,ae_inargs);
 
-    ae_inargs.sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
+    ae_inargs.first_sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
     ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
                                            // gather seeds
 
@@ -1586,7 +1585,7 @@ evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     panzer::AssemblyEngineInArgs ae_inargs;
     setupAssemblyInArgs(inArgs,ae_inargs);
 
-    ae_inargs.sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
+    ae_inargs.first_sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
     ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
                                            // gather seeds
     rLibrary.addResponsesToInArgs<Traits::Jacobian>(ae_inargs);

@@ -64,7 +64,8 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
-       , sensitivities_name("")
+       , first_sensitivities_name("")
+       , second_sensitivities_name("")
        , apply_dirichlet_beta(false)
        , dirichlet_beta(0.0)
     { }
@@ -75,7 +76,8 @@ namespace panzer {
        , beta(Teuchos::ScalarTraits<double>::nan())    // hopefully loud initial values
        , time(Teuchos::ScalarTraits<double>::nan())
        , evaluate_transient_terms(false)
-       , sensitivities_name("")
+       , first_sensitivities_name("")
+       , second_sensitivities_name("")
        , apply_dirichlet_beta(false)
        , dirichlet_beta(0.0)
     { }
@@ -88,7 +90,8 @@ namespace panzer {
     double time;
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
-    std::string sensitivities_name;
+    std::string first_sensitivities_name;
+    std::string second_sensitivities_name;
 
     bool apply_dirichlet_beta;
     double dirichlet_beta;
@@ -136,14 +139,15 @@ namespace panzer {
   inline std::ostream & operator<<(std::ostream & os,const AssemblyEngineInArgs & in)
   {
     os << "AE Inargs:\n"
-       << "  alpha     = " << in.alpha << "\n"
-       << "  beta      = "  << in.beta << "\n"
-       << "  time      = "  << in.time << "\n"
-       << "  eval_tran = " << in.evaluate_transient_terms << "\n"
-       << "  sens_name = " << in.sensitivities_name << "\n"
-       << "  apply_db  = " << in.apply_dirichlet_beta << "\n"
-       << "  db        = " << in.dirichlet_beta << "\n"
-       << "  seeds     = ";
+       << "  alpha         = " << in.alpha << "\n"
+       << "  beta          = "  << in.beta << "\n"
+       << "  time          = "  << in.time << "\n"
+       << "  eval_tran     = " << in.evaluate_transient_terms << "\n"
+       << "  1st sens_name = " << in.first_sensitivities_name << "\n"
+       << "  2nd sens_name = " << in.second_sensitivities_name << "\n"
+       << "  apply_db      = " << in.apply_dirichlet_beta << "\n"
+       << "  db            = " << in.dirichlet_beta << "\n"
+       << "  seeds         = ";
     for(std::size_t i=0;i<in.gather_seeds.size();i++)
       os << in.gather_seeds[i] << " ";
     os << "\n";

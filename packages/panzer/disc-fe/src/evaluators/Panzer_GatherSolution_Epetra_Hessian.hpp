@@ -86,28 +86,32 @@ private:
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  std::vector<std::string> indexerNames_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > sensFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
   bool useTimeDerivativeSolutionVector_;
-  bool disableSensitivities_;     // This disables sensitivities absolutely
-  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
-  bool applySensitivities_;       // This is a local variable that is used by evaluateFields
-                                  // to turn on/off a certain set of sensitivities
   std::string globalDataKey_; // what global data does this fill?
-  int gatherSeedIndex_; // what gather seed in the workset to use
-                        // if less than zero then use alpha or beta
-                        // as appropriate
+
+  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+
+  // first derivative fields
+  int gatherSeedIndex_;              // what gather seed in the workset to use
+                                     // if less than zero then use alpha or beta
+                                     // as appropriate
+  bool firstSensitivitiesAvailable_; // Turn on the first derivative sensitivities 
+                                     // to turn on/off a certain set of sensitivities
+  bool firstApplySensitivities_;     // This is a local variable that is used by evaluateFields
                         
   // handle second derivatives                         
-  bool enable2ndSensitivities_;        // Turn on the second derivative sensitivities 
   std::string sensitivities2ndPrefix_; // Prefix for field containing the sensitivities
-
+  bool secondSensitivitiesAvailable_;  // Turn on the second derivative sensitivities 
+  bool secondApplySensitivities_;      // This is a local variable that is used by evaluateFields
 
   Teuchos::RCP<Epetra_Vector> x_;
+  Teuchos::RCP<Epetra_Vector> dx_;
 
   GatherSolution_Epetra();
 };
