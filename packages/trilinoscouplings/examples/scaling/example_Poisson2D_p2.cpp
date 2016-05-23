@@ -2005,19 +2005,19 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
       int row = P2_elemToNode(i,j);
 
       if(j<4) {
-	P->InsertGlobalValues(row,1,&one,&row);
+        P->InsertGlobalValues(row,1,&one,&row);
       }
       else if (j>=4 && j<8){
-	int col0 = P2_elemToNode(i,edge_node0_id[j-4]);
-	int col1 = P2_elemToNode(i,edge_node1_id[j-4]);
-	P->InsertGlobalValues(row,1,&half,&col0);	
-	P->InsertGlobalValues(row,1,&half,&col1);
+        int col0 = P2_elemToNode(i,edge_node0_id[j-4]);
+        int col1 = P2_elemToNode(i,edge_node1_id[j-4]);
+        P->InsertGlobalValues(row,1,&half,&col0);
+        P->InsertGlobalValues(row,1,&half,&col1);
       }
       else {
-	int cols[4] = {P2_elemToNode(i,0),P2_elemToNode(i,1),P2_elemToNode(i,2),P2_elemToNode(i,3)};
-	double vals[4] = {quarter, quarter,quarter,quarter};
-	P->InsertGlobalValues(row,3,&vals[0],&cols[0]);
-      }	 
+        int cols[4] = {P2_elemToNode(i,0),P2_elemToNode(i,1),P2_elemToNode(i,2),P2_elemToNode(i,3)};
+        double vals[4] = {quarter, quarter,quarter,quarter};
+        P->InsertGlobalValues(row,3,&vals[0],&cols[0]);
+      }
     }
   P->FillComplete(P1_map,P2_map);
 }
