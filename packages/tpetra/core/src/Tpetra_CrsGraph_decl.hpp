@@ -54,6 +54,7 @@
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include "Tpetra_Util.hpp" // need this here for sort2
 
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
@@ -625,7 +626,7 @@ namespace Tpetra {
     /// Epetra_CrsGraph::InsertGlobalIndices.
     void
     insertGlobalIndices (const GlobalOrdinal globalRow,
-			 const LocalOrdinal numEnt,
+                         const LocalOrdinal numEnt,
                          const GlobalOrdinal inds[]);
 
     //! Insert local indices into the graph.
@@ -655,8 +656,8 @@ namespace Tpetra {
     /// Epetra_CrsGraph::InsertMyIndices.
     void
     insertLocalIndices (const LocalOrdinal localRow,
-			const LocalOrdinal numEnt,
-			const LocalOrdinal inds[]);
+                        const LocalOrdinal numEnt,
+                        const LocalOrdinal inds[]);
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -1274,7 +1275,36 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
+    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const
+    {
+      using Teuchos::arcp;
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      const char tfecfFuncName[] = "allocateValues2D: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! indicesAreAllocated (), std::runtime_error,
+         "Graph indices must be allocated before values.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (getProfileType () != DynamicProfile, std::runtime_error,
+         "Graph indices must be allocated in a dynamic profile.");
+
+      ArrayRCP<Array<T> > values2D;
+      values2D = arcp<Array<T> > (getNodeNumRows ());
+      if (lclInds2D_ != null) {
+        const size_t numRows = lclInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (lclInds2D_[r].size ());
+        }
+      }
+      else if (gblInds2D_ != null) {
+        const size_t numRows = gblInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (gblInds2D_[r].size ());
+        }
+      }
+      return values2D;
+    }
 
     template <class T>
     RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
@@ -1540,7 +1570,114 @@ namespace Tpetra {
                             const Teuchos::ArrayView<Scalar>& oldRowVals,
                             const Teuchos::ArrayView<const Scalar>& newRowVals,
                             const ELocalGlobal lg,
-                            const ELocalGlobal I);
+                            const ELocalGlobal I)
+    {
+      const char tfecfFuncName[] = "insertIndicesAndValues: ";
+
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numNewInds = 0;
+      try {
+        numNewInds = insertIndices (rowInfo, newInds, lg, I);
+      } catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "insertIndices threw an exception: "
+           << e.what ());
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "oldRowVals.size() (" << oldRowVals.size () << ".");
+#else
+      const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+#endif // HAVE_TPETRA_DEBUG
+
+      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (rowInfo.numEntries + numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "rowInfo.numEntries (" << rowInfo.numEntries << ")"
+         " + numNewInds (" << numNewInds << ") > oldRowVals.size() ("
+         << oldRowVals.size () << ").");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_type> (numNewInds) > newRowVals.size (),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "newRowVals.size() (" << newRowVals.size () << ").");
+#endif // HAVE_TPETRA_DEBUG
+
+      size_type oldInd = static_cast<size_type> (rowInfo.numEntries);
+
+#ifdef HAVE_TPETRA_DEBUG
+      try {
+#endif // HAVE_TPETRA_DEBUG
+        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
+        //We supply a workaround n as well as other code variants which produce or not produce the error
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#if GCC_VERSION >= 490
+#define GCC_WORKAROUND
+#endif
+#endif
+#ifdef GCC_WORKAROUND
+        size_type nNI = static_cast<size_type>(numNewInds);
+        if (nNI > 0)
+          memcpy(&oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+        /*
+        //Original Code Fails
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+        ++newInd, ++oldInd) {
+        oldRowVals[oldInd] = newRowVals[newInd];
+        }
+
+        //char cast variant fails
+        char* oldRowValPtr = (char*)&oldRowVals[oldInd];
+        const char* newRowValPtr = (const char*) &newRowVals[0];
+
+        for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //Raw ptr variant fails
+        Scalar* oldRowValPtr = &oldRowVals[oldInd];
+        Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
+
+        for(size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //memcpy works
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        memcpy( &oldRowVals[oldInd+newInd], &newRowVals[newInd], sizeof(Scalar));
+        }
+
+        //just one loop index fails
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowVals[oldInd+newInd] = newRowVals[newInd];
+        }
+
+        //inline increment fails
+        for (size_type newInd = 0; newInd < numNewInds;) {
+        oldRowVals[oldInd++] = newRowVals[newInd++];
+        }
+
+        */
+
+#else // GCC Workaround above
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+             ++newInd, ++oldInd) {
+          oldRowVals[oldInd] = newRowVals[newInd];
+        }
+#endif // GCC Workaround
+#ifdef HAVE_TPETRA_DEBUG
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "for loop for copying values threw an "
+           "exception: " << e.what ());
+      }
+#endif // HAVE_TPETRA_DEBUG
+    }
+
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const Teuchos::ArrayView<const GlobalOrdinal> &indices);
@@ -1624,35 +1761,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
@@ -1782,35 +1919,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1931,35 +2068,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -2171,9 +2308,9 @@ namespace Tpetra {
              class InputScalarViewType>
     LocalOrdinal
     replaceGlobalValues (const RowInfo& rowInfo,
-			 const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
-			 const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
-			 const typename UnmanagedView<InputScalarViewType>::type& newVals) const
+                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+                         const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
+                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
       // We use static_assert here to check the template parameters,
       // rather than std::enable_if (e.g., on the return value, to
@@ -2181,35 +2318,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value, 
-		     "Template parameter GlobalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value,
+                     "Template parameter GlobalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
-		     "Template parameter GlobalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter GlobalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename GlobalIndicesViewType::non_const_value_type,
-		       global_ordinal_type>::value,
-		     "Template parameter GlobalIndicesViewType must "
-		     "contain values of type global_ordinal_type.");
+                       typename GlobalIndicesViewType::non_const_value_type,
+                       global_ordinal_type>::value,
+                     "Template parameter GlobalIndicesViewType must "
+                     "contain values of type global_ordinal_type.");
 
       typedef LocalOrdinal LO;
 
@@ -2248,7 +2385,7 @@ namespace Tpetra {
             const size_t k =
               this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
             if (k != STINV) {
-	      rowVals(k) = newVals(j);
+              rowVals(k) = newVals(j);
               hint = k+1;
               numValid++;
             }
@@ -2265,7 +2402,7 @@ namespace Tpetra {
           const size_t k =
             this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
           if (k != STINV) {
-	    rowVals(k) = newVals(j);
+            rowVals(k) = newVals(j);
             hint = k+1;
             numValid++;
           }
@@ -2443,8 +2580,17 @@ namespace Tpetra {
     ///   values[k].  On output: the same values, but sorted in the
     ///   same order as the (now sorted) column indices in the row.
     template <class Scalar>
-    void sortRowIndicesAndValues (const RowInfo rowinfo,
-                                  const Teuchos::ArrayView<Scalar>& values);
+    void
+    sortRowIndicesAndValues (const RowInfo rowinfo,
+                             const Teuchos::ArrayView<Scalar>& values)
+    {
+      if (rowinfo.numEntries > 0) {
+        Teuchos::ArrayView<LocalOrdinal> inds_view =
+          this->getLocalViewNonConst (rowinfo);
+        sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
+               values.begin ());
+      }
+    }
 
     /// \brief Merge duplicate row indices in all of the rows.
     ///
@@ -2475,7 +2621,63 @@ namespace Tpetra {
     template<class Scalar>
     void
     mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues);
+                              const Teuchos::ArrayView<Scalar>& rowValues)
+    {
+      using Teuchos::ArrayView;
+      const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isStorageOptimized(), std::logic_error, "It is invalid to call this "
+         "method if the graph's storage has already been optimized.  Please "
+         "report this bug to the Tpetra developers.");
+
+      typedef typename ArrayView<Scalar>::iterator Iter;
+      Iter rowValueIter = rowValues.begin ();
+      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
+      typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
+
+      // beg,end define a half-exclusive interval over which to iterate.
+      beg = inds_view.begin();
+      end = inds_view.begin() + rowinfo.numEntries;
+      newend = beg;
+      if (beg != end) {
+        typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
+        Iter vcur = rowValueIter + 1;
+        Iter vend = rowValueIter;
+        cur = beg+1;
+        while (cur != end) {
+          if (*cur != *newend) {
+            // new entry; save it
+            ++newend;
+            ++vend;
+            (*newend) = (*cur);
+            (*vend) = (*vcur);
+          }
+          else {
+            // old entry; merge it
+            //(*vend) = f (*vend, *vcur);
+            (*vend) += *vcur;
+          }
+          ++cur;
+          ++vcur;
+        }
+        ++newend; // one past the last entry, per typical [beg,end) semantics
+      }
+      const size_t mergedEntries = newend - beg;
+#ifdef HAVE_TPETRA_DEBUG
+      // merge should not have eliminated any entries; if so, the
+      // assignment below will destroy the packed structure
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isStorageOptimized() && mergedEntries != rowinfo.numEntries,
+         std::logic_error,
+         "Merge was incorrect; it eliminated entries from the graph.  "
+         << "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+      // k_numRowEntries_ is a host View.
+      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
+      nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
+    }
+
     //@}
 
     /// Set the domain and range Maps, and invalidate the Import
