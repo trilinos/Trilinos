@@ -51,6 +51,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
+#include "Panzer_GatherSolution_Input.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -89,18 +90,22 @@ GatherSolution_BlockedEpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
-  , useTimeDerivativeSolutionVector_(false)
-  , globalDataKey_("Solution Gather Container")
   , has_tangent_fields_(false)
 {
-  const std::vector<std::string>& names =
-    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+  typedef std::vector< std::vector<std::string> > vvstring;
 
-  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+  GatherSolution_Input input;
+  input.setParameterList(p);
 
-  Teuchos::RCP<panzer::PureBasis> basis =
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  const std::vector<std::string> & names      = input.getDofNames();
+  Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
+  const vvstring & tangent_field_names        = input.getTangentNames();
 
+  indexerNames_                    = input.getIndexerNames();
+  useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
+  globalDataKey_                   = input.getGlobalDataKey();
+
+  // allocate fields
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     gatherFields_[fd] =
@@ -109,32 +114,28 @@ GatherSolution_BlockedEpetra(
   }
 
   // Setup dependent tangent fields if requested
-  Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
-  if (p.isType< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names")) {
-    tangent_field_names = p.get< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names");
-    if (tangent_field_names != Teuchos::null) {
-      TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names->size());
+  if (tangent_field_names.size()>0) {
+    TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names.size());
 
-      has_tangent_fields_ = true;
-      tangentFields_.resize(gatherFields_.size());
-      for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-        tangentFields_[fd].resize((*tangent_field_names)[fd].size());
-        for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
-          tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
-          this->addDependentField(tangentFields_[fd][i]);
-        }
+    has_tangent_fields_ = true;
+    tangentFields_.resize(gatherFields_.size());
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+      tangentFields_[fd].resize(tangent_field_names[fd].size());
+      for (std::size_t i=0; i<tangent_field_names[fd].size(); ++i) {
+        tangentFields_[fd][i] =
+          PHX::MDField<ScalarT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
+        this->addDependentField(tangentFields_[fd][i]);
       }
     }
   }
 
-  if (p.isType<bool>("Use Time Derivative Solution Vector"))
-    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
 
-  if (p.isType<std::string>("Global Data Key"))
-     globalDataKey_ = p.get<std::string>("Global Data Key");
-
-  this->setName("Gather Solution");
+  std::string n = "GatherSolution (BlockedEpetra): "+firstName+" ()";
+  this->setName(n);
 }
 
 // **********************************************************************
@@ -143,13 +144,13 @@ void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO
 postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& fm)
 {
-  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    const std::string& fieldName = (*indexerNames_)[fd];
+    const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
@@ -162,7 +163,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
         this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
-  indexerNames_ = Teuchos::null;  // Don't need this anymore
+  indexerNames_.clear();  // Don't need this anymore
 }
 
 // **********************************************************************
@@ -261,18 +262,22 @@ GatherSolution_BlockedEpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
-  , useTimeDerivativeSolutionVector_(false)
-  , globalDataKey_("Solution Gather Container")
   , has_tangent_fields_(false)
 {
-  const std::vector<std::string>& names =
-    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+  typedef std::vector< std::vector<std::string> > vvstring;
 
-  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+  GatherSolution_Input input;
+  input.setParameterList(p);
 
-  Teuchos::RCP<panzer::PureBasis> basis =
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
+  const std::vector<std::string> & names      = input.getDofNames();
+  Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
+  const vvstring & tangent_field_names        = input.getTangentNames();
 
+  indexerNames_                    = input.getIndexerNames();
+  useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
+  globalDataKey_                   = input.getGlobalDataKey();
+
+  // allocate fields
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     gatherFields_[fd] =
@@ -281,32 +286,28 @@ GatherSolution_BlockedEpetra(
   }
 
   // Setup dependent tangent fields if requested
-  Teuchos::RCP< std::vector< std::vector<std::string> > > tangent_field_names;
-  if (p.isType< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names")) {
-    tangent_field_names = p.get< Teuchos::RCP< std::vector< std::vector<std::string> > > >("Tangent Names");
-    if (tangent_field_names != Teuchos::null) {
-      TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names->size());
+  if (tangent_field_names.size()>0) {
+    TEUCHOS_ASSERT(gatherFields_.size() == tangent_field_names.size());
 
-      has_tangent_fields_ = true;
-      tangentFields_.resize(gatherFields_.size());
-      for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
-        tangentFields_[fd].resize((*tangent_field_names)[fd].size());
-        for (std::size_t i=0; i<(*tangent_field_names)[fd].size(); ++i) {
-          tangentFields_[fd][i] =
-            PHX::MDField<ScalarT,Cell,NODE>((*tangent_field_names)[fd][i],basis->functional);
-          this->addDependentField(tangentFields_[fd][i]);
-        }
+    has_tangent_fields_ = true;
+    tangentFields_.resize(gatherFields_.size());
+    for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
+      tangentFields_[fd].resize(tangent_field_names[fd].size());
+      for (std::size_t i=0; i<tangent_field_names[fd].size(); ++i) {
+        tangentFields_[fd][i] =
+          PHX::MDField<ScalarT,Cell,NODE>(tangent_field_names[fd][i],basis->functional);
+        this->addDependentField(tangentFields_[fd][i]);
       }
     }
   }
 
-  if (p.isType<bool>("Use Time Derivative Solution Vector"))
-    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
 
-  if (p.isType<std::string>("Global Data Key"))
-     globalDataKey_ = p.get<std::string>("Global Data Key");
-
-  this->setName("Gather Solution");
+  std::string n = "GatherSolution Tangent (BlockedEpetra): "+firstName+" ()";
+  this->setName(n);
 }
 
 // **********************************************************************
@@ -315,13 +316,13 @@ void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>
 postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& fm)
 {
-  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
-    const std::string& fieldName = (*indexerNames_)[fd];
+    const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
@@ -334,7 +335,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
         this->utils.setFieldData(tangentFields_[fd][i],fm);
   }
 
-  indexerNames_ = Teuchos::null;  // Don't need this anymore
+  indexerNames_.clear();  // Don't need this anymore
 }
 
 // **********************************************************************
@@ -440,39 +441,45 @@ GatherSolution_BlockedEpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
   const Teuchos::ParameterList& p)
   : gidIndexer_(indexer)
-  , useTimeDerivativeSolutionVector_(false)
-  , disableSensitivities_(false)
-  , globalDataKey_("Solution Gather Container")
 {
-  const std::vector<std::string>& names =
-    *(p.get< Teuchos::RCP< std::vector<std::string> > >("DOF Names"));
+  typedef std::vector< std::vector<std::string> > vvstring;
 
-  indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
+  GatherSolution_Input input;
+  input.setParameterList(p);
 
-  Teuchos::RCP<PHX::DataLayout> dl =
-    p.get< Teuchos::RCP<panzer::PureBasis> >("Basis")->functional;
+  const std::vector<std::string> & names      = input.getDofNames();
+  Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
+  const vvstring & tangent_field_names        = input.getTangentNames();
+
+  indexerNames_                    = input.getIndexerNames();
+  useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();
+  globalDataKey_                   = input.getGlobalDataKey();
+
+  // gatherSeedIndex_                 = input.getGatherSeedIndex();
+  // sensitivitiesName_               = input.getSensitivitiesName();
+  disableSensitivities_            = !input.firstSensitivitiesAvailable();
 
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
-    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],dl);
+    PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);
     gatherFields_[fd] = f;
     this->addEvaluatedField(gatherFields_[fd]);
   }
 
-  if (p.isType<bool>("Use Time Derivative Solution Vector"))
-    useTimeDerivativeSolutionVector_ = p.get<bool>("Use Time Derivative Solution Vector");
-
-  if (p.isType<bool>("Disable Sensitivities"))
-    disableSensitivities_ = p.get<bool>("Disable Sensitivities");
-
-  if (p.isType<std::string>("Global Data Key"))
-     globalDataKey_ = p.get<std::string>("Global Data Key");
+  // figure out what the first active name is
+  std::string firstName = "<none>";
+  if(names.size()>0)
+    firstName = names[0];
 
   // print out convenience
-  if(disableSensitivities_)
-     this->setName("Gather Solution (No Sensitivities)");
-  else
-     this->setName("Gather Solution");
+  if(disableSensitivities_) {
+    std::string n = "GatherSolution (BlockedEpetra, No Sensitivities): "+firstName+" ("+PHX::typeAsString<EvalT>()+")";
+    this->setName(n);
+  }
+  else {
+    std::string n = "GatherSolution (BlockedEpetra): "+firstName+" ("+PHX::typeAsString<EvalT>()+") ";
+    this->setName(n);
+  }
 }
 
 // **********************************************************************
@@ -481,21 +488,21 @@ void panzer::GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO
 postRegistrationSetup(typename TRAITS::SetupData d,
                       PHX::FieldManager<TRAITS>& fm)
 {
-  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
+  TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     //std::string fieldName = gatherFields_[fd].fieldTag().name();
-    const std::string& fieldName = (*indexerNames_)[fd];
+    const std::string& fieldName = indexerNames_[fd];
     fieldIds_[fd] = gidIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
   }
 
-  indexerNames_ = Teuchos::null;  // Don't need this anymore
+  indexerNames_.clear();  // Don't need this anymore
 }
 
 template<typename TRAITS,typename LO,typename GO>

@@ -164,7 +164,7 @@ buildClosureModels(const std::string& model_id,
             p.set("DOF Names", dof_names);
             p.set("Indexer Names", dof_names);
             p.set("Sensitivities Name", key);
-            p.set("Disable Sensitivities", false);
+            p.set("First Sensitivities Available", true);
             p.set("Gather Seed Index", 0);
             p.set("Global Data Key", key);
 

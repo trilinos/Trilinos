@@ -117,6 +117,7 @@ public:
 
 private:
 
+  typedef typename panzer::Traits::Residual EvalT;
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
   // maps the local (field,element,basis) triplet to a global ID
@@ -126,7 +127,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -172,8 +173,8 @@ public:
 
 private:
 
+  typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
-  //typedef typename panzer::Traits::RealType RealT;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -182,7 +183,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -242,7 +243,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;     // This disables sensitivities absolutely
   std::string sensitivitiesName_; // This sets which gather operations have sensitivities
