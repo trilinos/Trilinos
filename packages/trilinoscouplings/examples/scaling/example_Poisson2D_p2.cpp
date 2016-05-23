@@ -180,6 +180,8 @@ void CreateLinearSystem(int numWorkSets,
                         Epetra_Time &Time
                        );
 
+void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Epetra_CrsMatrix * P);
+
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
 /**********************************************************************************/
@@ -646,10 +648,10 @@ int main(int argc, char *argv[]) {
    CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
    // Only works in serial
-   std::vector<bool>nodeIsOwned(P2_numNodes,true);
-   std::vector<int>globalNodeIds(P2_numNodes);
+   std::vector<bool>P2_nodeIsOwned(P2_numNodes,true);
+   std::vector<int>P2_globalNodeIds(P2_numNodes);
    for(int i=0; i<P2_numNodes; i++)
-     globalNodeIds[i]=i;
+     P2_globalNodeIds[i]=i;
 
    std::vector<double> P2_nodeCoordx(P2_numNodes);
    std::vector<double> P2_nodeCoordy(P2_numNodes);
@@ -659,6 +661,7 @@ int main(int argc, char *argv[]) {
     }
 
    // Reset constants
+   int P1_numNodes =numNodes;
    numNodes = P2_numNodes;
    numNodesGlobal = numNodes;
 
@@ -698,9 +701,9 @@ int main(int argc, char *argv[]) {
 
    // Define basis
    Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> > myHGradBasis;
-     int numFieldsG = myHGradBasis.getCardinality();
-     FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
-     FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
+   int numFieldsG = myHGradBasis.getCardinality();
+   FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
+   FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
      myHGradBasis.getValues(HGBValues, cubPoints, OPERATOR_VALUE);
@@ -713,25 +716,42 @@ int main(int argc, char *argv[]) {
 /**********************************************************************************/
 /********************* BUILD MAPS FOR GLOBAL SOLUTION *****************************/
 /**********************************************************************************/
-    // Count owned nodes
-    int ownedNodes=0;
-    for(int i=0;i<numNodes;i++)
-      if(nodeIsOwned[i]) ownedNodes++;
-
-
+    // Count owned nodes (P2)
+   int P2_ownedNodes=0;
+   for(int i=0;i<numNodes;i++)
+     if(P2_nodeIsOwned[i]) P2_ownedNodes++;
 
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
-    int *ownedGIDs=new int[ownedNodes];
-    int oidx=0;
+   std::vector<int> P2_ownedGIDs(P2_ownedNodes);
+   int oidx=0;
     for(int i=0;i<numNodes;i++)
-      if(nodeIsOwned[i]){
-        ownedGIDs[oidx]=(int)globalNodeIds[i];
+      if(P2_nodeIsOwned[i]){
+        P2_ownedGIDs[oidx]=(int)P2_globalNodeIds[i];
         oidx++;
       }
-   
+
+    // Count owned nodes (P1)
+    int P1_ownedNodes=0;
+    for(int i=0;i<P1_numNodes;i++)
+      if(P1_nodeIsOwned[i]) P1_ownedNodes++;
+    std::vector<int> P1_ownedGIDs(P1_ownedNodes);
+    oidx=0;
+    for(int i=0;i<P1_numNodes;i++)
+      if(P1_nodeIsOwned[i]){
+        P1_ownedGIDs[oidx]=(int)P1_globalNodeIds[i];
+        oidx++;
+      }
+       
     // Generate epetra map for nodes
-    Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+    Epetra_Map globalMapG(-1,P2_ownedNodes,&P2_ownedGIDs[0],0,Comm);
+    
+    // Generate p1 map
+    Epetra_Map P1_globalMap(-1,P1_ownedNodes,&P1_ownedGIDs[0],0,Comm);
+
+    // Genetrate P2-to-P1 coarsening.
+    Epetra_CrsMatrix *P_linear;
+    GenerateLinearCoarsening_p2_to_p1(elemToNode,P1_globalMap,globalMapG,P_linear);
 
     // Global arrays in Epetra format
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
@@ -782,33 +802,32 @@ int main(int argc, char *argv[]) {
 
   int numBCNodes = 0;
   for (int inode = 0; inode < numNodes; inode++){
-     if (nodeOnBoundary(inode) && nodeIsOwned[inode]){
+     if (nodeOnBoundary(inode) && P2_nodeIsOwned[inode]){
         numBCNodes++;
      }
   }
 
 
-
   // Vector for use in applying BCs
-  Epetra_MultiVector v(globalMapG,true);
-  v.PutScalar(0.0);
+   Epetra_MultiVector v(globalMapG,true);
+   v.PutScalar(0.0);
 
-  // Set v to boundary values on Dirichlet nodes
-  int * BCNodes = new int [numBCNodes];
-  int indbc=0;
-  int iOwned=0;
-  for (int inode=0; inode<numNodes; inode++){
-    if (nodeIsOwned[inode]){
-      if (nodeOnBoundary(inode)){
-        BCNodes[indbc]=iOwned;
-        indbc++;
-        double x  = nodeCoord(inode, 0);
-        double y  = nodeCoord(inode, 1);
-        v[0][iOwned]=exactSolution(x, y);
+   // Set v to boundary values on Dirichlet nodes
+    int * BCNodes = new int [numBCNodes];
+    int indbc=0;
+    int iOwned=0;
+    for (int inode=0; inode<numNodes; inode++){
+      if (P2_nodeIsOwned[inode]){
+        if (nodeOnBoundary(inode)){
+           BCNodes[indbc]=iOwned;
+           indbc++;
+           double x  = nodeCoord(inode, 0);
+           double y  = nodeCoord(inode, 1);
+           v[0][iOwned]=exactSolution(x, y);
+        }
+         iOwned++;
       }
-      iOwned++;
     }
-  }
 
     
   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
@@ -842,7 +861,7 @@ int main(int argc, char *argv[]) {
                      cubWeights,
                      HGBGrads,
                      HGBValues,
-                     globalNodeIds,
+                     P2_globalNodeIds,
                      P2_cellType,
                      StiffMatrix,
                      rhsVector,
@@ -876,7 +895,6 @@ int main(int argc, char *argv[]) {
 
   cubPoints(numCubPoints, cubDim);
   cubWeights(numCubPoints);
-
   myCub->getCubature(cubPoints, cubWeights);
 
   if(MyPID==0) {std::cout << "Getting cubature for auxiliary P1 mesh      "
@@ -913,7 +931,7 @@ int main(int argc, char *argv[]) {
                      cubWeights,
                      HGBGrads_aux,
                      HGBValues_aux,
-                     globalNodeIds,
+                     P2_globalNodeIds,
                      P1_cellType,
                      StiffMatrix_aux,
                      rhsVector_aux,
@@ -941,18 +959,18 @@ int main(int argc, char *argv[]) {
   StiffMatrix.Apply(v,rhsDir);
 
   // Update right-hand side
-  rhsVector.Update(-1.0,rhsDir,1.0);
+   rhsVector.Update(-1.0,rhsDir,1.0);
 
-  // Adjust rhs due to Dirichlet boundary conditions
-  iOwned=0;
-  for (int inode=0; inode<numNodes; inode++){
-    if (nodeIsOwned[inode]){
-      if (nodeOnBoundary(inode)){
-        rhsVector[0][iOwned]=v[0][iOwned];
+    // Adjust rhs due to Dirichlet boundary conditions
+   iOwned=0;
+   for (int inode=0; inode<numNodes; inode++){
+      if (P2_nodeIsOwned[inode]){
+        if (nodeOnBoundary(inode)){
+           rhsVector[0][iOwned]=v[0][iOwned];
+        }
+        iOwned++;
       }
-      iOwned++;
-    }
-  }
+   }
 
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
@@ -970,7 +988,7 @@ int main(int argc, char *argv[]) {
   // Adjust rhs due to Dirichlet boundary conditions
   iOwned=0;
   for (int inode=0; inode<numNodes; inode++){
-    if (nodeIsOwned[inode]){
+    if (P2_nodeIsOwned[inode]){
       if (nodeOnBoundary(inode)){
         rhsVector_aux[0][iOwned]=v[0][iOwned];
       }
@@ -1018,12 +1036,12 @@ int main(int argc, char *argv[]) {
 
   // Get exact solution at nodes
   for (int i = 0; i<numNodes; i++) {
-     if (nodeIsOwned[i]){
+     if (P2_nodeIsOwned[i]){
       double x = nodeCoord(i,0);
       double y = nodeCoord(i,1);
       double exactu = exactSolution(x, y);
 
-      int rowindex=globalNodeIds[i];
+      int rowindex=P2_globalNodeIds[i];
       exactNodalVals.SumIntoGlobalValues(1, &rowindex, &exactu);
     }
   }
@@ -1113,7 +1131,7 @@ int main(int argc, char *argv[]) {
                 cellWorksetEr(cellCounter, node, 0) = nodeCoord( elemToNode(cell, node), 0);
                 cellWorksetEr(cellCounter, node, 1) = nodeCoord( elemToNode(cell, node), 1);
 
-                int rowIndex  = globalNodeIds[elemToNode(cell, node)];
+                int rowIndex  = P2_globalNodeIds[elemToNode(cell, node)];
 #ifdef HAVE_MPI
                worksetApproxSolnCoef(cellCounter, node) = uCoeff.Values()[rowIndex];
 #else
@@ -1240,7 +1258,6 @@ int main(int argc, char *argv[]) {
    delete [] element_attributes;
    delete [] element_types;
    delete [] elmt_node_linkage;
-   delete [] ownedGIDs;
    delete [] elements;
    delete [] P1_globalNodeIds;
    delete [] P1_nodeIsOwned;
@@ -1965,3 +1982,42 @@ void CreateLinearSystem(int numWorksets,
   }// *** workset loop ***
 
 } //CreateLinearSystem
+
+/*********************************************************************************************************/
+void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Epetra_CrsMatrix * P) {
+
+  // Generate a P matrix that uses the linear coarsening from p2 to p1 on the base mesh.
+  // This presumes that the P2 element has all of the P1 nodes numbered first
+  // Resulting matrix is #P2nodes x #P1nodes
+  double one     = 1.0;
+  double half    = 0.5;    
+  double quarter = 0.25;
+  int edge_node0_id[4]={0,1,2,3};
+  int edge_node1_id[4]={1,2,3,0};
+  
+  int Nelem=P2_elemToNode.dimension(0);
+  if(P2_elemToNode.dimension(1) != 9) throw std::runtime_error("Unidentified element type");
+  
+  P = new Epetra_CrsMatrix(Copy,P2_map,0);
+
+  for(int i=0; i<Nelem; i++)
+    for(int j=0; j<P2_elemToNode.dimension(1); j++) {
+      int row = P2_elemToNode(i,j);
+
+      if(j<4) {
+	P->InsertGlobalValues(row,1,&one,&row);
+      }
+      else if (j>=4 && j<8){
+	int col0 = P2_elemToNode(i,edge_node0_id[j-4]);
+	int col1 = P2_elemToNode(i,edge_node1_id[j-4]);
+	P->InsertGlobalValues(row,1,&half,&col0);	
+	P->InsertGlobalValues(row,1,&half,&col1);
+      }
+      else {
+	int cols[4] = {P2_elemToNode(i,0),P2_elemToNode(i,1),P2_elemToNode(i,2),P2_elemToNode(i,3)};
+	double vals[4] = {quarter, quarter,quarter,quarter};
+	P->InsertGlobalValues(row,3,&vals[0],&cols[0]);
+      }	 
+    }
+  P->FillComplete(P1_map,P2_map);
+}
