@@ -592,8 +592,6 @@ int main(int argc, char *argv[]) {
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
-    std::cout << ">>>>>>>>>>>>>>> numNodes = " << numNodes << std::endl;
-
    // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> P1_nodeOnBoundary(numNodes);
 
@@ -637,7 +635,6 @@ int main(int argc, char *argv[]) {
    // Generate higher order mesh
    // NOTE: Only correct in serial
    int P2_numNodes = numNodes + P1_edgeCoord.dimension(0) + numElems;
-   std::cout << ">>>>>>>>>>>>>>>>>>>> P2_numNodes = " << P2_numNodes << std::endl;
    FieldContainer<int>    elemToNode(numElems,9); //because quads
    FieldContainer<double> nodeCoord(P2_numNodes,dim);
    FieldContainer<int>   nodeOnBoundary(P2_numNodes);
@@ -702,7 +699,6 @@ int main(int argc, char *argv[]) {
    // Define basis
    Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> > myHGradBasis;
      int numFieldsG = myHGradBasis.getCardinality();
-     std::cout << ">>>>>>>>>>>>>>>>>>> numFieldsG = " << numFieldsG << std::endl;
      FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
      FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
 
@@ -726,7 +722,6 @@ int main(int argc, char *argv[]) {
 
     // Build a list of the OWNED global ids...
     // NTS: will need to switch back to long long
-    std::cout << ">>>>>>>>>>>>>>>>>> ownedNodes = " << ownedNodes << std::endl;
     int *ownedGIDs=new int[ownedNodes];
     int oidx=0;
     for(int i=0;i<numNodes;i++)
@@ -892,7 +887,6 @@ int main(int argc, char *argv[]) {
   // Define basis
   Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
-  std::cout << ">>>>>>>>>>>>>>>>>>> numFieldsG_aux (aux) = " << numFieldsG_aux << std::endl;
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints);
   FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints, spaceDim);
   HGBValues_aux(numFieldsG_aux, numCubPoints);
