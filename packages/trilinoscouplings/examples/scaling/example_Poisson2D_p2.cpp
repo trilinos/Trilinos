@@ -644,7 +644,8 @@ int main(int argc, char *argv[]) {
    PromoteMesh(2,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
                elemToNode, nodeCoord, nodeOnBoundary);
 
-   FieldContainer<int> aux_P1_elemToNode(numElems*4,P1_numNodesPerElem); //4 P1 elements per P2 element
+   long long numElems_aux = numElems*4;  //4 P1 elements per P2 element in auxiliary mesh
+   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per P2 element
    CreateP1MeshFromP2Mesh(elemToNode, aux_P1_elemToNode);
 
    // Only works in serial
@@ -907,9 +908,9 @@ int main(int argc, char *argv[]) {
   Epetra_FECrsMatrix StiffMatrix_aux(Copy, globalMapG, 20*numFieldsG_aux);
   Epetra_FEVector rhsVector_aux(globalMapG);
 
-  desiredWorksetSize = numElems;
-  numWorksets        = numElems/desiredWorksetSize;
-  if(numWorksets*desiredWorksetSize < numElems) numWorksets += 1;
+  desiredWorksetSize = numElems_aux;
+  numWorksets        = numElems_aux/desiredWorksetSize;
+  if(numWorksets*desiredWorksetSize < numElems_aux) numWorksets += 1;
   CreateLinearSystem(numWorksets,
                      desiredWorksetSize,
                      aux_P1_elemToNode,
@@ -966,7 +967,6 @@ int main(int argc, char *argv[]) {
   ///////////////////////////////////////////
   // Apply BCs to auxiliary P1 matrix
   ///////////////////////////////////////////
-#ifdef BUSTED_AND_I_DONT_KNOW_WHY
   // Apply stiffness matrix to v
   StiffMatrix_aux.Apply(v,rhsDir);
 
@@ -990,8 +990,6 @@ int main(int argc, char *argv[]) {
   std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
   ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix_aux);
 
-#endif
-
   delete [] BCNodes;
 
   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
@@ -1002,6 +1000,9 @@ int main(int argc, char *argv[]) {
   // Dump matrices to disk
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
+  EpetraExt::RowMatrixToMatlabFile("stiff_matrix_aux.dat",StiffMatrix_aux);
+  EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_aux.dat",rhsVector_aux,0,0,false);
+#undef DUMP_DATA
 #endif
 
 /**********************************************************************************/
@@ -1777,6 +1778,26 @@ void CreateLinearSystem(int numWorksets,
   int numFieldsG = HGBGrads.dimension(0);
   long long numElems = elemToNode.dimension(0);
   int numNodesPerElem = cellType.getNodeCount();
+
+  /*
+  std::cout << "CreateLinearSystem:" << std::endl;
+  std::cout << "     numCubPoints = " << numCubPoints << std::endl;
+  std::cout << "     cubDim = " << cubDim << std::endl;
+  std::cout << "     spaceDim = " << spaceDim << std::endl;
+  std::cout << "     numFieldsG = " << numFieldsG << std::endl;
+  std::cout << "     numElems = " << numElems << std::endl;
+  std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
+  std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
+  std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
+  */
+
+  if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
+    std::ostringstream errStr;
+    errStr << "Error: CreateLinearSystem: length of coordinates != #nodes ("
+           << nodeCoord.dimension(0) << "!=" << globalNodeIds.size() << ")";
+    throw std::runtime_error(errStr.str());
+  }
+
   for(int workset = 0; workset < numWorksets; workset++){
 
     // Compute cell numbers where the workset starts and ends
@@ -1789,6 +1810,8 @@ void CreateLinearSystem(int numWorksets,
 
     // Now we know the actual workset size and can allocate the array for the cell nodes
     worksetSize  = worksetEnd - worksetBegin;
+    //std::cout << "     cellWorkset: begin=" << worksetBegin << ", end=" << worksetEnd
+    //          << ", size=" << worksetSize << std::endl;
     FieldContainer<double> cellWorkset(worksetSize, numNodesPerElem, spaceDim);
 
     // Copy coordinates into cell workset
