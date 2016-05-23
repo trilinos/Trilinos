@@ -42,12 +42,9 @@
 #ifndef TPETRA_DIRECTORY_HPP
 #define TPETRA_DIRECTORY_HPP
 
-#include <Teuchos_as.hpp>
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_Distributor.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_DirectoryImpl.hpp>
-#include <Tpetra_DirectoryImpl_def.hpp>
+#include "Tpetra_Distributor.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_DirectoryImpl.hpp"
 #include "Tpetra_Directory_decl.hpp"
 
 namespace Tpetra {

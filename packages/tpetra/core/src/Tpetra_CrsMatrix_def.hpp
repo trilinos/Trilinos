@@ -53,10 +53,8 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
-#include "Tpetra_Util.hpp"
+//#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_ArrayRCP.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include <typeinfo>
 

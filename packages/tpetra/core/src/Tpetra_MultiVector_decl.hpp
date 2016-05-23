@@ -51,19 +51,14 @@
 /// Tpetra::MultiVector, include this file
 /// (Tpetra_MultiVector_decl.hpp).
 
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map_decl.hpp"
-
 #include "Kokkos_DualView.hpp"
-
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_Range1D.hpp"
-
-#include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Kokkos_ArithTraits.hpp"
-
+#include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
 #include <type_traits>
 

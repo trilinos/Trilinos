@@ -51,9 +51,6 @@
 /// "Tpetra_CrsGraph_decl.hpp".
 
 #include "Tpetra_Distributor.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_NullIteratorTraits.hpp"
-#include "Teuchos_as.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 #include <algorithm>
@@ -568,7 +565,6 @@ namespace Tpetra {
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
-    using Teuchos::as;
     using Teuchos::ParameterList;
     using Teuchos::parameterList;
     using Teuchos::rcp;
@@ -3210,7 +3206,6 @@ namespace Tpetra {
   globalAssemble ()
   {
     using Teuchos::Array;
-    using Teuchos::as;
     using Teuchos::Comm;
     using Teuchos::gatherAll;
     using Teuchos::ireceive;
@@ -3384,7 +3379,7 @@ namespace Tpetra {
       numSends++; // one last increment, to make it a count instead of an index
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      as<typename Array<int>::size_type> (numSends) != sendIDs.size (),
+      static_cast<typename Array<int>::size_type> (numSends) != sendIDs.size (),
       std::logic_error, ": internal logic error. Contact Tpetra team.");
 
     // don't need this data anymore
@@ -4475,7 +4470,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeGlobalConstants ()
   {
-    using Teuchos::as;
     using Teuchos::outArg;
     using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
