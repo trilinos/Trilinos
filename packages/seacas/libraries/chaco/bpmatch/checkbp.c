@@ -69,7 +69,7 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
 
   for (i = 1; i <= nvtxs; i++) {
     /* Is vertex closest to the set it is assigned to? */
-    for (j     = 0; j < ndims; j++)
+    for (j     = 0; j < MAXDIMS; j++)
       signs[j] = -1;
     bestval    = 0;
     for (j = 0; j < nsets; j++) {
