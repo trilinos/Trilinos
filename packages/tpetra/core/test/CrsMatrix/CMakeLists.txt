@@ -92,15 +92,61 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_WithGraph
-  SOURCES
-    CrsMatrix_WithGraph
+# We split the CrsMatrix_WithGraph test by execution space.
+# This speeds up the build.
+
+ASSERT_DEFINED (Tpetra_INST_CUDA)
+IF (Tpetra_INST_CUDA) 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Cuda
+    SOURCES
+      CrsMatrix_WithGraph_Cuda
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ${ARGS}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_OPENMP)
+IF (Tpetra_INST_OPENMP) 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_OpenMP
+    SOURCES
+      CrsMatrix_WithGraph_OpenMP
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_SERIAL)
+IF (Tpetra_INST_SERIAL) 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Serial
+    SOURCES
+      CrsMatrix_WithGraph_Serial
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
+ASSERT_DEFINED (Tpetra_INST_PTHREAD)
+IF (Tpetra_INST_PTHREAD) 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_WithGraph_Threads
+    SOURCES
+      CrsMatrix_WithGraph_Threads
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ARGS ${ARGS}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceDomainMapAndImporter
