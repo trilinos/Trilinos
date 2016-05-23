@@ -264,7 +264,7 @@ namespace Iohb {
         if (!tsFormat.empty()) {
           new_this->legend_->add_literal("+");
           new_this->legend_->add_literal(time_stamp(tsFormat));
-          new_this->legend_->add_literal(" ");
+          new_this->legend_->add_literal(separator_);
         }
 
         if (addTimeField) {
@@ -293,7 +293,7 @@ namespace Iohb {
     if (tsFormat != "") {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
-      layout_->add_literal(" ");
+      layout_->add_literal(separator_);
     }
 
     if (addTimeField) {
