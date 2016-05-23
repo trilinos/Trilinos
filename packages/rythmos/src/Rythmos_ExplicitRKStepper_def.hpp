@@ -202,7 +202,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     return stepSizeTaken;
   }  else {
       isVariableStep_ = true;
-      int desiredOrder;
+
       stepControl_->setOStream(out);
       stepControl_->setVerbLevel(verbLevel);
 
