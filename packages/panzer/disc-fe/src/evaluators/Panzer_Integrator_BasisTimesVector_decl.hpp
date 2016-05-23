@@ -61,7 +61,7 @@ PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
+  Kokkos::View<PHX::MDField<ScalarT,Cell,IP>* > field_multipliers;
 
   std::size_t basis_card;
 
@@ -74,11 +74,19 @@ PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
   std::string basis_name;
   std::size_t basis_index;
 
-  // Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
-  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
+public:
 
+  typedef PHX::Device::scratch_memory_space shmem_space ;
+
+  template<int NUM_FIELD_MULT>
+  struct FieldMultTag{};
+
+  template<int NUM_FIELD_MULT>
+  void operator()(const FieldMultTag<NUM_FIELD_MULT> &, const std::size_t &cell) const;
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
+
+  PHX::MDField<double,Cell,BASIS,IP,Dim> weighted_basis_vector;
 
 PANZER_EVALUATOR_CLASS_END
 
