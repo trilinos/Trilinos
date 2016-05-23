@@ -8,6 +8,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Aprepro_lib libraries/aprepro_lib   SS  REQUIRED
   Supes       libraries/supes         SS  REQUIRED
   Suplib      libraries/suplib        SS  REQUIRED
+  SuplibC     libraries/suplib_c      SS  REQUIRED
   SuplibCpp   libraries/suplib_cpp    SS  REQUIRED
   SVDI        libraries/svdi          SS  OPTIONAL
   PLT         libraries/plt           SS  OPTIONAL
@@ -42,3 +43,4 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 )
 
 SET(LIB_OPTIONAL_DEP_TPLS MPI)
+
