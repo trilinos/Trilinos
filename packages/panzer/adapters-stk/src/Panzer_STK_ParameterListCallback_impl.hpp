@@ -123,7 +123,7 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
 {
    TEUCHOS_ASSERT(fieldPatterns_.size()>0); // must be at least one field pattern
 
-   std::map<std::string,Intrepid2::FieldContainer<double> > data;
+   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
    std::map<std::string,Teuchos::RCP<const panzer::Intrepid2FieldPattern> >::const_iterator itr; 
    for(itr=fieldPatterns_.begin();itr!=fieldPatterns_.end();++itr) {
@@ -132,8 +132,8 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
-      fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
+      realloc(fieldData,connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
          // get degree of freedom coordiantes

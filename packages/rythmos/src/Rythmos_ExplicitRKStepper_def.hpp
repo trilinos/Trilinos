@@ -177,7 +177,159 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitRKStepper<Scalar>::g
 }
 
 template<class Scalar>
-Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
+Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
+{
+
+  RCP<FancyOStream> out = this->getOStream();
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  Teuchos::OSTab ostab(out,1,"takeStep");
+  Scalar stepSizeTaken;
+
+
+  // not needed for this
+  int desiredOrder;
+
+  if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
+    *out
+      << "\nEntering "
+      << Teuchos::TypeNameTraits<ExplicitRKStepper<Scalar> >::name()
+      << "::takeStep("<<dt<<","<<toString(stepSizeType)<<") ...\n";
+  }
+
+
+  if (stepSizeType == STEP_TYPE_FIXED) {
+    stepSizeTaken = takeFixedStep_(dt , stepSizeType);
+    return stepSizeTaken;
+  }  else {
+      isVariableStep_ = true;
+
+      stepControl_->setOStream(out);
+      stepControl_->setVerbLevel(verbLevel);
+
+      rkNewtonConvergenceStatus_ = -1;
+
+      while (rkNewtonConvergenceStatus_ < 0){
+
+         stepControl_->setRequestedStepSize(*this, dt, stepSizeType);
+         stepControl_->nextStepSize(*this, &dt, &stepSizeType, &desiredOrder);
+
+         stepSizeTaken = takeVariableStep_(dt, stepSizeType);
+
+      }
+     return stepSizeTaken;
+  }
+
+
+}
+
+
+template<class Scalar>
+Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType stepSizeType)
+{
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
+  this->initialize_();
+
+  // Store old solution & old time
+  V_V(solution_vector_old_.ptr(), *solution_vector_);
+  t_old_ = t_;
+  Scalar current_dt = dt;
+  Scalar t = timeRange_.upper();
+  Scalar dt_to_return;
+  AttemptedStepStatusFlag status;
+  Scalar dt_old = dt;
+
+  dt_ = dt;
+
+  int stages = erkButcherTableau_->numStages();
+  Teuchos::SerialDenseMatrix<int,Scalar> A = erkButcherTableau_->A();
+  Teuchos::SerialDenseVector<int,Scalar> b = erkButcherTableau_->b();
+  Teuchos::SerialDenseVector<int,Scalar> c = erkButcherTableau_->c();
+
+ 
+  // Compute stage solutions
+  for (int s=0 ; s < stages ; ++s) {
+    Thyra::assign(ktemp_vector_.ptr(), *solution_vector_); // ktemp = solution_vector
+    for (int j=0 ; j < s ; ++j) { // assuming Butcher matix is strictly lower triangular
+      if (A(s,j) != ST::zero()) {
+        Thyra::Vp_StV(ktemp_vector_.ptr(), A(s,j), *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
+      }
+    }
+    TScalarMag ts = t_ + c(s)*dt;
+    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
+    Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
+  }
+  // Sum for solution:
+  for (int s=0 ; s < stages ; ++s) {
+    if (b(s) != ST::zero()) {
+      Thyra::Vp_StV(solution_vector_.ptr(), b(s), *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+    }
+  }
+
+
+   if (erkButcherTableau_->isEmbeddedMethod() ){ 
+       rkNewtonConvergenceStatus_ = 0; // cheat and say that the solver converged ( although no solver is needed for explicit method )
+       stepControl_->setCorrection(*this, solution_vector_, Teuchos::null , rkNewtonConvergenceStatus_);
+       bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
+       Teuchos::SerialDenseVector<int,Scalar> bhat = erkButcherTableau_->bhat();
+
+       //std::cout << "(SIDAFA2 -- got here!!!)- LETValue_ = " <<  LETvalue_ << std::endl;
+        // Sum for Embedded solution:
+        for (int s=0 ; s < stages ; ++s) {
+          if (bhat(s) != ST::zero()) {
+            Thyra::Vp_StV(solution_hat_vector_.ptr(), bhat(s), *k_vector_[s]); // solution_hat_vector += bhat_{s+1}*k_{s+1}
+          }
+        }
+
+        // ee_ = (solution_vector__ - solution_hat_vector_)
+        Thyra::V_VmV(ee_.ptr(), *solution_vector_, *solution_hat_vector_);
+        rkNewtonConvergenceStatus_ = 0;
+        stepControl_->setCorrection(*this, solution_vector_, ee_ , rkNewtonConvergenceStatus_);
+
+       //std::cout << "(SIDAFA4 -- got here!!!)" << std::endl;
+        stepPass = stepControl_->acceptStep(*this, &LETvalue_);
+
+       //std::cout << "stepPass = " << stepPass << std::endl;
+
+        if (!stepPass) { // stepPass = false
+           stepLETStatus_ = STEP_LET_STATUS_FAILED;
+           rkNewtonConvergenceStatus_ = -1; // just making sure here
+        } else { // stepPass = true
+           stepLETStatus_ = STEP_LET_STATUS_PASSED;
+           rkNewtonConvergenceStatus_ = 0; // just making sure here
+        }
+   }
+
+
+   //std::cout << "rkNewtonConvergenceStatus_ = " << rkNewtonConvergenceStatus_ << std::endl;
+
+   if (rkNewtonConvergenceStatus_ == 0) {
+
+     // Update time range
+     timeRange_ = timeRange(t,t+current_dt);
+     numSteps_++;
+
+       //std::cout << "(SIDAFA5 -- got here!!!)" << std::endl;
+     // completeStep only if the none of the stage solution's failed to converged
+     stepControl_->completeStep(*this);
+
+     dt_to_return = current_dt;
+
+     } else {
+        rkNewtonConvergenceStatus_ = -1;
+        status = stepControl_-> rejectStep(*this); // reject the stage value
+        (void) status; // avoid "set but not used" build warning
+        dt_to_return = dt_old;
+     }
+
+  // update current time:
+  t_ = t_ + dt;
+  numSteps_++;
+  return( dt_to_return );
+}
+
+
+template<class Scalar>
+Scalar ExplicitRKStepper<Scalar>::takeFixedStep_(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
@@ -444,6 +596,10 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   solution_vector_ = x_init->clone_v();
   solution_vector_old_ = x_init->clone_v();
 
+ // for the embedded RK method
+  solution_hat_vector_ = x_init->clone_v();
+  ee_ = x_init->clone_v();
+
   // t
 
   t_ = initialCondition.get_t();
@@ -492,8 +648,24 @@ RCP<StepperBase<Scalar> > ExplicitRKStepper<Scalar>::cloneStepperAlgorithm() con
 
 }
 
+template<class Scalar>
+RCP<StepControlStrategyBase<Scalar> > ExplicitRKStepper<Scalar>::getNonconstStepControlStrategy()
+{
+  return(stepControl_);
+}
 
+template<class Scalar>
+RCP<const StepControlStrategyBase<Scalar> > ExplicitRKStepper<Scalar>::getStepControlStrategy() const
+{
+  return(stepControl_);
+}
 
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::setStepControlStrategy(const RCP<StepControlStrategyBase<Scalar> >& stepControl)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(stepControl == Teuchos::null,std::logic_error,"Error, stepControl == Teuchos::null!\n");
+  stepControl_ = stepControl;
+}
 //
 // Explicit Instantiation macro
 //

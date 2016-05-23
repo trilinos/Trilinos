@@ -305,6 +305,8 @@ public:
    */
   virtual void setStepControlData(const StepperBase & stepper);
 
+  bool isEmbeddedRK_; // Sidafa
+
 };
 
 

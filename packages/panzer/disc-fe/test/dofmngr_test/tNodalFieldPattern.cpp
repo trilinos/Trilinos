@@ -79,7 +79,7 @@ namespace panzer {
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 {
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;
 
    basis1 = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
@@ -96,7 +96,7 @@ TEUCHOS_UNIT_TEST(tNodalFieldPattern, test2d_tri_c1)
 TEUCHOS_UNIT_TEST(tNodalFieldPattern, test3d_HEX_c1)
 {
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis1, basis2;
 
    basis1 = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);

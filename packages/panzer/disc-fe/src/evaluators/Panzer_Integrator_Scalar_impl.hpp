@@ -46,6 +46,7 @@
 #include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Kokkos_ViewFactory.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 namespace panzer {
@@ -102,7 +103,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   num_qp = scalar.dimension(1);
 
-  tmp = Intrepid2::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(scalar.get_kokkos_view(),"tmp", scalar.dimension(0), num_qp);
 
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
@@ -140,7 +141,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   // intrepid field container for MDFields.  This is rather involved
   // since we need to change the Worksets.
 
-  // const Intrepid2::FieldContainer<double>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
+  // const Kokkos::DynRankView<double,PHX::Device>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
   int numPoints       = tmp.dimension(1);

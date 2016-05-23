@@ -18,6 +18,7 @@
 #include "Tacho_DenseMatrixTools.hpp"
 
 #include "Tacho_MatrixMarket.hpp"
+#include "Tacho_CrsData.hpp"
 
 #include "Tacho_GraphTools.hpp"
 
@@ -115,7 +116,16 @@ namespace Tacho {
         std::cout << "Failed in open the file: " << file_input << std::endl;
         return -1;
       }
-      MatrixMarket::read(AA_host, in);
+
+      const auto extension = file_input.substr(file_input.find_last_of(".") + 1);
+      if        (extension == "mtx") {
+        std::cout << "CholSuperNodesByBlocks:: Input matrix is MatrixMarket format" << std::endl;
+        MatrixMarket::read(AA_host, in);
+      } else if (extension == "crs") {
+        std::cout << "CholSuperNodesByBlocks:: Input matrix is CRS data format" << std::endl;
+        CrsData::read(AA_host, in);
+        CrsMatrixTools::sortColumnsPerRow(AA_host);
+      }
     }
     double t_read = timer.seconds();
 

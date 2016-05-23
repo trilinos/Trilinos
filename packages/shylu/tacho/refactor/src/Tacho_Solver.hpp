@@ -23,6 +23,7 @@
 #include "Tacho_DenseMatrixTools.hpp"
 
 #include "Tacho_MatrixMarket.hpp"
+#include "Tacho_CrsData.hpp"
 
 #include "Tacho_GraphTools.hpp"
 

@@ -103,7 +103,7 @@ template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  // Intrepid2::FieldContainer<double>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
+  // Kokkos::DynRankView<double,PHX::Device>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
   IntegrationValues2<double> & iv = *this->wda(workset).int_rules[ir_index_];
 
   if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.dimension(2))) {

@@ -76,7 +76,10 @@ int testElement(const std::string &name)
 
   std::cerr << "Testing element '" << name << "'\n";
   // Currently not supported:
-  if (element->name() == "unknown") {
+  if (element->name() == "unknown" ||
+      element->name() == "tetra14" || element->name() == "tetra15" ||
+      element->name() == "tri7" ||
+      element->name() == "wedge20" || element->name() == "wedge21") {
     std::cerr << "\tERROR (EXPECTED): No support for '" << element->name() << "'\n";
     return 0;
   }
@@ -85,7 +88,7 @@ int testElement(const std::string &name)
   stk::topology cell = stk::io::map_ioss_topology_to_stk(element);
   if (cell == stk::topology::INVALID_TOPOLOGY) {
     std::cerr << "\tERROR: Could not find a stk::topology corresponding to the Ioss::ElementTopology element '"
-              << name << "'.";
+              << name << "'.\n";
     return 1;
   }
 

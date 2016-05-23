@@ -50,6 +50,7 @@
 #include "Intrepid2_CellTools.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -115,7 +116,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  faceNormal = Intrepid2::FieldContainer<ScalarT>(dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceNormal = Kokkos::createDynRankView(residual.get_kokkos_view(),"faceNormal",dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -159,10 +160,10 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     int cellDim = parentCell.getDimension();
     int numFaces = dof.dimension(1);
 
-    refFaceNormal = Intrepid2::FieldContainer<ScalarT>(numFaces,cellDim);
+    refFaceNormal = Kokkos::createDynRankView(residual.get_kokkos_view(),"refFaceNormal",numFaces,cellDim);
 
     for(int i=0;i<numFaces;i++) {
-      Intrepid2::FieldContainer<double> refFaceNormal_local(cellDim);
+      Kokkos::DynRankView<double,PHX::Device> refFaceNormal_local(cellDim);
       Intrepid2::CellTools<double>::getReferenceFaceNormal(refFaceNormal_local, i, parentCell);
 
       for(int d=0;d<cellDim;d++) 

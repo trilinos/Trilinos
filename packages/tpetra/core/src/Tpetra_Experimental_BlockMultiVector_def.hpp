@@ -62,16 +62,15 @@ namespace { // anonymous
     typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
 
     static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      typedef typename MultiVectorType::dual_view_type dual_view_type;
-      typedef typename dual_view_type::t_host::memory_space host_memory_space;
-
+      // We need a host pointer, so we need to sync to host.
+      X.template sync<Kokkos::HostSpace> ();
       // We're getting a nonconst View, so mark the MultiVector as
       // modified on the host.  This will throw an exception if the
       // MultiVector is already modified on the host.
-      X.template modify<host_memory_space> ();
+      X.template modify<Kokkos::HostSpace> ();
 
-      dual_view_type X_view = X.getDualView ();
-      impl_scalar_type* X_raw = X_view.h_view.ptr_on_device ();
+      auto X_view_host = X.template getLocalView<Kokkos::HostSpace> ();
+      impl_scalar_type* X_raw = X_view_host.ptr_on_device ();
       return X_raw;
     }
   };

@@ -52,14 +52,13 @@
 #include "Panzer_PointValues.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Intrepid2::FieldContainer;
 
 namespace panzer {
   TEUCHOS_UNIT_TEST(point_values, intrepid_container)
@@ -77,7 +76,7 @@ namespace panzer {
 
     TEST_EQUALITY(point_rule->num_points,num_points);
   
-    panzer::PointValues<double,Intrepid2::FieldContainer<double> > point_values;
+    panzer::PointValues<double,Kokkos::DynRankView<double,PHX::Device> > point_values;
     panzer::Intrepid2FieldContainerFactory af;
 
     point_values.setupArrays(point_rule,af);
@@ -92,11 +91,11 @@ namespace panzer {
     // 0(0,0)---1(1,0)
 
     const int num_vertices = point_rule->topology->getNodeCount();
-    Intrepid2::FieldContainer<double> node_coordinates(num_cells, num_vertices,
-	 				              base_cell_dimension);
+    Kokkos::DynRankView<double,PHX::Device> node_coordinates(num_cells, num_vertices,
+							     base_cell_dimension);
 
 
-    typedef panzer::ArrayTraits<double,FieldContainer<double> >::size_type size_type;
+    typedef panzer::ArrayTraits<double,Kokkos::DynRankView<double,PHX::Device> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
     for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
@@ -124,7 +123,7 @@ namespace panzer {
 
     // Build the evaluation points
 
-    Intrepid2::FieldContainer<double> point_coordinates(num_points, base_cell_dimension);
+    Kokkos::DynRankView<double,PHX::Device> point_coordinates("a",num_points, base_cell_dimension);
     point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
     point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
     point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
@@ -164,7 +163,7 @@ namespace panzer {
     TEST_EQUALITY(point_rule->num_points,num_points);
   
     typedef panzer::Traits::FadType ScalarType;
-    panzer::PointValues<ScalarType,Intrepid2::FieldContainer<ScalarType> > point_values;
+    panzer::PointValues<ScalarType,Kokkos::DynRankView<ScalarType,PHX::Device> > point_values;
     panzer::Intrepid2FieldContainerFactory af;
 
     point_values.setupArrays(point_rule,af);
@@ -179,10 +178,10 @@ namespace panzer {
     // 0(0,0)---1(1,0)
 
     const int num_vertices = point_rule->topology->getNodeCount();
-    Intrepid2::FieldContainer<ScalarType> node_coordinates(num_cells, num_vertices,
-	 				              base_cell_dimension);
+    Kokkos::DynRankView<ScalarType,PHX::Device> node_coordinates("node_coordinates",num_cells, num_vertices,
+								 base_cell_dimension);
 
-    typedef panzer::ArrayTraits<ScalarType,FieldContainer<ScalarType> >::size_type size_type;
+    typedef panzer::ArrayTraits<ScalarType,Kokkos::DynRankView<ScalarType,PHX::Device> >::size_type size_type;
     const size_type x = 0;
     const size_type y = 1;
     for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
@@ -210,7 +209,7 @@ namespace panzer {
 
     // Build the evaluation points
 
-    Intrepid2::FieldContainer<ScalarType> point_coordinates(num_points, base_cell_dimension);
+    Kokkos::DynRankView<ScalarType,PHX::Device> point_coordinates(num_points, base_cell_dimension);
     point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
     point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
     point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side

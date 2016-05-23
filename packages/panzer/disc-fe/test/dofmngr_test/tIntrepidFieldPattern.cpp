@@ -90,7 +90,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c1)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
 
    basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
@@ -165,7 +165,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_c2)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
 
    basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c1)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
    basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
 
@@ -331,7 +331,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_quad_c2)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
    basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>);
 
@@ -445,7 +445,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c1)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
    basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
 
@@ -537,7 +537,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test3d_hex_c2)
 
    out << note << std::endl;
 
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
    RCP<Intrepid2::Basis<double,FieldContainer> > basis;
    basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
 
@@ -699,7 +699,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, test2d_tri_hdivi1)
 {
 
    out << note << std::endl;
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
    RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
    RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
@@ -718,7 +718,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
 {
 
    out << note << std::endl;
-   typedef Intrepid2::FieldContainer<double> FieldContainer;
+   typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
    shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
    shards::CellTopology hex(shards::getCellTopologyData<shards::Hexahedron<8> >());

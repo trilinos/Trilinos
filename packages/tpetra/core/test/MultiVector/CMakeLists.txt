@@ -57,3 +57,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${MAXNP}
   )
 
+# This test relates to Github Issue #358.
+# It does not need multiple MPI processes,
+# but it still works if MPI is enabled.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MultiVector_get2dView
+  SOURCES
+    MultiVector_get2dView
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )

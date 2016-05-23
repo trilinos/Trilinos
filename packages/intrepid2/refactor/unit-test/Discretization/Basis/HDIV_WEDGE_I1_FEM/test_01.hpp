@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -108,7 +108,8 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-        typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -308,7 +309,7 @@ namespace Intrepid2 {
   
   try{
 
-    DynRankView ConstructWithLabel(wedgeNodesHost, 12, 3);
+    DynRankViewHost ConstructWithLabel(wedgeNodesHost, 12, 3);
     wedgeNodesHost(0,0) =  0.0;  wedgeNodesHost(0,1) =  0.0;  wedgeNodesHost(0,2) = -1.0;
     wedgeNodesHost(1,0) =  1.0;  wedgeNodesHost(1,1) =  0.0;  wedgeNodesHost(1,2) = -1.0;
     wedgeNodesHost(2,0) =  0.0;  wedgeNodesHost(2,1) =  1.0;  wedgeNodesHost(2,2) = -1.0;
@@ -324,6 +325,7 @@ namespace Intrepid2 {
     wedgeNodesHost(11,0)=  0.5;  wedgeNodesHost(11,1)=  0.5;  wedgeNodesHost(11,2)=  0.0;
         
         const auto wedgeNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), wedgeNodesHost);
+        Kokkos::deep_copy(wedgeNodes, wedgeNodesHost);
 
         // Dimensions for the output arrays:
         const auto numFields = wedgeBasis.getCardinality();
@@ -335,18 +337,20 @@ namespace Intrepid2 {
     {
     DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_VALUE);
+    const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
     for (int i = 0; i < numFields; i++) {
       for (size_type j = 0; j < numPoints; j++) {
         for (size_type k = 0; k < spaceDim; k++) {
            int l = k + i * spaceDim + j * spaceDim * numFields;
-           if (std::abs(vals(i,j,k) - basisValues[l]) > tol) {
+           if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-             *outStream << "}  computed value: " << vals(i,j,k)
+             *outStream << "}  computed value: " << vals_host(i,j,k)
                << " but reference value: " << basisValues[l] << "\n";
             }
          }
@@ -359,17 +363,19 @@ namespace Intrepid2 {
     {
     DynRankView ConstructWithLabel(vals, numFields, numPoints);
     wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_DIV);
+    const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+    Kokkos::deep_copy(vals_host, vals);
     for (int i = 0; i < numFields; i++) {
       for (size_type j = 0; j < numPoints; j++) {
           int l =  i + j * numFields;
-           if (std::abs(vals(i,j) - basisDivs[l]) > tol) {
+           if (std::abs(vals_host(i,j) - basisDivs[l]) > tol) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
              // Output the multi-index of the value where the error is:
              *outStream << " At multi-index { ";
              *outStream << i << " ";*outStream << j << " ";
-             *outStream << "}  computed divergence component: " << vals(i,j)
+             *outStream << "}  computed divergence component: " << vals_host(i,j)
                << " but reference divergence component: " << basisDivs[l] << "\n";
          }
       }
@@ -420,7 +426,7 @@ namespace Intrepid2 {
         wedgeBasis.getValues(bvals, cvals, OPERATOR_VALUE);
 
         // Check mathematical correctness
-        DynRankView ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
+        DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
         normals(0,0)  =  0.0; normals(0,1)  = -2.0; normals(0,2)  =  0.0;
         normals(1,0)  =  2.0; normals(1,1)  =  2.0; normals(1,2)  =  0.0;
         normals(2,0)  = -2.0; normals(2,1)  =  0.0; normals(2,2)  =  0.0;
@@ -438,14 +444,14 @@ namespace Intrepid2 {
 
             ValueType normal = 0.0;
             for(size_type d=0;d<spaceDim;++d) {
-               normal += bvals(i,j,d)*normals(j,d);
+               normal += bvals_host(i,j,d)*normals(j,d);
             }
 
             const ValueType expected_normal = (i == j);
             if (std::abs(normal - expected_normal) > tol || isnan(normal)) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ", " << cvals(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nNormal component of basis function " << i << " at (" << cvals_host(j,0) << ", " << cvals_host(j,1)<< ", " << cvals_host(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
               *outStream << ss.str();
             }
           }

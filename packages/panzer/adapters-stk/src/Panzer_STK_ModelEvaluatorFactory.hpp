@@ -289,7 +289,8 @@ namespace panzer_stk_classic {
                              const Teuchos::ParameterList& closure_models,
                              const panzer::LinearObjFactory<panzer::Traits> & lo_factory,
                              const Teuchos::ParameterList& user_data,
-                             bool writeGraph,const std::string & graphPrefix) const;
+                             bool writeGraph,const std::string & graphPrefix,
+			     bool write_field_managers,const std::string & field_manager_prefix) const;
 
     /**
       */

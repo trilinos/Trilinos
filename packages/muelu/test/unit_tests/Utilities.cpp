@@ -62,7 +62,6 @@
 
 namespace MueLuTests {
 
-
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LocalOrdinal,GlobalOrdinal,Node)
   {
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
@@ -265,11 +264,221 @@ namespace MueLuTests {
 
   } // GetDiagonalInverse
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetLumpedDiagonal,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    std::vector<RCP<const Map> > maps = std::vector<RCP<const Map> >(3, Teuchos::null);
+    maps[0] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+    maps[1] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+    maps[2] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+    RCP<Matrix> A00 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], 4.0, -1.0, -1.0, lib);
+    RCP<Matrix> A01 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], -1.0, 0.0, 0.0, lib);
+    RCP<Matrix> A10 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
+    RCP<Matrix> A11 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], 4.0, -1.0, -1.0, lib);
+    RCP<Matrix> A12 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
+    RCP<Matrix> A21 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], -1.0, 0.0, 0.0, lib);
+    RCP<Matrix> A22 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], 4.0, -1.0, -1.0, lib);
+
+    // create map extractor
+    // To generate the Thyra style map extractor we do not need a full map but only the
+    // information about the Map details (i.e. lib and indexBase). We can extract this
+    // information from maps[0]
+    Teuchos::RCP<const MapExtractor > rgMapExtractor =
+        Teuchos::rcp(new MapExtractor(maps[0], maps, true));
+    Teuchos::RCP<const MapExtractor > doMapExtractor =
+        Teuchos::rcp(new MapExtractor(maps[0], maps, true));
+    // build blocked operator
+    Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,5));
+    bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(0),A00);
+    bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(1),A01);
+    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(0),A10);
+    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(1),A11);
+    bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(2),A12);
+    bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(1),A21);
+    bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(2),A22);
+    bop->fillComplete();
+
+    // blocked diagonal operator (Thyra)
+    RCP<Vector> diagLumped = Utilities::GetLumpedMatrixDiagonal(bop);
+    TEST_EQUALITY(diagLumped->getMap()->isSameAs(*(bop->getRangeMapExtractor()->getFullMap())),true);
+
+    RCP<Vector> diagLumpedPart0 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,0,false);
+    RCP<Vector> diagLumpedPart1 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,1,false);
+    RCP<Vector> diagLumpedPart2 = bop->getRangeMapExtractor()->ExtractVector(diagLumped,2,false);
+    Teuchos::ArrayRCP<const Scalar> diagLumpedPart0Data = diagLumpedPart0->getData(0);
+    Teuchos::ArrayRCP<const Scalar> diagLumpedPart1Data = diagLumpedPart1->getData(0);
+    Teuchos::ArrayRCP<const Scalar> diagLumpedPart2Data = diagLumpedPart2->getData(0);
+    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),diagLumpedPart1->getLocalLength());
+    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),diagLumpedPart2->getLocalLength());
+    for(size_t i = 1; i < diagLumpedPart0->getLocalLength() - 1; ++i) {
+      TEST_EQUALITY(diagLumpedPart0Data[i],Teuchos::as<Scalar>(7.0));
+      TEST_EQUALITY(diagLumpedPart1Data[i],Teuchos::as<Scalar>(8.0));
+      TEST_EQUALITY(diagLumpedPart2Data[i],Teuchos::as<Scalar>(7.0));
+    }
+
+    LocalOrdinal lastElement = diagLumpedPart0->getLocalLength() - 1;
+
+    if(comm->getSize() == 1) {
+      TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
+      TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(6.0));
+
+      TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
+      TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(6.0));
+    } else {
+
+      if (comm->getRank() == 0) {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(8.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+
+      } else if (comm->getRank() == comm->getSize() - 1) {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(8.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(6.0));
+      } else {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(8.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(8.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+      }
+    }
+
+    // test reordered operator
+    Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ [ 2 0] 1 ]");
+    Teuchos::RCP<const BlockedCrsMatrix> bAA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(bop);
+    Teuchos::RCP<const BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<const Xpetra::ReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(buildReorderedBlockedCrsMatrix(brm, bAA));
+
+    TEST_EQUALITY(bA->Rows(),2);
+    TEST_EQUALITY(bA->Cols(),2);
+
+    TEST_EQUALITY(bA->getRangeMapExtractor()->getThyraMode(),true);
+    TEST_EQUALITY(bA->getDomainMapExtractor()->getThyraMode(),true);
+
+    RCP<Vector> diagLumped2 = Utilities::GetLumpedMatrixDiagonal(bA);
+
+
+    TEST_EQUALITY(diagLumped2->getMap()->isSameAs(*(bA->getRangeMapExtractor()->getFullMap())),true);
+
+    // the following is only true, since all blocks are the same size and we have
+    // Thyra maps?? compare max global ids!
+    TEST_EQUALITY(diagLumped2->getMap()->isSameAs(*(diagLumped2->getMap())),true);
+
+    TEST_EQUALITY(diagLumped2->getMap()->getMaxAllGlobalIndex(),comm->getSize() * 300 - 1);
+    TEST_EQUALITY(diagLumped2->getMap()->getMinGlobalIndex(),comm->getRank() * 100);
+
+    RCP<const BlockedCrsMatrix> bA0 = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(bA->getMatrix(0,0));
+    diagLumpedPart0  = bA->getRangeMapExtractor()->ExtractVector(diagLumped2,0,false);
+    RCP<Vector> diagLumpedPart00 = bA0->getRangeMapExtractor()->ExtractVector(diagLumpedPart0,0,false);
+    RCP<Vector> diagLumpedPart01 = bA0->getRangeMapExtractor()->ExtractVector(diagLumpedPart0,1,false);
+    diagLumpedPart1  = bA->getRangeMapExtractor()->ExtractVector(diagLumped2,1,false);
+
+    diagLumpedPart0Data = diagLumpedPart00->getData(0);
+    diagLumpedPart1Data = diagLumpedPart01->getData(0);
+    diagLumpedPart2Data = diagLumpedPart1->getData(0);
+    TEST_EQUALITY(diagLumpedPart0->getLocalLength(),2*diagLumpedPart1->getLocalLength());
+    for(size_t i = 1; i < 100 - 1; ++i) {
+      TEST_EQUALITY(diagLumpedPart0Data[i],Teuchos::as<Scalar>(7.0));
+      TEST_EQUALITY(diagLumpedPart1Data[i],Teuchos::as<Scalar>(7.0));
+      TEST_EQUALITY(diagLumpedPart2Data[i],Teuchos::as<Scalar>(8.0));
+    }
+
+    lastElement = diagLumpedPart00->getLocalLength() - 1;
+
+    if(comm->getSize() == 1) {
+      TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+
+      TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(6.0));
+      TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+    } else {
+
+      if (comm->getRank() == 0) {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(8.0));
+
+      } else if (comm->getRank() == comm->getSize() - 1) {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(8.0));
+
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(6.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(7.0));
+      } else {
+        TEST_EQUALITY(diagLumpedPart0Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[0],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[0],Teuchos::as<Scalar>(8.0));
+
+        TEST_EQUALITY(diagLumpedPart0Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart1Data[lastElement],Teuchos::as<Scalar>(7.0));
+        TEST_EQUALITY(diagLumpedPart2Data[lastElement],Teuchos::as<Scalar>(8.0));
+      }
+    }
+  }
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Utilities,GetInverse,Scalar,LocalOrdinal,GlobalOrdinal,Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = TestHelpers::Parameters::getLib();
+
+    RCP<Map> m  = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(lib, 100, 0, comm);
+
+    RCP<Vector> v  = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
+    RCP<Vector> tv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
+    Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
+    Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
+    for(LocalOrdinal i = 0; i < v->getLocalLength(); ++i) {
+      vData[i] = Teuchos::as<Scalar>(i+1);
+      tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
+    }
+
+    RCP<Vector> inv = Utilities::GetInverse(v);
+
+    tv->update(1.0,*inv,-1.0);
+    TEST_EQUALITY(tv->norm1(),Teuchos::ScalarTraits<Scalar>::zero());
+    TEST_EQUALITY(tv->norm2(),Teuchos::ScalarTraits<Scalar>::zero());
+    TEST_EQUALITY(tv->normInf(),Teuchos::ScalarTraits<Scalar>::zero());
+  }
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,MatMatMult_EpetraVsTpetra,Scalar,LO,GO,Node) \
          TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,DetectDirichletRows,Scalar,LO,GO,Node) \
-         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node)
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetDiagonalInverse,Scalar,LO,GO,Node) \
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetLumpedDiagonal,Scalar,LO,GO,Node) \
+         TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Utilities,GetInverse,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

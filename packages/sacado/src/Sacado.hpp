@@ -65,6 +65,16 @@
 #include "Sacado_ELRCacheFad_DFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SFadTraits.hpp"
 #include "Sacado_ELRCacheFad_SLFadTraits.hpp"
+#ifndef __CUDACC__
+#include "Sacado_Fad_DMFadTraits.hpp"
+#include "Sacado_Fad_DVFadTraits.hpp"
+#include "Sacado_LFad_LogicalSparseTraits.hpp"
+#include "Sacado_ScalarFlopCounterTraits.hpp"
+#include "Sacado_Tay_TaylorTraits.hpp"
+#include "Sacado_trad_Traits.hpp"
+#include "Sacado_trad2_Traits.hpp"
+#include "Sacado_tradvec_Traits.hpp"
+#endif
 
 // Standard forward AD classes
 #include "Sacado_Fad_DFad.hpp"
@@ -91,6 +101,31 @@
 #include "KokkosExp_View_Fad.hpp"
 #else
 #include "Kokkos_View_Fad.hpp"
+#endif
+
+//
+// AD classes that won't or don't build under Cuda
+//
+#ifndef __CUDACC__
+
+// Standard forward AD classes
+#include "Sacado_Fad_MemPoolManager.hpp"
+#include "Sacado_Fad_DMFad.hpp"
+#include "Sacado_LFad_LogicalSparse.hpp"
+#include "Sacado_Fad_DVFad.hpp"
+#include "Sacado_Fad_Vector.hpp"
+
+// Reverse AD classes
+#include "Sacado_trad.hpp"
+#include "Sacado_trad2.hpp"
+#include "Sacado_tradvec.hpp"
+
+// Taylor polynomial AD classes
+#include "Sacado_Tay_Taylor.hpp"
+
+// Flop-counting classes
+#include "Sacado_ScalarFlopCounter.hpp"
+
 #endif
 
 #endif // SACADO_KOKKOS_HPP

@@ -64,6 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_BC.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
 
@@ -133,7 +134,7 @@ namespace panzer {
     for (std::vector<std::string>::size_type i=0; i < element_blocks.size(); ++i) {
 
       std::vector<std::size_t> local_cell_ids;
-      Intrepid2::FieldContainer<double> cell_vertex_coordinates;
+      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
 
       panzer_stk_classic::workset_utils::getIdsAndVertices(*mesh, element_blocks[i], local_cell_ids, 
 				cell_vertex_coordinates);
@@ -237,7 +238,7 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Intrepid2::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
+      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
       mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
       mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
 
@@ -368,7 +369,7 @@ namespace panzer {
       local_side_ids_b.push_back(3);
       local_side_ids_b.push_back(3);
 
-      Intrepid2::FieldContainer<double> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
+      Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates_a, cell_vertex_coordinates_b;
       mesh->getElementVertices(local_cell_ids_a,cell_vertex_coordinates_a);
       mesh->getElementVertices(local_cell_ids_b,cell_vertex_coordinates_b);
 
@@ -487,8 +488,8 @@ namespace panzer {
       panzer_stk_classic::workset_utils::getSideElements(*mesh, bc->elementBlockID(),
 		      sideEntities,local_side_ids,elements);
 
-      Intrepid2::FieldContainer<double> vertices;
-      vertices.resize(elements.size(),4,dim);  
+      Kokkos::DynRankView<double,PHX::Device> vertices = 
+	Kokkos::createDynRankView(vertices,"vertices",elements.size(),4,dim);  
       
       // loop over elements of this block
       for(std::size_t elm=0;elm<elements.size();++elm) {

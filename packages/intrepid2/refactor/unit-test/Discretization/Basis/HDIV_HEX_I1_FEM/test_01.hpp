@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -110,9 +110,15 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = Parameters::Tolerence;
+
       int errorFlag = 0;
+
+      typedef ValueType outputValueType;
+      typedef ValueType pointValueType;
+      Basis_HDIV_HEX_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> hexBasis;
 
       *outStream
         << "\n"
@@ -123,7 +129,6 @@ namespace Intrepid2 {
       try {
         ordinal_type nthrow = 0, ncatch = 0;
 #ifdef HAVE_INTREPID2_DEBUG
-        Basis_HDIV_HEX_I1_FEM<DeviceSpaceType> hexBasis;
 
         // Define array containing the 8 vertices of the reference HEX, its center and 6 face centers
         DynRankView ConstructWithLabel(hexNodes, 15, 3);
@@ -206,6 +211,7 @@ namespace Intrepid2 {
         if (nthrow != ncatch) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
       }
       catch (std::logic_error err) {
@@ -224,7 +230,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       try{
-        Basis_HDIV_HEX_I1_FEM<DeviceSpaceType> hexBasis;
 
         const auto numFields = hexBasis.getCardinality();
         const auto allTags = hexBasis.getAllDofTags();
@@ -339,78 +344,83 @@ namespace Intrepid2 {
             0.125, 0.125, 0.125, 0.125, 0.125, 0.125,
         };
 
-        Basis_HDIV_HEX_I1_FEM<DeviceSpaceType> hexBasis;
         // Define array containing the 8 vertices of the reference HEX, its center and 6 face centers
-        DynRankView ConstructWithLabel(hexNodes, 15, 3);
+        DynRankViewHost ConstructWithLabel(hexNodesHost, 15, 3);
   
-        hexNodes(0,0) = -1.0;  hexNodes(0,1) = -1.0;  hexNodes(0,2) = -1.0;
-        hexNodes(1,0) =  1.0;  hexNodes(1,1) = -1.0;  hexNodes(1,2) = -1.0;
-        hexNodes(2,0) =  1.0;  hexNodes(2,1) =  1.0;  hexNodes(2,2) = -1.0;
-        hexNodes(3,0) = -1.0;  hexNodes(3,1) =  1.0;  hexNodes(3,2) = -1.0;
+        hexNodesHost(0,0) = -1.0;  hexNodesHost(0,1) = -1.0;  hexNodesHost(0,2) = -1.0;
+        hexNodesHost(1,0) =  1.0;  hexNodesHost(1,1) = -1.0;  hexNodesHost(1,2) = -1.0;
+        hexNodesHost(2,0) =  1.0;  hexNodesHost(2,1) =  1.0;  hexNodesHost(2,2) = -1.0;
+        hexNodesHost(3,0) = -1.0;  hexNodesHost(3,1) =  1.0;  hexNodesHost(3,2) = -1.0;
   
-        hexNodes(4,0) = -1.0;  hexNodes(4,1) = -1.0;  hexNodes(4,2) =  1.0;
-        hexNodes(5,0) =  1.0;  hexNodes(5,1) = -1.0;  hexNodes(5,2) =  1.0;
-        hexNodes(6,0) =  1.0;  hexNodes(6,1) =  1.0;  hexNodes(6,2) =  1.0;
-        hexNodes(7,0) = -1.0;  hexNodes(7,1) =  1.0;  hexNodes(7,2) =  1.0;
+        hexNodesHost(4,0) = -1.0;  hexNodesHost(4,1) = -1.0;  hexNodesHost(4,2) =  1.0;
+        hexNodesHost(5,0) =  1.0;  hexNodesHost(5,1) = -1.0;  hexNodesHost(5,2) =  1.0;
+        hexNodesHost(6,0) =  1.0;  hexNodesHost(6,1) =  1.0;  hexNodesHost(6,2) =  1.0;
+        hexNodesHost(7,0) = -1.0;  hexNodesHost(7,1) =  1.0;  hexNodesHost(7,2) =  1.0;
   
-        hexNodes(8,0) =  0.0;  hexNodes(8,1) =  0.0;  hexNodes(8,2) =  0.0;
+        hexNodesHost(8,0) =  0.0;  hexNodesHost(8,1) =  0.0;  hexNodesHost(8,2) =  0.0;
   
-        hexNodes(9,0) =  1.0;  hexNodes(9,1) =  0.0;  hexNodes(9,2) =  0.0;
-        hexNodes(10,0)= -1.0;  hexNodes(10,1)=  0.0;  hexNodes(10,2)=  0.0;
+        hexNodesHost(9,0) =  1.0;  hexNodesHost(9,1) =  0.0;  hexNodesHost(9,2) =  0.0;
+        hexNodesHost(10,0)= -1.0;  hexNodesHost(10,1)=  0.0;  hexNodesHost(10,2)=  0.0;
   
-        hexNodes(11,0)=  0.0;  hexNodes(11,1)=  1.0;  hexNodes(11,2)=  0.0;
-        hexNodes(12,0)=  0.0;  hexNodes(12,1)= -1.0;  hexNodes(12,2)=  0.0;
+        hexNodesHost(11,0)=  0.0;  hexNodesHost(11,1)=  1.0;  hexNodesHost(11,2)=  0.0;
+        hexNodesHost(12,0)=  0.0;  hexNodesHost(12,1)= -1.0;  hexNodesHost(12,2)=  0.0;
   
-        hexNodes(13,0)=  0.0;  hexNodes(13,1)=  0.0;  hexNodes(13,2)=  1.0;
-        hexNodes(14,0)=  0.0;  hexNodes(14,1)=  0.0;  hexNodes(14,2)= -1.0;
+        hexNodesHost(13,0)=  0.0;  hexNodesHost(13,1)=  0.0;  hexNodesHost(13,2)=  1.0;
+        hexNodesHost(14,0)=  0.0;  hexNodesHost(14,1)=  0.0;  hexNodesHost(14,2)= -1.0;
 
+        const auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+        Kokkos::deep_copy(hexNodes, hexNodesHost);
         
         // Dimensions for the output arrays:
         const auto numPoints = hexNodes.dimension(0);
         const auto numFields = hexBasis.getCardinality();
         const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
-
-        // Generic array for values and curls that will be properly sized before each call
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-
+        {
         // Check VALUE of basis functions: resize vals to rank-3 container:
+        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
         hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
+        const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i=0;i<numFields;++i) 
           for (size_type j=0;j<numPoints;++j) 
             for (size_type k=0;k<spaceDim;++k) {
               
               // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
               const auto l = k + i * spaceDim + j * spaceDim * numFields;
-              if (std::abs(vals(i,j,k) - basisValues[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                 
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                *outStream << "}  computed value: " << vals(i,j,k)
+                *outStream << "}  computed value: " << vals_host(i,j,k)
                            << " but reference value: " << basisValues[l] << "\n";
               }
             }
-        
+        }
+        { 
         // Check DIV of basis function: resize vals to rank-2 container
-        vals = DynRankView("vals", numFields, numPoints);
+        DynRankView ConstructWithLabel(vals, numFields, numPoints);
         hexBasis.getValues(vals, hexNodes, OPERATOR_DIV);
+        const auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i=0;i<numFields;++i)
           for (size_type j=0;j<numPoints;++j) {
             const auto l =  i + j * numFields;
-            if (std::abs(vals(i,j) - basisDivs[l]) > tol) {
+            if (std::abs(vals_host(i,j) - basisDivs[l]) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               
               // Output the multi-index of the value where the error is:
               *outStream << " At multi-index { ";
               *outStream << i << " ";*outStream << j << " ";
-              *outStream << "}  computed divergence component: " << vals(i,j)
+              *outStream << "}  computed divergence component: " << vals_host(i,j)
                          << " but reference divergence component: " << basisDivs[l] << "\n";
             }
           }
+        }
         
         // Catch unexpected errors
       } catch (std::logic_error err) {
@@ -425,7 +435,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
     
       try{
-        Basis_HDIV_HEX_I1_FEM<DeviceSpaceType> hexBasis;
         const auto numFields = hexBasis.getCardinality();
         const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
     
@@ -452,7 +461,7 @@ namespace Intrepid2 {
          }
 
         // Check mathematical correctness
-        DynRankView ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
+        DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
         normals(0,0)  =  0.0; normals(0,1)  = -4.0; normals(0,2)  =  0.0;
         normals(1,0)  =  4.0; normals(1,1)  =  0.0; normals(1,2)  =  0.0;
         normals(2,0)  =  0.0; normals(2,1)  =  4.0; normals(2,2)  =  0.0;
@@ -460,12 +469,16 @@ namespace Intrepid2 {
         normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  = -4.0;
         normals(5,0)  =  0.0; normals(5,1)  =  0.0; normals(5,2)  =  4.0;
 
-        DynRankView ConstructWithLabel(cvals, numFields, spaceDim);
-        DynRankView ConstructWithLabel(bvals, numFields, numFields, spaceDim); // last dimension is spatial dim
+        DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
+        DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
 
+        hexBasis.getDofCoords(cvals_dev);
+        hexBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
-        hexBasis.getDofCoords(cvals);
-        hexBasis.getValues(bvals, cvals, OPERATOR_VALUE);
+        const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
+        Kokkos::deep_copy(bvals, bvals_dev);
+        const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
+        Kokkos::deep_copy(cvals, cvals_dev);
 
         for (ordinal_type i=0;i<numFields;++i) 
           for (ordinal_type j=0;j<numFields;++j) {

@@ -48,7 +48,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"

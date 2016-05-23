@@ -169,6 +169,7 @@ namespace stk { namespace topology_detail {
 struct num_nodes_impl {
   typedef unsigned result_type;
   template <typename Topology>
+  STK_FUNCTION
   result_type operator()(Topology) const
   { return Topology::num_nodes; }
 };

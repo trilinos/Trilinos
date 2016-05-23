@@ -117,7 +117,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
       centroidRule = rcp(new panzer::PointRule("Centroid",1,physicsBlock.cellData()));
 
       // compute centroid
-      Intrepid2::FieldContainer<double> centroid;
+      Kokkos::DynRankView<double,PHX::Device> centroid;
       computeReferenceCentroid(bases,physicsBlock.cellData().baseCellDimension(),centroid);
 
       // build pointe values evaluator
@@ -272,28 +272,28 @@ template <typename EvalT>
 void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
 computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                          int baseDimension,
-                         Intrepid2::FieldContainer<double> & centroid) const
+                         Kokkos::DynRankView<double,PHX::Device> & centroid) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
-   centroid.resize(1,baseDimension);
+   realloc(centroid,1,baseDimension);
 
    // loop over each possible basis
    for(std::map<std::string,RCP<const panzer::PureBasis> >::const_iterator itr=bases.begin();
        itr!=bases.end();++itr) {
 
       // see if this basis has coordinates
-      RCP<Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > intrepidBasis = itr->second->getIntrepid2Basis();
-      RCP<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > > basisCoords 
-         = rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Intrepid2::FieldContainer<double> > >(intrepidBasis);
+      RCP<Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > intrepidBasis = itr->second->getIntrepid2Basis();
+      RCP<Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > > basisCoords 
+         = rcp_dynamic_cast<Intrepid2::DofCoordsInterface<Kokkos::DynRankView<double,PHX::Device> > >(intrepidBasis);
 
       if(basisCoords==Teuchos::null) // no coordinates...move on
          continue;
 
       // we've got coordinates, lets commpute the "centroid"
-      Intrepid2::FieldContainer<double> coords(intrepidBasis->getCardinality(),
-                                              intrepidBasis->getBaseCellTopology().getDimension());
+      Kokkos::DynRankView<double,PHX::Device> coords("coords",intrepidBasis->getCardinality(),
+						     intrepidBasis->getBaseCellTopology().getDimension());
       basisCoords->getDofCoords(coords);
       TEUCHOS_ASSERT(coords.rank()==2);
       TEUCHOS_ASSERT(coords.dimension(1)==baseDimension);

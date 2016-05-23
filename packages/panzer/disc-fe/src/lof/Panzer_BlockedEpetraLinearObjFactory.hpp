@@ -89,6 +89,10 @@ public:
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                  const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider);
 
+   BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
+                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
+                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & colGidProvider);
+
    virtual ~BlockedEpetraLinearObjFactory();
 
 /*************** Linear object factory methods *******************/
@@ -236,8 +240,14 @@ public:
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap(int i) const;
 
+   //! get the map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getColMap(int i) const;
+
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int i) const;
+
+   //! get the ghosted map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getColGhostedMap(int i) const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph(int i,int j) const;
@@ -248,8 +258,14 @@ public:
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int i) const;
 
+   //! get importer for converting an overalapped object to a "normal" object
+   virtual const Teuchos::RCP<Epetra_Import> getColGhostedImport(int i) const;
+
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport(int j) const;
+
+   //! get exporter for converting an overalapped object to a "normal" object
+   virtual const Teuchos::RCP<Epetra_Export> getColGhostedExport(int j) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
@@ -264,6 +280,12 @@ public:
    int getBlockColCount() const;
 
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > getGlobalIndexer() const
+   { return blockedDOFManager_; }
+
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
+   { return blockedDOFManager_; }
+
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
    { return blockedDOFManager_; }
 
    //! exclude a block pair from the matrix
@@ -282,23 +304,34 @@ protected:
    // Get the global indexer associated with a particular block
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > getGlobalIndexer(int i) const;
 
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > getColGlobalIndexer(int i) const;
+
+   //! How many gid providers are there?
+   std::size_t getGidProviderCount() const;
+
+   //! How many column gid providers are there?
+   std::size_t getColGidProviderCount() const;
+
    //! Allocate the space in the std::vector objects so we can fill with appropriate Epetra data
-   void makeRoomForBlocks(std::size_t blockCnt);
+   void makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt=0);
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > blockProvider_;
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
+   std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > colGidProviders_;
+
+   bool useColGidProviders_;
 
    // which block entries are ignored
-  std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
+   std::unordered_set<std::pair<int,int>,panzer::pair_hash> excludedPairs_;
   
 /*************** Thyra based methods/members *******************/
 
    void ghostToGlobalThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & in,
-                                 const Teuchos::RCP<Thyra::VectorBase<double> > & out) const;
+                                 const Teuchos::RCP<Thyra::VectorBase<double> > & out,bool col) const;
    void ghostToGlobalThyraMatrix(const Thyra::LinearOpBase<double> & in,Thyra::LinearOpBase<double> & out) const;
    void globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & in,
-                                 const Teuchos::RCP<Thyra::VectorBase<double> > & out) const;
+                                 const Teuchos::RCP<Thyra::VectorBase<double> > & out,bool col) const;
 
    mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > rangeSpace_;
    mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > domainSpace_;
@@ -314,13 +347,17 @@ protected:
                                      const Teuchos::Ptr<Epetra_CrsMatrix> & A,
                                      bool zeroVectorRows) const;
 
-   void ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) const;
+   void ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out,bool col) const;
    void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
-   void globalToGhostEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out) const;
+   void globalToGhostEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out,bool col) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildEpetraMap(int i) const;
    virtual const Teuchos::RCP<Epetra_Map> buildEpetraGhostedMap(int i) const;
+
+   // get the map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> buildEpetraColMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildEpetraColGhostedMap(int i) const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildEpetraGraph(int i,int j) const;
@@ -330,13 +367,19 @@ protected:
    Teuchos::RCP<const Epetra_Comm> comm_;
    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm_;
    Teuchos::RCP<Teuchos::MpiComm<int> > tComm_;
+
    mutable std::vector<Teuchos::RCP<Epetra_Map> > maps_;
    mutable std::vector<Teuchos::RCP<Epetra_Map> > ghostedMaps_;
-  mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> graphs_ ;
-  mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> ghostedGraphs_;
-
    mutable std::vector<Teuchos::RCP<Epetra_Import> > importers_;
    mutable std::vector<Teuchos::RCP<Epetra_Export> > exporters_;
+
+   mutable std::vector<Teuchos::RCP<Epetra_Map> > colMaps_;
+   mutable std::vector<Teuchos::RCP<Epetra_Map> > colGhostedMaps_;
+   mutable std::vector<Teuchos::RCP<Epetra_Import> > colImporters_;
+   mutable std::vector<Teuchos::RCP<Epetra_Export> > colExporters_;
+
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> graphs_ ;
+   mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> ghostedGraphs_;
 };
 
 }

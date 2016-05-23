@@ -64,7 +64,7 @@ namespace Intrepid2 {
       ++nthrow;                                                         \
       S ;                                                               \
     }                                                                   \
-    catch (std::logic_error err) {                                      \
+    catch (std::exception err) {                                        \
       ++ncatch;                                                         \
       *outStream << "Expected Error ----------------------------------------------------------------\n"; \
       *outStream << err.what() << '\n';                                 \
@@ -110,6 +110,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = Parameters::Tolerence;
@@ -215,7 +216,7 @@ namespace Intrepid2 {
        if (nthrow != ncatch) {
          errorFlag++;
          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-         *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << ncatch << ")\n";
+         *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
        }
      } catch (std::logic_error err) {
        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -336,7 +337,7 @@ namespace Intrepid2 {
      };
 
      try {
-       DynRankView ConstructWithLabel(pyrNodesHost, 10, 3);
+       DynRankViewHost ConstructWithLabel(pyrNodesHost, 10, 3);
 
        pyrNodesHost(0,0) = -1.0;  pyrNodesHost(0,1) = -1.0;  pyrNodesHost(0,2) =  0;
        pyrNodesHost(1,0) =  1.0;  pyrNodesHost(1,1) = -1.0;  pyrNodesHost(1,2) =  0;
@@ -350,7 +351,8 @@ namespace Intrepid2 {
        pyrNodesHost(8,0) = -0.15; pyrNodesHost(8,1) = -0.2;  pyrNodesHost(8,2) = 0.75;
        pyrNodesHost(9,0) = -0.4;  pyrNodesHost(9,1) =  0.9;  pyrNodesHost(9,2) = 0.0;
 
-       const auto pyrNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), pyrNodesHost);
+       auto pyrNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), pyrNodesHost);
+       Kokkos::deep_copy(pyrNodes, pyrNodesHost);
 
        // Dimensions for the output arrays:
        const auto numFields = pyrBasis.getCardinality();

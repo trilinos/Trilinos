@@ -1,6 +1,6 @@
 """
 
-exodus.py v 1.03 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.04 (beta) is a python wrapper of some of the exodus II library
 
 Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation.
 
@@ -40,10 +40,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.03 (beta-cmake)"
+EXODUS_PY_VERSION = "1.04 (beta-cmake)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.03 (beta-cmake), a python wrapper of some of the exodus II library.
+You are using exodus.py v 1.04 (beta-cmake), a python wrapper of some of the exodus II library.
 Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
 with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
@@ -200,22 +200,63 @@ def ex_entity_type(varType):
   # none found, must be invalid`
   return -1 ##EX_INVALID
 
+# init params struct
+class ex_init_params(Structure):
+    """
+    Parameters defining the model dimension, note that many are optional.
+
+    <int>     num_dim        number of model dimensions
+    <int>     num_nodes      number of model nodes
+    <int>     num_edge       number of model edges
+    <int>     num_edge_blk   number of model edge blocks
+    <int>     num_face       number of model faces
+    <int>     num_face_blk   number of model face blocks
+    <int>     num_elem       number of model elements
+    <int>     num_elem_blk   number of model element blocks
+    <int>     num_node_sets  number of model node sets
+    <int>     num_edge_sets  number of model edge sets
+    <int>     num_face_sets  number of model face sets
+    <int>     num_side_sets  number of model side sets
+    <int>     num_elem_sets  number of model elem sets
+    <int>     num_node_maps  number of model node maps
+    <int>     num_edge_maps  number of model edge maps
+    <int>     num_face_maps  number of model face maps
+    <int>     num_elem_maps  number of model elem maps
+    """
+    _fields_ = [("title", c_char*(MAX_LINE_LENGTH+1)),
+                ("num_dim", c_longlong),
+                ("num_nodes", c_longlong),
+                ("num_edge", c_longlong),
+                ("num_edge_blk", c_longlong),
+                ("num_face", c_longlong),
+                ("num_face_blk", c_longlong),
+                ("num_elem", c_longlong),
+                ("num_elem_blk", c_longlong),
+                ("num_node_sets", c_longlong),
+                ("num_edge_sets", c_longlong),
+                ("num_face_sets", c_longlong),
+                ("num_side_sets", c_longlong),
+                ("num_elem_sets", c_longlong),
+                ("num_node_maps", c_longlong),
+                ("num_edge_maps", c_longlong),
+                ("num_face_maps", c_longlong),
+                ("num_elem_maps", c_longlong)]
+
+
 #
 # ----------------------------------------------------------------------
 #
 
 class exodus:
   """
+  ex_pars = ex_init_params(num_dim=numDims,num_nodes=numNodes,
+                           num_elem=numElems, num_elem_blk=numElemBlocks)
+
   exo = exodus(file_name, \\
     mode=mode, \\
     title=title, \\
     array_type=array_type, \\
-    numDims=num_dims, \\
-    numNodes=num_nodes, \\
-    numElems=num_elems, \\
-    numBlocks=num_blocks, \\
-    numNodeSets=num_ns, \\
-    numSideSets=num_ss)
+    init_params=init_params)
 
     -> open exodus database for data insertion/extraction
 
@@ -227,12 +268,9 @@ class exodus:
       <string>  title       database title
       <string>  array_type  'ctype' for c-type arrays,
         'numpy' for numpy arrays
-      <int>     num_dims    number of model dimensions ('w' mode only)
-      <int>     num_nodes   number of model nodes ('w' mode only)
-      <int>     num_elems   number of model elements ('w' mode only)
-      <int>     num_blocks  number of model element blocks ('w' mode only)
-      <int>     num_ns      number of model node sets ('w' mode only)
-      <int>     num_ss      number of model side sets ('w' mode only)
+
+      <ex_init_params>
+                init_params see ex_init_params for more info.
 
     return value(s):
       <exodus>  exo  the open exodus database
@@ -245,7 +283,8 @@ class exodus:
 
   def __init__(self, file, mode=None, array_type='ctype', title=None,
                numDims=None, numNodes=None, numElems=None, numBlocks=None,
-               numNodeSets=None, numSideSets=None, io_size=0):
+               numNodeSets=None, numSideSets=None,
+               init_params=None, io_size=0):
     print EXODUS_PY_COPYRIGHT
     if mode == None:
       mode = 'r'
@@ -267,14 +306,43 @@ class exodus:
     self.modeChar = mode
     self.__open(io_size=io_size)
     if mode.lower() == 'w':
-      info = [title, numDims, numNodes, numElems, numBlocks,
-              numNodeSets, numSideSets]
-      assert None not in info
-      self.__ex_put_info(info)
+      if (init_params is not None):
+        self.init_params = init_params
+        if (title is not None):
+          self.init_params.title = title
+        self.put_info_ext(self.init_params)
+      else:
+        info = [title, numDims, numNodes, numElems, numBlocks,
+                numNodeSets, numSideSets]
+        assert None not in info
+        self.__ex_put_info(info)
+
       self.numTimes = c_int(0)
     else:
       self.__ex_get_info()
       self.numTimes = c_int(self.__ex_inquire_int(ex_inquiry("EX_INQ_TIME")))
+
+
+  #
+  # build the info struct
+  #
+  # --------------------------------------------------------------------
+
+  def put_info_ext(self,p):
+    """
+      e.put_info_ext(self,info_struct)
+      -> put initialization information into exodus file
+    """
+    self.Title       = create_string_buffer(p.title,MAX_LINE_LENGTH+1)
+    self.numDim      = c_longlong(p.num_dim)
+    self.numNodes    = c_longlong(p.num_nodes)
+    self.numElem     = c_longlong(p.num_elem)
+    self.numElemBlk  = c_longlong(p.num_elem_blk)
+    self.numNodeSets = c_longlong(p.num_node_sets)
+    self.numSideSets = c_longlong(p.num_side_sets)
+
+    EXODUS_LIB.ex_put_init_ext(self.fileId, byref(p))
+    return True
 
   #
   # copy to a new database
@@ -294,15 +362,17 @@ class exodus:
       return value(s):
         <exodus>  exo_copy  the copy
     """
+    ex_pars = ex_init_params(num_dim=self.num_dimensions(),
+                             num_nodes=self.num_nodes(),
+                             num_elem=self.num_elems(),
+                             num_elem_blk=self.num_blks(),
+                             num_node_sets=self.num_node_sets(),
+                             num_side_sets=self.num_side_sets())
+
     new = exodus(fileName,
                  mode="w",
                  title=self.title(),
-                 numDims=self.num_dimensions(),
-                 numNodes=self.num_nodes(),
-                 numElems=self.num_elems(),
-                 numBlocks=self.num_blks(),
-                 numNodeSets=self.num_node_sets(),
-                 numSideSets=self.num_side_sets())
+                 init_params=ex_pars)
     self.__copy_file(new)
     return new
 
@@ -3077,6 +3147,180 @@ class exodus:
 
   # --------------------------------------------------------------------
 
+  def put_polyhedra_elem_blk(self, blkID,
+                             num_elems_this_blk,
+                             num_faces,
+                             num_attr_per_elem):
+    """
+    status = exo.put_polyhedra_elem_blk(blkID, num_elems_this_blk,
+                                        num_faces, num_attr_per_elem)
+
+      -> put in an element block with polyhedral elements
+
+      input values:
+        <int>     blkID               id of the block to be added
+        <int>     num_elems_this_blk
+        <int>     num_faces  total number of faces in this block
+        <int>     num_attr_per_elem
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+
+    ebType = ex_entity_type("EX_ELEM_BLOCK")
+
+    EXODUS_LIB.ex_put_block(self.fileId,ebType,c_int(blkID),
+                            create_string_buffer("NFACED"),
+                            c_longlong(num_elems_this_blk),
+                            c_longlong(0),
+                            c_longlong(0),
+                            c_longlong(num_faces),
+                            c_longlong(num_attr_per_elem))
+    return True
+
+  # --------------------------------------------------------------------
+
+  def put_polyhedra_face_blk(self, blkID,
+                             num_faces_this_blk,
+                             num_nodes,
+                             num_attr_per_face):
+    """
+    status = exo.put_polyhedra_face_blk(blkID, num_faces_this_blk,
+                                        num_nodes, num_attr_per_face)
+
+      -> put in a block of faces
+
+      input values:
+        <int>     blkID               id of the block to be added
+        <int>     num_faces_this_blk
+        <int>     num_nodes           total number of nodes in this block
+        <int>     num_attr_per_face
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+    fbType = ex_entity_type("EX_FACE_BLOCK")
+
+
+    EXODUS_LIB.ex_put_block(self.fileId,fbType,c_int(blkID),
+                            create_string_buffer("NSIDED"),
+                            c_longlong(num_faces_this_blk),
+                            c_longlong(num_nodes),
+                            c_longlong(0),
+                            c_longlong(0),
+                            c_longlong(num_attr_per_face))
+    return True
+
+  # --------------------------------------------------------------------
+
+  def put_face_count_per_polyhedra(self,blkID,entityCounts):
+    """
+    status = exo.put_face_count_per_polyhedra(blkID, entityCounts)
+
+      -> put in a count of faces in for each polyhedra in an elem block
+
+      input values:
+        <int>     blkID               id of the block to be added
+
+        if array_type == 'ctype':
+          <list<float>>  entityCounts
+
+        if array_type == 'numpy':
+          <np_array<double>>  entityCounts
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+    ebType = ex_entity_type("EX_ELEM_BLOCK")
+    entity_counts = (c_int * len(entityCounts))()
+    entity_counts[:] = entityCounts
+    EXODUS_LIB.ex_put_entity_count_per_polyhedra(self.fileId,ebType,
+                                                 c_int(blkID),entity_counts)
+    return True
+
+  # --------------------------------------------------------------------
+
+  def put_node_count_per_face(self,blkID,entityCounts):
+    """
+    status = exo.put_node_count_per_face(blkID, entityCounts)
+
+      -> put in a count of nodes in for each face in a polygonal face block
+
+      input values:
+        <int>     blkID               id of the block to be added
+
+        if array_type == 'ctype':
+          <list<float>>  entityCounts
+
+        if array_type == 'numpy':
+          <np_array<double>>  entityCounts
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+    ebType = ex_entity_type("EX_FACE_BLOCK")
+    entity_counts = (c_int * len(entityCounts))()
+    entity_counts[:] = entityCounts
+    EXODUS_LIB.ex_put_entity_count_per_polyhedra(self.fileId,ebType,
+                                                 c_int(blkID),entity_counts)
+    return True
+
+  # --------------------------------------------------------------------
+
+  def put_elem_face_conn(self,blkId,elemFaceConn):
+    """
+    status = exo.put_elem_face_conn(blkID, elemFaceConn)
+
+      -> put in connectivity information from elems to faces
+
+      input values:
+        <int>     blkID               id of the elem block to be added
+
+        if array_type == 'ctype':
+          <list<float>>  elemFaceConn  (raveled/flat list)
+
+        if array_type == 'numpy':
+          <np_array<double>>  elemFaceConn  (raveled/flat array)
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+    ebType = ex_entity_type("EX_ELEM_BLOCK")
+    elem_face_conn = (c_int * len(elemFaceConn))()
+    elem_face_conn[:] = elemFaceConn
+    EXODUS_LIB.ex_put_conn(self.fileId, ebType, c_int(blkId),
+                           None, None, elem_face_conn)
+    return True
+
+  # --------------------------------------------------------------------
+
+  def put_face_node_conn(self,blkId,faceNodeConn):
+    """
+    status = exo.put_face_node_conn(blkID, faceNodeConn)
+
+      -> put in connectivity information from faces to nodes
+
+      input values:
+        <int>     blkID               id of the face block to be added
+
+        if array_type == 'ctype':
+          <list<float>>  faceNodeConn  (raveled/flat list)
+
+        if array_type == 'numpy':
+          <np_array<double>>  faceNodeConn  (raveled/flat array)
+
+      return value(s):
+        <bool>  status  True = successful execution
+    """
+    ebType = ex_entity_type("EX_FACE_BLOCK")
+    node_conn = (c_int * len(faceNodeConn))()
+    node_conn[:] = faceNodeConn
+    EXODUS_LIB.ex_put_conn(self.fileId, ebType, c_int(blkId),
+                           node_conn, None, None)
+    return True
+
+  # --------------------------------------------------------------------
+
   def close(self):
     """
     exo.close()
@@ -4078,7 +4322,9 @@ class exodus:
     EXODUS_LIB.ex_update(self.fileId)
     return True
 
-# --------------------------------------------------------------------
+
+
+  # --------------------------------------------------------------------
 # Utility Functions
 # --------------------------------------------------------------------
 
@@ -4210,17 +4456,15 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
     raise Exception, ("ERROR: ", toFileName, " file already exists cowardly exiting instead of overwriting in call to copy_mesh().")
 
   title = exoFrom.title()
-  numDim = exoFrom.num_dimensions()
-  numNodes = exoFrom.num_nodes()
-  numElems = exoFrom.num_elems()
-  numBlks = exoFrom.num_blks()
-  numNodeSets = exoFrom.num_node_sets()
-  numSideSets = exoFrom.num_side_sets()
+  ex_pars = ex_init_params(num_dim=exoFrom.num_dimensions(),
+                           num_nodes=exoFrom.num_nodes(),
+                           num_elem=exoFrom.num_elems(),
+                           num_elem_blk=exoFrom.num_blks(),
+                           num_node_sets=exoFrom.num_node_sets(),
+                           num_side_sets=exoFrom.num_side_sets())
 
   exoTo = exodus(toFileName, mode="w", array_type=array_type, \
-    title=title, numDims=numDim, \
-    numNodes=numNodes, numElems=numElems, numBlocks=numBlks, \
-    numNodeSets=numNodeSets, numSideSets=numSideSets)
+                 title=title, init_params=ex_pars)
 
   if debugPrint: print "Transfer QA records"
   qaRecords = exoFrom.get_qa_records()
@@ -4261,7 +4505,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
   exoTo.put_elem_id_map(elemIdMap)
 
   if debugPrint: print "Transfer Node Sets"
-  if numNodeSets > 0:
+  if exoFrom.num_node_sets() > 0:
     nodeSetProps = exoFrom.get_node_set_property_names()
     nodeSetIds = exoFrom.get_node_set_ids()
     for nsId in nodeSetIds:
@@ -4282,7 +4526,7 @@ def copy_mesh(fromFileName, toFileName, exoFromObj=None, array_type='ctype'):
           exoTo.put_node_set_property_value(nsId, nodeSetProp, propVal)
 
   if debugPrint: print "Transfer Side Sets"
-  if numSideSets > 0:
+  if exoFrom.num_side_sets() > 0:
     sideSetProps = exoFrom.get_side_set_property_names()
     sideSetIds = exoFrom.get_side_set_ids()
     for ssId in sideSetIds:

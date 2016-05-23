@@ -138,7 +138,6 @@ The relavant defines for SEACAS are listed below:
  -D TPL_Netcdf_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
  -D TPL_Netcdf_Enables_Netcdf4:BOOL=ON  (if built with hdf5 libraries which give netcdf-4 capability)
  -D TPL_Netcdf_Enables_PNetcdf:BOOL=ON  (if built with parallel-netcdf which gives parallel I/O capability)
- -D TPL_Netcdf_PARALLEL:BOOL=OFF|ON (ON if netcdf has parallel enabled; OFF if serial )
  -D TPL_ENABLE_Matio:BOOL=ON  (set to OFF if not available)
  -D Matio_LIBRARY_DIRS:PATH=${WHERE_TO_INSTALL}/lib
  -D TPL_Matio_INCLUDE_DIRS:PATH=${WHERE_TO_INSTALL}/include
@@ -146,6 +145,14 @@ The relavant defines for SEACAS are listed below:
  -D SEACAS_ENABLE_TESTS=ON
  -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L${WHERE_TO_INSTALL}/lib -lpnetcdf -lhdf5_hl -lhdf5 -lz" 
 ```
+
+If you are using a NetCDF version prior to 4.3 and NetCDF was compiled
+with parallel enabled, then you also need to add:
+
+ -D TPL_Netcdf_PARALLEL:BOOL=ON
+
+This is automatically determined for NetCDF-4.3 and later.
+
 ## Testing
 There are a few unit tests for exodus, and aprepro that can be run via `make test` if you configured with `-D SEACAS_ENABLE_TESTS=ON`.
 

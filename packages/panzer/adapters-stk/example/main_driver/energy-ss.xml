@@ -151,7 +151,9 @@
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="true"/>
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss_"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-ss"/> 
+        <Parameter name="Write Field Manager Files" type="bool" value="true"/>
+        <Parameter name="Field Manager File Prefix" type="string" value="energy-ss"/> 
     </ParameterList>
 
     <ParameterList name="Active Parameters">

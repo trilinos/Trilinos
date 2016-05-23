@@ -69,9 +69,10 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 
   Ptr<const BlockedEpetraLOF> blk_epetra_lof = ptr_dynamic_cast<const BlockedEpetraLOF>(ptrFromRef(lof));
   if(blk_epetra_lof!=null) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                               "panzer::cloneWithNewRangeAndDomain: Blocked Epetra LOF does not yet support "
-                               "different range and domain indexers!");
+    RCP<const BlockedEpetraUGI> rangeUGI  = rcp_dynamic_cast<const BlockedEpetraUGI>(rUgi==null ? blk_epetra_lof->getRangeGlobalIndexer() : rUgi,true);
+    RCP<const BlockedEpetraUGI> domainUGI = rcp_dynamic_cast<const BlockedEpetraUGI>(dUgi==null ? blk_epetra_lof->getDomainGlobalIndexer() : dUgi,true);
+    RCP<Teuchos::MpiComm<int> > mpiComm = rcp(new Teuchos::MpiComm<int>(blk_epetra_lof->getComm()));
+    return rcp(new BlockedEpetraLOF(mpiComm,rangeUGI,domainUGI));
   }
 
   Ptr<const BlockedTpetraLOF> blk_tpetra_lof = ptr_dynamic_cast<const BlockedTpetraLOF>(ptrFromRef(lof));

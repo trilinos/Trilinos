@@ -84,17 +84,19 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
     const std::vector<std::string>& field_multiplier_names = 
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
+    int i=0;
+    field_multipliers.resize(field_multiplier_names.size());
+    kokkos_field_multipliers = Kokkos::View<Kokkos::View<ScalarT**>* >("BasisTimesVector::KokkosFieldMultipliers", field_multiplier_names.size());
+    Kokkos::fence();
     for (std::vector<std::string>::const_iterator name = 
            field_multiplier_names.begin(); 
          name != field_multiplier_names.end(); ++name) {
       PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers.push_back(tmp_field);
+      Kokkos::fence();
+      field_multipliers[i++] = tmp_field;
+      this->addDependentField(tmp_field);
     }
   }
-
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->addDependentField(*field);
 
   std::string n = "Integrator_BasisTimesVector: " + residual.fieldTag().name();
   this->setName(n);
@@ -107,9 +109,10 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
   this->utils.setFieldData(vectorField,fm);
   // this->utils.setFieldData(dof_orientation,fm);
   
-  for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-       field != field_multipliers.end(); ++field)
-    this->utils.setFieldData(*field,fm);
+  for (int i=0; i<field_multipliers.size(); ++i) {
+    this->utils.setFieldData(field_multipliers[i],fm);
+    kokkos_field_multipliers(i) = field_multipliers[i].get_kokkos_view();
+  }
 
   basis_card = residual.dimension(1); // basis cardinality
   num_qp = vectorField.dimension(1); 
@@ -119,103 +122,62 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
 
   // tmp = Intrepid2:FieldContainer<ScalarT>(vectorField.dimension(0), num_qp, num_dim);
   MDFieldArrayFactory af("",fm.template getKokkosExtendedDataTypeDimensions<EvalT>(),true);
-  scratch = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",vectorField.dimension(0),num_qp,num_dim);
 }
 
 
 //**********************************************************************
+template<typename EvalT, typename TRAITS>
+template<int NUM_FIELD_MULT>
+KOKKOS_INLINE_FUNCTION
+void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<NUM_FIELD_MULT> &, const size_t &cell) const {
+  const std::size_t nqp = vectorField.dimension_1(), ndim = vectorField.dimension_2();
+  const std::size_t nfm = kokkos_field_multipliers.dimension_0();
+  const std::size_t nbf = weighted_basis_vector.dimension_1();
 
-namespace {
+  for (int lbf = 0; lbf < nbf; lbf++)
+    residual(cell,lbf) = 0.0;
 
-template <typename ScalarT>
-class FillScratch_Initialize {
-public:
-  typedef typename PHX::Device execution_space;
-  double multiplier;
-  PHX::MDField<ScalarT,Cell,IP,Dim> vectorField;
-  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const unsigned cell) const
-  {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
-      for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
-        scratch(cell,qp,d) = multiplier * vectorField(cell,qp,d);
+  ScalarT tmp, fmm=1;
+  if ( NUM_FIELD_MULT == 0 ){
+    for (std::size_t qp = 0; qp < nqp; ++qp) {
+      for (std::size_t d = 0; d < ndim; ++d) {
+        tmp = multiplier * vectorField(cell,qp,d);
+        for (int lbf = 0; lbf < nbf; lbf++)
+          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
+      }
+    }
+  } else if ( NUM_FIELD_MULT == 1 ){
+    for (std::size_t qp = 0; qp < nqp; ++qp) {
+      for (std::size_t d = 0; d < ndim; ++d) {
+        tmp = multiplier * vectorField(cell,qp,d)*kokkos_field_multipliers(0)(cell,qp);
+        for (int lbf = 0; lbf < nbf; lbf++)
+          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
+      }
+    }
+  } else {
+    for (std::size_t qp = 0; qp < nqp; ++qp) {
+      for (std::size_t i = 0; i < nfm; ++i)
+        fmm *= kokkos_field_multipliers(i)(cell,qp);
+      for (std::size_t d = 0; d < ndim; ++d) {
+        tmp = multiplier * vectorField(cell,qp,d)*fmm;
+        for (int lbf = 0; lbf < nbf; lbf++)
+          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
+      }
+    }
   }
-};
-
-template <typename ScalarT>
-class FillScratch_FieldMultipliers {
-public:
-  typedef typename PHX::Device execution_space;
-  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
-  PHX::MDField<ScalarT,Cell,IP> field;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const unsigned cell) const
-  {
-    for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
-      for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
-        scratch(cell,qp,d) *= field(cell,qp);  
-  }
-};
-
-template <typename ScalarT>
-class Integrate_Values {
-public:
-  typedef typename PHX::Device execution_space;
-  PHX::MDField<ScalarT,Cell,IP,Dim> scratch;
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-  PHX::MDField<double,Cell,BASIS,IP,Dim> weighted_basis_vector;
-  KOKKOS_INLINE_FUNCTION
-  void operator()(const unsigned cell) const
-  {
-    for (int lbf = 0; lbf < weighted_basis_vector.dimension_1(); lbf++) {
-      residual(cell,lbf) = 0.0;
-      for (int qp = 0; qp < weighted_basis_vector.dimension_2(); qp++) {
-        for (int iVec = 0; iVec < weighted_basis_vector.dimension_3(); iVec++) {
-          residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, iVec)*scratch(cell, qp, iVec);
-        } // D-loop
-      } // P-loop
-    } // F-loop
-  }
-};
-
-} // end internal namespace
+}
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
 { 
   // residual.deep_copy(ScalarT(0.0));
-
-  // initialize the scratch field with vectorField times the 
-  // multiplier
-  {
-    FillScratch_Initialize<ScalarT> fillScratch_I;
-    fillScratch_I.scratch = scratch;
-    fillScratch_I.multiplier = multiplier;
-    fillScratch_I.vectorField = vectorField;
-    Kokkos::parallel_for(workset.num_cells,fillScratch_I);
-  }
-
-  // this multipliers each entry by the field
-  {
-    FillScratch_FieldMultipliers<ScalarT> fillScratch_FM;
-    fillScratch_FM.scratch = scratch;
-    for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
-         field != field_multipliers.end(); ++field) {
-      fillScratch_FM.field = *field;
-      Kokkos::parallel_for(workset.num_cells,fillScratch_FM);
-    }
-  }
-
-  if(workset.num_cells>0) {
-
-    Integrate_Values<ScalarT> integrate_V;
-    integrate_V.weighted_basis_vector = this->wda(workset).bases[basis_index]->weighted_basis_vector;
-    integrate_V.residual = residual;
-    integrate_V.scratch = scratch;
-
-    Kokkos::parallel_for(workset.num_cells,integrate_V);
-  }
+  weighted_basis_vector = this->wda(workset).bases[basis_index]->weighted_basis_vector;
+  if ( field_multipliers.size() == 0)
+    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<0> >(0, workset.num_cells),*this);
+  else if ( field_multipliers.size() == 1)
+    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<1> >(0, workset.num_cells),*this);
+  else
+    Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<-1> >(0, workset.num_cells),*this);
 }
 
 //**********************************************************************

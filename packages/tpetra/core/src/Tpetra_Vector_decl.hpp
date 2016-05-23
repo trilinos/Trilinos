@@ -250,9 +250,9 @@ public:
   /// This method affects the host memory version of the data.  If the
   /// \c DeviceType template parameter is a device that has two memory
   /// spaces, and you want to modify the non-host version of the data,
-  /// you must access the DualView directly by calling getDualView().
-  /// Please see modify(), sync(), and the discussion of DualView
-  /// semantics elsewhere in the documentation.
+  /// you must access the device View directly by calling
+  /// getLocalView().  Please see modify(), sync(), and the discussion
+  /// of DualView semantics elsewhere in the documentation.
   ///
   /// \param globalRow [in] Global row index of the entry to modify.
   ///   This <i>must</i> be a valid global row index on the calling
@@ -279,9 +279,9 @@ public:
   /// This method affects the host memory version of the data.  If the
   /// \c DeviceType template parameter is a device that has two memory
   /// spaces, and you want to modify the non-host version of the data,
-  /// you must access the DualView directly by calling getDualView().
-  /// Please see modify(), sync(), and the discussion of DualView
-  /// semantics elsewhere in the documentation.
+  /// you must access the device View directly by calling
+  /// getLocalView().  Please see modify(), sync(), and the discussion
+  /// of DualView semantics elsewhere in the documentation.
   ///
   /// \param localRow [in] Local row index of the entry to modify.
   /// \param value [in] Incoming value to add to the entry.
@@ -356,14 +356,34 @@ public:
   //! @name Implementation of the Teuchos::Describable interface
   //@{
 
-  //! A simple one-line description of this object.
-  virtual std::string description() const;
+  //! Return a one-line description of this object.
+  virtual std::string description () const;
 
-  //! Print the object with some verbosity level to a FancyOStream.
+  /// \brief Describe this object in a human-readable way to the
+  ///   given output stream.
+  ///
+  /// You must call this method as a collective over all processes
+  /// in this object's communicator.
+  ///
+  /// \param out [out] Output stream to which to write.  Only
+  ///   Process 0 in this object's communicator may write to the
+  ///   output stream.
+  ///
+  /// \param verbLevel [in] Verbosity level.  This also controls
+  ///   whether this method does any communication.  At verbosity
+  ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+  ///   may behave as a collective over the object's communicator.
+  ///
+  /// Teuchos::FancyOStream wraps std::ostream.  It adds features
+  /// like tab levels.  If you just want to wrap std::cout, try
+  /// this:
+  /// \code
+  /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+  /// \endcode
   virtual void
   describe (Teuchos::FancyOStream& out,
             const Teuchos::EVerbosityLevel verbLevel =
-            Teuchos::Describable::verbLevel_default) const;
+              Teuchos::Describable::verbLevel_default) const;
   //@}
 }; // class Vector
 

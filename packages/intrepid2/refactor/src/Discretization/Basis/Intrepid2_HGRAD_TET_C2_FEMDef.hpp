@@ -1,5 +1,3 @@
-#ifndef INTREPID2_HGRAD_TET_C2_FEMDEF_HPP
-#define INTREPID2_HGRAD_TET_C2_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -45,243 +43,307 @@
 /** \file   Intrepid_HGRAD_TET_C2_FEMDef.hpp
     \brief  Definition file for the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
     \author Created by P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
+
+#ifndef __INTREPID2_HGRAD_TET_C2_FEM_DEF_HPP__
+#define __INTREPID2_HGRAD_TET_C2_FEM_DEF_HPP__
 
 namespace Intrepid2 {
 
-  template<class Scalar, class ArrayScalar>
-  Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::Basis_HGRAD_TET_C2_FEM()
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT, typename OT, typename PT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HGRAD_TET_C2_FEM<SpT,OT,PT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
+    switch (opType) {
+    case OPERATOR_VALUE: {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+        
+      // output is a rank-2 array with dimensions (basisCardinality_, dim0)
+      output(0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
+      output(1) = x*(-1. + 2.*x);
+      output(2) = y*(-1. + 2.*y);
+      output(3) = z*(-1. + 2.*z);
+
+      output(4) = -4.*x*(-1. + x + y + z);
+      output(5) =  4.*x*y;
+      output(6) = -4.*y*(-1. + x + y + z);
+      output(7) = -4.*z*(-1. + x + y + z);
+      output(8) =  4.*x*z;
+      output(9) =  4.*y*z;
+      break;
+    }
+    case OPERATOR_D1:
+    case OPERATOR_GRAD: {
+      const auto x = input(0);
+      const auto y = input(1);
+      const auto z = input(2);
+        
+      // output is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
+      output(0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
+      output(0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
+      output(0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
+      
+      output(1, 0) = -1.+ 4.*x; 
+      output(1, 1) =  0.;
+      output(1, 2) =  0.;
+      
+      output(2, 0) =  0.;        
+      output(2, 1) = -1.+ 4.*y;
+      output(2, 2) =  0.;
+
+      output(3, 0) =  0.;         
+      output(3, 1) =  0.;
+      output(3, 2) = -1.+ 4.*z;
+ 
+      
+      output(4, 0) = -4.*(-1.+ 2*x + y + z);         
+      output(4, 1) = -4.*x;
+      output(4, 2) = -4.*x;
+      
+      output(5, 0) =  4.*y;       
+      output(5, 1) =  4.*x; 
+      output(5, 2) =  0.;
+
+      output(6, 0) = -4.*y;          
+      output(6, 1) = -4.*(-1.+ x + 2*y + z);
+      output(6, 2) = -4.*y; 
+
+      output(7, 0) = -4.*z;          
+      output(7, 1) = -4.*z;
+      output(7, 2) = -4.*(-1.+ x + y + 2*z);
+
+      output(8, 0) =  4.*z;     
+      output(8, 1) =  0.;
+      output(8, 2) =  4.*x;
+
+      output(9, 0) =  0.;         
+      output(9, 1) =  4.*z;
+      output(9, 2) =  4.*y;
+      break;
+    }
+    case OPERATOR_D2: {
+      output(0, 0) =  4.;
+      output(0, 1) =  4.;
+      output(0, 2) =  4.;
+      output(0, 3) =  4.;
+      output(0, 4) =  4.;
+      output(0, 5) =  4.;
+      
+      output(1, 0) =  4.;
+      output(1, 1) =  0.;
+      output(1, 2) =  0.;
+      output(1, 3) =  0.;
+      output(1, 4) =  0.;
+      output(1, 5) =  0.;
+
+      output(2, 0) =  0.;
+      output(2, 1) =  0.;
+      output(2, 2) =  0.;
+      output(2, 3) =  4.;
+      output(2, 4) =  0.;
+      output(2, 5) =  0.;
+
+      output(3, 0) =  0.;
+      output(3, 1) =  0.;
+      output(3, 2) =  0.;
+      output(3, 3) =  0.;
+      output(3, 4) =  0.;
+      output(3, 5) =  4.;
+
+      output(4, 0) = -8.;
+      output(4, 1) = -4.;
+      output(4, 2) = -4.;
+      output(4, 3) =  0.;
+      output(4, 4) =  0.;
+      output(4, 5) =  0.;
+
+      output(5, 0) =  0.;
+      output(5, 1) =  4.;
+      output(5, 2) =  0.;
+      output(5, 3) =  0.;
+      output(5, 4) =  0.;
+      output(5, 5) =  0.;
+
+      output(6, 0) =  0.;
+      output(6, 1) = -4.;
+      output(6, 2) =  0.;
+      output(6, 3) = -8.;
+      output(6, 4) = -4.;
+      output(6, 5) =  0;
+
+      output(7, 0) =  0.;
+      output(7, 1) =  0.;
+      output(7, 2) = -4.;
+      output(7, 3) =  0.;
+      output(7, 4) = -4.;
+      output(7, 5) = -8.;
+
+      output(8, 0) =  0.;
+      output(8, 1) =  0.;
+      output(8, 2) =  4.;
+      output(8, 3) =  0.;
+      output(8, 4) =  0.;
+      output(8, 5) =  0.;
+
+      output(9, 0) =  0.;
+      output(9, 1) =  0.;
+      output(9, 2) =  0.;
+      output(9, 3) =  0.;
+      output(9, 4) =  4.;
+      output(9, 5) =  0.;
+      break;
+    }
+    case OPERATOR_MAX: {
+      const auto jend = output.dimension(1);
+      const auto iend = output.dimension(0);
+
+      for (auto j=0;j<jend;++j)
+        for (auto i=0;i<iend;++i)
+          output(i, j) = 0.0;
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_GRAD &&
+                                opType != OPERATOR_D1 &&
+                                opType != OPERATOR_D2 &&
+                                opType != OPERATOR_MAX,
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::Serial::getValues) operator is not supported");
+    }
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT, typename OT, typename PT>
+  Basis_HGRAD_TET_C2_FEM<SpT,OT,PT>::
+  Basis_HGRAD_TET_C2_FEM()
+    : impl_(this)
   {
     this -> basisCardinality_  = 10;
     this -> basisDegree_       = 2;    
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
     this -> basisType_         = BASIS_FEM_DEFAULT;
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
 
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-  }
+    // intialize tags
+    {
+      // Basis-dependent intializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
   
-  
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::initializeTags() {
-  
-  // Basis-dependent intializations
-  int tagSize  = 4;        // size of DoF tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+      // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
+      ordinal_type tags[40]  = { 0, 0, 0, 1,
+                                 0, 1, 0, 1,
+                                 0, 2, 0, 1,
+                                 0, 3, 0, 1,
+                                 1, 0, 0, 1,
+                                 1, 1, 0, 1,
+                                 1, 2, 0, 1,
+                                 1, 3, 0, 1,
+                                 1, 4, 0, 1,
+                                 1, 5, 0, 1,
+      };
 
-  // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
-  int tags[]  = { 0, 0, 0, 1,
-                  0, 1, 0, 1,
-                  0, 2, 0, 1,
-                  0, 3, 0, 1,
-                  1, 0, 0, 1,
-                  1, 1, 0, 1,
-                  1, 2, 0, 1,
-                  1, 3, 0, 1,
-                  1, 4, 0, 1,
-                  1, 5, 0, 1,
-  };
-  
-  // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
+      // host tags
+      ordinal_type_array_1d_host tagView(&tags[0], 40);
+    
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      this->setOrdinalTagData(this -> tagToOrdinal_,
                               this -> ordinalToTag_,
-                              tags,
+                              tagView,
                               this -> basisCardinality_,
                               tagSize,
                               posScDim,
                               posScOrd,
                               posDfOrd);
-}
+    }
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
+    dofCoords(0,0) = 0.0;   dofCoords(0,1) = 0.0; dofCoords(0,2) = 0.0;
+    dofCoords(1,0) = 1.0;   dofCoords(1,1) = 0.0; dofCoords(1,2) = 0.0;
+    dofCoords(2,0) = 0.0;   dofCoords(2,1) = 1.0; dofCoords(2,2) = 0.0;
+    dofCoords(3,0) = 0.0;   dofCoords(3,1) = 0.0; dofCoords(3,2) = 1.0;
+
+    dofCoords(4,0) = 0.5;   dofCoords(4,1) = 0.0; dofCoords(4,2) = 0.0;
+    dofCoords(5,0) = 0.5;   dofCoords(5,1) = 0.5; dofCoords(5,2) = 0.0;
+    dofCoords(6,0) = 0.0;   dofCoords(6,1) = 0.5; dofCoords(6,2) = 0.0;
+    dofCoords(7,0) = 0.0;   dofCoords(7,1) = 0.0; dofCoords(7,2) = 0.5;
+    dofCoords(8,0) = 0.5;   dofCoords(8,1) = 0.0; dofCoords(8,2) = 0.5;
+    dofCoords(9,0) = 0.0;   dofCoords(9,1) = 0.5; dofCoords(9,2) = 0.5;
+
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);
+  }
 
 
-
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                             const ArrayScalar &  inputPoints,
-                                                             const EOperator      operatorType) const {
-  
-  // Verify arguments
+  template<typename SpT, typename OT, typename PT>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  void
+  Basis_HGRAD_TET_C2_FEM<SpT,OT,PT>::Internal::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-  Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
+    Intrepid2::getValues_HGRAD_Args(outputValues,
+                                    inputPoints,
+                                    operatorType,
+                                    obj_->getBaseCellTopology(),
+                                    obj_->getCardinality() );
 #endif
-  
-  // Number of evaluation points = dim 0 of inputPoints
-  int dim0 = inputPoints.dimension(0);  
-  
-  // Temporaries: (x,y,z) coordinates of the evaluation point
-  Scalar x = 0.0;                                    
-  Scalar y = 0.0;   
-  Scalar z = 0.0;
-  
-  switch (operatorType) {
+
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+    // Number of evaluation points = dim 0 of inputPoints
+    const auto loopSize = inputPoints.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+    switch (operatorType) {
     
-    case OPERATOR_VALUE:
-      for (int i0 = 0; i0 < dim0; i0++) {
-        x = inputPoints(i0, 0);
-        y = inputPoints(i0, 1);
-        z = inputPoints(i0, 2);
-        
-        // outputValues is a rank-2 array with dimensions (basisCardinality_, dim0)
-        outputValues(0, i0) = (-1. + x + y + z)*(-1. + 2.*x + 2.*y + 2.*z);
-        outputValues(1, i0) = x*(-1. + 2.*x);
-        outputValues(2, i0) = y*(-1. + 2.*y);
-        outputValues(3, i0) = z*(-1. + 2.*z);
-
-        outputValues(4, i0) = -4.*x*(-1. + x + y + z);
-        outputValues(5, i0) =  4.*x*y;
-        outputValues(6, i0) = -4.*y*(-1. + x + y + z);
-        outputValues(7, i0) = -4.*z*(-1. + x + y + z);
-        outputValues(8, i0) =  4.*x*z;
-        outputValues(9, i0) =  4.*y*z;
-
-      }
+    case OPERATOR_VALUE: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
+    } 
     case OPERATOR_GRAD:
-    case OPERATOR_D1:
-      for (int i0 = 0; i0 < dim0; i0++) {
-        x = inputPoints(i0, 0);
-        y = inputPoints(i0, 1);
-        z = inputPoints(i0, 2);
-        
-        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, spaceDim)
-        outputValues(0, i0, 0) = -3.+ 4.*x + 4.*y + 4.*z;
-        outputValues(0, i0, 1) = -3.+ 4.*x + 4.*y + 4.*z;
-        outputValues(0, i0, 2) = -3.+ 4.*x + 4.*y + 4.*z; 
-        
-        outputValues(1, i0, 0) = -1.+ 4.*x; 
-        outputValues(1, i0, 1) =  0.;
-        outputValues(1, i0, 2) =  0.;
-        
-        outputValues(2, i0, 0) =  0.;        
-        outputValues(2, i0, 1) = -1.+ 4.*y;
-        outputValues(2, i0, 2) =  0.;
-  
-        outputValues(3, i0, 0) =  0.;         
-        outputValues(3, i0, 1) =  0.;
-        outputValues(3, i0, 2) = -1.+ 4.*z;
- 
-        
-        outputValues(4, i0, 0) = -4.*(-1.+ 2*x + y + z);         
-        outputValues(4, i0, 1) = -4.*x;
-        outputValues(4, i0, 2) = -4.*x;
-        
-        outputValues(5, i0, 0) =  4.*y;       
-        outputValues(5, i0, 1) =  4.*x; 
-        outputValues(5, i0, 2) =  0.;
-
-        outputValues(6, i0, 0) = -4.*y;          
-        outputValues(6, i0, 1) = -4.*(-1.+ x + 2*y + z);
-        outputValues(6, i0, 2) = -4.*y; 
-
-        outputValues(7, i0, 0) = -4.*z;          
-        outputValues(7, i0, 1) = -4.*z;
-        outputValues(7, i0, 2) = -4.*(-1.+ x + y + 2*z);
-
-        outputValues(8, i0, 0) =  4.*z;     
-        outputValues(8, i0, 1) =  0.;
-        outputValues(8, i0, 2) =  4.*x;
-
-        outputValues(9, i0, 0) =  0.;         
-        outputValues(9, i0, 1) =  4.*z;
-        outputValues(9, i0, 2) =  4.*y;
-        
-      }
+    case OPERATOR_D1: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
-    case OPERATOR_CURL:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_TET_C2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
+    } 
+    case OPERATOR_CURL: {
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_CURL), std::invalid_argument,
+                                    ">>> ERROR (Basis_HGRAD_TET_C2_FEM): CURL is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
-    case OPERATOR_DIV:
-      TEUCHOS_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_TET_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
+    } 
+    case OPERATOR_DIV: {
+      INTREPID2_TEST_FOR_EXCEPTION( (operatorType == OPERATOR_DIV), std::invalid_argument,
+                                    ">>> ERROR (Basis_HGRAD_TET_C2_FEM): DIV is invalid operator for rank-0 (scalar) functions in 3D");
       break;
-      
-    case OPERATOR_D2:
-      for (int i0 = 0; i0 < dim0; i0++) {
-          
-        outputValues(0, i0, 0) =  4.;
-        outputValues(0, i0, 1) =  4.;
-        outputValues(0, i0, 2) =  4.;
-        outputValues(0, i0, 3) =  4.;
-        outputValues(0, i0, 4) =  4.;
-        outputValues(0, i0, 5) =  4.;
-        
-        outputValues(1, i0, 0) =  4.;
-        outputValues(1, i0, 1) =  0.;
-        outputValues(1, i0, 2) =  0.;
-        outputValues(1, i0, 3) =  0.;
-        outputValues(1, i0, 4) =  0.;
-        outputValues(1, i0, 5) =  0.;
-
-        outputValues(2, i0, 0) =  0.;
-        outputValues(2, i0, 1) =  0.;
-        outputValues(2, i0, 2) =  0.;
-        outputValues(2, i0, 3) =  4.;
-        outputValues(2, i0, 4) =  0.;
-        outputValues(2, i0, 5) =  0.;
-
-        outputValues(3, i0, 0) =  0.;
-        outputValues(3, i0, 1) =  0.;
-        outputValues(3, i0, 2) =  0.;
-        outputValues(3, i0, 3) =  0.;
-        outputValues(3, i0, 4) =  0.;
-        outputValues(3, i0, 5) =  4.;
-
-        outputValues(4, i0, 0) = -8.;
-        outputValues(4, i0, 1) = -4.;
-        outputValues(4, i0, 2) = -4.;
-        outputValues(4, i0, 3) =  0.;
-        outputValues(4, i0, 4) =  0.;
-        outputValues(4, i0, 5) =  0.;
-
-        outputValues(5, i0, 0) =  0.;
-        outputValues(5, i0, 1) =  4.;
-        outputValues(5, i0, 2) =  0.;
-        outputValues(5, i0, 3) =  0.;
-        outputValues(5, i0, 4) =  0.;
-        outputValues(5, i0, 5) =  0.;
-
-        outputValues(6, i0, 0) =  0.;
-        outputValues(6, i0, 1) = -4.;
-        outputValues(6, i0, 2) =  0.;
-        outputValues(6, i0, 3) = -8.;
-        outputValues(6, i0, 4) = -4.;
-        outputValues(6, i0, 5) =  0;
-
-        outputValues(7, i0, 0) =  0.;
-        outputValues(7, i0, 1) =  0.;
-        outputValues(7, i0, 2) = -4.;
-        outputValues(7, i0, 3) =  0.;
-        outputValues(7, i0, 4) = -4.;
-        outputValues(7, i0, 5) = -8.;
-
-        outputValues(8, i0, 0) =  0.;
-        outputValues(8, i0, 1) =  0.;
-        outputValues(8, i0, 2) =  4.;
-        outputValues(8, i0, 3) =  0.;
-        outputValues(8, i0, 4) =  0.;
-        outputValues(8, i0, 5) =  0.;
-
-        outputValues(9, i0, 0) =  0.;
-        outputValues(9, i0, 1) =  0.;
-        outputValues(9, i0, 2) =  0.;
-        outputValues(9, i0, 3) =  0.;
-        outputValues(9, i0, 4) =  4.;
-        outputValues(9, i0, 5) =  0.;
-      }
+    } 
+    case OPERATOR_D2: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-      
+    } 
     case OPERATOR_D3:
     case OPERATOR_D4:
     case OPERATOR_D5:
@@ -289,35 +351,36 @@ void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &       
     case OPERATOR_D7:
     case OPERATOR_D8:
     case OPERATOR_D9:
-    case OPERATOR_D10:
-      {
-        // outputValues is a rank-3 array with dimensions (basisCardinality_, dim0, DkCardinality)
-        int DkCardinality = Intrepid2::getDkCardinality(operatorType, 
-                                                       this -> basisCellTopology_.getDimension() );
-        for(int dofOrd = 0; dofOrd < this -> basisCardinality_; dofOrd++) {
-          for (int i0 = 0; i0 < dim0; i0++) {
-            for(int dkOrd = 0; dkOrd < DkCardinality; dkOrd++){
-              outputValues(dofOrd, i0, dkOrd) = 0.0;
-            }
-          }
-        }
-      }
+    case OPERATOR_D10: {
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints) );
       break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_TET_C2_FEM): Invalid operator type");
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
+                                    ">>> ERROR (Basis_HGRAD_TET_C2_FEM): Invalid operator type");
+    }
+    }
   }
-}
 
+  template<typename SpT, typename OT, typename PT>
+  template<typename dofCoordValueType, class ...dofCoordProperties>
+  void
+  Basis_HGRAD_TET_C2_FEM<SpT,OT,PT>::Internal::
+  getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    // Verify rank of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::getDofCoords) rank = 2 required for dofCoords array");
+    // Verify 0th dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != obj_->basisCardinality_, std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+    // Verify 1st dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != obj_->basisCellTopology_.getDimension(), std::invalid_argument,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+#endif
+    Kokkos::deep_copy(dofCoords, obj_->dofCoords_);
+  }
 
-  
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_TET_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                             const ArrayScalar &    inputPoints,
-                                                             const ArrayScalar &    cellVertices,
-                                                             const EOperator        operatorType) const {
-  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HGRAD_TET_C2_FEM): FEM Basis calling an FVD member function");
-}
 }// namespace Intrepid2
 #endif

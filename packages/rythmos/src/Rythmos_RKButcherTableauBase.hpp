@@ -54,9 +54,13 @@ public:
   /** \brief . */
   virtual const Teuchos::SerialDenseVector<int,Scalar>& b() const = 0;
   /** \brief . */
+  virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const = 0;
+  /** \brief . */
   virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const = 0;
   /** \brief . */
   virtual int order() const = 0;
+    /** \brief . */
+  virtual bool isEmbeddedMethod() const = 0;
   /** \brief . */
   virtual bool operator== (const RKButcherTableauBase<Scalar>& rkbt) const;
   /** \brief . */

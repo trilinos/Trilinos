@@ -314,9 +314,8 @@ namespace Tpetra {
   ///
   /// \section Kokkos_KR_MV_access How to access the local data
   ///
-  /// The getLocalView() method for getting a Kokkos::View, and
-  /// getDualView() for getting a Kokkos::DualView, are the two main
-  /// ways to access a MultiVector's local data.  If you want to read
+  /// The getLocalView() method for getting a Kokkos::View is the main
+  /// way to access a MultiVector's local data.  If you want to read
   /// or write the actual values in a multivector, this is what you
   /// want.  The resulting Kokkos::View behaves like a 2-D array.  You
   /// can address it using an index pair (i,j), where i is the local
@@ -794,11 +793,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoGlobalValue.  This is deliberate.  Replacement is not
@@ -831,7 +830,7 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
+    /// must access the device View directly by calling getLocalView().
     /// Please see modify(), sync(), and the discussion of DualView
     /// semantics elsewhere in the documentation.  You are responsible
     /// for calling modify() and sync(), if needed; this method
@@ -868,11 +867,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -901,11 +900,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// \param gblRow [in] Global row index of the entry to modify.
     ///   This <i>must</i> be a valid global row index on the calling
@@ -934,11 +933,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -971,11 +970,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// This method does not have an "atomic" option like
     /// sumIntoLocalValue.  This is deliberate.  Replacement is not
@@ -1008,11 +1007,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     ///   Must be a valid local index in this MultiVector's Map on the
@@ -1041,11 +1040,11 @@ namespace Tpetra {
     /// This method affects the host memory version of the data.  If
     /// \c device_type is a Kokkos device that has two memory spaces,
     /// and you want to modify the non-host version of the data, you
-    /// must access the DualView directly by calling getDualView().
-    /// Please see modify(), sync(), and the discussion of DualView
-    /// semantics elsewhere in the documentation.  You are responsible
-    /// for calling modify() and sync(), if needed; this method
-    /// doesn't do that.
+    /// must access the device View directly by calling
+    /// getLocalView().  Please see modify(), sync(), and the
+    /// discussion of DualView semantics elsewhere in the
+    /// documentation.  You are responsible for calling modify() and
+    /// sync(), if needed; this method doesn't do that.
     ///
     /// \param lclRow [in] Local row index of the entry to modify.
     /// \param col [in] Column index of the entry to modify.
@@ -1372,15 +1371,18 @@ namespace Tpetra {
 
     /// \brief Get the Kokkos::DualView which implements local storage.
     ///
+    /// \warning This method is scheduled for DEPRECATION.
+    ///
+    /// \warning This method is ONLY for expert developers.  Its
+    ///   interface may change or it may disappear at any time.
+    ///
     /// Instead of getting the Kokkos::DualView, we highly recommend
     /// calling the templated getLocalView() method, that returns a
     /// Kokkos::View of the MultiVector's data in a given memory
     /// space.  Since that MultiVector itself implements DualView
     /// semantics, it's much better to use MultiVector's interface to
-    /// do "DualView things," like calling modify() and sync().
-    ///
-    /// \warning This method is ONLY for expert developers.  Its
-    ///   interface may change or it may disappear at any time.
+    /// do "DualView things," like calling modify(), need_sync(), and
+    /// sync().
     dual_view_type getDualView () const;
 
     /// \brief Update data on device or host only if data in the other
@@ -1404,6 +1406,12 @@ namespace Tpetra {
     template<class TargetDeviceType>
     void sync () {
       getDualView ().template sync<TargetDeviceType> ();
+    }
+
+    //! Whether this MultiVector needs synchronization to the given space.
+    template<class TargetDeviceType>
+    bool need_sync () const {
+      return getDualView ().template need_sync<TargetDeviceType> ();
     }
 
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
@@ -2178,6 +2186,43 @@ namespace Tpetra {
     //! @name Misc. implementation details
     //@{
 
+    /// \brief Implementation of description() for this class, and its
+    ///   subclass Vector.
+    ///
+    /// \param className [in] Name of the class calling this method:
+    ///   Either "Tpetra::MultiVector" or "Tpetra::Vector" (no quotes
+    ///   in the string, in either case).
+    std::string
+    descriptionImpl (const std::string& className) const;
+
+    /// \brief Print the calling process' verbose describe()
+    ///   information to the returned string.
+    ///
+    /// This is an implementation detail of describe().
+    ///
+    /// \param vl [in] Verbosity level with which to print.
+    std::string
+    localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
+
+    /// \brief Implementation of describe() for this class, and its
+    ///   subclass Vector.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param className [in] Name of the class calling this method.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   behaves as a collective over the object's communicator.
+    void
+    describeImpl (Teuchos::FancyOStream& out,
+                  const std::string& className,
+                  const Teuchos::EVerbosityLevel verbLevel =
+                    Teuchos::Describable::verbLevel_default) const;
+
     // Return true if and only if VectorIndex is a valid column index.
     bool vectorIndexOutOfRange (const size_t VectorIndex) const;
 
@@ -2316,19 +2361,22 @@ namespace Tpetra {
       typedef typename MultiVector<DS, DL, DG, DN, dstClassic>::dual_view_type::t_host::execution_space HES;
       typedef typename MultiVector<DS, DL, DG, DN, dstClassic>::dual_view_type::t_dev::execution_space DES;
 
-      if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
+      // If we need sync to device, then host has the most recent version.
+      const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
+
+      if (! useHostVersion) {
         // Device memory has the most recent version of src.
         dst.template modify<DES> (); // We are about to modify dst on device.
         // Copy from src to dst on device.
-        Details::localDeepCopyConstStride (dst.getDualView ().d_view,
-                                           src.getDualView ().d_view);
+        Details::localDeepCopyConstStride (dst.template getLocalView<DES> (),
+                                           src.template getLocalView<typename SN::device_type> ());
         dst.template sync<HES> (); // Sync dst from device to host.
       }
       else { // Host memory has the most recent version of src.
         dst.template modify<HES> (); // We are about to modify dst on host.
         // Copy from src to dst on host.
-        Details::localDeepCopyConstStride (dst.getDualView ().h_view,
-                                           src.getDualView ().h_view);
+        Details::localDeepCopyConstStride (dst.template getLocalView<Kokkos::HostSpace> (),
+                                           src.template getLocalView<Kokkos::HostSpace> ());
         dst.template sync<DES> (); // Sync dst from host to device.
       }
     }
@@ -2343,10 +2391,12 @@ namespace Tpetra {
 
         // We can't sync src, since it is only an input argument.
         // Thus, we have to use the most recently modified version of
-        // src, which coudl be either the device or host version.
-        if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
-          // Copy from the device version of src.
-          //
+        // src, which could be either the device or host version.
+        //
+        // If we need sync to device, then host has the most recent version.
+        const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
+
+        if (! useHostVersion) { // Copy from the device version of src.
           // whichVecs tells the kernel which vectors (columns) of src
           // to copy.  Fill whichVecs on the host, and sync to device.
           whichvecs_type whichVecs (whichVecsLabel, numWhichVecs);
@@ -2360,8 +2410,8 @@ namespace Tpetra {
           // Mark the device version of dst's DualView as modified.
           dst.template modify<DES> ();
           // Copy from the selected vectors of src to dst, on the device.
-          Details::localDeepCopy (dst.getDualView ().d_view,
-                                  src.getDualView ().d_view,
+          Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
+                                  src.template getLocalView<typename SN::device_type> (),
                                   dst.isConstantStride (),
                                   src.isConstantStride (),
                                   whichVecs.d_view,
@@ -2383,8 +2433,8 @@ namespace Tpetra {
           // Copy from the selected vectors of src to dst, on the
           // host.  The function ignores the first instance of
           // 'whichVecs' in this case.
-          Details::localDeepCopy (dst.getDualView ().h_view,
-                                  src.getDualView ().h_view,
+          Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
+                                  src.template getLocalView<Kokkos::HostSpace> (),
                                   dst.isConstantStride (),
                                   src.isConstantStride (),
                                   whichVecs, whichVecs);
@@ -2394,9 +2444,11 @@ namespace Tpetra {
       }
       else { // dst is NOT constant stride
         if (src.isConstantStride ()) {
-          if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
-            // Copy from the device version of src.
-            //
+
+          // If we need sync to device, then host has the most recent version.
+          const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
+
+          if (! useHostVersion) { // Copy from the device version of src.
             // whichVecs tells the kernel which vectors (columns) of dst
             // to copy.  Fill whichVecs on the host, and sync to device.
             typedef Kokkos::DualView<DL*, DES> the_whichvecs_type;
@@ -2411,8 +2463,8 @@ namespace Tpetra {
             whichVecs.template sync<DES> ();
 
             // Copy src to the selected vectors of dst, on the device.
-            Details::localDeepCopy (dst.getDualView ().d_view,
-                                    src.getDualView ().d_view,
+            Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
+                                    src.template getLocalView<typename SN::device_type> (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecs.d_view,
@@ -2436,8 +2488,8 @@ namespace Tpetra {
               whichVecs(i) = static_cast<DL> (dst.whichVectors_[i]);
             }
             // Copy from src to the selected vectors of dst, on the host.
-            Details::localDeepCopy (dst.getDualView ().h_view,
-                                    src.getDualView ().h_view,
+            Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
+                                    src.template getLocalView<Kokkos::HostSpace> (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecs, whichVecs);
@@ -2449,12 +2501,13 @@ namespace Tpetra {
           }
         }
         else { // neither src nor dst have constant stride
-          if (src.getDualView ().modified_device () >= src.getDualView ().modified_host ()) {
-            // Copy from the device version of src.
-            //
-            // whichVectorsDst tells the kernel which vectors
-            // (columns) of dst to copy.  Fill it on the host, and
-            // sync to device.
+
+          // If we need sync to device, then host has the most recent version.
+          const bool useHostVersion = src.template need_sync<typename SN::device_type> ();
+
+          if (! useHostVersion) { // Copy from the device version of src.
+            // whichVectorsDst tells the kernel which columns of dst
+            // to copy.  Fill it on the host, and sync to device.
             const DL dstNumWhichVecs = static_cast<DL> (dst.whichVectors_.size ());
             Kokkos::DualView<DL*, DES> whichVecsDst ("MV::deep_copy::whichVecsDst",
                                                      dstNumWhichVecs);
@@ -2481,8 +2534,8 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the device.
-            Details::localDeepCopy (dst.getDualView ().d_view,
-                                    src.getDualView ().d_view,
+            Details::localDeepCopy (dst.template getLocalView<typename DN::device_type> (),
+                                    src.template getLocalView<typename SN::device_type> (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVecsDst.d_view,
@@ -2504,8 +2557,8 @@ namespace Tpetra {
 
             // Copy from the selected vectors of src to the selected
             // vectors of dst, on the host.
-            Details::localDeepCopy (dst.getDualView ().h_view,
-                                    src.getDualView ().h_view,
+            Details::localDeepCopy (dst.template getLocalView<Kokkos::HostSpace> (),
+                                    src.template getLocalView<Kokkos::HostSpace> (),
                                     dst.isConstantStride (),
                                     src.isConstantStride (),
                                     whichVectorsDst, whichVectorsSrc);
