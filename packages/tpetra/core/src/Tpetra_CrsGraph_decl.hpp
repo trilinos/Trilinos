@@ -1572,7 +1572,9 @@ namespace Tpetra {
                             const ELocalGlobal lg,
                             const ELocalGlobal I)
     {
+#ifdef HAVE_TPETRA_DEBUG
       const char tfecfFuncName[] = "insertIndicesAndValues: ";
+#endif // HAVE_TPETRA_DEBUG
 
 #ifdef HAVE_TPETRA_DEBUG
       size_t numNewInds = 0;
