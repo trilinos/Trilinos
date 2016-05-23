@@ -199,6 +199,9 @@ namespace Iohb {
         if (Ioss::Utils::case_strcmp(format, "spyhis") == 0) {
           new_this->fileFormat = SPYHIS;
         }
+        else if (Ioss::Utils::case_strcmp(format, "csv") == 0) {
+          new_this->fileFormat = CSV;
+        }
       }
 
       bool append = open_create_behavior() == Ioss::DB_APPEND;
@@ -264,7 +267,12 @@ namespace Iohb {
         if (!tsFormat.empty()) {
           new_this->legend_->add_literal("+");
           new_this->legend_->add_literal(time_stamp(tsFormat));
-          new_this->legend_->add_literal(separator_);
+	  if (fileFormat == CSV) {
+	    new_this->legend_->add_literal(separator_);
+	  }
+          else {
+            new_this->legend_->add_literal(" ");
+          }
         }
 
         if (addTimeField) {
@@ -293,7 +301,12 @@ namespace Iohb {
     if (tsFormat != "") {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
-      layout_->add_literal(separator_);
+      if (fileFormat == CSV) {
+	layout_->add_literal(separator_);
+      }
+      else {
+        layout_->add_literal(" ");
+      }
     }
 
     if (addTimeField) {

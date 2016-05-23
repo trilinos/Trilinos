@@ -98,7 +98,7 @@ namespace Iohb {
 
 namespace Iohb {
 
-  enum Format { DEFAULT = 0, SPYHIS = 1 };
+  enum Format { DEFAULT = 0, SPYHIS = 1, CSV = 2 };
 
   class IOFactory : public Ioss::IOFactory
   {
