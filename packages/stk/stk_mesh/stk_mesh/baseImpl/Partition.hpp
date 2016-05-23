@@ -132,6 +132,8 @@ public:
   std::ostream &dumpit(std::ostream &os) const;
   std::string dumpit() const;
 
+  void delete_bucket(Bucket * bucket);
+
 private:
   BulkData& m_mesh;
   BucketRepository *m_repository;

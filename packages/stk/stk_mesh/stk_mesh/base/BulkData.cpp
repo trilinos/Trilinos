@@ -79,7 +79,7 @@
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/baseImpl/elementGraph/SideConnector.hpp>   // for SideConnector
 #include <stk_mesh/baseImpl/elementGraph/SideSharingUsingGraph.hpp>
-
+#include <stk_mesh/baseImpl/ElementTopologyDeletions.hpp>
 
 namespace stk {
 namespace mesh {
@@ -942,14 +942,10 @@ bool BulkData::internal_destroy_entity_with_notification(Entity entity, bool was
 
 bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 {
-  require_ok_to_modify();
-
   const stk::mesh::EntityKey key = entity_key(entity);
-
   require_ok_to_modify();
 
   m_check_invalid_rels = false;
-
   if (!is_valid(entity)) {
     m_check_invalid_rels = true;
     return false;
@@ -968,7 +964,7 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 
   m_modSummary.track_destroy_entity(entity);
 
-  //------------------------------
+  //-----------------------------------------------------------------------------
   // Immediately remove it from relations and buckets.
   // Postpone deletion until modification_end to be sure that
   // 1) No attempt is made to re-create it.
@@ -1032,20 +1028,27 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
   m_bucket_repository.remove_entity(mesh_index(entity));
-  set_mesh_index(entity, 0, 0);
 
-  m_entity_repo.destroy_entity(key, entity );
-  notifier.notify_local_entities_created_or_deleted(key.rank());
-  notifier.notify_local_buckets_changed(key.rank());
-  m_meshModification.mark_entity_as_deleted(entity.local_offset());
-  m_mark_entity[entity.local_offset()] = NOT_MARKED;
-  m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
+  record_entity_deletion(entity);
+
   if ( !ghost ) {
     m_deleted_entities_current_modification_cycle.push_front(entity.local_offset());
   }
 
   m_check_invalid_rels = true;
   return true ;
+}
+
+void BulkData::record_entity_deletion(Entity entity)
+{
+    const EntityKey key = entity_key(entity);
+    set_mesh_index(entity, 0, 0);
+    m_entity_repo.destroy_entity(key, entity);
+    notifier.notify_local_entities_created_or_deleted(key.rank());
+    notifier.notify_local_buckets_changed(key.rank());
+    m_meshModification.mark_entity_as_deleted(entity.local_offset());
+    m_mark_entity[entity.local_offset()] = NOT_MARKED;
+    m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
 }
 
 size_t get_max_num_ids_needed_across_all_procs(const stk::mesh::BulkData& bulkData, size_t numIdsNeededThisProc)
@@ -7431,6 +7434,40 @@ const stk::mesh::ElemElemGraph& BulkData::get_face_adjacent_element_graph() cons
 bool BulkData::has_face_adjacent_element_graph() const
 {
     return m_elemElemGraph != nullptr;
+}
+
+void BulkData::destroy_elements_of_topology(stk::topology topologyToDelete)
+{
+    impl::ElementTopologyDeletions topoBasedBucketDestroyer(*this, topologyToDelete);
+    topoBasedBucketDestroyer.find_buckets_to_destroy_and_relations_to_sever();
+    break_boundary_relations_and_delete_buckets(topoBasedBucketDestroyer.get_relations_to_sever(), topoBasedBucketDestroyer.get_buckets_to_delete());
+}
+
+void BulkData::break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete)
+{
+    modification_begin();
+    for(const impl::RelationEntityToNode & relation : relationsToDestroy)
+        destroy_relation(relation.entity, relation.node, relation.ordinal);
+    delete_buckets(bucketsToDelete);
+    modification_end();
+}
+
+void BulkData::delete_buckets(const stk::mesh::BucketVector & buckets)
+{
+    for(stk::mesh::Bucket * bucket : buckets)
+    {
+        mark_entities_as_deleted(bucket);
+        m_bucket_repository.delete_bucket(bucket);
+    }
+}
+
+void BulkData::mark_entities_as_deleted(stk::mesh::Bucket * bucket)
+{
+    for(Entity e : *bucket)
+    {
+        notifier.notify_entity_deleted(e);
+        record_entity_deletion(e);
+    }
 }
 
 #ifdef SIERRA_MIGRATION

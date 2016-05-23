@@ -84,6 +84,7 @@ namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -772,6 +773,12 @@ public:
 
   size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
 
+  void destroy_elements_of_topology(stk::topology topologyToDelete);
+private:
+  void record_entity_deletion(Entity entity);
+  void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
+  void delete_buckets(const stk::mesh::BucketVector & buckets);
+  void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 protected: //functions
 
   bool resolve_node_sharing()
