@@ -32,6 +32,8 @@
 // 
 
 
+#include <cmath>
+#include <cfenv>
 #include <ctype.h>                      // for isalnum, isalpha, isupper, etc
 #include <errno.h>                      // for errno, EDOM, ERANGE
 #include <stddef.h>                     // for size_t
@@ -173,28 +175,38 @@ namespace SEAMS {
 
   void math_error(const SEAMS::Aprepro &apr, const char *function)
   {
-    if (errno != 0) {
-      yyerror(apr, function);
+    if (math_errhandling & MATH_ERRNO) {
+      if (errno != 0) {
+	yyerror(apr, function);
+      }
+      if (errno == EDOM)
+	perror("	DOMAIN error");
+      else if (errno == ERANGE)
+	perror("	RANGE error");
+      else if (errno != 0)
+	perror("	Unknown error");
+      errno = 0;
     }
-    if (errno == EDOM)
-      perror("	DOMAIN error");
-    else if (errno == ERANGE)
-      perror("	RANGE error");
-    else if (errno != 0)
-      perror("	Unknown error");
+    else if (math_errhandling & MATH_ERREXCEPT) {
+      if (std::fetestexcept(FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO)) {
+	yyerror(apr, function);
+      }
+
+      if(std::fetestexcept(FE_INVALID)) {
+	std::cerr << "	DOMAIN error\n";
+      }
+      else if (std::fetestexcept(FE_OVERFLOW)) {
+	std::cerr << "  RANGE error -- overflow\n";
+      }
+      else if (std::fetestexcept(FE_DIVBYZERO)) {
+	std::cerr << "	RANGE error -- divide by zero\n";
+      }
+    }
   }
 
   void math_error(const char *function)
   {
-    if (errno != 0) {
-      yyerror(*SEAMS::aprepro, function);
-    }
-    if (errno == EDOM)
-      perror("	DOMAIN error");
-    else if (errno == ERANGE)
-      perror("	RANGE error");
-    else if (errno != 0)
-      perror("	Unknown error");
+    math_error(*SEAMS::aprepro, function);
   }
 
   /* Convert string to all lower-case and replace all spaces with '_' */

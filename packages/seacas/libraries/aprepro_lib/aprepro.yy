@@ -41,6 +41,19 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdio>
+#include <cfenv>
+
+namespace {
+  void reset_error()
+  {
+    if (math_errhandling & MATH_ERREXCEPT) {
+      std::feclearexcept(FE_ALL_EXCEPT);
+    }
+    if (math_errhandling & MATH_ERRNO) {
+      errno = 0;
+    }
+  }
+}
 
 namespace SEAMS {
    extern int echo;
@@ -327,7 +340,7 @@ exp:	  NUM			{ $$ = $1; 				}
 	| VAR EQ_MINUS exp	{ $1->value.var -= $3; $$ = $1->value.var; }
 	| VAR EQ_TIME exp	{ $1->value.var *= $3; $$ = $1->value.var; }
 	| VAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; }
-	| VAR EQ_POW exp	{ errno = 0;
+	| VAR EQ_POW exp	{ reset_error();
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
 				  SEAMS::math_error(aprepro, "Power");
@@ -372,7 +385,7 @@ exp:	  NUM			{ $$ = $1; 				}
 	| UNDVAR EQ_DIV exp	{ $1->value.var /= $3; $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
 				  undefined_error(aprepro, $1->name);          }
-	| UNDVAR EQ_POW exp	{ errno = 0;
+	| UNDVAR EQ_POW exp	{ reset_error();
 				  $1->value.var = std::pow($1->value.var,$3); 
 				  $$ = $1->value.var; 
 		                  set_type(aprepro, $1, token::VAR);
@@ -489,11 +502,11 @@ exp:	  NUM			{ $$ = $1; 				}
 				    $$ = (int)$1 % (int)$3;		}  
 	| SUB exp %prec UNARY	{ $$ = -$2;				}
 	| PLU exp %prec UNARY	{ $$ =  $2;				}
-	| exp POW exp 		{ errno = 0;
+	| exp POW exp 		{ reset_error();
 				  $$ = std::pow($1, $3); 
 				  SEAMS::math_error(aprepro, "Power");			}
 	| LPAR exp RPAR		{ $$ = $2;				}
-	| LBRACK exp RBRACK     { errno = 0;
+	| LBRACK exp RBRACK     { reset_error();
 				  $$ = (double)($2 < 0 ? -floor(-($2)): floor($2) );
 				  SEAMS::math_error(aprepro, "floor (int)");		}
         | bool                   { $$ = ($1) ? 1 : 0; }

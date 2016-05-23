@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.29 (2016/04/12)";
+  const char* version_string = "4.30 (2016/05/23)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -65,6 +65,7 @@ namespace SEAMS {
   Aprepro *aprepro;  // A global for use in the library.  Clean this up...
   int   echo = true;
   
+
   Aprepro::Aprepro()
     : lexer(nullptr), infoStream(&std::cout), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(nullptr),
@@ -76,7 +77,7 @@ namespace SEAMS {
     init_table("$");
     aprepro = this;
   }
-
+  
   Aprepro::~Aprepro()
   {
     outputStream.top()->flush();
