@@ -85,12 +85,15 @@ PHX_EVALUATOR_CTOR(Integrator_BasisTimesVector,p) :
       *(p.get<Teuchos::RCP<const std::vector<std::string> > >("Field Multipliers"));
 
     int i=0;
-    field_multipliers = Kokkos::View<PHX::MDField<ScalarT,Cell,IP>* >("BasisTimesVector", field_multiplier_names.size());
+    field_multipliers.resize(field_multiplier_names.size());
+    kokkos_field_multipliers = Kokkos::View<Kokkos::View<ScalarT**>* >("BasisTimesVector::KokkosFieldMultipliers", field_multiplier_names.size());
+    Kokkos::fence();
     for (std::vector<std::string>::const_iterator name = 
            field_multiplier_names.begin(); 
          name != field_multiplier_names.end(); ++name) {
       PHX::MDField<ScalarT,Cell,IP> tmp_field(*name, p.get< Teuchos::RCP<panzer::IntegrationRule> >("IR")->dl_scalar);
-      field_multipliers(i++) = tmp_field;
+      Kokkos::fence();
+      field_multipliers[i++] = tmp_field;
       this->addDependentField(tmp_field);
     }
   }
@@ -106,8 +109,10 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
   this->utils.setFieldData(vectorField,fm);
   // this->utils.setFieldData(dof_orientation,fm);
   
-  for (int i=0; i<field_multipliers.dimension(0); ++i)
-    this->utils.setFieldData(field_multipliers(i),fm);
+  for (int i=0; i<field_multipliers.size(); ++i) {
+    this->utils.setFieldData(field_multipliers[i],fm);
+    kokkos_field_multipliers(i) = field_multipliers[i].get_kokkos_view();
+  }
 
   basis_card = residual.dimension(1); // basis cardinality
   num_qp = vectorField.dimension(1); 
@@ -126,7 +131,7 @@ template<int NUM_FIELD_MULT>
 KOKKOS_INLINE_FUNCTION
 void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<NUM_FIELD_MULT> &, const size_t &cell) const {
   const std::size_t nqp = vectorField.dimension_1(), ndim = vectorField.dimension_2();
-  const std::size_t nfm = field_multipliers.dimension_0();
+  const std::size_t nfm = kokkos_field_multipliers.dimension_0();
   const std::size_t nbf = weighted_basis_vector.dimension_1();
 
   for (int lbf = 0; lbf < nbf; lbf++)
@@ -144,7 +149,7 @@ void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<N
   } else if ( NUM_FIELD_MULT == 1 ){
     for (std::size_t qp = 0; qp < nqp; ++qp) {
       for (std::size_t d = 0; d < ndim; ++d) {
-        tmp = multiplier * vectorField(cell,qp,d)*field_multipliers(0)(cell,qp);
+        tmp = multiplier * vectorField(cell,qp,d)*kokkos_field_multipliers(0)(cell,qp);
         for (int lbf = 0; lbf < nbf; lbf++)
           residual(cell,lbf) += weighted_basis_vector(cell, lbf, qp, d)*tmp;
       }
@@ -152,7 +157,7 @@ void Integrator_BasisTimesVector<EvalT, TRAITS>::operator()(const FieldMultTag<N
   } else {
     for (std::size_t qp = 0; qp < nqp; ++qp) {
       for (std::size_t i = 0; i < nfm; ++i)
-        fmm *= field_multipliers(i)(cell,qp);
+        fmm *= kokkos_field_multipliers(i)(cell,qp);
       for (std::size_t d = 0; d < ndim; ++d) {
         tmp = multiplier * vectorField(cell,qp,d)*fmm;
         for (int lbf = 0; lbf < nbf; lbf++)
@@ -167,9 +172,9 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
 { 
   // residual.deep_copy(ScalarT(0.0));
   weighted_basis_vector = this->wda(workset).bases[basis_index]->weighted_basis_vector;
-  if ( field_multipliers.dimension_0() == 0)
+  if ( field_multipliers.size() == 0)
     Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<0> >(0, workset.num_cells),*this);
-  else if ( field_multipliers.dimension_0() == 1)
+  else if ( field_multipliers.size() == 1)
     Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<1> >(0, workset.num_cells),*this);
   else
     Kokkos::parallel_for(Kokkos::RangePolicy<FieldMultTag<-1> >(0, workset.num_cells),*this);
