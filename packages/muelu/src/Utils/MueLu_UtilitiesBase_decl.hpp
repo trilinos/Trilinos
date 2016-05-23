@@ -74,7 +74,6 @@
 #include <Xpetra_MatrixMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 
-
 #include "MueLu_Exceptions.hpp"
 
 
@@ -160,53 +159,14 @@ namespace MueLu {
 
       RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
 
-      RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
-          Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
-      if(bA == Teuchos::null) {
-        RCP<const Map> rowMap = rcpA->getRowMap();
-        RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap);
-        ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
-        size_t numRows = rowMap->getNodeNumElements();
-        Teuchos::ArrayView<const LocalOrdinal> cols;
-        Teuchos::ArrayView<const Scalar> vals;
-        for (size_t i = 0; i < numRows; ++i) {
-          rcpA->getLocalRowView(i, cols, vals);
-          LocalOrdinal j = 0;
-          for (; j < cols.size(); ++j) {
-            if (Teuchos::as<size_t>(cols[j]) == i) {
-              if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > tol)
-                diagVals[i] = Teuchos::ScalarTraits<Scalar>::one() / vals[j];
-              else
-                diagVals[i]=Teuchos::ScalarTraits<Scalar>::zero();
-              break;
-            }
-          }
-          if (j == cols.size()) {
-            // Diagonal entry is absent
-            diagVals[i]=Teuchos::ScalarTraits<Scalar>::zero();
-          }
-        }
-        diagVals=null;
-        return diag;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
-          "UtilitiesBase::GetMatrixDiagonalInverse(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
+      RCP<const Map> rowMap = rcpA->getRowMap();
+      RCP<Vector> diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
 
-        RCP<Vector> diagInv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(bA->getRangeMapExtractor()->getFullMap());
+      rcpA->getLocalDiagCopy(*diag);
 
-        for (size_t row = 0; row < bA->Rows(); ++row) {
-          if (!bA->getMatrix(row,row).is_null()) {
-            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
-            bool bThyraMode = bA->getRangeMapExtractor()->getThyraMode() && (Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA->getMatrix(row,row)) == Teuchos::null);
-            RCP<const Vector> dd = GetMatrixDiagonalInverse(*(bA->getMatrix(row,row)), tol);
-            bA->getRangeMapExtractor()->InsertVector(dd,row,diagInv,bThyraMode);
-          }
-        }
+      RCP<Vector> inv = MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(diag, tol, Teuchos::ScalarTraits<Scalar>::zero());
 
-        return diagInv;
-      }
-      // we should never get here...
-      return Teuchos::null;
+      return inv;
     }
 
 
@@ -218,6 +178,7 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static Teuchos::ArrayRCP<Scalar> GetLumpedMatrixDiagonal(const Matrix& A) {
+
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Teuchos::ArrayRCP<Scalar> diag(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
@@ -230,6 +191,78 @@ namespace MueLu {
         }
       }
       return diag;
+    }
+
+    /*! @brief Extract Matrix Diagonal of lumped matrix
+
+    Returns Matrix diagonal of lumped matrix in ArrayRCP.
+
+    NOTE -- it's assumed that A has been fillComplete'd.
+    */
+    static Teuchos::RCP<Vector> GetLumpedMatrixDiagonal(Teuchos::RCP<const Matrix> rcpA) {
+
+      RCP<Vector> diag = Teuchos::null;
+
+      RCP<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bA =
+          Teuchos::rcp_dynamic_cast<const Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(rcpA);
+      if(bA == Teuchos::null) {
+        RCP<const Map> rowMap = rcpA->getRowMap();
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(rowMap,true);
+        ArrayRCP<Scalar> diagVals = diag->getDataNonConst(0);
+        Teuchos::ArrayView<const LocalOrdinal> cols;
+        Teuchos::ArrayView<const Scalar> vals;
+        for (size_t i = 0; i < rowMap->getNodeNumElements(); ++i) {
+          rcpA->getLocalRowView(i, cols, vals);
+          diagVals[i] = Teuchos::ScalarTraits<Scalar>::zero();
+          for (LocalOrdinal j = 0; j < cols.size(); ++j) {
+            diagVals[i] += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+          }
+        }
+
+      } else {
+        //TEUCHOS_TEST_FOR_EXCEPTION(bA->Rows() != bA->Cols(), Xpetra::Exceptions::RuntimeError,
+        //  "UtilitiesBase::GetLumpedMatrixDiagonal(): you cannot extract the diagonal of a "<< bA->Rows() << "x"<< bA->Cols() << " blocked matrix." );
+
+        diag = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(bA->getRangeMapExtractor()->getFullMap(),true);
+
+        for (size_t row = 0; row < bA->Rows(); ++row) {
+          for (size_t col = 0; col < bA->Cols(); ++col) {
+            if (!bA->getMatrix(row,col).is_null()) {
+              // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+              bool bThyraMode = bA->getRangeMapExtractor()->getThyraMode() && (Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(bA->getMatrix(row,col)) == Teuchos::null);
+              RCP<Vector> ddtemp = bA->getRangeMapExtractor()->ExtractVector(diag,row,bThyraMode);
+              RCP<const Vector> dd = GetLumpedMatrixDiagonal(bA->getMatrix(row,col));
+              ddtemp->update(Teuchos::as<Scalar>(1.0),*dd,Teuchos::as<Scalar>(1.0));
+              bA->getRangeMapExtractor()->InsertVector(ddtemp,row,diag,bThyraMode);
+            }
+          }
+        }
+
+      }
+
+      // we should never get here...
+      return diag;
+    }
+
+    /*! @brief Return vector containing inverse of input vector
+     *
+     * @param[in] v: input vector
+     * @param[in] tol: tolerance. If entries of input vector are smaller than tolerance they are replaced by tolReplacement (see below). The default value for tol is 100*eps (machine precision)
+     * @param[in] tolReplacement: Value put in for undefined entries in output vector (default: 0.0)
+     * @ret: vector containing inverse values of input vector v
+    */
+    static Teuchos::RCP<Vector> GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) {
+
+      RCP<Vector> ret = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(v->getMap(),true);
+      ArrayRCP<Scalar> retVals = ret->getDataNonConst(0);
+      ArrayRCP<const Scalar> inputVals = v->getData(0);
+      for (size_t i = 0; i < v->getMap()->getNodeNumElements(); ++i) {
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(inputVals[i]) > tol)
+          retVals[i] = Teuchos::ScalarTraits<Scalar>::one() / inputVals[i];
+        else
+          retVals[i] = tolReplacement;
+      }
+      return ret;
     }
 
     /*! @brief Extract Overlapped Matrix Diagonal

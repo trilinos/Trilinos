@@ -50,7 +50,6 @@
 /// for you).  If you only want the declaration of Tpetra::DistObject,
 /// include this file (Tpetra_DistObject_decl.hpp).
 
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"

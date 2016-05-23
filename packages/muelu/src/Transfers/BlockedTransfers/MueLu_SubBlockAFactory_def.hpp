@@ -113,7 +113,7 @@ namespace MueLu {
       // check if it is a 1x1 leaf block
       if (bOp->Rows() == 1 && bOp->Cols() == 1) {
         // return the unwrapped CrsMatrixWrap object underneath
-        Op = bOp->getMatrix(0,0);
+        Op = bOp->getCrsMatrix();
         TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Op) == Teuchos::null, Exceptions::BadCast, "SubBlockAFactory::Build: sub block A[" << row << "," << col << "] must be a single block CrsMatrixWrap object!");
       } else {
         // If it is a regular nxm blocked operator, just return it.

@@ -485,6 +485,45 @@ namespace MueLuTests {
         return bop;
       }
 
+      static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateBlocked3x3MatrixThyra(const Teuchos::Comm<int>& comm, Xpetra::UnderlyingLib lib) {
+        typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> Map;
+        typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> Matrix;
+        typedef Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapExtractor;
+        typedef Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCrsMatrix;
+
+        std::vector<RCP<const Map> > maps = std::vector<RCP<const Map> >(3, Teuchos::null);
+        maps[0] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+        maps[1] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+        maps[2] = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMap(100);
+        RCP<Matrix> A00 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], 4.0, -1.0, -1.0, lib);
+        RCP<Matrix> A01 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[0], -1.0, 0.0, 0.0, lib);
+        RCP<Matrix> A10 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
+        RCP<Matrix> A11 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], 4.0, -1.0, -1.0, lib);
+        RCP<Matrix> A12 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[1], -1.0, 0.0, 0.0, lib);
+        RCP<Matrix> A21 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], -1.0, 0.0, 0.0, lib);
+        RCP<Matrix> A22 = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildTridiag(maps[2], 4.0, -1.0, -1.0, lib);
+
+        // create map extractor
+        // To generate the Thyra style map extractor we do not need a full map but only the
+        // information about the Map details (i.e. lib and indexBase). We can extract this
+        // information from maps[0]
+        Teuchos::RCP<const MapExtractor > rgMapExtractor =
+            Teuchos::rcp(new MapExtractor(maps[0], maps, true));
+        Teuchos::RCP<const MapExtractor > doMapExtractor =
+            Teuchos::rcp(new MapExtractor(maps[0], maps, true));
+        // build blocked operator
+        Teuchos::RCP<BlockedCrsMatrix> bop = Teuchos::rcp(new BlockedCrsMatrix(rgMapExtractor,doMapExtractor,5));
+        bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(0),A00);
+        bop->setMatrix(Teuchos::as<size_t>(0),Teuchos::as<size_t>(1),A01);
+        bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(0),A10);
+        bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(1),A11);
+        bop->setMatrix(Teuchos::as<size_t>(1),Teuchos::as<size_t>(2),A12);
+        bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(1),A21);
+        bop->setMatrix(Teuchos::as<size_t>(2),Teuchos::as<size_t>(2),A22);
+        bop->fillComplete();
+        return bop;
+      }
+
      // Create a matrix as specified by parameter list options
      /*static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) {
        RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();

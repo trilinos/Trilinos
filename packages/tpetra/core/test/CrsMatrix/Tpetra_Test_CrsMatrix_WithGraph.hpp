@@ -41,17 +41,12 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
-#include <Tpetra_ConfigDefs.hpp>
+#ifndef TPETRA_TEST_CRSMATRIX_WITHGRAPH_HPP
+#define TPETRA_TEST_CRSMATRIX_WITHGRAPH_HPP
 
-#include <Tpetra_TestingUtilities.hpp>
-
-#include <Tpetra_MultiVector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-// mfh 08 Mar 2013: This include isn't being used here, so I'm
-// commenting it out to speed up compilation time.
-//#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -75,7 +70,8 @@ namespace Teuchos {
     }
 }
 
-namespace {
+namespace Tpetra {
+namespace Test {
 
   // no ScalarTraits<>::eps() for integer types
 
@@ -720,20 +716,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
   }
 
 //
-// INSTANTIATIONS
+// Macro for test instanatiations.
+// Please only invoke this in the Tpetra::Test namespace.
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithColMap, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AdvancedGraphUsage, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithColMap, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AdvancedGraphUsage, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
 
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+} // namespace Test
+} // namespace Tpetra
 
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
-
-}
+#endif // TPETRA_TEST_CRSMATRIX_WITHGRAPH_HPP
 
 

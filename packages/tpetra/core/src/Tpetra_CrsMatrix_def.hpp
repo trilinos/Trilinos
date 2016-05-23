@@ -53,19 +53,10 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
-#include "Tpetra_Util.hpp"
+//#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_as.hpp"
-#include "Teuchos_ArrayRCP.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
 #include <typeinfo>
-
-// CrsMatrix relies on template methods implemented in Tpetra_CrsGraph_def.hpp
-//
-// FIXME (mfh 01 Oct 2015) If I comment this out, I get link errors
-// for CrsGraph's templated methods, even though supposedly the ETI
-// for CrsGraph instantiates them.
-#include "Tpetra_CrsGraph_def.hpp"
 
 namespace Tpetra {
 //

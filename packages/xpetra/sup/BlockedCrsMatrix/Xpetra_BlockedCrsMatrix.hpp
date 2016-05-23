@@ -396,40 +396,31 @@ namespace Xpetra {
     /*! Resume fill operations.
       After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
 
+      For BlockedCrsMatrix objects we call the routine iteratively for all sub-blocks.
+
       resumeFill() may be called repeatedly.
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-
-      TODO: extend this routine to global
       */
     void resumeFill(const RCP< ParameterList >& params = null) {
-      if (Rows() == 1 && Cols () == 1) {
-        getMatrix(0,0)->resumeFill(params);
-        return;
+      for (size_t row = 0; row < Rows(); row++) {
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            getMatrix(row,col)->resumeFill(params);
+          }
+        }
       }
-      throw Xpetra::Exceptions::RuntimeError("resumeFill not supported for block matrices");
     }
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
+    /*! \brief Signal that data entry is complete.
 
-      Off-node indices are distributed (via globalAssemble()), indices are sorted,
-      redundant indices are eliminated, and global indices are transformed to local
-      indices.
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-      \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+      Note: for blocked operators the specified domain and range maps have no meaning.
+            We just call fillComplete for all underlying blocks
       */
     void fillComplete(const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, const RCP<ParameterList>& params = null) {
       if (Rows() == 1 && Cols () == 1) {
         getMatrix(0,0)->fillComplete(domainMap, rangeMap, params);
         return;
       }
-      throw Xpetra::Exceptions::RuntimeError("fillComplete with arguments not supported for block matrices");
+      fillComplete(params);
     }
 
     /*! \brief Signal that data entry is complete.
@@ -447,12 +438,16 @@ namespace Xpetra {
       \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
       */
     void fillComplete(const RCP<ParameterList>& params = null) {
+      TEUCHOS_TEST_FOR_EXCEPTION(rangemaps_==Teuchos::null, Xpetra::Exceptions::RuntimeError,"BlockedCrsMatrix::fillComplete: rangemaps_ is not set. Error.");
+
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
-          Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
+          if(getMatrix(r,c) != Teuchos::null) {
+            Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
 
-          if (Ablock != Teuchos::null && !Ablock->isFillComplete())
-            Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
+            if (Ablock != Teuchos::null && !Ablock->isFillComplete())
+              Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
+          }
         }
 
       // get full row map
@@ -790,10 +785,15 @@ namespace Xpetra {
 
     //! Get Frobenius norm of the matrix
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
-      if (Rows() == 1 && Cols () == 1) {
-        return getMatrix(0,0)->getFrobeniusNorm();
+      typename ScalarTraits<Scalar>::magnitudeType ret = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero());
+      for (size_t col = 0; col < Cols(); ++col) {
+        for (size_t row = 0; row < Rows(); ++row) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            ret += getMatrix(row,col)->getFrobeniusNorm();
+          }
+        }
       }
-      throw Xpetra::Exceptions::RuntimeError("getFrobeniusNorm() not supported by BlockedCrsMatrix, yet");
+      return ret;
     }
 
     //@}
@@ -1039,8 +1039,12 @@ namespace Xpetra {
       if (isFillComplete()) {
         out << "BlockMatrix is fillComplete" << std::endl;
 
-        out << "fullRowMap" << std::endl;
-        fullrowmap_->describe(out,verbLevel);
+        if(fullrowmap_ != Teuchos::null) {
+          out << "fullRowMap" << std::endl;
+          fullrowmap_->describe(out,verbLevel);
+        } else {
+          out << "fullRowMap not set. Check whether block matrix is properly fillCompleted!" << std::endl;
+        }
 
         //out << "fullColMap" << std::endl;
         //fullcolmap_->describe(out,verbLevel);
@@ -1051,8 +1055,10 @@ namespace Xpetra {
 
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
-          out << "Block(" << r << "," << c << ")" << std::endl;
-          getMatrix(r,c)->describe(out,verbLevel);
+          if(getMatrix(r,c)!=Teuchos::null) {
+            out << "Block(" << r << "," << c << ")" << std::endl;
+            getMatrix(r,c)->describe(out,verbLevel);
+          } else out << "Block(" << r << "," << c << ") = null" << std::endl;
         }
     }
 
@@ -1075,8 +1081,22 @@ namespace Xpetra {
     /// number of column blocks
     virtual size_t Cols() const                                       { return domainmaps_->NumMaps(); }
 
+    /// return unwrap 1x1 blocked operators
+    Teuchos::RCP<Matrix> getCrsMatrix() const {
+      TEUCHOS_TEST_FOR_EXCEPTION(Rows()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Rows() << " block rows, though.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Cols()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Cols() << " block columns, though.");
+
+      RCP<Matrix> mat = getMatrix(0,0);
+      RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+      if (bmat == Teuchos::null) return mat;
+      return bmat->getCrsMatrix();
+    }
+
     /// return block (r,c)
     Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       {
+      TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
+      TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
+
       // transfer strided/blocked map information
       if (blocks_[r*Cols()+c] != Teuchos::null &&
           blocks_[r*Cols()+c]->IsView("stridedMaps") == false)

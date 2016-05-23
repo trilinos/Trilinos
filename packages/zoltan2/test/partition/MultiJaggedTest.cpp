@@ -1003,7 +1003,7 @@ int testFromSeparateDataFiles(
     }
 
     if(pqParts != ""){
-        params->set("pqParts", pqParts);
+        params->set("mj_parts", pqParts);
     }
     if(numParts > 0){
         params->set("num_global_parts", numParts);

@@ -51,6 +51,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   APPEND_SET(SOURCES
     BlockedCoarseMapFactory.cpp
     BlockedPFactory.cpp
+    SchurComplementFactory.cpp
     SubBlockAFactory.cpp
     Smoothers/BlockedSmoother.cpp
   )

@@ -1,9 +1,9 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,62 +35,39 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ************************************************************************
 // @HEADER
+*/
 
-#ifndef __Panzer_Integerator_BasisTimesVector_decl_hpp__
-#define __Panzer_Integerator_BasisTimesVector_decl_hpp__
+// Include here just the bare minimum needed for the outer #if.
+// Only include more once we know we need the test.
+#include "TpetraCore_config.h"
 
-#include <string>
-#include "Panzer_Dimension.hpp"
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
+#if defined(HAVE_TPETRA_OPENMP)
 
-#include "Panzer_Evaluator_Macros.hpp"
+#include "Tpetra_Test_CrsMatrix_WithGraph.hpp"
 
-namespace panzer {
-    
-PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
-  
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-    
-  PHX::MDField<ScalarT,Cell,IP,Dim> vectorField;
+namespace Tpetra {
+namespace Test {
 
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
+//
+// INSTANTIATIONS
+//
 
-  std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
-  Kokkos::View<Kokkos::View<ScalarT** >* > kokkos_field_multipliers;
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  std::size_t basis_card;
+// Declare a colon- and comma-free typedef, to avoid macro issues.
+typedef Kokkos::Compat::KokkosOpenMPWrapperNode openmp_node_type;
 
-  std::size_t num_qp;
+#define UNIT_TEST_GROUP_OPENMP( SCALAR, LO, GO ) \
+  UNIT_TEST_GROUP( SCALAR, LO, GO, openmp_node_type )
 
-  std::size_t num_dim;
+TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP_OPENMP )
 
-  double multiplier;
+} // namespace Test
+} // namespace Tpetra
 
-  std::string basis_name;
-  std::size_t basis_index;
+#endif // defined(HAVE_TPETRA_OPENMP)
 
-public:
-
-  typedef PHX::Device::scratch_memory_space shmem_space ;
-
-  template<int NUM_FIELD_MULT>
-  struct FieldMultTag{};
-
-  template<int NUM_FIELD_MULT>
-  void operator()(const FieldMultTag<NUM_FIELD_MULT> &, const std::size_t &cell) const;
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-
-  PHX::MDField<double,Cell,BASIS,IP,Dim> weighted_basis_vector;
-
-PANZER_EVALUATOR_CLASS_END
-
-}
-
-#endif
