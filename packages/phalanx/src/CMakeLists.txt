@@ -46,6 +46,7 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_Factory_UFO.hpp
   Phalanx_Evaluator.hpp
   Phalanx_Evaluator_Macros.hpp
+  Phalanx_Evaluator_TaskBase.hpp
   Phalanx_Evaluator_TemplateBuilder.hpp
   Phalanx_Evaluator_TemplateManager.hpp
   Phalanx_Evaluator_Utilities.hpp

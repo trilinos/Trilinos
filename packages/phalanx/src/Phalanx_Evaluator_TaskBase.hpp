@@ -5,7 +5,6 @@
 
 #include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Workset.hpp"
 
 namespace PHX_example {
 
