@@ -12,9 +12,7 @@ quick install without worrying about all the features and options that are
 available.  For a more indepth document on what features and options are
 available and how to use them, see the document:
 
-    doc/build_ref/TrilinosBuildReference.html
-
-(or the *.rst or *.pdf forms).
+https://trilinos.org/docs/files/TrilinosBuildReference.html
 
 .. sectnum::
 
@@ -45,72 +43,94 @@ Note: all examples assume a unix like command line and Makefile Generators.
 Simple MPI instructions (enables most packages)
 ------------------------------------------------
 
-cmake \
--DTPL_ENABLE_MPI=ON \
--DMPI_BASE_DIR=<path to mpi install> \
--DTrilinos_ENABLE_ALL_PACKAGES=ON \
--DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
-<path to Trilinos source>
+::
 
-make -j<n> install
+  cmake \
+  -DTPL_ENABLE_MPI=ON \
+  -DMPI_BASE_DIR=<path to mpi install> \
+  -DTrilinos_ENABLE_ALL_PACKAGES=ON \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
+  <path to Trilinos source>
+  
+  make -j<n> install
+
+NOTE: Enabling all packages will trigger the enable of several third-party
+libraries (TPLs).  If CMake can't find these TPLs on your system, then you
+will need to either point to them or disable them as specified in the CMake
+output.
 
 
 Simple serial instructions (enables most packages)
 --------------------------------------------------
 
-cmake \
--DCMAKE_C_COMPILER=<path to C compiler> \
--DCMAKE_CXX_COMPILER=<path to C++ compiler> \
--DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
--DTrilinos_ENABLE_ALL_PACKAGES=ON \
--DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
-<path to Trilinos source>
+::
 
-make -j<n> install
-
-
-Intermediate MPI instructions (enables a few packages)
-------------------------------------------------------
-
-cmake \
--DTPL_ENABLE_MPI=ON \
--DMPI_BASE_DIR=<path to mpi install> \
--DTrilinos_ENABLE_Epetra=ON \
--DTrilinos_ENABLE_AztecOO=ON \
--DTrilinos_ENABLE_Ifpack=ON \
--DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
-<path to Trilinos source>
-
-make -j<n> install
+  cmake \
+  -DCMAKE_C_COMPILER=<path to C compiler> \
+  -DCMAKE_CXX_COMPILER=<path to C++ compiler> \
+  -DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
+  -DTrilinos_ENABLE_ALL_PACKAGES=ON \
+  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  <path to Trilinos source>
+  
+  make -j<n> install
 
 
 Intermediate MPI instructions (enables a few packages)
 ------------------------------------------------------
 
-cmake \
--DCMAKE_C_COMPILER=<path to C compiler> \
--DCMAKE_CXX_COMPILER=<path to C++ compiler> \
--DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
--DTrilinos_ENABLE_Epetra=ON \
--DTrilinos_ENABLE_AztecOO=ON \
--DTrilinos_ENABLE_Ifpack=ON \
--DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
-<path to Trilinos source>
+::
 
-make -j<n> install
+  cmake \
+  -DTPL_ENABLE_MPI=ON \
+  -DMPI_BASE_DIR=<path to mpi install> \
+  -DTrilinos_ENABLE_Epetra=ON \
+  -DTrilinos_ENABLE_AztecOO=ON \
+  -DTrilinos_ENABLE_Ifpack=ON \
+  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  <path to Trilinos source>
+  
+  make -j<n> install
+
+
+Intermediate MPI instructions (enables a few packages)
+------------------------------------------------------
+
+::
+
+  cmake \
+  -DCMAKE_C_COMPILER=<path to C compiler> \
+  -DCMAKE_CXX_COMPILER=<path to C++ compiler> \
+  -DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
+  -DTrilinos_ENABLE_Epetra=ON \
+  -DTrilinos_ENABLE_AztecOO=ON \
+  -DTrilinos_ENABLE_Ifpack=ON \
+  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  <path to Trilinos source>
+  
+  make -j<n> install
 
 
 Useful Options
 ==============
 
-To disable Fortran use the following
--DTrilinos_ENABLE_FORTRAN=OFF
+To turn on explicit template instantiation (can massively reduce build times)
+use::
 
-To enable a package
--DTrilinos_ENABLE_<package name>=ON
+  -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON
 
-To enable tests
--DTrilinos_ENABLE_TESTS=ON
+To use shared libraries (much smaller executables and faster linking) use::
 
-To enable all Primary Stable Trilinos packages (not all packages)
--DTrilinos_ENABLE_ALL_PACKAGES=ON
+  -DBUILD_SHARED_LIBS=ON
+
+To disable Fortran use the following::
+
+  -DTrilinos_ENABLE_FORTRAN=OFF
+
+To enable a package::
+
+  -DTrilinos_ENABLE_<package name>=ON
+
+To enable tests::
+
+  -DTrilinos_ENABLE_TESTS=ON
