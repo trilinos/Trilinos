@@ -121,11 +121,6 @@ struct ViewFactory {
 
 };
 
-template< class > struct is_dyn_rank_view : public std::false_type {};
-
-template< class D, class ... P >
-struct is_dyn_rank_view< DynRankView<D,P...> > : public std::true_type {};
-
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename ResultViewType, typename InputViewType, typename CtorProp,
           typename ... Dims>
