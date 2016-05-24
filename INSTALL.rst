@@ -5,14 +5,14 @@ Quick configure, build and install hints for Trilinos
 :Author: Brent Perschbacher
 :Contact: bmpersc@sandia.gov
 
-:Abstract: This document is intended to be a very concise set of examples of
-how to configure, build and install Trilinos. The intended audience is those
-who need a quick refresher on Trilinos CMake build system or those wanting a
-quick install without worrying about all the features and options that are
+This document is intended to be a very concise set of examples of how to
+configure, build and install Trilinos. The intended audience is those who need
+a quick refresher on Trilinos CMake build system or those wanting a quick
+install without worrying about all the features and options that are
 available.  For a more indepth document on what features and options are
 available and how to use them, see the document:
 
-https://trilinos.org/docs/files/TrilinosBuildReference.html
+  https://trilinos.org/docs/files/TrilinosBuildReference.html
 
 .. sectnum::
 
@@ -22,10 +22,10 @@ https://trilinos.org/docs/files/TrilinosBuildReference.html
 Requirements
 ============
 
-CMake 2.8.11 or newer
-A C and C++ compiler
-Optionally a Fortran compiler
-Optionally an installation of MPI
+* CMake 2.8.11 or newer
+* A C and C++ compiler
+* Optionally a Fortran compiler
+* Optionally an installation of MPI
 
 
 Instructions
@@ -34,8 +34,8 @@ Instructions
 Following are a few examples of simple configurations for Trilinos. Anything in
 <> should be replaced with the appropriate path or value and excluding the <>.
 
-It is recommended that you put your configure options in a script so you can
-repeat the configure if necessary.
+It is recommended that you put your configure options in a script (e..g
+``do-configure``) so you can repeat the configure if necessary.
 
 Note: all examples assume a unix like command line and Makefile Generators.
 
