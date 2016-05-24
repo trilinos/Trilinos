@@ -3606,7 +3606,7 @@ namespace MueLuTests {
       out << "  ||Residual_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(20) << residualNorm1[0] << std::endl;
       out << "  ||X_final|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << finalNorms[0] << std::endl;
 
-      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 32e-3, out, success);
+      TEUCHOS_TEST_COMPARE(residualNorm1[0], <, 35e-3, out, success);
       TEUCHOS_TEST_COMPARE(residualNorm1[0], >, 22e-3, out, success);
     } // end UseTpetra
   }
