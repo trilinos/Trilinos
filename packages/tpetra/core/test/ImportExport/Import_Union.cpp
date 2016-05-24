@@ -245,22 +245,22 @@ namespace {
     TEST_EQUALITY( dist1.getMaxSendLength (), dist2.getMaxSendLength () );
     TEST_EQUALITY( dist1.getTotalReceiveLength (), dist2.getTotalReceiveLength () );
 
-    ArrayView<const int> imagesFrom1 = dist1.getImagesFrom ();
-    ArrayView<const int> imagesFrom2 = dist2.getImagesFrom ();
-    const bool sameImagesFrom =
+    ArrayView<const int> imagesFrom1 = dist1.getProcsFrom ();
+    ArrayView<const int> imagesFrom2 = dist2.getProcsFrom ();
+    const bool sameProcsFrom =
       imagesFrom1.size () == imagesFrom2.size () &&
       std::equal (imagesFrom1.begin (),
                   imagesFrom1.end (),
                   imagesFrom2.begin ());
-    TEST_EQUALITY( sameImagesFrom, true );
+    TEST_EQUALITY( sameProcsFrom, true );
 
-    ArrayView<const int> imagesTo1 = dist1.getImagesTo ();
-    ArrayView<const int> imagesTo2 = dist2.getImagesTo ();
-    const bool sameImagesTo =
+    ArrayView<const int> imagesTo1 = dist1.getProcsTo ();
+    ArrayView<const int> imagesTo2 = dist2.getProcsTo ();
+    const bool sameProcsTo =
       imagesTo1.size () == imagesTo2.size () &&
       std::equal (imagesTo1.begin (), imagesTo1.end (),
                   imagesTo2.begin ());
-    TEST_EQUALITY( sameImagesTo, true );
+    TEST_EQUALITY( sameProcsTo, true );
 
     ArrayView<const size_t> lengthsFrom1 = dist1.getLengthsFrom ();
     ArrayView<const size_t> lengthsFrom2 = dist2.getLengthsFrom ();

@@ -208,7 +208,7 @@ namespace Tpetra {
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
             Teuchos::Array<int> & remotePIDs);
-
+  
     /// \brief Copy constructor.
     ///
     /// \note Currently this only makes a shallow copy of the Import's
@@ -222,6 +222,21 @@ namespace Tpetra {
     /// Tpetra developers, for example when building the explicit
     /// transpose of a sparse matrix.
     Import (const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter);
+
+    /// \bief Full Expert constructor
+    /// Requirements: source and target maps are fully correct
+    ///
+
+    Import (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& source,
+	    const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& target,
+	    Teuchos::Array<int> & userRemotePIDs,
+	    Teuchos::Array<GlobalOrdinal>& remoteGIDs,
+	    const Teuchos::ArrayView<const LocalOrdinal> & userExportLIDs,
+	    const Teuchos::ArrayView<const int> & userExportPIDs,
+	    const bool useRemotePIDs,
+	    const Teuchos::RCP<Teuchos::ParameterList>& plist = Teuchos::null,
+	    const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null);
+
 
     //! Destructor.
     virtual ~Import ();
@@ -400,7 +415,6 @@ namespace Tpetra {
     virtual void print (std::ostream& os) const;
 
     //@}
-
   private:
     //! All the data needed for executing the Import communication plan.
     RCP<ImportExportData<LocalOrdinal,GlobalOrdinal,Node> > ImportData_;
@@ -500,7 +514,6 @@ namespace Tpetra {
     setupExport (Teuchos::Array<GlobalOrdinal>& remoteGIDs, bool useRemotePIDs, Teuchos::Array<int> & remotePIDs);
     //@}
 
-
     /// \brief "Expert" constructor that includes all the Import's data.
     ///
     /// This is useful for implementing setUnion() efficiently.
@@ -510,7 +523,7 @@ namespace Tpetra {
     /// so that it doesn't have to copy them.
     Import (const Teuchos::RCP<const map_type>& source,
             const Teuchos::RCP<const map_type>& target,
-            const size_t numSameIDs,
+            const size_t numSameID,
             Teuchos::Array<LocalOrdinal>& permuteToLIDs,
             Teuchos::Array<LocalOrdinal>& permuteFromLIDs,
             Teuchos::Array<LocalOrdinal>& remoteLIDs,

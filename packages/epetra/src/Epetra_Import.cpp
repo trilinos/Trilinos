@@ -64,7 +64,8 @@
 //==============================================================================
 // Epetra_Import constructor function for a Epetra_BlockMap object
 template<typename int_type>
-void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, int NumRemotePIDs, const int * UserRemotePIDs,
+void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap, 
+				      int NumRemotePIDs, const int * UserRemotePIDs,
                                       const int & UserNumExportIDs, const int * UserExportLIDs,  const int * UserExportPIDs)
 {
   int i,ierr;

@@ -252,7 +252,7 @@ namespace Tpetra {
     , debug_ (distributor.debug_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
-    , imagesTo_ (distributor.imagesTo_)
+    , procsTo_ (distributor.procsTo_)
     , startsTo_ (distributor.startsTo_)
     , lengthsTo_ (distributor.lengthsTo_)
     , maxSendLength_ (distributor.maxSendLength_)
@@ -260,7 +260,7 @@ namespace Tpetra {
     , numReceives_ (distributor.numReceives_)
     , totalReceiveLength_ (distributor.totalReceiveLength_)
     , lengthsFrom_ (distributor.lengthsFrom_)
-    , imagesFrom_ (distributor.imagesFrom_)
+    , procsFrom_ (distributor.procsFrom_)
     , startsFrom_ (distributor.startsFrom_)
     , indicesFrom_ (distributor.indicesFrom_)
     , reverseDistributor_ (distributor.reverseDistributor_)
@@ -314,7 +314,7 @@ namespace Tpetra {
     std::swap (debug_, rhs.debug_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
-    std::swap (imagesTo_, rhs.imagesTo_);
+    std::swap (procsTo_, rhs.procsTo_);
     std::swap (startsTo_, rhs.startsTo_);
     std::swap (lengthsTo_, rhs.lengthsTo_);
     std::swap (maxSendLength_, rhs.maxSendLength_);
@@ -322,7 +322,7 @@ namespace Tpetra {
     std::swap (numReceives_, rhs.numReceives_);
     std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
     std::swap (lengthsFrom_, rhs.lengthsFrom_);
-    std::swap (imagesFrom_, rhs.imagesFrom_);
+    std::swap (procsFrom_, rhs.procsFrom_);
     std::swap (startsFrom_, rhs.startsFrom_);
     std::swap (indicesFrom_, rhs.indicesFrom_);
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
@@ -488,14 +488,14 @@ namespace Tpetra {
   size_t Distributor::getMaxSendLength() const
   { return maxSendLength_; }
 
-  Teuchos::ArrayView<const int> Distributor::getImagesFrom() const
-  { return imagesFrom_; }
+  Teuchos::ArrayView<const int> Distributor::getProcsFrom() const
+  { return procsFrom_; }
 
   Teuchos::ArrayView<const size_t> Distributor::getLengthsFrom() const
   { return lengthsFrom_; }
 
-  Teuchos::ArrayView<const int> Distributor::getImagesTo() const
-  { return imagesTo_; }
+  Teuchos::ArrayView<const int> Distributor::getProcsTo() const
+  { return procsTo_; }
 
   Teuchos::ArrayView<const size_t> Distributor::getLengthsTo() const
   { return lengthsTo_; }
@@ -532,9 +532,9 @@ namespace Tpetra {
     // We calculate it because it's the maximum length of any of the
     // sends of the reverse Distributor.
     size_t maxReceiveLength = 0;
-    const int myImageID = comm_->getRank();
+    const int myProcID = comm_->getRank();
     for (size_t i=0; i < numReceives_; ++i) {
-      if (imagesFrom_[i] != myImageID) {
+      if (procsFrom_[i] != myProcID) {
         // Don't count receives for messages sent by myself to myself.
         if (lengthsFrom_[i] > maxReceiveLength) {
           maxReceiveLength = lengthsFrom_[i];
@@ -548,7 +548,7 @@ namespace Tpetra {
 
     reverseDistributor_->selfMessage_ = selfMessage_;
     reverseDistributor_->numSends_ = numReceives_;
-    reverseDistributor_->imagesTo_ = imagesFrom_;
+    reverseDistributor_->procsTo_ = procsFrom_;
     reverseDistributor_->startsTo_ = startsFrom_;
     reverseDistributor_->lengthsTo_ = lengthsFrom_;
     reverseDistributor_->maxSendLength_ = maxReceiveLength;
@@ -556,7 +556,7 @@ namespace Tpetra {
     reverseDistributor_->numReceives_ = numSends_;
     reverseDistributor_->totalReceiveLength_ = totalSendLength;
     reverseDistributor_->lengthsFrom_ = lengthsTo_;
-    reverseDistributor_->imagesFrom_ = imagesTo_;
+    reverseDistributor_->procsFrom_ = procsTo_;
     reverseDistributor_->startsFrom_ = startsTo_;
     reverseDistributor_->indicesFrom_ = indicesTo_;
 
@@ -709,7 +709,7 @@ namespace Tpetra {
     out << "selfMessage: " << hasSelfMessage () << endl;
     out << "numSends: " << getNumSends () << endl;
     if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-      out << "imagesTo: " << toString (imagesTo_) << endl;
+      out << "procsTo: " << toString (procsTo_) << endl;
       out << "lengthsTo: " << toString (lengthsTo_) << endl;
       out << "maxSendLength: " << getMaxSendLength () << endl;
     }
@@ -722,7 +722,7 @@ namespace Tpetra {
       out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
       out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
       out << "startsFrom: " << toString (startsFrom_) << endl;
-      out << "imagesFrom: " << toString (imagesFrom_) << endl;
+      out << "procsFrom: " << toString (procsFrom_) << endl;
     }
 
     out.flush (); // make sure the ostringstream got everything
@@ -848,23 +848,23 @@ namespace Tpetra {
       *out_ << os.str ();
     }
 
-    // toNodesFromMe[i] == the number of messages sent by this process
-    // to process i.  The data in numSends_, imagesTo_, and lengthsTo_
+    // toProcsFromMe[i] == the number of messages sent by this process
+    // to process i.  The data in numSends_, procsTo_, and lengthsTo_
     // concern the contiguous sends.  Therefore, each process will be
-    // listed in imagesTo_ at most once, and so toNodesFromMe[i] will
+    // listed in procsTo_ at most once, and so toProcsFromMe[i] will
     // either be 0 or 1.
     {
-      Array<int> toNodesFromMe (numProcs, 0);
+      Array<int> toProcsFromMe (numProcs, 0);
 #ifdef HAVE_TEUCHOS_DEBUG
       bool counting_error = false;
 #endif // HAVE_TEUCHOS_DEBUG
       for (size_t i = 0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
 #ifdef HAVE_TEUCHOS_DEBUG
-        if (toNodesFromMe[imagesTo_[i]] != 0) {
+        if (toProcsFromMe[procsTo_[i]] != 0) {
           counting_error = true;
         }
 #endif // HAVE_TEUCHOS_DEBUG
-        toNodesFromMe[imagesTo_[i]] = 1;
+        toProcsFromMe[procsTo_[i]] = 1;
       }
 #ifdef HAVE_TEUCHOS_DEBUG
       SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
@@ -890,9 +890,9 @@ namespace Tpetra {
       // to receive, and how many packets of data we expect to receive
       // from each process.)
       //
-      // toNodesFromMe[i] is the number of messages sent by this
+      // toProcsFromMe[i] is the number of messages sent by this
       // process to process i.  Compute the sum (elementwise) of all
-      // the toNodesFromMe arrays on all processes in the
+      // the toProcsFromMe arrays on all processes in the
       // communicator.  If the array x is that sum, then if this
       // process has rank j, x[j] is the number of messages sent
       // to process j, that is, the number of receives on process j
@@ -907,7 +907,7 @@ namespace Tpetra {
       // implement this O(P) memory algorithm.
       //
       //   1. Use MPI_Reduce and MPI_Scatter: reduce on the root
-      //      process (0) from toNodesFromMe, to numRecvsOnEachProc.
+      //      process (0) from toProcsFromMe, to numRecvsOnEachProc.
       //      Then, scatter the latter, so that each process p gets
       //      numRecvsOnEachProc[p].
       //
@@ -917,9 +917,9 @@ namespace Tpetra {
       //      MPI_Reduce_scatter is more general than we need (it
       //      allows the equivalent of MPI_Scatterv).  See Bug 6336.
       //
-      //   3. Do an all-reduce on toNodesFromMe, and let my process
+      //   3. Do an all-reduce on toProcsFromMe, and let my process
       //      (with rank myRank) get numReceives_ from
-      //      toNodesFromMe[myRank].  The HPCCG miniapp uses the
+      //      toProcsFromMe[myRank].  The HPCCG miniapp uses the
       //      all-reduce method.
       //
       // Approaches 1 and 3 have the same critical path length.
@@ -938,7 +938,7 @@ namespace Tpetra {
         numRecvsOnEachProc.resize (numProcs);
       }
       int numReceivesAsInt = 0; // output
-      reduce<int, int> (toNodesFromMe.getRawPtr (),
+      reduce<int, int> (toProcsFromMe.getRawPtr (),
                         numRecvsOnEachProc.getRawPtr (),
                         numProcs, REDUCE_SUM, root, *comm_);
       scatter<int, int> (numRecvsOnEachProc.getRawPtr (), 1,
@@ -947,10 +947,10 @@ namespace Tpetra {
     }
 
     // Now we know numReceives_, which is this process' number of
-    // receives.  Allocate the lengthsFrom_ and imagesFrom_ arrays
+    // receives.  Allocate the lengthsFrom_ and procsFrom_ arrays
     // with this number of entries.
     lengthsFrom_.assign (numReceives_, 0);
-    imagesFrom_.assign (numReceives_, 0);
+    procsFrom_.assign (numReceives_, 0);
 
     //
     // Ask (via nonblocking receive) each process from which we are
@@ -995,7 +995,7 @@ namespace Tpetra {
     for (size_t i = 0; i < actualNumReceives; ++i) {
       // Once the receive completes, we can ask the corresponding
       // CommStatus object (output by wait()) for the sending process'
-      // ID (which we'll assign to imagesFrom_[i] -- don't forget to
+      // ID (which we'll assign to procsFrom_[i] -- don't forget to
       // do that!).
       lengthsFromBuffers[i].resize (1);
       lengthsFromBuffers[i][0] = as<size_t> (0);
@@ -1023,16 +1023,16 @@ namespace Tpetra {
     // set.  The value of numSends_ (my process' number of sends) does
     // not include any message that it might send to itself.
     for (size_t i = 0; i < numSends_ + (selfMessage_ ? 1 : 0); ++i) {
-      if (imagesTo_[i] != myRank) {
-        // Send a message to imagesTo_[i], telling that process that
+      if (procsTo_[i] != myRank) {
+        // Send a message to procsTo_[i], telling that process that
         // this communication pattern will send that process
         // lengthsTo_[i] blocks of packets.
         const size_t* const lengthsTo_i = &lengthsTo_[i];
-        send<int, size_t> (lengthsTo_i, 1, as<int> (imagesTo_[i]), tag, *comm_);
+        send<int, size_t> (lengthsTo_i, 1, as<int> (procsTo_[i]), tag, *comm_);
         if (debug_) {
           std::ostringstream os;
           os << myRank << ": computeReceives: "
-            "Posted send to Proc " << imagesTo_[i] << " w/ specified tag "
+            "Posted send to Proc " << procsTo_[i] << " w/ specified tag "
              << tag << endl;
           *out_ << os.str ();
         }
@@ -1041,11 +1041,11 @@ namespace Tpetra {
         // We don't need a send in the self-message case.  If this
         // process will send a message to itself in the communication
         // pattern, then the last element of lengthsFrom_ and
-        // imagesFrom_ corresponds to the self-message.  Of course
+        // procsFrom_ corresponds to the self-message.  Of course
         // this process knows how long the message is, and the process
         // ID is its own process ID.
         lengthsFrom_[numReceives_-1] = lengthsTo_[i];
-        imagesFrom_[numReceives_-1] = myRank;
+        procsFrom_[numReceives_-1] = myRank;
       }
     }
 
@@ -1058,19 +1058,19 @@ namespace Tpetra {
     //
     // Wait on all the receives.  When they arrive, check the status
     // output of wait() for the receiving process ID, unpack the
-    // request buffers into lengthsFrom_, and set imagesFrom_ from the
+    // request buffers into lengthsFrom_, and set procsFrom_ from the
     // status.
     //
     waitAll (*comm_, requests (), statuses ());
     for (size_t i = 0; i < actualNumReceives; ++i) {
       lengthsFrom_[i] = *lengthsFromBuffers[i];
-      imagesFrom_[i] = statuses[i]->getSourceRank ();
+      procsFrom_[i] = statuses[i]->getSourceRank ();
     }
 
-    // Sort the imagesFrom_ array, and apply the same permutation to
-    // lengthsFrom_.  This ensures that imagesFrom_[i] and
+    // Sort the procsFrom_ array, and apply the same permutation to
+    // lengthsFrom_.  This ensures that procsFrom_[i] and
     // lengthsFrom_[i] refers to the same thing.
-    sort2 (imagesFrom_.begin(), imagesFrom_.end(), lengthsFrom_.begin());
+    sort2 (procsFrom_.begin(), procsFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
     totalReceiveLength_ = std::accumulate (lengthsFrom_.begin(), lengthsFrom_.end(), 0);
@@ -1099,7 +1099,7 @@ namespace Tpetra {
   }
 
   size_t
-  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportNodeIDs)
+  Distributor::createFromSends (const Teuchos::ArrayView<const int> &exportProcIDs)
   {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
@@ -1107,16 +1107,16 @@ namespace Tpetra {
     using std::endl;
 
     Teuchos::OSTab tab (out_);
-    const size_t numExports = exportNodeIDs.size();
-    const int myImageID = comm_->getRank();
-    const int numImages = comm_->getSize();
+    const size_t numExports = exportProcIDs.size();
+    const int myProcID = comm_->getRank();
+    const int numProcs = comm_->getSize();
     if (debug_) {
       std::ostringstream os;
-      os << myImageID << ": createFromSends" << endl;
+      os << myProcID << ": createFromSends" << endl;
       *out_ << os.str ();
     }
 
-    // exportNodeIDs tells us the communication pattern for this
+    // exportProcIDs tells us the communication pattern for this
     // distributor.  It dictates the way that the export data will be
     // interpreted in doPosts().  We want to perform at most one
     // send per process in doPosts; this is for two reasons:
@@ -1140,7 +1140,7 @@ namespace Tpetra {
     //
     // Determine contiguity. There are a number of ways to do this:
     // * If the export IDs are sorted, then all exports to a
-    //   particular node must be contiguous. This is what Epetra does.
+    //   particular proc must be contiguous. This is what Epetra does.
     // * If the export ID of the current export already has been
     //   listed, then the previous listing should correspond to the
     //   same export.  This tests contiguity, but not sortedness.
@@ -1149,7 +1149,7 @@ namespace Tpetra {
     // exports. However, the latter will positively identify a greater
     // portion of contiguous patterns.  We use the latter method.
     //
-    // Check to see if values are grouped by images without gaps
+    // Check to see if values are grouped by procs without gaps
     // If so, indices_to -> 0.
 
     // Set up data structures for quick traversal of arrays.
@@ -1164,7 +1164,7 @@ namespace Tpetra {
     // large process count, unless the communication pattern is dense.
     // Note that it's important to be able to iterate through keys (i
     // for which starts[i] is nonzero) in increasing order.
-    Teuchos::Array<size_t> starts (numImages + 1, 0);
+    Teuchos::Array<size_t> starts (numProcs + 1, 0);
 
     // numActive is the number of sends that are not Null
     size_t numActive = 0;
@@ -1174,10 +1174,10 @@ namespace Tpetra {
     int badID = -1; // only used in a debug build
 #endif // HAVE_TPETRA_DEBUG
     for (size_t i = 0; i < numExports; ++i) {
-      const int exportID = exportNodeIDs[i];
-      if (exportID >= numImages) {
+      const int exportID = exportProcIDs[i];
+      if (exportID >= numProcs) {
 #ifdef HAVE_TPETRA_DEBUG
-        badID = myImageID;
+        badID = myProcID;
 #endif // HAVE_TPETRA_DEBUG
         break;
       }
@@ -1189,13 +1189,13 @@ namespace Tpetra {
         // If we're sending more than one message to process exportID,
         // then it is possible that the data are not contiguous.
         // Check by seeing if the previous process ID in the list
-        // (exportNodeIDs[i-1]) is the same.  It's safe to use i-1,
+        // (exportProcIDs[i-1]) is the same.  It's safe to use i-1,
         // because if starts[exportID] > 1, then i must be > 1 (since
         // the starts array was filled with zeros initially).
 
         // null entries break continuity.
         // e.g.,  [ 0, 0, 0, 1, -99, 1, 2, 2, 2] is not contiguous
-        if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportNodeIDs[i-1]) {
+        if (needSendBuff==0 && starts[exportID] > 1 && exportID != exportProcIDs[i-1]) {
           needSendBuff = 1;
         }
         ++numActive;
@@ -1243,7 +1243,7 @@ namespace Tpetra {
 
     // Determine from the caller's data whether or not the current
     // process should send (a) message(s) to itself.
-    if (starts[myImageID] != 0) {
+    if (starts[myProcID] != 0) {
       selfMessage_ = true;
     }
     else {
@@ -1255,11 +1255,11 @@ namespace Tpetra {
     bool send_neq_numSends = false;
 #endif
     if (! needSendBuff) {
-      // grouped by image, no send buffer or indicesTo_ needed
+      // grouped by proc, no send buffer or indicesTo_ needed
       numSends_ = 0;
-      // Count total number of sends, i.e., total number of images to
+      // Count total number of sends, i.e., total number of procs to
       // which we are sending.  This includes myself, if applicable.
-      for (int i = 0; i < numImages; ++i) {
+      for (int i = 0; i < numProcs; ++i) {
         if (starts[i]) {
           ++numSends_;
         }
@@ -1270,25 +1270,25 @@ namespace Tpetra {
       indicesTo_.resize(0);
       // Size these to numSends_; note, at the moment, numSends_
       // includes self sends.  Set their values to zeros.
-      imagesTo_.assign(numSends_,0);
+      procsTo_.assign(numSends_,0);
       startsTo_.assign(numSends_,0);
       lengthsTo_.assign(numSends_,0);
 
-      // set startsTo to the offset for each send (i.e., each image ID)
-      // set imagesTo to the image ID for each send
+      // set startsTo to the offset for each send (i.e., each proc ID)
+      // set procsTo to the proc ID for each send
       // in interpreting this code, remember that we are assuming contiguity
       // that is why index skips through the ranks
       {
-        size_t index = 0, nodeIndex = 0;
+        size_t index = 0, procIndex = 0;
         for (size_t i = 0; i < numSends_; ++i) {
-          while (exportNodeIDs[nodeIndex] < 0) {
-            ++nodeIndex; // skip all negative node IDs
+          while (exportProcIDs[procIndex] < 0) {
+            ++procIndex; // skip all negative proc IDs
           }
-          startsTo_[i] = nodeIndex;
-          int imageID = exportNodeIDs[nodeIndex];
-          imagesTo_[i] = imageID;
-          index     += starts[imageID];
-          nodeIndex += starts[imageID];
+          startsTo_[i] = procIndex;
+          int procID = exportProcIDs[procIndex];
+          procsTo_[i] = procID;
+          index     += starts[procID];
+          procIndex += starts[procID];
         }
 #ifdef HAVE_TEUCHOS_DEBUG
         if (index != numActive) {
@@ -1296,25 +1296,25 @@ namespace Tpetra {
         }
 #endif
       }
-      // sort the startsTo and image IDs together, in ascending order, according
-      // to image IDs
+      // sort the startsTo and proc IDs together, in ascending order, according
+      // to proc IDs
       if (numSends_ > 0) {
-        sort2(imagesTo_.begin(), imagesTo_.end(), startsTo_.begin());
+        sort2(procsTo_.begin(), procsTo_.end(), startsTo_.begin());
       }
       // compute the maximum send length
       maxSendLength_ = 0;
       for (size_t i = 0; i < numSends_; ++i) {
-        int imageID = imagesTo_[i];
-        lengthsTo_[i] = starts[imageID];
-        if ((imageID != myImageID) && (lengthsTo_[i] > maxSendLength_)) {
+        int procID = procsTo_[i];
+        lengthsTo_[i] = starts[procID];
+        if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
           maxSendLength_ = lengthsTo_[i];
         }
       }
     }
     else {
-      // not grouped by image, need send buffer and indicesTo_
+      // not grouped by proc, need send buffer and indicesTo_
 
-      // starts[i] is the number of sends to node i
+      // starts[i] is the number of sends to proc i
       // numActive equals number of sends total, \sum_i starts[i]
 
       // this loop starts at starts[1], so explicitly check starts[0]
@@ -1332,7 +1332,7 @@ namespace Tpetra {
         *i += *im1;
         im1 = i;
       }
-      // starts[i] now contains the number of exports to nodes 0 through i
+      // starts[i] now contains the number of exports to procs 0 through i
 
       for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
                                                       i=starts.rbegin()+1;
@@ -1342,57 +1342,57 @@ namespace Tpetra {
         ip1 = i;
       }
       starts[0] = 0;
-      // starts[i] now contains the number of exports to nodes 0 through
-      // i-1, i.e., all nodes before node i
+      // starts[i] now contains the number of exports to procs 0 through
+      // i-1, i.e., all procs before proc i
 
       indicesTo_.resize(numActive);
 
       for (size_t i = 0; i < numExports; ++i) {
-        if (exportNodeIDs[i] >= 0) {
+        if (exportProcIDs[i] >= 0) {
           // record the offset to the sendBuffer for this export
-          indicesTo_[starts[exportNodeIDs[i]]] = i;
-          // now increment the offset for this node
-          ++starts[exportNodeIDs[i]];
+          indicesTo_[starts[exportProcIDs[i]]] = i;
+          // now increment the offset for this proc
+          ++starts[exportProcIDs[i]];
         }
       }
-      // our send buffer will contain the export data for each of the nodes
-      // we communicate with, in order by node id
-      // sendBuffer = {node_0_data, node_1_data, ..., node_np-1_data}
+      // our send buffer will contain the export data for each of the procs
+      // we communicate with, in order by proc id
+      // sendBuffer = {proc_0_data, proc_1_data, ..., proc_np-1_data}
       // indicesTo now maps each export to the location in our send buffer
       // associated with the export
       // data for export i located at sendBuffer[indicesTo[i]]
       //
       // starts[i] once again contains the number of exports to
-      // nodes 0 through i
-      for (int node = numImages-1; node != 0; --node) {
-        starts[node] = starts[node-1];
+      // procs 0 through i
+      for (int proc = numProcs-1; proc != 0; --proc) {
+        starts[proc] = starts[proc-1];
       }
       starts.front() = 0;
-      starts[numImages] = numActive;
+      starts[numProcs] = numActive;
       //
-      // starts[node] once again contains the number of exports to
-      // nodes 0 through node-1
+      // starts[proc] once again contains the number of exports to
+      // procs 0 through proc-1
       // i.e., the start of my data in the sendBuffer
 
-      // this contains invalid data at nodes we don't care about, that is okay
-      imagesTo_.resize(numSends_);
+      // this contains invalid data at procs we don't care about, that is okay
+      procsTo_.resize(numSends_);
       startsTo_.resize(numSends_);
       lengthsTo_.resize(numSends_);
 
-      // for each group of sends/exports, record the destination node,
+      // for each group of sends/exports, record the destination proc,
       // the length, and the offset for this send into the
       // send buffer (startsTo_)
       maxSendLength_ = 0;
       size_t snd = 0;
-      for (int node = 0; node < numImages; ++node ) {
-        if (starts[node+1] != starts[node]) {
-          lengthsTo_[snd] = starts[node+1] - starts[node];
-          startsTo_[snd] = starts[node];
-          // record max length for all off-node sends
-          if ((node != myImageID) && (lengthsTo_[snd] > maxSendLength_)) {
+      for (int proc = 0; proc < numProcs; ++proc ) {
+        if (starts[proc+1] != starts[proc]) {
+          lengthsTo_[snd] = starts[proc+1] - starts[proc];
+          startsTo_[snd] = starts[proc];
+          // record max length for all off-proc sends
+          if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
             maxSendLength_ = lengthsTo_[snd];
           }
-          imagesTo_[snd] = node;
+          procsTo_[snd] = proc;
           ++snd;
         }
       }
@@ -1416,7 +1416,7 @@ namespace Tpetra {
 
     if (debug_) {
       std::ostringstream os;
-      os << myImageID << ": createFromSends: done" << endl;
+      os << myProcID << ": createFromSends: done" << endl;
       *out_ << os.str ();
     }
 
@@ -1426,5 +1426,198 @@ namespace Tpetra {
 
     return totalReceiveLength_;
   }
+  //  template <class Ordinal>
+  void 
+  Distributor::createFromSendsAndRecvs(
+				       const ArrayView<const int> &exportProcIDs,  
+				       const ArrayView<const int> &remoteProcIDs )
+  {
+    // note the exportProcIDs and remoteProcIDs _must_ be a list that has 
+    // an entry for each GID. If the export/remoteProcIDs is taken from 
+    // the getProcs{From|To} lists that are extracted from a previous distributor,
+    // it will generate a wrong answer, because those lists have a unique entry
+    // for each processor id. A version of this with lengthsTo and lengthsFrom
+    // should be made.  
 
+    howInitialized_ = Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS;
+    
+
+    int myProcID = comm_->getRank ();
+    int numProcs = comm_->getSize();
+
+    const size_t numExportIDs = exportProcIDs.size();
+    Teuchos::Array<size_t> starts (numProcs + 1, 0);
+
+    size_t numActive = 0;
+    int needSendBuff = 0; // Boolean
+
+    for(size_t i = 0; i < numExportIDs; i++ )
+      {
+	if( needSendBuff==0 && i && (exportProcIDs[i] < exportProcIDs[i-1]) )
+	  needSendBuff = 1;
+	if( exportProcIDs[i] >= 0 )
+	  {
+	    ++starts[ exportProcIDs[i] ];
+	    ++numActive;
+	  }
+      }
+
+    selfMessage_ = ( starts[myProcID] != 0 ) ? 1 : 0;
+
+    numSends_ = 0;
+
+    if( needSendBuff ) //grouped by processor, no send buffer or indicesTo_ needed
+      {
+	if (starts[0] == 0 ) {
+	  numSends_ = 0;
+	}
+	else {
+	  numSends_ = 1;
+	}
+	for (Teuchos::Array<size_t>::iterator i=starts.begin()+1,
+	       im1=starts.begin();
+	     i != starts.end(); ++i)
+	  {
+	    if (*i != 0) ++numSends_;
+	    *i += *im1;
+	    im1 = i;
+	  }
+	// starts[i] now contains the number of exports to procs 0 through i
+
+	for (Teuchos::Array<size_t>::reverse_iterator ip1=starts.rbegin(),
+	       i=starts.rbegin()+1;
+	     i != starts.rend(); ++i)
+	  {
+	    *ip1 = *i;
+	    ip1 = i;
+	  }
+	starts[0] = 0;
+	// starts[i] now contains the number of exports to procs 0 through
+	// i-1, i.e., all procs before proc i
+
+	indicesTo_.resize(numActive);
+
+	for (size_t i = 0; i < numExportIDs; ++i) {
+	  if (exportProcIDs[i] >= 0) {
+	    // record the offset to the sendBuffer for this export
+	    indicesTo_[starts[exportProcIDs[i]]] = i;
+	    // now increment the offset for this proc
+	    ++starts[exportProcIDs[i]];
+	  }
+	}
+	for (int proc = numProcs-1; proc != 0; --proc) {
+	  starts[proc] = starts[proc-1];
+	}
+	starts.front() = 0;
+	starts[numProcs] = numActive;
+	procsTo_.resize(numSends_);
+	startsTo_.resize(numSends_);
+	lengthsTo_.resize(numSends_);
+	maxSendLength_ = 0;
+	size_t snd = 0;
+	for (int proc = 0; proc < numProcs; ++proc ) {
+	  if (starts[proc+1] != starts[proc]) {
+	    lengthsTo_[snd] = starts[proc+1] - starts[proc];
+	    startsTo_[snd] = starts[proc];
+	    // record max length for all off-proc sends
+	    if ((proc != myProcID) && (lengthsTo_[snd] > maxSendLength_)) {
+	      maxSendLength_ = lengthsTo_[snd];
+	    }
+	    procsTo_[snd] = proc;
+	    ++snd;
+	  }
+	}
+      }
+    else {
+      // grouped by proc, no send buffer or indicesTo_ needed
+      numSends_ = 0;
+      // Count total number of sends, i.e., total number of procs to
+      // which we are sending.  This includes myself, if applicable.
+      for (int i = 0; i < numProcs; ++i) {
+        if (starts[i]) {
+          ++numSends_;
+        }
+      }
+
+      // Not only do we not need these, but we must clear them, as
+      // empty status of indicesTo is a flag used later.
+      indicesTo_.resize(0);
+      // Size these to numSends_; note, at the moment, numSends_
+      // includes self sends.  Set their values to zeros.
+      procsTo_.assign(numSends_,0);
+      startsTo_.assign(numSends_,0);
+      lengthsTo_.assign(numSends_,0);
+
+      // set startsTo to the offset for each send (i.e., each proc ID)
+      // set procsTo to the proc ID for each send
+      // in interpreting this code, remember that we are assuming contiguity
+      // that is why index skips through the ranks
+      {
+        size_t index = 0, procIndex = 0;
+        for (size_t i = 0; i < numSends_; ++i) {
+          while (exportProcIDs[procIndex] < 0) {
+            ++procIndex; // skip all negative proc IDs
+          }
+          startsTo_[i] = procIndex;
+          int procID = exportProcIDs[procIndex];
+          procsTo_[i] = procID;
+          index     += starts[procID];
+          procIndex += starts[procID];
+        }
+      }
+      // sort the startsTo and proc IDs together, in ascending order, according
+      // to proc IDs
+      if (numSends_ > 0) {
+        sort2(procsTo_.begin(), procsTo_.end(), startsTo_.begin());
+      }
+      // compute the maximum send length
+      maxSendLength_ = 0;
+      for (size_t i = 0; i < numSends_; ++i) {
+        int procID = procsTo_[i];
+        lengthsTo_[i] = starts[procID];
+        if ((procID != myProcID) && (lengthsTo_[i] > maxSendLength_)) {
+          maxSendLength_ = lengthsTo_[i];
+        }
+      }
+    }
+
+
+    numSends_ -= selfMessage_;
+    std::vector<int> recv_list;
+    recv_list.reserve(numSends_); //reserve an initial guess for size needed
+
+    int last_pid=-2;
+    for(int i=0; i<remoteProcIDs.size(); i++) {
+    if(remoteProcIDs[i]>last_pid) {
+      recv_list.push_back(remoteProcIDs[i]);
+      last_pid = remoteProcIDs[i];
+    }
+    else if (remoteProcIDs[i]<last_pid)
+      throw std::runtime_error("Tpetra::Distributor:::createFromSendsAndRecvs expected RemotePIDs to be in sorted order");
+    }
+    numReceives_ = recv_list.size();
+    if(numReceives_) {
+      procsFrom_.assign(numReceives_,0);
+      lengthsFrom_.assign(numReceives_,0);
+      indicesFrom_.assign(numReceives_,0);
+      startsFrom_.assign(numReceives_,0);
+    }
+    for(size_t i=0,j=0; i<numReceives_; ++i) {
+      int jlast=j;
+      procsFrom_[i]  = recv_list[i];
+      startsFrom_[i] = j;
+      for( ; j<(size_t)remoteProcIDs.size() && 
+	     remoteProcIDs[jlast]==remoteProcIDs[j]  ; j++){;}
+      lengthsFrom_[i] = j-jlast;
+    }
+    totalReceiveLength_ = remoteProcIDs.size();
+    indicesFrom_.clear ();
+    indicesFrom_.reserve (totalReceiveLength_);
+    for (size_t i = 0; i < totalReceiveLength_; ++i) {
+      indicesFrom_.push_back(i);
+    }
+
+    numReceives_-=selfMessage_;
+  }
+  
 } // namespace Tpetra

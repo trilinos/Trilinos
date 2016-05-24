@@ -134,8 +134,8 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numImages > 1 ? 2 : 0))
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
@@ -239,8 +239,8 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
@@ -304,8 +304,8 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? 1 : 0));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), numInMyPartition);
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
@@ -360,8 +360,8 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 1);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(numImages-1));
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
@@ -422,8 +422,8 @@ namespace {
     TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 3);
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(3*numImages));
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
@@ -488,8 +488,8 @@ namespace {
     }
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<size_t>(2*numImages));
     {
-      ArrayView<const int> imgFrom(distributor.getImagesFrom());
-      ArrayView<const int> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getProcsFrom());
+      ArrayView<const int> imgTo(distributor.getProcsTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
