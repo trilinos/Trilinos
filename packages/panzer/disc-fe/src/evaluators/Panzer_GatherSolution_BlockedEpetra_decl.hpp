@@ -56,8 +56,14 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
+// epetra forward decl
 class Epetra_Vector;
 class Epetra_CrsMatrix;
+
+// thyra forward decl
+namespace Thyra {
+  template <typename> class ProductVectorBase;
+}
 
 namespace panzer {
 
@@ -152,14 +158,14 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > x_;
 
   // Fields for storing tangent components dx/dp of solution vector x
   // These are not actually used by the residual specialization of this evaluator,
   // even if they are supplied, but it is useful to declare them as dependencies anyway
   // when saving the tangent components to the output file
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_BlockedEpetra();
 };
@@ -214,7 +220,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_BlockedEpetra();
 };
