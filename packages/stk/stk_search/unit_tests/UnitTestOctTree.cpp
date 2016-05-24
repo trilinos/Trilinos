@@ -49,7 +49,33 @@
 namespace
 {
 
-void checkKeyAgainstOffset(const int key[], const int offset_key_1);
+void setKeyUsingIntArray(const std::vector<unsigned> & key_values, stk::OctTreeKey &goldKey)
+{
+    for (unsigned int i=0; i<key_values.size(); ++i) {
+        bool isLeadingBitIndexZero = ( key_values[i] == 0u );
+        if ( isLeadingBitIndexZero ) break;
+        goldKey.set_index(i+1, key_values[i]);
+    }
+}
+
+void checkKeyGeneration(const std::vector<unsigned> & key_raw_value,
+                        const std::vector<unsigned> & key_values,
+                        unsigned key_offset)
+{
+    stk::OctTreeKey rawKey;
+    rawKey.set_value(&key_raw_value[0]);
+
+    stk::OctTreeKey valueKey;
+    setKeyUsingIntArray(key_values, valueKey);
+
+    stk::OctTreeKey octTreeKey;
+    unsigned depth = key_values.size();
+    stk::search::calculate_key_using_offset(depth, key_offset, octTreeKey);
+
+    EXPECT_EQ(rawKey, valueKey);
+    EXPECT_EQ(rawKey, octTreeKey);
+}
+
 void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weights, stk::OctTreeKey *cuts);
 
 typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
@@ -157,20 +183,42 @@ TEST(stk_search_oct_tree, checkCuts)
 TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
 {
     int procId=stk::parallel_machine_rank(MPI_COMM_WORLD);
-    if ( procId == 0 )
+    if ( procId != 0 ) return;
     {
-        int key_1[4] = { 1, 1, 1, 1 };
-        int offset_key_1 = 4;
-        checkKeyAgainstOffset(key_1, offset_key_1);
-        int key_2[4] = { 8, 8, 8, 8 };
-        int offset_key_2 = 4680;
-        checkKeyAgainstOffset(key_2, offset_key_2);
-        int key_3[4] = {1, 0, 0, 0 };
-        int offset_key_3 = 1;
-        checkKeyAgainstOffset(key_3, offset_key_3);
-        int key_4[4] = { 1, 1, 1, 2 };
-        int offset_key_4 = 5;
-        checkKeyAgainstOffset(key_4, offset_key_4);
+        std::vector<unsigned> key_raw_value = {0x11110000, 0x00000000};
+        std::vector<unsigned> key_values = {1, 1, 1, 1};
+        unsigned key_offset = 4;  // Computed with oct_tree_offset()
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
+    }
+    {
+        std::vector<unsigned> key_raw_value = {0x88880000, 0x00000000};
+        std::vector<unsigned> key_values = {8, 8, 8, 8};
+        unsigned key_offset = 4680;
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
+    }
+    {
+        std::vector<unsigned> key_raw_value = {0x10000000, 0x00000000};
+        std::vector<unsigned> key_values = {1, 0, 0, 0};
+        unsigned key_offset = 1;
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
+    }
+    {
+        std::vector<unsigned> key_raw_value = {0x11120000, 0x00000000};
+        std::vector<unsigned> key_values = {1, 1, 1, 2};
+        unsigned key_offset = 5;
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
+    }
+    {
+        std::vector<unsigned> key_raw_value = {0x12345678, 0x00000000};
+        std::vector<unsigned> key_values = {1, 2, 3, 4, 5, 6, 7, 8};
+        unsigned key_offset = 391308;
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
+    }
+    {
+        std::vector<unsigned> key_raw_value = {0x12345678, 0x12000000};
+        std::vector<unsigned> key_values = {1, 2, 3, 4, 5, 6, 7, 8, 1, 2};
+        unsigned key_offset = 25043463;
+        checkKeyGeneration(key_raw_value, key_values, key_offset);
     }
 }
 
@@ -276,28 +324,6 @@ void getCutsForProcessorCount(unsigned numProcsLocal, const float * const weight
 {
         unsigned depth = 4;
         stk::search::partition_oct_tree(numProcsLocal, depth, weights, numProcsLocal, cuts);
-}
-
-void setKeyUsingIntArray(const unsigned depth, const int key[], stk::OctTreeKey &goldKey)
-{
-    for (unsigned int i=0;i<depth;i++)
-    {
-        bool isLeadingBitIndexZero = ( key[i] == 0 );
-        if ( isLeadingBitIndexZero ) break;
-        goldKey.set_index(i+1, key[i]);
-    }
-}
-
-void checkKeyAgainstOffset(const int key[], const int offset_key_1)
-{
-    unsigned depth = 4;
-    stk::OctTreeKey octTreeKey;
-    stk::search::calculate_key_using_offset(depth, offset_key_1, octTreeKey);
-
-    stk::OctTreeKey goldKey;
-    setKeyUsingIntArray(depth, key, goldKey);
-
-    EXPECT_EQ( goldKey, octTreeKey);
 }
 
 } // end namespace
