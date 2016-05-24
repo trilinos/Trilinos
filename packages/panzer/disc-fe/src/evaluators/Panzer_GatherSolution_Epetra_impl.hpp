@@ -463,6 +463,7 @@ GatherSolution_Epetra(
   sensitivitiesName_               = input.getSensitivitiesName();
   disableSensitivities_            = !input.firstSensitivitiesAvailable();
 
+  // allocate fields
   gatherFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     PHX::MDField<ScalarT,Cell,NODE> f(names[fd],basis->functional);

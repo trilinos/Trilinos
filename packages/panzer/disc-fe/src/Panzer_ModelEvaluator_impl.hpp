@@ -303,7 +303,6 @@ panzer::ModelEvaluator<Scalar>::getNominalValues() const
 
     // setup parameter support
     nomInArgs.set_Np(num_me_parameters_);
-    std::size_t v_index = 0;
     for(std::size_t p=0;p<parameters_.size();p++) {
       // setup nominal in arguments
       nomInArgs.set_p(p,parameters_[p]->initial_value);
