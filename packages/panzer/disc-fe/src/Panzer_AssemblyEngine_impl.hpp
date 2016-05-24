@@ -200,6 +200,11 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
       fm->template evaluateFields<EvalT>(workset);
     }
 
+    // double s = 0.;
+    // double p = 0.;
+    // fm->template analyzeGraph<EvalT>(s,p);
+    // std::cout << "Analyze Graph: " << PHX::typeAsString<EvalT>() << ",b=" << block << ", s=" << s << ", p=" << p << std::endl; 
+
     fm->template postEvaluate<EvalT>(NULL);
   }
 }

@@ -341,7 +341,7 @@ evaluateFields(typename Traits::EvalData d)
 
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
 
-    nodes_[topoSortEvalIndex[n]].setExecutionTime(clock::now()-start);
+    nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
   }
 }
 
@@ -365,7 +365,7 @@ evaluateFieldsTaskParallel(const int& threads_per_task,
 		     threads_per_task
 		     );
 
-  // Issie in reusing vector. The assign doesn't like the change of policy.
+  // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
   std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
 

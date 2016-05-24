@@ -420,4 +420,36 @@ TEUCHOS_UNIT_TEST(dag, analyze_graph2)
   TEST_FLOATING_EQUALITY(speedup,s_gold,tol);
   double p_gold = (1. - 1./s_gold)/(1. - 1./4.);
   TEST_FLOATING_EQUALITY(parallelizability,p_gold,tol);
+
+  // Now test the sum into execution time to accumulate timings
+  // Insert evaluation times into the graph
+  for (const auto& i : order) {
+    const DagNode<MyTraits>& n = nodes[i];
+
+    // cast away const for unit testing to set the execution times
+    if (n.get()->getName() == "Eval_A") {
+      std::chrono::duration<double> dt(2.0);
+      const_cast<DagNode<MyTraits>&>(n).sumIntoExecutionTime(dt);
+    }
+    else if (n.get()->getName() == "Eval_B") {
+      // force different ratio to test sumInto function
+      std::chrono::duration<double> dt(8.0);
+      const_cast<DagNode<MyTraits>&>(n).sumIntoExecutionTime(dt);
+    }
+    else if (n.get()->getName() == "Eval_C") {
+      std::chrono::duration<double> dt(4.0);
+      const_cast<DagNode<MyTraits>&>(n).sumIntoExecutionTime(dt);
+    }
+    else if (n.get()->getName() == "Eval_D") {
+      std::chrono::duration<double> dt(2.0);
+      const_cast<DagNode<MyTraits>&>(n).sumIntoExecutionTime(dt);
+    }
+  }
+  
+  dag.analyzeGraph(speedup, parallelizability);
+
+  s_gold = 26.0 / 18.0;
+  TEST_FLOATING_EQUALITY(speedup,s_gold,tol);
+  p_gold = (1. - 1./s_gold)/(1. - 1./4.);
+  TEST_FLOATING_EQUALITY(parallelizability,p_gold,tol);
 }
