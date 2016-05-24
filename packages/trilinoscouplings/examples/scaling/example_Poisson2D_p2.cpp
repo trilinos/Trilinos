@@ -755,9 +755,12 @@ int main(int argc, char *argv[]) {
   Epetra_Map P1_globalMap(-1,P1_ownedNodes,&P1_ownedGIDs[0],0,Comm);
 
   // Genetrate P2-to-P1 coarsening.
+  if (inputSolverList.isParameter("aux P1") && inputSolverList.isParameter("linear P1"))
+    throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   Teuchos::RCP<Epetra_CrsMatrix> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
     GenerateLinearCoarsening_p2_to_p1(elemToNode,P1_globalMap,globalMapG,P_linear);
+    inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
   // Global arrays in Epetra format
@@ -1062,11 +1065,17 @@ int main(int argc, char *argv[]) {
 
   char probType[10] = "laplace";
 
-  if (P_identity != Teuchos::null)
+  Teuchos::RCP<Epetra_CrsMatrix> interpolationMatrix;
+  if (P_identity != Teuchos::null) {
     MLList.set("user coarse matrix",(Epetra_CrsMatrix*)&StiffMatrix_aux);
+    interpolationMatrix = P_identity;
+  }
+  if (P_linear != Teuchos::null) {
+    interpolationMatrix = P_linear;
+  }
 
   TestMultiLevelPreconditionerLaplace(probType, MLList,
-                                      Teuchos::rcpFromRef(StiffMatrix), P_identity, exactNodalVals,
+                                      Teuchos::rcpFromRef(StiffMatrix), interpolationMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,
                                       TotalErrorResidual,   TotalErrorExactSol);
 
@@ -1517,11 +1526,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   Epetra_Operator *MLPrec;
   if (P0 == Teuchos::null)
     MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A0, MLList, true);
-  else {
-    if (MLList.isParameter("user coarse matrix") == false)
-      throw std::runtime_error("Must supply coarse grid matrix to use ML::LevelWrap");
+  else
     MLPrec = new ML_Epetra::LevelWrap(A0, P0, MLList, true);
-  }
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);

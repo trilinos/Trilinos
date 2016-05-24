@@ -52,7 +52,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     )
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Maxwell.xml CVFEM.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Maxwell.xml CVFEM.xml ML_ho.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
