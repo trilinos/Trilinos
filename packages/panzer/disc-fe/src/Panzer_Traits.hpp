@@ -146,7 +146,7 @@ namespace PHX {
 
   template<>
   struct eval_scalar_types<panzer::Traits::Tangent> 
-  { typedef Sacado::mpl::vector<panzer::Traits::FadType,bool> type; };
+  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   template<>
