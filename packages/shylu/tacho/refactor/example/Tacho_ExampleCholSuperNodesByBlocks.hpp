@@ -98,7 +98,7 @@ namespace Tacho {
 #endif
 
     int r_val = 0;
-    
+
     Kokkos::Impl::Timer timer;
 
     ///
@@ -134,7 +134,7 @@ namespace Tacho {
 
     ///
     /// Create a graph structure for Scotch and CAMD (rptr, cidx)
-    ///     
+    ///
     ///     rptr and cidx are need to be set up for Scotch and CAMD
     ///
     typename GraphToolsHostType::size_type_array rptr("Graph::RowPtrArray", AA_host.NumRows() + 1);
@@ -154,23 +154,23 @@ namespace Tacho {
     S.setGraph(AA_host.NumRows(), rptr, cidx);
     S.setSeed(0);
     S.setTreeLevel();
-    S.setStrategy( SCOTCH_STRATSPEED 
-                   | SCOTCH_STRATLEVELMAX   
-                   | SCOTCH_STRATLEVELMIN   
-                   | SCOTCH_STRATLEAFSIMPLE 
-                   | SCOTCH_STRATSEPASIMPLE 
+    S.setStrategy( SCOTCH_STRATSPEED
+                   | SCOTCH_STRATLEVELMAX
+                   | SCOTCH_STRATLEVELMIN
+                   | SCOTCH_STRATLEAFSIMPLE
+                   | SCOTCH_STRATSEPASIMPLE
                    );
-    
+
     timer.reset();
     S.computeOrdering(treecut);
     double t_scotch = timer.seconds();
-    
+
     if (verbose)
       S.showMe(std::cout) << std::endl;
 
     CrsMatrixBaseHostType AA_scotch_host("AA_scotch_host");
     AA_scotch_host.createConfTo(AA_host);
-    
+
     CrsMatrixTools::copy(AA_scotch_host,
                          S.PermVector(),
                          S.InvPermVector(),
@@ -201,15 +201,15 @@ namespace Tacho {
 
     if (verbose)
       C.showMe(std::cout) << std::endl;
-    
+
     CrsMatrixBaseHostType AA_camd_host("AA_camd_host");
     AA_camd_host.createConfTo(AA_scotch_host);
-    
+
     CrsMatrixTools::copy(AA_camd_host,
                          C.PermVector(),
                          C.InvPermVector(),
                          AA_scotch_host);
-    
+
     if (verbose)
       AA_camd_host.showMe(std::cout) << std::endl;
 
@@ -218,7 +218,7 @@ namespace Tacho {
     ///
     /// Symbolic factorization
     ///
-    ///     input  - 
+    ///     input  -
     ///     output - S (perm, iperm, nblks, range, tree), AA_scotch_host (permuted)
     ///
     CrsMatrixBaseHostType AA_factor_host("AA_factor_host");
@@ -277,15 +277,15 @@ namespace Tacho {
     {
       timer.reset();
       S.pruneTree(prunecut);
-      CrsMatrixTools::createHierMatrix(HA_factor_host, 
-                                       AA_factor_host, 
+      CrsMatrixTools::createHierMatrix(HA_factor_host,
+                                       AA_factor_host,
                                        S.NumBlocks(),
                                        S.RangeVector(),
                                        S.TreeVector());
-      t_hier = timer.seconds();    
-      
+      t_hier = timer.seconds();
+
       timer.reset();
-      {      
+      {
         const size_type nblocks = HA_factor_host.NumNonZeros();
 
         // scan ap
@@ -302,7 +302,7 @@ namespace Tacho {
                                auto &block = HA_factor_host.Value(k);
                                block.setRowViewArray(Kokkos::subview(rows, range_type(ap(k), ap(k+1))));
                              } );
-        CrsMatrixTools::filterEmptyBlocks(HA_factor_host);        
+        CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
       }
       { // nblocks is changed as empty blocks are filtered out
         const size_type nblocks = HA_factor_host.NumNonZeros();
@@ -316,7 +316,7 @@ namespace Tacho {
         }
 
         mats = Kokkos::View<value_type*,HostSpaceType>("MatsInBlocks", ap(nblocks));
-        
+
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
                              [&](const ordinal_type k) {
                                auto &block = HA_factor_host.Value(k);
@@ -350,12 +350,12 @@ namespace Tacho {
                                block.Hier().setExternalMatrix(hm, hn,
                                                               -1, -1,
                                                               Kokkos::subview(blks, range_type(ap(k), ap(k+1))));
-                               DenseMatrixTools::getHierMatrix(block.Hier(), 
+                               DenseMatrixTools::getHierMatrix(block.Hier(),
                                                                block.Flat(),
                                                                mb, mb);
                              } );
       }
-      t_blocks = timer.seconds();    
+      t_blocks = timer.seconds();
 
       {
         const size_type nblocks = HA_factor_host.NumNonZeros();
@@ -365,9 +365,9 @@ namespace Tacho {
           nnz_blocks  += block.NumNonZeros();
           const auto current_blk_size = block.NumRows()*block.NumCols();
           size_blocks += current_blk_size;
-          
+
           if (max_blk_size < current_blk_size) {
-            max_blk_nnz   = block.NumNonZeros(); 
+            max_blk_nnz   = block.NumNonZeros();
             max_blk_nrows = block.NumRows();
             max_blk_ncols = block.NumCols();
             max_blk_size = current_blk_size;
@@ -375,16 +375,16 @@ namespace Tacho {
         }
         TACHO_TEST_FOR_ABORT( nnz_blocks != AA_factor_host.NumNonZeros(),
                               "nnz counted in blocks is different from nnz in the base matrix.");
-        std::cout << "CholSuperNodesByBlocks:: nnz in blocks = " << nnz_blocks 
-                  << ", size of blocks = " << size_blocks 
-                  << ", ratio = " << (double(nnz_blocks)/size_blocks) 
+        std::cout << "CholSuperNodesByBlocks:: nnz in blocks = " << nnz_blocks
+                  << ", size of blocks = " << size_blocks
+                  << ", ratio = " << (double(nnz_blocks)/size_blocks)
                   << std::endl;
         std::cout << "CholSuperNodesByBlocks:: max block info, nnz = " << max_blk_nnz
                   << ", dim = " << max_blk_nrows << " x " << max_blk_ncols
                   << ", ratio = " << (double(max_blk_nnz)/max_blk_size)
                   << std::endl;
       }
-      
+
       CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
 #ifdef HAVE_SHYLUTACHO_VTUNE
       __itt_resume();
@@ -396,16 +396,16 @@ namespace Tacho {
           // call nested block version
           std::cout << "CholSuperNodesByBlocks:: use DenseByBlocks with external LAPACK and BLAS" << std::endl;
           future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Three>
-                                           ::createTaskFunctor(policy, 
-                                                               TA_factor_host), 
+                                           ::createTaskFunctor(policy,
+                                                               TA_factor_host),
                                            0);
           policy.spawn(future);
         } else {
           // call plain block version
           std::cout << "CholSuperNodesByBlocks:: use external LAPACK and BLAS" << std::endl;
           future = policy.proc_create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks,Variant::Two>
-                                           ::createTaskFunctor(policy, 
-                                                               TA_factor_host), 
+                                           ::createTaskFunctor(policy,
+                                                               TA_factor_host),
                                            0);
           policy.spawn(future);
         }
@@ -417,7 +417,7 @@ namespace Tacho {
       __itt_pause();
 #endif
 
-      {      
+      {
         const size_type nblocks = HA_factor_host.NumNonZeros();
 
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
@@ -425,7 +425,7 @@ namespace Tacho {
                                auto &block = HA_factor_host.Value(k);
                                block.copyToView();
                              } );
-      }        
+      }
 
       if (verbose)
         AA_factor_host.showMe(std::cout) << std::endl;
@@ -435,19 +435,23 @@ namespace Tacho {
     /// Solution check
     ///
     ///    input  - AA_reordered_host
-    ///    output - 
+    ///    output -
     ///
     double t_solve = 0;
     double error = 0, norm = 1;
     if (nrhs) {
-      DenseMatrixBaseHostType BB_host("BB_host", AA_reordered_host.NumRows(), nrhs), XX_host("XX_host");
+      DenseMatrixBaseHostType 
+        BB_host("BB_host", AA_reordered_host.NumRows(), nrhs), 
+        XX_host("XX_host"), RR_host("RR_host");
       XX_host.createConfTo(BB_host);
-
+      RR_host.createConfTo(BB_host);
+      
+      srand(time(NULL));
       const ordinal_type m = BB_host.NumRows();
       for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i) 
-          XX_host.Value(i, rhs) = (rhs + 1);
-        
+        for (ordinal_type i=0;i<m;++i)
+          XX_host.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
+
         // matvec
         HostSpaceType::execution_space::fence();
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, m),
@@ -455,79 +459,80 @@ namespace Tacho {
                                const auto nnz  = AA_reordered_host.NumNonZerosInRow(i);
                                const auto cols = AA_reordered_host.ColsInRow(i);
                                const auto vals = AA_reordered_host.ValuesInRow(i);
-                               
+
                                value_type tmp = 0;
-                               for (ordinal_type j=0;j<nnz;++j) 
+                               for (ordinal_type j=0;j<nnz;++j)
                                  tmp += vals(j)*XX_host.Value(cols(j), rhs);
                                BB_host.Value(i, rhs) = tmp;
                              } );
-        HostSpaceType::execution_space::fence();       
+        HostSpaceType::execution_space::fence();
       }
       if (verbose) {
         XX_host.showMe(std::cout) << std::endl;
         BB_host.showMe(std::cout) << std::endl;
       }
-      DenseMatrixTools::copy(XX_host, BB_host);
+      DenseMatrixTools::copy(RR_host, XX_host); // keep solution on RR
+      DenseMatrixTools::copy(XX_host, BB_host); // copy BB into XX
 
       DenseHierBaseHostType HX_host("HX_host");
-      
-      DenseMatrixTools::createHierMatrix(HX_host, XX_host, 
+
+      DenseMatrixTools::createHierMatrix(HX_host, XX_host,
                                          S.NumBlocks(),
                                          S.RangeVector(),
                                          nb);
-      
+
       CrsTaskHierViewHostType TA_factor_host(HA_factor_host);
       DenseTaskHierViewHostType TX_host(HX_host);
-      
+
       timer.reset();
       {
-        auto future_forward_solve 
+        auto future_forward_solve
           = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
                                     AlgoTriSolve::ByBlocks,Variant::Two>
-                                    ::createTaskFunctor(policy, 
+                                    ::createTaskFunctor(policy,
                                                         Diag::NonUnit, TA_factor_host, TX_host),
                                     0);
         policy.spawn(future_forward_solve);
-        
+
         auto future_backward_solve
           = policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
                                     AlgoTriSolve::ByBlocks,Variant::Two>
                                     ::createTaskFunctor(policy,
                                                         Diag::NonUnit, TA_factor_host, TX_host),
                                     1);
-        
+
         policy.add_dependence(future_backward_solve, future_forward_solve);
         policy.spawn(future_backward_solve);
-        
+
         Kokkos::Experimental::wait(policy);
-        
+
         TACHO_TEST_FOR_ABORT(future_forward_solve.get(),  "Fail to perform TriSolveSuperNodesByBlocks (forward)");
         TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
       }
       t_solve = timer.seconds();
 
-      if (verbose) {                                                                                                  
-        XX_host.showMe(std::cout) << std::endl;                                                                       
-        BB_host.showMe(std::cout) << std::endl;                                                                       
-      } 
-
-      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
-        for (ordinal_type i=0;i<m;++i) {
-          error += Util::abs(XX_host.Value(i, rhs) - (rhs + 1));
-          norm  += Util::abs(rhs + 1);
-        }
+      if (verbose) {
+        XX_host.showMe(std::cout) << std::endl;
+        BB_host.showMe(std::cout) << std::endl;
       }
       
+      for (ordinal_type rhs=0;rhs<nrhs;++rhs) {
+        for (ordinal_type i=0;i<m;++i) {
+          error += Util::abs(XX_host.Value(i, rhs) - RR_host.Value(i, rhs));
+          norm  += Util::abs(RR_host.Value(i, rhs));
+        }
+      }
+
       std::cout << std::scientific;
-      std::cout << "CholSuperNodesByBlocks:: error = " << error 
-                << ", norm = " << norm 
-                << ", rel error = " << (error/norm) 
+      std::cout << "CholSuperNodesByBlocks:: error = " << error
+                << ", norm = " << norm
+                << ", rel error = " << (error/norm)
                 << std::endl;
-      std::cout.unsetf(std::ios::scientific);      
+      std::cout.unsetf(std::ios::scientific);
     }
-  
+
     ///
-    /// Print out 
+    /// Print out
     ///
     {
       const auto prec = std::cout.precision();
@@ -542,7 +547,7 @@ namespace Tacho {
                 << "read = " << t_read << " [sec], "
                 << "graph generation = " << (t_graph/2.0) << " [sec] "
                 << "scotch reordering = " << t_scotch << " [sec] "
-                << "camd reordering = " << t_camd << " [sec] " 
+                << "camd reordering = " << t_camd << " [sec] "
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
                 << "symbolic factorization = " << t_symbolic << " [sec] "
@@ -556,9 +561,9 @@ namespace Tacho {
                 << "Chol = " << t_chol << " [sec] ";
       if (nrhs)
         std::cout << "Solve = " << t_solve << " [sec] ";
-          
+
       std::cout << std::endl;
-      
+
       std::cout.unsetf(std::ios::scientific);
       std::cout.precision(prec);
     }
