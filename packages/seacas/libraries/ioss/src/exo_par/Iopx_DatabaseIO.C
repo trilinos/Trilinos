@@ -273,196 +273,245 @@ namespace Iopx {
     }
   }
 
+  bool DatabaseIO::check_valid_file_ptr(bool write_message, std::string *error_msg, int *bad_count,
+                                        bool abort_if_error) const
+  {
+    // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
+    int global_file_ptr = exodusFilePtr;
+    assert(isParallel);
+    global_file_ptr = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+
+    if (global_file_ptr < 0) {
+      if (write_message || error_msg != nullptr || bad_count != nullptr) {
+        Ioss::IntVector status;
+	util().all_gather(exodusFilePtr, status);
+
+        std::string open_create = is_input() ? "open input" : "create output";
+        if (write_message || error_msg != nullptr) {
+          // See which processors could not open/create the file...
+          std::ostringstream errmsg;
+	  errmsg << "ERROR: Unable to " << open_create << " exodus database file '" <<
+	    get_filename() << "' on processors:\n\t";
+	  for (int i = 0; i < util().parallel_size(); i++) {
+	    if (status[i] < 0) {
+	      errmsg << i << ", ";
+	    }
+	  }
+          if (error_msg != nullptr) {
+            *error_msg = errmsg.str();
+          }
+          if (write_message && myProcessor == 0) {
+            errmsg << "\n";
+            std::cerr << errmsg.str();
+          }
+        }
+        if (bad_count != nullptr) {
+          for (int i = 0; i < util().parallel_size(); i++) {
+            if (status[i] < 0) {
+              (*bad_count)++;
+            }
+          }
+        }
+        if (abort_if_error) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: Cannot " << open_create << " file '" << get_filename() << "'";
+          IOSS_ERROR(errmsg);
+        }
+      }
+      return false;
+    }
+    return true;
+  }
+
   bool DatabaseIO::ok(bool write_message, std::string *error_msg, int *bad_count) const
   {
+    // For input, we try to open the existing file.
+
+    // For output, we do not want to overwrite or clobber the output
+    // file if it already exists since the app might be reading the restart
+    // data from this file and then later clobbering it and then writing
+    // restart data to the same file. So, for output, we first check
+    // whether the file exists and if it it and is writable, assume
+    // that we can later create a new or append to existing file.
+
+    // Returns the number of processors on which this file is *NOT* ok in 'bad_count' if not null.
+    // Will return 'true' only if file ok on all processors.
+
     if (fileExists) {
       // File has already been opened at least once...
       return dbState != Ioss::STATE_INVALID;
     }
 
-    // File has not yet been opened, so verify that it is readable or
-    // writable.  HOWEVER, *DO NOT* overwrite the file here if it exists
-    // and the mode is WRITE.
+    bool abort_if_error = false;
+    bool is_ok;
+    if (is_input()) {
+      is_ok = open_input_file(write_message, error_msg, bad_count, abort_if_error);
+    }
+    else {
+      // See if file exists... Don't overwrite (yet) it it exists.
+      bool overwrite = false;
+      is_ok = handle_output_file(write_message, error_msg, bad_count, overwrite, abort_if_error);
+      // Close all open files...
+      if (exodusFilePtr >= 0) {
+        ex_close(exodusFilePtr);
+        exodusFilePtr = -1;
+      }
+    }
+    return is_ok;
+  }
+
+  bool DatabaseIO::open_input_file(bool write_message, std::string *error_msg, int *bad_count,
+                                   bool abort_if_error) const
+  {
+    int         cpu_word_size = sizeof(double);
+    int         io_word_size  = 0;
+    float       version;
+
+    int mode = exodusMode;
+    if (int_byte_size_api() == 8) {
+      mode |= EX_ALL_INT64_API;
+    }
+
+#if defined EX_DISKLESS
+    // Experimental -- in memory read by netcdf library
+    if (properties.exists("MEMORY_READ")) {
+      mode |= EX_DISKLESS;
+    }
+#endif
+    int par_mode = get_parallel_io_mode(properties);
+
+    MPI_Info info        = MPI_INFO_NULL;
+    int app_opt_val = ex_opts(EX_VERBOSE);
+    exodusFilePtr =
+      ex_open_par(get_filename().c_str(), EX_READ | par_mode | mode, &cpu_word_size, &io_word_size,
+		  &version, util().communicator(), info);
+
+    bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
+
+    if (is_ok) {
+      assert(exodusFilePtr >= 0);
+      // Check byte-size of integers stored on the database...
+      if ((ex_int64_status(exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
+        ex_set_int64_status(exodusFilePtr, EX_ALL_INT64_API);
+        set_int_byte_size_api(Ioss::USE_INT64_API);
+      }
+
+      // Check for maximum name length used on the input file.
+      int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+      if (max_name_length > maximumNameLength) {
+        maximumNameLength = max_name_length;
+      }
+
+      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+    }
+    ex_opts(app_opt_val); // Reset back to what it was.
+    return is_ok;
+  }
+
+  bool DatabaseIO::handle_output_file(bool write_message, std::string *error_msg, int *bad_count,
+                                      bool overwrite, bool abort_if_error) const
+  {
+    // If 'overwrite' is false, we do not want to overwrite or clobber
+    // the output file if it already exists since the app might be
+    // reading the restart data from this file and then later
+    // clobbering it and then writing restart data to the same
+    // file. So, for output, we first check whether the file exists
+    // and if it it and is writable, assume that we can later create a
+    // new or append to existing file.
+
+    // if 'overwrite' is true, then clobber/append
+
+    if (!overwrite) {
+      // check if file exists and is writeable. If so, return true.
+      // Only need to check on processor 0
+      int int_is_ok = 0;
+      if (myProcessor == 0) {
+	Ioss::FileInfo file(get_filename());
+	int_is_ok = file.exists() && file.is_writable() ? 1 : 0;
+      }
+      MPI_Bcast(&int_is_ok, 1, MPI_INT, 0, util().communicator());
+
+      if (int_is_ok == 1) {
+        // Note that at this point, we cannot totally guarantee that
+        // we will be able to create the file when needed, but we have
+        // a pretty good chance.  We can't guarantee creation without
+        // creating and the app (or calling function) doesn't want us to overwrite...
+        return true;
+      }
+      // File doesn't exist, so fall through and try to
+      // create file since we won't be overwriting anything...
+    }
+
     int   cpu_word_size = sizeof(double);
     int   io_word_size  = 0;
     float version;
 
+    int mode = exodusMode;
+    if (int_byte_size_api() == 8) {
+      mode |= EX_ALL_INT64_API;
+    }
+
+#if defined EX_DISKLESS
+    // Experimental -- in memory write by netcdf library
+    if (properties.exists("MEMORY_WRITE")) {
+      mode |= EX_DISKLESS;
+    }
+#endif
+
     int par_mode = get_parallel_io_mode(properties);
 
     MPI_Info info        = MPI_INFO_NULL;
-    int      app_opt_val = 0;
-    if (is_input()) {
-      app_opt_val = ex_opts(EX_VERBOSE);
+    int app_opt_val = ex_opts(EX_VERBOSE);
+    if (fileExists) {
+      exodusFilePtr = ex_open_par(get_filename().c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
+				  &io_word_size, &version, util().communicator(), info);
     }
-    int exodus_file_ptr = ex_open_par(get_filename().c_str(), EX_READ | par_mode, &cpu_word_size,
-                                      &io_word_size, &version, util().communicator(), info);
-    if (is_input()) {
-      ex_opts(app_opt_val); // Reset back to what it was.
-    }
-
-    if (!is_input() && exodus_file_ptr < 0) {
-      // File didn't exist above, but this OK if is an output
-      // file. See if we can create it...
-      int mode = 0;
+    else {
+      // If the first write for this file, create it...
       if (int_byte_size_api() == 8) {
         mode |= EX_ALL_INT64_DB;
       }
-
-      if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF)
-        par_mode = EX_MPIIO;
-
-      app_opt_val     = ex_opts(EX_VERBOSE);
-      exodus_file_ptr = ex_create_par(get_filename().c_str(), exodusMode | mode | par_mode,
-                                      &cpu_word_size, &dbRealWordSize, util().communicator(), info);
-      ex_opts(app_opt_val); // Reset back to what it was.
+      exodusFilePtr = ex_create_par(get_filename().c_str(), mode | par_mode,
+				    &cpu_word_size, &dbRealWordSize, util().communicator(), info);
     }
 
-    // Check for valid exodus_file_ptr (valid >= 0; invalid < 0)
-    int global_file_ptr = util().global_minmax(exodus_file_ptr, Ioss::ParallelUtils::DO_MIN);
-    if (global_file_ptr < 0 && (write_message || error_msg != nullptr || bad_count != nullptr)) {
-      Ioss::IntVector status;
-      util().all_gather(exodus_file_ptr, status);
+    bool is_ok = check_valid_file_ptr(write_message, error_msg, bad_count, abort_if_error);
 
-      if (write_message || error_msg != nullptr) {
-        // See which processors could not open/create the file...
-        std::string        open_create = is_input() ? "open input" : "create output";
-        bool               first       = true;
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Unable to " << open_create << " database '" << get_filename()
-               << "' of type 'exodusII'";
-        if (isParallel) {
-          errmsg << "\n\ton processor(s): ";
-          for (int i = 0; i < util().parallel_size(); i++) {
-            if (status[i] < 0) {
-              if (!first)
-                errmsg << ", ";
-              errmsg << i;
-              first = false;
-            }
-          }
-        }
-        if (error_msg != nullptr) {
-          *error_msg = errmsg.str();
-        }
-        if (write_message && myProcessor == 0) {
-          errmsg << "\n";
-          std::cerr << errmsg.str();
-        }
+    if (is_ok) {
+      ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+
+      // Check properties handled post-create/open...
+      if (properties.exists("COMPRESSION_LEVEL")) {
+        int comp_level = properties.get("COMPRESSION_LEVEL").get_int();
+        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_LEVEL, comp_level);
       }
-      if (bad_count != nullptr) {
-        for (auto stat : status) {
-          if (stat < 0) {
-            (*bad_count)++;
-          }
-        }
+      if (properties.exists("COMPRESSION_SHUFFLE")) {
+        int shuffle = properties.get("COMPRESSION_SHUFFLE").get_int();
+        ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
     }
-
-    if (is_input() && exodus_file_ptr >= 0) {
-      // Check byte-size of integers stored on the database...
-      int mode = ex_int64_status(exodus_file_ptr) & EX_ALL_INT64_DB;
-      if (mode) {
-        exodusMode |= mode;
-        set_int_byte_size_api(Ioss::USE_INT64_API);
-      }
-    }
-
-    // Close all open files...
-    if (exodus_file_ptr >= 0) {
-      ex_close(exodus_file_ptr);
-    }
-    return global_file_ptr >= 0;
+    ex_opts(app_opt_val); // Reset back to what it was.
+    return is_ok;
   }
 
   int DatabaseIO::get_file_pointer() const
   {
     // Returns the file_pointer used to access the file on disk.
     // Checks that the file is open and if not, opens it first.
+
     if (exodusFilePtr < 0) {
-      int   cpu_word_size = sizeof(double);
-      int   io_word_size  = 0;
-      float version;
-
-      int mode = exodusMode;
-      if (int_byte_size_api() == 8) {
-        mode |= EX_ALL_INT64_API;
-      }
-
-      int par_mode = get_parallel_io_mode(properties);
-
-      MPI_Info info = MPI_INFO_NULL;
+      bool write_message  = true;
+      bool abort_if_error = true;
       if (is_input()) {
-        int app_opt_val = ex_opts(EX_VERBOSE);
-        exodusFilePtr =
-            ex_open_par(get_filename().c_str(), EX_READ | mode | par_mode, &cpu_word_size,
-                        &io_word_size, &version, util().communicator(), info);
-        ex_opts(app_opt_val); // Reset back to what it was.
+        open_input_file(write_message, nullptr, nullptr, abort_if_error);
       }
       else {
-        if (fileExists) {
-          int app_opt_val = ex_opts(EX_VERBOSE);
-          exodusFilePtr =
-              ex_open_par(get_filename().c_str(), EX_WRITE | mode | par_mode, &cpu_word_size,
-                          &io_word_size, &version, util().communicator(), info);
-          ex_opts(app_opt_val); // Reset back to what it was.
-        }
-        else {
-          // If the first write for this file, create it...
-          if (int_byte_size_api() == 8)
-            mode |= EX_ALL_INT64_DB;
-          int app_opt_val = ex_opts(EX_VERBOSE);
-
-          if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF)
-            par_mode = EX_MPIIO;
-
-          exodusFilePtr = ex_create_par(get_filename().c_str(), mode | par_mode, &cpu_word_size,
-                                        &dbRealWordSize, util().communicator(), info);
-          ex_opts(app_opt_val); // Reset back to what it was.
-
-          if (exodusFilePtr < 0) {
-            dbState = Ioss::STATE_INVALID;
-            // NOTE: Code will not continue past this call...
-            std::ostringstream errmsg;
-            errmsg << "ERROR: Cannot create specified file '" << get_filename() << "'";
-            IOSS_ERROR(errmsg);
-          }
-        }
-        ex_set_max_name_length(exodusFilePtr, maximumNameLength);
+        bool overwrite = true;
+        handle_output_file(write_message, nullptr, nullptr, overwrite, abort_if_error);
       }
 
-      if (exodusFilePtr < 0) {
-        dbState    = Ioss::STATE_INVALID;
-        fileExists = false;
-        // NOTE: Code will not continue past this call...
-        std::ostringstream errmsg;
-        errmsg << "ERROR: Problem opening specified file '" << get_filename() << "'";
-        IOSS_ERROR(errmsg);
-      }
-
-      if (is_input()) {
-        // Check for maximum name length used on the input file.
-        int max_name_length = ex_inquire_int(exodusFilePtr, EX_INQ_DB_MAX_USED_NAME_LENGTH);
-        if (max_name_length > maximumNameLength) {
-          ex_set_max_name_length(exodusFilePtr, max_name_length);
-          maximumNameLength = max_name_length;
-        }
-      }
-
-      // Check properties handled post-create/open...
-      // NOTE: Compression is not supported in parallel output at this time...
-      if (!is_input()) {
-        if (properties.exists("COMPRESSION_LEVEL")) {
-          if (myProcessor == 0) {
-            IOSS_WARNING
-                << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-          }
-        }
-        if (properties.exists("COMPRESSION_SHUFFLE")) {
-          if (myProcessor == 0) {
-            IOSS_WARNING
-                << "WARNING: Compression is not supported in single-file parallel output mode.\n";
-          }
-        }
+      if (!m_groupName.empty()) {
+        ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
       }
     }
     assert(exodusFilePtr >= 0);
