@@ -441,7 +441,10 @@ void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
 
   // Set the weighted merit function.  Throw error if a user defined
   // merit funciton is present.
-  TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
+  // ETP 5/23/16 -- Commenting this out because the parameter list may have
+  // been reused from previous solves, and so the merit function that has been
+  // set below from previous solves may still be there.
+  //TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
 
   RCP<NOX::MeritFunction::Generic> mf = rcp(new NOX::Thyra::WeightedMeritFunction(scaling_vector_));
 
