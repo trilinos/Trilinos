@@ -180,7 +180,11 @@ void CreateLinearSystem(int numWorkSets,
                         Epetra_Time &Time
 			);
 
-void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Epetra_CrsMatrix * P);
+void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Teuchos::RCP<Epetra_CrsMatrix> & P);
+
+void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode,
+                      Epetra_Map const & P1_map_aux, Epetra_Map const &P2_map,
+                      Teuchos::RCP<Epetra_CrsMatrix> & I);
 
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
@@ -199,13 +203,14 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
 
 */
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-					Teuchos::ParameterList   & MLList,
-					Epetra_CrsMatrix   & A,
-					const Epetra_MultiVector & xexact,
-					Epetra_MultiVector & b,
-					Epetra_MultiVector & uh,
-					double & TotalErrorResidual,
-					double & TotalErrorExactSol);
+                                 Teuchos::ParameterList   & MLList,
+                                 Teuchos::RCP<Epetra_CrsMatrix>   const & A,
+                                 Teuchos::RCP<Epetra_CrsMatrix>   const & P,
+                                 const Epetra_MultiVector & xexact,
+                                 Epetra_MultiVector & b,
+                                 Epetra_MultiVector & uh,
+                                 double & TotalErrorResidual,
+                                 double & TotalErrorExactSol);
 
 
 
@@ -750,8 +755,10 @@ int main(int argc, char *argv[]) {
   Epetra_Map P1_globalMap(-1,P1_ownedNodes,&P1_ownedGIDs[0],0,Comm);
 
   // Genetrate P2-to-P1 coarsening.
-  Epetra_CrsMatrix *P_linear;
-  GenerateLinearCoarsening_p2_to_p1(elemToNode,P1_globalMap,globalMapG,P_linear);
+  Teuchos::RCP<Epetra_CrsMatrix> P_linear;
+  if (inputSolverList.isParameter("linear P1")) {
+    GenerateLinearCoarsening_p2_to_p1(elemToNode,P1_globalMap,globalMapG,P_linear);
+  }
 
   // Global arrays in Epetra format
   Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
@@ -950,9 +957,16 @@ int main(int argc, char *argv[]) {
   if(MyPID==0) {std::cout << msg << "Global assembly (auxiliary system)          "
 			  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
 
-  /**********************************************************************************/
-  /******************************* ADJUST MATRIX DUE TO BC **************************/
-  /**********************************************************************************/
+  // Generate P2-to-P1 identity coarsening (base mesh to auxiliary mesh).
+  Teuchos::RCP<Epetra_CrsMatrix> P_identity;
+  if (inputSolverList.isParameter("aux P1")) {
+    GenerateIdentityCoarsening_p2_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
+    inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
+  }
+
+/**********************************************************************************/
+/******************************* ADJUST MATRIX DUE TO BC **************************/
+/**********************************************************************************/
 
   // Apply stiffness matrix to v
   Epetra_MultiVector rhsDir(globalMapG,true);
@@ -1028,7 +1042,6 @@ int main(int argc, char *argv[]) {
   MLList.set("x-coordinates",P2_nodeCoordx.data());
   MLList.set("y-coordinates",P2_nodeCoordy.data());
 
-
   Epetra_FEVector exactNodalVals(globalMapG);
   Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
@@ -1049,11 +1062,13 @@ int main(int argc, char *argv[]) {
 
   char probType[10] = "laplace";
 
+  if (P_identity != Teuchos::null)
+    MLList.set("user coarse matrix",(Epetra_CrsMatrix*)&StiffMatrix_aux);
 
-  TestMultiLevelPreconditionerLaplace(probType,             MLList,
-				      StiffMatrix,          exactNodalVals,
-				      rhsVector,            femCoefficients,
-				      TotalErrorResidual,   TotalErrorExactSol);
+  TestMultiLevelPreconditionerLaplace(probType, MLList,
+                                      Teuchos::rcpFromRef(StiffMatrix), P_identity, exactNodalVals,
+                                      rhsVector,            femCoefficients,
+                                      TotalErrorResidual,   TotalErrorExactSol);
 
 
 #ifdef DUMP_DATA
@@ -1472,31 +1487,41 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 /******************************* TEST ML ******************************************/
 /**********************************************************************************/
 
+#include "ml_LevelWrap.h"
+
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-					Teuchos::ParameterList   & MLList,
-					Epetra_CrsMatrix   & A,
-					const Epetra_MultiVector & xexact,
-					Epetra_MultiVector & b,
-					Epetra_MultiVector & uh,
-					double & TotalErrorResidual,
-					double & TotalErrorExactSol)
+                                 Teuchos::ParameterList   & MLList,
+                                 Teuchos::RCP<Epetra_CrsMatrix> const &A0,
+                                 Teuchos::RCP<Epetra_CrsMatrix> const &P0,
+                                 const Epetra_MultiVector & xexact,
+                                 Epetra_MultiVector & b,
+                                 Epetra_MultiVector & uh,
+                                 double & TotalErrorResidual,
+                                 double & TotalErrorExactSol)
 {
   Epetra_MultiVector x(xexact);
   x.PutScalar(0.0);
 
-  Epetra_LinearProblem Problem(&A,&x,&b);
+  Epetra_LinearProblem Problem(&*A0,&x,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
 
-  Epetra_Time Time(A.Comm());
+  Epetra_Time Time(A0->Comm());
 
   // =================== //
   // call ML and AztecOO //
   // =================== //
 
   AztecOO solver(Problem);
-  ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+  Epetra_Operator *MLPrec;
+  if (P0 == Teuchos::null)
+    MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A0, MLList, true);
+  else {
+    if (MLList.isParameter("user coarse matrix") == false)
+      throw std::runtime_error("Must supply coarse grid matrix to use ML::LevelWrap");
+    MLPrec = new ML_Epetra::LevelWrap(A0, P0, MLList, true);
+  }
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
@@ -1518,22 +1543,22 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
     s +=  xexact[0][i]* xexact[0][i];
   }
 
-  A.Comm().SumAll(&d,&d_tot,1);
-  A.Comm().SumAll(&s,&s_tot,1);
+  A0->Comm().SumAll(&d,&d_tot,1);
+  A0->Comm().SumAll(&s,&s_tot,1);
 
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
   double Norm;
   Epetra_Vector Ax(rhs->Map());
-  A.Multiply(false, *lhs, Ax);
+  A0->Multiply(false, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
 
   string msg = ProblemType;
 
-  if (A.Comm().MyPID() == 0) {
-    cout << msg << endl << "......Using " << A.Comm().NumProc() << " processes" << endl;
+  if (A0->Comm().MyPID() == 0) {
+    cout << msg << endl << "......Using " << A0->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2/||x_exact||_2 = " << sqrt(d_tot/s_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
@@ -1545,9 +1570,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   return( solver.NumIters() );
 
 }
-
-
-
 
 /*********************************************************************************************************/
 /*********************************************************************************************************/
@@ -1984,7 +2006,7 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Epetra_CrsMatrix * P) {
+void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
 
   // Generate a P matrix that uses the linear coarsening from p2 to p1 on the base mesh.
   // This presumes that the P2 element has all of the P1 nodes numbered first
@@ -1998,7 +2020,7 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
   int Nelem=P2_elemToNode.dimension(0);
   if(P2_elemToNode.dimension(1) != 9) throw std::runtime_error("Unidentified element type");
   
-  P = new Epetra_CrsMatrix(Copy,P2_map,0);
+  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,P2_map,0));
 
   for(int i=0; i<Nelem; i++)
     for(int j=0; j<P2_elemToNode.dimension(1); j++) {
@@ -2020,4 +2042,35 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
       }
     }
   P->FillComplete(P1_map,P2_map);
+}
+
+/*********************************************************************************************************/
+void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode,
+                      Epetra_Map const & P1_map_aux, Epetra_Map const &P2_map,
+                      Teuchos::RCP<Epetra_CrsMatrix> & P) {
+
+  // Generate prolongator matrix that will be used to transfer from P1 on auxiliary mesh to  P2 on base mesh.
+  // It's just the identity matrix.
+  // By construction, the node numbering on the P1 auxiliary mesh is the same as on the P2 base mesh
+  // (see CreateP1MeshFromP2Mesh).  The P2 map is the range map, the P1 auxiliary map is the domain map.
+  
+  double one = 1.0;
+  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,P2_map,0));
+
+  //We must keep track of the nodes already encountered.  Inserting more than once will cause
+  //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
+  std::map<int,int> hashTable;
+  int Nelem=P2_elemToNode.dimension(0);
+  for(int i=0; i<Nelem; i++) {
+    for(int j=0; j<P2_elemToNode.dimension(1); j++) {
+      int row = P2_elemToNode(i,j);
+      if (hashTable.find(row) == hashTable.end()) {
+        //not found
+        P->InsertGlobalValues(row,1,&one,&row);
+        hashTable[row] = 1;
+      }
+    }
+  }
+
+  P->FillComplete(P1_map_aux,P2_map);
 }
