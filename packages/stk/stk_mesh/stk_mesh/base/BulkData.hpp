@@ -621,6 +621,11 @@ public:
 #endif
 
   //
+  //  Get the maximum ID that is allowed by the host code e.g. (64 vs. 32 bit limits)
+  //
+  uint64_t get_max_allowed_id() const;
+
+  //
   // Connectivity getter methods. For each entity, you can get connected entities
   // of any rank (i.e. node, edge, face, element, constraint).
   // (Some of those connectivities are empty, for example an element may not

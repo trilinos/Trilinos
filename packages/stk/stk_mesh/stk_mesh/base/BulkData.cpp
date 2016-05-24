@@ -1089,13 +1089,26 @@ std::vector<uint64_t> BulkData::internal_get_ids_in_use(stk::topology::rank_t ra
     return ids_in_use;
 }
 
+uint64_t  BulkData::get_max_allowed_id() const {
+#ifdef SIERRA_MIGRATION
+  if(m_add_fmwk_data) {
+    return std::numeric_limits<FmwkId>::max();
+  } else {
+    return stk::mesh::EntityKey::MAX_ID;
+  }
+#else
+  return stk::mesh::EntityKey::MAX_ID;
+#endif
+}
+
 void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, size_t numIdsNeeded, const std::vector<stk::mesh::EntityId>& reserved_ids, std::vector<stk::mesh::EntityId>& requestedIds) const
 {
     size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
     if ( maxNumNeeded == 0 ) return;
     std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank, reserved_ids);
 
-    uint64_t maxAllowedId = stk::mesh::EntityKey::MAX_ID;
+    uint64_t maxAllowedId = get_max_allowed_id();
+
     requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
 }
 
@@ -1105,7 +1118,9 @@ void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded,
     if ( maxNumNeeded == 0 ) return;
 
     std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank);
-    uint64_t maxAllowedId = stk::mesh::EntityKey::MAX_ID;
+
+    uint64_t maxAllowedId = get_max_allowed_id();
+
     requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
 }
 
