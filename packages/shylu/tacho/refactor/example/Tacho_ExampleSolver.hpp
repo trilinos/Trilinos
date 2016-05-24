@@ -78,10 +78,11 @@ namespace Tacho {
       typename SolverType::DenseMatrixBaseHostType BB("BB", AA.NumRows(), nrhs), XX("XX");
       XX.createConfTo(BB);
 
+      srand(time(NULL));  
       const ordinal_type m = BB.NumRows();
       for (auto rhs=0;rhs<nrhs;++rhs) 
         for (auto i=0;i<m;++i) 
-          BB.Value(i, rhs) = (rhs + 1);
+          BB.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
       
       //tacho.setProblem(AA, BB, XX);
       tacho.setMatrix(AA);
@@ -128,10 +129,11 @@ namespace Tacho {
       };
 
       data.b = new value_type[m*nrhs];
-      
+
+      srand(time(NULL));        
       for (auto rhs=0;rhs<nrhs;++rhs) 
         for (auto i=0;i<m;++i) 
-          data.b[i+m*rhs] = (rhs +1 );
+          data.b[i+m*rhs] = ((value_type)rand()/(RAND_MAX));
       
       typename SolverType::CrsMatrixBaseHostType AA("AA", m, m, nnz);
 
