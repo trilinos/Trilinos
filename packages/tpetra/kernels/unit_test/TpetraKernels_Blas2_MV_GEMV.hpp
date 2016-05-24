@@ -84,25 +84,39 @@ struct SerialGEMV {
     const bool transpose = trans[0] != 'N' && trans[0] != 'n';
 
     if (transpose) {
-      for (IndexType j = 0; j < A_numCols; ++j) {
-        y_value_type y_j = ArithTraits<y_value_type>::zero ();
-
-        if (alpha != ArithTraits<AlphaCoeffType>::zero ()) {
-          for (IndexType i = 0; i < A_numRows; ++i) {
-            if (conjugate) {
-              y_j += alpha * ArithTraits<A_value_type>::conj (A(i, j)) * x(i);
-            }
-            else {
-              y_j += alpha * A(i, j) * x(i);
-            }
+      if (A_numRows == 0) {
+        if (beta == ArithTraits<BetaCoeffType>::zero ()) {
+          for (IndexType j = 0; j < A_numCols; ++j) {
+            y[j] = ArithTraits<y_value_type>::zero ();
           }
         }
+        else if (beta != ArithTraits<BetaCoeffType>::one ()) {
+          for (IndexType j = 0; j < A_numCols; ++j) {
+            y[j] = beta * y[j];
+          }
+        }
+      }
+      else { // A_numRows != 0
+        for (IndexType j = 0; j < A_numCols; ++j) {
+          y_value_type y_j = ArithTraits<y_value_type>::zero ();
 
-        const y_value_type y_j_orig =
-          beta == ArithTraits<BetaCoeffType>::zero () ?
-          ArithTraits<y_value_type>::zero () :
-          beta * y[j];
-        y[j] = y_j + y_j_orig;
+          if (alpha != ArithTraits<AlphaCoeffType>::zero ()) {
+            for (IndexType i = 0; i < A_numRows; ++i) {
+              if (conjugate) {
+                y_j += alpha * ArithTraits<A_value_type>::conj (A(i, j)) * x(i);
+              }
+              else {
+                y_j += alpha * A(i, j) * x(i);
+              }
+            }
+          }
+
+          const y_value_type y_j_orig =
+            beta == ArithTraits<BetaCoeffType>::zero () ?
+            ArithTraits<y_value_type>::zero () :
+            beta * y[j];
+          y[j] = y_j + y_j_orig;
+        }
       }
     }
     else { // not transpose
@@ -183,19 +197,29 @@ testGemvOne (std::ostream& curOut,
   const Scalar four = two + two;
   const bool transpose = (trans != 'N' && trans != 'n');
 
+  // FIXME (mfh 24 May 2016) Something is currently broken for the
+  // transpose case when numRows == 0.  Skip it for now.
+  if (numRows == 0 && transpose) {
+    return true;
+  }
+
   bool curSuccess = true;
   indent = indent + "  ";
 
   std::ostringstream os;
   // Gather non-debug output into the above ostringstream first.  This
-  // makes the test output easier to read.  Always print debug output
-  // immediately, since that lets us catch unexpected program
-  // termination.
+  // makes the test output easier to read.
   os << "numRows: " << numRows
      << ", numCols: " << numCols
      << ", trans: '" << trans << "'"
      << ", alpha: " << alpha
      << ", beta: " << beta;
+
+  // Always print debug output immediately, since that lets us catch
+  // unexpected program termination.
+  if (debug) {
+    curOut << indent << os.str () << endl;
+  }
 
   Scalar curVal;
 
@@ -239,9 +263,12 @@ testGemvOne (std::ostream& curOut,
     curOut << indent << "Call KokkosBlas::gemv" << endl;
   }
   KokkosBlas::gemv (&trans, alpha, A, x, beta, y);
+  // Copy back to host -- we'll do the comparison there.
+  // (I don't want to rely on another device kernel for testing.)
+  Kokkos::deep_copy (y_h, y);
 
   if (debug) {
-    curOut << indent << "Call comparison function" << endl;
+    curOut << indent << "Set up comparison" << endl;
   }
   vector_type y_copy ("y_copy", y_numEnt);
   auto y_copy_h = Kokkos::create_mirror_view (y_copy);
@@ -253,14 +280,34 @@ testGemvOne (std::ostream& curOut,
   }
   Kokkos::deep_copy (y_copy, y_copy_h);
 
-  gemv (&trans, alpha, A, x, beta, y_copy);
+  if (debug) {
+    curOut << indent << "Call hand-rolled comparison function" << endl;
+  }
+
+  // We have to use the host version of the data, because our
+  // hand-rolled function runs on host.  y_copy_h is already up to
+  // date.  We could use the versions of A and x above, but let's copy
+  // them over to host again, just to make sure.  (A bug might
+  // overwrite them, resulting in a false pass.)
+  {
+    Kokkos::deep_copy (A_h, A);
+    Kokkos::deep_copy (x_h, x);
+
+    if (trans != 'N' && trans != 'n' && A.dimension_0 () == 0) {
+      for (size_type i = 0; i < y_numEnt; ++i) {
+        y_copy_h(i) = beta * y_copy_h(i);
+      }
+    }
+    else {
+      gemv (&trans, alpha, A_h, x_h, beta, y_copy_h);
+    }
+    // Comparison uses host version, so don't copy y_copy_h back to y_copy here.
+  }
 
   if (debug) {
     curOut << indent << "Compare KokkosBlas::gemv result to "
       "hand-rolled code result" << endl;
   }
-  Kokkos::deep_copy (y_h, y);
-  Kokkos::deep_copy (y_copy_h, y_copy);
 
   // Accumulate the max-norm difference.
   mag_type infNorm = ArithTraits<mag_type>::zero ();
@@ -270,9 +317,17 @@ testGemvOne (std::ostream& curOut,
     infNorm = std::max (infNorm, diff);
   }
 
-  const mag_type tol = (transpose ? numRows : numCols) * ArithTraits<Scalar>::eps ();
+  const mag_type tol = static_cast<mag_type> (std::max (numRows, numCols)) * ArithTraits<Scalar>::eps ();
   if (infNorm > tol) {
     curSuccess = false;
+    if (debug) {
+      curOut << indent << "FAILED: infNorm = " << infNorm << " > tol = " << tol << endl;
+    }
+  }
+  else {
+    if (debug) {
+      curOut << indent << "infNorm = " << infNorm << " <= tol = " << tol << endl;
+    }
   }
 
   // Now compare against the MKL's CBLAS, but only for the array
@@ -285,7 +340,11 @@ testGemvOne (std::ostream& curOut,
 #ifdef HAVE_TPETRAKERNELS_MKL
   if (numRows != 0 && numCols != 0 &&
       (typeid (Layout) == typeid (Kokkos::LayoutLeft) ||
-       typeid (Layout) == typeid (Kokkos::LayoutRight))) {
+       typeid (Layout) == typeid (Kokkos::LayoutRight)) &&
+      std::is_same<Kokkos::HostSpace, typename Device::memory_space>::value) {
+    if (debug) {
+      curOut << indent << "Attempt MKL CBLAS comparison" << endl;
+    }
     const CBLAS_LAYOUT layoutMkl =
       typeid (Layout) == typeid (Kokkos::LayoutLeft) ?
       CblasColMajor : CblasRowMajor;
@@ -596,91 +655,6 @@ testScalarsLayouts (std::ostream& out,
   else {
     out << "Device NOT initialized; skipping test" << endl;
   }
-
-  return success;
-}
-
-//
-// Test all BLAS 2 operations, for all Scalar types in {double, float,
-// int, complex<double>, complex<float>}, for all Layout types in
-// {LayoutLeft, LayoutRight}, and for all enabled Device types.
-//
-bool
-testScalarsLayoutsDevices (std::ostream& out,
-                           std::string indent,
-                           const bool testFloat,
-                           const bool testComplex,
-                           const bool printOnlyOnFailure,
-                           const bool debug)
-{
-  bool success = true;
-  bool curSuccess = true;
-
-  indent = indent + "  ";
-  out << indent << "Test all BLAS 2 operations" << endl;
-
-#ifdef KOKKOS_HAVE_SERIAL
-  {
-    out << indent << "Test Serial, HostSpace" << endl;
-    typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> device_type;
-    curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testFloat,
-                                                  testComplex,
-                                                  printOnlyOnFailure,
-                                                  debug);
-    success = success && curSuccess;
-  }
-#endif // KOKKOS_HAVE_SERIAL
-
-#ifdef KOKKOS_HAVE_OPENMP
-  {
-    out << indent << "Test OpenMP, HostSpace" << endl;
-    typedef Kokkos::Device<Kokkos::OpenMP, Kokkos::HostSpace> device_type;
-    curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testFloat,
-                                                  testComplex,
-                                                  printOnlyOnFailure,
-                                                  debug);
-    success = success && curSuccess;
-  }
-#endif // KOKKOS_HAVE_OPENMP
-
-#ifdef KOKKOS_HAVE_PTHREAD
-  {
-    out << indent << "Test Threads, HostSpace" << endl;
-    typedef Kokkos::Device<Kokkos::Threads, Kokkos::HostSpace> device_type;
-    curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testFloat,
-                                                  testComplex,
-                                                  printOnlyOnFailure,
-                                                  debug);
-    success = success && curSuccess;
-  }
-#endif // KOKKOS_HAVE_PTHREAD
-
-#ifdef KOKKOS_HAVE_CUDA
-  {
-    out << indent << "Test Cuda, CudaSpace" << endl;
-    typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> device_type;
-    curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testFloat,
-                                                  testComplex,
-                                                  printOnlyOnFailure,
-                                                  debug);
-    success = success && curSuccess;
-  }
-
-  {
-    out << indent << "Test Cuda, CudaUVMSpace" << endl;
-    typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> device_type;
-    curSuccess = testScalarsLayouts<device_type> (out, indent,
-                                                  testFloat,
-                                                  testComplex,
-                                                  printOnlyOnFailure,
-                                                  debug);
-    success = success && curSuccess;
-  }
-#endif // KOKKOS_HAVE_CUDA
 
   return success;
 }

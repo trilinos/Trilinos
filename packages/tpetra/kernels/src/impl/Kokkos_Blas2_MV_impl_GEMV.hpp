@@ -282,6 +282,27 @@ singleLevelGemv (const char trans[],
   policy_type range (0, A.dimension_0 ());
   const char tr = trans[0];
 
+  // The transpose and conjugate transpose cases where A has zero rows
+  // need special handling.  These are equivalent to y := beta*y.  We
+  // could implement this using KokkosBlas::scal, but we don't want to
+  // depend on that or its implementation details.  Instead, we reuse
+  // an instantiation of the non-transpose case for alpha=0.
+  if (A.dimension_0 () == 0 && (tr != 'N' && tr != 'n')) {
+    if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {
+      Kokkos::deep_copy (y, Kokkos::Details::ArithTraits<BetaCoeffType>::zero ());
+    }
+    else if (beta != Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
+      // "Fake out" a scal() by using the non-transpose alpha=0,
+      // general beta case.  This assumes that the functor doesn't
+      // check dimensions.
+      typedef SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
+        0, -1, AlphaCoeffType, BetaCoeffType, IndexType> functor_type;
+      functor_type functor (alpha, A, x, beta, y);
+      Kokkos::parallel_for (policy_type (0, A.dimension_1 ()), functor);
+    }
+    return;
+  }
+
   if (tr == 'N' || tr == 'n') {
     if (alpha == Kokkos::Details::ArithTraits<AlphaCoeffType>::zero ()) {
       if (beta == Kokkos::Details::ArithTraits<BetaCoeffType>::zero ()) {

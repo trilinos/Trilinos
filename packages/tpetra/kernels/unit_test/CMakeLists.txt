@@ -32,14 +32,50 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  blas2_MV_unit
-  SOURCES
-    blas2_MV
-    TpetraKernels_Blas2_MV_GEMV.hpp
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
+IF (Kokkos_ENABLE_Cuda)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    blas2_MV_Cuda
+    SOURCES
+      blas2_MV_Cuda
+      TpetraKernels_Blas2_MV_GEMV.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
+
+IF (Kokkos_ENABLE_OpenMP)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    blas2_MV_OpenMP
+    SOURCES
+      blas2_MV_OpenMP
+      TpetraKernels_Blas2_MV_GEMV.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
+
+IF (Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    blas2_MV_Serial
+    SOURCES
+      blas2_MV_Serial
+      TpetraKernels_Blas2_MV_GEMV.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
+
+IF (Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    blas2_MV_Threads
+    SOURCES
+      blas2_MV_Threads
+      TpetraKernels_Blas2_MV_GEMV.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF ()
+
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_MKL)
 IF (${PACKAGE_NAME}_ENABLE_MKL)
