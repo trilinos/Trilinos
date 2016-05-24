@@ -87,6 +87,7 @@ class MyProblem(NOX.Epetra.Interface.Required,
         self.__comm = Epetra.SerialComm()
         self.__map  = Epetra.Map(2, 0, self.__comm)
         self.__jac  = Epetra.CrsMatrix(Epetra.Copy, self.__map, 2)
+        self.__soln = Epetra.Vector(self.__map)
 
     def getJacobian(self):
         return self.__jac
@@ -112,16 +113,23 @@ class MyProblem(NOX.Epetra.Interface.Required,
             return False
         return True
 
+    def getSolution(self):
+        return self.__soln
+
 #
 # Main function.  Create a solver based on the MyProblem class and solve it.
 def main():
 
     # Initialize
-    initGuess = Epetra.Vector([.5,.5])
-    problem   = MyProblem()
-    jacobian  = problem.getJacobian()
-    solver    = NOX.Epetra.defaultSolver(initGuess, problem, problem, jacobian,
-                                         maxIters=40)
+    problem      = MyProblem()
+    initGuess    = problem.getSolution()
+    initGuess[:] = [.5,.5]
+    jacobian     = problem.getJacobian()
+    solver       = NOX.Epetra.defaultSolver(initGuess,
+                                            problem,
+                                            problem,
+                                            jacobian,
+                                            maxIters=40)
     print solver.statusTest
 
     # Solve

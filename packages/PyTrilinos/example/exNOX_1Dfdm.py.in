@@ -313,10 +313,12 @@ def main():
         else:
             print "End Result: TEST FAILED"
 
-    # Obtain a view of the plot data
-    x = interface.getMesh()
+    # Obtain a view of the plot data. Note that the following code is the Python
+    # alalog of what you might use in C++:
+    #
     finalGroup = solver.getSolutionGroup()
     u = finalGroup.getX()
+    x = interface.getMesh()
 
     # Plot the results
     if options.plot:
