@@ -138,7 +138,7 @@ public:
     size_t gidOffset = 0;
     for(int p = 0; p < comm->getRank(); p++) gidOffset += numGIDs[p];
 
-    // we use nonOvlInput to assing the globally unique shrinked GIDs and communicate them to input.
+    // we use nonOvlInput to assign the globally unique shrinked GIDs and communicate them to input.
     std::map<const GlobalOrdinal, GlobalOrdinal> origGID2newGID;
     for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) {
       origGID2newGID[nonOvlInput.getGlobalElement(i)] = Teuchos::as<GlobalOrdinal>(i) + Teuchos::as<GlobalOrdinal>(gidOffset);
@@ -199,6 +199,92 @@ public:
     return ovlDomainMap;
   }
 
+  /*! @brief Helper function to shrink the GIDs and generate a standard map whith GIDs starting at 0
+   *
+    @param  input                Input map (may be overlapping) containing all GIDs. Think of it as a column map.
+    @param  nonOvlInput          Non-overlapping version of "input" map. Think of it is the corresponding domain map associated with the column map "input"
+    @param  nonOvlReferenceInput Non-overlapping version of reference "input" map. Think of it is the corresponding domain map associated with the column map "input"
+    @return                      New map with unique continuous global ids starting with GID 0
+
+    TODO
+    Example: input = { 10, 15, 26, 37, 48 }; on proc 0
+             input = { 37, 48, 59, 60, 70 }; on proc 1
+             nonOvlInput = { 10, 15, 26, 37 }; on proc 0
+             nonOvlInput = { 48, 59, 60, 70 }: on proc 1
+             result = { 0, 1, 2, 3, 4 }; on proc 0
+             result = { 3, 4, 5, 6, 7 }; on proc 1
+    */
+  static Teuchos::RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > transformThyra2XpetraGIDs(
+      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& input,
+      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlInput,
+      const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& nonOvlReferenceInput) {
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() > input.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the non-overlapping map must not have more local ids than the overlapping map.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getNodeNumElements() != nonOvlReferenceInput.getNodeNumElements(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the number of local Xpetra reference GIDs and local Thyra GIDs of the non-overlapping maps must be the same!");
+    TEUCHOS_TEST_FOR_EXCEPTION(nonOvlInput.getMaxAllGlobalIndex() != input.getMaxAllGlobalIndex(), Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::transformThyra2XpetraGIDs: the maximum GIDs of the overlapping and non-overlapping maps must be the same.");
+
+    RCP< const Teuchos::Comm<int> > comm = input.getComm();
+
+    // fill translation map as far as possible
+    std::map<const GlobalOrdinal, GlobalOrdinal> thyra2xpetraGID;
+    for(size_t i = 0; i < nonOvlInput.getNodeNumElements(); i++) {
+      thyra2xpetraGID[nonOvlInput.getGlobalElement(i)] =
+          nonOvlReferenceInput.getGlobalElement(i);
+    }
+
+    // find all GIDs of the overlapping Thyra map which are not owned by this proc
+    Teuchos::Array<GlobalOrdinal> ovlUnknownStatusGids;
+    // loop over global column map of A and find all GIDs where it is not sure, whether they are special or not
+    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+      GlobalOrdinal gcid = input.getGlobalElement(i);
+      if( nonOvlInput.isNodeGlobalElement(gcid) == false) {
+        ovlUnknownStatusGids.push_back(gcid);
+      }
+    }
+
+    // Communicate the number of DOFs on each processor
+    std::vector<int> myUnknownDofGIDs(comm->getSize(),0);
+    std::vector<int> numUnknownDofGIDs(comm->getSize(),0);
+    myUnknownDofGIDs[comm->getRank()] = ovlUnknownStatusGids.size();
+    Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,comm->getSize(),&myUnknownDofGIDs[0],&numUnknownDofGIDs[0]);
+
+    // create array containing all DOF GIDs
+    size_t cntUnknownDofGIDs = 0;
+    for(int p = 0; p < comm->getSize(); p++) cntUnknownDofGIDs += numUnknownDofGIDs[p];
+    std::vector<GlobalOrdinal> lUnknownDofGIDs(cntUnknownDofGIDs,0); // local version to be filled
+    std::vector<GlobalOrdinal> gUnknownDofGIDs(cntUnknownDofGIDs,0); // global version after communication
+    // calculate the offset and fill chunk of memory with local data on each processor
+    size_t cntUnknownOffset = 0;
+    for(int p = 0; p < comm->getRank(); p++) cntUnknownOffset += numUnknownDofGIDs[p];
+    for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
+      lUnknownDofGIDs[k+cntUnknownOffset] = ovlUnknownStatusGids[k];
+    }
+    if(cntUnknownDofGIDs > 0) // only perform communication if there are unknown DOF GIDs
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lUnknownDofGIDs[0],&gUnknownDofGIDs[0]);
+    std::vector<GlobalOrdinal> lTranslatedDofGIDs(cntUnknownDofGIDs,0); // local version to be filled
+    std::vector<GlobalOrdinal> gTranslatedDofGIDs(cntUnknownDofGIDs,0); // global version after communication
+    // loop through all GIDs with unknown status
+    for(size_t k=0; k < gUnknownDofGIDs.size(); k++) {
+      GlobalOrdinal curgid = gUnknownDofGIDs[k];
+      if(nonOvlInput.isNodeGlobalElement(curgid)) {
+        lTranslatedDofGIDs[k] = thyra2xpetraGID[curgid];
+      }
+    }
+    if(cntUnknownDofGIDs > 0) // only perform communication if there are unknown DOF GIDs
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_MAX,Teuchos::as<int>(cntUnknownDofGIDs),&lTranslatedDofGIDs[0],&gTranslatedDofGIDs[0]);
+
+    for(size_t k=0; k < Teuchos::as<size_t>(ovlUnknownStatusGids.size()); k++) {
+      thyra2xpetraGID[ovlUnknownStatusGids[k]] = gTranslatedDofGIDs[k+cntUnknownOffset];
+    }
+    Teuchos::Array<GlobalOrdinal> ovlDomainMapArray;
+    for(size_t i = 0; i<input.getNodeNumElements(); i++) {
+      GlobalOrdinal gcid = input.getGlobalElement(i);
+      ovlDomainMapArray.push_back(thyra2xpetraGID[gcid]);
+    }
+    RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ovlDomainMap =
+        Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build
+        (nonOvlInput.lib(),Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),ovlDomainMapArray(),0,comm);
+    return ovlDomainMap;
+  }
 
 
 };

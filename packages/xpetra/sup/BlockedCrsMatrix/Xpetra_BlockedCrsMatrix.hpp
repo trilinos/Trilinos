@@ -451,8 +451,8 @@ namespace Xpetra {
         }
 
       // get full row map
-      RCP<const Map> rangeMap = rangemaps_->getFullMap();
-      fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
+      //RCP<const Map> rangeMap = rangemaps_->getFullMap();
+      //fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
 
 #if 0
       // build full col map
@@ -789,11 +789,12 @@ namespace Xpetra {
       for (size_t col = 0; col < Cols(); ++col) {
         for (size_t row = 0; row < Rows(); ++row) {
           if(getMatrix(row,col)!=Teuchos::null) {
-            ret += getMatrix(row,col)->getFrobeniusNorm();
+            typename ScalarTraits<Scalar>::magnitudeType n = getMatrix(row,col)->getFrobeniusNorm();
+            ret += n * n;
           }
         }
       }
-      return ret;
+      return Teuchos::ScalarTraits< typename ScalarTraits<Scalar>::magnitudeType >::squareroot(ret);
     }
 
     //@}
@@ -1039,12 +1040,12 @@ namespace Xpetra {
       if (isFillComplete()) {
         out << "BlockMatrix is fillComplete" << std::endl;
 
-        if(fullrowmap_ != Teuchos::null) {
+        /*if(fullrowmap_ != Teuchos::null) {
           out << "fullRowMap" << std::endl;
           fullrowmap_->describe(out,verbLevel);
         } else {
           out << "fullRowMap not set. Check whether block matrix is properly fillCompleted!" << std::endl;
-        }
+        }*/
 
         //out << "fullColMap" << std::endl;
         //fullcolmap_->describe(out,verbLevel);
@@ -1124,16 +1125,112 @@ namespace Xpetra {
       using Teuchos::rcp_dynamic_cast;
       Scalar one = ScalarTraits<SC>::one();
 
-      TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ || bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
-                                 "BlockedCrsMatrix::Merge: only implemented for Xpetra-style numbering. If you need the merge routine for Thyra-style numbering, report this to the Xpetra developers." );
+      TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ != bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: only implemented for Xpetra-style or Thyra-style numbering. No mixup allowed!" );
 
-      RCP<Matrix> sparse = MatrixFactory::Build(fullrowmap_, 33);
+      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed." );
 
-      for (size_t i = 0; i < blocks_.size(); i++)
-        if (blocks_[i] != Teuchos::null)
-          this->Add(*blocks_[i], one, *sparse, one);
+      //TEUCHOS_TEST_FOR_EXCEPTION(fullrowmap_ == Teuchos::null, Xpetra::Exceptions::RuntimeError,
+      //                           "BlockedCrsMatrix::Merge: Full row map not available. Did you call fillComplete?" );
+
+      RCP<Matrix> sparse = MatrixFactory::Build(getRangeMapExtractor()->getFullMap(), 33);
+
+      if(bRangeThyraMode_ == false) {
+        // Xpetra mode
+        for (size_t i = 0; i < Rows(); i++) {
+          for (size_t j = 0; j < Cols(); j++) {
+            if (getMatrix(i,j) != Teuchos::null) {
+              RCP<const Matrix> mat = getMatrix(i,j);
+
+              // recursively call Merge routine
+              RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              if (bMat != Teuchos::null) mat = bMat->Merge();
+
+              bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
+                                         "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
+
+              // jump over empty blocks
+              if(mat->getNodeNumEntries() == 0) continue;
+
+              this->Add(*mat, one, *sparse, one);
+            }
+          }
+        }
+      } else {
+        // Thyra mode
+        for (size_t i = 0; i < Rows(); i++) {
+          for (size_t j = 0; j < Cols(); j++) {
+            if (getMatrix(i,j) != Teuchos::null) {
+              RCP<const Matrix> mat = getMatrix(i,j);
+              // recursively call Merge routine
+              RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              if (bMat != Teuchos::null) mat = bMat->Merge();
+
+              bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
+                                         "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
+
+              // jump over empty blocks
+              if(mat->getNodeNumEntries() == 0) continue;
+
+              // check whether we have a CrsMatrix block (no blocked operator)
+              RCP<const CrsMatrixWrap> crsMat = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(mat);
+              TEUCHOS_ASSERT(crsMat != Teuchos::null);
+
+              // these are the thyra style maps of the matrix
+              RCP<const Map> trowMap = mat->getRowMap();
+              RCP<const Map> tcolMap = mat->getColMap();
+              RCP<const Map> tdomMap = mat->getDomainMap();
+
+              // get Xpetra maps
+              RCP<const Map> xrowMap = getRangeMapExtractor()->getMap(i,false);
+              RCP<const Map> xdomMap = getDomainMapExtractor()->getMap(j,false);
+
+              // generate column map with Xpetra GIDs
+              // We have to do this separately for each block since the column
+              // map of each block might be different in the same block column
+              Teuchos::RCP<Map> xcolMap = MapUtils::transformThyra2XpetraGIDs(
+                    *tcolMap,
+                    *tdomMap,
+                    *xdomMap);
+
+              size_t maxNumEntries = mat->getNodeMaxNumRowEntries();
+
+              size_t    numEntries;
+              Array<GO> inds (maxNumEntries);
+              Array<GO> inds2(maxNumEntries);
+              Array<SC> vals (maxNumEntries);
+
+              // loop over all rows and add entries
+              for (size_t k = 0; k < mat->getNodeNumRows(); k++) {
+                GlobalOrdinal rowTGID = trowMap->getGlobalElement(k);
+                crsMat->getCrsMatrix()->getGlobalRowCopy(rowTGID, inds(), vals(), numEntries);
+
+                // create new indices array
+                for (size_t l = 0; l < numEntries; ++l) {
+                  LocalOrdinal lid = tcolMap->getLocalElement(inds[l]);
+                  inds2[l] = xcolMap->getGlobalElement(lid);
+                }
+
+                GlobalOrdinal rowXGID = xrowMap->getGlobalElement(k);
+                sparse->insertGlobalValues(
+                    rowXGID, inds2(0, numEntries),
+                    vals(0, numEntries));
+              }
+            }
+          }
+        }
+      }
 
       sparse->fillComplete(getDomainMap(), getRangeMap());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getNodeNumEntries() != getNodeNumEntries(), Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: Local number of entries of merged matrix does not coincide with local number of entries of blocked operator." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getGlobalNumEntries() != getGlobalNumEntries(), Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: Global number of entries of merged matrix does not coincide with global number of entries of blocked operator." );
 
       return sparse;
     }
@@ -1238,7 +1335,7 @@ namespace Xpetra {
   private:
     Teuchos::RCP<const MapExtractor>      domainmaps_;        // full        domain map together with all partial domain maps
     Teuchos::RCP<const MapExtractor>      rangemaps_;         // full         range map together with all partial domain maps
-    Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
+    //Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
     //Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
     std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
