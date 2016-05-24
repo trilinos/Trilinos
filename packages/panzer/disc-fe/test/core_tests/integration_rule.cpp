@@ -130,4 +130,23 @@ namespace panzer {
     TEST_ASSERT(cv_type == int_rule.cv_type);
   }
 
+  TEUCHOS_UNIT_TEST(integration_rule, cv_bc)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const int cell_local_side_id = 1;
+    const panzer::CellData cell_data(num_cells,cell_local_side_id,topo);
+    std::string cv_type = "boundary";
+    
+    panzer::IntegrationRule int_rule(cell_data,cv_type);
+    
+    TEST_ASSERT(num_cells == int_rule.workset_size);
+    TEST_ASSERT(int_rule.num_points == 2);
+    TEST_ASSERT(base_cell_dimension == int_rule.spatial_dimension);
+    TEST_ASSERT(cv_type == int_rule.cv_type);
+  }
+
 }

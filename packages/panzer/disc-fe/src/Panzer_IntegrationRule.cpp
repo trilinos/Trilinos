@@ -48,6 +48,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_CubatureControlVolume.hpp"
 #include "Intrepid2_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -114,6 +115,9 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
   if (cv_type == "side") {
      cubature_degree = 85;
   }
+  if (cv_type == "boundary") {
+     cubature_degree = 95;
+  }
 
   //int spatialDimension = cell_data.baseCellDimension();
 
@@ -133,6 +137,12 @@ void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::s
   else if (cv_type == "side") {
     ss << ",side)";
     intrepid_cubature  = Teuchos::rcp(new Intrepid2::CubatureControlVolumeSide<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo));
+    num_points = intrepid_cubature->getNumPoints();
+  }
+  else if (cv_type == "boundary") {
+    ss << ",boundary)";
+    intrepid_cubature  = Teuchos::rcp(new 
+           Intrepid2::CubatureControlVolumeBoundary<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device> >(topo,cell_data.side()));
     num_points = intrepid_cubature->getNumPoints();
   }
 

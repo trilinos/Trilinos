@@ -53,6 +53,7 @@
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_CubatureControlVolume.hpp"
 #include "Intrepid2_CubatureControlVolumeSide.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
 #include "Kokkos_DynRankView.hpp"
 
 namespace panzer {
