@@ -162,6 +162,10 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
                  FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary);
 
+void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
+			  FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
+
+
 void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
 
 void CreateP1MeshFromP2Mesh(const FieldContainer<int> & P2_elemToNode, FieldContainer<int> &aux_P1_elemToNode);
@@ -649,6 +653,18 @@ int main(int argc, char *argv[]) {
   FieldContainer<int>   nodeOnBoundary(P2_numNodes);
   PromoteMesh(2,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
 	      elemToNode, nodeCoord, nodeOnBoundary);
+
+
+  // ---------------------------
+  FieldContainer<int>    Pn_elemToNode(numElems,9); //because quads
+  FieldContainer<double> Pn_nodeCoord(P2_numNodes,dim);
+  FieldContainer<int>   Pn_nodeOnBoundary(P2_numNodes);
+
+  PromoteMesh_Pn_Kirby(2,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
+		       Pn_elemToNode, Pn_nodeCoord, Pn_nodeOnBoundary);
+  // ---------------------------
+
+
 
   long long numElems_aux = numElems*4;  //4 P1 elements per P2 element in auxiliary mesh
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per P2 element
@@ -1757,7 +1773,10 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int P1_numNodes        = P1_nodeCoord.dimension(0);
   int P1_numEdges        = P1_edgeCoord.dimension(0);
   int dim                = P1_nodeCoord.dimension(1);
-  
+
+
+  int Pn_numNodes        = Pn_nodeCoord.dimension(0);
+
 
   int Pn_ExpectedNodesperElem = P1_numNodesperElem + (degree-1)*P1_numEdgesperElem + (degree-1)*(degree-1);
   int Pn_ExpectedNumNodes     = P1_numNodes + (degree-1)*P1_numEdges + (degree-1)*(degree-1)*numElems;  
@@ -1794,17 +1813,18 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   // We still number the global nodes in the exodus-style (node,edge,face) ordering, but
   // the elem2node map has to account for Kirby-style elements
 
-  int p1_node_in_pn[4] = {0,degree+1, (degree+1)*(degree+1)-1, degree*(degree+1)};
+  int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
 
   // As you advance along each edge, we'll skip by the following amount to get to the next Kirby dof
   int edge_skip[4] = {1,degree+1,-1,-(degree+1)};
+  int center_root = degree+2;
 
   // Make the new el2node array
   for(int i=0; i<numElems; i++)  {    
     // P1 nodes
     for(int j=0; j<P1_numNodesperElem; j++) 
       Pn_elemToNode(i,p1_node_in_pn[j]) = P1_elemToNode(i,j);
-    
+  
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++){
       int base_id =  p1_node_in_pn[j];
@@ -1815,20 +1835,26 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
     // P1 cells
     for(int j=0; j<degree-1; j++) 
       for(int k=0; k<degree-1; k++) 
-	Pn_elemToNode(i,P1_numNodesperElem+P1_numEdgesperElem*(degree-1) + j*(degree-1)+k) = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+	Pn_elemToNode(i,center_root+j*(degree-1)+k) = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+
   }
 
   // Get the p=n node locations
   FieldContainer<double> RefNodeCoords(Pn_numNodesperElem,dim);  
-  FieldContainer<double> PhysNodeCoords(Pn_numNodesperElem,dim);  
+  FieldContainer<double> RefNodeCoords2(1,Pn_numNodesperElem,dim);  
+  FieldContainer<double> PhysNodeCoords(1,Pn_numNodesperElem,dim);  
   Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > BasisPn(degree,pointType);
   BasisPn.getDofCoords(RefNodeCoords);
   
-  // debug
-  printf("**** P=%d nodal coordinates ***\n",degree);
+#ifdef DEBUG_OUTPUT
+  printf("**** P=%d reference nodal coordinates ***\n",degree);
   for(int i=0; i<Pn_numNodesperElem; i++)
     printf("[%2d] %10.2f %10.2f\n",i,RefNodeCoords(i,0),RefNodeCoords(i,1));
+#endif
 
+  for(int i=0; i<Pn_numNodesperElem; i++)
+    for(int k=0; k<dim; k++)
+      RefNodeCoords2(0,i,k) = RefNodeCoords(i,k);
 
   // Make the new coordinates (inefficient, but correct)
  for(int i=0; i<numElems; i++)  {    
@@ -1841,7 +1867,15 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    }
 
    // Map the reference node location to physical   
-   Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords,my_p1_nodes,cellTopo);
+   Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
+
+#ifdef DEBUG_OUTPUT
+   printf("[%2d] PhysNodes  : ",i);
+   for(int j=0; j<Pn_numNodesperElem; j++)
+     printf("(%10.2f %10.2f) ",PhysNodeCoords(0,j,0),PhysNodeCoords(0,j,1));
+   printf("\n");
+#endif
+
 
    // Copy the physical node locations to the Pn_nodeCoord array
    for(int j=0; j<Pn_numNodesperElem; j++) {
@@ -1851,7 +1885,6 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    }
  }
 
-
   // Update the boundary conditions
   int edge_node0_id[4]={0,1,2,3};
   int edge_node1_id[4]={1,2,3,0};
@@ -1859,7 +1892,6 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   // P1 nodes
   for(int i=0; i<P1_numNodes; i++) 
     Pn_nodeOnBoundary(i) = P1_nodeOnBoundary(i);
-
   
   // P1 edges
   // Not all that efficient
@@ -1873,6 +1905,29 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
       }
     }
   }
+
+  // debug
+  printf("**** P=%d elem2node  ***\n",degree);
+  for(int i=0; i<numElems; i++) {
+    printf("[%2d] ",i);
+    for(int j=0; j<Pn_numNodesperElem; j++)
+      printf("%2d ",Pn_elemToNode(i,j));
+    printf("\n");
+  }
+
+
+  printf("**** P=%d nodes  ***\n",degree);
+  for(int i=0; i<Pn_numNodes; i++) {
+    printf("[%2d] %10.2e %10.2e (%d)\n",i,Pn_nodeCoord(i,0),Pn_nodeCoord(i,1),(int)Pn_nodeOnBoundary(i));   
+  }
+  
+  printf("**** P=1 nodes  ***\n");
+  for(int i=0; i<P1_numNodes; i++) {
+    printf("[%2d] %10.2e %10.2e (%d)\n",i,P1_nodeCoord(i,0),P1_nodeCoord(i,1),(int)P1_nodeOnBoundary(i));   
+  }
+  
+
+
 }
 
 
