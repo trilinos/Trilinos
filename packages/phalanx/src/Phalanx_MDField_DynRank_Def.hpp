@@ -360,46 +360,64 @@ setFieldData(const PHX::any& a)
 
     if (m_tag.dataLayout().rank() == 1) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
-      m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
-										    tmp.extent(0),
-										    Kokkos::dimension_scalar(tmp));
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar > 0)
+        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
+		  								      tmp.extent(0),
+										      Kokkos::dimension_scalar(tmp));
+      else
+        m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
+                                                                                      tmp.extent(0));
+
     }
     else if (m_tag.dataLayout().rank() == 2) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
 										    tmp.extent(0),
 										    tmp.extent(1),
-										    Kokkos::dimension_scalar(tmp));
+										    dim_scalar);
     }
     else if (m_tag.dataLayout().rank() == 3) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
       										    tmp.extent(0),
       										    tmp.extent(1),
       										    tmp.extent(2),
-      										    Kokkos::dimension_scalar(tmp));
+      										    dim_scalar);
     }
     else if (m_tag.dataLayout().rank() == 4) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
 										    tmp.extent(0),
 										    tmp.extent(1),
 										    tmp.extent(2),
 										    tmp.extent(3),
-										    Kokkos::dimension_scalar(tmp));
+										    dim_scalar);
     }
     else if (m_tag.dataLayout().rank() == 5) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
+
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
 										    tmp.extent(0),
 										    tmp.extent(1),
 										    tmp.extent(2),
 										    tmp.extent(3),
 										    tmp.extent(4),
-										    Kokkos::dimension_scalar(tmp));
+										    dim_scalar);
     }
     else if (m_tag.dataLayout().rank() == 6) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
+
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
 										    tmp.extent(0),
 										    tmp.extent(1),
@@ -407,10 +425,13 @@ setFieldData(const PHX::any& a)
 										    tmp.extent(3),
 										    tmp.extent(4),
 										    tmp.extent(5),
-										    Kokkos::dimension_scalar(tmp));
+										    dim_scalar);
     }
     else if (m_tag.dataLayout().rank() == 7) {
       auto tmp =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
+      uint64_t dim_scalar = Kokkos::dimension_scalar(tmp);
+      if(dim_scalar == 0) dim_scalar = ~size_t(0);
+
       m_field_data = Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(tmp.ptr_on_device(),
 										    tmp.extent(0),
 										    tmp.extent(1),
@@ -419,7 +440,7 @@ setFieldData(const PHX::any& a)
 										    tmp.extent(4),
 										    tmp.extent(5),
 										    tmp.extent(6),
-										    Kokkos::dimension_scalar(tmp));
+										    dim_scalar);
     }
     else {
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
