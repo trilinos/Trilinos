@@ -1855,7 +1855,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Merge, M, MA, Scalar, LO, G
   TEST_EQUALITY(brop->Rows(), 2);
   TEST_EQUALITY(brop->Cols(), 2);
 
-  Teuchos::RCP<const MatrixClass> A = bop->Merge();
+  Teuchos::RCP<const MatrixClass> A = brop->Merge();
   Teuchos::RCP<const BlockedCrsMatrixClass> brop2 = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrixClass>(A);
   TEST_EQUALITY(brop2, Teuchos::null);
 
@@ -1867,8 +1867,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, Merge, M, MA, Scalar, LO, G
   // note that v1 and v2 have a different map here!
   TEST_EQUALITY(v1->norm2(), v2->norm2());
   TEST_EQUALITY(v1->normInf(), v2->normInf());
-  TEST_EQUALITY(v1->getMap()->isSameAs(*(v2->getMap())),false);
-  TEST_EQUALITY(brop->getRangeMap()->isSameAs(*(A->getRangeMap())),false);
+  TEST_EQUALITY(v1->getMap()->isSameAs(*(v2->getMap())),true);
+  TEST_EQUALITY(brop->getRangeMap()->isSameAs(*(A->getRangeMap())),true);
 
   TEST_EQUALITY(bop->getNodeNumEntries(), A->getNodeNumEntries());
   TEST_EQUALITY(bop->getGlobalNumEntries(), A->getGlobalNumEntries());
