@@ -53,7 +53,7 @@ namespace Ioex {
                            const std::string &name);
   void fix_bad_name(char *name);
 
-  void exodus_error(int exoid, int lineno, int /* processor */);
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename);
 
   void check_non_null(void *ptr, const char *type, const std::string &name);
 

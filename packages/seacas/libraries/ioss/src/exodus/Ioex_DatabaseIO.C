@@ -392,7 +392,7 @@ namespace Ioex {
     int ierr = ex_put_qa(get_file_pointer(), num_qa_records + 1,
                          myProcessor == 0 ? qa[0].qa_record : nullptr);
     if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
     }
 
     for (size_t i = 0; i < num_qa_records + 1; i++) {
@@ -445,7 +445,7 @@ namespace Ioex {
 
     int ierr = ex_put_info(get_file_pointer(), total_lines, myProcessor == 0 ? info : nullptr);
     if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
     }
 
     delete_exodus_names(info, total_lines);
@@ -484,7 +484,7 @@ namespace Ioex {
       Ioss::SerializeIO serializeIO__(this);
       int               ierr = ex_get_attr_param(get_file_pointer(), EX_NODE_BLOCK, 1, &num_attr);
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
     }
 
@@ -812,7 +812,7 @@ namespace Ioex {
       int ierr = ex_put_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count,
                             (double *)TOPTR(globalValues));
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
     }
   }
@@ -825,7 +825,7 @@ namespace Ioex {
     if (count > 0) {
       int ierr = ex_get_var(get_file_pointer(), step, EX_GLOBAL, 1, 0, count, TOPTR(globalValues));
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
     }
   }
@@ -885,7 +885,7 @@ namespace Ioex {
     if (!is_input()) {
       int ierr = ex_put_time(get_file_pointer(), state, &time);
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
 
       // Zero global variable array...
@@ -941,7 +941,7 @@ namespace Ioex {
 
       int ierr = ex_get_variable_param(get_file_pointer(), type, &nvar);
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
     }
 
@@ -962,7 +962,7 @@ namespace Ioex {
           int               ierr =
               ex_get_truth_table(get_file_pointer(), type, block_count, nvar, TOPTR(truth_table));
           if (ierr < 0) {
-            Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+            Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
           }
         }
 
@@ -989,7 +989,7 @@ namespace Ioex {
 
         int ierr = ex_get_variable_names(get_file_pointer(), type, nvar, names);
         if (ierr < 0) {
-          Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+          Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
         }
 
         // Add to VariableNameMap so can determine exodusII index given a
@@ -1106,7 +1106,7 @@ namespace Ioex {
 
       int ierr = ex_put_all_var_param_ext(get_file_pointer(), &exo_params);
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
 
       globalValues.resize(m_variables[EX_GLOBAL].size());
@@ -1314,7 +1314,7 @@ namespace Ioex {
 
       int ierr = ex_put_variable_names(get_file_pointer(), type, var_count, TOPTR(var_names));
       if (ierr < 0) {
-        Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+        Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
       }
     }
   }
@@ -1454,7 +1454,7 @@ namespace Ioex {
           if (block->get_property("entity_count").get_int() != 0) {
             int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
             if (ierr < 0) {
-              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+              Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
             }
           }
         }
@@ -1670,7 +1670,7 @@ namespace Ioex {
     labels[2] = "z";
     int ierr  = ex_put_coord_names(get_file_pointer(), (char **)labels);
     if (ierr < 0) {
-      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+      Ioex::exodus_error(get_file_pointer(), __LINE__,  __func__, __FILE__);
     }
 
     // Write coordinate frame data...
@@ -1723,7 +1723,7 @@ namespace {
         size_t ge_id = ge->get_property("id").get_int();
         int    ierr  = ex_put_attr_names(exoid, type, ge_id, TOPTR(names));
         if (ierr < 0) {
-          Ioex::exodus_error(exoid, __LINE__, -1);
+          Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
         }
       }
     }
