@@ -450,11 +450,11 @@ namespace Xpetra {
           }
         }
 
-      // get full row map
-      //RCP<const Map> rangeMap = rangemaps_->getFullMap();
-      //fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
-
 #if 0
+      // get full row map
+      RCP<const Map> rangeMap = rangemaps_->getFullMap();
+      fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
+
       // build full col map
       fullcolmap_ = Teuchos::null; // delete old full column map
 
@@ -1131,9 +1131,6 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
                                  "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed." );
 
-      //TEUCHOS_TEST_FOR_EXCEPTION(fullrowmap_ == Teuchos::null, Xpetra::Exceptions::RuntimeError,
-      //                           "BlockedCrsMatrix::Merge: Full row map not available. Did you call fillComplete?" );
-
       RCP<Matrix> sparse = MatrixFactory::Build(getRangeMapExtractor()->getFullMap(), 33);
 
       if(bRangeThyraMode_ == false) {
@@ -1335,8 +1332,6 @@ namespace Xpetra {
   private:
     Teuchos::RCP<const MapExtractor>      domainmaps_;        // full        domain map together with all partial domain maps
     Teuchos::RCP<const MapExtractor>      rangemaps_;         // full         range map together with all partial domain maps
-    //Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
-    //Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
     std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
