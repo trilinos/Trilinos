@@ -144,7 +144,7 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_)); }
+   { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(blockedDOFManager_,colBlockedDOFManager_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -288,7 +288,9 @@ public:
    { return blockedDOFManager_; }
 
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
-   { return blockedDOFManager_; }
+   { if(useColGidProviders_!=Teuchos::null)
+       return colBlockedDOFManager_; 
+     return blockedDOFManager_; }
 
    //! exclude a block pair from the matrix
    void addExcludedPair(int rowBlock,int colBlock);

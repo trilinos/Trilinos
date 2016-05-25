@@ -60,6 +60,11 @@
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
+namespace Thyra {
+  template <typename> class ProductVectorBase;
+  template <typename> class BlockedLinearOpBase;
+}
+
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -79,10 +84,14 @@ template<typename EvalT, typename TRAITS,typename LO,typename GO> class ScatterR
 public:
    typedef typename EvalT::ScalarT ScalarT;
  
-   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                 const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer=Teuchos::null)
    { }
-   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
-                                const Teuchos::ParameterList& p);
+
+   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                 const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer,
+                                 const Teuchos::ParameterList& p,
+                                 bool useDiscreteAdjoint=false);
 
    virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,TRAITS,LO,GO>(Teuchos::null,pl)); }
@@ -111,12 +120,16 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+
+  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer=Teuchos::null)
      : globalIndexer_(indexer) {}
   
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
-  
+   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                 const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer,
+                                 const Teuchos::ParameterList& p,
+                                 bool useDiscreteAdjoint=false);
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
 
@@ -125,7 +138,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,colIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
@@ -134,11 +147,12 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,int> > colIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -164,11 +178,14 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer=Teuchos::null)
      : globalIndexer_(indexer) {}
   
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                 const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer,
+                                 const Teuchos::ParameterList& p,
+                                 bool useDiscreteAdjoint=false);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -178,7 +195,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,colIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
@@ -187,11 +204,12 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,int> > colIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -239,11 +257,14 @@ public:
   * linear algebra data structures that need to be filled. By default this is the simple residual/jacobian
   * with key "Residual Scatter Container".
   */
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer=Teuchos::null)
      : globalIndexer_(indexer) {}
   
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                 const Teuchos::RCP<const BlockedDOFManager<LO,int> > & cIndexer,
+                                 const Teuchos::ParameterList& p,
+                                 bool useDiscreteAdjoint=false);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -253,7 +274,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,colIndexer_,pl)); }
 
 private:
 
@@ -263,11 +284,12 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,int> > colIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -278,7 +300,10 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   std::string globalDataKey_; // what global data does this fill?
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  bool useDiscreteAdjoint_;
+
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > r_;
+  Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > Jac_;
 
   ScatterResidual_BlockedEpetra();
 };

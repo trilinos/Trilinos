@@ -350,7 +350,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
   if(useDiscreteAdjoint)
   { TEUCHOS_ASSERT(colGlobalIndexer_==Teuchos::null); }
 
-  this->setName(scatterName+" Scatter Residual (Jacobian)");
+  this->setName(scatterName+" Scatter Residual Epetra (Jacobian)");
 }
 
 // **********************************************************************
