@@ -652,6 +652,61 @@ update (const Scalar& alpha,
   mv_.update (alpha, X.mv_, beta);
 }
 
+namespace Impl {
+// Y := alpha * D * X
+template <typename Scalar, typename ViewY, typename ViewD, typename ViewX>
+struct BlockWiseMultiply {
+  typedef typename ViewD::size_type Size;
+
+private:
+  typedef typename ViewD::device_type Device;
+  typedef typename ViewD::non_const_value_type ImplScalar;
+  typedef Kokkos::MemoryTraits<Kokkos::Unmanaged> Unmanaged;
+
+  template <typename View>
+  using UnmanagedView = Kokkos::View<typename View::data_type, typename View::array_layout,
+                                     typename View::device_type, Unmanaged>;
+  typedef UnmanagedView<ViewY> UnMViewY;
+  typedef UnmanagedView<ViewD> UnMViewD;
+  typedef UnmanagedView<ViewX> UnMViewX;
+
+  const Size block_size_;
+  Scalar alpha_;
+  UnMViewY Y_;
+  UnMViewD D_;
+  UnMViewX X_;
+
+public:
+  BlockWiseMultiply (const Size block_size, const Scalar& alpha,
+                     const ViewY& Y, const ViewD& D, const ViewX& X)
+    : block_size_(block_size), alpha_(alpha), Y_(Y), D_(D), X_(X)
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const Size k) const {
+    const auto zero = Kokkos::Details::ArithTraits<Scalar>::zero();
+    auto D_curBlk = Kokkos::subview(D_, k, Kokkos::ALL (), Kokkos::ALL ());
+    const auto num_vecs = X_.dimension_1();
+    for (Size i = 0; i < num_vecs; ++i) {
+      Kokkos::pair<Size, Size> kslice(k*block_size_, (k+1)*block_size_);
+      auto X_curBlk = Kokkos::subview(X_, kslice, i);
+      auto Y_curBlk = Kokkos::subview(Y_, kslice, i);
+      // Y_curBlk := alpha * D_curBlk * X_curBlk.
+      // Recall that GEMV does an update (+=) of the last argument.
+      Tpetra::Experimental::FILL(Y_curBlk, zero);
+      Tpetra::Experimental::GEMV(alpha_, D_curBlk, X_curBlk, Y_curBlk);
+    }
+  }
+};
+
+template <typename Scalar, typename ViewY, typename ViewD, typename ViewX>
+inline BlockWiseMultiply<Scalar, ViewY, ViewD, ViewX>
+createBlockWiseMultiply (const int block_size, const Scalar& alpha,
+                         const ViewY& Y, const ViewD& D, const ViewX& X) {
+  return BlockWiseMultiply<Scalar, ViewY, ViewD, ViewX>(block_size, alpha, Y, D, X);
+}
+}
+
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
 blockWiseMultiply (const Scalar& alpha,
@@ -668,20 +723,14 @@ blockWiseMultiply (const Scalar& alpha,
     this->putScalar (STS::zero ());
   }
   else { // alpha != 0
-    for (LO i = 0; i < numVecs; ++i) {
-      for (LO k = 0; k < lclNumMeshRows; ++k) {
-        auto D_curBlk = Kokkos::subview (D, k, ALL (), ALL ());
-        auto X_curBlk = X.getLocalBlock (k, i);
-        auto Y_curBlk = this->getLocalBlock (k, i);
-        // Y_curBlk := alpha * D_curBlk * X_curBlk.
-        // Recall that GEMV does an update (+=) of the last argument.
-        Tpetra::Experimental::FILL (Y_curBlk, zero);
-        Tpetra::Experimental::GEMV (alpha, D_curBlk, X_curBlk, Y_curBlk);
-      }
-    }
+    auto bwm = Impl::createBlockWiseMultiply (
+      getBlockSize(), alpha,
+      this->getMultiVectorView().template getLocalView<device_type>(),
+      D,
+      const_cast<BlockMultiVector<Scalar, LO, GO, Node>&>(X).getMultiVectorView().template getLocalView<device_type>());
+    Kokkos::parallel_for (lclNumMeshRows, bwm);
   }
 }
-
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::

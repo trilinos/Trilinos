@@ -260,6 +260,7 @@ template<class ViewType,
          class IndexType = int,
          const int rank = ViewType::rank>
 struct FILL {
+  KOKKOS_INLINE_FUNCTION
   static void run (const ViewType& x, const InputType& val);
 };
 
@@ -270,6 +271,7 @@ template<class ViewType,
          class LayoutType,
          class IndexType>
 struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
+  KOKKOS_INLINE_FUNCTION
   static void run (const ViewType& x, const InputType& val)
   {
     const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
@@ -286,6 +288,7 @@ template<class ViewType,
          class LayoutType,
          class IndexType>
 struct FILL<ViewType, InputType, LayoutType, IndexType, 2> {
+  KOKKOS_INLINE_FUNCTION
   static void run (const ViewType& X, const InputType& val)
   {
     const IndexType numRows = static_cast<IndexType> (X.dimension_0 ());
@@ -547,6 +550,7 @@ template<class VecType1,
          class BlkLayoutType = typename BlkType::array_layout,
          class VecLayoutType2 = typename VecType2::array_layout>
 struct GEMV {
+  KOKKOS_INLINE_FUNCTION
   static void
   run (const CoeffType& alpha,
        const BlkType& A,
@@ -579,6 +583,7 @@ template<class VecType1,
 struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
             Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight>
 {
+  KOKKOS_INLINE_FUNCTION
   static void
   run (const CoeffType& alpha,
        const BlkType& A,
@@ -614,6 +619,7 @@ template<class VecType1,
 struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
             Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft>
 {
+  KOKKOS_INLINE_FUNCTION
   static void
   run (const CoeffType& alpha,
        const BlkType& A,
@@ -656,6 +662,7 @@ template<class ViewType,
          class LayoutType = typename ViewType::array_layout,
          class IndexType = int,
          const int rank = ViewType::rank>
+KOKKOS_INLINE_FUNCTION
 void FILL (const ViewType& x, const InputType& val) {
   Impl::FILL<ViewType, InputType, LayoutType, IndexType, rank>::run (x, val);
 }
@@ -718,6 +725,7 @@ template<class VecType1,
          class VecType2,
          class CoeffType,
          class IndexType = int>
+KOKKOS_INLINE_FUNCTION
 void
 GEMV (const CoeffType& alpha,
       const BlkType& A,
@@ -878,6 +886,7 @@ GEMM (const char transA[],
 /// \brief Computes A = P*L*U
 template<class LittleBlockType,
          class LittleVectorType>
+KOKKOS_INLINE_FUNCTION
 void
 GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
 {
@@ -1136,6 +1145,7 @@ GETRS (const char mode[], const LittleBlockType& A, const LittleIntVectorType& i
 template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
+KOKKOS_INLINE_FUNCTION
 void
 GETRI (const LittleBlockType& A,
        const LittleIntVectorType& ipiv,
