@@ -49,6 +49,43 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//
+// mfh 25 May 2016: Temporary fix for #393.
+//
+// Don't use lambdas in the BCRS mat-vec for GCC < 4.8, due to a GCC
+// 4.7.2 compiler bug ("internal compiler error") when compiling them.
+// Also, lambdas for Kokkos::parallel_* don't work with CUDA, so don't
+// use them in that case, either.
+//
+#if defined(__CUDACC__)
+   // Lambdas for Kokkos::parallel_* don't work with CUDA 7.5 either.
+#  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#    undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
+#  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+
+#elif defined(__GNUC__)
+   // GCC 4.7.2 is broken (see #393), but GCC 4.8, 4.9, etc. are not
+   // (with regards to #393).  To be safe, we'll assume GCC 4.x.y is
+   // broken for all x <= 7, and for all y.
+#  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+#    if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#      undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
+#    endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#  else // GCC >= 4.8
+#    if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#      define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
+#    endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+
+#else // some other compiler
+
+   // Optimistically assume that other compilers aren't broken.
+#  if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#    define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
+#  endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#endif // defined(__CUDACC__), defined(__GNUC__)
+
+
 namespace Tpetra {
 namespace Experimental {
 
@@ -1168,11 +1205,9 @@ namespace Experimental {
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
     const LO blockSize = getBlockSize ();
 
-    // FIXME (mfh 23 May 2016) This code needs to build even if the
-    // CUDA option for device lambdas is not enabled.  Thus, I'm
-    // disabling the Kokkos thread-parallel code path for now when
-    // building with CUDA.  See #178.
-#if ! defined(__CUDACC__)
+    // FIXME (mfh 23 May 2016, 25 May 2016) See #393 and #178, as well
+    // as comments defining this macro at the top of this file.
+#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
     // KJ : workset size; for now, let's just give a number
     const int rowsPerTeam = 20;
 
@@ -1188,12 +1223,12 @@ namespace Experimental {
                                               Kokkos::PerTeam  (scratchSizePerTeam),
                                               Kokkos::PerThread(scratchSizePerThread) );
     }
-#endif // ! defined(__CUDACC__)
+#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     // KJ : do we really need to separate numVecs == 1 and multiple numVecs ?
 
     for (LO j = 0; j < numVecs; ++j) {
-#if ! defined(__CUDACC__)
+#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 #  if 1 // team parallel for version
       Kokkos::parallel_for( team_exec, KOKKOS_LAMBDA( const typename team_policy_type::member_type & member ) {
           const LO leagueRank = member.league_rank();
@@ -1298,12 +1333,10 @@ namespace Experimental {
         } ); // for each local row of the matrix
 
 #  endif // 1
-#else // defined(__CUDACC__)
+#else // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
-      // FIXME (mfh 23 May 2016) The above doesn't work with CUDA out
-      // of the box.  We need to rewrite it to use a functor.  See
-      // #178.  Once we do that, we can and should get rid of this
-      // sequential code path.
+      // FIXME (mfh 23 May 2016, 25 May 2016) See #393, #178, and
+      // comments at the top of this function and file.
 
       Teuchos::Array<impl_scalar_type> localMem (blockSize);
       little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
@@ -1335,7 +1368,7 @@ namespace Experimental {
         COPY (Y_lcl, Y_cur);
       } // for each local row of the matrix
 
-#endif // ! defined(__CUDACC__)
+#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     } // for each column j of the input / output block multivector
   }
