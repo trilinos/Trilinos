@@ -460,7 +460,7 @@ namespace MueLuTests {
     RCP<Vector> tv = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(m, true);
     Teuchos::ArrayRCP<Scalar> vData  = v->getDataNonConst(0);
     Teuchos::ArrayRCP<Scalar> tvData = tv->getDataNonConst(0);
-    for(LocalOrdinal i = 0; i < v->getLocalLength(); ++i) {
+    for(LocalOrdinal i = 0; i < Teuchos::as<LocalOrdinal>(v->getLocalLength()); ++i) {
       vData[i] = Teuchos::as<Scalar>(i+1);
       tvData[i] = Teuchos::ScalarTraits<Scalar>::one() / Teuchos::as<Scalar>(i+1);
     }
