@@ -558,7 +558,7 @@ template <typename Adapter>
 template <typename scalar_t, typename part_t>
 void printImbalanceMetricsHeader(std::ostream &os, part_t targetNumParts, part_t numParts, part_t numNonemptyParts)
 {
-  os << "Imbalance Metrics: Number of parts is " << numParts;
+  os << "Imbalance Metrics: (" << numParts << " parts)";
   if (numNonemptyParts < numParts) {
     os << " (" << numNonemptyParts << " of which are non-empty)";
   }

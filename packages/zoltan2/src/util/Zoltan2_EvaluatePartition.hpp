@@ -268,7 +268,7 @@ public:
 	    throw std::logic_error( "getNormedImbalance() was called but no metrics data was generated for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + "." );
 	}
 	if( metrics.size() <= 1 ) {
-		 throw std::logic_error( "getNormedImbalance() was called but the normed data does not exist for " + std::to_string(metrics.size()) + "." );
+		 throw std::logic_error( "getNormedImbalance() was called but the normed data does not exist." );
 	}
 
     return metrics[1]->getMetricValue("maximum imbalance");
@@ -295,11 +295,11 @@ public:
 
 	int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 2 : 1;
 	int numberOfWeights = metrics.size() - weight0IndexStartsAtThisArrayIndex;
-	int useArayIndex = weight0IndexStartsAtThisArrayIndex + weightIndex;
-	if( metrics.size() < useArayIndex ) {
+	int useArrayIndex = weight0IndexStartsAtThisArrayIndex + weightIndex;
+	if( metrics.size() <= useArrayIndex ) {
    	    throw std::logic_error( "getWeightImbalance(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + " is weight " + std::to_string(numberOfWeights-1) + "." );
     }
-    return metrics[useArayIndex]->getMetricValue("maximum imbalance");
+    return metrics[useArrayIndex]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the max cut for the requested weight.
@@ -319,7 +319,7 @@ public:
 	if( graphMetrics.size() <= 1 ) {
 	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
 	}
-	else if( graphMetrics.size() < indexInArray ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
+	else if( graphMetrics.size() <= indexInArray ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
 	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
     return graphMetrics[weightIndex]->getMetricValue("global maximum");
@@ -343,7 +343,7 @@ public:
 	if( graphMetrics.size() <= 1 ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
 	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
 	}
-	else if( graphMetrics.size() < indexInArray ) {
+	else if( graphMetrics.size() <= indexInArray ) {
 	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
     return graphMetrics[weightIndex]->getMetricValue("global sum");

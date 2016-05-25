@@ -157,15 +157,9 @@ template <typename scalar_t>
   void ImbalanceMetrics<scalar_t>::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
-  os << std::setw(36) << "------------SUM PER PART-----------";
-  os << std::setw(2) << " ";
-  os << std::setw(24) << "---IMBALANCE PER PART---";
-  os << std::endl;
-
-  os << std::setw(20) << " ";
   os << std::setw(11) << "min" << std::setw(11) << "max" << std::setw(11) << "avg";
   os << std::setw(2) << " ";
-  os << std::setw(10) << "lightest" << std::setw(10) << "heaviest" << std::setw(6) << "avg";
+  os << std::setw(10) << "imbalance";
   os << std::endl;
 }
 
@@ -201,9 +195,6 @@ template <typename scalar_t>
 
   os << std::setw(2) << " ";
   os << std::setw(10) << std::setprecision(4) << this->getMetricValue("maximum imbalance");
-
-  os << std::setw(2) << char(177);
-  os << std::setprecision(3) << this->getMetricValue("average imbalance");
 
   os << std::endl;
 }

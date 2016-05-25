@@ -63,9 +63,9 @@ namespace Zoltan2{
  *   \param numParts  on return this is the global number of parts.
  *   \param metrics on return points to a list of named GraphMetricValues cuts
  *     that each contains the global max and sum over parts of
- *     the item being measured. The list may contain "cut count", or
+ *     the item being measured. The list may contain "edge cuts", or
  *     "weight 0", "weight 1" and so on in that order.
- *     If uniform weights were given, then only "cut count" appears.
+ *     If uniform weights were given, then only "edge cuts" appears.
  *     If one set of non-uniform weights were given, then
  *     "weight 0" appear.  Finally, if multiple
  *     weights were given, we have
@@ -101,7 +101,7 @@ template <typename Adapter>
 
   int ewgtDim = graph->getNumWeightsPerEdge();
 
-  int numMetrics = 1;                   // "cut count"
+  int numMetrics = 1;                   // "edge cuts"
   if (ewgtDim) numMetrics += ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
@@ -288,7 +288,7 @@ template <typename Adapter>
   ArrayView<scalar_t> cutVec(cut, nparts);
   getStridedStats<scalar_t>(cutVec, 1, 0, max, sum);
 
-  metrics[next]->setName("cut count");
+  metrics[next]->setName("edge cuts");
   metrics[next]->setMetricValue("global maximum", max);
   metrics[next]->setMetricValue("global sum", sum);
 
@@ -323,7 +323,7 @@ template <typename Adapter>
 template <typename scalar_t, typename part_t>
 void printGraphMetricsHeader(std::ostream &os, part_t targetNumParts, part_t numParts )
 {
-  os << "Graph Metrics: Number of parts is " << numParts;
+  os << "Graph Metrics:  (" << numParts << " parts)";
   os << std::endl;
   if (targetNumParts != numParts) {
     os << "Target number of parts is: " << targetNumParts << std::endl;

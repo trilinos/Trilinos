@@ -201,10 +201,30 @@
     <Parameter name="Problem" type="string" value="TEST/PROBLEM TITLE #1"/>
     <Parameter name="Reference" type="string" value="TEST/PROBLEM TITLE #2"/><!-- compare our test problem against this one-->
     
-    <ParameterList name="METRIC NAME">
-      <Parameter name="lower" type="double" value="##.####"/>
-      <Parameter name="upper" type="double" value="##.####"/>
-    </ParameterList>
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="max edge cuts"/>
+       	<Parameter name="weight" type="int" value="0"/>
+	    <Parameter name="lower" type="double" value="1.0"/>
+	    <Parameter name="upper" type="double" value="999.0"/>
+	  </ParameterList>
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="max edge cuts"/>
+       	<Parameter name="weight" type="int" value="1"/>
+	    <Parameter name="lower" type="double" value="1.0"/>
+	    <Parameter name="upper" type="double" value="999.0"/>
+	  </ParameterList>
+	  <ParameterList name="metriccheck3">
+	    <Parameter name="check" type="string" value="total edge cuts"/>
+	    <Parameter name="weight" type="int" value="0"/>
+	    <Parameter name="lower" type="double" value="1.0"/>
+	    <Parameter name="upper" type="double" value="999.0"/>
+	  </ParameterList>
+	  <ParameterList name="metriccheck4">
+	    <Parameter name="check" type="string" value="total edge cuts"/>
+	    <Parameter name="weight" type="int" value="1"/>
+	    <Parameter name="lower" type="double" value="1.0"/>
+	    <Parameter name="upper" type="double" value="999.0"/>
+	  </ParameterList>
     
     <ParameterList name="TIMER NAME">
       <Parameter name="lower" type="double" value="##.####"/>

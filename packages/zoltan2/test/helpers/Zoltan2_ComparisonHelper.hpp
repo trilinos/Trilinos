@@ -50,6 +50,7 @@
 #pragma once
 
 #include "Zoltan2_TestHelpers.hpp"
+#include "Zoltan2_MetricAnalyzer.hpp"
 #include <Zoltan2_Typedefs.hpp>
 #include <AdapterForTests.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -183,7 +184,7 @@ private:
    * \param comm is the process communicator
    */
   void CompareMetrics(const ParameterList &metricsPlist,
-                      const RCP<const Comm<int> > &comm, std::string metricClassType);
+                      const RCP<const Comm<int> > &comm);
   
   /* \brief Method that compares two metrics and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -196,8 +197,8 @@ private:
    */
   static bool
   metricComparisonTest(const RCP<const Comm<int> > &comm,
-                       const base_metric_t & metric,
-                       const base_metric_t &ref_metric,
+                       const MetricAnalyzerInfo & metric,
+                       const MetricAnalyzerInfo &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
                        ostringstream &msg);
   
@@ -216,14 +217,6 @@ private:
                       const double ref_time,
                       const Teuchos::ParameterList & metricPlist,
                       ostringstream &msg);
-  
-  /* \brief Method for inserting an array of metrics into a map
-   * param[in] metrics an array of metric objects
-   *
-   * \return a map with metrics assigned to keys assigned by name
-   */
-  static std::map<const string, const base_metric_t>
-  metricArrayToMap(ArrayView<RCP<base_metric_t> > metrics);
   
   /* \brief Method for inserting data from all timers to a map of clocked times
    * param[in] timers a map of timers
@@ -260,12 +253,11 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
   if(pList.isParameter("A") && pList.isParameter("B"))
   {
     // comparing solutions
-    
     string pA = pList.get<string>("A");
     if(this->sources.find(pA) == this->sources.end())
     {
       cout << "\nProblem: " + pA + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the problem.";
+      cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       return;
     }
@@ -274,21 +266,22 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(pB) == this->sources.end())
     {
       cout << "\nProblem: " + pB + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the problem.";
+      cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
       
       return;
     }
     
     this->CompareSolutions(pA, pB, comm);
-  }else if (pList.isParameter("Problem") && pList.isParameter("Reference"))
+  }
+  else if (pList.isParameter("Problem") && pList.isParameter("Reference"))
   {
     // comparing metrics/timers
     string prb = pList.get<string>("Problem");
     if(this->sources.find(prb) == this->sources.end())
     {
       cout << "\nProblem: " + prb + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the problem.";
+      cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return;
     }
@@ -297,17 +290,14 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     if(this->sources.find(ref) == this->sources.end())
     {
       cout << "\nReference: " + ref + ", was not saved for comparison.";
-      cout << "\nThis typically indicates that an error occured while running the problem.";
+      cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
       return;
     }
     
-	const std::vector<std::string> & allPossibleTypes = Zoltan2::BaseClassMetrics<zscalar_t>::static_allMetricNames_;
-	for(auto metricType : allPossibleTypes) {
-		this->CompareMetrics(pList, comm, metricType );
-	}
-
-  }else if (pList.isParameter("A") || pList.isParameter("B"))
+	this->CompareMetrics(pList, comm);
+  }
+  else if (pList.isParameter("A") || pList.isParameter("B"))
   {
     if(comm->getRank() == 0)
     {
@@ -315,16 +305,15 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout <<"\nSolution comparison FAILED." << endl;
     }
     
-  }else if (pList.isParameter("Problem") || pList.isParameter("Reference"))
+  }
+  else if (pList.isParameter("Problem") || pList.isParameter("Reference"))
   {
     if(comm->getRank() == 0)
     {
       cout << "Problem or reference is not specified -- check input.";
       cout <<"\nMetric comparison FAILED." << endl;
     }
-    
   }
-  
 }
 
 void ComparisonHelper::CompareSolutions(const string &p1,
@@ -456,7 +445,6 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
     status << "Solution set comparison PASSED.";
   }
   
-
   if(rank == 0)
   {
     cout << status.str() << endl;
@@ -635,8 +623,7 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
 }
 
 // compare metrics
-void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
-                                      const RCP<const Comm<int> > &comm, std::string metricClassType)
+void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   
@@ -656,58 +643,54 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   // get metric objects
   auto metricObjectPrb = sourcePrb.get()->metricObject.get();
   auto metricObjectRef = sourceRef.get()->metricObject.get();
-  
-  // get metrics
-  std::map<const string, const base_metric_t> prb_metrics = this->metricArrayToMap
-    (metricObjectPrb->getAllMetricsOfType( metricClassType ));
-  std::map<const string, const base_metric_t> ref_metrics = this->metricArrayToMap
-    (metricObjectRef->getAllMetricsOfType( metricClassType ));
-  
+
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
   std::map< const string, const double> ref_timers = this->timerDataToMap(sourceRef->timers);
-  
+
   // get all of the metrics to be tested
   std::queue<ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
-  
+
   // run comparison
   int all_tests_pass = 1;
   string metric_name;
+  
   while(!metrics.empty())
   {
     // print their names...
     ostringstream msg;
     metric_name = metrics.front().name();
-    
-    if(prb_metrics.find(metric_name) != prb_metrics.end() &&
-       ref_metrics.find(metric_name) != ref_metrics.end())
-    {
-      if(rank == 0) cout << "\ncomparing metric: " << metric_name << endl;
-      if(!ComparisonHelper::metricComparisonTest(comm,
-                                                 prb_metrics[metric_name],
-                                                 ref_metrics[metric_name],
-                                                 metrics.front(), msg))
-      {
-        all_tests_pass = 0;
-      }
-      if(rank == 0) cout << msg.str() << endl;
-      
+
+    if (metric_name == "Metrics") { // special key word means compare the metrics list
+
+        std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
+        std::vector<MetricAnalyzerInfo> metricInfoSetRef;
+
+        MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb, sourcePrb.get()->metricObject, metricsPlist.sublist("Metrics"));
+        MetricAnalyzer::LoadMetricInfo(metricInfoSetRef, sourceRef.get()->metricObject, metricsPlist.sublist("Metrics"));
+
+        // there is some redundancy here because the metric info holds both the questions and the results
+        // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
+        // we can iterate over either to get the questions
+        for (int n = 0; n < metricInfoSetPrb.size(); ++n) {
+          if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
+            all_tests_pass = 0;
+          }
+          if(rank == 0) cout << msg.str() << endl;
+        }
     }
-    else if(prb_timers.find(metric_name) != prb_timers.end() &&
-            ref_timers.find(metric_name) != ref_timers.end())
-    {
+    else if(prb_timers.find(metric_name) != prb_timers.end() && ref_timers.find(metric_name) != ref_timers.end()) {
       if(rank == 0) cout << "\ncomparing timer: " << metric_name << endl;
       if(!ComparisonHelper::timerComparisonTest(comm,
                                                 prb_timers.at(metric_name),
                                                 ref_timers.at(metric_name),
-                                                metrics.front(), msg))
-      {
+                                                metrics.front(), msg)) {
         all_tests_pass = 0;
       }
       
       if(rank == 0) cout << msg.str() << endl;
     }
-    
+
     metrics.pop();
   }
   
@@ -717,19 +700,6 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
     if(all_tests_pass == 1) cout << "\nAll metric/timer comparisons PASSED." << endl;
     else cout << "\nMetric/timer metric comparisons FAILED." << endl;
   }
-}
-
-std::map<const string, const base_metric_t>
-ComparisonHelper::metricArrayToMap(ArrayView<RCP<base_metric_t>> metrics)
-{
-  typedef std::pair<const string,const base_metric_t> pair_t;
-  std::map<const string, const base_metric_t> metric_map;
-  ArrayRCP<const base_metric_t>::size_type idx;
-  for(idx = 0; idx < metrics.size(); idx++) {
-    metric_map.insert(pair_t(metrics[idx]->getName(),*metrics[idx]));
-  }
-  
-  return metric_map;
 }
 
 std::map<const string, const double>
@@ -747,48 +717,40 @@ ComparisonHelper::timerDataToMap(const map<const std::string, RCP<Time> > &timer
 
 bool
 ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
-                                       const base_metric_t & metric,
-                                       const base_metric_t & ref_metric,
+                                       const MetricAnalyzerInfo & metric,
+                                       const MetricAnalyzerInfo & ref_metric,
                                        const Teuchos::ParameterList & metricPlist,
                                        ostringstream &msg)
 {
-  // run a comparison of min and max agains a given metric
+  // run a comparison of min and max against a given metric
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
-  double ref_value = ref_metric.getMetricValue("maximum imbalance");
-  double value = metric.getMetricValue("maximum imbalance");
+  double ref_value = ref_metric.theValue;
+  double value = metric.theValue;
   
   // want to reduce value to max value for all procs
   
-  if (metricPlist.isParameter("lower"))
-  {
-    double min = metricPlist.get<double>("lower")*ref_value;
-    
-    if(value < min)
-    {
-      msg << test_name << " FAILED: imbalance per part, "
-      << value << ", less than specified allowable minimum, " << min << ".\n";
+  if (ref_metric.bFoundLowerBound) {
+    double min = ref_metric.lowerValue;
+    if (value < min) {
+      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << ", less than specified allowable minimum, " << min << ".\n";
       pass = false;
-    }else{
-      msg << test_name << " PASSED: imbalance per part, "
-      << value << ", greater than specified allowable minimum, " << min << ".\n";
+    }
+    else {
+      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << ", greater than specified allowable minimum, " << min << ".\n";
     }
   }
   
-  if(metricPlist.isParameter("upper" ) && pass != false) {
-    
-    double max = metricPlist.get<double>("upper") * ref_value;
-    if (value > max)
-    {
-      msg << test_name << " FAILED: imbalance per part, "
-      << value << ", greater than specified allowable maximum, " << max << ".\n";
+  if (ref_metric.bFoundUpperBound) {
+    double max = ref_metric.upperValue;
+    if (value > max) {
+      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << ", greater than specified allowable maximum, " << max << ".\n";
       pass = false;
-    }else{
-      msg << test_name << " PASSED: imbalance per part, "
-      << value << ", less than specified allowable maximum, " << max << ".\n";
     }
-    
+    else {
+      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << ", less than specified allowable maximum, " << max << ".\n";
+    }
   }
 
   return pass;
@@ -814,11 +776,11 @@ bool ComparisonHelper::timerComparisonTest(const RCP<const Comm<int> > &comm,
   comm->barrier();
   reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,ref_time,globalRef);
   
-  
-  // run a comparison of min and max agains a given metric
+  // run a comparison of min and max against a given metric
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
+
   if (metricPlist.isParameter("lower"))
   {
     double min = metricPlist.get<double>("lower")*global_ref_time;

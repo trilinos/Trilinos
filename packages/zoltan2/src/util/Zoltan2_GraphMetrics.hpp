@@ -112,11 +112,7 @@ template <typename scalar_t>
   void GraphMetrics<scalar_t>::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
-  os << std::setw(24) << "----------SUM----------";
-  os << std::endl;
-
-  os << std::setw(20) << " ";
-  os << std::setw(12) << "sum" << std::setw(12) << "max";
+  os << std::setw(12) << "total" << std::setw(12) << "max";
   os << std::endl;
 }
 

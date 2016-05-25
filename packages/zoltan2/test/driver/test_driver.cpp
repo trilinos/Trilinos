@@ -44,7 +44,7 @@
 // @HEADER
 
 /* \file test_driver.cpp
- * \brief Test driver for Zoltan2. Facillitates generation of test problem via
+ * \brief Test driver for Zoltan2. Facilitates generation of test problem via
  * a simple .xml input interface
  */
 
@@ -160,7 +160,8 @@ void getParameterLists(const string &inputFileName,
 }
 
 void run(const UserInputForTests &uinput,
-         const ParameterList &problem_parameters,
+        const ParameterList &problem_parameters,
+        const ParameterList &comparison_parameters,
          RCP<ComparisonHelper> & comparison_helper,
          const RCP<const Teuchos::Comm<int> > & comm)
 {
@@ -310,7 +311,9 @@ void run(const UserInputForTests &uinput,
   //   reinterpret_cast<partitioning_problem_t *>(problem)->getEnvironment();
 
  // get metric object
-  if( problem_parameters.isSublist("Metrics") ) { // the specification is that we don't create anything unless the Metrics list exists
+  // this is not the most beautiful thing, but comparison parameters is checked as well because it's possible we are checking comparisons of metrics but not individual metrics
+  // we want to only load the EvaluatePartition when Metrics is requested, or some comparison is requested
+  if(problem_parameters.isSublist("Metrics") || comparison_parameters.numParams() != 0) { // the specification is that we don't create anything unless the Metrics list exists
     RCP<EvaluatePartition<basic_id_t> > metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
 
@@ -320,18 +323,13 @@ void run(const UserInputForTests &uinput,
 	     cout << msgSummary.str();
     }
 
-	try {
-	     std::ostringstream msgResults;
-	     MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msgResults ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
-	     if(rank == 0) {
-	 	   cout << msgResults.str();
-	     }
+	std::ostringstream msgResults;
+	MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msgResults ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
+	if(rank == 0) {
+	  cout << msgResults.str();
 	}
-    catch(std::logic_error theLogicError) {
-	  cout << "test_driver.cpp passed bad input parameters to analyzeMetrics(): " << theLogicError.what() << endl;
-    }
 
-#define BDD
+//#define BDD
 #ifdef BDD 
   if (problem_kind == "ordering") {
     std::cout << "\nLet's examine the solution..." << std::endl;
@@ -457,7 +455,7 @@ int main(int argc, char *argv[])
     RCP<ComparisonHelper> comparison_manager
       = rcp(new ComparisonHelper);
     while (!problems.empty()) {
-      run(uinput, problems.front(), comparison_manager, comm);
+      run(uinput, problems.front(), comparisons.front(), comparison_manager, comm);
       problems.pop();
     }
     
