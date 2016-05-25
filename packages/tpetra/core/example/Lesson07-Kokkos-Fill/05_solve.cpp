@@ -408,7 +408,18 @@ int main (int argc, char* argv[]) {
 
   x_exact.sync<memory_space> ();
   x_exact.modify<memory_space> ();
+
+  // Slight breakage with respect to GCC < 4.8.
+#if defined(__GNUC__)
+#  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+  auto x_exact_lcl = x_exact.getLocalView<memory_space> ();
+#  else // GCC >= 4.8
   auto x_exact_lcl = x_exact.template getLocalView<memory_space> ();
+#  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+#else // ! defined(__GNUC__)
+  auto x_exact_lcl = x_exact.template getLocalView<memory_space> ();
+#endif // defined(__GNUC__)
+
   Kokkos::parallel_for (policy_type (0, numLclNodes),
                         KOKKOS_LAMBDA (const LO& node) {
       const double x_cur = x_left + node * dx;
