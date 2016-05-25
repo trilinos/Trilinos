@@ -471,6 +471,9 @@ namespace Iopx {
       if (int_byte_size_api() == 8) {
         mode |= EX_ALL_INT64_DB;
       }
+      if ((mode & EX_ALL_INT64_DB) && par_mode == EX_PNETCDF) {
+	par_mode = EX_MPIIO;
+      }
       exodusFilePtr = ex_create_par(get_filename().c_str(), mode | par_mode,
 				    &cpu_word_size, &dbRealWordSize, util().communicator(), info);
     }
