@@ -156,15 +156,13 @@
   </ParameterList>
   
   <!-- 3. COMPARISON BLOCK DEFINITIONS -->
-<ParameterList name="Comparison"> 
-  <Parameter name="A" type="string" value="Problem 1"/>
-  <Parameter name="B" type="string" value="Problem 2"/>
- </ParameterList>
-  
+ 
+ <!-- 
  <ParameterList name="Comparison">
-   <Parameter name="A" type="string" value="Problem 1"/>
+   <Parameter name="A" type="string" value="Problem 2"/>
    <Parameter name="B" type="string" value="Problem 3"/>
  </ParameterList>
+ -->
 
  <ParameterList name="Comparison">
    <Parameter name="Problem" type="string" value="Problem 3"/>
@@ -193,6 +191,8 @@
       <Parameter name="upper" type="double" value="1.5"/>
     </ParameterList>
     
-  </ParameterList>
+</ParameterList>
   
 </ParameterList>
+
+

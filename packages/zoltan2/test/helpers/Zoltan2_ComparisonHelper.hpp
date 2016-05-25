@@ -409,18 +409,14 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
         {
           for(size_t i = 0; i < sourceA->adapter->getLocalNumIDs(); i++)
           {
-            if(solution_a.getPartListView()[i] != solution_b.getPartListView()[i])
-            {
-              if(!failed){ failed = 1; }
+            if(!failed && solution_a.getPartListView()[i] != solution_b.getPartListView()[i]) {
+              failed = 1;
+              ComparisonHelper::reduceWithMessage(comm, "Solution sets A and B have different values for getPartListView(). Solution comparison FAILED.", failed, status);
             }
           }
-          
-          ComparisonHelper::reduceWithMessage(comm,
-                                              "Partitioning solution comparison FAILED.",
-                                              failed,
-                                              status);
         }
-      }else{
+      }
+      else {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
                                             "Solution sets A and B are from different problem types. \

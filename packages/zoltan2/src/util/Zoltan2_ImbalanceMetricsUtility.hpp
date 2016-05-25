@@ -237,8 +237,6 @@ template <typename scalar_t, typename lno_t, typename part_t>
         metrics[next]->setName(oss.str());
         metrics[next]->setMetricValue("local sum", total);
 
-        std::cout << "***** Logging ImbalanceMetric Data Index: " << next << "  Name:" << oss.str() << "   local sum: " << total << std::endl;
-
         next++;
       }
     }

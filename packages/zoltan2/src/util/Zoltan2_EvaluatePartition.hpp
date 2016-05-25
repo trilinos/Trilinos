@@ -295,11 +295,11 @@ public:
 
 	int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 2 : 1;
 	int numberOfWeights = metrics.size() - weight0IndexStartsAtThisArrayIndex;
-	int useArrayIndex = weight0IndexStartsAtThisArrayIndex + weightIndex;
-	if( metrics.size() <= useArrayIndex ) {
+	int indexInArray = weight0IndexStartsAtThisArrayIndex + weightIndex;
+	if( metrics.size() <= indexInArray ) {
    	    throw std::logic_error( "getWeightImbalance(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + " is weight " + std::to_string(numberOfWeights-1) + "." );
     }
-    return metrics[useArrayIndex]->getMetricValue("maximum imbalance");
+    return metrics[indexInArray]->getMetricValue("maximum imbalance");
   }
 
   /*! \brief Return the max cut for the requested weight.
@@ -315,14 +315,15 @@ public:
   /*! \brief getMaxWeightEdgeCuts weighted for the specified index
    */
   scalar_t getMaxWeightEdgeCut(int weightIndex) const{
-	ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
+	ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+	int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
 	if( graphMetrics.size() <= 1 ) {
 	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
 	}
 	else if( graphMetrics.size() <= indexInArray ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
 	    throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
-    return graphMetrics[weightIndex]->getMetricValue("global maximum");
+    return graphMetrics[indexInArray]->getMetricValue("global maximum");
   }
 
   /*! \brief getTotalEdgeCut
@@ -346,7 +347,7 @@ public:
 	else if( graphMetrics.size() <= indexInArray ) {
 	    throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but the maximum weight available for " + std::string(GRAPH_METRICS_TYPE_NAME) + " is weight " + std::to_string(graphMetrics.size() - 2) + "." );
 	}
-    return graphMetrics[weightIndex]->getMetricValue("global sum");
+    return graphMetrics[indexInArray]->getMetricValue("global sum");
   }
 
   /*! \brief Print all the metrics based on the  metric object type

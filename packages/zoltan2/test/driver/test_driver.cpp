@@ -161,7 +161,7 @@ void getParameterLists(const string &inputFileName,
 
 void run(const UserInputForTests &uinput,
         const ParameterList &problem_parameters,
-        const ParameterList &comparison_parameters,
+        bool bHasComparisons,
          RCP<ComparisonHelper> & comparison_helper,
          const RCP<const Teuchos::Comm<int> > & comm)
 {
@@ -313,7 +313,7 @@ void run(const UserInputForTests &uinput,
  // get metric object
   // this is not the most beautiful thing, but comparison parameters is checked as well because it's possible we are checking comparisons of metrics but not individual metrics
   // we want to only load the EvaluatePartition when Metrics is requested, or some comparison is requested
-  if(problem_parameters.isSublist("Metrics") || comparison_parameters.numParams() != 0) { // the specification is that we don't create anything unless the Metrics list exists
+  if(problem_parameters.isSublist("Metrics") || bHasComparisons) { // the specification is that we don't create anything unless the Metrics list exists
     RCP<EvaluatePartition<basic_id_t> > metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
 
@@ -454,8 +454,11 @@ int main(int argc, char *argv[])
         
     RCP<ComparisonHelper> comparison_manager
       = rcp(new ComparisonHelper);
+
+    bool bHasComparisons = (comparisons.size() != 0);
+
     while (!problems.empty()) {
-      run(uinput, problems.front(), comparisons.front(), comparison_manager, comm);
+      run(uinput, problems.front(), bHasComparisons, comparison_manager, comm);
       problems.pop();
     }
     
