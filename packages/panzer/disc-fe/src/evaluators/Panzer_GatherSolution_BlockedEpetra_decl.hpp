@@ -216,7 +216,7 @@ private:
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > x_;
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
@@ -267,9 +267,15 @@ private:
   std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;
+  std::string sensitivitiesName_; // This sets which gather operations have sensitivities
+  bool applySensitivities_;       // This is a local variable that is used by evaluateFields
+                                  // to turn on/off a certain set of sensitivities
   std::string globalDataKey_; // what global data does this fill?
+  int gatherSeedIndex_; // what gather seed in the workset to use
+                        // if less than zero then use alpha or beta
+                        // as appropriate
 
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > x_;
 
   GatherSolution_BlockedEpetra();
 };
