@@ -164,6 +164,7 @@
  </ParameterList>
  -->
 
+ <!--
  <ParameterList name="Comparison">
    <Parameter name="Problem" type="string" value="Problem 3"/>
    <Parameter name="Reference" type="string" value="Problem 2"/>
@@ -171,8 +172,8 @@
     <ParameterList name="Metrics"> 
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="imbalance"/>
-        <Parameter name="lower" type="double" value="1.0"/>
-        <Parameter name="upper" type="double" value="1.3"/>
+        <Parameter name="lower" type="double" value="0.1"/>
+        <Parameter name="upper" type="double" value="2.0"/>
       </ParameterList>
     </ParameterList>
     
@@ -192,6 +193,7 @@
     </ParameterList>
     
 </ParameterList>
+-->
   
 </ParameterList>
 

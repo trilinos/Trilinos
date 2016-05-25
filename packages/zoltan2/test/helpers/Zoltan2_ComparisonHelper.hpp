@@ -724,28 +724,33 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   string test_name = metricPlist.name() + " test";
   double ref_value = ref_metric.theValue;
   double value = metric.theValue;
+
+  if( ref_value == 0 ) {
+	  throw std::logic_error( "The parameter list had a 0 value for the reference value so a percentage cannot be calculated." );
+  }
+  double percentRatio = value / ref_value;
   
   // want to reduce value to max value for all procs
   
   if (ref_metric.bFoundLowerBound) {
     double min = ref_metric.lowerValue;
-    if (value < min) {
-      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << ", less than specified allowable minimum, " << min << ".\n";
+    if (percentRatio < min) {
+      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << " is " << percentRatio << " percent of the reference value " << ref_value << ", which less than specified allowable minimum percent, " << min << ".\n";
       pass = false;
     }
     else {
-      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << ", greater than specified allowable minimum, " << min << ".\n";
+      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << " is " << percentRatio << " percent of the reference value " << ref_value << ", which is greater than specified allowable minimum percent, " << min << ".\n";
     }
   }
   
   if (ref_metric.bFoundUpperBound) {
     double max = ref_metric.upperValue;
-    if (value > max) {
-      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << ", greater than specified allowable maximum, " << max << ".\n";
+    if (percentRatio > max) {
+      msg << test_name << " FAILED: " << ref_metric.parameterDescription << ": " << value << " is " << percentRatio << " percent of the reference value " << ref_value << ", which is greater than specified allowable maximum percent, " << max << ".\n";
       pass = false;
     }
     else {
-      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << ", less than specified allowable maximum, " << max << ".\n";
+      msg << test_name << " PASSED: " << ref_metric.parameterDescription << ": " << value << " is " << percentRatio << " percent of the reference value " << ref_value << ", which is less than specified allowable maximum percent, " << max << ".\n";
     }
   }
 
