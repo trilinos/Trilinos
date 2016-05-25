@@ -130,6 +130,7 @@ evaluateFields(typename Traits::EvalData d)
 template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::
 evaluateFieldsTaskParallel(const int& threads_per_task,
+			   const int& work_size,
 			   typename Traits::EvalData d)
 {
 #ifdef PHX_DEBUG
@@ -137,7 +138,7 @@ evaluateFieldsTaskParallel(const int& threads_per_task,
 		      "You must call post registration setup for each evaluation type before calling the evaluateFields() method for that type!");
 #endif
 
-  this->dag_manager_.evaluateFieldsTaskParallel(threads_per_task,d);
+  this->dag_manager_.evaluateFieldsTaskParallel(threads_per_task,work_size,d);
 }
 #endif
 

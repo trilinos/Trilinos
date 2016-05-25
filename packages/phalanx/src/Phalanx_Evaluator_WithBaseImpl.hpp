@@ -125,7 +125,10 @@ namespace PHX {
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
     createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
+	       const int& work_size,
 	       typename Traits::EvalData d);
+
+    virtual unsigned taskSize() const;
 #endif
 
     virtual void preEvaluate(typename Traits::PreEvalData d) override;

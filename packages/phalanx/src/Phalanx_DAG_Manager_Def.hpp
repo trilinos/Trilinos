@@ -350,20 +350,27 @@ evaluateFields(typename Traits::EvalData d)
 template<typename Traits>
 void PHX::DagManager<Traits>::
 evaluateFieldsTaskParallel(const int& threads_per_task,
+			   const int& work_size,
 			   typename Traits::EvalData d)
 {
   using execution_space = PHX::Device::execution_space;
   using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
 
-  const unsigned task_max_count = 100;
-  //const unsigned task_max_size = std::max(sizeof(TaskDep<execution_space>),sizeof());
-  const unsigned task_max_size = 1024;
-  const unsigned task_max_dependence = 5;
+  const unsigned task_max_count = static_cast<unsigned>(topoSortEvalIndex.size());
+  unsigned task_max_size = 0;
+  unsigned task_max_dependencies = 0;
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    const auto& adjacencies = node.adjacencies();
+    task_max_dependencies = ::std::max(task_max_dependencies,static_cast<unsigned>(adjacencies.size()));
+    task_max_size = ::std::max(task_max_size,node.get()->taskSize());
+  }
+  //std::cout << "task_max_deps=" << task_max_dependencies << ", task_max_size=" << task_max_size << std::endl;
+
   policy_type policy(task_max_count,
 		     task_max_size,
-		     task_max_dependence,
-		     threads_per_task
-		     );
+		     task_max_dependencies,
+		     threads_per_task);
 
   // Issue in reusing vector. The assign doesn't like the change of policy.
   //node_futures_.resize(nodes_.size());
@@ -373,7 +380,7 @@ evaluateFieldsTaskParallel(const int& threads_per_task,
     
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
-    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),d);
+    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),work_size,d);
     node_futures_[topoSortEvalIndex[n]] = future;
 
     // Since this is registered in the order of the topological sort,

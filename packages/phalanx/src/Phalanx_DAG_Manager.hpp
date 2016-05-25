@@ -113,9 +113,11 @@ namespace PHX {
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
 
       @param threads_per_task The number of threads used for data parallelism within a single task.
-      @param d User defined data
+      @param work_Size The number of items to divide the parallel work over.
+      @param d User defined data.
      */
     void evaluateFieldsTaskParallel(const int& threads_per_task,
+				    const int& work_size,
 				    typename Traits::EvalData d);
 #endif
 

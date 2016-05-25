@@ -119,12 +119,13 @@ Kokkos::Experimental::Future<void,PHX::Device::execution_space>
 FEInterpolation<EvalT, Traits>::
 createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	   const std::size_t& num_adjacencies,
-	   typename Traits::EvalData cell_data)
+	   const int& work_size,
+	   typename Traits::EvalData workset)
 {
-  std::vector<MyCell>::iterator cell_it = cell_data.begin;
+  std::vector<MyCell>::iterator cell_it = workset.begin;
   phi = cell_it->getBasisFunctions();
   grad_phi = cell_it->getBasisFunctionGradients();
-  return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(cell_data.num_cells,*this),num_adjacencies);
+  return policy.task_create_team(PHX_example::TaskWrap<PHX::Device::execution_space,FEInterpolation<EvalT, Traits>>(work_size,*this),num_adjacencies);
 }
 #endif
 
