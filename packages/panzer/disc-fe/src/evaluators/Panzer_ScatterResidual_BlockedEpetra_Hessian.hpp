@@ -61,10 +61,12 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::RCP<const BlockedDOFManager<LO,int> > & colIndexer)
      : globalIndexer_(indexer) {}
   
   ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                const Teuchos::RCP<const BlockedDOFManager<LO,int> > & colIndexer,
                                 const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -75,7 +77,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,colIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
@@ -89,6 +91,7 @@ private:
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  Teuchos::RCP<const BlockedDOFManager<LO,int> > colIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

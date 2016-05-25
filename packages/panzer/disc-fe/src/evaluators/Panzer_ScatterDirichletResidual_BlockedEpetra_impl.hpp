@@ -71,6 +71,7 @@
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<EvalT, TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                       const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
                                        const Teuchos::ParameterList& p)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -86,7 +87,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
 
   // build the vector of fields that this is dependent on
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,Cell,NODE> scatterField = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    PHX::MDField<const ScalarT,Cell,NODE> scatterField = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterField);
@@ -106,7 +107,8 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                const Teuchos::ParameterList& p)
+                                       const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                       const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
 { 
@@ -135,7 +137,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -145,7 +147,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -324,7 +326,8 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                const Teuchos::ParameterList& p)
+                                       const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                       const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
    , globalDataKey_("Residual Scatter Container")
 { 
@@ -353,7 +356,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -363,7 +366,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -543,8 +546,10 @@ evaluateFields(typename TRAITS::EvalData workset)
 template<typename TRAITS,typename LO,typename GO>
 panzer::ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                const Teuchos::ParameterList& p)
+                                       const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                       const Teuchos::ParameterList& p)
    : globalIndexer_(indexer)
+   , colGlobalIndexer_(colIndexer)
    , globalDataKey_("Residual Scatter Container")
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -567,7 +572,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   // build the vector of fields that this is dependent on
   scatterFields_.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    scatterFields_[eq] = PHX::MDField<ScalarT,Cell,NODE>(names[eq],dl);
+    scatterFields_[eq] = PHX::MDField<const ScalarT,Cell,NODE>(names[eq],dl);
 
     // tell the field manager that we depend on this field
     this->addDependentField(scatterFields_[eq]);
@@ -577,7 +582,7 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
   if (checkApplyBC_) {
     applyBC_.resize(names.size());
     for (std::size_t eq = 0; eq < names.size(); ++eq) {
-      applyBC_[eq] = PHX::MDField<bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
+      applyBC_[eq] = PHX::MDField<const bool,Cell,NODE>(std::string("APPLY_BC_")+fieldMap_->find(names[eq])->second,dl);
       this->addDependentField(applyBC_[eq]);
     }
   }
@@ -587,6 +592,9 @@ ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManage
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  if(colGlobalIndexer_==Teuchos::null)
+    colGlobalIndexer_ = globalIndexer_;
 
   this->setName(scatterName+" Scatter Residual (Jacobian)");
 }
@@ -622,16 +630,21 @@ preEvaluate(typename TRAITS::PreEvalData d)
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   // extract dirichlet counter from container
-   Teuchos::RCP<BLOC> blockContainer 
-         = Teuchos::rcp_dynamic_cast<BLOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+   using Teuchos::rcp_dynamic_cast;
 
-   dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
+   // extract dirichlet counter from container
+   Teuchos::RCP<const BLOC> blockContainer 
+         = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+
+   dirichletCounter_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
-   TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
+   blockContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
+   TEUCHOS_ASSERT(!Teuchos::is_null(blockContainer));
+
+   r_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f());
+   Jac_ = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(blockContainer->get_A());
 }
 
 // **********************************************************************
@@ -644,23 +657,16 @@ evaluateFields(typename TRAITS::EvalData workset)
    using Teuchos::ptrFromRef;
    using Teuchos::rcp_dynamic_cast;
 
-   using Thyra::VectorBase;
    using Thyra::SpmdVectorBase;
-   using Thyra::ProductVectorBase;
-   using Thyra::BlockedLinearOpBase;
 
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   std::vector<std::pair<int,GO> > GIDs;
-   std::vector<int> LIDs;
- 
+   bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
+
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   RCP<const BLOC> blockedContainer = blockedContainer_;
-   RCP<ProductVectorBase<double> > r = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer->get_f());
-   Teuchos::RCP<BlockedLinearOpBase<double> > Jac = rcp_dynamic_cast<BlockedLinearOpBase<double> >(blockedContainer->get_A());
 
    int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
    std::vector<int> blockOffsets(numFieldBlocks+1); // number of fields, plus a sentinnel
@@ -668,6 +674,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
       blockOffsets[blk] = blockOffset;
    }
+   blockOffsets[numFieldBlocks] = globalIndexer_->getElementBlockGIDCount(blockId);
 
    std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix>,panzer::pair_hash> jacEpetraBlocks;
 
@@ -675,53 +682,41 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
-
-   // scatter operation for each cell in workset
-   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
-      std::size_t cellLocalId = localCellIds[worksetCellIndex];
-
-      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      blockOffsets[numFieldBlocks] = GIDs.size();
-
-      // caculate the local IDs for this element
-      LIDs.resize(GIDs.size());
-      for(std::size_t i=0;i<GIDs.size();i++) {
-         // used for doing local ID lookups
-         RCP<const Epetra_Map> r_map = blockedContainer->getMapForBlock(GIDs[i].first);
-
-         LIDs[i] = r_map->LID(GIDs[i].second);
-      }
-
-      std::vector<bool> is_owned(GIDs.size(), false);
-      globalIndexer_->ownedIndices(GIDs,is_owned);
+  
+   for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
+      int fieldNum = fieldIds_[fieldIndex];
+      int blockRowIndex = globalIndexer_->getFieldBlock(fieldNum);
 
       // loop over each field to be scattered
-      Teuchos::ArrayRCP<double> local_r, local_dc;
-      for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
-         int fieldNum = fieldIds_[fieldIndex];
-         int blockRowIndex = globalIndexer_->getFieldBlock(fieldNum);
+      Teuchos::ArrayRCP<double> local_dc;
+      rcp_dynamic_cast<SpmdVectorBase<double> >(dirichletCounter_->getNonconstVectorBlock(blockRowIndex))
+                                                                 ->getNonconstLocalData(ptrFromRef(local_dc));
 
-         RCP<SpmdVectorBase<double> > dc = rcp_dynamic_cast<SpmdVectorBase<double> >(dirichletCounter_->getNonconstVectorBlock(blockRowIndex));
-         dc->getNonconstLocalData(ptrFromRef(local_dc));
+      // grab local data for inputing
+      Teuchos::ArrayRCP<double> local_r;
+      rcp_dynamic_cast<SpmdVectorBase<double> >(r_->getNonconstVectorBlock(blockRowIndex))
+                                                  ->getNonconstLocalData(ptrFromRef(local_r));
 
-         // grab local data for inputing
-         RCP<SpmdVectorBase<double> > block_r = rcp_dynamic_cast<SpmdVectorBase<double> >(r->getNonconstVectorBlock(blockRowIndex));
-         block_r->getNonconstLocalData(ptrFromRef(local_r));
-   
-         // this call "should" get the right ordering according to the Intrepid2 basis
-         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
-         const std::vector<int> & elmtOffset = indicePair.first;
-         const std::vector<int> & basisIdMap = indicePair.second;
-   
+      auto subRowIndexer = globalIndexer_->getFieldDOFManagers()[blockRowIndex];
+      int subFieldNum = subRowIndexer->getFieldNum(globalIndexer_->getFieldString(fieldNum));
+      auto subIndicePair = subRowIndexer->getGIDFieldOffsets_closure(blockId,subFieldNum, side_subcell_dim_, local_side_id_);
+      const std::vector<int> & subElmtOffset = subIndicePair.first;
+      const std::vector<int> & subBasisIdMap = subIndicePair.second;
+
+      // scatter operation for each cell in workset
+      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
+         std::size_t cellLocalId = localCellIds[worksetCellIndex];
+
+         const std::vector<LO> & rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+
          // loop over basis functions
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
+         for(std::size_t basis=0;basis<subElmtOffset.size();basis++) {
+            int offset = subElmtOffset[basis];
+            int lid = rLIDs[offset];
             if(lid<0) // not on this processor
                continue;
 
-            int basisId = basisIdMap[basis];
+            int basisId = subBasisIdMap[basis];
 
             if (checkApplyBC_)
               if (!applyBC_[fieldIndex](worksetCellIndex,basisId))
@@ -741,7 +736,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
-                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac->getNonconstBlock(blockIndex.first,blockIndex.second); 
+                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac_->getNonconstBlock(blockIndex.first,blockIndex.second); 
 
                   // block operator is null, don't do anything (it is excluded)
                   if(Teuchos::is_null(tOp))
@@ -772,7 +767,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     
             for(int sensIndex=0;sensIndex<scatterField.size();++sensIndex)
                jacRow[sensIndex] = scatterField.fastAccessDx(sensIndex);
-            TEUCHOS_ASSERT(jacRow.size()==GIDs.size());
     
             for(int blockColIndex=0;blockColIndex<numFieldBlocks;blockColIndex++) {
                int start = blockOffsets[blockColIndex];
@@ -781,13 +775,18 @@ evaluateFields(typename TRAITS::EvalData workset)
                if(end-start<=0) 
                   continue;
 
+               auto subColIndexer = colGlobalIndexer_->getFieldDOFManagers()[blockColIndex];
+               const std::vector<LO> & cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+
+               TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
+
                // check hash table for jacobian sub block
                std::pair<int,int> blockIndex = std::make_pair(blockRowIndex,blockColIndex);
                Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[blockIndex];
 
                // if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
-                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac->getNonconstBlock(blockIndex.first,blockIndex.second); 
+                  Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac_->getNonconstBlock(blockIndex.first,blockIndex.second); 
 
                   // block operator is null, don't do anything (it is excluded)
                   if(Teuchos::is_null(tOp))
@@ -799,12 +798,12 @@ evaluateFields(typename TRAITS::EvalData workset)
                }
 
                // Sum Jacobian
-               int err = subJac->ReplaceMyValues(lid, end-start, &jacRow[start],&LIDs[start]);
+               int err = subJac->ReplaceMyValues(lid, end-start, &jacRow[start],&cLIDs[0]);
                if(err!=0) {
                  std::stringstream ss;
-                 ss << "Failed inserting row: " << GIDs[offset].second << " (" << lid << "): ";
-                 for(int i=start;i<end;i++)
-                   ss << GIDs[i].second << " (" << LIDs[i] << ") ";
+                 ss << "Failed inserting row: " << " (" << lid << "): ";
+                 for(int i=0;i<end-start;i++)
+                   ss << cLIDs[i] << " ";
                  ss << std::endl;
                  ss << "Into block " << blockRowIndex << ", " << blockColIndex << std::endl;
 

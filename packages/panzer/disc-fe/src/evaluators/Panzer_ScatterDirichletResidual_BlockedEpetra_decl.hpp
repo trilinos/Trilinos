@@ -59,6 +59,7 @@
 
 namespace Thyra {
    template <typename ScalarT> class ProductVectorBase;
+   template <typename ScalarT> class BlockedLinearOpBase;
 }
 
 namespace panzer {
@@ -83,14 +84,16 @@ template<typename EvalT, typename TRAITS,typename LO,typename GO> class ScatterD
     public panzer::CloneableEvaluator  {
 public:
    typedef typename EvalT::ScalarT ScalarT;
-   ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
+   ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+                                          const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer)
    { }
 
    ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
+                                          const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
                                           const Teuchos::ParameterList& p);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,TRAITS,LO,GO>(Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,TRAITS,LO,GO>(Teuchos::null,Teuchos::null,pl)); }
 
   void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm) 
    { }
@@ -116,11 +119,13 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer)
      : globalIndexer_(indexer) {}
   
   ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                  const Teuchos::ParameterList& p);
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                         const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -130,7 +135,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
@@ -139,7 +144,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -169,7 +174,7 @@ private:
   bool scatterIC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
@@ -184,11 +189,13 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,G
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer)
      : globalIndexer_(indexer) {}
   
   ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                  const Teuchos::ParameterList& p);
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                         const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -198,7 +205,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
 
 private:
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
@@ -207,7 +214,7 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
@@ -237,7 +244,7 @@ private:
   bool scatterIC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra() {}
 };
@@ -252,11 +259,13 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer)
      : globalIndexer_(indexer) {}
   
   ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                  const Teuchos::ParameterList& p);
+                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & colIndexer,
+                                         const Teuchos::ParameterList& p);
 
   void preEvaluate(typename TRAITS::PreEvalData d);
   
@@ -266,7 +275,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(globalIndexer_,colGlobalIndexer_,pl)); }
   
 private:
 
@@ -276,11 +285,11 @@ private:
   Teuchos::RCP<PHX::FieldTag> scatterHolder_;
 
   // fields that need to be scattered will be put in this vector
-  std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,Cell,NODE> > scatterFields_;
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_, colGlobalIndexer_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -298,13 +307,15 @@ private:
 
   Teuchos::RCP<Thyra::ProductVectorBase<double> > dirichletCounter_;
   std::string globalDataKey_; // what global data does this fill?
-  Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
+
+  Teuchos::RCP<Thyra::ProductVectorBase<double> > r_;
+  Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > Jac_;
 
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
 
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
-  std::vector< PHX::MDField<bool,Cell,NODE> > applyBC_;
+  std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
 
   ScatterDirichletResidual_BlockedEpetra();
 };

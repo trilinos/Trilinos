@@ -598,7 +598,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                  std::stringstream ss;
                  ss << "Failed inserting row: " << "LID = " << r_lid << "): ";
                  for(int i=start;i<end;i++)
-                   ss <<  rLIDs[i] << " ";
+                   ss <<  cLIDs[i] << " ";
                  ss << std::endl;
                  ss << "Into block " << blockRowIndex << ", " << blockColIndex << std::endl;
 
