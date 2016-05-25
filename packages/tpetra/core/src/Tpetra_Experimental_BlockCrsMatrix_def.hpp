@@ -87,7 +87,80 @@
 
 
 namespace Tpetra {
+
 namespace Experimental {
+
+namespace { // (anonymous)
+
+// Implementation of BlockCrsMatrix::getLocalDiagCopy (non-deprecated
+// version that takes two Kokkos::View arguments).
+template<class Scalar, class LO, class GO, class Node>
+class GetLocalDiagCopy {
+public:
+  typedef typename Node::device_type device_type;
+  typedef size_t diag_offset_type;
+  typedef Kokkos::View<const size_t*, device_type,
+                       Kokkos::MemoryUnmanaged> diag_offsets_type;
+  typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
+  typedef typename global_graph_type::local_graph_type local_graph_type;
+  typedef typename local_graph_type::row_map_type row_map_type;
+  typedef typename row_map_type::HostMirror abs_offset_type;
+  typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar,
+                                                            LO, GO, Node>::impl_scalar_type impl_scalar_type;
+  typedef Kokkos::View<impl_scalar_type**,
+                       Kokkos::LayoutRight,
+                       device_type,
+                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+    little_block_type;
+  typedef Kokkos::View<impl_scalar_type***, device_type,
+                       Kokkos::MemoryUnmanaged> diag_type;
+  typedef Kokkos::View<const impl_scalar_type*, device_type,
+                       Kokkos::MemoryUnmanaged> values_type;
+
+  // Constructor
+  GetLocalDiagCopy (const diag_type& diag,
+                    const values_type& val,
+                    const diag_offsets_type& diagOffsets,
+                    const abs_offset_type& ptr,
+                    const LO blockSize) :
+    diag_ (diag),
+    diagOffsets_ (diagOffsets),
+    ptr_ (ptr),
+    blockSize_ (blockSize),
+    offsetPerBlock_ (blockSize_*blockSize_),
+    val_(val)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const LO& lclRowInd) const
+  {
+    using Kokkos::ALL;
+
+    // Get row offset
+    const size_t absOffset = ptr_[lclRowInd];
+
+    // Get offset relative to start of row
+    const size_t relOffset = diagOffsets_[lclRowInd];
+
+    // Get the total offset
+    const size_t pointOffset = (absOffset+relOffset)*offsetPerBlock_;
+
+    // Get a view of the block
+    typename little_block_type::const_type D_in (val_.ptr_on_device () + pointOffset, blockSize_, blockSize_);
+
+    little_block_type D_out = Kokkos::subview (diag_, lclRowInd, ALL (), ALL ());
+    COPY (D_in, D_out);
+  }
+
+  private:
+    diag_type diag_;
+    diag_offsets_type diagOffsets_;
+    abs_offset_type ptr_;
+    LO blockSize_;
+    LO offsetPerBlock_;
+    values_type val_;
+  };
+} // namespace (anonymous)
 
   template<class Scalar, class LO, class GO, class Node>
   std::ostream&
@@ -675,8 +748,7 @@ namespace Experimental {
   {
     using Kokkos::ALL;
     using Kokkos::parallel_for;
-    typedef typename Kokkos::View<impl_scalar_type***, device_type,
-      Kokkos::MemoryUnmanaged>::HostMirror::execution_space host_exec_space;
+    typedef typename device_type::execution_space execution_space;
 
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO blockSize = this->getBlockSize ();
@@ -694,13 +766,10 @@ namespace Experimental {
 
     // mfh 12 Dec 2015: Use the host execution space, since we haven't
     // quite made everything work with CUDA yet.
-    typedef Kokkos::RangePolicy<host_exec_space, LO> policy_type;
-    parallel_for (policy_type (0, lclNumMeshRows), [=] (const LO& lclMeshRow) {
-        const size_t offset = offsets(lclMeshRow);
-        auto D_in = this->getConstLocalBlockFromRelOffset (lclMeshRow, offset);
-        auto D_out = Kokkos::subview (diag, lclMeshRow, ALL (), ALL ());
-        COPY (D_in, D_out);
-      });
+    typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
+    typedef GetLocalDiagCopy<Scalar,LO,GO,Node> functor_type;
+    parallel_for (policy_type (0, lclNumMeshRows),
+                  functor_type (diag, valView_, offsets, ptr_, blockSize_));
   }
 
 
