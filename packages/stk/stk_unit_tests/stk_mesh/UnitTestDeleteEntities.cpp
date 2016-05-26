@@ -158,54 +158,60 @@ TEST_F(HexWedgeHexMesh, CreateFacesThenDeleteWedgeThenCreateFaces_TwoHexesRemain
 class SingleHexMesh : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void create_hex_with_one_face_on_proc_zero()
+    const stk::mesh::EntityId firstHexId = 1;
+    const stk::mesh::EntityId secondHexId = 2;
+    void create_hex_on_proc_zero()
     {
         get_bulk().modification_begin();
-        stk::mesh::PartVector topologyParts = {&get_meta().get_topology_root_part(stk::topology::HEX_8)};
         if(get_bulk().parallel_rank() == 0)
-        {
-            stk::mesh::Entity elem = stk::mesh::declare_element(get_bulk(), topologyParts, 1, {1,2,3,4,5,6,7,8});
-            stk::mesh::declare_element_side(get_bulk(), elem, 5, {});
-        }
+            stk::mesh::declare_element(get_bulk(), get_elem_part(), firstHexId, {1,2,3,4,5,6,7,8});
         get_bulk().modification_end();
     }
-    void create_adjacent_hex_on_proc_one()
+    void create_face_on_proc_zero()
     {
-        stk::mesh::PartVector topologyParts = {&get_meta().get_topology_root_part(stk::topology::HEX_8)};
         get_bulk().modification_begin();
-        if(get_bulk().parallel_rank() == 1)
-            stk::mesh::declare_element(get_bulk(), topologyParts, 2, {5,6,7,8,9,10,11,12});
+        if(get_bulk().parallel_rank() == 0)
+            stk::mesh::declare_element_side(get_bulk(), get_bulk().get_entity(stk::topology::ELEM_RANK, firstHexId), 5, {});
+        get_bulk().modification_end();
+    }
+    void create_adjacent_hex_on_last_proc()
+    {
+        get_bulk().modification_begin();
+        if(get_bulk().parallel_rank() == 1 || get_bulk().parallel_size() == 1)
+            stk::mesh::declare_element(get_bulk(), get_elem_part(), secondHexId, {5,6,7,8,9,10,11,12});
 
         int otherProcRank = get_bulk().parallel_rank() == 0 ? 1 : 0;
-        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, 5), otherProcRank);
-        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, 6), otherProcRank);
-        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, 7), otherProcRank);
-        get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, 8), otherProcRank);
+        for(stk::mesh::EntityId nodeId : {5, 6, 7, 8})
+            get_bulk().add_node_sharing(get_bulk().get_entity(stk::topology::NODE_RANK, nodeId), otherProcRank);
         get_bulk().modification_end();
     }
-    void expect_face_connected_to_element_with_id(stk::mesh::EntityId id)
+    void expect_one_face_connected_to_two_elements()
     {
-        if(get_bulk().parallel_rank() == 1)
-        {
-            stk::mesh::EntityVector faces;
-            stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, faces);
-            ASSERT_EQ(1u, faces.size());
-            unsigned numElems = get_bulk().num_elements(faces[0]);
-            ASSERT_EQ(1u, numElems);
-            const stk::mesh::Entity * elems = get_bulk().begin_elements(faces[0]);
-            EXPECT_EQ(id, get_bulk().identifier(elems[0]));
-        }
+        stk::mesh::EntityVector faces;
+        stk::mesh::get_entities(get_bulk(), stk::topology::FACE_RANK, faces);
+        ASSERT_EQ(1u, faces.size());
+        unsigned numElems = get_bulk().num_elements(faces[0]);
+        ASSERT_EQ(2u, numElems);
+        const stk::mesh::Entity * elems = get_bulk().begin_elements(faces[0]);
+        EXPECT_EQ(firstHexId, get_bulk().identifier(elems[0]));
+        EXPECT_EQ(secondHexId, get_bulk().identifier(elems[1]));
+    }
+    stk::mesh::Part &get_elem_part()
+    {
+        return get_meta().get_topology_root_part(stk::topology::HEX_8);
     }
 };
 // pre-existing face is not being attached to newly created element
 TEST_F(SingleHexMesh, DISABLED_CreateFacesThenCreateAnotherElement_ConnectivityIsWrong)
 {
-    if(stk::parallel_machine_size(get_comm()) == 2)
+    if(stk::parallel_machine_size(get_comm()) <= 2)
     {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        create_hex_with_one_face_on_proc_zero();
-        create_adjacent_hex_on_proc_one();
-        expect_face_connected_to_element_with_id(get_bulk().parallel_rank() + 1);
+        setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+        get_bulk().initialize_face_adjacent_element_graph();
+        create_hex_on_proc_zero();
+        create_face_on_proc_zero();
+        create_adjacent_hex_on_last_proc();
+        expect_one_face_connected_to_two_elements();
     }
 }
 
