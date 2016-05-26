@@ -187,7 +187,7 @@ void gather_in_block(const std::string & blockId, const panzer::UniqueGlobalInde
 
       // grab the field
       const std::vector<int> & elmtOffset = dofMngr.getGIDFieldOffsets(blockId,fieldNum);
-      realloc(fc[fieldStr],localCellIds.size(),elmtOffset.size());
+      fc[fieldStr] = Kokkos::DynRankView<double,PHX::Device>("fc",localCellIds.size(),elmtOffset.size());
 
       // gather operation for each cell in workset
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {

@@ -164,7 +164,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
 
       // allocate block of data to store coordinates
       Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
-      realloc(fieldData,connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+      fieldData = Kokkos::DynRankView<double,PHX::Device>("fieldData",connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
          // get degree of freedom coordiantes
