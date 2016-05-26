@@ -785,8 +785,13 @@ private:
   /// those.
   typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptrHost_;
 
-  //! Raw pointer to the graph's array of column indices.
-  const LO* ind_;
+  /// \brief Host version of the graph's array of column indices.
+  ///
+  /// The device version of this is already stored in the graph.  We
+  /// need the host version here, because this class' interface needs
+  /// to access it on host.  See notes on ptrHost_ above.
+  typename crs_graph_type::local_graph_type::entries_type::HostMirror indHost_;
+
   /// \brief Array of values in the matrix.
   ///
   /// Each blockSize_ x blockSize_ block is stored contiguously, in
@@ -908,20 +913,20 @@ private:
   /// <i>Relative</i> offsets are relative to the current row, while
   /// <i>absolute</i> offsets are just direct indices into an array.
   /// For example, if <tt>k_abs</tt> is an absolute offset into the
-  /// array of column indices <tt>ind_</tt>, then one can use
-  /// <tt>k_abs</tt> directly as <tt>ind_[k_abs]</tt>.  If
-  /// <tt>k_rel</tt> is a relative offset into <tt>ind_</tt>, then one
-  /// must know the current local row index in order to use
+  /// array of column indices <tt>indHost_</tt>, then one can use
+  /// <tt>k_abs</tt> directly as <tt>indHost_[k_abs]</tt>.  If
+  /// <tt>k_rel</tt> is a relative offset into <tt>indHost_</tt>, then
+  /// one must know the current local row index in order to use
   /// <tt>k_rel</tt>.  For example:
   /// \code
   /// size_t k_abs = ptrHost_[curLocalRow] + k_rel; // absolute offset
-  /// LO colInd = ind_[k_abs];
+  /// LO colInd = indHost_[k_abs];
   /// \endcode
   ///
   /// This method returns a relative block offset.  A <i>block</i>
   /// offset means a graph or mesh offset, vs. the <i>point</i> offset
   /// into the array of values \c val_.  A block offset is suitable
-  /// for use in \c ind_, but not in \c val_.  One must multiply a
+  /// for use in \c indHost_, but not in \c val_.  One must multiply a
   /// block offset by offsetPerBlock() in order to get the
   /// <i>point</i> offset into \c val_.
   ///

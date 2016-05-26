@@ -175,7 +175,6 @@ public:
     dist_object_type (Teuchos::rcp (new map_type ())), // nonnull, so DistObject doesn't throw
     graph_ (Teuchos::rcp (new map_type ()), 0), // FIXME (mfh 16 May 2014) no empty ctor yet
     blockSize_ (static_cast<LO> (0)),
-    ind_ (NULL),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     offsetPerBlock_ (0),
@@ -192,7 +191,6 @@ public:
     graph_ (graph),
     rowMeshMap_ (* (graph.getRowMap ())),
     blockSize_ (blockSize),
-    ind_ (NULL), // to be initialized below
     val_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
@@ -229,7 +227,15 @@ public:
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
-    ind_ = graph.getNodePackedIndices ().getRawPtr ();
+    {
+      typedef typename crs_graph_type::local_graph_type::entries_type entries_type;
+      typedef typename entries_type::HostMirror::non_const_type nc_host_entries_type;
+
+      entries_type ind_d = graph.getLocalGraph ().entries;
+      nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
+      Kokkos::deep_copy (ind_h_nc, ind_d);
+      indHost_ = ind_h_nc;
+    }
 
     Kokkos::resize (valView_,
                     static_cast<size_t> (graph.getNodeNumEntries () *
@@ -249,7 +255,6 @@ public:
     domainPointMap_ (domainPointMap),
     rangePointMap_ (rangePointMap),
     blockSize_ (blockSize),
-    ind_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     offsetPerBlock_ (blockSize * blockSize),
@@ -282,7 +287,15 @@ public:
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
-    ind_ = graph.getNodePackedIndices ().getRawPtr ();
+    {
+      typedef typename crs_graph_type::local_graph_type::entries_type entries_type;
+      typedef typename entries_type::HostMirror::non_const_type nc_host_entries_type;
+
+      entries_type ind_d = graph.getLocalGraph ().entries;
+      nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
+      Kokkos::deep_copy (ind_h_nc, ind_d);
+      indHost_ = ind_h_nc;
+    }
 
     Kokkos::resize (valView_,
                     static_cast<size_t> (graph.getNodeNumEntries () *
@@ -610,7 +623,7 @@ public:
         const size_t meshBeg = ptrHost_[actlRow];
         const size_t meshEnd = ptrHost_[actlRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-          const LO meshCol = ind_[absBlkOff];
+          const LO meshCol = indHost_[absBlkOff];
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
@@ -642,7 +655,7 @@ public:
           const size_t meshBeg = ptrHost_[actlRow];
           const size_t meshEnd = ptrHost_[actlRow+1];
           for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-            const LO meshCol = ind_[absBlkOff];
+            const LO meshCol = indHost_[absBlkOff];
             const_little_block_type A_cur =
               getConstLocalBlockFromAbsOffset (absBlkOff);
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
@@ -913,7 +926,7 @@ public:
     }
     else {
       const size_t absBlockOffsetStart = ptrHost_[localRowInd];
-      colInds = ind_ + absBlockOffsetStart;
+      colInds = indHost_.ptr_on_device () + absBlockOffsetStart;
 
       impl_scalar_type* const vOut = val_ + absBlockOffsetStart * offsetPerBlock ();
       vals = reinterpret_cast<Scalar*> (vOut);
@@ -1284,6 +1297,8 @@ public:
 
     typename crs_graph_type::local_graph_type::row_map_type::const_type ptrDev =
       graph_.getLocalGraph ().row_map;
+    typename crs_graph_type::local_graph_type::entries_type::const_type indDev =
+      graph_.getLocalGraph ().entries;
 #endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     // KJ : do we really need to separate numVecs == 1 and multiple numVecs ?
@@ -1326,7 +1341,7 @@ public:
               const size_t meshEnd = ptrDev[lclRow+1];
 
               for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-                const LO meshCol = ind_[absBlkOff];
+                const LO meshCol = indDev[absBlkOff];
                 const_little_block_type A_cur =
                   getConstLocalBlockFromAbsOffset (absBlkOff);
                 little_vec_type X_cur = X.getLocalBlock (meshCol, j);
@@ -1378,7 +1393,7 @@ public:
             //
             int dummy = 0;
             Kokkos::parallel_reduce( Kokkos::TeamThreadRange(member, meshBeg, meshEnd), [&](const LO absBlkOff, int) {
-                const LO meshCol = ind_[absBlkOff];
+                const LO meshCol = indDev[absBlkOff];
                 const_little_block_type A_cur =
                   getConstLocalBlockFromAbsOffset (absBlkOff);
                 little_vec_type X_cur = X.getLocalBlock (meshCol, j);
@@ -1417,7 +1432,7 @@ public:
         const size_t meshBeg = ptrHost_[lclRow];
         const size_t meshEnd = ptrHost_[lclRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-          const LO meshCol = ind_[absBlkOff];
+          const LO meshCol = indHost_[absBlkOff];
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
           little_vec_type X_cur = X.getLocalBlock (meshCol, j);
@@ -1445,7 +1460,7 @@ public:
     const size_t absEndOffset = ptrHost_[localRowIndex+1];
     const LO numEntriesInRow = static_cast<LO> (absEndOffset - absStartOffset);
     // Amortize pointer arithmetic over the search loop.
-    const LO* const curInd = ind_ + absStartOffset;
+    const LO* const curInd = indHost_.ptr_on_device () + absStartOffset;
 
     // If the hint was correct, then the hint is the offset to return.
     if (hint < numEntriesInRow && curInd[hint] == colIndexToFind) {
