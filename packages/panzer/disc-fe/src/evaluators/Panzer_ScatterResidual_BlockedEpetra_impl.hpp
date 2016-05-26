@@ -509,12 +509,13 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-   int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
+   int numFieldBlocks = colIndexer_->getNumFieldBlocks();
    std::vector<int> blockOffsets(numFieldBlocks+1); // number of fields, plus a sentinnel
    for(int blk=0;blk<numFieldBlocks;blk++) {
-      int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
+      int blockOffset = colIndexer_->getBlockGIDOffset(blockId,blk);
       blockOffsets[blk] = blockOffset;
    }
+   blockOffsets[numFieldBlocks] = colIndexer_->getElementBlockGIDCount(blockId);
 
    std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix>,panzer::pair_hash> jacEpetraBlocks;
 
@@ -550,7 +551,6 @@ evaluateFields(typename TRAITS::EvalData workset)
             if(local_r!=Teuchos::null)
                local_r[r_lid] += (scatterField.val());
 
-            blockOffsets[numFieldBlocks] = scatterField.size(); // add the sentinel
             // loop over the sensitivity indices: all DOFs on a cell
             jacRow.resize(scatterField.size());
   

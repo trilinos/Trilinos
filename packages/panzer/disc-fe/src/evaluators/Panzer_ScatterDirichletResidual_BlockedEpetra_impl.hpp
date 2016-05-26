@@ -661,20 +661,17 @@ evaluateFields(typename TRAITS::EvalData workset)
 
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
-
-   int numFieldBlocks = globalIndexer_->getNumFieldBlocks();
+   int numFieldBlocks = colGlobalIndexer_->getNumFieldBlocks();
    std::vector<int> blockOffsets(numFieldBlocks+1); // number of fields, plus a sentinnel
    for(int blk=0;blk<numFieldBlocks;blk++) {
-      int blockOffset = globalIndexer_->getBlockGIDOffset(blockId,blk);
+      int blockOffset = colGlobalIndexer_->getBlockGIDOffset(blockId,blk);
       blockOffsets[blk] = blockOffset;
    }
-   blockOffsets[numFieldBlocks] = globalIndexer_->getElementBlockGIDCount(blockId);
+   blockOffsets[numFieldBlocks] = colGlobalIndexer_->getElementBlockGIDCount(blockId);
 
    std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsMatrix>,panzer::pair_hash> jacEpetraBlocks;
 
