@@ -103,20 +103,16 @@ public:
                        Kokkos::MemoryUnmanaged> diag_offsets_type;
   typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
   typedef typename global_graph_type::local_graph_type local_graph_type;
-  typedef typename local_graph_type::row_map_type row_map_type;
-  typedef typename row_map_type::HostMirror abs_offset_type;
-  typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar,
-                                                            LO, GO, Node>::impl_scalar_type impl_scalar_type;
-  typedef Kokkos::View<impl_scalar_type***, device_type,
-                       Kokkos::MemoryUnmanaged> diag_type;
-  typedef Kokkos::View<const impl_scalar_type*, device_type,
-                       Kokkos::MemoryUnmanaged> values_type;
+  typedef typename local_graph_type::row_map_type row_offsets_type;
+  typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type IST;
+  typedef Kokkos::View<IST***, device_type, Kokkos::MemoryUnmanaged> diag_type;
+  typedef Kokkos::View<const IST*, device_type, Kokkos::MemoryUnmanaged> values_type;
 
   // Constructor
   GetLocalDiagCopy (const diag_type& diag,
                     const values_type& val,
                     const diag_offsets_type& diagOffsets,
-                    const abs_offset_type& ptr,
+                    const row_offsets_type& ptr,
                     const LO blockSize) :
     diag_ (diag),
     diagOffsets_ (diagOffsets),
@@ -142,7 +138,7 @@ public:
 
     // Get a view of the block.  BCRS currently uses LayoutRight
     // regardless of the device.
-    typedef Kokkos::View<const impl_scalar_type**, Kokkos::LayoutRight,
+    typedef Kokkos::View<const IST**, Kokkos::LayoutRight,
       device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
       const_little_block_type;
     const_little_block_type D_in (val_.ptr_on_device () + pointOffset,
@@ -154,7 +150,7 @@ public:
   private:
     diag_type diag_;
     diag_offsets_type diagOffsets_;
-    abs_offset_type ptr_;
+    row_offsets_type ptr_;
     LO blockSize_;
     LO offsetPerBlock_;
     values_type val_;
@@ -229,11 +225,9 @@ public:
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
-      // FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
-      // mat-vec, we won't need a host version of this.
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
-      ptr_ = ptr_h_nc;
+      ptrHost_ = ptr_h_nc;
     }
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
 
@@ -284,11 +278,9 @@ public:
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
 
       row_map_type ptr_d = graph.getLocalGraph ().row_map;
-      // FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
-      // mat-vec, we won't need a host version of this.
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
-      ptr_ = ptr_h_nc;
+      ptrHost_ = ptr_h_nc;
     }
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
 
@@ -474,7 +466,7 @@ public:
     }
     const impl_scalar_type* const vIn =
       reinterpret_cast<const impl_scalar_type*> (vals);
-    const size_t absRowBlockOffset = this->ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
     const LO perBlockSize = this->offsetPerBlock ();
     LO hint = 0; // Guess for the relative offset into the current row
@@ -615,8 +607,8 @@ public:
         COPY (B_cur, X_lcl);
         SCAL (omega, X_lcl);
 
-        const size_t meshBeg = ptr_[actlRow];
-        const size_t meshEnd = ptr_[actlRow+1];
+        const size_t meshBeg = ptrHost_[actlRow];
+        const size_t meshEnd = ptrHost_[actlRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
           const LO meshCol = ind_[absBlkOff];
           const_little_block_type A_cur =
@@ -647,8 +639,8 @@ public:
           COPY (B_cur, X_lcl);
           SCAL (omega, X_lcl);
 
-          const size_t meshBeg = ptr_[actlRow];
-          const size_t meshEnd = ptr_[actlRow+1];
+          const size_t meshBeg = ptrHost_[actlRow];
+          const size_t meshEnd = ptrHost_[actlRow+1];
           for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
             const LO meshCol = ind_[absBlkOff];
             const_little_block_type A_cur =
@@ -745,7 +737,6 @@ public:
                     const Kokkos::View<const size_t*, device_type,
                                        Kokkos::MemoryUnmanaged>& offsets) const
   {
-    using Kokkos::ALL;
     using Kokkos::parallel_for;
     typedef typename device_type::execution_space execution_space;
 
@@ -763,12 +754,11 @@ public:
        "offsets.size() = " << offsets.size () << " < local number of diagonal "
        "blocks " << lclNumMeshRows << ".");
 
-    // mfh 12 Dec 2015: Use the host execution space, since we haven't
-    // quite made everything work with CUDA yet.
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
-    typedef GetLocalDiagCopy<Scalar,LO,GO,Node> functor_type;
+    typedef GetLocalDiagCopy<Scalar, LO, GO, Node> functor_type;
     parallel_for (policy_type (0, lclNumMeshRows),
-                  functor_type (diag, valView_, offsets, ptr_, blockSize_));
+                  functor_type (diag, valView_, offsets,
+                                graph_.getLocalGraph ().row_map, blockSize_));
   }
 
 
@@ -826,7 +816,7 @@ public:
     }
     const impl_scalar_type* const vIn =
       reinterpret_cast<const impl_scalar_type*> (vals);
-    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
     const LO perBlockSize = this->offsetPerBlock ();
     LO hint = 0; // Guess for the relative offset into the current row
@@ -870,7 +860,7 @@ public:
     //const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn =
       reinterpret_cast<const impl_scalar_type*> (vals);
-    const size_t absRowBlockOffset = this->ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
     const LO perBlockSize = this->offsetPerBlock ();
     LO hint = 0; // Guess for the relative offset into the current row
@@ -922,13 +912,13 @@ public:
       return Teuchos::OrdinalTraits<LO>::invalid ();
     }
     else {
-      const size_t absBlockOffsetStart = ptr_[localRowInd];
+      const size_t absBlockOffsetStart = ptrHost_[localRowInd];
       colInds = ind_ + absBlockOffsetStart;
 
       impl_scalar_type* const vOut = val_ + absBlockOffsetStart * offsetPerBlock ();
       vals = reinterpret_cast<Scalar*> (vOut);
 
-      numInds = ptr_[localRowInd + 1] - absBlockOffsetStart;
+      numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
       return 0; // indicates no error
     }
   }
@@ -1009,7 +999,7 @@ public:
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
-    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     size_t pointOffset = 0; // Current offset into input values
@@ -1048,7 +1038,7 @@ public:
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
-    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     size_t pointOffset = 0; // Current offset into input values
@@ -1088,7 +1078,7 @@ public:
     const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
 
-    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
     size_t pointOffset = 0; // Current offset into input values
@@ -1291,6 +1281,9 @@ public:
                                               Kokkos::PerTeam  (scratchSizePerTeam),
                                               Kokkos::PerThread(scratchSizePerThread) );
     }
+
+    typename crs_graph_type::local_graph_type::row_map_type::const_type ptrDev =
+      graph_.getLocalGraph ().row_map;
 #endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     // KJ : do we really need to separate numVecs == 1 and multiple numVecs ?
@@ -1329,8 +1322,8 @@ public:
                 SCAL (beta, Y_tlm);
               }
 
-              const size_t meshBeg = ptr_[lclRow];
-              const size_t meshEnd = ptr_[lclRow+1];
+              const size_t meshBeg = ptrDev[lclRow];
+              const size_t meshEnd = ptrDev[lclRow+1];
 
               for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
                 const LO meshCol = ind_[absBlkOff];
@@ -1375,8 +1368,8 @@ public:
               SCAL (beta, Y_tlm);
             }
 
-            const size_t meshBeg = ptr_[lclRow];
-            const size_t meshEnd = ptr_[lclRow+1];
+            const size_t meshBeg = ptrDev[lclRow];
+            const size_t meshEnd = ptrDev[lclRow+1];
 
             // KJ : cannot pass little_vec_type as it does not have a default constructor;
             // even if it exists, it should be initialized thread local little vector.
@@ -1421,8 +1414,8 @@ public:
           SCAL (beta, Y_lcl);
         }
 
-        const size_t meshBeg = ptr_[lclRow];
-        const size_t meshEnd = ptr_[lclRow+1];
+        const size_t meshBeg = ptrHost_[lclRow];
+        const size_t meshEnd = ptrHost_[lclRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
           const LO meshCol = ind_[absBlkOff];
           const_little_block_type A_cur =
@@ -1448,8 +1441,8 @@ public:
                               const LO colIndexToFind,
                               const LO hint) const
   {
-    const size_t absStartOffset = ptr_[localRowIndex];
-    const size_t absEndOffset = ptr_[localRowIndex+1];
+    const size_t absStartOffset = ptrHost_[localRowIndex];
+    const size_t absEndOffset = ptrHost_[localRowIndex+1];
     const LO numEntriesInRow = static_cast<LO> (absEndOffset - absStartOffset);
     // Amortize pointer arithmetic over the search loop.
     const LO* const curInd = ind_ + absStartOffset;
@@ -1529,7 +1522,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
-    if (absBlockOffset >= ptr_[rowMeshMap_.getNodeNumElements ()]) {
+    if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
@@ -1572,7 +1565,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
-    if (absBlockOffset >= ptr_[rowMeshMap_.getNodeNumElements ()]) {
+    if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
@@ -1589,7 +1582,7 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalBlock (const LO localRowInd, const LO localColInd) const
   {
-    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset =
       this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
 

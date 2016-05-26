@@ -770,11 +770,20 @@ private:
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
 
-  /// \brief The graph's array of row offsets.
+  /// \brief Host version of the graph's array of row offsets.
   ///
-  /// FIXME (mfh 23 Mar 2015) Once we write a Kokkos kernel for the
-  /// mat-vec, we won't need a host version of this.
-  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptr_;
+  /// The device version of this is already stored in the graph.  We
+  /// need the host version here, because this class' interface needs
+  /// to access it on host.  We don't want to assume UVM if we can
+  /// avoid it.  Furthermore, we don't use Kokkos::DualView, because
+  /// the graph is never supposed to change once a BlockCrsMatrix gets
+  /// it.  The whole point of Kokkos::DualView is to help users
+  /// synchronize changes between host and device versions of the
+  /// data, but the data aren't changing in this case.  Furthermore,
+  /// Kokkos::DualView has extra Views in it for the "modified" flags,
+  /// and we don't want the (modest) overhead of creating and storing
+  /// those.
+  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptrHost_;
 
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
@@ -905,7 +914,7 @@ private:
   /// must know the current local row index in order to use
   /// <tt>k_rel</tt>.  For example:
   /// \code
-  /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
+  /// size_t k_abs = ptrHost_[curLocalRow] + k_rel; // absolute offset
   /// LO colInd = ind_[k_abs];
   /// \endcode
   ///
