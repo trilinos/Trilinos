@@ -107,11 +107,6 @@ public:
   typedef typename row_map_type::HostMirror abs_offset_type;
   typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar,
                                                             LO, GO, Node>::impl_scalar_type impl_scalar_type;
-  typedef Kokkos::View<impl_scalar_type**,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-    little_block_type;
   typedef Kokkos::View<impl_scalar_type***, device_type,
                        Kokkos::MemoryUnmanaged> diag_type;
   typedef Kokkos::View<const impl_scalar_type*, device_type,
@@ -145,10 +140,14 @@ public:
     // Get the total offset
     const size_t pointOffset = (absOffset+relOffset)*offsetPerBlock_;
 
-    // Get a view of the block
-    typename little_block_type::const_type D_in (val_.ptr_on_device () + pointOffset, blockSize_, blockSize_);
-
-    little_block_type D_out = Kokkos::subview (diag_, lclRowInd, ALL (), ALL ());
+    // Get a view of the block.  BCRS currently uses LayoutRight
+    // regardless of the device.
+    typedef Kokkos::View<const impl_scalar_type**, Kokkos::LayoutRight,
+      device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      const_little_block_type;
+    const_little_block_type D_in (val_.ptr_on_device () + pointOffset,
+                                  blockSize_, blockSize_);
+    auto D_out = Kokkos::subview (diag_, lclRowInd, ALL (), ALL ());
     COPY (D_in, D_out);
   }
 

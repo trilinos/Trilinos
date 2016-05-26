@@ -82,7 +82,8 @@ template<class ViewType1,
          class ViewType2,
          const int rank1 = ViewType1::rank>
 struct AbsMax {
-  static void run (const ViewType2& Y, const ViewType1& X);
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType2& Y, const ViewType1& X);
 };
 
 /// \brief Implementation of Tpetra's ABSMAX CombineMode for the small
@@ -94,7 +95,8 @@ template<class ViewType1,
 struct AbsMax<ViewType1, ViewType2, 2> {
   /// \brief <tt>(*this)(i,j) := max(abs((*this)(i,j)), abs(X(i,j)))</tt>
   ///   for all (i,j).
-  static void run (const ViewType2& Y, const ViewType1& X)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType2& Y, const ViewType1& X)
   {
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AbsMax: ViewType1 and ViewType2 must have the same rank.");
@@ -133,7 +135,8 @@ template<class ViewType1,
 struct AbsMax<ViewType1, ViewType2, 1> {
   /// \brief <tt>(*this)(i) := max(abs((*this)(i)), abs(X(i)))</tt>
   ///   for all i.
-  static void run (const ViewType2& Y, const ViewType1& X)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType2& Y, const ViewType1& X)
   {
     static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                    "AbsMax: ViewType1 and ViewType2 must have the same rank.");
@@ -168,7 +171,9 @@ struct AbsMax<ViewType1, ViewType2, 1> {
 /// This is the function that Tpetra actually uses to implement the
 /// ABSMAX CombineMode.
 template<class ViewType1, class ViewType2, const int rank = ViewType1::rank>
-void absMax (const ViewType2& Y, const ViewType1& X) {
+KOKKOS_INLINE_FUNCTION void
+absMax (const ViewType2& Y, const ViewType1& X)
+{
   static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
                  "absMax: ViewType1 and ViewType2 must have the same rank.");
   AbsMax<ViewType1, ViewType2, rank>::run (Y, X);
@@ -184,7 +189,8 @@ template<class ViewType,
          class IndexType = int,
          const int rank = ViewType::rank>
 struct SCAL {
-  static void run (const CoefficientType& alpha, const ViewType& x);
+  static KOKKOS_INLINE_FUNCTION void
+  run (const CoefficientType& alpha, const ViewType& x);
 };
 
 /// \brief Implementation of Tpetra::Experimental::SCAL function, for
@@ -195,7 +201,8 @@ template<class ViewType,
          class IndexType>
 struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 1> {
   /// \brief x := alpha*x (rank-1 x, i.e., a vector)
-  static void run (const CoefficientType& alpha, const ViewType& x)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const CoefficientType& alpha, const ViewType& x)
   {
     const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
     // BLAS _SCAL doesn't check whether alpha is 0.
@@ -213,7 +220,8 @@ template<class ViewType,
          class IndexType>
 struct SCAL<ViewType, CoefficientType, LayoutType, IndexType, 2> {
   /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
-  static void run (const CoefficientType& alpha, const ViewType& A)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const CoefficientType& alpha, const ViewType& A)
   {
     const IndexType numRows = static_cast<IndexType> (A.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (A.dimension_1 ());
@@ -237,7 +245,8 @@ template<class ViewType,
          class IndexType>
 struct SCAL<ViewType, CoefficientType, Kokkos::LayoutRight, IndexType, 2> {
   /// \brief A := alpha*A (rank-2 A, i.e., a matrix)
-  static void run (const CoefficientType& alpha, const ViewType& A)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const CoefficientType& alpha, const ViewType& A)
   {
     const IndexType N = A.size ();
     typedef typename std::decay<decltype (A(0,0)) >::type scalar_type;
@@ -260,8 +269,8 @@ template<class ViewType,
          class IndexType = int,
          const int rank = ViewType::rank>
 struct FILL {
-  KOKKOS_INLINE_FUNCTION
-  static void run (const ViewType& x, const InputType& val);
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType& x, const InputType& val);
 };
 
 /// \brief Implementation of Tpetra::Experimental::FILL function, for
@@ -271,8 +280,8 @@ template<class ViewType,
          class LayoutType,
          class IndexType>
 struct FILL<ViewType, InputType, LayoutType, IndexType, 1> {
-  KOKKOS_INLINE_FUNCTION
-  static void run (const ViewType& x, const InputType& val)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType& x, const InputType& val)
   {
     const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
     for (IndexType i = 0; i < numRows; ++i) {
@@ -288,8 +297,8 @@ template<class ViewType,
          class LayoutType,
          class IndexType>
 struct FILL<ViewType, InputType, LayoutType, IndexType, 2> {
-  KOKKOS_INLINE_FUNCTION
-  static void run (const ViewType& X, const InputType& val)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType& X, const InputType& val)
   {
     const IndexType numRows = static_cast<IndexType> (X.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (X.dimension_1 ());
@@ -313,7 +322,7 @@ template<class CoefficientType,
          class IndexType = int,
          const int rank = ViewType1::rank>
 struct AXPY {
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha,
        const ViewType1& x,
        const ViewType2& y);
@@ -329,7 +338,7 @@ template<class CoefficientType,
          class IndexType>
 struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   /// \brief y := y + alpha*x (rank-1 x and y, i.e., vectors)
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha,
        const ViewType1& x,
        const ViewType2& y)
@@ -355,7 +364,7 @@ template<class CoefficientType,
          class IndexType>
 struct AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha,
        const ViewType1& X,
        const ViewType2& Y)
@@ -384,7 +393,7 @@ template<class CoefficientType,
          class IndexType>
 struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
   /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha,
        const ViewType1& X,
        const ViewType2& Y)
@@ -415,7 +424,7 @@ template<class CoefficientType,
          class IndexType>
 struct AXPY<CoefficientType, ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexType, 2> {
   /// \brief Y := Y + alpha*X (rank-2 X and Y, i.e., matrices)
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoefficientType& alpha,
        const ViewType1& X,
        const ViewType2& Y)
@@ -448,7 +457,8 @@ template<class ViewType1,
          class IndexType = int,
          const int rank = ViewType1::rank>
 struct COPY {
-  static void run (const ViewType1& x, const ViewType2& y);
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType1& x, const ViewType2& y);
 };
 
 /// \brief Implementation of Tpetra::Experimental::COPY function, for
@@ -460,7 +470,8 @@ template<class ViewType1,
          class IndexType>
 struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 1> {
   /// \brief y := x (rank-1 x and y, i.e., vectors)
-  static void run (const ViewType1& x, const ViewType2& y)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType1& x, const ViewType2& y)
   {
     const IndexType numRows = static_cast<IndexType> (x.dimension_0 ());
     for (IndexType i = 0; i < numRows; ++i) {
@@ -478,7 +489,8 @@ template<class ViewType1,
          class IndexType>
 struct COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
-  static void run (const ViewType1& X, const ViewType2& Y)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType1& X, const ViewType2& Y)
   {
     const IndexType numRows = static_cast<IndexType> (Y.dimension_0 ());
     const IndexType numCols = static_cast<IndexType> (Y.dimension_1 ());
@@ -500,7 +512,8 @@ template<class ViewType1,
          class IndexType>
 struct COPY<ViewType1, ViewType2, Kokkos::LayoutRight, Kokkos::LayoutRight, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
-  static void run (const ViewType1& X, const ViewType2& Y)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType1& X, const ViewType2& Y)
   {
     typedef typename std::decay<decltype (X(0,0)) >::type SX;
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
@@ -524,7 +537,8 @@ template<class ViewType1,
          class IndexType>
 struct COPY<ViewType1, ViewType2, Kokkos::LayoutLeft, Kokkos::LayoutLeft, IndexType, 2> {
   /// \brief Y := X (rank-2 X and Y, i.e., matrices)
-  static void run (const ViewType1& X, const ViewType2& Y)
+  static KOKKOS_INLINE_FUNCTION void
+  run (const ViewType1& X, const ViewType2& Y)
   {
     typedef typename std::decay<decltype (X(0,0)) >::type SX;
     typedef typename std::decay<decltype (Y(0,0)) >::type SY;
@@ -550,8 +564,7 @@ template<class VecType1,
          class BlkLayoutType = typename BlkType::array_layout,
          class VecLayoutType2 = typename VecType2::array_layout>
 struct GEMV {
-  KOKKOS_INLINE_FUNCTION
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoeffType& alpha,
        const BlkType& A,
        const VecType1& x,
@@ -583,8 +596,7 @@ template<class VecType1,
 struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
             Kokkos::LayoutRight, Kokkos::LayoutRight, Kokkos::LayoutRight>
 {
-  KOKKOS_INLINE_FUNCTION
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoeffType& alpha,
        const BlkType& A,
        const VecType1& x,
@@ -619,8 +631,7 @@ template<class VecType1,
 struct GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType,
             Kokkos::LayoutLeft, Kokkos::LayoutLeft, Kokkos::LayoutLeft>
 {
-  KOKKOS_INLINE_FUNCTION
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const CoeffType& alpha,
        const BlkType& A,
        const VecType1& x,
@@ -652,7 +663,9 @@ template<class ViewType,
          class LayoutType = typename ViewType::array_layout,
          class IndexType = int,
          const int rank = ViewType::rank>
-void SCAL (const CoefficientType& alpha, const ViewType& x) {
+KOKKOS_INLINE_FUNCTION void
+SCAL (const CoefficientType& alpha, const ViewType& x)
+{
   Impl::SCAL<ViewType, CoefficientType, LayoutType, IndexType, rank>::run (alpha, x);
 }
 
@@ -662,8 +675,9 @@ template<class ViewType,
          class LayoutType = typename ViewType::array_layout,
          class IndexType = int,
          const int rank = ViewType::rank>
-KOKKOS_INLINE_FUNCTION
-void FILL (const ViewType& x, const InputType& val) {
+KOKKOS_INLINE_FUNCTION void
+FILL (const ViewType& x, const InputType& val)
+{
   Impl::FILL<ViewType, InputType, LayoutType, IndexType, rank>::run (x, val);
 }
 
@@ -679,14 +693,16 @@ template<class CoefficientType,
          class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
-void
+KOKKOS_INLINE_FUNCTION void
 AXPY (const CoefficientType& alpha,
       const ViewType1& x,
       const ViewType2& y)
 {
-  static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
+  static_assert (static_cast<int> (ViewType1::rank) ==
+                 static_cast<int> (ViewType2::rank),
                  "AXPY: x and y must have the same rank.");
-  Impl::AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (alpha, x, y);
+  Impl::AXPY<CoefficientType, ViewType1, ViewType2, LayoutType1, LayoutType2,
+    IndexType, rank>::run (alpha, x, y);
 }
 
 /// \brief Deep copy x into y, where x and y are either rank 1
@@ -703,10 +719,14 @@ template<class ViewType1,
          class LayoutType2 = typename ViewType2::array_layout,
          class IndexType = int,
          const int rank = ViewType1::rank>
-void COPY (const ViewType1& x, const ViewType2& y) {
-  static_assert (static_cast<int> (ViewType1::rank) == static_cast<int> (ViewType2::rank),
+KOKKOS_INLINE_FUNCTION void
+COPY (const ViewType1& x, const ViewType2& y)
+{
+  static_assert (static_cast<int> (ViewType1::rank) ==
+                 static_cast<int> (ViewType2::rank),
                  "COPY: x and y must have the same rank.");
-  Impl::COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType, rank>::run (x, y);
+  Impl::COPY<ViewType1, ViewType2, LayoutType1, LayoutType2, IndexType,
+    rank>::run (x, y);
 }
 
 /// \brief <tt>y := y + alpha * A * x</tt> (dense matrix-vector multiply)
@@ -725,14 +745,14 @@ template<class VecType1,
          class VecType2,
          class CoeffType,
          class IndexType = int>
-KOKKOS_INLINE_FUNCTION
-void
+KOKKOS_INLINE_FUNCTION void
 GEMV (const CoeffType& alpha,
       const BlkType& A,
       const VecType1& x,
       const VecType2& y)
 {
-  Impl::GEMV<VecType1, BlkType, VecType2, CoeffType, IndexType>::run (alpha, A, x, y);
+  Impl::GEMV<VecType1, BlkType, VecType2, CoeffType,
+    IndexType>::run (alpha, A, x, y);
 }
 
 /// \brief Small dense matrix-matrix multiply: <tt>C := alpha*A*B + beta*C</tt>
@@ -747,7 +767,7 @@ template<class ViewType1,
          class ViewType3,
          class CoefficientType,
          class IndexType = int>
-void
+KOKKOS_INLINE_FUNCTION void
 GEMM (const char transA[],
       const char transB[],
       const CoefficientType& alpha,
@@ -886,8 +906,7 @@ GEMM (const char transA[],
 /// \brief Computes A = P*L*U
 template<class LittleBlockType,
          class LittleVectorType>
-KOKKOS_INLINE_FUNCTION
-void
+KOKKOS_INLINE_FUNCTION void
 GETF2 (const LittleBlockType& A, const LittleVectorType& ipiv, int& info)
 {
   // The type of an entry of ipiv is the index type.
@@ -971,7 +990,7 @@ template<class LittleBlockType,
          class LittleScalarVectorType,
          const int rank = LittleScalarVectorType::rank>
 struct GETRS {
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const char mode[],
        const LittleBlockType& A,
        const LittleIntVectorType& ipiv,
@@ -984,7 +1003,7 @@ template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
 struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const char mode[],
        const LittleBlockType& A,
        const LittleIntVectorType& ipiv,
@@ -992,7 +1011,7 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 1> {
        int& info)
   {
     // The type of an entry of ipiv is the index type.
-    typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
+    typedef typename std::decay<decltype (ipiv(0))>::type IndexType;
     // IndexType must be signed, because this code does a countdown loop
     // to zero.  Unsigned integers are always >= 0, even on underflow.
     static_assert (std::is_integral<IndexType>::value &&
@@ -1080,7 +1099,7 @@ template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
 struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 2> {
-  static void
+  static KOKKOS_INLINE_FUNCTION void
   run (const char mode[],
        const LittleBlockType& A,
        const LittleIntVectorType& ipiv,
@@ -1088,7 +1107,7 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 2> {
        int& info)
   {
     // The type of an entry of ipiv is the index type.
-    typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0)) >::type>::type IndexType;
+    typedef typename std::decay<decltype (ipiv(0)) >::type IndexType;
     static_assert (std::is_integral<IndexType>::value,
                    "GETRS: The type of each entry of ipiv must be an integer type.");
     static_assert (! std::is_const<std::remove_reference<decltype (B(0)) > >::value,
@@ -1121,10 +1140,15 @@ struct GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, 2> {
 template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
-void
-GETRS (const char mode[], const LittleBlockType& A, const LittleIntVectorType& ipiv, const LittleScalarVectorType& B, int& info)
+KOKKOS_INLINE_FUNCTION void
+GETRS (const char mode[],
+       const LittleBlockType& A,
+       const LittleIntVectorType& ipiv,
+       const LittleScalarVectorType& B,
+       int& info)
 {
-  Impl::GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType, LittleScalarVectorType::rank>::run (mode, A, ipiv, B, info);
+  Impl::GETRS<LittleBlockType, LittleIntVectorType, LittleScalarVectorType,
+    LittleScalarVectorType::rank>::run (mode, A, ipiv, B, info);
 }
 
 
@@ -1145,15 +1169,14 @@ GETRS (const char mode[], const LittleBlockType& A, const LittleIntVectorType& i
 template<class LittleBlockType,
          class LittleIntVectorType,
          class LittleScalarVectorType>
-KOKKOS_INLINE_FUNCTION
-void
+KOKKOS_INLINE_FUNCTION void
 GETRI (const LittleBlockType& A,
        const LittleIntVectorType& ipiv,
        const LittleScalarVectorType& work,
        int& info)
 {
   // The type of an entry of ipiv is the index type.
-  typedef typename std::remove_const<typename std::remove_reference<decltype (ipiv(0))>::type>::type IndexType;
+  typedef typename std::decay<decltype (ipiv(0))>::type IndexType;
   // IndexType must be signed, because this code does a countdown loop
   // to zero.  Unsigned integers are always >= 0, even on underflow.
   static_assert (std::is_integral<IndexType>::value &&
@@ -1253,7 +1276,7 @@ template<class LittleBlockType,
          class LittleVectorTypeY,
          class CoefficientType,
          class IndexType = int>
-void
+KOKKOS_INLINE_FUNCTION void
 GEMV (const char trans,
       const CoefficientType& alpha,
       const LittleBlockType& A,
