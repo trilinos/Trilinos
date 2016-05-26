@@ -4,21 +4,27 @@ INCLUDE(TribitsAddAdvancedTest)
 
 ADD_DEFINITIONS(-DUSING_CMAKE)
 
-find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
+if ( NETCDF_NCDUMP_BINARY )
+   # Do nothing. Set earlier in config process...
+else()
+   find_program (NETCDF_NCDUMP_BINARY
 	     NAME ncdump
 	     PATHS 
-                ${Netcdf_LIBRARY_DIRS}/../bin
-	        $ENV{ACCESS}/bin
-	        $ENV{NETCDF_DIR}/bin
-	        $ENV{NETCDF_DIR}/ncdump
-		ENV PATH
+	       ${NetCDF_BINARY_DIR}
+               ${Netcdf_LIBRARY_DIRS}/../bin
+               $ENV{ACCESS}/bin
+               $ENV{NETCDF_DIR}/bin
+               $ENV{NETCDF_DIR}/ncdump
+               ENV PATH
+	        ${NetCDF_DIR}/bin
 	     )
+endif()
 	     
 # ===============================================
 
 
-IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
-  SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
+IF ( NETCDF_NCDUMP_BINARY )
+  SET(NETCDF_NCDUMP ${NETCDF_NCDUMP_BINARY})
   SET( forbind_OLDTESTS
     testwt
     testwtd
@@ -53,12 +59,13 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
 
   TRIBITS_ADD_ADVANCED_TEST(
    exodus_unit_tests
-   TEST_0 CMND /bin/csh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
+   TEST_0 CMND /bin/bash ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
 	  OUTPUT_FILE exodus_unit_tests.out
 	  PASS_ANY
    TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
 		         ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
-   COMM serial		      
+   COMM mpi serial
+   OVERALL_NUM_MPI_PROCS 1
    FINAL_PASS_REGULAR_EXPRESSION 
   )
 ELSE()
