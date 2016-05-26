@@ -880,6 +880,7 @@ lib suplib
     ]
     exodus_for
     supes
+    /tpl/netcdf//netcdf
   : 
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
