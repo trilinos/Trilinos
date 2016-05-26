@@ -120,7 +120,7 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   }
 }
 
-void getParameterLists(const string &inputFileName,
+bool getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
                        queue<ParameterList> &comparisons,
                        const RCP<const Teuchos::Comm<int> > & comm)
@@ -142,6 +142,7 @@ void getParameterLists(const string &inputFileName,
   catch(exception &e)
   {
     EXC_ERRMSG("Test Driver error: reading", e); // error reading input
+    return false;
   }
 
   // get the parameter lists for each model
@@ -157,13 +158,15 @@ void getParameterLists(const string &inputFileName,
     	problems.emplace(plist);
     }
   }
+
+  return true;
 }
 
-void run(const UserInputForTests &uinput,
+bool run(const UserInputForTests &uinput,
         const ParameterList &problem_parameters,
         bool bHasComparisons,
-         RCP<ComparisonHelper> & comparison_helper,
-         const RCP<const Teuchos::Comm<int> > & comm)
+        RCP<ComparisonHelper> & comparison_helper,
+        const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
   // 1. get an input adapter
@@ -175,21 +178,29 @@ void run(const UserInputForTests &uinput,
   int rank = comm->getRank();
   if(!problem_parameters.isParameter("kind"))
   {
-    if(rank == 0) std::cerr << "Problem kind not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Problem kind not provided" << std::endl;
+    }
+    return false;
   }
   if(!problem_parameters.isParameter("InputAdapterParameters"))
   {
-    if(rank == 0) std::cerr << "Input adapter parameters not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Input adapter parameters not provided" << std::endl;
+    }
+    return false;
   }
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
   {
-    if(rank == 0) std::cerr << "Zoltan2 problem parameters not provided" << std::endl;
-    return;
+    if(rank == 0) {
+      std::cout << "Zoltan2 problem parameters not provided" << std::endl;
+    }
+    return false;
   }
 
-  if(rank == 0) cout << "\n\nRunning test: " << problem_parameters.name() << endl;
+  if(rank == 0) {
+    cout << "\n\nRunning test: " << problem_parameters.name() << endl;
+  }
   
   ////////////////////////////////////////////////////////////
   // 0. add comparison source
@@ -207,16 +218,16 @@ void run(const UserInputForTests &uinput,
   comparison_source->timers["adapter construction time"]->start();
   base_adapter_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
   comparison_source->timers["adapter construction time"]->stop();
-  
+
 //  if(rank == 0) cout << "Got input adapter... " << endl;
   if(ia == nullptr)
   {
     if(rank == 0) {
       cout << "Get adapter for input failed" << endl;
     }
-    return;
+    return false;
   }
-  
+
   ////////////////////////////////////////////////////////////
   // 2. construct a Zoltan2 problem
   ////////////////////////////////////////////////////////////
@@ -224,14 +235,14 @@ void run(const UserInputForTests &uinput,
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters")); // get Zoltan2 partition parameters
   
   if(rank == 0) {
-    //cout << "\nZoltan 2 parameters:" << endl;
-    //zoltan2_parameters.print(std::cout);
     cout << endl;
   }
 
   comparison_source->timers["problem construction time"]->start();
   std::string problem_kind = problem_parameters.get<std::string>("kind"); 
-  if (rank == 0) std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
+  if (rank == 0) {
+    std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
+  }
 #ifdef HAVE_ZOLTAN2_MPI
   base_problem_t * problem = 
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters, MPI_COMM_WORLD);
@@ -240,14 +251,14 @@ void run(const UserInputForTests &uinput,
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind, adapter_name, ia, &zoltan2_parameters);
 #endif
 
-  if (rank == 0) {
-	  if (problem == nullptr) {
-		  std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
-		  return;
-	  }
-	  else {
-		  std::cout << "Using input adapter type: " + adapter_name << std::endl;
-	  }
+  if (problem == nullptr) {
+    if (rank == 0) {
+	  std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+	}
+	return false;
+  }
+  else if(rank == 0) {
+     std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
 
   ////////////////////////////////////////////////////////////
@@ -263,11 +274,11 @@ void run(const UserInputForTests &uinput,
   }
 
   comparison_source->timers["solve time"]->stop();
-  if (rank == 0)
+  if (rank == 0) {
     cout << problem_kind + " problem solved." << endl;
+  }
  
-
-#define KDDKDD
+//#define KDDKDD
 #ifdef KDDKDD
   {
   const base_adapter_t::gno_t *kddIDs = NULL;
@@ -313,6 +324,9 @@ void run(const UserInputForTests &uinput,
  // get metric object
   // this is not the most beautiful thing, but comparison parameters is checked as well because it's possible we are checking comparisons of metrics but not individual metrics
   // we want to only load the EvaluatePartition when Metrics is requested, or some comparison is requested
+
+  bool bSuccess = true;
+
   if(problem_parameters.isSublist("Metrics") || bHasComparisons) { // the specification is that we don't create anything unless the Metrics list exists
     RCP<EvaluatePartition<basic_id_t> > metricObject =
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
@@ -320,12 +334,17 @@ void run(const UserInputForTests &uinput,
     std::ostringstream msgSummary;
 	metricObject->printMetrics(msgSummary, true); //
     if(rank == 0) {
-	     cout << msgSummary.str();
+	  cout << msgSummary.str();
     }
 
 	std::ostringstream msgResults;
-	MetricAnalyzer::analyzeMetrics( metricObject, problem_parameters.sublist("Metrics"), msgResults ); // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
-	if(rank == 0) {
+	if (!MetricAnalyzer::analyzeMetrics(metricObject, problem_parameters.sublist("Metrics"), msgResults)) { // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
+	  bSuccess = false;
+	  if (rank == 0) {
+	    std::cout << "MetricAnalyzer::analyzeMetrics() returned false and the test is FAILED." << std::endl;
+	  }
+	}
+    if(rank == 0) {
 	  cout << msgResults.str();
 	}
 
@@ -375,6 +394,7 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   // 5. Add solution to map for possible comparison testing
   ////////////////////////////////////////////////////////////
+
   comparison_source->adapter = RCP<basic_id_t>(reinterpret_cast<basic_id_t *>(ia));
   comparison_source->problem = RCP<base_problem_t>(reinterpret_cast<base_problem_t *>(problem));
   comparison_source->metricObject = metricObject;
@@ -389,17 +409,18 @@ void run(const UserInputForTests &uinput,
   // 6. Clean up
   ////////////////////////////////////////////////////////////
   }
+
+  return bSuccess;
 }
 
-int main(int argc, char *argv[])
+bool mainExecute(int argc, char *argv[], int &rank)
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  
-  int rank = comm->getRank(); // get rank
+  rank = comm->getRank(); // get rank
 
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
@@ -416,33 +437,36 @@ int main(int argc, char *argv[])
       msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
       std::cout << msg.str() << std::endl;
     }
-    return 1;
+    return false;
   }
 
   ////////////////////////////////////////////////////////////
   // (2) Get All Input Parameter Lists
   ////////////////////////////////////////////////////////////
   queue<ParameterList> problems, comparisons;
-  getParameterLists(inputFileName,problems, comparisons, comm);
+  if( !getParameterLists(inputFileName,problems, comparisons, comm) ) {
+    return false;
+  }
   
   ////////////////////////////////////////////////////////////
   // (3) Get Input Data Parameters
   ////////////////////////////////////////////////////////////
-  
+
   // assumes that first block will always be the input block
   const ParameterList inputParameters = problems.front();
   if(inputParameters.name() != "InputParameters")
   {
     if(rank == 0)
       cout << "InputParameters not defined. Testing FAILED." << endl;
-    return 1;
+    return false;
   }
   
   // get the user input for all tests
   UserInputForTests uinput(inputParameters,comm);
   problems.pop();
   comm->barrier();
-  
+
+  bool bPass = true;
   if(uinput.hasInput())
   {
     ////////////////////////////////////////////////////////////
@@ -452,31 +476,71 @@ int main(int argc, char *argv[])
 //    MyUtils::writeMesh(uinput,comm);
 //    MyUtils::getConnectivityGraph(uinput, comm);
         
-    RCP<ComparisonHelper> comparison_manager
-      = rcp(new ComparisonHelper);
-
-    bool bHasComparisons = (comparisons.size() != 0);
-
+    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
-      run(uinput, problems.front(), bHasComparisons, comparison_manager, comm);
+      if (!run(uinput, problems.front(), !comparisons.empty(), comparison_manager, comm)) {
+    	std::cout << "Problem run returned false" << std::endl;
+        bPass = false;
+      }
       problems.pop();
     }
-    
+
     ////////////////////////////////////////////////////////////
     // (5) Compare solutions
     ////////////////////////////////////////////////////////////
+
     while (!comparisons.empty()) {
-      comparison_manager->Compare(comparisons.front(),comm);
+      if (!comparison_manager->Compare(comparisons.front(),comm)) {
+    	if (rank == 0) {
+    	  std::cout << "Comparison manager returned false so the test should fail." << std::endl;
+    	}
+        bPass = false;
+      }
       comparisons.pop();
     }
-    
-  }else{
-    if(rank == 0){
-      cout << "\nFAILED to load input data source.";
-      cout << "\nSkipping all tests." << endl;
+  }
+  else {
+    if(rank == 0) {
+      cout << "\nFAILED to load input data source. Skipping all tests." << endl;
+      return false;
     }
   }
-  
-  return 0;
+
+  return bPass;
 }
 
+int main(int argc, char *argv[])
+{
+  int result = 0;
+  int rank = -1; // mainExecute will set this - this structure was setup to make the catch handling more apparent
+  try {
+    result = mainExecute(argc, argv, rank) ? 0 : 1; // code 0 is ok, 1 is a failed test
+
+    if (rank == 0 && result != 0) {
+      std::cout << "mainExecute for rank " << rank << " returns: " << result << std::endl;
+    }
+  }
+  catch(std::logic_error) {
+	if (rank == 0) {
+      std::cout << "Test driver for rank " << rank << " caught a logic_error which may be a formatting error and will return false." << std::endl;
+	}
+    result = 1;
+  }
+  catch(...) {
+	if (rank == 0) {
+      std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
+	}
+	result = 1;
+  }
+
+  if (rank == 0) {
+    if (result == 1) {
+      std::cout << "main for rank " << rank << " is exiting in FAILED state and returning: " << result << std::endl;
+    }
+    else {
+      std::cout << "main for rank " << rank << " is exiting in PASSED state and returning: " << result << std::endl;
+    }
+  }
+
+  return result;
+}

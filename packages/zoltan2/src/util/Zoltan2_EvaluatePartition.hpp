@@ -364,10 +364,12 @@ public:
   void printMetrics(std::ostream &os, std::string metricType) const {
 	  // Might need changing. The issue here is that they each have unique parameters to pass.
 	  ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType( metricType );
-	  if( metricType == GRAPH_METRICS_TYPE_NAME )
-	    Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
-	  else if( metricType == IMBALANCE_METRICS_TYPE_NAME )
-		Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
+	  if (metrics.size() != 0) { // this could be a critical decision - do we want a blank table with headers when the list is empty - for debugging that is probably better but it's very messy to have lots of empty tables in the logs
+	    if( metricType == GRAPH_METRICS_TYPE_NAME )
+	      Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
+	    else if( metricType == IMBALANCE_METRICS_TYPE_NAME )
+		  Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
+	  }
   }
 };
 

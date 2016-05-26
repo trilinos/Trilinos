@@ -124,7 +124,7 @@ public:
    * \param pList is a parameter list defining the comparison
    * \param comm is the process communicator
    */
-  void Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm);
+  bool Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /* \brief Add a new source by name to the comparison source map.
    * \param name is the name of the new source
@@ -148,7 +148,7 @@ private:
    * \param p2 is the name of problem 2
    * \param comm is the process communicator
    */
-  void CompareSolutions(const string &p1,
+  bool CompareSolutions(const string &p1,
                         const string &p2,
                         const RCP<const Comm<int> > &comm);
   
@@ -157,7 +157,7 @@ private:
    * \param sourceB is a ptr to problem B's comparison source
    * \param comm is the process communicator
    */
-  void ComparePartitionSolutions(const ComparisonSource * sourceA,
+  bool ComparePartitionSolutions(const ComparisonSource * sourceA,
                                  const ComparisonSource * sourceB,
                                  const RCP<const Comm<int> > &comm);
   
@@ -166,7 +166,7 @@ private:
    * \param sourceB is a ptr to problem B's comparison source
    * \param comm is the process communicator
    */
-  void CompareColoringSolutions(const ComparisonSource * sourceA,
+  bool CompareColoringSolutions(const ComparisonSource * sourceA,
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
@@ -175,7 +175,7 @@ private:
    * \param sourceB is a ptr to problem B's comparison source
    * \param comm is the process communicator
    */
-  void CompareOrderingSolutions(const ComparisonSource * sourceA,
+  bool CompareOrderingSolutions(const ComparisonSource * sourceA,
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
@@ -183,8 +183,7 @@ private:
    * \param metricsPlist is a parameter list defining the comparison
    * \param comm is the process communicator
    */
-  void CompareMetrics(const ParameterList &metricsPlist,
-                      const RCP<const Comm<int> > &comm);
+  bool CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm);
   
   /* \brief Method that compares two metrics and returns a pass/fail message.
    * \param[in] comm is the process communicator
@@ -248,7 +247,7 @@ void ComparisonHelper::AddSource(const string &name, ComparisonSource * source)
   this->sources.insert(pair_t(name, RCP<ComparisonSource>(source)));
 }
 
-void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm)
+bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm)
 {
   if(pList.isParameter("A") && pList.isParameter("B"))
   {
@@ -259,7 +258,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout << "\nProblem: " + pA + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
-      return;
+      return false;
     }
     
     string pB = pList.get<string>("B");
@@ -268,11 +267,11 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout << "\nProblem: " + pB + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
-      
-      return;
+      return false;
     }
     
-    this->CompareSolutions(pA, pB, comm);
+    bool bResult = this->CompareSolutions(pA, pB, comm);
+    return bResult;
   }
   else if (pList.isParameter("Problem") && pList.isParameter("Reference"))
   {
@@ -283,7 +282,7 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout << "\nProblem: " + prb + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
-      return;
+      return false;
     }
     
     string ref = pList.get<string>("Reference");
@@ -292,10 +291,11 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout << "\nReference: " + ref + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
-      return;
+      return false;
     }
     
-	this->CompareMetrics(pList, comm);
+	bool bResult = this->CompareMetrics(pList, comm);
+    return bResult;
   }
   else if (pList.isParameter("A") || pList.isParameter("B"))
   {
@@ -304,7 +304,6 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout << "Problem A or Problem B is not specified -- check input.";
       cout <<"\nSolution comparison FAILED." << endl;
     }
-    
   }
   else if (pList.isParameter("Problem") || pList.isParameter("Reference"))
   {
@@ -314,13 +313,18 @@ void ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout <<"\nMetric comparison FAILED." << endl;
     }
   }
+  else {
+    if (comm->getRank() == 0) {
+	  cout << "ComparisonHelper did not understand how to read the xml. Test FAILED." << endl;
+	}
+  }
+  return false;
 }
 
-void ComparisonHelper::CompareSolutions(const string &p1,
+bool ComparisonHelper::CompareSolutions(const string &p1,
                                         const string &p2,
                                         const RCP<const Comm<int> > &comm)
 {
-  
   if(comm->getRank() == 0) printf("\nComparing: %s and %s\n",p1.c_str(),p2.c_str());
   auto A = this->sources[p1];
   auto B = this->sources[p2];
@@ -328,26 +332,27 @@ void ComparisonHelper::CompareSolutions(const string &p1,
   {
     cout << "Problem A and B are of a different kind and cannot be compared.";
     cout <<"\nSolution comparison FAILED." << endl;
-  }else{
-    
+  }
+  else
+  {
     if(A->problem_kind == "partitioning")
     {
-      this->ComparePartitionSolutions(A.getRawPtr(), B.getRawPtr(), comm);
-      
-    }else if(A->problem_kind == "coloring")
+      return this->ComparePartitionSolutions(A.getRawPtr(), B.getRawPtr(), comm);
+    }
+    else if(A->problem_kind == "coloring")
     {
-      this->CompareColoringSolutions(A.getRawPtr(), B.getRawPtr(), comm);
-      
-    }else if(A->problem_kind == "ordering"){
-      
-      this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
-      
-    }else{
+      return this->CompareColoringSolutions(A.getRawPtr(), B.getRawPtr(), comm);
+    }
+    else if(A->problem_kind == "ordering"){
+      return this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
+    }
+    else
+    {
       cout << "Problem kind not recognized.  Check spelling.";
       cout <<"\nSolution comparison FAILED." << endl;
     }
   }
-  
+  return false;
 }
 
 void
@@ -367,7 +372,7 @@ ComparisonHelper::reduceWithMessage(const RCP<const Comm<int> > &comm, const std
 
 }
 
-void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * sourceA,
+bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * sourceA,
                                                  const ComparisonSource * sourceB,
                                                  const RCP<const Comm<int> > &comm)
 {
@@ -441,15 +446,14 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
     status << "Solution set comparison PASSED.";
   }
   
-  if(rank == 0)
-  {
+  if(rank == 0) {
     cout << status.str() << endl;
   }
-  
+  return (failed == 0);
 }
 
 
-void ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA,
+bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA,
                                                 const ComparisonSource * sourceB,
                                                 const RCP<const Comm<int> > &comm)
 {
@@ -551,14 +555,13 @@ void ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
     status << "Solution set comparison PASSED.";
   }
   
-  if(rank == 0)
-  {
+  if(rank == 0) {
     cout << status.str() << endl;
   }
-  
+  return (failed == 0);
 }
 
-void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA,
+bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA,
                                                 const ComparisonSource * sourceB,
                                                 const RCP<const Comm<int> > &comm)
 {
@@ -611,15 +614,14 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
     status << "Solution set comparison PASSED.";
   }
   
-  if(rank == 0)
-  {
+  if(rank == 0) {
     cout << status.str() << endl;
   }
-  
+  return (failed == 0);
 }
 
 // compare metrics
-void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm)
+bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
   
@@ -672,7 +674,9 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
           if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
             all_tests_pass = 0;
           }
-          if(rank == 0) cout << msg.str() << endl;
+          if(rank == 0) {
+            cout << msg.str() << endl;
+          }
         }
     }
     else if(prb_timers.find(metric_name) != prb_timers.end() && ref_timers.find(metric_name) != ref_timers.end()) {
@@ -682,20 +686,29 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
                                                 ref_timers.at(metric_name),
                                                 metrics.front(), msg)) {
         all_tests_pass = 0;
+        if (rank == 0) {
+          cout << "timer comparison test caused a FAILED event." << endl;
+        }
       }
       
-      if(rank == 0) cout << msg.str() << endl;
+      if(rank == 0) {
+        cout << msg.str() << endl;
+      }
     }
 
     metrics.pop();
   }
   
-  
-  if(rank == 0)
-  {
-    if(all_tests_pass == 1) cout << "\nAll metric/timer comparisons PASSED." << endl;
-    else cout << "\nMetric/timer metric comparisons FAILED." << endl;
+  if(rank == 0) {
+    if(all_tests_pass == 1) {
+      cout << "\nAll metric/timer comparisons PASSED." << endl;
+    }
+    else {
+      cout << "\nMetric/timer metric comparisons FAILED." << endl;
+    }
   }
+
+  return (all_tests_pass == 1);
 }
 
 std::map<const string, const double>
@@ -725,7 +738,7 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   double ref_value = ref_metric.theValue;
   double value = metric.theValue;
 
-  if( ref_value == 0 ) {
+  if (ref_value == 0) {
 	  throw std::logic_error( "The parameter list had a 0 value for the reference value so a percentage cannot be calculated." );
   }
   double percentRatio = value / ref_value;

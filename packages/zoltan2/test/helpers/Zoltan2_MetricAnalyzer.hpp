@@ -104,8 +104,8 @@ public:
 							  const ParameterList &metricsParameters,
                               std::ostringstream & msg_stream )
   {
-	  if(metricsParameters.numParams() == 0 ) {
-		  return true; // specification is that we do nothing - we may just be testing our status
+	  if( metricsParameters.numParams() == 0) {
+	    return true; // specification is that we do nothing - we may just be testing our status
 	  }
 
 	  bool bAllPassed = true;
@@ -115,18 +115,18 @@ public:
 
 	  int countFailedMetricChecks = 0;
 	  for (auto metricInfo = metricInfoSet.begin(); metricInfo != metricInfoSet.end(); ++metricInfo) {
-		  if (!MetricAnalyzer::executeMetricCheck(*metricInfo, msg_stream)) {
-			  ++countFailedMetricChecks;
-		  }
+	    if (!MetricAnalyzer::executeMetricCheck(*metricInfo, msg_stream)) {
+		  ++countFailedMetricChecks;
+		}
 	  }
 
 	  // this code prints a summary of all metric checks and indicates how many failed, if any did fail
 	  if(countFailedMetricChecks == 0) {
-		  msg_stream << metricsParameters.numParams() << " out of " << metricsParameters.numParams() << " metric checks"  << " PASSED." << std::endl;
+	    msg_stream << metricsParameters.numParams() << " out of " << metricsParameters.numParams() << " metric checks"  << " PASSED." << std::endl;
 	  }
 	  else {
-		  msg_stream << countFailedMetricChecks << " out of " << metricsParameters.numParams() << " metric checks " << " FAILED." << std::endl;
-		  bAllPassed = false;
+	    msg_stream << countFailedMetricChecks << " out of " << metricsParameters.numParams() << " metric checks " << " FAILED." << std::endl;
+	    bAllPassed = false;
 	  }
 
 	  msg_stream << std::endl; // cosmetic spacer

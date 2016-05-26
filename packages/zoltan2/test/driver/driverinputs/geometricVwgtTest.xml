@@ -210,5 +210,19 @@
     <Parameter name="A" type="string" value="zoltan2hsfc"/>
     <Parameter name="B" type="string" value="zoltanhsfc"/>
   </ParameterList>
+  
+ <!-- // This is just an example of using the Metrics check to compare values.
+ <ParameterList name="Comparison">
+   <Parameter name="Problem" type="string" value="zoltan2rib"/>
+   <Parameter name="Reference" type="string" value="zoltanhsfc"/>
+    <ParameterList name="Metrics"> 
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.1"/>
+        <Parameter name="upper" type="double" value="2.0"/>
+      </ParameterList>
+    </ParameterList>
+</ParameterList>
+-->
 
 </ParameterList>
