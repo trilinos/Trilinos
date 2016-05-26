@@ -110,7 +110,8 @@ namespace NOX {
       */
       Group(const NOX::Thyra::Vector& initial_guess,
         const Teuchos::RCP<const ::Thyra::ModelEvaluator<double> >& model,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
 
       /** \brief Power user constructor that takes explicit linear solver objects to handle different combinations.
 
@@ -134,7 +135,8 @@ namespace NOX {
         const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
         const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
         const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
-        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null);
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector = Teuchos::null,
+        const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector = Teuchos::null);
 
       //! Copy constructor
       Group(const NOX::Thyra::Group& source, NOX::CopyType type = DeepCopy);
@@ -270,6 +272,8 @@ namespace NOX {
 
       const NOX::Abstract::Vector& getX() const;
 
+      const NOX::Abstract::Vector& getScaledX() const;
+
       const NOX::Abstract::Vector& getF() const;
 
       double getNormF() const;
@@ -386,10 +390,13 @@ namespace NOX {
            This is pulled out of the initial guess vector
       */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
+      Teuchos::RCP<const ::Thyra::VectorBase<double> > right_weight_vec_;
 
       //! Inverse of weight vector used to unscale problem
       mutable Teuchos::RCP< ::Thyra::VectorBase<double> > inv_weight_vec_;
+      Teuchos::RCP< ::Thyra::VectorBase<double> > inv_right_weight_vec_;
 
+      mutable Teuchos::RCP<NOX::Abstract::Vector> scaled_x_vec_;
     };
 
   } // namespace LAPACK

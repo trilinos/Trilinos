@@ -173,6 +173,7 @@ private:
   bool do_row_sum_scaling_;
   NOX::RowSumScaling::ENOX_WhenToUpdateScaling when_to_update_;
   Teuchos::RCP< ::Thyra::VectorBase<double> > scaling_vector_;
+  Teuchos::RCP< ::Thyra::VectorBase<double> > right_scaling_vector_;
 
   bool rebuild_solver_;
 };

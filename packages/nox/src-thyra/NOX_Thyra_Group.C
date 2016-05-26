@@ -71,7 +71,8 @@
 NOX::Thyra::Group::
 Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >& model,
-      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector):
+      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector):
   model_(model)
 {
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, DeepCopy));
@@ -84,6 +85,12 @@ Group(const NOX::Thyra::Vector& initial_guess,
   if (nonnull(weight_vector)) {
     weight_vec_ = weight_vector;
     x_vec_->setWeightVector(weight_vec_);
+  }
+
+  if (nonnull(right_weight_vector)) {
+    right_weight_vec_ = right_weight_vector;
+    inv_right_weight_vec_ = right_weight_vec_->clone_v();
+    ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
   }
 
   f_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
@@ -125,7 +132,8 @@ Group(const NOX::Thyra::Vector& initial_guess,
       const Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<double> >& lows_factory,
       const Teuchos::RCP< ::Thyra::PreconditionerBase<double> >& prec_op,
       const Teuchos::RCP< ::Thyra::PreconditionerFactoryBase<double> >& prec_factory,
-      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector):
+      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& weight_vector,
+      const Teuchos::RCP<const ::Thyra::VectorBase<double> >& right_weight_vector):
   model_(model),
   lop_(linear_op),
   lows_factory_(lows_factory),
@@ -142,6 +150,10 @@ Group(const NOX::Thyra::Vector& initial_guess,
   if (nonnull(weight_vector)) {
     weight_vec_ = weight_vector;
     x_vec_->setWeightVector(weight_vec_);
+  }
+
+  if (nonnull(right_weight_vector)) {
+    right_weight_vec_ = right_weight_vector;
   }
 
   f_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
@@ -171,7 +183,9 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   lows_factory_(source.lows_factory_),
   losb_(source.losb_),
   prec_(source.prec_),
-  prec_factory_(source.prec_factory_)
+  prec_factory_(source.prec_factory_),
+  right_weight_vec_(source.right_weight_vec_),
+  inv_right_weight_vec_(source.inv_right_weight_vec_)
 {
 
   x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.x_vec_, type));
@@ -606,6 +620,19 @@ const NOX::Abstract::Vector& NOX::Thyra::Group::getX() const
   return *x_vec_;
 }
 
+const NOX::Abstract::Vector& NOX::Thyra::Group::getScaledX() const
+{ 
+  if(inv_right_weight_vec_!=Teuchos::null){
+    scaled_x_vec_ = x_vec_->clone();
+    NOX::Thyra::Vector scaling(inv_right_weight_vec_);
+    scaled_x_vec_->scale(scaling);
+    return *scaled_x_vec_;
+  }
+  else {
+    return *x_vec_;
+  }
+}
+
 const NOX::Abstract::Vector& NOX::Thyra::Group::getF() const
 {
   return *f_vec_;
@@ -696,6 +723,14 @@ applyJacobianInverseMultiVector(Teuchos::ParameterList& p,
   }
 
   this->unscaleResidualAndJacobian();
+
+  if (nonnull(right_weight_vec_)){
+  
+    const Teuchos::RCP< ::Thyra::ScaledLinearOpBase<double> > result_scaled =
+      Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(Teuchos::rcpFromRef(result), true);
+    result_scaled->scaleLeft(*right_weight_vec_);
+
+  }
 
   // ToDo: Get the output statistics and achieved tolerance to pass
   // back ...
@@ -836,6 +871,12 @@ void NOX::Thyra::Group::scaleResidualAndJacobian() const
       Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(lop_, true);
     W_scaled->scaleLeft(*weight_vec_);
   }
+
+  if (nonnull(right_weight_vec_)) {
+    const Teuchos::RCP< ::Thyra::ScaledLinearOpBase<double> > W_scaled =
+      Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(lop_, true);
+    W_scaled->scaleRight(*right_weight_vec_);
+  }
 }
 
 void NOX::Thyra::Group::unscaleResidualAndJacobian() const
@@ -854,6 +895,14 @@ void NOX::Thyra::Group::unscaleResidualAndJacobian() const
     const Teuchos::RCP< ::Thyra::ScaledLinearOpBase<double> > W_scaled =
       Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(lop_, true);
     W_scaled->scaleLeft(*inv_weight_vec_);
+  }
+
+  if (nonnull(right_weight_vec_)) {
+
+    const Teuchos::RCP< ::Thyra::ScaledLinearOpBase<double> > W_scaled =
+      Teuchos::rcp_dynamic_cast< ::Thyra::ScaledLinearOpBase<double> >(lop_, true);
+    W_scaled->scaleRight(*inv_right_weight_vec_);
+
   }
 }
 

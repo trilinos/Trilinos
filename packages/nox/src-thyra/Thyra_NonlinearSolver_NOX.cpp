@@ -178,7 +178,13 @@ solve(VectorBase<double> *x,
       TEUCHOS_ASSERT(is_null(scaling_vector_));
     }
 
-    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_));
+    right_scaling_vector_ = Teuchos::null;
+    if(param_list_->isParameter("Right Scaling Vector")){
+      Teuchos::RCP<NOX::Abstract::Vector> abstract_vec = param_list_->get<RCP<NOX::Abstract::Vector> >("Right Scaling Vector");
+      right_scaling_vector_ = Teuchos::rcp_dynamic_cast<NOX::Thyra::Vector>(abstract_vec)->getThyraRCPVector();
+    }    
+
+    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_));
     nox_group_->getNonconstInArgs() = this->basePoint_;
 
     status_test_ = this->buildStatusTests(*param_list_);
