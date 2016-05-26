@@ -109,10 +109,6 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_INTREPID2_DEBUG
   int beginThrowNumber = Teuchos::TestForException_getThrowNumber();
   int endThrowNumber = beginThrowNumber + 81;
-#endif
-  typedef ArrayTools art; 
-  typedef RealSpaceTools<double> rst; 
-#ifdef HAVE_INTREPID2_DEBUG
   ArrayTools atools;
 #endif
   *outStream \

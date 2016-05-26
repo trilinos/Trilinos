@@ -151,7 +151,7 @@ void CubatureControlVolumeBoundary<Scalar,ArrayPoint,ArrayWeight>::getCubature(A
     }
 
     // get side cubature points
-    for (int icell = 0; icell < numCells; icell++)
+    for (int icell = 0; icell < static_cast<int>(numCells); icell++)
     {
 
       for (int inode=0; inode<numPrimarySideNodes; inode++){
@@ -160,7 +160,7 @@ void CubatureControlVolumeBoundary<Scalar,ArrayPoint,ArrayWeight>::getCubature(A
          int cvside = CVSideonBoundary(sideIndex_,inode);
 
          Intrepid2::FieldContainer<double> cubpoint(spaceDim);
-         for (int idim=0; idim<spaceDim; idim++) { 
+         for (int idim=0; idim <static_cast<int>(spaceDim); idim++) { 
             for (int icvnode=0; icvnode<numCVSideNodes; icvnode++) { 
                int cvnode = subCVCellTopo_->getNodeMap(spaceDim-1,cvside,icvnode);
                cubpoint(idim) = cubpoint(idim) + subCVCoords(icell,cvind,cvnode,idim);       
@@ -177,7 +177,7 @@ void CubatureControlVolumeBoundary<Scalar,ArrayPoint,ArrayWeight>::getCubature(A
          // array of sub-control volume coordinates
           Intrepid2::FieldContainer<Scalar> cellCVCoords(1, numNodesPerSubCV, spaceDim);
           for (int icvnode = 0; icvnode < numNodesPerSubCV; icvnode++){
-              for (int idim = 0; idim < spaceDim; idim++){
+              for (int idim = 0; idim < static_cast<int>(spaceDim); idim++){
                    cellCVCoords(0,icvnode,idim) = subCVCoords(icell,cvind,icvnode,idim);
               }
           }
