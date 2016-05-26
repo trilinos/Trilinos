@@ -78,6 +78,9 @@ namespace Ioss {
   class SideSet;
 }
 
+/** \brief A namespace for the decompose-on-the-fly version of the
+ *  parallel exodus database format.
+ */
 namespace Iopx {
   class DatabaseIO : public Ioex::DatabaseIO
   {

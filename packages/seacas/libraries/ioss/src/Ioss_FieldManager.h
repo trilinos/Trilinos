@@ -57,6 +57,8 @@ namespace Ioss {
   typedef std::map<std::string, Field, StringCmp> FieldMapType;
   typedef FieldMapType::value_type FieldValuePair;
 
+  /** \brief A collection of Ioss::Field objects.
+   */
   class FieldManager
   {
   public:

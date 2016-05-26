@@ -45,6 +45,13 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
+/** \brief Create an edge block.
+ *
+ *  \param[in] io_database The database associated with the region containing the edge block.
+ *  \param[in] my_name The edge block's name.
+ *  \param[in] edge_type The name of the edge topology type for the edge block.
+ *  \param[in] number_edges The number of edges in the edge block.
+ */
 Ioss::EdgeBlock::EdgeBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            const std::string &edge_type, int64_t number_edges)
     : Ioss::EntityBlock(io_database, my_name, edge_type, number_edges)

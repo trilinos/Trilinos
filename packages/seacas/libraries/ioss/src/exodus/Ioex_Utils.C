@@ -87,7 +87,7 @@ namespace {
     int nframes = 0;
     int ierr    = ex_get_coordinate_frames(exoid, &nframes, nullptr, nullptr, nullptr);
     if (ierr < 0) {
-      Ioex::exodus_error(exoid, __LINE__,  __func__, __FILE__);
+      Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
 
     if (nframes > 0) {
@@ -96,7 +96,7 @@ namespace {
       std::vector<INT>    ids(nframes);
       ierr = ex_get_coordinate_frames(exoid, &nframes, TOPTR(ids), TOPTR(coord), TOPTR(tags));
       if (ierr < 0) {
-        Ioex::exodus_error(exoid, __LINE__,  __func__, __FILE__);
+        Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
       }
 
       for (int i = 0; i < nframes; i++) {
@@ -458,7 +458,7 @@ namespace Ioex {
     buffer[0] = '\0';
     int error = ex_get_name(exoid, type, id, TOPTR(buffer));
     if (error < 0) {
-      exodus_error(exoid, __LINE__,  __func__, __FILE__);
+      exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
     if (buffer[0] != '\0') {
       Ioss::Utils::fixup_name(TOPTR(buffer));
@@ -933,7 +933,7 @@ namespace Ioex {
     char **names = Ioex::get_exodus_names(map_count, name_length);
     int    ierr  = ex_get_names(exoid, EX_ELEM_MAP, names);
     if (ierr < 0) {
-      Ioex::exodus_error(exoid, __LINE__,  __func__, __FILE__);
+      Ioex::exodus_error(exoid, __LINE__, __func__, __FILE__);
     }
 
     // Convert to lowercase.

@@ -262,7 +262,6 @@ namespace {
       properties.add(Ioss::Property("LOGGING", 1));
     }
 
-    Ioss::PropertyManager properties_in;
     if (!interface.decomp_method.empty()) {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
     }

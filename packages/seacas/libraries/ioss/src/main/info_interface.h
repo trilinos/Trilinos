@@ -39,6 +39,8 @@
 #include <iosfwd>            // for ostream
 #include <string>            // for string
 
+/** \brief A special namespace for the io_info demonstration program interface.
+ */
 namespace Info {
   class Interface
   {

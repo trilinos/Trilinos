@@ -44,6 +44,13 @@ namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
 
+/** \brief Base class constructor adds "name" and "entity_count" properties to the set.
+ *
+ *  \param[in] io_database The database associated with the set.
+ *  \param[in] my_name The set name.
+ *  \param[in] entity_count The number of subentities in the set.
+ *
+ */
 Ioss::EntitySet::EntitySet(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            size_t entity_count)
     : Ioss::GroupingEntity(io_database, my_name, entity_count)

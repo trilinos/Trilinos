@@ -39,6 +39,8 @@
 #include <string>
 #include <utility>
 
+/** \brief Empty constructor.
+ */
 Ioss::PropertyManager::PropertyManager() {}
 
 Ioss::PropertyManager::~PropertyManager()
@@ -50,6 +52,10 @@ Ioss::PropertyManager::~PropertyManager()
   }
 }
 
+/** \brief Add a property to the property manager.
+ *
+ *  \param[in] new_prop The property to add.
+ */
 void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
 {
   auto iter = properties.find(new_prop.get_name());
@@ -59,12 +65,21 @@ void Ioss::PropertyManager::add(const Ioss::Property &new_prop)
   properties.insert(ValuePair(new_prop.get_name(), new_prop));
 }
 
-// Checks if a property with 'property_name' exists in the database.
+/** \brief Checks if a property exists in the database.
+ *
+ *  \param[in] property_name The property to check
+ *  \returns True if the property exists, false otherwise.
+ */
 bool Ioss::PropertyManager::exists(const std::string &property_name) const
 {
   return (properties.find(property_name) != properties.end());
 }
 
+/** \brief Get a property object from the property manager.
+ *
+ *  \param[in] property_name The name of the property to get.
+ *  \returns The property object.
+ */
 Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) const
 {
   auto iter = properties.find(property_name);
@@ -76,6 +91,13 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
   return (*iter).second;
 }
 
+/** \brief Remove a property from the property manager.
+ *
+ *  Assumes that the property with the given name already exists in the property manager.
+ *
+ *  \param[in] property_name The name of the property to remove.
+ *
+ */
 void Ioss::PropertyManager::erase(const std::string &property_name)
 {
   auto iter = properties.find(property_name);
@@ -84,7 +106,11 @@ void Ioss::PropertyManager::erase(const std::string &property_name)
   }
 }
 
-// Returns the names of all properties
+/** \brief Get the names of all properties in the property manager
+ *
+ *  \param[out] names All the property names in the property manager.
+ *  \returns The number of properties extracted from the property manager.
+ */
 int Ioss::PropertyManager::describe(NameList *names) const
 {
   int                         the_count = 0;
@@ -96,4 +122,8 @@ int Ioss::PropertyManager::describe(NameList *names) const
   return the_count;
 }
 
+/** Get the number of properties in the property manager
+ *
+ *  \returns The number of properties in the property manager.
+ */
 size_t Ioss::PropertyManager::count() const { return properties.size(); }

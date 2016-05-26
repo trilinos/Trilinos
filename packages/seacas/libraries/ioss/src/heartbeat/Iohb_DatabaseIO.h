@@ -93,12 +93,14 @@ namespace Ioss {
   class EntityBlock;
 }
 
+/** \brief A namespace for the heartbeat database format.
+ */
 namespace Iohb {
 }
 
 namespace Iohb {
 
-  enum Format { DEFAULT = 0, SPYHIS = 1, CSV = 2 };
+  enum Format { DEFAULT = 0, SPYHIS = 1 };
 
   class IOFactory : public Ioss::IOFactory
   {

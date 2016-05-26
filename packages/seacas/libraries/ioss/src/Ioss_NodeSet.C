@@ -45,6 +45,12 @@ namespace Ioss {
 
 Ioss::NodeSet::NodeSet() : Ioss::EntitySet(nullptr, "invalid", 0) {}
 
+/** \brief Create a node set.
+ *
+ *  \param[in] io_database The database associated with the region containing the node set.
+ *  \param[in] my_name The node set's name.
+ *  \param[in] number_nodes The number of nodes in the node set.
+ */
 Ioss::NodeSet::NodeSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
                        int64_t number_nodes)
     : Ioss::EntitySet(io_database, my_name, number_nodes)

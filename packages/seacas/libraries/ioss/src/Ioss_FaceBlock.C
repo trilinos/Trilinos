@@ -44,6 +44,13 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
+/** \brief Create a face block.
+ *
+ *  \param[in] io_database The database associated with the region containing the face block.
+ *  \param[in] my_name The face block's name.
+ *  \param[in] face_type The name of the face topology type for the face block.
+ *  \param[in] number_faces The number of faces in the face block.
+ */
 Ioss::FaceBlock::FaceBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            const std::string &face_type, int64_t number_faces)
     : Ioss::EntityBlock(io_database, my_name, face_type, number_faces)

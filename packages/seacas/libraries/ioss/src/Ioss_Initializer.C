@@ -65,6 +65,7 @@
 #include <Ioss_TriShell3.h>
 #include <Ioss_TriShell4.h>
 #include <Ioss_TriShell6.h>
+#include <Ioss_TriShell7.h>
 #include <Ioss_Unknown.h>
 #include <Ioss_Wedge15.h>
 #include <Ioss_Wedge16.h>
@@ -121,6 +122,7 @@ Ioss::Initializer::Initializer()
   Ioss::TriShell3::factory();
   Ioss::TriShell4::factory();
   Ioss::TriShell6::factory();
+  Ioss::TriShell7::factory();
 
   Ioss::Unknown::factory();
 

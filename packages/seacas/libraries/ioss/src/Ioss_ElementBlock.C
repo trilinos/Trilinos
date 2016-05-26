@@ -44,6 +44,13 @@
 namespace Ioss {
   class Field;
 
+  /** \brief Create an element block.
+   *
+   *  \param[in] io_database The database associated with the region containing the element block.
+   *  \param[in] my_name The element block's name.
+   *  \param[in] element_type The name of the element topology type for the element block.
+   *  \param[in] number_elements The number of elements in the element block.
+   */
   ElementBlock::ElementBlock(DatabaseIO *io_database, const std::string &my_name,
                              const std::string &element_type, int64_t number_elements)
       : EntityBlock(io_database, my_name, element_type, number_elements)

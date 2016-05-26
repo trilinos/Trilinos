@@ -33,6 +33,8 @@
 #ifndef IOSS_Ioss_SurfaceSplit_h
 #define IOSS_Ioss_SurfaceSplit_h
 namespace Ioss {
+  /** \brief Method used to split sidesets into homogenous blocks.
+   */
   enum SurfaceSplitType {
     SPLIT_INVALID          = -1,
     SPLIT_BY_TOPOLOGIES    = 1,
@@ -41,6 +43,11 @@ namespace Ioss {
     SPLIT_LAST_ENTRY       = 4
   };
 
+  /** \brief Convert an integer code for the method used to split sidesets into homogenous blocks.
+   *
+   * \param[in] split_int The code.
+   * \returns The corresponding SurfaceSplitType.
+   */
   inline SurfaceSplitType int_to_surface_split(int split_int)
   {
     SurfaceSplitType split_type = Ioss::SPLIT_INVALID;

@@ -48,6 +48,13 @@ namespace {
   const std::string VECTOR_3D() { return std::string("vector_3d"); }
 } // namespace
 
+/** \brief Create a node block.
+ *
+ *  \param[in] io_database The database associated with the region containing the node block.
+ *  \param[in] my_name The node block's name.
+ *  \param[in] node_count The number of nodes in the node block.
+ *  \param[in] degrees_of_freedom The number of degrees of freedom (or coordinates) per node.
+ */
 Ioss::NodeBlock::NodeBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            int64_t node_count, int64_t degrees_of_freedom)
     : Ioss::EntityBlock(io_database, my_name, "node", node_count)

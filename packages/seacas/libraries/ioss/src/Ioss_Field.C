@@ -70,6 +70,8 @@ namespace {
   }
 } // namespace
 
+/** \brief Create an empty field.
+ */
 Ioss::Field::Field()
     : name_(""), rawCount_(0), transCount_(0), size_(0), index_(0), type_(INVALID), role_(INTERNAL),
       rawStorage_(nullptr), transStorage_(nullptr)
@@ -77,6 +79,18 @@ Ioss::Field::Field()
   rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid");
 }
 
+/** \brief Create a field.
+ *
+ *  \param[in] name The name of the field
+ *  \param[in] type The basic data type of data held in the field.
+ *  \param[in] storage The storage class of the data (ConstructedVariableType,
+ * CompositeVariableType, etc)
+ *  \param[in] role The category of information held in the field (MESH, ATTRIBUTE, TRANSIENT,
+ * REDUCTION, etc)
+ *  \param[in] value_count The number of items in the field.
+ *  \param[in] index
+ *
+ */
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const std::string &storage,
                    const Ioss::Field::RoleType role, size_t value_count, size_t index)
     : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
@@ -86,6 +100,19 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const st
   size_                       = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
+/** \brief Create a field.
+ *
+ *  \param[in] name The name of the field
+ *  \param[in] type The basic data type of data held in the field.
+ *  \param[in] storage The storage class of the data (ConstructedVariableType,
+ * CompositeVariableType, etc)
+ *  \param[in] copies The number of variables to be combined in a CompositeVariableType field.
+ *  \param[in] role The category of information held in the field (MESH, ATTRIBUTE, TRANSIENT,
+ * REDUCTION, etc)
+ *  \param[in] value_count The number of items in the field.
+ *  \param[in] index
+ *
+ */
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const std::string &storage,
                    int copies, const Ioss::Field::RoleType role, size_t value_count, size_t index)
     : name_(std::move(name)), rawCount_(value_count), transCount_(value_count), size_(0),
@@ -95,6 +122,18 @@ Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type, const st
   size_                       = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
+/** \brief Create a field.
+ *
+ *  \param[in] name The name of the field
+ *  \param[in] type The basic data type of data held in the field.
+ *  \param[in] storage The storage class of the data (ConstructedVariableType,
+ * CompositeVariableType, etc)
+ *  \param[in] role The category of information held in the field (MESH, ATTRIBUTE, TRANSIENT,
+ * REDUCTION, etc)
+ *  \param[in] value_count The number of items in the field.
+ *  \param[in] index
+ *
+ */
 Ioss::Field::Field(std::string name, const Ioss::Field::BasicType type,
                    const Ioss::VariableType *storage, const Ioss::Field::RoleType role,
                    size_t value_count, size_t index)
@@ -110,10 +149,16 @@ Ioss::Field &Ioss::Field::operator=(const Field &from) = default;
 
 Ioss::Field::~Field() = default;
 
-// Verify that data_size is valid.
-// If return value >= 0, then it is the maximum number of
-// entities to get 'count'
-// Throws runtime error if data_size too small.
+/* \brief Verify that data_size is valid.
+ *
+ * If return value >= 0, then it is the maximum number of
+ * entities to get 'count'
+ * Throws runtime error if data_size too small.
+ *
+ * \param[in] data_size The data size to test
+ * \returns The maximum number of entities to get 'count'
+ *
+ */
 size_t Ioss::Field::verify(size_t data_size) const
 {
   if (data_size > 0) {

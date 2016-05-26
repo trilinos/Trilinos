@@ -48,35 +48,43 @@
 
 namespace Ioss {
 
-  // Base class for all 'grouping' entities. The following derived classes
-  // are typical:
-  // -- NodeList  -- grouping of nodes (0d topology)
-  // -- EdgeList  -- grouping of edges (1d topology)
-  // -- FaceList  -- grouping of faces (2d topology) [Surface]
-  //
-  // Similarly, there is:
-  // -- NodeBlock -- grouping of 'similar' nodes (same degree of freedom, ...)
-  // -- ElementBlock -- grouping of 'similar' elements (same element topology,
-  //                    attributes, ...)
-  //    0d, 1d, 2d, 3d topology possible -- e.g., sphere, bar, quad, hex
-  //
-  // A Region is also a grouping entity, except that its list of subentites
-  // are other GroupingEntities. That is, it maintains a list of NodeBlocks,
-  // ElementBlocks, NodeLists, CommLists and Surfaces. [Similar to the
-  // "Composite Patter" in Design Patterns]  All interface to GroupingEntities
-  // is through the Region class; clients of the IO subsystem have no direct
-  // access to the underlying GroupingEntities (other than the Region).
-  //
-  // Each GroupingEntity contains:
-  // -- name
-  // -- MeshEntities of the specified topological dimension
-  // -- Optional attributes, either global (applied to the groupingentity), or
-  //    unique value(s) to be applied to each subentity.
-  // -- Data items
-  //
-  //========================================================================
   class EntityBlock;
 
+  /** \brief Base class for all 'grouping' entities.
+   *  The following derived classes are typical:
+   *
+   *  -- NodeSet  -- grouping of nodes (0d topology)
+   *
+   *  -- EdgeSet  -- grouping of edges (1d topology)
+   *
+   *  -- FaceSet  -- grouping of faces (2d topology) [Surface]
+   *
+   *  Similarly, there is:
+   *
+   *  -- NodeBlock -- grouping of 'similar' nodes (same degree of freedom, ...)
+   *
+   *  -- ElementBlock -- grouping of 'similar' elements (same element topology,
+   *                     attributes, ...)
+   *     0d, 1d, 2d, 3d topology possible -- e.g., sphere, bar, quad, hex
+   *
+   *  A Region is also a grouping entity, except that its list of subentites
+   *  are other GroupingEntities. That is, it maintains a list of NodeBlocks,
+   *  ElementBlocks, NodeLists, CommLists and Surfaces. [Similar to the
+   *  "Composite Patter" in Design Patterns]  All interface to GroupingEntities
+   *  is through the Region class; clients of the IO subsystem have no direct
+   *  access to the underlying GroupingEntities (other than the Region).
+   *
+   *  Each GroupingEntity contains:
+   *
+   *  -- name
+   *
+   *  -- MeshEntities of the specified topological dimension
+   *
+   *  -- Optional attributes, either global (applied to the groupingentity), or
+   *     unique value(s) to be applied to each subentity.
+   *
+   *  -- Data items
+   */
   class GroupingEntity
   {
   public:
@@ -95,32 +103,65 @@ namespace Ioss {
     void set_database(DatabaseIO *io_database);
     virtual void delete_database();
 
-    //: Return name of entity.  This short-circuits the process of
-    //  getting the name via the property.  Returns the same information
-    //  as: entity->get_property("name").get_string()
+    /** \brief Get name of entity.
+     *
+     *  This short-circuits the process of getting the name via the property.
+     *  \returns The same information as: entity->get_property("name").get_string()
+     */
     const std::string &name() const { return entityName; }
+
+    /** \brief Set the name of the entity.
+     *
+     *  \param[in] name The new name of the entity.
+     */
     void set_name(const std::string &new_name) { entityName = new_name; }
 
-    //: Return a generated name based on the type of the entity and the id
-    //  For example, element block 10 would return "block_10"
-    //  This is the default name if no name is assigned in the mesh database.
+    /** \brief Get a generated name based on the type of the entity and the id.
+     *
+     *  For example, element block 10 would return "block_10"
+     *  This is the default name if no name is assigned in the mesh database.
+     *  \returns The generic name.
+     */
     std::string generic_name() const;
 
-    //: Returns true if 'name' is an alias for this entity.
+    /** Determine whether a name is an alias for this entity.
+     *
+     *  \param[in] my_name Determine whether this name is an alias for this entity.
+     *  \returns True if input name is an alias for this entity.
+     */
     bool is_alias(const std::string &my_name) const;
 
-    //: Return list of blocks that the entities in this GroupingEntity "touch"
-    //: For a SideSet, returns a list of the element blocks that the
-    //: elements in the set belong to.
-    //: For others, it returns an empty vector.
-    //: Entries are pushed onto the "block_members" vector, so it will be
-    //: appended to if it is not empty at entry to the function.
+    /** \brief Get list of blocks that the entities in this GroupingEntity "touch".
+     *
+     *  \param[out] block_members The blocks that the entities touch.
+     *
+     * For a SideSet, returns a list of the element blocks that the
+     * elements in the set belong to.
+     * For others, it returns an empty vector.
+     * Entries are pushed onto the "block_members" vector, so it will be
+     * appended to if it is not empty at entry to the function.
+     */
     virtual void block_membership(std::vector<std::string> &block_members) {}
 
-    std::string         get_filename() const;
-    virtual std::string type_string() const       = 0;
+    std::string get_filename() const;
+
+    /** \brief Get the name of the particular type of entity.
+     *
+     *  \returns The name of the particular type of entity.
+     */
+    virtual std::string type_string() const = 0;
+
+    /** \brief Get a short name of the particular type of entity.
+     *
+     *  \returns The short name of the particular type of entity.
+     */
     virtual std::string short_type_string() const = 0;
-    virtual EntityType  type() const              = 0;
+
+    /** \brief Get the EntityType, which indicates the particular type of GroupingEntity this is.
+     *
+     *  \returns The particular EntityType of this GroupingEntity.
+     */
+    virtual EntityType type() const = 0;
 
     // ========================================================================
     //                                PROPERTIES
@@ -170,6 +211,10 @@ namespace Ioss {
     int put_field_data(const std::string &field_name, std::vector<int64_t> &data) const;
     int put_field_data(const std::string &field_name, std::vector<Complex> &data) const;
 
+    /** Get the number of bytes used to store the INT data type
+     *
+     *  \returns The number of bytes.
+     */
     Ioss::Field::BasicType field_int_type() const
     {
       if (get_database() == nullptr || get_database()->int_byte_size_api() == 4) {
@@ -226,65 +271,138 @@ namespace Ioss {
     unsigned int    hash_;
   };
 }
+
+/** \brief Add a property to the entity's property manager.
+ *
+ *  \param[in] new_prop The property to add.
+ */
 inline void Ioss::GroupingEntity::property_add(const Ioss::Property &new_prop)
 {
   properties.add(new_prop);
 }
 
+/** \brief Remove a property from the entity's property manager.
+ *
+ *  Assumes that the property with the given name already exists in the property manager.
+ *
+ *  \param[in] property_name The name of the property to remove.
+ *
+ */
 inline void Ioss::GroupingEntity::property_erase(const std::string &property_name)
 {
   properties.erase(property_name);
 }
 
+/** \brief Checks if a property exists in the entity's property manager.
+ *
+ *  \param[in] property_name The property to check
+ *  \returns True if the property exists.
+ */
 inline bool Ioss::GroupingEntity::property_exists(const std::string &property_name) const
 {
   return properties.exists(property_name);
 }
 
+/** \brief Get the Property from the property manager associated with the entity.
+ *
+ *  \param[in] property_name The name of the property to get
+ *  \returns The property
+ *
+ */
 inline Ioss::Property Ioss::GroupingEntity::get_property(const std::string &property_name) const
 {
   return properties.get(property_name);
 }
 
+/** \brief Get the names of all properties in the property manager for this entity.
+ *
+ * \param[out] names All the property names in the property manager.
+ * \returns The number of properties extracted from the property manager.
+ */
 inline int Ioss::GroupingEntity::property_describe(NameList *names) const
 {
   return properties.describe(names);
 }
 
+/** \brief Get the number of properties defined in the property manager for this entity.
+ *
+ *  \returns The number of properties.
+ */
 inline size_t Ioss::GroupingEntity::property_count() const { return properties.count(); }
 
 // ------------------------------------------------------------------------
 
+/** \brief Remove a field from the entity's field manager.
+ *
+ * Assumes that a field with the given name exists in the field manager.
+ *
+ * \param[in] field_name The name of the field to remove.
+ */
 inline void Ioss::GroupingEntity::field_erase(const std::string &field_name)
 {
   fields.erase(field_name);
 }
 
+/** \brief Checks if a field with a given name exists in the entity's field manager.
+ *
+ * \param[in] field_name The name of the field to check for.
+ * \returns True if the field exists in the entity's field manager.
+ *
+ */
 inline bool Ioss::GroupingEntity::field_exists(const std::string &field_name) const
 {
   return fields.exists(field_name);
 }
 
+/** \brief Get a field from the entity's field manager.
+ *
+ *  \param[in] field_name The name of the field to get.
+ *  \returns The field object.
+ *
+ */
 inline Ioss::Field Ioss::GroupingEntity::get_field(const std::string &field_name) const
 {
   return fields.get(field_name);
 }
 
+/** \brief Get a reference to a field from the entity's field manager.
+ *
+ *  \param[in] field_name The name of the field to get.
+ *  \returns A reference to the field object.
+ *
+ */
 inline const Ioss::Field &Ioss::GroupingEntity::get_fieldref(const std::string &field_name) const
 {
   return fields.getref(field_name);
 }
 
+/** \brief Get the names of all fields in the entity's field manager.
+ *
+ * \param[out] names All field names in the entity's field manager.
+ * \returns The number of fields extracted from the entity's field manager.
+ *
+ */
 inline int Ioss::GroupingEntity::field_describe(NameList *names) const
 {
   return fields.describe(names);
 }
 
+/** \brief Get the names of all fields of a specified RoleType in the entity's field manager.
+ *
+ * \param[in] role The role type (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.)
+ * \param[out] names All field names of the specified RoleType in the entity's field manager.
+ * \returns The number of fields extracted from the entity's field manager.
+ *
+ */
 inline int Ioss::GroupingEntity::field_describe(Ioss::Field::RoleType role, NameList *names) const
 {
   return fields.describe(role, names);
 }
 
+/** \brief Get the number of fields in the entity's field manager.
+ *
+ *  \returns The number of fields in the entity's field manager.
+ */
 inline size_t Ioss::GroupingEntity::field_count() const { return fields.count(); }
 
 #endif

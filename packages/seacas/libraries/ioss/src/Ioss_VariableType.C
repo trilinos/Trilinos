@@ -92,6 +92,11 @@ Ioss::Registry &Ioss::VariableType::registry()
   return registry_;
 }
 
+/** \brief Get the names of variable types known to IOSS.
+ *
+ *  \param[out] names The list of known variable type names.
+ *  \returns The number of known variable types.
+ */
 int Ioss::VariableType::describe(NameList *names)
 {
   int count = 0;

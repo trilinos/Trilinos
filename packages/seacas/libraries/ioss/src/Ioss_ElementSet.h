@@ -49,6 +49,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of elements.
+   */
   class ElementSet : public EntitySet
   {
   public:

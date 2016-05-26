@@ -1,4 +1,4 @@
-// Copyright(C) 2016
+// Copyright(C) 1999-2010
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
@@ -33,104 +33,94 @@
 #include "Ioss_CodeTypes.h"           // for IntVector
 #include "Ioss_ElementTopology.h"     // for ElementTopology
 #include <Ioss_ElementVariableType.h> // for ElementVariableType
-#include <Ioss_Tet15.h>
+#include <Ioss_TriShell7.h>
 #include <cassert> // for assert
 
 //------------------------------------------------------------------------
 // Define a variable type for storage of this elements connectivity
 namespace Ioss {
-  class St_Tet15 : public ElementVariableType
+  class St_TriShell7 : public ElementVariableType
   {
   public:
-    static void factory() { static St_Tet15 registerThis; }
+    static void factory() { static St_TriShell7 registerThis; }
 
   protected:
-    St_Tet15() : ElementVariableType("tetra15", 15) {}
+    St_TriShell7() : ElementVariableType("trishell7", 7) {}
   };
 } // namespace Ioss
-
 // ========================================================================
 namespace {
   struct Constants
   {
-    static const int nnode     = 15;
-    static const int nedge     = 6;
+    static const int nnode     = 7;
+    static const int nedge     = 3;
     static const int nedgenode = 3;
-    static const int nface     = 4;
+    static const int nface     = 2;
     static const int nfacenode = 7;
-    static const int nfaceedge = 3;
     static int       edge_node_order[nedge][nedgenode];
     static int       face_node_order[nface][nfacenode];
-    static int       face_edge_order[nface][nfaceedge];
     static int       nodes_per_face[nface + 1];
     static int       edges_per_face[nface + 1];
   };
-
-  // Edge numbers are zero-based [0..number_edges)
-  int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
-      {{0, 1, 4}, {1, 2, 5}, {2, 0, 6}, {0, 3, 7}, {1, 3, 8}, {2, 3, 9}};
-
-  // Face numbers are zero-based [0..number_faces)
-  int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-      {{0, 1, 3, 4, 8, 7, 13},
-       {1, 2, 3, 5, 9, 8, 11},
-       {0, 3, 2, 7, 9, 6, 12},
-       {0, 2, 1, 6, 5, 4, 10}};
-
-  int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
-      {{0, 4, 3}, {1, 5, 4}, {3, 5, 2}, {2, 1, 0}};
-
-  // face 0 returns number of nodes for all faces if homogenous
-  //        returns -1 if faces have differing topology
-  int Constants::nodes_per_face[nface + 1] = {nfacenode, nfacenode, nfacenode, nfacenode,
-                                              nfacenode};
-
-  // face 0 returns number of edges for all faces if homogenous
-  //        returns -1 if faces have differing topology
-  int Constants::edges_per_face[nface + 1] = {nfaceedge, nfaceedge, nfaceedge, nfaceedge,
-                                              nfaceedge};
 } // namespace
 
-void Ioss::Tet15::factory()
+// Edge numbers are zero-based [0..number_edges)
+int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
+    {{0, 1, 3}, {1, 2, 4}, {2, 0, 5}};
+
+// Face numbers are zero-based [0..number_faces)
+int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
+    {{0, 1, 2, 3, 4, 5, 6}, {0, 2, 1, 5, 4, 3, 6}};
+
+// face 0 returns number of nodes for all faces if homogenous
+//        returns -1 if faces have differing topology
+int Constants::nodes_per_face[nface + 1] = {7, 7, 7};
+
+// face 0 returns number of edges for all faces if homogenous
+//        returns -1 if faces have differing topology
+int Constants::edges_per_face[nface + 1] = {3, 3, 3};
+
+void Ioss::TriShell7::factory()
 {
-  static Ioss::Tet15 registerThis;
-  Ioss::St_Tet15::factory();
+  static Ioss::TriShell7 registerThis;
+  Ioss::St_TriShell7::factory();
 }
 
-Ioss::Tet15::Tet15() : Ioss::ElementTopology("tetra15", "Tetrahedron_15")
+Ioss::TriShell7::TriShell7() : Ioss::ElementTopology("trishell7", "ShellTriangle_7")
 {
-  Ioss::ElementTopology::alias("tetra15", "tet15");
-  Ioss::ElementTopology::alias("tetra15", "Solid_Tet_15_3D");
+  Ioss::ElementTopology::alias("trishell7", "Shell_Tri_7_3D");
+  Ioss::ElementTopology::alias("trishell7", "SHELL_TRIANGLE_7");
+  Ioss::ElementTopology::alias("trishell7", "SHELL7");
 }
 
-Ioss::Tet15::~Tet15() = default;
+Ioss::TriShell7::~TriShell7() = default;
 
-int Ioss::Tet15::parametric_dimension() const { return 3; }
-int Ioss::Tet15::spatial_dimension() const { return 3; }
-int Ioss::Tet15::order() const { return 2; }
+int Ioss::TriShell7::parametric_dimension() const { return 2; }
+int Ioss::TriShell7::spatial_dimension() const { return 3; }
+int Ioss::TriShell7::order() const { return 2; }
 
-int Ioss::Tet15::number_corner_nodes() const { return 4; }
-int Ioss::Tet15::number_nodes() const { return Constants::nnode; }
-int Ioss::Tet15::number_edges() const { return Constants::nedge; }
-int Ioss::Tet15::number_faces() const { return Constants::nface; }
+int Ioss::TriShell7::number_corner_nodes() const { return 3; }
+int Ioss::TriShell7::number_nodes() const { return Constants::nnode; }
+int Ioss::TriShell7::number_edges() const { return Constants::nedge; }
+int Ioss::TriShell7::number_faces() const { return Constants::nface; }
 
-int Ioss::Tet15::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
+int Ioss::TriShell7::number_nodes_edge(int /* edge */) const { return Constants::nedgenode; }
 
-int Ioss::Tet15::number_nodes_face(int face) const
+int Ioss::TriShell7::number_nodes_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::nodes_per_face[face];
 }
 
-int Ioss::Tet15::number_edges_face(int face) const
+int Ioss::TriShell7::number_edges_face(int face) const
 {
   // face is 1-based.  0 passed in for all faces.
   assert(face >= 0 && face <= number_faces());
   return Constants::edges_per_face[face];
 }
 
-Ioss::IntVector Ioss::Tet15::edge_connectivity(int edge_number) const
+Ioss::IntVector Ioss::TriShell7::edge_connectivity(int edge_number) const
 {
   assert(edge_number > 0 && edge_number <= Constants::nedge);
   Ioss::IntVector connectivity(Constants::nedgenode);
@@ -142,7 +132,7 @@ Ioss::IntVector Ioss::Tet15::edge_connectivity(int edge_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::Tet15::face_connectivity(int face_number) const
+Ioss::IntVector Ioss::TriShell7::face_connectivity(int face_number) const
 {
   assert(face_number > 0 && face_number <= number_faces());
   Ioss::IntVector connectivity(Constants::nodes_per_face[face_number]);
@@ -154,7 +144,7 @@ Ioss::IntVector Ioss::Tet15::face_connectivity(int face_number) const
   return connectivity;
 }
 
-Ioss::IntVector Ioss::Tet15::element_connectivity() const
+Ioss::IntVector Ioss::TriShell7::element_connectivity() const
 {
   Ioss::IntVector connectivity(number_nodes());
   for (int i = 0; i < number_nodes(); i++) {
@@ -163,37 +153,15 @@ Ioss::IntVector Ioss::Tet15::element_connectivity() const
   return connectivity;
 }
 
-Ioss::ElementTopology *Ioss::Tet15::face_type(int face_number) const
+Ioss::ElementTopology *Ioss::TriShell7::face_type(int face_number) const
 {
-  // face_number == 0 returns topology for all faces if
-  // all faces are the same topology; otherwise, returns nullptr
-  // face_number is 1-based.
-
   assert(face_number >= 0 && face_number <= number_faces());
-  //  return Ioss::ElementTopology::factory("triface6");
+  //  return Ioss::ElementTopology::factory("triface7");
   return Ioss::ElementTopology::factory("tri7");
 }
 
-Ioss::ElementTopology *Ioss::Tet15::edge_type(int edge_number) const
+Ioss::ElementTopology *Ioss::TriShell7::edge_type(int edge_number) const
 {
-  // edge_number == 0 returns topology for all edges if
-  // all edges are the same topology; otherwise, returns nullptr
-  // edge_number is 1-based.
-
   assert(edge_number >= 0 && edge_number <= number_edges());
   return Ioss::ElementTopology::factory("edge3");
-}
-
-Ioss::IntVector Ioss::Tet15::face_edge_connectivity(int face_number) const
-{
-  assert(face_number > 0 && face_number <= Constants::nface);
-
-  int             nface_edge = number_edges_face(face_number);
-  Ioss::IntVector fcon(nface_edge);
-
-  for (int i = 0; i < nface_edge; i++) {
-    fcon[i] = Constants::face_edge_order[face_number - 1][i];
-  }
-
-  return fcon;
 }

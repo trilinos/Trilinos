@@ -42,6 +42,13 @@ Ioss::FieldManager::FieldManager() {}
 
 Ioss::FieldManager::~FieldManager() = default;
 
+/** \brief Add a field to the field manager.
+ *
+ *  Assumes that a field with the same name does not already exist.
+ *
+ *  \param[in] new_field The field to add
+ *
+ */
 void Ioss::FieldManager::add(const Ioss::Field &new_field)
 {
   if (!exists(new_field.get_name())) {
@@ -49,12 +56,23 @@ void Ioss::FieldManager::add(const Ioss::Field &new_field)
   }
 }
 
-// Checks if a field with 'field_name' exists in the database.
+/** \brief Checks if a field with a given name exists in the field manager.
+ *
+ * \param[in] field_name The name of the field to check for.
+ * \returns True if the field exists in the field manager.
+ *
+ */
 bool Ioss::FieldManager::exists(const std::string &field_name) const
 {
   return (fields.find(field_name) != fields.end());
 }
 
+/** \brief Get a field from the field manager.
+ *
+ *  \param[in] field_name The name of the field to get.
+ *  \returns The field object.
+ *
+ */
 Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
 {
   auto iter = fields.find(field_name);
@@ -62,6 +80,12 @@ Ioss::Field Ioss::FieldManager::get(const std::string &field_name) const
   return (*iter).second;
 }
 
+/** \brief Get a reference to a field from the field manager.
+ *
+ *  \param[in] field_name The name of the field to get.
+ *  \returns A reference to the field object.
+ *
+ */
 const Ioss::Field &Ioss::FieldManager::getref(const std::string &field_name) const
 {
   auto iter = fields.find(field_name);
@@ -69,7 +93,12 @@ const Ioss::Field &Ioss::FieldManager::getref(const std::string &field_name) con
   return (*iter).second;
 }
 
-// Assumes: Field 'name' must exist.
+/** \brief Remove a field from the field manager.
+ *
+ * Assumes that a field with the given name exists in the field manager.
+ *
+ * \param[in] field_name The name of the field to remove.
+ */
 void Ioss::FieldManager::erase(const std::string &field_name)
 {
   assert(exists(field_name));
@@ -79,7 +108,12 @@ void Ioss::FieldManager::erase(const std::string &field_name)
   }
 }
 
-// Returns the names of all fields
+/** \brief Get the names of all fields in the field manager.
+ *
+ * \param[out] names All field names in the field manager.
+ * \returns The number of fields extracted from the field manager.
+ *
+ */
 int Ioss::FieldManager::describe(NameList *names) const
 {
   int                          the_count = 0;
@@ -91,7 +125,13 @@ int Ioss::FieldManager::describe(NameList *names) const
   return the_count;
 }
 
-// Returns the names of all fields
+/** \brief Get the names of all fields of a specified RoleType in the field manager.
+ *
+ * \param[in] role The role type (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.)
+ * \param[out] names All field names of the specified RoleType in the field manager.
+ * \returns The number of fields extracted from the field manager.
+ *
+ */
 int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) const
 {
   int                          the_count = 0;
@@ -105,4 +145,8 @@ int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) co
   return the_count;
 }
 
+/** \brief Get the number of fields in the field manager.
+ *
+ *  \returns The number of fields in the field manager.
+ */
 size_t Ioss::FieldManager::count() const { return fields.size(); }

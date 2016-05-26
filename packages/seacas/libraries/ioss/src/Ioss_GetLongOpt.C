@@ -3,6 +3,10 @@
 #include <string.h>
 
 namespace Ioss {
+  /** \brief Create an empty options database.
+   *
+   * \param optmark The command line symbol designating options.
+   */
   GetLongOption::GetLongOption(const char optmark)
       : table(nullptr), ustring(nullptr), pname(nullptr), last(nullptr), enroll_done(0),
         optmarker(optmark)
@@ -10,6 +14,10 @@ namespace Ioss {
     ustring = "[valid options and arguments]";
   }
 
+  /** \brief Frees dynamically allocated memory.
+   *
+   *  Frees memory for the private struct variables representing the options.
+   */
   GetLongOption::~GetLongOption()
   {
     Cell *t = table;
@@ -21,6 +29,14 @@ namespace Ioss {
     }
   }
 
+  /** \brief Extract the base file name from a full path.
+   *
+   *  Finds the last instance of the '/' character and
+   *  extracts the part of the string that follows.
+   *
+   *  \param[in] pathname The full path.
+   *  \return The base file name.
+   */
   char *GetLongOption::basename(char *const pathname)
   {
     char *s = strrchr(pathname, '/');
@@ -33,6 +49,19 @@ namespace Ioss {
     return s;
   }
 
+  /** \brief Enroll a command line option into the database.
+   *
+   *  Dynamically allocates memory for the option, sets its name
+   *  type, description, value, and default value, and links it
+   *  to the preceding option.
+   *
+   * \param[in] opt The long option name.
+   * \param[in] t The option type.
+   * \param[in] desc A short description of the option.
+   * \param[in] val The option value.
+   * \param[in] optval The default value.
+   * \returns 1 if successful, 0 if unsuccessful.
+   */
   int GetLongOption::enroll(const char *const opt, const OptType t, const char *const desc,
                             const char *const val, const char *const optval)
   {
@@ -59,6 +88,11 @@ namespace Ioss {
     return 1;
   }
 
+  /** \brief Get a command line option object.
+   *
+   *  \param[in] opt The option name.
+   *  \returns The option object.
+   */
   const char *GetLongOption::retrieve(const char *const opt) const
   {
     Cell *t;
@@ -72,6 +106,16 @@ namespace Ioss {
     return nullptr;
   }
 
+  /** \brief parse command line arguments
+   *
+   *  Set the values of options in the option table based on
+   *  the given command line arguments.
+   *
+   *  \param[in] argc Number of command line arguments passed in from main(int argc, char *argv[]).
+   *  \param[in] argv Command line arguments passed in from main(int argc, char *argv[]).
+   *  \returns Number of options processed, or -1 on failure.
+   *
+   */
   int GetLongOption::parse(int argc, char *const *argv)
   {
     int my_optind = 1;
@@ -170,6 +214,16 @@ namespace Ioss {
     return my_optind;
   }
 
+  /** \brief parse an argument string.
+   *
+   *  Set the values of options in the option table based on
+   *  the given option string.
+   *
+   *  \param[in] str The option string.
+   *  \param[in] p A string to be used in error reporting
+   *  \returns 1 if successful, or -1 otherwise.
+   *
+   */
   int GetLongOption::parse(char *const str, char *const p)
   {
     enroll_done       = 1;
@@ -294,6 +348,10 @@ namespace Ioss {
     return -1;
   }
 
+  /** \brief Print the program usage string.
+   *
+   *  \param[in] outfile The output stream to which the usage string is printed.
+   */
   void GetLongOption::usage(std::ostream &outfile) const
   {
     Cell *t;

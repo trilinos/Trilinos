@@ -74,6 +74,9 @@ namespace Ioex {
   struct CommunicationMetaData;
 }
 
+/** \brief A namespace for the file-per-process version of the
+ *  parallel exodus database format.
+ */
 namespace Iofx {
   class DatabaseIO : public Ioex::DatabaseIO
   {

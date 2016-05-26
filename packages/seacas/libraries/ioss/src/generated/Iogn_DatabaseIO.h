@@ -97,6 +97,8 @@ namespace Ioss {
   class EntityBlock;
 }
 
+/** \brief A namespace for the generated database format.
+ */
 namespace Iogn {
 
   class IOFactory : public Ioss::IOFactory

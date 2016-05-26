@@ -34,6 +34,8 @@
 #define IOSS_Ioss_EntityType_H
 
 namespace Ioss {
+  /** \brief The particular type of GroupingEntity.
+   */
   enum EntityType {
     NODEBLOCK    = 1,
     EDGEBLOCK    = 2,

@@ -76,10 +76,10 @@ int Constants::edge_node_order[nedge][nedgenode] = // [edge][edge_node]
 
 // Face numbers are zero-based [0..number_faces)
 int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 4,  3,  6, 10, 12,  9, 20},
-     {1, 2, 5,  4,  7, 11, 13, 10, 18},
-     {0, 3, 5,  2,  9, 14, 11,  8, 19},
-     {0, 2, 1,  8,  7,  6, 15, -1, -1},
+    {{0, 1, 4, 3, 6, 10, 12, 9, 20},
+     {1, 2, 5, 4, 7, 11, 13, 10, 18},
+     {0, 3, 5, 2, 9, 14, 11, 8, 19},
+     {0, 2, 1, 8, 7, 6, 15, -1, -1},
      {3, 4, 5, 12, 13, 14, 16, -1, -1}};
 
 int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]

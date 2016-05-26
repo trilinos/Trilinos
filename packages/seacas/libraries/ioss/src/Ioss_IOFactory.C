@@ -49,6 +49,28 @@ namespace Ioss {
   typedef IOFactoryMap::value_type IOFactoryValuePair;
 } // namespace Ioss
 
+/** \brief Create an IO database.
+ *
+ *  This is the public interface method for creating an Ioss::DatabaseIO object.
+ *  If Ioss is invoked with more than one process, type == "exodus", db_usage == Ioss::READ_MODEL,
+ *  and properties contains the property DECOMPOSITION_METHOD, which is not set to EXTERNAL,
+ *  then a parallel decompose-on-the-fly (dof) style Exodus database will be created. The mesh in a
+ * single
+ *  Exodus file will be decomposed according to DECOMPOSITION_METHOD. Otherwise, if the number of
+ *  processes is greater than one, then a file-per-process (fpp) style Exodus database will be
+ * created.
+ *  In this case, Ioss expects the mesh in p Exodus files, where p is the number of processes in
+ *  communicator.
+ *
+ *  \param[in] type The database file format. Use Ioss::IOFactory::describe to list formats known to
+ * Ioss.
+ *  \param[in] filename The name of the database file to read from or write to.
+ *  \param[in] db_usage Specifies whether the database will be used for input, normal output,
+ * restart output, etc.
+ *  \param[in] communicator The MPI communicator.
+ *  \param[in] properties The property manager associated with the database.
+ *  \returns A pointer to the newly-constructed Ioss::DatabaseIO object, or NULL if unsuccessful.
+ */
 Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::string &filename,
                                           Ioss::DatabaseUsage db_usage, MPI_Comm communicator,
                                           const Ioss::PropertyManager &properties)
@@ -82,6 +104,11 @@ Ioss::DatabaseIO *Ioss::IOFactory::create(const std::string &type, const std::st
   return db;
 }
 
+/** \brief Get the names of database formats known to IOSS.
+ *
+ *  \param[out] names The list of known database format names.
+ *  \returns The number of known database formats.
+ */
 int Ioss::IOFactory::describe(NameList *names)
 {
   int                                count = 0;
@@ -110,4 +137,6 @@ Ioss::IOFactoryMap *Ioss::IOFactory::registry()
   return &registry_;
 }
 
+/** \brief Empty method.
+ */
 void Ioss::IOFactory::clean() {}

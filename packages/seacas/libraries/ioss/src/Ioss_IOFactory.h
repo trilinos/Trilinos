@@ -42,6 +42,8 @@
 #include <map>
 #include <vector>
 
+/** \brief The main namespace for the Ioss library.
+ */
 namespace Ioss {
 
   class IOFactory;
@@ -50,6 +52,9 @@ namespace Ioss {
   typedef std::map<std::string, IOFactory *, std::less<std::string>> IOFactoryMap;
 
   class DatabaseIO;
+
+  /** \brief The main public user interface for creating Ioss::DatabaseIO objects.
+   */
   class IOFactory
   {
   public:

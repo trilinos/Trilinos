@@ -44,6 +44,15 @@
 #include "Ioss_PropertyManager.h"
 #include "Ioss_Utils.h"
 
+/** \brief Constructor adds "name" and "entity_count" properties to the entity
+ *         and specifies the topology type for the entity block.
+ *
+ *  \param[in] io_database The database associated with the block.
+ *  \param[in] my_name The block name.
+ *  \param[in] entity_type The topology type for the block.
+ *  \param[in] entity_count The number of subentities in the block.
+ *
+ */
 Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                                const std::string &entity_type, size_t entity_count)
     : Ioss::GroupingEntity(io_database, my_name, entity_count), idOffset(0)
@@ -75,6 +84,15 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
                          Ioss::Field::MESH, entity_count));
 }
 
+/** \brief Calculate and get an implicit property.
+ *
+ *  These are calcuated from data stored in the EntityBlock instead of having
+ *  an explicit value assigned. An example would be 'topology_node_count' for an ElementBlock.
+ *  Note that even though this is a pure virtual function, an implementation
+ *  is provided to return properties that are common to all 'block'-type grouping entities.
+ *  Derived classes should call 'EntityBlock::get_implicit_property'
+ *  if the requested property is not specific to their type.
+ */
 Ioss::Property Ioss::EntityBlock::get_implicit_property(const std::string &my_name) const
 {
   if (my_name == "topology_node_count") {

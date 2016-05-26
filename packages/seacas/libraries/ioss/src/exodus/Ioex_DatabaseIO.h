@@ -70,6 +70,8 @@ namespace Ioss {
   class ElementTopology;
 }
 
+/** \brief A namespace for the exodus database format.
+ */
 namespace Ioex {
   struct CommunicationMetaData;
 

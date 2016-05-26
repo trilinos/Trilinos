@@ -44,6 +44,8 @@ namespace Ioss {
   typedef std::map<std::string, Property, std::less<std::string>> PropMapType;
   typedef PropMapType::value_type ValuePair;
 
+  /** \brief A collection of Ioss::Property objects
+   */
   class PropertyManager
   {
   public:

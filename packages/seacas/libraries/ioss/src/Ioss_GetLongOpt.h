@@ -6,6 +6,11 @@
 #include <iostream>
 
 namespace Ioss {
+  /** \brief A database of program command line and environment variable options and methods for
+   * manipulating them.
+   *
+   *  A collection of long command line option names for a program that uses the Ioss library.
+   */
   class GetLongOption
   {
   public:
@@ -54,6 +59,14 @@ namespace Ioss {
     const char *retrieve(const char *const opt) const;
 
     void usage(std::ostream &outfile = std::cout) const;
+
+    /** \brief Set the program usage string.
+     *
+     *  The program usage string should define the command line
+     *  syntax for program options and arguments and contain
+     *  other helpful usage text.
+     *  \param[in] str The usage string.
+     */
     void usage(const char *str) { ustring = str; }
   };
 }

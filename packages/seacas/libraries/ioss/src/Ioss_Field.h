@@ -47,9 +47,13 @@ namespace Ioss {
 
   class GroupingEntity;
 
+  /** \brief Holds metadata for bulk data associated with a GroupingEntity.
+   */
   class Field
   {
   public:
+    /** \brief The basic data type held in the field.
+     */
     enum BasicType {
       INVALID = -1,
       REAL    = 1,
@@ -61,7 +65,32 @@ namespace Ioss {
       STRING,
       CHARACTER
     };
-    enum RoleType { INTERNAL, MESH, ATTRIBUTE, COMMUNICATION, INFORMATION, REDUCTION, TRANSIENT };
+
+    /* \brief Categorizes the type of information held in the field.
+     */
+    enum RoleType {
+      INTERNAL,
+      MESH,      /**< A field which is used to define the basic geometry
+                      or topology of the model and is not normally transient
+                      in nature. Examples would be element connectivity or
+                      nodal coordinates. */
+      ATTRIBUTE, /**< A field which is used to define an attribute on an
+                      EntityBlock derived class. Examples would be thickness
+                      of the elements in a shell element block or the radius
+                      of particles in a particle element block. */
+      COMMUNICATION,
+      INFORMATION,
+      REDUCTION, /**< A field which typically summarizes some transient data
+                      about an entity. The size of this field is typically not
+                      proportional to the number of entities in a GroupingEntity.
+                      An example would be average displacement over a group of
+                      nodes or the kinetic energy of a model. This data is also
+                      transient. */
+      TRANSIENT  /**< A field which is typically calculated at multiple steps
+                      or times in an analysis. These are typically "results"
+                      data. Examples would be nodal displacement or element
+                      stress. */
+    };
 
     Field();
 
@@ -90,7 +119,12 @@ namespace Ioss {
     bool is_invalid() const { return type_ == INVALID; }
 
     const std::string &get_name() const { return name_; }
-    BasicType          get_type() const { return type_; }
+
+    /** \brief Get the basic data type of the data held in the field.
+     *
+     * \returns the basic data type of the data held in the field.
+     */
+    BasicType get_type() const { return type_; }
 
     const VariableType *raw_storage() const { return rawStorage_; }
     const VariableType *transformed_storage() const { return transStorage_; }
@@ -100,6 +134,10 @@ namespace Ioss {
 
     size_t get_size() const; // data size (in bytes) required to hold entire field
 
+    /** \brief Get the role (MESH, ATTRIBUTE, TRANSIENT, REDUCTION, etc.) of the data in the field.
+     *
+     * \returns The RoleType of the data in the field.
+     */
     RoleType get_role() const { return role_; }
 
     size_t get_index() const { return index_; }

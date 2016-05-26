@@ -96,6 +96,8 @@ namespace Ioss {
   class EntityBlock;
 }
 
+/** \brief A namespace for the CGNS database format.
+ */
 namespace Iocgns {
 
   class DatabaseIO : public Ioss::DatabaseIO

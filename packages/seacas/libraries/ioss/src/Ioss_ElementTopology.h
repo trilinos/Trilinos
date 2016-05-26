@@ -64,6 +64,11 @@ namespace Ioss {
   };
 
   // ========================================================================
+
+  /** \brief Represents an element topology.
+   *
+   *  Defines node, edge, and face connectivity information of an element.
+   */
   class ElementTopology
   {
   public:
