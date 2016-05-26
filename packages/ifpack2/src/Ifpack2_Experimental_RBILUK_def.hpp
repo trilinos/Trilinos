@@ -306,6 +306,18 @@ initAllValues (const block_crs_matrix_type& A)
   U_block_->setAllToScalar (STM::zero ());
   D_block_->setAllToScalar (STM::zero ()); // Set diagonal values to zero
 
+  // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
+  // host, so sync to host first.  The const_cast is unfortunate but
+  // is our only option to make this correct.
+  const_cast<block_crs_matrix_type&> (A).template sync<Kokkos::HostSpace> ();
+  L_block_->template sync<Kokkos::HostSpace> ();
+  U_block_->template sync<Kokkos::HostSpace> ();
+  D_block_->template sync<Kokkos::HostSpace> ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->template modify<Kokkos::HostSpace> ();
+  U_block_->template modify<Kokkos::HostSpace> ();
+  D_block_->template modify<Kokkos::HostSpace> ();
+
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
   // First we copy the user's matrix into L and U, regardless of fill level.
@@ -387,6 +399,15 @@ initAllValues (const block_crs_matrix_type& A)
     }
   }
 
+  // NOTE (mfh 27 May 2016) Sync back to device, in case compute()
+  // ever gets a device implementation.
+  {
+    typedef typename block_crs_matrix_type::device_type device_type;
+    const_cast<block_crs_matrix_type&> (A).template sync<device_type> ();
+    L_block_->template sync<device_type> ();
+    U_block_->template sync<device_type> ();
+    D_block_->template sync<device_type> ();
+  }
   this->isInitialized_ = true;
 }
 
@@ -434,6 +455,22 @@ void RBILUK<MatrixType>::compute ()
   if (! this->isInitialized ()) {
     initialize (); // Don't count this in the compute() time
   }
+
+  // NOTE (mfh 27 May 2016) The factorization below occurs entirely on
+  // host, so sync to host first.  The const_cast is unfortunate but
+  // is our only option to make this correct.
+  if (! A_block_.is_null ()) {
+    Teuchos::RCP<block_crs_matrix_type> A_nc =
+      Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+    A_nc->template sync<Kokkos::HostSpace> ();
+  }
+  L_block_->template sync<Kokkos::HostSpace> ();
+  U_block_->template sync<Kokkos::HostSpace> ();
+  D_block_->template sync<Kokkos::HostSpace> ();
+  // NOTE (mfh 27 May 2016) We're modifying L, U, and D on host.
+  L_block_->template modify<Kokkos::HostSpace> ();
+  U_block_->template modify<Kokkos::HostSpace> ();
+  D_block_->template modify<Kokkos::HostSpace> ();
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
@@ -650,6 +687,19 @@ void RBILUK<MatrixType>::compute ()
     }
 
   } // Stop timing
+
+  // Sync everything back to device, for efficient solves.
+  {
+    typedef typename block_crs_matrix_type::device_type device_type;
+    if (! A_block_.is_null ()) {
+      Teuchos::RCP<block_crs_matrix_type> A_nc =
+        Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
+      A_nc->template sync<device_type> ();
+    }
+    L_block_->template sync<device_type> ();
+    U_block_->template sync<device_type> ();
+    D_block_->template sync<device_type> ();
+  }
 
   this->isComputed_ = true;
   this->numCompute_ += 1;

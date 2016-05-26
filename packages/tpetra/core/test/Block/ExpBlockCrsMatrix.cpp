@@ -1219,6 +1219,7 @@ namespace {
     BCM blockMat (graph, blockSize);
 
     // Test that the point domain and range Maps are correct.
+    out << "Test the matrix's point domain and range Maps" << endl;
     map_type pointDomainMap = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
     TEST_ASSERT( ! blockMat.getDomainMap ().is_null () &&
                  pointDomainMap.isSameAs (* (blockMat.getDomainMap ())) );
@@ -1227,6 +1228,8 @@ namespace {
                  pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
 
     // Test that the result of getGraph() has the same Maps.
+    out << "Test that the result of getGraph() has the same Maps "
+      "as the original graph" << endl;
     {
       graph_type graph2 = blockMat.getCrsGraph ();
       TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
@@ -1244,6 +1247,7 @@ namespace {
     }
 
     // Fill all entries of the matrix with 3.
+    out << "Fill all entries of the matrix with 3 (setAllToScalar)" << endl;
     const Scalar three = STS::one () + STS::one () + STS::one ();
     blockMat.setAllToScalar (three);
 
@@ -1251,12 +1255,14 @@ namespace {
     // of 1s.  Since there are two block entries per row, each of
     // which is all 3s, we know that each entry of the result Y will
     // be 6*blockSize.
+    out << "Test applyBlock" << endl;
     const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
     BMV X (* (graph.getDomainMap ()), pointDomainMap, blockSize, static_cast<LO> (1));
     X.putScalar (STS::one ());
     BMV Y (* (graph.getRangeMap ()), pointRangeMap, blockSize, static_cast<LO> (1));
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
 
+    out << "Make sure applyBlock got the right answer" << endl;
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
@@ -1342,11 +1348,18 @@ namespace {
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
 
+#ifdef HAVE_TPETRA_DEBUG
+    // The above setAllToScalar should have run on device.
+    TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
+    TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
+#endif // HAVE_TPETRA_DEBUG
+
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
 
     // Fill all entries of the second matrix with -2.
     const Scalar minusTwo = -STS::one () - STS::one ();
+    out << "Fill all entries of A2 with " << minusTwo << endl;
     A2.setAllToScalar (minusTwo);
 
     out << "The matrix A2, after construction:" << endl;
@@ -1766,6 +1779,9 @@ namespace {
     exactSolution[1] = -12.0/35.0;
     exactSolution[2] = -17.0/35.0;
 
+    // NOTE (mfh 26 May 2016) We may start modifying the matrix on
+    // host now, because we haven't yet done anything to it on device.
+
     Teuchos::Array<LO> lclColInds(1);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
@@ -1784,6 +1800,9 @@ namespace {
 
     Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
     graph.getLocalDiagOffsets (diagonalOffsets);
+
+    // Sync the matrix to device, since getLocalDiagCopy runs there.
+    blockMat.template sync<device_type> ();
 
     typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,

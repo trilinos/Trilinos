@@ -792,17 +792,12 @@ private:
   /// to access it on host.  See notes on ptrHost_ above.
   typename crs_graph_type::local_graph_type::entries_type::HostMirror indHost_;
 
-  /// \brief Array of values in the matrix.
+  /// \brief The array of values in the matrix.
   ///
-  /// Each blockSize_ x blockSize_ block is stored contiguously, in
-  /// row major format, with no padding either inside a block or
-  /// between blocks.
-  Kokkos::View<impl_scalar_type*, device_type> valView_;
-  /// \brief Raw pointer version of valView_.
-  ///
-  /// It must always be true, outside of the constructors, that
-  /// <tt>valView_.ptr_on_device() == val_</tt>.
-  impl_scalar_type* val_;
+  /// Each blockSize_ x blockSize_ block of values is stored
+  /// contiguously, in row major format, with no padding either inside
+  /// a block or between blocks.
+  typename Kokkos::DualView<impl_scalar_type*, device_type> val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
@@ -861,6 +856,50 @@ private:
 
   // //! Clear the local error state and stream.
   // void clearLocalErrorStateAndStream ();
+
+public:
+  /// \brief Mark the matrix's values as modified in the given space.
+  ///
+  /// \tparam Space Space in which the matrix's values may need sync'ing.
+  template<class Space>
+  void modify ()
+  {
+    val_.template modify<Space> ();
+  }
+
+  /// \brief Whether the matrix's values need sync'ing to the given space.
+  ///
+  /// \tparam Space Space in which the matrix's values may need sync'ing.
+  template<class Space>
+  bool need_sync () const
+  {
+    return val_.template need_sync<Space> ();
+  }
+
+  /// \brief Sync the matrix's values <i>to</i> the given space.
+  ///
+  /// \tparam Space Space to which to sync the values.
+  template<class Space>
+  void sync ()
+  {
+    val_.template sync<Space> ();
+  }
+
+private:
+  /// \brief Get the host or device View of the matrix's values (\c val_).
+  ///
+  /// \tparam Space Space for which to get the View.
+  ///
+  /// This is <i>not</i> const, because we reserve the right to do
+  /// lazy allocation on device / "fast" memory.  Host / "slow" memory
+  /// allocations generally are not lazy; that way, the host fill
+  /// interface always works in a thread-parallel context without
+  /// needing to synchronize on the allocation.
+  template<class Space>
+  auto getValues () -> decltype (val_.template view<Space> ())
+  {
+    return val_.template view<Space> ();
+  }
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.

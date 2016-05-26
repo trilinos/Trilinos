@@ -191,7 +191,6 @@ public:
     graph_ (graph),
     rowMeshMap_ (* (graph.getRowMap ())),
     blockSize_ (blockSize),
-    val_ (NULL), // to be initialized below
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     offsetPerBlock_ (blockSize * blockSize),
@@ -237,10 +236,8 @@ public:
       indHost_ = ind_h_nc;
     }
 
-    Kokkos::resize (valView_,
-                    static_cast<size_t> (graph.getNodeNumEntries () *
-                                         offsetPerBlock ()));
-    val_ = valView_.ptr_on_device ();
+    const auto numValEnt = graph.getNodeNumEntries () * offsetPerBlock ();
+    val_ = decltype (val_) ("val", numValEnt);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -297,10 +294,8 @@ public:
       indHost_ = ind_h_nc;
     }
 
-    Kokkos::resize (valView_,
-                    static_cast<size_t> (graph.getNodeNumEntries () *
-                                         offsetPerBlock ()));
-    val_ = valView_.ptr_on_device ();
+    const auto numValEnt = graph.getNodeNumEntries () * offsetPerBlock ();
+    val_ = decltype (val_) ("val", numValEnt);
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -459,7 +454,36 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
-    Kokkos::deep_copy (valView_, alpha);
+    const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::setAllToScalar: ";
+
+    if (this->template need_sync<device_type> ()) {
+      // If we need to sync to device, then the data were last
+      // modified on host.  In that case, we should again modify them
+      // on host.
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+         prefix << "The matrix's values need sync on both device and host.");
+#endif // HAVE_TPETRA_DEBUG
+      this->template modify<Kokkos::HostSpace> ();
+      Kokkos::deep_copy (this->template getValues<Kokkos::HostSpace> (), alpha);
+    }
+    else if (this->template need_sync<Kokkos::HostSpace> ()) {
+      // If we need to sync to host, then the data were last modified
+      // on device.  In that case, we should again modify them on
+      // device.
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<device_type> (), std::runtime_error,
+         prefix << "The matrix's values need sync on both host and device.");
+#endif // HAVE_TPETRA_DEBUG
+      this->template modify<device_type> ();
+      Kokkos::deep_copy (this->template getValues<device_type> (), alpha);
+    }
+    else { // neither host nor device marked as modified, so modify on device
+      this->template modify<device_type> ();
+      Kokkos::deep_copy (this->template getValues<device_type> (), alpha);
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -470,6 +494,11 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::replaceLocalValues: ";
+#endif // HAVE_TPETRA_DEBUG
+
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       // We modified no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
@@ -486,6 +515,23 @@ public:
     LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+       prefix << "The matrix's data were last modified on device, but have "
+       "not been sync'd to host.  Please sync to host (by calling "
+       "sync<Kokkos::HostSpace>() on this matrix) before calling this "
+       "method.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+    // version of the data always exists (no lazy allocation for host
+    // data).
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    auto vals_host_out =
+      const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+    impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const LO relBlockOffset =
         this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
@@ -501,7 +547,8 @@ public:
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
         // little_block_type A_old =
         //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        impl_scalar_type* const A_old =
+          vals_host_out_raw + absBlockOffset * perBlockSize;
         // const_little_block_type A_new =
         //   getConstLocalBlockFromInput (vIn, pointOffset);
         const impl_scalar_type* const A_new = vIn + pointOffset;
@@ -752,6 +799,7 @@ public:
   {
     using Kokkos::parallel_for;
     typedef typename device_type::execution_space execution_space;
+    const char prefix[] = "Tpetra::BlockCrsMatrix::getLocalDiagCopy (2-arg): ";
 
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO blockSize = this->getBlockSize ();
@@ -759,18 +807,34 @@ public:
       (static_cast<LO> (diag.dimension_0 ()) < lclNumMeshRows ||
        static_cast<LO> (diag.dimension_1 ()) < blockSize ||
        static_cast<LO> (diag.dimension_2 ()) < blockSize,
-       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
+       std::invalid_argument, prefix <<
        "The input Kokkos::View is not big enough to hold all the data.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<LO> (offsets.size ()) < lclNumMeshRows,
-       std::invalid_argument, "Tpetra::BlockCrsMatrix::getLocalDiagCopy: "
-       "offsets.size() = " << offsets.size () << " < local number of diagonal "
-       "blocks " << lclNumMeshRows << ".");
+      (static_cast<LO> (offsets.size ()) < lclNumMeshRows, std::invalid_argument,
+       prefix << "offsets.size() = " << offsets.size () << " < local number of "
+       "diagonal blocks " << lclNumMeshRows << ".");
+
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->template need_sync<device_type> (), std::runtime_error,
+       prefix << "The matrix's data were last modified on host, but have "
+       "not been sync'd to device.  Please sync to device (by calling "
+       "sync<device_type>() on this matrix) before calling this method.");
+#endif // HAVE_TPETRA_DEBUG
 
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
     typedef GetLocalDiagCopy<Scalar, LO, GO, Node> functor_type;
+
+    // FIXME (mfh 26 May 2016) Not really OK to const_cast here, since
+    // we reserve the right to do lazy allocation of device data.  (We
+    // don't plan to do lazy allocation for host data; the host
+    // version of the data always exists.)
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    auto vals_dev =
+      const_cast<this_type*> (this)->template getValues<device_type> ();
+
     parallel_for (policy_type (0, lclNumMeshRows),
-                  functor_type (diag, valView_, offsets,
+                  functor_type (diag, vals_dev, offsets,
                                 graph_.getLocalGraph ().row_map, blockSize_));
   }
 
@@ -863,6 +927,11 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::sumIntoLocalValues: ";
+#endif // HAVE_TPETRA_DEBUG
+
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       // We modified no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
@@ -880,6 +949,22 @@ public:
     LO pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+       prefix << "The matrix's data were last modified on device, but have not "
+       "been sync'd to host.  Please sync to host (by calling "
+       "sync<Kokkos::HostSpace>() on this matrix) before calling this method.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+    // version of the data always exists (no lazy allocation for host
+    // data).
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    auto vals_host_out =
+      const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+    impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+
     for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const LO relBlockOffset =
         this->findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
@@ -895,7 +980,8 @@ public:
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
         // little_block_type A_old =
         //   getNonConstLocalBlockFromAbsOffset (absBlockOffset);
-        impl_scalar_type* const A_old = val_ + absBlockOffset * perBlockSize;
+        impl_scalar_type* const A_old =
+          vals_host_out_raw + absBlockOffset * perBlockSize;
         // const_little_block_type A_new =
         //   getConstLocalBlockFromInput (vIn, pointOffset);
         const impl_scalar_type* const A_new = vIn + pointOffset;
@@ -918,6 +1004,11 @@ public:
                    Scalar*& vals,
                    LO& numInds) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::getLocalRowView: ";
+#endif // HAVE_TPETRA_DEBUG
+
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       colInds = NULL;
       vals = NULL;
@@ -928,7 +1019,24 @@ public:
       const size_t absBlockOffsetStart = ptrHost_[localRowInd];
       colInds = indHost_.ptr_on_device () + absBlockOffsetStart;
 
-      impl_scalar_type* const vOut = val_ + absBlockOffsetStart * offsetPerBlock ();
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+         prefix << "The matrix's data were last modified on device, but have "
+         "not been sync'd to host.  Please sync to host (by calling "
+         "sync<Kokkos::HostSpace>() on this matrix) before calling this "
+         "method.");
+#endif // HAVE_TPETRA_DEBUG
+
+      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+      // version of the data always exists (no lazy allocation for host
+      // data).
+      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+      auto vals_host_out =
+        const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+      impl_scalar_type* vals_host_out_raw = vals_host_out.ptr_on_device ();
+      impl_scalar_type* const vOut = vals_host_out_raw +
+        absBlockOffsetStart * offsetPerBlock ();
       vals = reinterpret_cast<Scalar*> (vOut);
 
       numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
@@ -1414,6 +1522,11 @@ public:
       // FIXME (mfh 23 May 2016, 25 May 2016) See #393, #178, and
       // comments at the top of this function and file.
 
+      // FIXME (mfh 26 May 2016) This is a host code, so we have to
+      // sync the matrix to host.
+      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+      const_cast<this_type*> (this)->template sync<Kokkos::HostSpace> ();
+
       Teuchos::Array<impl_scalar_type> localMem (blockSize);
       little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 
@@ -1537,14 +1650,37 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::getConstLocalBlockFromAbsOffset: ";
+#endif // HAVE_TPETRA_DEBUG
+
     if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
       return const_little_block_type ();
-    } else {
+    }
+    else {
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+         prefix << "The matrix's data were last modified on device, but have "
+         "not been sync'd to host.  Please sync to host (by calling "
+         "sync<Kokkos::HostSpace>() on this matrix) before calling this "
+         "method.");
+#endif // HAVE_TPETRA_DEBUG
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
-      return getConstLocalBlockFromInput (val_, absPointOffset);
+
+      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+      // version of the data always exists (no lazy allocation for host
+      // data).
+      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+      auto vals_host =
+        const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+      const impl_scalar_type* vals_host_raw = vals_host.ptr_on_device ();
+
+      return getConstLocalBlockFromInput (vals_host_raw, absPointOffset);
     }
   }
 
@@ -1580,15 +1716,35 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::getNonConstLocalBlockFromAbsOffset: ";
+#endif // HAVE_TPETRA_DEBUG
+
     if (absBlockOffset >= ptrHost_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
       // memory corruption in case there is a bug.
       return little_block_type ();
-    } else {
+    }
+    else {
       const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
-      return getNonConstLocalBlockFromInput (const_cast<impl_scalar_type*> (val_),
-                                             absPointOffset);
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+         prefix << "The matrix's data were last modified on device, but have "
+         "not been sync'd to host.  Please sync to host (by calling "
+         "sync<Kokkos::HostSpace>() on this matrix) before calling this "
+         "method.");
+#endif // HAVE_TPETRA_DEBUG
+      // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+      // version of the data always exists (no lazy allocation for host
+      // data).
+      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+      auto vals_host =
+        const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+      impl_scalar_type* vals_host_raw = vals_host.ptr_on_device ();
+      return getNonConstLocalBlockFromInput (vals_host_raw, absPointOffset);
     }
   }
 
@@ -2422,7 +2578,8 @@ public:
           return;
         }
 
-        const ST* valsRawST = const_cast<const ST*> (reinterpret_cast<ST*> (valsRaw));
+        const ST* valsRawST =
+          const_cast<const ST*> (reinterpret_cast<ST*> (valsRaw));
         View<const ST*, HES, MemoryUnmanaged> vals (valsRawST, numScalarEnt);
 
         // NOTE (mfh 07 Feb 2015) Since we're using the host memory
@@ -2806,6 +2963,7 @@ public:
     using Teuchos::RCP;
     using Teuchos::wait;
     using std::endl;
+    const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::describe: ";
 
     // Set default verbosity if applicable.
     const Teuchos::EVerbosityLevel vl =
@@ -2898,6 +3056,20 @@ public:
     }
 
     if (vl >= VERB_EXTREME) {
+      // FIXME (mfh 26 May 2016) It's not nice for this method to sync
+      // to host, since it's supposed to be const.  However, that's
+      // the easiest and least memory-intensive way to implement this
+      // method.
+      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+      const_cast<this_type*> (this)->template sync<Kokkos::HostSpace> ();
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (this->template need_sync<Kokkos::HostSpace> (), std::logic_error,
+         prefix << "Right after sync to host, the matrix claims that it needs "
+         "sync to host.  Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
       const Teuchos::Comm<int>& comm = * (graph_.getMap ()->getComm ());
       const int myRank = comm.getRank ();
       const int numProcs = comm.getSize ();
@@ -3211,6 +3383,11 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (Tpetra::Vector<Scalar,LO,GO,Node> &diag) const
   {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::Experimental::BlockCrsMatrix::getLocalDiagCopy: ";
+#endif // HAVE_TPETRA_DEBUG
+
     const size_t lclNumMeshRows = graph_.getNodeNumRows ();
 
     Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);
@@ -3222,6 +3399,24 @@ public:
     // We're filling diag on host for now.
     diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
 
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (this->template need_sync<Kokkos::HostSpace> (), std::runtime_error,
+       prefix << "The matrix's data were last modified on device, but have "
+       "not been sync'd to host.  Please sync to host (by calling "
+       "sync<Kokkos::HostSpace>() on this matrix) before calling this "
+       "method.");
+#endif // HAVE_TPETRA_DEBUG
+
+    // NOTE (mfh 26 May 2016) OK to const_cast here, since the host
+    // version of the data always exists (no lazy allocation for host
+    // data).
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    auto vals_host_out =
+      const_cast<this_type*> (this)->template getValues<Kokkos::HostSpace> ();
+    Scalar* vals_host_out_raw =
+      reinterpret_cast<Scalar*> (vals_host_out.ptr_on_device ());
+
     // TODO amk: This is a temporary measure to make the code run with Ifpack2
     size_t rowOffset = 0;
     size_t offset = 0;
@@ -3232,7 +3427,7 @@ public:
       offset = rowOffset + diagOffsetsHost(r)*bs*bs;
       for(int b=0; b<bs; b++)
       {
-        diag.replaceLocalValue(r*bs+b, val_[offset+b*(bs+1)]);
+        diag.replaceLocalValue(r*bs+b, vals_host_out_raw[offset+b*(bs+1)]);
       }
       // move pointer to start of next block row
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
