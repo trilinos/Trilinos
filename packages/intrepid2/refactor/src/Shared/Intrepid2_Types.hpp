@@ -114,13 +114,13 @@ namespace Intrepid2 {
     static constexpr unsigned int MaxNewton            = 15;      /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
     static constexpr unsigned int MaxDerivative        = 10;      /// Maximum order of derivatives allowed in intrepid.
 
-    static const double Epsilon;
-    static const double Threshold;
-    static const double Tolerence;
+    static constexpr double Epsilon   = 1.0e-16; 
+    static constexpr double Threshold = 1.0e-15;
+    static constexpr double Tolerence = 1.0e-14;
   };
-  const double Parameters::Epsilon   =       epsilon<double>();   /// Platform-dependent machine epsilon.
-  const double Parameters::Threshold =  10.0*epsilon<double>();   /// Tolerance for various cell inclusion tests
-  const double Parameters::Tolerence = 100.0*epsilon<double>();   /// General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
+//  const double Parameters::Epsilon   =       epsilon<double>();   /// Platform-dependent machine epsilon.
+//  const double Parameters::Threshold =  10.0*epsilon<double>();   /// Tolerance for various cell inclusion tests
+//  const double Parameters::Tolerence = 100.0*epsilon<double>();   /// General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
 
   // ===================================================================
   // Enum classes
