@@ -50,7 +50,7 @@
 namespace Ifpack2 {
 
 /// \class LinePartitioner
-/* \brief Ifpack2::LinePartitioner: A class to define partitions into a set of lines.
+/*! \brief Ifpack2::LinePartitioner: A class to define partitions into a set of lines.
 
 These "line" partitions could then be used in to do block Gauss-Seidel smoothing, for instance.
 
@@ -62,12 +62,14 @@ from the "far" points.  We also make sure the line can never double back on itse
 the associated sub-matrix could (in theory) be handed off to a fast triangular solver.  This
 implementation doesn't actual do that, however.
 
-This implementation is deived from the related routine in ML.
+This implementation is derived from the related routine in ML.
 
 Supported parameters:
-  \c "partitioner: line detection threshold": if ||x_j - x_i||^2 < thresh * max_k||x_k - x_i||^2, then the points are close enough to line smooth <Scalar>
-  \c "partitioner: coordinates"  : coordinates of local nodes  < Teuchos::MultiVector<Scalar> >
-  \c "partitioner: PDE equations": number of equations per node <int>
+  <ul>
+    <li> \c "partitioner: line detection threshold": if \f$||x_j - x_i||^2 < thresh * \max_k||x_k - x_i||^2\f$, then the points are close enough to line smooth <Scalar>
+    <li> \c "partitioner: coordinates"  : coordinates of local nodes  < Teuchos::MultiVector<Scalar> >
+    <li> \c "partitioner: PDE equations": number of equations per node <int>
+  </ul>
 */
 /// \tparam GraphType Specialization of Tpetra::RowGraph or Tpetra::CrsGraph.
 
