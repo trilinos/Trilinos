@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 # Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 # retains certain rights in this software.
@@ -35,6 +36,10 @@
 #
 # To run the tests with valgrind checking, uncomment the next line and comment the
 # following line. Can also define other prefixes if wanted.
+
+if [ "$1" == "netcdf4" ]; then
+   export EXODUS_NETCDF4=quiet
+fi
 
 #set PREFIX = "valgrind --tool=memcheck"
 PREFIX=""
@@ -213,9 +218,10 @@ echo "end testrd-nfaced" >> test.output
 
 echo "testwt-long-name - write file with long (64-character) names..."
 echo "begin testwt-long-name" >> test.output
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
 ${PREFIX} ${BINDIR}/testwt-long-name${SUFFIX} >> test.output
 echo "end testwt-long-name" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/testwt-long-name.dmp | tee testwt-long-name.res
+${NCDUMP} -d5,5 test.exo | grep -v version |grep -v "maximum_name_length" | ${DIFF} - ${SRCDIR}/testwt-long-name.dmp | tee testwt-long-name.res
 
 echo "testrd - read long name file truncating to 32 characters on read..."
 echo "begin testrd (truncate)" >> test.output
@@ -236,12 +242,6 @@ echo "test-empty - read an empty (only ex_create called) exodus file..."
 echo "begin test-empty" >> test.output
 ${PREFIX} ${BINDIR}/test-empty${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/test-empty.dmp | tee test-empty.res
 echo "end test-empty" >> test.output
-
-echo "testwt-compress - verify can create compressed netcdf-4 files..."
-echo "begin testwt-compress" > test.output
-${PREFIX} ${BINDIR}/testwt-compress${SUFFIX} >> test.output
-echo "end testwt-compress" >> test.output
-${NCDUMP} -h -s test-compress.exo | grep Deflate | ${DIFF} - ${SRCDIR}/test-compress.dmp | tee test-compress.res
 
 echo "************************************************************************"
 echo "************************************************************************"

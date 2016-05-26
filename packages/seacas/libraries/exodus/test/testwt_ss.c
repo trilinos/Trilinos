@@ -76,7 +76,7 @@ int main(int argc, char **argv)
   int  CPU_word_size, IO_word_size;
 
   float x[100], y[100], z[100];
-  float dist_fact[100];
+  float  attrib[1], dist_fact[100];
   char *coord_names[3], *qa_record[2][4], *info[3];
 
   ex_opts(EX_VERBOSE | EX_ABORT);
@@ -463,6 +463,79 @@ int main(int argc, char **argv)
   }
 
   free(connect);
+
+  /* write element block attributes */
+  attrib[0] = 3.14159;
+  error     = ex_put_attr(exoid, EX_ELEM_BLOCK, ebids[0], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[0], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  attrib[0] = 6.14159;
+  error     = ex_put_elem_attr(exoid, ebids[1], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[2], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[3], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[4], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[5], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[6], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
+
+  error = ex_put_elem_attr(exoid, ebids[7], attrib);
+  printf("after ex_put_elem_attr, error = %d\n", error);
+
+  if (error) {
+    ex_close(exoid);
+    exit(-1);
+  }
 
   /* write individual side sets */
 
