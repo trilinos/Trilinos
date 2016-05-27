@@ -368,7 +368,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
   if(lof!=Teuchos::null) 
-    globalIndexer = lof->getUniqueGlobalIndexerBase();
+    globalIndexer = lof->getRangeGlobalIndexer();
   
   // DOFs: Scalar value @ basis --> Scalar value @ IP 
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {

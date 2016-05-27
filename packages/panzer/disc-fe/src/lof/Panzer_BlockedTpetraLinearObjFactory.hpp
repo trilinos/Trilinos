@@ -272,9 +272,6 @@ public:
    //! how many block columns
    int getBlockColCount() const;
 
-   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > getGlobalIndexer() const
-   { return blockedDOFManager_; }
-
    //! exclude a block pair from the matrix
    void addExcludedPair(int rowBlock,int colBlock);
 
@@ -284,8 +281,15 @@ public:
    virtual void beginFill(LinearObjContainer & loc) const;
    virtual void endFill(LinearObjContainer & loc) const;
 
-   //! Get the unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
+   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > getGlobalIndexer() const
+   { return blockedDOFManager_; }
+
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
+   { return blockProvider_; }
+
+   //! Get the range unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
    { return blockProvider_; }
 
 protected:

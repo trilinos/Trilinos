@@ -410,7 +410,7 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   // Second: build the responses
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  responseLibrary_->initialize(wc,lof_->getUniqueGlobalIndexerBase(),lof_);
+  responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
   buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
   buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
@@ -811,7 +811,7 @@ addFlexibleResponse(const std::string & responseName,
             const Teuchos::RCP<ResponseMESupportBuilderBase> & builder)
 {
    // add a basic response, use x global indexer to define it
-   builder->setDerivativeInformationBase(lof_,lof_->getUniqueGlobalIndexerBase());
+   builder->setDerivativeInformationBase(lof_,lof_->getRangeGlobalIndexer());
 
    int respIndex = addResponse(responseName,wkst_desc,*builder);
 
@@ -1767,7 +1767,7 @@ buildDistroParamDfDp_RL(
 
     // the user wants global sensitivities, hooray! Build and setup the response library
     RCP<ResponseLibrary<Traits> > rLibrary
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(),
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getRangeGlobalIndexer(),
                                                    param_lof,true));
     rLibrary->buildResidualResponseEvaluators(physicsBlocks,eqset_factory,bcs,bc_factory,
                                               cm_factory,closure_models,user_data,
@@ -1818,7 +1818,7 @@ buildDistroParamDgDp_RL(
 
     // the user wants global sensitivities, hooray! Build and setup the response library
     RCP<ResponseLibrary<Traits> > rLibrary
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(), lof_));
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getRangeGlobalIndexer(), lof_));
 
 
     // build evaluators for all flexible responses

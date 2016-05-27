@@ -98,7 +98,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 
   phx_volume_field_managers_.clear();
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getUniqueGlobalIndexerBase();
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getRangeGlobalIndexer();
 
   for (std::size_t blkInd=0;blkInd<physicsBlocks.size();++blkInd) {
     RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
@@ -176,7 +176,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                             "panzer::FMB::setupBCFieldManagers: method function getWorksetContainer() returns null. "
                             "Plase call setWorksetContainer() before calling this method");
 
-  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getUniqueGlobalIndexerBase();
+  Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer = lo_factory.getRangeGlobalIndexer();
 
   // for convenience build a map (element block id => physics block)
   std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks_map;

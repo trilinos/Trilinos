@@ -246,14 +246,6 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
 
-   //! Get the unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
-   { return gidProvider_; }
-
-   //! Get the unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
-   { return gidProvider_; }
-
    //! Get the domain unique global indexer this factory was created with.
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
    { return colGidProvider_!=Teuchos::null ? colGidProvider_ : gidProvider_; }

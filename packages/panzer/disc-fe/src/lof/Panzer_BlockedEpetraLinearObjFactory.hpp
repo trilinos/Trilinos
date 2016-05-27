@@ -281,7 +281,7 @@ public:
    //! how many block columns
    int getBlockColCount() const;
 
-   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > getGlobalIndexer() const
+   Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > getGlobalIndexer() const
    { return blockedDOFManager_; }
 
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
@@ -297,10 +297,6 @@ public:
 
    //! exclude a vector of pairs from the matrix
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
-
-   //! Get the unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
-   { return blockProvider_; }
 
 protected:
 /*************** Generic methods/members *******************/
@@ -347,8 +343,8 @@ protected:
                                      bool zeroVectorRows) const;
 
    void ghostToGlobalEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out,bool col) const;
-   void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
    void globalToGhostEpetraVector(int i,const Epetra_Vector & in,Epetra_Vector & out,bool col) const;
+   void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildEpetraMap(int i) const;
