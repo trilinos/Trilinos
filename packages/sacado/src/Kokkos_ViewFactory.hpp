@@ -107,7 +107,7 @@ struct ViewFactory {
  
    if(is_dyn_rank) {
     
-      typename ResultView::array_layout layout = Experimental::Impl::reconstructLayout(layout_extern, rank_extern + (is_fad?1:0));
+      typename ResultView::array_layout layout = Experimental::Impl::reconstructLayout(layout_extern, rank_extern);
     
       const unsigned rank = computeRank(layout);
       if(is_fad) 
@@ -135,14 +135,14 @@ struct ViewFactory {
   computeRank(
     const size_t N0, const size_t N1, const size_t N2, const size_t N3,
     const size_t N4, const size_t N5, const size_t N6, const size_t N7 ) {
-    return  ( (N7 == 0) ?
-            ( (N6 == 0) ?
-            ( (N5 == 0) ?
-            ( (N4 == 0) ?
-            ( (N3 == 0) ?
-            ( (N2 == 0) ?
-            ( (N1 == 0) ?
-            ( (N0 == 0) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
+    return  ( (N7 == ~size_t(0)) ?
+            ( (N6 == ~size_t(0)) ?
+            ( (N5 == ~size_t(0)) ?
+            ( (N4 == ~size_t(0)) ?
+            ( (N3 == ~size_t(0)) ?
+            ( (N2 == ~size_t(0)) ?
+            ( (N1 == ~size_t(0)) ?
+            ( (N0 == ~size_t(0)) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
   }
 
 };
