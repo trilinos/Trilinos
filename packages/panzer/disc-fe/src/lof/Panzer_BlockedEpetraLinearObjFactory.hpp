@@ -90,8 +90,8 @@ public:
                                  const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider);
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
-                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & colGidProvider);
+                                 const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
+                                 const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider);
 
    virtual ~BlockedEpetraLinearObjFactory();
 

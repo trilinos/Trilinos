@@ -234,9 +234,10 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    TEST_EQUALITY(gmat->productDomain()->dim(),10+15);
 }
 
-/*
 TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
 {
+   typedef Thyra::ProductVectorBase<double> PVector;
+   typedef Thyra::BlockedLinearOpBase<double> BLinearOp;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -255,23 +256,32 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+   RCP<const FieldPattern> patternC2
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer> >();
 
    RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
-   indexer->setConnManager(connManager,MPI_COMM_WORLD);
-   indexer->addField("U",patternC1);
-   indexer->addField("V",patternC1);
+   {
+     std::vector<std::vector<std::string> > fieldOrder(2);
 
-   std::vector<std::vector<std::string> > fieldOrder(2);
-   fieldOrder[0].push_back("U");
-   fieldOrder[1].push_back("V");
-   indexer->setFieldOrder(fieldOrder);
-   indexer->buildGlobalUnknowns();
+     indexer->setConnManager(connManager,MPI_COMM_WORLD);
+     indexer->addField("U",patternC1);
+     indexer->addField("V",patternC1);
+
+     fieldOrder[0].push_back("U");
+     fieldOrder[1].push_back("V");
+     indexer->setFieldOrder(fieldOrder);
+     indexer->buildGlobalUnknowns();
+   }
 
    RCP<panzer::DOFManager<int,int> > control_indexer = rcp(new panzer::DOFManager<int,int>());
-   control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
-   control_indexer->addField("Z",patternC1);
-   control_indexer->buildGlobalUnknowns();
- 
+   {
+     control_indexer->setConnManager(connManager,MPI_COMM_WORLD);
+     control_indexer->addField("Z",patternC1);
+     control_indexer->buildGlobalUnknowns();
+
+     patternC2->print(out);
+   }
+
    // setup factory
    RCP<BlockedEpetraLinearObjFactory<Traits,int> > ep_lof
          = Teuchos::rcp(new BlockedEpetraLinearObjFactory<Traits,int>(tComm,indexer));
@@ -281,12 +291,33 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    RCP<const BlockedEpetraLinearObjFactory<Traits,int> > ep_control_lof 
        = rcp_dynamic_cast<const BlockedEpetraLinearObjFactory<Traits,int> >(control_lof);
 
-   std::vector<int> control_owned;
-   control_indexer->getOwnedIndices(control_owned);
+   RCP<BLinearOp> mat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getThyraMatrix()); 
+   RCP<BLinearOp> gmat = rcp_dynamic_cast<BLinearOp>(ep_control_lof->getGhostedThyraMatrix()); 
+   RCP<PVector>   x   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraDomainVector()); 
+   RCP<PVector>   gx   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraDomainVector()); 
+   RCP<PVector>   f   = rcp_dynamic_cast<PVector>(ep_control_lof->getThyraRangeVector()); 
+   RCP<PVector>   gf   = rcp_dynamic_cast<PVector>(ep_control_lof->getGhostedThyraRangeVector()); 
 
-   // TEST_ASSERT(ep_control_lof->getMap()->SameAs(*ep_lof->getMap()));
-   // TEST_EQUALITY(ep_control_lof->getColMap()->NumMyElements(),Teuchos::as<int>(control_owned.size()));
+   TEST_EQUALITY(x->productSpace()->numBlocks(),1);
+   TEST_EQUALITY(x->productSpace()->dim(),18);
+   TEST_EQUALITY(gx->productSpace()->numBlocks(),1);
+   TEST_EQUALITY(gx->productSpace()->dim(),10+15);
+
+   TEST_EQUALITY(f->productSpace()->numBlocks(),2);
+   TEST_EQUALITY(f->productSpace()->dim(),36);
+   TEST_EQUALITY(gf->productSpace()->numBlocks(),2);
+   TEST_EQUALITY(gf->productSpace()->dim(),50);
+
+
+   TEST_EQUALITY(mat->productRange()->numBlocks(),2);
+   TEST_EQUALITY(mat->productRange()->dim(),36);
+   TEST_EQUALITY(mat->productDomain()->numBlocks(),1);
+   TEST_EQUALITY(mat->productDomain()->dim(),18);
+
+   TEST_EQUALITY(gmat->productRange()->numBlocks(),2);
+   TEST_EQUALITY(gmat->productRange()->dim(),50);
+   TEST_EQUALITY(gmat->productDomain()->numBlocks(),1);
+   TEST_EQUALITY(gmat->productDomain()->dim(),10+15);
 }
-*/
 
 }

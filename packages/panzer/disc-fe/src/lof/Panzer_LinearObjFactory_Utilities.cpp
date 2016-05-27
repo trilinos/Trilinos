@@ -69,8 +69,8 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
 
   Ptr<const BlockedEpetraLOF> blk_epetra_lof = ptr_dynamic_cast<const BlockedEpetraLOF>(ptrFromRef(lof));
   if(blk_epetra_lof!=null) {
-    RCP<const BlockedEpetraUGI> rangeUGI  = rcp_dynamic_cast<const BlockedEpetraUGI>(rUgi==null ? blk_epetra_lof->getRangeGlobalIndexer() : rUgi,true);
-    RCP<const BlockedEpetraUGI> domainUGI = rcp_dynamic_cast<const BlockedEpetraUGI>(dUgi==null ? blk_epetra_lof->getDomainGlobalIndexer() : dUgi,true);
+    auto rangeUGI  = (rUgi==null ? blk_epetra_lof->getRangeGlobalIndexer() : rUgi);
+    auto domainUGI = (dUgi==null ? blk_epetra_lof->getDomainGlobalIndexer() : dUgi);
     RCP<Teuchos::MpiComm<int> > mpiComm = rcp(new Teuchos::MpiComm<int>(blk_epetra_lof->getComm()));
     return rcp(new BlockedEpetraLOF(mpiComm,rangeUGI,domainUGI));
   }

@@ -132,18 +132,46 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
-                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & colGidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), colBlockedDOFManager_(colGidProvider)
-   , comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
+                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
+                              const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider)
+   : comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
+   blockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(gidProvider,true);
+   blockProvider_= blockedDOFManager_;
+   if(colGidProvider!=Teuchos::null) {
+     colBlockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(colGidProvider);
+
+     // this is really a hack to try to build a blocked column indexer
+     if(colBlockedDOFManager_==Teuchos::null) {
+       // remove constantness as well as a result of the poorly designed blocked dof manager
+       auto colIndexer = Teuchos::rcp_const_cast<UniqueGlobalIndexer<LocalOrdinalT,int> >(
+                             Teuchos::rcp_dynamic_cast<const UniqueGlobalIndexer<LocalOrdinalT,int> >(colGidProvider,true));
+
+       // build a vector containing one column indexer
+       std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,int> > > ugi_vec;
+       ugi_vec.push_back(colIndexer);
+
+       // 
+       auto connManager = Teuchos::rcp_const_cast<ConnManager<LocalOrdinalT,int> >(
+                          Teuchos::rcp_dynamic_cast<const ConnManager<LocalOrdinalT,int> >(colIndexer->getConnManagerBase()));
+
+       // build blocked column indexer
+       Teuchos::RCP<BlockedDOFManager<LocalOrdinalT,int> > colBIndexer
+           = Teuchos::rcp(new BlockedDOFManager<LocalOrdinalT,int>);
+       colBIndexer->setConnManager(connManager,*comm->getRawMpiComm());
+       colBIndexer->buildGlobalUnknowns(ugi_vec);
+
+       colBlockedDOFManager_ = colBIndexer;
+     }
+   }
+
    comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
-   for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
-      gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
+   for(std::size_t i=0;i<blockedDOFManager_->getFieldDOFManagers().size();i++)
+      gidProviders_.push_back(blockedDOFManager_->getFieldDOFManagers()[i]);
 
-   for(std::size_t i=0;i<colGidProvider->getFieldDOFManagers().size();i++)
-      colGidProviders_.push_back(colGidProvider->getFieldDOFManagers()[i]);
+   for(std::size_t i=0;i<colBlockedDOFManager_->getFieldDOFManagers().size();i++)
+      colGidProviders_.push_back(colBlockedDOFManager_->getFieldDOFManagers()[i]);
 
    useColGidProviders_ = true;
 
