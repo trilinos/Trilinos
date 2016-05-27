@@ -249,8 +249,7 @@ void ComparisonHelper::AddSource(const string &name, ComparisonSource * source)
 
 bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm)
 {
-  if(pList.isParameter("A") && pList.isParameter("B"))
-  {
+  if(pList.isParameter("A") && pList.isParameter("B")) {
     // comparing solutions
     string pA = pList.get<string>("A");
     if(this->sources.find(pA) == this->sources.end())
@@ -262,8 +261,7 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     }
     
     string pB = pList.get<string>("B");
-    if(this->sources.find(pB) == this->sources.end())
-    {
+    if(this->sources.find(pB) == this->sources.end()) {
       cout << "\nProblem: " + pB + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nSolution comparison FAILED." << endl;
@@ -273,12 +271,10 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     bool bResult = this->CompareSolutions(pA, pB, comm);
     return bResult;
   }
-  else if (pList.isParameter("Problem") && pList.isParameter("Reference"))
-  {
+  else if (pList.isParameter("Problem") && pList.isParameter("Reference")) {
     // comparing metrics/timers
     string prb = pList.get<string>("Problem");
-    if(this->sources.find(prb) == this->sources.end())
-    {
+    if(this->sources.find(prb) == this->sources.end()) {
       cout << "\nProblem: " + prb + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
@@ -286,8 +282,7 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
     }
     
     string ref = pList.get<string>("Reference");
-    if(this->sources.find(ref) == this->sources.end())
-    {
+    if(this->sources.find(ref) == this->sources.end()) {
       cout << "\nReference: " + ref + ", was not saved for comparison.";
       cout << "\nThis typically indicates that an error occurred while running the problem.";
       cout << "\nMetric comparison FAILED." << endl;
@@ -305,10 +300,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       cout <<"\nSolution comparison FAILED." << endl;
     }
   }
-  else if (pList.isParameter("Problem") || pList.isParameter("Reference"))
-  {
-    if(comm->getRank() == 0)
-    {
+  else if (pList.isParameter("Problem") || pList.isParameter("Reference")) {
+    if(comm->getRank() == 0) {
       cout << "Problem or reference is not specified -- check input.";
       cout <<"\nMetric comparison FAILED." << endl;
     }
@@ -328,26 +321,21 @@ bool ComparisonHelper::CompareSolutions(const string &p1,
   if(comm->getRank() == 0) printf("\nComparing: %s and %s\n",p1.c_str(),p2.c_str());
   auto A = this->sources[p1];
   auto B = this->sources[p2];
-  if(A->problem_kind != B->problem_kind)
-  {
+  if(A->problem_kind != B->problem_kind) {
     cout << "Problem A and B are of a different kind and cannot be compared.";
     cout <<"\nSolution comparison FAILED." << endl;
   }
-  else
-  {
-    if(A->problem_kind == "partitioning")
-    {
+  else {
+    if(A->problem_kind == "partitioning") {
       return this->ComparePartitionSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
-    else if(A->problem_kind == "coloring")
-    {
+    else if(A->problem_kind == "coloring") {
       return this->CompareColoringSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
     else if(A->problem_kind == "ordering"){
       return this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
     }
-    else
-    {
+    else {
       cout << "Problem kind not recognized.  Check spelling.";
       cout <<"\nSolution comparison FAILED." << endl;
     }
@@ -365,8 +353,7 @@ ComparisonHelper::reduceWithMessage(const RCP<const Comm<int> > &comm, const std
   reduceAll<int,int>(*comm.get(), Teuchos::EReductionType::REDUCE_MAX, local_status , global);
   
   local_status = *global;
-  if(local_status == 1)
-  {
+  if (local_status == 1) {
     msg << msg_in;
   }
 
@@ -556,7 +543,9 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   ostringstream status;
   int failed = 0;
   
-  if(!sourceA->problem.getRawPtr()){ failed = 1;}
+  if (!sourceA->problem.getRawPtr()) {
+    failed = 1;
+  }
   ComparisonHelper::reduceWithMessage(comm,
                                       "Solution A is NULL. Solution comparison FAILED.",
                                       failed,
@@ -595,8 +584,7 @@ bool ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
   //  }
   
   
-  if(!failed)
-  {
+  if(!failed) {
     status << "Solution sets A and B are the same. ";
     status << "Solution set comparison PASSED.";
   }
@@ -639,8 +627,7 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   int all_tests_pass = 1;
   string metric_name;
   
-  while(!metrics.empty())
-  {
+  while(!metrics.empty()) {
     // print their names...
     ostringstream msg;
     metric_name = metrics.front().name();
@@ -670,10 +657,10 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
                                                 prb_timers.at(metric_name),
                                                 ref_timers.at(metric_name),
                                                 metrics.front(), msg)) {
-        all_tests_pass = 0;
-        if (rank == 0) {
-          cout << "timer comparison test caused a FAILED event." << endl;
-        }
+	all_tests_pass = 0;
+	if (rank == 0) {
+	  cout << "timer comparison test caused a FAILED event." << endl;
+	}
       }
       
       if(rank == 0) {

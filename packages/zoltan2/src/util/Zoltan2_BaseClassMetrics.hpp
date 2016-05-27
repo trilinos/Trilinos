@@ -90,20 +90,21 @@ public:
 
 /*! \brief Constructor - for compiling but not used */
 BaseClassMetrics() :
-	values_(), metricName_(METRICS_UNSET_STRING) {
-	}
+  values_(), metricName_(METRICS_UNSET_STRING) {
+
+}
 
 /*! \brief Constructor */
 BaseClassMetrics(int memCount, std::string mname) :
   values_(), metricName_(mname) {
-	resetValues(memCount);
-	}
+  resetValues(memCount);
+}
 
 /*! \brief Constructor */
 BaseClassMetrics(int memCount) :
   values_(), metricName_(METRICS_UNSET_STRING) {
-	resetValues(memCount);
-	}
+  resetValues(memCount);
+}
 
 /*! \abstract printLine. Not abstract so that we can generically support stl containers like maps. */
 virtual void printLine(std::ostream &os) const {};
@@ -122,32 +123,32 @@ void setName(std::string name) { metricName_ = name;}
 
 /*! \hasMetricValue.  */
 bool hasMetricValue(const std::string & metric_name) const {
-	return( convertMetricNameToIndex( metric_name ) != getMetrics().size() );
+  return( convertMetricNameToIndex( metric_name ) != getMetrics().size() );
 }
 
 /*! \ return a metric value specified by name */
 scalar_t getMetricValue(const std::string & metric_name) const
 {
-	int metricIndex = convertMetricNameToIndex( metric_name);
-	if( metricIndex == getMetrics().size() )
-		return 0.0; // throw an error
-	return values_[metricIndex];
+  int metricIndex = convertMetricNameToIndex( metric_name);
+  if( metricIndex == getMetrics().size() )
+    return 0.0; // throw an error
+  return values_[metricIndex];
 }
 
 /*! \ set a metric value specified by name */
 void setMetricValue(const std::string & metric_name, scalar_t value) const
 {
-	int metricIndex = convertMetricNameToIndex( metric_name);
-	if( metricIndex != getMetrics().size() )
-		values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utlity functions - but we probably want to error handle here for bad names
+  int metricIndex = convertMetricNameToIndex( metric_name);
+  if( metricIndex != getMetrics().size() )
+    values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utlity functions - but we probably want to error handle here for bad names
 }
 
 /*! \utility function converts the name to an enum index. */
 int convertMetricNameToIndex(const std::string & metric_name) const
 {
-	const std::vector<std::string> & metricNames = getMetrics();
-	int metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
-	return metricIndex; // this can return metricNames.size() if not found
+  const std::vector<std::string> & metricNames = getMetrics();
+  int metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
+  return metricIndex; // this can return metricNames.size() if not found
 }
 
 /*! \setup a static string name indicating my class name. This stub name exists so that this base class is not virtual to resolve problems with using metrics with stl. It should never be used. */
