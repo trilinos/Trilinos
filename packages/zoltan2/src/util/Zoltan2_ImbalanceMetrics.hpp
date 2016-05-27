@@ -170,7 +170,7 @@ template <typename scalar_t>
   if (mcnorm_ > 0){
     multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm_ - 1);
     std::ostringstream oss;
-    switch (realNorm){
+    switch (realNorm) {
       case normMinimizeTotalWeight:   // 1-norm = Manhattan norm
         oss << this->getName() << " (1)";
         break;

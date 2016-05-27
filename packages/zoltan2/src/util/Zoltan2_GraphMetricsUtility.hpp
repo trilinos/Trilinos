@@ -123,12 +123,11 @@ template <typename Adapter>
   // add some more metrics to the array
   typedef typename ArrayRCP<RCP<BaseClassMetrics<typename Adapter::scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n )
-  {
-	  mv_t * newMetric = new mv_t;									// allocate the new memory
-	  env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
-	  metrics[n] = rcp( newMetric); 				// create the new members
-  }
+  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
+    mv_t * newMetric = new mv_t;									// allocate the new memory
+    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
+    metrics[n] = rcp( newMetric); 				// create the new members
+    }
   array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
 

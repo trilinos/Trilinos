@@ -130,7 +130,7 @@ bool getParameterLists(const string &inputFileName,
   // and a parameter list for solution comparisons
   Teuchos::FileInputSource inputSource(inputFileName);
   if(rank == 0) {
-	  cout << "Input file source: " << inputFileName << endl;
+    cout << "Input file source: " << inputFileName << endl;
   }
   XMLObject xmlInput;
   
@@ -152,10 +152,10 @@ bool getParameterLists(const string &inputFileName,
     xmlToModelPList(xmlInput.getChild(i), plist);
 
     if(plist.name() == "Comparison") {
-    	comparisons.emplace(plist);
+      comparisons.emplace(plist);
     }
     else {
-    	problems.emplace(plist);
+      problems.emplace(plist);
     }
   }
 
@@ -253,12 +253,12 @@ bool run(const UserInputForTests &uinput,
 
   if (problem == nullptr) {
     if (rank == 0) {
-	  std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
-	}
-	return false;
+      std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+    }
+    return false;
   }
   else if(rank == 0) {
-     std::cout << "Using input adapter type: " + adapter_name << std::endl;
+    std::cout << "Using input adapter type: " + adapter_name << std::endl;
   }
 
   ////////////////////////////////////////////////////////////
@@ -332,21 +332,21 @@ bool run(const UserInputForTests &uinput,
       rcp(Zoltan2_TestingFramework::EvaluatePartitionFactory::newEvaluatePartition(reinterpret_cast<partitioning_problem_t*> (problem), adapter_name, ia, &zoltan2_parameters));
 
     std::ostringstream msgSummary;
-	metricObject->printMetrics(msgSummary, true); //
+    metricObject->printMetrics(msgSummary, true); //
     if(rank == 0) {
-	  cout << msgSummary.str();
+      cout << msgSummary.str();
     }
 
-	std::ostringstream msgResults;
-	if (!MetricAnalyzer::analyzeMetrics(metricObject, problem_parameters.sublist("Metrics"), msgResults)) { // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
-	  bSuccess = false;
-	  if (rank == 0) {
-	    std::cout << "MetricAnalyzer::analyzeMetrics() returned false and the test is FAILED." << std::endl;
-	  }
-	}
+    std::ostringstream msgResults;
+    if (!MetricAnalyzer::analyzeMetrics(metricObject, problem_parameters.sublist("Metrics"), msgResults)) { // Note the MetricAnalyzer only cares about the data found in the "Metrics" sublist
+      bSuccess = false;
+      if (rank == 0) {
+	std::cout << "MetricAnalyzer::analyzeMetrics() returned false and the test is FAILED." << std::endl;
+      }
+    }
     if(rank == 0) {
-	  cout << msgResults.str();
-	}
+      cout << msgResults.str();
+    }
 
 //#define BDD
 #ifdef BDD 
@@ -521,17 +521,17 @@ int main(int argc, char *argv[])
     }
   }
   catch(std::logic_error) {
-	if (rank == 0) {
+    if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught a logic_error which may be a formatting error and will return false." << std::endl;
-	}
+    }
     result = 1;
     throw;
   }
   catch(...) {
-	if (rank == 0) {
+    if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
-	}
-	result = 1;
+    }
+    result = 1;
     throw;
   }
 

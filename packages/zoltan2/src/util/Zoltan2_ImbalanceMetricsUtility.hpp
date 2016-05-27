@@ -123,18 +123,18 @@ template <typename scalar_t, typename lno_t, typename part_t>
   typedef ImbalanceMetrics<scalar_t> mv_t;
   typedef typename ArrayRCP<RCP<BaseClassMetrics<scalar_t> > >::size_type array_size_type;
   metrics.resize( metrics.size() + numMetrics );
-  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n )
-  {
-	  mv_t * newMetric = new mv_t;									// allocate the new memory
+  for( array_size_type n = metrics.size() - numMetrics; n < metrics.size(); ++n ) {
+    mv_t * newMetric = new mv_t;									// allocate the new memory
 
-	  // moved this here because we now allocate the polymorphic classes
-	  // we should probably reorganize these functions so all data setup is done on the derived classes
-	  // then as a last step we can insert them into the general array of MetricBase types
-	  if (vwgtDim > 1)
-	    newMetric->setNorm(multiCriteriaNorm(mcNorm));
+    // moved this here because we now allocate the polymorphic classes
+    // we should probably reorganize these functions so all data setup is done on the derived classes
+    // then as a last step we can insert them into the general array of MetricBase types
+    if (vwgtDim > 1) {
+      newMetric->setNorm(multiCriteriaNorm(mcNorm));
+    }
 
-	  env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
-	  metrics[n] = rcp( newMetric ); 				// create the new members
+    env->localMemoryAssertion(__FILE__,__LINE__,1,newMetric);		// check errors
+    metrics[n] = rcp( newMetric ); 				// create the new members
   }
   array_size_type next = metrics.size() - numMetrics; // MDM - this is most likely temporary to preserve the format here - we are now filling a larger array so we may not have started at 0
 
@@ -483,6 +483,7 @@ template <typename Adapter>
 
   ArrayRCP<scalar_t> globalSums;
 
+  int initialMetricCount = metrics.size();
   try{
     globalSumsByPart<scalar_t, lno_t, part_t>(env, comm,
       partArray, nWeights, weights.view(0, numCriteria), mcNorm,
@@ -490,9 +491,13 @@ template <typename Adapter>
   }
   Z2_FORWARD_EXCEPTIONS
 
+  int addedMetricsCount = metrics.size() - initialMetricCount;
+
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the object count.
   // (Use first index of part sizes.)
+
+  int index = initialMetricCount;
 
   scalar_t *objCount  = globalSums.getRawPtr();
   scalar_t min, max, avg;
@@ -502,34 +507,33 @@ template <typename Adapter>
     psizes = partSizes[0].getRawPtr();
 
   computeImbalances<scalar_t, part_t>(numParts, targetNumParts, psizes,
-      metrics[0]->getMetricValue("global sum"), objCount,
+      metrics[index]->getMetricValue("global sum"), objCount,
       min, max, avg);
 
-  // MDM - note that this indexing works because we have Metrics first - but we should generalize this - perhaps we will not start at index 0 in the new scheme
-  metrics[0]->setMetricValue("maximum imbalance", 1.0 + max);
-  metrics[0]->setMetricValue("average imbalance", avg);
+  metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
+  metrics[index]->setMetricValue("average imbalance", avg);
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the normed weight sum.
 
   scalar_t *wgts = globalSums.getRawPtr() + numParts;
 
-  if (metrics.size() > 1){
-
+  if (addedMetricsCount > 1){
+    ++index;
     computeImbalances<scalar_t, part_t>(numParts, targetNumParts,
       numCriteria, partSizes.view(0, numCriteria),
-      metrics[1]->getMetricValue("global sum"), wgts,
+      metrics[index]->getMetricValue("global sum"), wgts,
       min, max, avg);
 
-    metrics[1]->setMetricValue("maximum imbalance", 1.0 + max);
-    metrics[1]->setMetricValue("average imbalance", avg);
+    metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
+    metrics[index]->setMetricValue("average imbalance", avg);
 
-    if (metrics.size() > 2){
+    if (addedMetricsCount > 2){
 
     ///////////////////////////////////////////////////////////////////////////
     // Compute imbalances for each individual weight.
 
-      int next = 2;	// MDM - also generalize here for the new scheme where we build the list - currently still fine because ImbalanceMetrics happen to be loaded first
+      ++index;
 
       for (int vdim=0; vdim < numCriteria; vdim++){
         wgts += numParts;
@@ -539,11 +543,11 @@ template <typename Adapter>
            psizes = partSizes[vdim].getRawPtr();
 
         computeImbalances<scalar_t, part_t>(numParts, targetNumParts, psizes,
-          metrics[next]->getMetricValue("global sum"), wgts, min, max, avg);
+          metrics[index]->getMetricValue("global sum"), wgts, min, max, avg);
 
-        metrics[next]->setMetricValue("maximum imbalance", 1.0 + max);
-        metrics[next]->setMetricValue("average imbalance", avg);
-        next++;
+        metrics[index]->setMetricValue("maximum imbalance", 1.0 + max);
+        metrics[index]->setMetricValue("average imbalance", avg);
+        index++;
       }
     }
 

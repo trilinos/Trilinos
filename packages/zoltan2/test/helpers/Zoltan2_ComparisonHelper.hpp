@@ -294,7 +294,7 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
       return false;
     }
     
-	bool bResult = this->CompareMetrics(pList, comm);
+    bool bResult = this->CompareMetrics(pList, comm);
     return bResult;
   }
   else if (pList.isParameter("A") || pList.isParameter("B"))
@@ -315,8 +315,8 @@ bool ComparisonHelper::Compare(const ParameterList &pList, const RCP<const Comm<
   }
   else {
     if (comm->getRank() == 0) {
-	  cout << "ComparisonHelper did not understand how to read the xml. Test FAILED." << endl;
-	}
+      cout << "ComparisonHelper did not understand how to read the xml. Test FAILED." << endl;
+    }
   }
   return false;
 }
@@ -392,28 +392,25 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
                                       failed,
                                       status);
 
-  if(!failed)
-  {
+  if(!failed) {
     //    typedef Zoltan2::PartitioningSolution<basic_id_t> partitioning_solution_t; // BDD unused
     // have some solutions lets compare them
-    if(partitioning_problem_t * problem_a = reinterpret_cast<partitioning_problem_t *>(sourceA->problem.getRawPtr()))
-    {
-      if(partitioning_problem_t * problem_b = reinterpret_cast<partitioning_problem_t *>(sourceB->problem.getRawPtr()))
-      {
+    if (partitioning_problem_t * problem_a = reinterpret_cast<partitioning_problem_t *>(sourceA->problem.getRawPtr())) {
+      if(partitioning_problem_t * problem_b = reinterpret_cast<partitioning_problem_t *>(sourceB->problem.getRawPtr())) {
         auto solution_a = problem_a->getSolution();
         auto solution_b = problem_b->getSolution();
         
-        if(sourceA->adapter->getLocalNumIDs() != sourceB->adapter->getLocalNumIDs()){failed = 1;}
+        if(sourceA->adapter->getLocalNumIDs() != sourceB->adapter->getLocalNumIDs()) {
+          failed = 1;
+        }
         ComparisonHelper::reduceWithMessage(comm,
                                             "Number of parts in Solution A != Solution B. \
                                             Partitioning solution comparison FAILED.",
                                             failed,
                                             status);
         
-        if(!failed)
-        {
-          for(size_t i = 0; i < sourceA->adapter->getLocalNumIDs(); i++)
-          {
+        if (!failed) {
+          for(size_t i = 0; i < sourceA->adapter->getLocalNumIDs(); i++) {
             if(!failed && solution_a.getPartListView()[i] != solution_b.getPartListView()[i]) {
               failed = 1;
               ComparisonHelper::reduceWithMessage(comm, "Solution sets A and B have different values for getPartListView(). Solution comparison FAILED.", failed, status);
@@ -430,7 +427,7 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
                                             status);
       }
       
-    }else{
+    } else {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
                                             "Could not cast solution A to valid problem type.  \
@@ -440,8 +437,7 @@ bool ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
     }
   }
   
-  if(!failed)
-  {
+  if(!failed) {
     status << "Solution sets A and B are the same. ";
     status << "Solution set comparison PASSED.";
   }
@@ -461,8 +457,7 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
   ostringstream status;
   int failed = 0;
   
-  if(!sourceA->problem.getRawPtr())
-  {
+  if(!sourceA->problem.getRawPtr()) {
     failed = 1;
   }
   ComparisonHelper::reduceWithMessage(comm,
@@ -470,8 +465,7 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                       failed,
                                       status);
   
-  if(!failed && !sourceB->problem.getRawPtr())
-  {
+  if(!failed && !sourceB->problem.getRawPtr()) {
     failed = 1;
   }
   ComparisonHelper::reduceWithMessage(comm,
@@ -479,20 +473,16 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                       failed,
                                       status);
   
-  if(!failed)
-  {
+  if (!failed) {
     // have some solutions lets compare them
     typedef Zoltan2::ColoringProblem<basic_id_t> coloring_problem_t; //BDD unused
     // have some solutions lets compare them
-    if(coloring_problem_t * problem_a = reinterpret_cast<coloring_problem_t *>(sourceA->problem.getRawPtr()))
-    {
-      if(coloring_problem_t * problem_b = reinterpret_cast<coloring_problem_t *>(sourceB->problem.getRawPtr()))
-      {
+    if(coloring_problem_t * problem_a = reinterpret_cast<coloring_problem_t *>(sourceA->problem.getRawPtr())) {
+      if(coloring_problem_t * problem_b = reinterpret_cast<coloring_problem_t *>(sourceB->problem.getRawPtr())) {
         auto solution_a = problem_a->getSolution();
         auto solution_b = problem_b->getSolution();
         
-        if(solution_a->getNumColors() != solution_b->getNumColors())
-        {
+        if(solution_a->getNumColors() != solution_b->getNumColors()) {
           failed = 1;
         }
         ComparisonHelper::reduceWithMessage(comm,
@@ -501,10 +491,8 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                             failed,
                                             status);
         
-        if(!failed)
-        {
-          if(solution_a->getColorsSize() != solution_b->getColorsSize())
-          {
+        if (!failed) {
+          if(solution_a->getColorsSize() != solution_b->getColorsSize()) {
             failed = 1;
           }
           ComparisonHelper::reduceWithMessage(comm,
@@ -515,14 +503,12 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
           
         }
         
-        if(!failed)
-        {
-          for(size_t i = 0; i < solution_a->getColorsSize(); i++)
-          {
-            if(solution_a->getColors()[i] != solution_b->getColors()[i])
-            {
-              // fail
-              if(!failed) failed = 1;
+        if (!failed) {
+          for(size_t i = 0; i < solution_a->getColorsSize(); i++) {
+            if (solution_a->getColors()[i] != solution_b->getColors()[i]) {
+              if(!failed) {
+        	failed = 1;              // fail
+              }
             }
           }
           ComparisonHelper::reduceWithMessage(comm,
@@ -530,7 +516,8 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                               failed,
                                               status);
         }
-      }else{
+      }
+      else {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
                                             "Solution sets A and B are from different problem types. \
@@ -539,7 +526,8 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
                                             status);
       }
       
-    }else{
+    }
+    else {
         failed = 1;
         ComparisonHelper::reduceWithMessage(comm,
                                             "Could not cast solution A to valid problem type.  \
@@ -549,13 +537,12 @@ bool ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
     }
   }
   
-  if(!failed)
-  {
+  if (!failed) {
     status << "Solution sets A and B are the same. ";
     status << "Solution set comparison PASSED.";
   }
   
-  if(rank == 0) {
+  if (rank == 0) {
     cout << status.str() << endl;
   }
   return (failed == 0);
@@ -628,8 +615,7 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   //get sources for problema nd reference
   const string prb_name = metricsPlist.get<string>("Problem");
   const string ref_name = metricsPlist.get<string>("Reference");
-  if(rank == 0)
-  {
+  if(rank == 0) {
     cout  << "\nMetric/Timer comparison of: " << prb_name << " and ";
     cout << ref_name <<" (reference source)\n";
   }
@@ -660,24 +646,23 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
     metric_name = metrics.front().name();
 
     if (metric_name == "Metrics") { // special key word means compare the metrics list
+      std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
+      std::vector<MetricAnalyzerInfo> metricInfoSetRef;
 
-        std::vector<MetricAnalyzerInfo> metricInfoSetPrb;
-        std::vector<MetricAnalyzerInfo> metricInfoSetRef;
+      MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb, sourcePrb.get()->metricObject, metricsPlist.sublist("Metrics"));
+      MetricAnalyzer::LoadMetricInfo(metricInfoSetRef, sourceRef.get()->metricObject, metricsPlist.sublist("Metrics"));
 
-        MetricAnalyzer::LoadMetricInfo(metricInfoSetPrb, sourcePrb.get()->metricObject, metricsPlist.sublist("Metrics"));
-        MetricAnalyzer::LoadMetricInfo(metricInfoSetRef, sourceRef.get()->metricObject, metricsPlist.sublist("Metrics"));
-
-        // there is some redundancy here because the metric info holds both the questions and the results
-        // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
-        // we can iterate over either to get the questions
-        for (int n = 0; n < metricInfoSetPrb.size(); ++n) {
-          if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
-            all_tests_pass = 0;
-          }
-          if(rank == 0) {
-            cout << msg.str() << endl;
-          }
-        }
+      // there is some redundancy here because the metric info holds both the questions and the results
+      // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
+      // we can iterate over either to get the questions
+      for (int n = 0; n < metricInfoSetPrb.size(); ++n) {
+	if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
+	  all_tests_pass = 0;
+	}
+	if(rank == 0) {
+	  cout << msg.str() << endl;
+	}
+      }
     }
     else if(prb_timers.find(metric_name) != prb_timers.end() && ref_timers.find(metric_name) != ref_timers.end()) {
       if(rank == 0) cout << "\ncomparing timer: " << metric_name << endl;
@@ -711,21 +696,17 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   return (all_tests_pass == 1);
 }
 
-std::map<const string, const double>
-ComparisonHelper::timerDataToMap(const map<const std::string, RCP<Time> > &timers)
+std::map<const string, const double> ComparisonHelper::timerDataToMap(const map<const std::string, RCP<Time> > &timers)
 {
   typedef std::pair<const string,const double> pair_t;
   std::map<const string, const double> time_data;
-  for(auto &i : timers)
-  {
+  for (auto &i : timers) {
     time_data.insert(pair_t(i.first, i.second->totalElapsedTime()));
   }
-  
   return time_data;
 }
 
-bool
-ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
+bool ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
                                        const MetricAnalyzerInfo & metric,
                                        const MetricAnalyzerInfo & ref_metric,
                                        const Teuchos::ParameterList & metricPlist,
@@ -739,7 +720,7 @@ ComparisonHelper::metricComparisonTest(const RCP<const Comm<int> > &comm,
   double value = metric.theValue;
 
   if (ref_value == 0) {
-	  throw std::logic_error( "The parameter list had a 0 value for the reference value so a percentage cannot be calculated." );
+    throw std::logic_error( "The parameter list had a 0 value for the reference value so a percentage cannot be calculated." );
   }
   double percentRatio = value / ref_value;
   
@@ -795,56 +776,49 @@ bool ComparisonHelper::timerComparisonTest(const RCP<const Comm<int> > &comm,
   bool pass = true;
   string test_name = metricPlist.name() + " test";
 
-  if (metricPlist.isParameter("lower"))
-  {
+  if (metricPlist.isParameter("lower")) {
     double min = metricPlist.get<double>("lower")*global_ref_time;
     
-    if(global_time < min)
-    {
+    if (global_time < min) {
       msg << test_name << " FAILED: Minimum time, "
       << time <<
       "[s], less than specified allowable minimum time, " << min <<"[s]"<< ".\n";
       pass = false;
-    }else{
+    }
+    else {
       msg << test_name << " PASSED: Minimum time, "
       << time <<
       "[s], greater than specified allowable minimum time, " << min <<"[s]"<< ".\n";
     }
   }
   
-  if(metricPlist.isParameter("upper" ) && pass != false) {
-    
+  if (metricPlist.isParameter("upper" ) && pass != false) {
     double max = metricPlist.get<double>("upper") * global_ref_time;
-    if (global_time > max)
-    {
+    if (global_time > max) {
       msg << test_name << " FAILED: Maximum time, "
       << global_time <<
       "[s], greater than specified allowable maximum time, " << max <<"[s]"<< ".\n";
       pass = false;
-    }else{
+    }
+    else {
       msg << test_name << " PASSED: Maximum time, "
       << global_time <<
       "[s], less than specified allowable maximum time, " << max <<"[s]"<< ".\n";
     }
-    
   }
   
   return pass;
 }
 
-std::queue<ParameterList>
-ComparisonHelper::getMetricsToCompare(const ParameterList &pList)
+std::queue<ParameterList> ComparisonHelper::getMetricsToCompare(const ParameterList &pList)
 {
-  // extract all of the metrics to be testd
+  // extract all of the metrics to be tested
   std::queue<ParameterList> metrics;
-  for(auto it = pList.begin(); it != pList.end(); ++it)
-  {
-    if(pList.isSublist(it->first))
-    {
+  for(auto it = pList.begin(); it != pList.end(); ++it) {
+    if (pList.isSublist(it->first)) {
       metrics.push(pList.sublist(it->first));
     }
   }
-  
   return metrics;
 }
 
