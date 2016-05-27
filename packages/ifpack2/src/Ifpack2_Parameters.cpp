@@ -92,7 +92,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("fact: relative threshold", (double)1.0);
   params.set("fact: relax value", (double)0.0);
 
-  // Ifpack2_METISPartitioner.cpp
+  // Overlapping partitioner
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
   params.set("partitioner: print level", (int)0);
@@ -111,6 +111,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: banded container subdiagonals", -1);
 
   // Ifpack2_SPARSKIT.cpp
+  // ap 25 May 2016: all SPARSKIT for backwards compatibility ONLY
   params.set("fact: sparskit: lfil", (int)0);
   params.set("fact: sparskit: tol", (double)0.0);
   params.set("fact: sparskit: droptol", (double)0.0);
@@ -138,6 +139,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: parts", tmp0);
 
   // Ifpack2_METISPartitioner.hpp
+  // ap 25 May 2016: all METIS for backwards compatibility ONLY
   params.set("partitioner: use symmetric graph", true);
 
 

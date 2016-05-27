@@ -68,8 +68,6 @@ namespace Ifpack2 {
 ///   partition, which means "do not partition locally").
 /// - "partitioner: overlap" (int): the amount of overlap between
 ///   partitions.  Default is zero (no overlap).
-/// - "partitioner: verbose": if \c true, print verbosely
-///   to stdout.  Default is \c false (print nothing).
 ///
 /// This class implements common functionality for derived classes
 /// like LinearPartitioner.  Graphs given as input to any derived
@@ -123,7 +121,7 @@ public:
   /*! The supported parameters are:
    * - \c "partitioner: overlap" (int, default = 0).
    * - \c "partitioner: local parts" (int, default = 1).
-   * - \c "partitioner: print level" (int, default = 0).
+   * - \c "partitioner: print level" (bool, default = false).
    */
   virtual void setParameters (Teuchos::ParameterList& List);
 
