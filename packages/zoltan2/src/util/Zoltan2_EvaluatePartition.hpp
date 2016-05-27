@@ -327,11 +327,11 @@ public:
   /*! \brief getTotalEdgeCut
    */
   scalar_t getTotalEdgeCut() const{
-	ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
-	if( graphMetrics.size() < 1 ) {
-	    throw std::logic_error( "getTotalEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
-	}
-	return graphMetrics[0]->getMetricValue("global sum");
+    ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    if( graphMetrics.size() < 1 ) {
+      throw std::logic_error( "getTotalEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
+    }
+    return graphMetrics[0]->getMetricValue("global sum");
   }
 
   /*! \brief getTotalWeightEdgeCut weighted for the specified index
