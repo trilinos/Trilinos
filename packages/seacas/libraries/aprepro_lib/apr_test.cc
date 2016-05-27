@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
     }
   }
   if (readfile) {
-    std::cout << "Aprepro: There were " << aprepro.get_error_count()
+    std::cerr << "Aprepro: There were " << aprepro.get_error_count()
 	      << " errors detected during parsing.\n";
     return 0;
   }
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
     line.clear();
   }
-  std::cout << "Aprepro: There were " << aprepro.get_error_count()
+  std::cerr << "Aprepro: There were " << aprepro.get_error_count()
 	    << " errors detected during parsing.\n";
   
 }

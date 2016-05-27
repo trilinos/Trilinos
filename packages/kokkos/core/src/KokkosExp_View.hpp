@@ -160,9 +160,9 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_space<Space>::value
 {
   // Specify Space, memory traits should be the only subsequent argument.
 
-  static_assert( std::is_same< typename ViewTraits<void,Prop...>::execution_space , void >::value ||
-                 std::is_same< typename ViewTraits<void,Prop...>::memory_space    , void >::value ||
-                 std::is_same< typename ViewTraits<void,Prop...>::HostMirrorSpace , void >::value ||
+  static_assert( std::is_same< typename ViewTraits<void,Prop...>::execution_space , void >::value &&
+                 std::is_same< typename ViewTraits<void,Prop...>::memory_space    , void >::value &&
+                 std::is_same< typename ViewTraits<void,Prop...>::HostMirrorSpace , void >::value &&
                  std::is_same< typename ViewTraits<void,Prop...>::array_layout    , void >::value
                , "Only one View Execution or Memory Space template argument" );
 
@@ -179,9 +179,9 @@ struct ViewTraits< typename std::enable_if< Kokkos::Impl::is_memory_traits<Memor
 {
   // Specify memory trait, should not be any subsequent arguments
 
-  static_assert( std::is_same< typename ViewTraits<void,Prop...>::execution_space , void >::value ||
-                 std::is_same< typename ViewTraits<void,Prop...>::memory_space    , void >::value ||
-                 std::is_same< typename ViewTraits<void,Prop...>::array_layout    , void >::value ||
+  static_assert( std::is_same< typename ViewTraits<void,Prop...>::execution_space , void >::value &&
+                 std::is_same< typename ViewTraits<void,Prop...>::memory_space    , void >::value &&
+                 std::is_same< typename ViewTraits<void,Prop...>::array_layout    , void >::value &&
                  std::is_same< typename ViewTraits<void,Prop...>::memory_traits   , void >::value
                , "MemoryTrait is the final optional template argument for a View" );
 
@@ -1373,7 +1373,8 @@ public:
 
   //----------------------------------------
   // Memory span required to wrap these dimensions.
-  static constexpr size_t memory_span( const size_t arg_N0 = 0
+  static constexpr size_t required_allocation_size(
+                                       const size_t arg_N0 = 0
                                      , const size_t arg_N1 = 0
                                      , const size_t arg_N2 = 0
                                      , const size_t arg_N3 = 0
@@ -1659,7 +1660,7 @@ struct ViewFill< OutputView , typename std::enable_if< OutputView::Rank == 0 >::
     }
 };
 
-template< class OutputView , class InputView >
+template< class OutputView , class InputView , class ExecSpace = typename OutputView::execution_space >
 struct ViewRemap {
 
   const OutputView output ;
@@ -1684,8 +1685,7 @@ struct ViewRemap {
     , n6( std::min( (size_t)arg_out.dimension_6() , (size_t)arg_in.dimension_6() ) )
     , n7( std::min( (size_t)arg_out.dimension_7() , (size_t)arg_in.dimension_7() ) )
     {
-      typedef typename OutputView::execution_space execution_space ;
-      typedef Kokkos::RangePolicy< execution_space > Policy ;
+      typedef Kokkos::RangePolicy< ExecSpace > Policy ;
       const Kokkos::Impl::ParallelFor< ViewRemap , Policy > closure( *this , Policy( 0 , n0 ) );
       closure.execute();
     }
@@ -1812,11 +1812,16 @@ void deep_copy
   typedef View<ST,SP...>  src_type ;
 
   typedef typename dst_type::execution_space  dst_execution_space ;
+  typedef typename src_type::execution_space  src_execution_space ;
   typedef typename dst_type::memory_space     dst_memory_space ;
   typedef typename src_type::memory_space     src_memory_space ;
 
   enum { DstExecCanAccessSrc =
    Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename dst_execution_space::memory_space , src_memory_space >::value };
+
+  enum { SrcExecCanAccessDst =
+   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename src_execution_space::memory_space , dst_memory_space >::value };
+
 
   if ( (void *) dst.data() != (void*) src.data() ) {
 
@@ -1828,8 +1833,16 @@ void deep_copy
     if ( std::is_same< typename ViewTraits<DT,DP...>::value_type ,
                        typename ViewTraits<ST,SP...>::non_const_value_type >::value &&
          (
-           std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
-                         typename ViewTraits<ST,SP...>::array_layout >::value
+           ( std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                           typename ViewTraits<ST,SP...>::array_layout >::value
+             &&
+             ( std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                             typename Kokkos::LayoutLeft>::value
+             ||
+               std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                             typename Kokkos::LayoutRight>::value
+             )
+           )
            ||
            ( ViewTraits<DT,DP...>::rank == 1 &&
              ViewTraits<ST,SP...>::rank == 1 )
@@ -1850,9 +1863,51 @@ void deep_copy
 
       Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
     }
+    else if ( std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                            typename ViewTraits<ST,SP...>::non_const_value_type >::value &&
+         (
+           ( std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                           typename ViewTraits<ST,SP...>::array_layout >::value
+             &&
+             std::is_same< typename ViewTraits<DT,DP...>::array_layout ,
+                          typename Kokkos::LayoutStride>::value
+           )
+           ||
+           ( ViewTraits<DT,DP...>::rank == 1 &&
+             ViewTraits<ST,SP...>::rank == 1 )
+         ) &&
+         dst.span_is_contiguous() &&
+         src.span_is_contiguous() &&
+         dst.span() == src.span() &&
+         dst.dimension_0() == src.dimension_0() &&
+         dst.dimension_1() == src.dimension_1() &&
+         dst.dimension_2() == src.dimension_2() &&
+         dst.dimension_3() == src.dimension_3() &&
+         dst.dimension_4() == src.dimension_4() &&
+         dst.dimension_5() == src.dimension_5() &&
+         dst.dimension_6() == src.dimension_6() &&
+         dst.dimension_7() == src.dimension_7() &&
+         dst.stride_0() == src.stride_0() &&
+         dst.stride_1() == src.stride_1() &&
+         dst.stride_2() == src.stride_2() &&
+         dst.stride_3() == src.stride_3() &&
+         dst.stride_4() == src.stride_4() &&
+         dst.stride_5() == src.stride_5() &&
+         dst.stride_6() == src.stride_6() &&
+         dst.stride_7() == src.stride_7() 
+         ) {
+
+      const size_t nbytes = sizeof(typename dst_type::value_type) * dst.span();
+
+      Kokkos::Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.data() , src.data() , nbytes );
+    }
     else if ( DstExecCanAccessSrc ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
       Kokkos::Experimental::Impl::ViewRemap< dst_type , src_type >( dst , src );
+    }
+    else if ( SrcExecCanAccessDst ) {
+      // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::Experimental::Impl::ViewRemap< dst_type , src_type , src_execution_space >( dst , src );
     }
     else {
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");
@@ -1976,11 +2031,15 @@ void deep_copy
   typedef View<ST,SP...>  src_type ;
 
   typedef typename dst_type::execution_space  dst_execution_space ;
+  typedef typename src_type::execution_space  src_execution_space ;
   typedef typename dst_type::memory_space     dst_memory_space ;
   typedef typename src_type::memory_space     src_memory_space ;
 
   enum { DstExecCanAccessSrc =
    Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename dst_execution_space::memory_space , src_memory_space >::value };
+
+  enum { SrcExecCanAccessDst =
+   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename src_execution_space::memory_space , dst_memory_space >::value };
 
   if ( (void *) dst.data() != (void*) src.data() ) {
 
@@ -2018,6 +2077,10 @@ void deep_copy
     else if ( DstExecCanAccessSrc ) {
       // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
       Kokkos::Experimental::Impl::ViewRemap< dst_type , src_type >( dst , src );
+    }
+    else if ( SrcExecCanAccessDst ) {
+      // Copying data between views in accessible memory spaces and either non-contiguous or incompatible shape.
+      Kokkos::Experimental::Impl::ViewRemap< dst_type , src_type , src_execution_space >( dst , src );
     }
     else {
       Kokkos::Impl::throw_runtime_exception("deep_copy given views that would require a temporary allocation");

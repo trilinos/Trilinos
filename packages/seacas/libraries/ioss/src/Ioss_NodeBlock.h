@@ -48,6 +48,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of all nodes in the region.
+   */
   class NodeBlock : public EntityBlock
   {
   public:

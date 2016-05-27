@@ -3377,7 +3377,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
            for (int iface = 0; iface < numFacesPerCell; iface++){
                numNodesPerFace = primaryCell.getNodeCount(2,iface);
 
-               for (int idim = 0; idim < spaceDim; idim++){
+               for (int idim = 0; idim < static_cast<int>(spaceDim); idim++){
 
                   for (int inode0 = 0; inode0 < numNodesPerFace; inode0++) {
                       int node1 = primaryCell.getNodeMap(2,iface,inode0);
@@ -3394,7 +3394,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
            case shards::Triangle<3>::key:
            case shards::Quadrilateral<4>::key:
 
-            for (int inode = 0; inode < numNodesPerCell; inode++){
+            for (int inode = 0; inode < static_cast<int>(numNodesPerCell); inode++){
               for (index_type idim = 0; idim < spaceDim; idim++){
 
                 // set first node to primary cell node

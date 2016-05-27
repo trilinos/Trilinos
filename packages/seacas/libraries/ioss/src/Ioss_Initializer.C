@@ -65,8 +65,10 @@
 #include <Ioss_TriShell3.h>
 #include <Ioss_TriShell4.h>
 #include <Ioss_TriShell6.h>
+#include <Ioss_TriShell7.h>
 #include <Ioss_Unknown.h>
 #include <Ioss_Wedge15.h>
+#include <Ioss_Wedge16.h>
 #include <Ioss_Wedge18.h>
 #include <Ioss_Wedge20.h>
 #include <Ioss_Wedge21.h>
@@ -120,11 +122,13 @@ Ioss::Initializer::Initializer()
   Ioss::TriShell3::factory();
   Ioss::TriShell4::factory();
   Ioss::TriShell6::factory();
+  Ioss::TriShell7::factory();
 
   Ioss::Unknown::factory();
 
   Ioss::Wedge6::factory();
   Ioss::Wedge15::factory();
+  Ioss::Wedge16::factory();
   Ioss::Wedge18::factory();
   Ioss::Wedge20::factory();
   Ioss::Wedge21::factory();

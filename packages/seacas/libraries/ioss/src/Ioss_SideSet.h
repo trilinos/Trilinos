@@ -54,6 +54,8 @@ namespace Ioss {
 
   typedef std::vector<SideBlock *> SideBlockContainer;
 
+  /** \brief A collection of element sides.
+   */
   class SideSet : public GroupingEntity
   {
   public:

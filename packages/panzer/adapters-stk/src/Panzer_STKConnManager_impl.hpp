@@ -370,7 +370,7 @@ void STKConnManager<GO>::getDofCoords(const std::string & blockId,
    workset_utils::getIdsAndVertices(*stkMeshDB_,blockId,localCellIds,vertices);
 
    // setup output array
-   realloc(points,localCellIds.size(),numIds,dim);
+   points = Kokkos::DynRankView<double,PHX::Device>("points",localCellIds.size(),numIds,dim);
    coordProvider.getInterpolatoryCoordinates(vertices,points);
 }
 

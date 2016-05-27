@@ -84,6 +84,7 @@ namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
 namespace stk { namespace mesh { class ModificationObserver; } }
 namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace mesh { namespace impl { struct RelationEntityToNode; } } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -621,6 +622,11 @@ public:
 #endif
 
   //
+  //  Get the maximum ID that is allowed by the host code e.g. (64 vs. 32 bit limits)
+  //
+  uint64_t get_max_allowed_id() const;
+
+  //
   // Connectivity getter methods. For each entity, you can get connected entities
   // of any rank (i.e. node, edge, face, element, constraint).
   // (Some of those connectivities are empty, for example an element may not
@@ -759,6 +765,7 @@ public:
   void delete_face_adjacent_element_graph();
   stk::mesh::ElemElemGraph& get_face_adjacent_element_graph();
   const stk::mesh::ElemElemGraph& get_face_adjacent_element_graph() const;
+  bool has_face_adjacent_element_graph() const;
 
   void enable_mesh_diagnostic_rule(stk::mesh::MeshDiagnosticFlag flag);
   unsigned get_mesh_diagnostic_error_count() const ;
@@ -766,6 +773,12 @@ public:
 
   size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
 
+  void destroy_elements_of_topology(stk::topology topologyToDelete);
+private:
+  void record_entity_deletion(Entity entity);
+  void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
+  void delete_buckets(const stk::mesh::BucketVector & buckets);
+  void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 protected: //functions
 
   bool resolve_node_sharing()

@@ -171,7 +171,7 @@ data:
  elem_map = 1, 2, 3, 4, 5 ;
 
  attrib1 =
-  0 ;
+  3.1416 ;
 
  attrib_name1 =
   "" ;
@@ -180,7 +180,7 @@ data:
   1, 2, 3, 4 ;
 
  attrib2 =
-  0 ;
+  3.1416 ;
 
  attrib_name2 =
   "" ;
@@ -189,7 +189,7 @@ data:
   5, 6, 7, 8 ;
 
  attrib3 =
-  0 ;
+  3.1416 ;
 
  attrib_name3 =
   "" ;
@@ -198,7 +198,7 @@ data:
   9, 10, 11, 12, 13, 14, 15, 16 ;
 
  attrib4 =
-  0 ;
+  3.1416 ;
 
  attrib_name4 =
   "" ;
@@ -207,7 +207,7 @@ data:
   17, 18, 19, 20 ;
 
  attrib5 =
-  0 ;
+  3.1416 ;
 
  attrib_name5 =
   "" ;

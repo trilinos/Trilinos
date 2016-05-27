@@ -112,10 +112,10 @@ Kokkos::initialize();
   // Access by overloaded (), multiindex and []:
   multiIndex[0] = 3; 
   multiIndex[1] = 1;
-  int enumeration = myContainer.getEnumeration(multiIndex);
 
   std::cout << "Access by ():          myContainer(" << 3 <<"," << 1 << ") = " << myContainer(3,1) << "\n";  
   std::cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
+  //int enumeration = myContainer.getEnumeration(multiIndex);
   //std::cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
   
   std::cout << "Assigning value by (): \n old value at (3,1) = " << myContainer(3,1) <<"\n";
@@ -163,10 +163,10 @@ Kokkos::initialize();
   multiIndex[0] = 3; 
   multiIndex[1] = 1;
   multiIndex[2] = 2;
-  enumeration = myContainer.getEnumeration(multiIndex);
     
   std::cout << "Access by ():          myContainer(" << 3 <<"," << 1 << "," << 2 << ") = " << myContainer(3,1,2) << "\n";  
   std::cout << "Access by multi-index: myContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << "} = "<< myContainer.getValue(multiIndex) <<"\n";
+  // enumeration  myContainer.getEnumeration(multiIndex);
   //std::cout << "Access by enumeration: myContainer[" << enumeration << "] = " << myContainer[enumeration] <<"\n";
 
   std::cout << "Assigning value by (): \n old value at (3,1,2) = " << myContainer(3,1,2) <<"\n";
@@ -215,10 +215,10 @@ Kokkos::initialize();
   multiIndex[2] = 2;
   multiIndex[3] = 2;
   multiIndex[4] = 5;
-  enumeration = myNewContainer.getEnumeration(multiIndex);
     
   std::cout << "Access by ():          myNewContainer(" << 3 <<"," << 1 << "," << 2 << "," << 2 << "," << 5 << ") = " << myNewContainer(3,1,2,2,5) << "\n";  
   std::cout << "Access by multi-index: myNewContainer{" << multiIndex[0] << multiIndex[1] << multiIndex[2] << multiIndex[3] << multiIndex[4] << "} = "<< myNewContainer.getValue(multiIndex) <<"\n";
+  // nenumeration = myNewContainer.getEnumeration(multiIndex);
   //std::cout << "Access by enumeration: myNewContainer[" << enumeration << "] = " << myNewContainer[enumeration] <<"\n";
 
   std::cout << "Assigning value by (): \n old value at (3,1,2,2,5) = " << myNewContainer(3,1,2,2,5) <<"\n";

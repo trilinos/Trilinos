@@ -306,7 +306,7 @@ TEST_F(HexShellShell, SideConnections)
         get_bulk().modification_begin();
         stk::mesh::Entity shell2 = get_bulk().get_entity(stk::topology::ELEM_RANK, 2);
         int shellSide = 1;
-        stk::mesh::Entity face = stk::mesh::declare_element_side(get_bulk(), 13, shell2, shellSide);
+        stk::mesh::Entity face = stk::mesh::declare_element_side(get_bulk(), shell2, shellSide);
         sideConnector.connect_side_to_all_elements(face, shell2, shellSide);
         get_bulk().modification_end();
 

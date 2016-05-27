@@ -76,6 +76,7 @@ int main(int argc, char **argv)
   float *x, *y, *z;
   float *dist_fact;
   float  version, fdum;
+  float attrib[1];
 
   char *coord_names[3], *qa_record[2][4], *info[3];
   char  title[MAX_LINE_LENGTH + 1], elem_type[MAX_STR_LENGTH + 1];
@@ -181,6 +182,7 @@ int main(int argc, char **argv)
   error = ex_get_elem_blk_ids(exoid, ids);
   printf("\nafter ex_get_elem_blk_ids, error = %3d\n", error);
 
+  attrib[0] = 3.14159;
   for (i = 0; i < num_elem_blk; i++) {
     error = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_in_block, &num_nodes_per_elem,
                               &num_attr);
@@ -197,6 +199,10 @@ int main(int argc, char **argv)
 
     error = ex_put_elem_conn(exoid2, ids[i], connect);
     printf("after ex_put_elem_conn, error = %d\n", error);
+
+    /* write element block attributes */
+    error = ex_put_attr(exoid2, EX_ELEM_BLOCK, ids[i], attrib);
+    printf("after ex_put_elem_attr, error = %d\n", error);
 
     free(connect);
   }

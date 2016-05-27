@@ -329,6 +329,7 @@ private:
 ///   It must be an integer type.
 template<class KeyType>
 struct FillPairsResult {
+  KOKKOS_INLINE_FUNCTION
   FillPairsResult () :
     minKey_ (std::numeric_limits<KeyType>::max ()),
     // min() for a floating-point type returns the minimum _positive_
@@ -352,6 +353,7 @@ struct FillPairsResult {
                    "KeyType must be some kind of number type.");
   }
 
+  KOKKOS_INLINE_FUNCTION
   FillPairsResult (const KeyType& initMinKey,
                    const KeyType& initMaxKey) :
     minKey_ (initMinKey),

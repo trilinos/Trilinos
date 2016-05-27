@@ -49,6 +49,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of element edges.
+   */
   class EdgeSet : public EntitySet
   {
   public:

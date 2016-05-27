@@ -71,6 +71,15 @@ unsigned dimension_scalar(const View& v, const ViewPack&... views) {
   return dim0 >= dim1 ? dim0 : dim1 ;
 }
 
+template<typename I, class ... DimPack>
+struct dim_count {
+  enum {count = dim_count<DimPack...>::count+1};
+};
+
+template<typename I>
+struct dim_count<I> {
+  enum {count=1};
+};
 // Traits class used to create a view for a given rank and dimension as a
 // function of one or more views.  The value_type for the view is determined
 // by value_type, and the view is created through the create_view() function.
@@ -86,10 +95,27 @@ struct ViewFactory {
   create_view(const ViewPack& ... views,
               const CtorProp& prop,
               const Dims ... dims) {
-    typename ResultView::array_layout layout(dims...);
-    const unsigned rank = computeRank(layout);
-    layout.dimension[rank] = dimension_scalar(views...);
-    return ResultView(prop, layout);
+
+    constexpr bool is_dyn_rank = is_dyn_rank_view<ResultView>::value;
+    constexpr bool is_fad = Sacado::IsScalarType<typename ResultView::non_const_value_type>::value?false:true; 
+ 
+    typename ResultView::array_layout layout_extern(dims...);
+    int rank_extern = dim_count<Dims...>::count;
+
+    if(is_fad)
+        layout_extern.dimension[rank_extern] = dimension_scalar(views...); 
+ 
+   if(is_dyn_rank) {
+    
+      typename ResultView::array_layout layout = Experimental::Impl::reconstructLayout(layout_extern, rank_extern);
+    
+      const unsigned rank = computeRank(layout);
+      if(is_fad) 
+      layout.dimension[rank] = dimension_scalar(views...);
+      return ResultView(prop, layout);
+    } else {
+      return ResultView(prop, layout_extern);   
+    }
   }
 
   // Compute the view rank from the dimension arguments
@@ -109,22 +135,17 @@ struct ViewFactory {
   computeRank(
     const size_t N0, const size_t N1, const size_t N2, const size_t N3,
     const size_t N4, const size_t N5, const size_t N6, const size_t N7 ) {
-    return  ( (N7 == 0) ?
-            ( (N6 == 0) ?
-            ( (N5 == 0) ?
-            ( (N4 == 0) ?
-            ( (N3 == 0) ?
-            ( (N2 == 0) ?
-            ( (N1 == 0) ?
-            ( (N0 == 0) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
+    return  ( (N7 == ~size_t(0)) ?
+            ( (N6 == ~size_t(0)) ?
+            ( (N5 == ~size_t(0)) ?
+            ( (N4 == ~size_t(0)) ?
+            ( (N3 == ~size_t(0)) ?
+            ( (N2 == ~size_t(0)) ?
+            ( (N1 == ~size_t(0)) ?
+            ( (N0 == ~size_t(0)) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
   }
 
 };
-
-template< class > struct is_dyn_rank_view : public std::false_type {};
-
-template< class D, class ... P >
-struct is_dyn_rank_view< DynRankView<D,P...> > : public std::true_type {};
 
 //! Wrapper to simplify use of Sacado ViewFactory
 template <typename ResultViewType, typename InputViewType, typename CtorProp,

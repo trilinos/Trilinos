@@ -46,6 +46,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <sstream>
+#include <Kokkos_Core.hpp>
 #include <Cuda/Kokkos_Cuda_TaskPolicy.hpp>
 
 #if defined( KOKKOS_ENABLE_CUDA_TASK_POLICY )
@@ -93,9 +94,8 @@ CudaTaskPolicyQueue
   , const unsigned arg_team_size
   )
   : m_space( Kokkos::CudaUVMSpace()
-           , arg_task_max_size
-           , arg_task_max_size * arg_task_max_count
-           , 1 /* only one level of memory pool */
+           , arg_task_max_size * arg_task_max_count * 1.2
+           , 16 /* log2(superblock size) */
            )
   , m_team { 0 , 0 , 0 }
   , m_serial { 0 , 0 , 0 }

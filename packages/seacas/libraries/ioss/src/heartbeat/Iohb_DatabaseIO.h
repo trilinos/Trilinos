@@ -93,6 +93,8 @@ namespace Ioss {
   class EntityBlock;
 }
 
+/** \brief A namespace for the heartbeat database format.
+ */
 namespace Iohb {
 }
 

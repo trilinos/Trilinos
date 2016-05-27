@@ -92,6 +92,8 @@ namespace Ioss {
   class EntityBlock;
 }
 
+/** \brief A namespace for the pamgen database format.
+ */
 namespace Iopg {
   typedef std::vector<int> IntVector;
 

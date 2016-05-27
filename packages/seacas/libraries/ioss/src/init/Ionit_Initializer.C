@@ -72,6 +72,12 @@ namespace Ioss {
       return ionit;
     }
 
+    /** \brief Initialize the Ioss library.
+     *
+     *  Calls appropriate internal functions and methods to
+     *  initialize the Ioss library. Initializes all database
+     *  types except xdmf.
+     */
     Initializer::Initializer()
     {
 #if !defined(NO_EXODUS_SUPPORT)

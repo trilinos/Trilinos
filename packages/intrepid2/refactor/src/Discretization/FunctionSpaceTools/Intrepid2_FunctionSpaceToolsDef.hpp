@@ -854,7 +854,7 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inputCoeffValueType, inputCoeffProperties...>          inputCoeffViewType;
     typedef          Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>          inputFieldViewType; 
     typedef          FunctorFunctionSpaceTools::F_evaluate
-      /**/           <outputPointValViewType,inputFieldViewType,inputFieldViewType>             FunctorType;
+      /**/           <outputPointValViewType,inputCoeffViewType,inputFieldViewType>             FunctorType;
     typedef typename ExecSpace<typename inputCoeffViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
     const auto loopSize = inputFields.dimension(0);

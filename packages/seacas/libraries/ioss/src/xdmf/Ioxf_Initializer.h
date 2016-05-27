@@ -34,6 +34,12 @@
 #define IOSS_Ioxf_Initializer_h
 
 namespace Ioxf {
+  /** \brief Initialization of the xdmf database parts of the Ioss library.
+   *
+   *  If any input or output type is xdmf, then an object of this type
+   *  must be created before using any other functions or methods in the
+   *  Ioss library except Ioss::Init::Initializer().
+   */
   class Initializer
   {
   public:

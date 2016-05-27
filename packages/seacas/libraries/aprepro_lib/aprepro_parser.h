@@ -104,7 +104,7 @@ namespace SEAMS {
 #ifndef YYSTYPE
     /// Symbol semantic values.
     union semantic_type {
-#line 77 "/Users/gdsjaar/src/seacas/packages/seacas/libraries/aprepro_lib/aprepro.yy" // lalr1.cc:377
+#line 90 "aprepro.yy" // lalr1.cc:377
 
       double         val;    /* For returning numbers.		*/
       struct symrec *tptr;   /* For returning symbol-table pointers	*/
@@ -210,7 +210,7 @@ namespace SEAMS {
       basic_symbol(typename Base::kind_type t);
 
       /// Constructor for symbols with semantic value.
-      basic_symbol(typename Base::kind_type t, semantic_type v);
+      basic_symbol(typename Base::kind_type t, const semantic_type &v);
 
       /// Destroy the symbol.
       ~basic_symbol();

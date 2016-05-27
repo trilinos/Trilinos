@@ -216,7 +216,7 @@ void Intrepid2FieldPattern::getInterpolatoryCoordinates(Kokkos::DynRankView<doub
          = rcp_dynamic_cast<CoordsInterface>(intrepidBasis_,throwOnFail);
 
    // resize coordinates
-   Kokkos::realloc(coords,intrepidBasis_->getCardinality(),getDimension());
+   coords = Kokkos::DynRankView<double,PHX::Device>("coords",intrepidBasis_->getCardinality(),getDimension());
    coordsInterface->getDofCoords(coords);
 }
 
@@ -237,7 +237,7 @@ void Intrepid2FieldPattern::getInterpolatoryCoordinates(const Kokkos::DynRankVie
    getInterpolatoryCoordinates(localCoords);
 
    // resize the coordinates field container
-   Kokkos::realloc(coords,numCells,localCoords.dimension(0),getDimension());
+   coords = Kokkos::DynRankView<double,PHX::Device>("coords",numCells,localCoords.dimension(0),getDimension());
 
    if(numCells>0) {
       // map to phsyical coordinates

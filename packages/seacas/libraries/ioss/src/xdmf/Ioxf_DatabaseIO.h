@@ -66,6 +66,8 @@ namespace Ioss {
   class CommSet;
 }
 
+/** \brief A namespace for the xdmf database format.
+ */
 namespace Ioxf {
   struct CommunicationMetaData;
 

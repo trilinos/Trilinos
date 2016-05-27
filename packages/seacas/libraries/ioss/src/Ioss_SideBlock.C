@@ -46,6 +46,15 @@
 #include "Ioss_ParallelUtils.h"
 #include "Ioss_PropertyManager.h"
 
+/** \brief Create a side block.
+ *
+ *  \param[in] io_database The database associated with the region containing the side block.
+ *  \param[in] my_name The side block's name.
+ *  \param[in] side_type The name of the side topology type for the side block.
+ *  \parem[in] element_type The name of the element topology of the parent element type for the side
+ * block.
+ *  \param[in] side_count The number of sides in the side block.
+ */
 Ioss::SideBlock::SideBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
                            const std::string &side_type, const std::string &element_type,
                            size_t side_count)

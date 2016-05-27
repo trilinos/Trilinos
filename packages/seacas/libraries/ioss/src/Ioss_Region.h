@@ -107,6 +107,13 @@ namespace Ioss {
 
   using AliasMap = std::map<std::string, std::string, std::less<std::string>>;
 
+  /** \brief A grouping entity that contains other grouping entities.
+   *
+   * Maintains a list of NodeBlocks, ElementBlocks, NodeLists, CommLists and Surfaces.
+   * [Similar to the "Composite Pattern" in Design Patterns]  All interface to
+   * GroupingEntities is through the Region class; clients of the IO subsystem have no direct
+   * access to the underlying GroupingEntities (other than the Region).
+   */
   class Region : public GroupingEntity
   {
   public:
@@ -137,23 +144,31 @@ namespace Ioss {
     int    get_current_state() const;
     double begin_state(int state);
     double end_state(int state);
+
+    /** \brief Determine whether the metadata defining the model (nontransient,
+     *         geometry, and toploloty) has been set.
+     *
+     *  \returns True if the metadata defining the model has been set.
+     */
     bool model_defined() const { return modelDefined; }
+
+    /** \brief Determine whether the metadata related to the transient
+     *         data has been set.
+     *
+     *  \returns True if the metadata related to the transient data has been set.
+     */
     bool transient_defined() const { return transientDefined; }
 
-    /**
-     * Return a pair consisting of the step (1-based) corresponding to
-     * the maximum time on the database and the corresponding maximum
-     * time value. Note that this may not necessarily be the last step
-     * on the database if cycle and overlay are being used.
-     */
+    // Return a pair consisting of the step (1-based) corresponding to
+    // the maximum time on the database and the corresponding maximum
+    // time value. Note that this may not necessarily be the last step
+    // on the database if cycle and overlay are being used.
     std::pair<int, double> get_max_time() const;
 
-    /**
-     * Return a pair consisting of the step (1-based) corresponding to
-     * the minimum time on the database and the corresponding minimum
-     * time value. Note that this may not necessarily be the first step
-     * on the database if cycle and overlay are being used.
-     */
+    // Return a pair consisting of the step (1-based) corresponding to
+    // the minimum time on the database and the corresponding minimum
+    // time value. Note that this may not necessarily be the first step
+    // on the database if cycle and overlay are being used.
     std::pair<int, double> get_min_time() const;
 
     // Functions for an output region...
@@ -199,7 +214,7 @@ namespace Ioss {
 
     const CoordinateFrame &get_coordinate_frame(int64_t id) const;
 
-    // Add the name 'alias' as an alias for the databae entity with the
+    // Add the name 'alias' as an alias for the database entity with the
     // name 'db_name'. Returns true if alias added; false if problems
     // adding alias.
     bool add_alias(const std::string &db_name, const std::string &alias);
@@ -283,6 +298,10 @@ namespace Ioss {
   };
 }
 
+/** \brief Get the index (1-based) of the currently-active state.
+ *
+ *  \returns The index.
+ */
 inline int Ioss::Region::get_current_state() const { return currentState; }
 
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
@@ -295,27 +314,64 @@ inline int64_t Ioss::Region::node_global_to_local(int64_t global, bool must_exis
   return get_database()->node_global_to_local(global, must_exist);
 }
 
+/** \brief Get all information records (informative strings) for the region's database.
+ *
+ *  \returns The informative strings.
+ */
 inline const std::vector<std::string> &Ioss::Region::get_information_records() const
 {
   return get_database()->get_information_records();
 }
 
+/** \brief Add multiple information records (informative strings) to the region's database.
+ *
+ *  \param[in] info The strings to add.
+ */
 inline void Ioss::Region::add_information_records(const std::vector<std::string> &info)
 {
   return get_database()->add_information_records(info);
 }
 
-inline void Ioss::Region::add_information_record(const std::string &info)
+/** \brief Add an information record (an informative string) to the region's database.
+ *
+ *  \param[in] info The string to add.
+ */ inline void
+Ioss::Region::add_information_record(const std::string &info)
 {
   return get_database()->add_information_record(info);
 }
 
+/** \brief Add a QA record, which consists of 4 strings, to the region's database
+ *
+ *  The 4 function parameters correspond to the 4 QA record strings.
+ *
+ *  \param[in] code A descriptive code name, such as the application that modified the database.
+ *  \param[in] code_qa A descriptive string, such as the version of the application that modified
+ * the database.
+ *  \param[in] date A relevant date, such as the date the database was modified.
+ *  \param[in] time A relevant time, such as the time the database was modified.
+ */
 inline void Ioss::Region::add_qa_record(const std::string &code, const std::string &code_qa,
                                         const std::string &date, const std::string &time)
 {
   return get_database()->add_qa_record(code, code_qa, date, time);
 }
 
+/** \brief Get all QA records, each of which consists of 4 strings, from the region's database.
+ *
+ *  The 4 strings that make up a databse QA record are:
+ *
+ *  1. A descriptive code name, such as the application that modified the database.
+ *
+ *  2. A descriptive string, such as the version of the application that modified the database.
+ *
+ *  3. A relevant date, such as the date the database was modified.
+ *
+ *  4. A relevant time, such as the time the database was modified.
+ *
+ *  \returns All QA records in a single vector. Every 4 consecutive elements of the
+ *           vector make up a single QA record.
+ */
 inline const std::vector<std::string> &Ioss::Region::get_qa_records() const
 {
   return get_database()->get_qa_records();

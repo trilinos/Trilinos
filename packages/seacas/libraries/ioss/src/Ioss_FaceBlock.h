@@ -48,6 +48,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of element faces with the same topology.
+   */
   class FaceBlock : public EntityBlock
   {
   public:
@@ -60,9 +62,9 @@ namespace Ioss {
     std::string short_type_string() const override { return "faceblock"; }
     EntityType  type() const override { return FACEBLOCK; }
 
-    /// Handle implicit properties -- These are calcuated from data stored
-    /// in the grouping entity instead of having an explicit value assigned.
-    /// An example would be 'face_block_count' for a region.
+    // Handle implicit properties -- These are calcuated from data stored
+    // in the grouping entity instead of having an explicit value assigned.
+    // An example would be 'face_block_count' for a region.
     Property get_implicit_property(const std::string &my_name) const override;
 
   protected:

@@ -46,6 +46,12 @@ namespace Ioss {
 
 Ioss::ElementSet::ElementSet() : Ioss::EntitySet(nullptr, "invalid", 0) {}
 
+/** \brief Create an element set.
+ *
+ *  \param[in] io_database The database associated with the region containing the element set.
+ *  \param[in] my_name The element set's name.
+ *  \param[in] number_elements The number of elements in the element set.
+ */
 Ioss::ElementSet::ElementSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
                              int64_t number_elements)
     : Ioss::EntitySet(io_database, my_name, number_elements)

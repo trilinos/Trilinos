@@ -29,6 +29,8 @@
 
 class ParaViewCatalystSierraAdaptorBase;
 
+/** \brief A namespace for the visualization database format.
+ */
 namespace Iovs {
 
   typedef std::set<std::pair<int64_t, int64_t> > EntityIdSet;

@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 //
@@ -53,6 +52,47 @@ using Teuchos::Comm;
 using Teuchos::RCP;
 using Teuchos::rcp;
 
+namespace { // (anonymous)
+
+// Test all BLAS 2 operations, for all Scalar types in {double, float,
+// int, complex<double>, complex<float>}, for all Layout types in
+// {LayoutLeft, LayoutRight}, and for Device<Serial, HostSpace>.
+//
+// The 'indent' string must be passed in by value, so that the caller
+// doesn't see changes inside (for incrementing indent level).
+bool
+runSerialTests (std::ostream& out,
+                std::string indent,
+                const bool testFloat,
+                const bool testComplex,
+                const bool printOnlyOnFailure,
+                const bool debug)
+{
+  bool success = true;
+  bool curSuccess = true;
+
+  indent = indent + "  ";
+  out << indent << "Test all BLAS 2 operations" << endl;
+
+#ifdef KOKKOS_HAVE_SERIAL
+  {
+    indent = indent + "  ";
+    out << indent << "Test Serial, HostSpace" << endl;
+    typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> device_type;
+    curSuccess = testScalarsLayouts<device_type> (out, indent,
+                                                  testFloat,
+                                                  testComplex,
+                                                  printOnlyOnFailure,
+                                                  debug);
+    success = success && curSuccess;
+  }
+#endif // KOKKOS_HAVE_SERIAL
+
+  return success;
+}
+
+} // namespace (anonymous)
+
 int
 main (int argc, char* argv[])
 {
@@ -101,12 +141,11 @@ main (int argc, char* argv[])
   bool success = true;
   std::string indent = "";
 
-  // Always test with numCols=1 first.
-  curSuccess = testScalarsLayoutsDevices (cout, indent + "  ",
-                                          testFloat,
-                                          testComplex,
-                                          printOnlyOnFailure,
-                                          debug);
+  curSuccess = runSerialTests (cout, indent + "  ",
+                               testFloat,
+                               testComplex,
+                               printOnlyOnFailure,
+                               debug);
   success = curSuccess && success;
 
   Kokkos::finalize ();

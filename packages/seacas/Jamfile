@@ -192,7 +192,7 @@ install install-user-include0
 
 explicit install-user-include1 ;
 install install-user-include1
-  : [ glob $(seacas-root)/libraries/suplib/*.h ]
+  : [ glob $(seacas-root)/libraries/suplib_c/*.h ]
   : <location>$(install-root)/seacas/include
   ;
 
@@ -246,6 +246,7 @@ explicit install-user-lib ;
 
 install install-user-lib
   : suplib
+    suplib_c
     suplib_cpp
     plt
     chaco
@@ -273,6 +274,7 @@ install install-user-lib
 
 install install-user-lib
   : suplib
+    suplib_c
     suplib_cpp
     plt
     chaco
@@ -878,6 +880,7 @@ lib suplib
     ]
     exodus_for
     supes
+    /tpl/netcdf//netcdf
   : 
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -951,15 +954,38 @@ lib suplib_cpp
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include
     ]
-    <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>clang,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>vacpp,<address-model>64:<fflags>"-WF,-D__XLF__ -qintsize=8 -qrealsize=8"
+  ;
+
+lib suplib_c
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/suplib_c/*.c ]
+    ]
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root)/libraries/suplib_c
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <include>$(sierra-root)/seacas/include
+    ]
+  :
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root-inc)/libraries/suplib_c
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <include>$(sierra-root)/seacas/include
+    ]
   ;
 
 lib plt
@@ -1496,8 +1522,9 @@ exe aprepro-orig
   $(seacas-root)/applications/aprepro-orig/ap_stat.c
   $(seacas-root)/applications/aprepro-orig/ap_units.c
   $(seacas-root)/applications/aprepro-orig/ap_util.c
+  $(seacas-root)/applications/aprepro-orig/ap_getline_int.c
   y_tab_o
-    suplib
+    suplib_c
   : <include>$(seacas-root)/applications/aprepro-orig
     <include>$(seacas-root-inc)/applications/aprepro-orig
     <define>NO_EXODUSII
@@ -1515,7 +1542,7 @@ exe conjoin
   $(seacas-root)/applications/conjoin/CJ_Internals.C
   $(seacas-root)/applications/conjoin/CJ_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     exodus
     /tpl/netcdf//netcdf
   : <include>$(seacas-root)/applications/conjoin
@@ -1535,7 +1562,7 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_match_xyz.C
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
-    suplib
+    suplib_c
     ioss
     ioinit
   : <include>$(seacas-root)/applications/ejoin
@@ -1550,7 +1577,7 @@ exe epu
   $(seacas-root)/applications/epu/EP_ParallelDisks.C
   $(seacas-root)/applications/epu/EP_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     exodus
     /tpl/netcdf//netcdf
   : <include>$(seacas-root)/applications/epu
@@ -1561,7 +1588,7 @@ exe exodiff
   :
     [ glob $(seacas-root)/applications/exodiff/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     exodus
   : <include>$(seacas-root)/applications/exodiff
     <tag>@utility-exec-tag
@@ -1573,7 +1600,7 @@ exe exomatlab
   $(seacas-root)/applications/exomatlab/exomatlab.C
   $(seacas-root)/applications/exomatlab/EML_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     ioss
     ioinit
     exodus
@@ -1592,7 +1619,7 @@ exe exo_format
 exe exo2mat
   :
   $(seacas-root)/applications/exo2mat/exo2mat.C
-    suplib
+    suplib_c
     exodus
     /tpl/matio//matio
   : <include>$(seacas-root)/applications/exo2mat
@@ -1602,7 +1629,7 @@ exe exo2mat
 exe mat2exo
   :
   $(seacas-root)/applications/mat2exo/mat2exo.C
-    suplib
+    suplib_c
     exodus
     /tpl/matio//matio
   : <include>$(seacas-root)/applications/mat2exo
@@ -1613,7 +1640,7 @@ exe nem_slice
   :
     [ glob $(seacas-root)/applications/nem_slice/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     chaco
     exodus
     /tpl/trilinos//zoltan
@@ -1626,7 +1653,7 @@ exe nem_spread
   :
     [ glob $(seacas-root)/applications/nem_spread/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     exodus
   : <include>$(seacas-root)/applications/nem_spread
     <tag>@utility-exec-tag

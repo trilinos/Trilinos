@@ -44,6 +44,20 @@ namespace Ioss {
 namespace Ioss {
   class ElementSet;
 
+  /** \brief Base class for all 'set'-type grouping entities, which means that members
+   *         of the set are not necessarily similar, or do not necessarily have the
+   *         same topology.
+   *
+   *   The following derived classes are typical:
+   *
+   *   -- NodeSet  -- grouping of nodes (0d topology)
+   *
+   *   -- EdgeSet  -- grouping of edges (1d topology)
+   *
+   *   -- FaceSet  -- grouping of faces (2d topology) [Surface]
+   *
+   *
+   */
   class EntitySet : public GroupingEntity
   {
   public:

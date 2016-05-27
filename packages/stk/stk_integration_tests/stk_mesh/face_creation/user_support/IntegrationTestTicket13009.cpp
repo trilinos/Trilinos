@@ -32,7 +32,7 @@ TEST_F(Ticket13009, check_create_adjacent_entities_serial)
     run_test_on_procs(1);
 }
 
-TEST_F(Ticket13009, DISABLED_check_create_adjacent_entities_parallel)
+TEST_F(Ticket13009, check_create_adjacent_entities_parallel)
 {
     run_test_on_procs(2);
 }

@@ -53,6 +53,5 @@ test-empty - read an empty (only ex_create called) exodus file...
 Exodus Library Warning/Error: [ex_get_init_ext]
 	Warning: no title in file id 65536
 	NetCDF: Attribute not found
-testwt-compress - verify can create compressed netcdf-4 files...
 ************************************************************************
 ************************************************************************

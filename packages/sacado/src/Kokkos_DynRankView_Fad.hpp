@@ -56,6 +56,8 @@ template <typename Spec> struct DynRankDimTraits;
 template <>
 struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 
+  enum : size_t{unspecified = ~size_t(0)};
+
   // Compute the rank of the view from the nonzero dimension arguments.
   // For views of Fad, the rank is one less than the rank determined by the nonzero dimension args
   static size_t computeRank( const size_t N0
@@ -68,14 +70,14 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
                            , const size_t N7 )
   {
     return
-      (   (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0 && N0 == 0) ? 0
-      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0 && N1 == 0) ? 0
-      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0 && N2 == 0) ? 1
-      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0 && N3 == 0) ? 2
-      : ( (N7 == 0 && N6 == 0 && N5 == 0 && N4 == 0) ? 3
-      : ( (N7 == 0 && N6 == 0 && N5 == 0) ? 4
-      : ( (N7 == 0 && N6 == 0) ? 5
-      : ( (N7 == 0) ? 6
+      (   (N7 == unspecified && N6 == unspecified && N5 == unspecified && N4 == unspecified && N3 == unspecified && N2 == unspecified && N1 == unspecified && N0 == unspecified) ? 0
+      : ( (N7 == unspecified && N6 == unspecified && N5 == unspecified && N4 == unspecified && N3 == unspecified && N2 == unspecified && N1 == unspecified) ? 0
+      : ( (N7 == unspecified && N6 == unspecified && N5 == unspecified && N4 == unspecified && N3 == unspecified && N2 == unspecified) ? 1
+      : ( (N7 == unspecified && N6 == unspecified && N5 == unspecified && N4 == unspecified && N3 == unspecified) ? 2
+      : ( (N7 == unspecified && N6 == unspecified && N5 == unspecified && N4 == unspecified) ? 3
+      : ( (N7 == unspecified && N6 == unspecified && N5 == unspecified) ? 4
+      : ( (N7 == unspecified && N6 == unspecified) ? 5
+      : ( (N7 == unspecified) ? 6
       : 7 ) ) ) ) ) ) ) );
   }
 
@@ -95,17 +97,49 @@ struct DynRankDimTraits<ViewSpecializeSacadoFad> {
 
   // Create the layout for the rank-7 view.
   // For Fad we have to move the fad dimension to the last (rank 8 since the DynRankView is rank-7)
+  // LayoutLeft or LayoutRight
   template <typename Layout>
-  static Layout createLayout( const Layout& layout )
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<Layout , Kokkos::LayoutRight>::value || std::is_same<Layout , Kokkos::LayoutLeft>::value) , Layout >::type createLayout( const Layout& layout )
   {
-    Layout l( layout.dimension[0] != 0 ? layout.dimension[0] : 1
-            , layout.dimension[1] != 0 ? layout.dimension[1] : 1
-            , layout.dimension[2] != 0 ? layout.dimension[2] : 1
-            , layout.dimension[3] != 0 ? layout.dimension[3] : 1
-            , layout.dimension[4] != 0 ? layout.dimension[4] : 1
-            , layout.dimension[5] != 0 ? layout.dimension[5] : 1
-            , layout.dimension[6] != 0 ? layout.dimension[6] : 1
-            , layout.dimension[7] != 0 ? layout.dimension[7] : 1 );
+    Layout l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+            , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+            , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+            , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+            , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+            , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+            , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+            , layout.dimension[7] != unspecified ? layout.dimension[7] : 1 );
+    const unsigned fad_dim = computeRank(layout);
+    const size_t fad_size = layout.dimension[fad_dim];
+    l.dimension[fad_dim] = 1;
+    l.dimension[7] = fad_size;
+
+    return l;
+  }
+
+  //LayoutStride
+  template <typename Layout>
+  KOKKOS_INLINE_FUNCTION
+  static typename std::enable_if< (std::is_same<Layout , Kokkos::LayoutStride>::value) , Layout>::type createLayout( const Layout& layout )
+  {
+    Layout      l( layout.dimension[0] != unspecified ? layout.dimension[0] : 1
+                 , layout.stride[0]
+                 , layout.dimension[1] != unspecified ? layout.dimension[1] : 1
+                 , layout.stride[1]
+                 , layout.dimension[2] != unspecified ? layout.dimension[2] : 1
+                 , layout.stride[2]
+                 , layout.dimension[3] != unspecified ? layout.dimension[3] : 1
+                 , layout.stride[3]
+                 , layout.dimension[4] != unspecified ? layout.dimension[4] : 1
+                 , layout.stride[4]
+                 , layout.dimension[5] != unspecified ? layout.dimension[5] : 1
+                 , layout.stride[5]
+                 , layout.dimension[6] != unspecified ? layout.dimension[6] : 1
+                 , layout.stride[6]
+                 , layout.dimension[7] != unspecified ? layout.dimension[7] : 1
+                 , layout.stride[7]
+                 );
     const unsigned fad_dim = computeRank(layout);
     const size_t fad_size = layout.dimension[fad_dim];
     l.dimension[fad_dim] = 1;

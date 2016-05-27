@@ -44,6 +44,12 @@
 
 Ioss::FaceSet::FaceSet() : Ioss::EntitySet(nullptr, "invalid", 0) {}
 
+/** \brief Create a face set.
+ *
+ *  \param[in] io_database The database associated with the region containing the face set.
+ *  \param[in] my_name The face set's name.
+ *  \param[in] number_faces The number of faces in the face set.
+ */
 Ioss::FaceSet::FaceSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
                        int64_t number_faces)
     : Ioss::EntitySet(io_database, my_name, number_faces)

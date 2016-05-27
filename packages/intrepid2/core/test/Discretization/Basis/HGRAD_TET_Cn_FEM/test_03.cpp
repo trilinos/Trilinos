@@ -75,12 +75,14 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
 
+#if defined( INTREPID_USING_EXPERIMENTAL_HIGH_ORDER )
   bool verbose = false;
   int  maxp = INTREPID2_MAX_ORDER;
   for (int i=0;i<argc;++i) {
     if ((strcmp(argv[i],"--verbose")           == 0)) { verbose  = atoi(argv[++i]); continue;}
     if ((strcmp(argv[i],"--maxp")              == 0)) { maxp     = atoi(argv[++i]); continue;}
   }
+#endif
   
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing

@@ -40,7 +40,7 @@
 #include <rf_allo.h>
 
 #define UTIL_NAME "nem_spread"
-#define VER_STR "6.14 (2016/03/21)"
+#define VER_STR "6.15 (2016/05/18)"
 
 extern void   check_exodus_error(int, const char *);
 extern double second(void);

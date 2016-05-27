@@ -61,11 +61,10 @@ Entity declare_element( BulkData & mesh ,
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
-Entity declare_element_side_using_graph(BulkData& mesh,
-                                        const stk::mesh::EntityId global_side_id,
-                                        Entity elem,
-                                        const unsigned side_ordinal,
-                                        const stk::mesh::PartVector& add_parts);
+Entity declare_element_side(BulkData& bulkData,
+                            Entity elem,
+                            const unsigned side_ordinal,
+                            const stk::mesh::PartVector& add_parts = stk::mesh::PartVector());
 
 /** \brief  Create (or find) an element side.
  *

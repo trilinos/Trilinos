@@ -142,7 +142,7 @@ void CubatureControlVolumeSide<Scalar,ArrayPoint,ArrayWeight>::getCubature(Array
        Intrepid2::FieldContainer<Scalar> cellCVCoords(numNodesPerCell, numNodesPerSubCV, spaceDim);
        for (index_type isubcv = 0; isubcv < numNodesPerCell; isubcv++) {
          for (int inode = 0; inode < numNodesPerSubCV; inode++){
-           for (int idim = 0; idim < spaceDim; idim++){
+           for (int idim = 0; idim < static_cast<int>(spaceDim); idim++){
                cellCVCoords(isubcv,inode,idim) = subCVCoords(icell,isubcv,inode,idim);
            }
          }

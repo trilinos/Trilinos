@@ -43,6 +43,8 @@
 namespace Ioss {
   class DatabaseIO;
 
+  /** \brief A collection of elements having the same topology.
+   */
   class ElementBlock : public EntityBlock
   {
   public:
@@ -55,9 +57,9 @@ namespace Ioss {
     std::string short_type_string() const override { return "block"; }
     EntityType  type() const override { return ELEMENTBLOCK; }
 
-    /// Handle implicit properties -- These are calcuated from data stored
-    /// in the grouping entity instead of having an explicit value assigned.
-    /// An example would be 'element_block_count' for a region.
+    // Handle implicit properties -- These are calcuated from data stored
+    // in the grouping entity instead of having an explicit value assigned.
+    // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string &my_name) const override;
 
     void get_block_adjacencies(std::vector<std::string> &block_adjacency) const;

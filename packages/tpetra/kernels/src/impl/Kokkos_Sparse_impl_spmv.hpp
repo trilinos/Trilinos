@@ -319,7 +319,7 @@ static void spmv_alpha_beta_no_transpose(typename AMatrix::const_value_type& alp
     const int rows_per_team = rows_per_thread * team_size;
     const typename AMatrix::size_type nteams =
         (nrow+rows_per_team-1)/rows_per_team;
-    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
+    Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space , Kokkos::Schedule<Kokkos::Dynamic> >
        ( nteams , team_size , vector_length ) , op );
 
 #else // KOKKOS_FAST_COMPILE this will only instantiate one Kernel for alpha/beta

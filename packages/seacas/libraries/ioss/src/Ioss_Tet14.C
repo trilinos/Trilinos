@@ -72,18 +72,23 @@ namespace {
 
   // Face numbers are zero-based [0..number_faces)
   int Constants::face_node_order[nface][nfacenode] = // [face][face_node]
-    {{0, 1, 3, 4, 8, 7, 13}, {1, 2, 3, 5, 9, 8, 11}, {0, 3, 2, 7, 9, 6, 12}, {0, 2, 1, 6, 5, 4, 10}};
+      {{0, 1, 3, 4, 8, 7, 13},
+       {1, 2, 3, 5, 9, 8, 11},
+       {0, 3, 2, 7, 9, 6, 12},
+       {0, 2, 1, 6, 5, 4, 10}};
 
   int Constants::face_edge_order[nface][nfaceedge] = // [face][face_edge]
       {{0, 4, 3}, {1, 5, 4}, {3, 5, 2}, {2, 1, 0}};
 
   // face 0 returns number of nodes for all faces if homogenous
   //        returns -1 if faces have differing topology
-  int Constants::nodes_per_face[nface + 1] = {nfacenode, nfacenode, nfacenode, nfacenode, nfacenode};
+  int Constants::nodes_per_face[nface + 1] = {nfacenode, nfacenode, nfacenode, nfacenode,
+                                              nfacenode};
 
   // face 0 returns number of edges for all faces if homogenous
   //        returns -1 if faces have differing topology
-  int Constants::edges_per_face[nface + 1] = {nfaceedge, nfaceedge, nfaceedge, nfaceedge, nfaceedge};
+  int Constants::edges_per_face[nface + 1] = {nfaceedge, nfaceedge, nfaceedge, nfaceedge,
+                                              nfaceedge};
 } // namespace
 
 void Ioss::Tet14::factory()

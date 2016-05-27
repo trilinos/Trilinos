@@ -33,6 +33,8 @@
 #ifndef IOSS_Iotr_Initializer_h
 #define IOSS_Iotr_Initializer_h
 
+/** \brief A namespace for Ioss transformations.
+ */
 namespace Iotr {
   class Initializer
   {

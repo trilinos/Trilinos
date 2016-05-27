@@ -184,7 +184,7 @@ void test_field() {
   mesh_spec << "generated:"<<dimX<<"x"<<dimY<<"x"<<dimZ;
   stk::unit_test_util::fill_mesh_using_stk_io(mesh_spec.str(), bulk);
 
-  double initialValue = 99.9;
+  double initialValue = 9.9;
   ngp::Field<double> scalarField(stk::topology::NODE_RANK, initialValue, bulk, meta.locally_owned_part());
 
   stk::mesh::EntityVector nodes;
@@ -223,7 +223,7 @@ void test_field() {
   std::cout << "Time: " << time << std::endl;
 
   double goldValue = nodes.size()*initialValue;
-  EXPECT_NEAR(goldValue, result, 0.0001);
+  EXPECT_NEAR(goldValue, result, 0.001);
 }
 
 TEST_F(MTK_Kokkos, field_exp) {

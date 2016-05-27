@@ -39,6 +39,8 @@
 #include <iosfwd>            // for ostream
 #include <string>            // for string
 
+/** \brief A special namespace for the skinner demonstration program interface.
+ */
 namespace Skinner {
   class Interface
   {

@@ -256,7 +256,7 @@ namespace panzer_stk_classic {
       // loop over nodes in nodes in side element
       stk_classic::mesh::PairIterRelation nodeRelations = (*parentElement)->relations(mesh->getNodeRank());
 
-      realloc(normals[mesh->elementLocalId(*parentElement)],nodeRelations.size(),parentTopology->getDimension()); 
+      normals[mesh->elementLocalId(*parentElement)] = Kokkos::DynRankView<double,PHX::Device>("normals",nodeRelations.size(),parentTopology->getDimension()); 
 
       int nodeIndex = 0;
       for (stk_classic::mesh::PairIterRelation::iterator node = nodeRelations.begin(); node != nodeRelations.end(); ++node,++nodeIndex) {

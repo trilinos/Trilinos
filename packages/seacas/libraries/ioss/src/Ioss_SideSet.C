@@ -50,6 +50,11 @@ namespace Ioss {
 
 static const std::string SCALAR("scalar");
 
+/** \brief Create a side set with no members initially.
+ *
+ *  \param[in] io_database The database associated with the region containing the side set.
+ *  \param[in] my_name The side set's name.
+ */
 Ioss::SideSet::SideSet(Ioss::DatabaseIO *io_database, const std::string &my_name)
     : Ioss::GroupingEntity(io_database, my_name, 0)
 {

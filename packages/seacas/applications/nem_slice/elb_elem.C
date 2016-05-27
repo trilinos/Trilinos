@@ -75,8 +75,8 @@ const char *elem_name_from_enum(const E_Type elem_type)
     "BAR2",      "BAR3",
     "QUAD4",     "QUAD8",   "QUAD9",
     "SHELL4",    "SHELL8",  "SHELL9",
-    "TRI3",      "TRI6",
-    "TSHELL3",   "TSHELL6",
+    "TRI3",      "TRI4",    "TRI6",    "TRI7",
+    "TSHELL3",   "TSHELL4", "TSHELL6", "TSHELL7",
     "HEX8",      "HEX20",   "HEX27",   "HEXSHELL",
     "TET4",      "TET10",   "TET8",    "TET14",   "TET15",
     "WEDGE6",    "WEDGE15", "WEDGE16", "WEDGE20", "WEDGE21",
@@ -174,11 +174,23 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes, const int num_d
         else
           answer = TSHELL3;
         break;
+      case 4:
+        if (num_dim == 2)
+          answer = TRI4;
+        else
+          answer = TSHELL4;
+        break;
       case 6:
         if (num_dim == 2)
           answer = TRI6;
         else
           answer = TSHELL6;
+        break;
+      case 7:
+        if (num_dim == 2)
+          answer = TRI7;
+        else
+          answer = TSHELL7;
         break;
       default:
         Gen_Error(0, "fatal: unsupported TRI element");
@@ -445,10 +457,38 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
+  case TRI4:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
   case TRI6:
     switch (req) /* select type of information required */
     {
     case NNODES: /* number of nodes */ answer             = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TRI7:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 7; break;
     case NDIM: /* number of physical dimensions */ answer = 2; break;
     case NSIDE_NODES: answer                              = 3; break;
     case NSIDES: answer                                   = 3; break;
@@ -473,10 +513,36 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
+  case TSHELL4:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
   case TSHELL6:
     switch (req) /* select type of information required */
     {
     case NNODES: /* number of nodes */ answer             = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TSHELL7:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 7; break;
     case NDIM: /* number of physical dimensions */ answer = 2; break;
     case NSIDES: answer                                   = 5; break;
     default:
@@ -626,7 +692,7 @@ int get_elem_info(const int req, const E_Type etype)
 
   case WEDGE15:
     switch (req) {
-    case NNODES: answer                                   = 16; break;
+    case NNODES: answer                                   = 15; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -638,7 +704,7 @@ int get_elem_info(const int req, const E_Type etype)
 
   case WEDGE16:
     switch (req) {
-    case NNODES: answer                                   = 15; break;
+    case NNODES: answer                                   = 16; break;
     case NSIDES: answer                                   = 5; break;
     case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
@@ -827,7 +893,9 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
     break;
 
   case TRI3:
+  case TRI4:
   case TRI6:
+  case TRI7:
     /* SIDE 1 */
     if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
       return 1;
@@ -1128,10 +1196,12 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
     break;
 
   case TSHELL3:
+  case TSHELL4:
   case TSHELL6:
+  case TSHELL7:
 
     /* 2D sides */
-    if (nsnodes == 2 || (etype == TSHELL6 && nsnodes == 3)) {
+    if (nsnodes == 2 || (etype == TSHELL6 && nsnodes == 3) || (etype == TSHELL7 && nsnodes == 3)) {
       /* SIDE 3 */
       if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
         return 3;
@@ -1146,7 +1216,7 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT s
     }
 
     /* 3D faces */
-    else if (nsnodes == 3 || nsnodes == 6) {
+    else if (nsnodes == 3 || nsnodes == 4 || nsnodes == 6 || nsnodes == 7) {
 
       /* SIDE 1 */
       if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
@@ -1418,9 +1488,9 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
   };
 
   /* tshell */
-  static int tshell_table[2][6] = {
-    {1, 2, 3, 4, 5, 6}, // side 1
-    {1, 3, 2, 6, 5, 4}  // side 2
+  static int tshell_table[2][7] = {
+    {1, 2, 3, 4, 5, 6, 7}, // side 1
+    {1, 3, 2, 6, 5, 4, 7}  // side 2
   };
 
   /* quad */
@@ -1446,14 +1516,42 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
   };
 
   /* wedge */
-  static int wedge_table[5][9] = {
-    {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
-    {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
-    {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
-    {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
-    {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+  /* wedge 6 or 7 */
+  static int wedge6_table[5][4] = {
+    {1, 2, 5, 4}, /* Side 1 nodes -- quad     */
+    {2, 3, 6, 5}, /* Side 2 nodes -- quad     */
+    {1, 4, 6, 3}, /* Side 3 nodes -- quad     */
+    {1, 3, 2, 0}, /* Side 4 nodes -- triangle */
+    {4, 5, 6, 0}  /* Side 5 nodes -- triangle */
   };
 
+  /* wedge 15 or 16 */
+  static int wedge15_table[5][8] = {
+      {1, 2, 5,  4,  7, 11, 13, 10}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 20 */
+  static int wedge20_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 21 */
+  static int wedge21_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 21}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 19}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 20}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 17,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 18,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+  
   /* hex */
   static int hex_table[6][9] = {
     {1, 2, 6, 5,  9, 14, 17, 13, 26}, /* side 1 */
@@ -1573,16 +1671,19 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     break;
 
   case TRI3:
+  case TRI4:
     for (i            = 0; i < 2; i++)
       ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TRI6:
+  case TRI7:
     for (i            = 0; i < 3; i++)
       ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TSHELL3:
+  case TSHELL4:
     switch (side_num) {
     case 0:
     case 1:
@@ -1602,6 +1703,7 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     break;
 
   case TSHELL6:
+  case TSHELL7:
     switch (side_num) {
     case 0:
     case 1:
@@ -1661,12 +1763,12 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     case 3:
     case 4:
       for (i            = 0; i < 3; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 4; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1677,28 +1779,42 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
     case 3:
     case 4:
       for (i            = 0; i < 6; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 8; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
       break;
     }
     break;
 
   case WEDGE20:
+    switch (side_num) {
+    case 3:
+    case 4:
+      for (i            = 0; i < 7; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
   case WEDGE21:
     switch (side_num) {
     case 3:
     case 4:
       for (i            = 0; i < 7; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
       break;
 
     default:
       for (i            = 0; i < 9; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1867,11 +1983,13 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
     break;
 
   case TRI3:
+  case TRI4:
     for (i                = 0; i < 2; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
 
   case TRI6:
+  case TRI7:
     for (i                = 0; i < 3; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
@@ -1891,11 +2009,41 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
     }
     break;
 
+  case TSHELL4:
+    switch (side_num) {
+    case 1:
+    case 2:
+      for (i                = 0; i < 4; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 2; i++)
+        mirror_node_list[i] = ss_node_list[line_table[i]];
+      break;
+    }
+    break;
+
   case TSHELL6:
     switch (side_num) {
     case 1:
     case 2:
       for (i                = 0; i < 6; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 3; i++)
+        mirror_node_list[i] = ss_node_list[line_table[i]];
+      break;
+    }
+    break;
+
+  case TSHELL7:
+    switch (side_num) {
+    case 1:
+    case 2:
+      for (i                = 0; i < 7; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 

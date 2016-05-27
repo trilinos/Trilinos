@@ -1,3 +1,4 @@
+#! /usr/bin/env bash
 # Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
 # DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
 # retains certain rights in this software.
@@ -36,47 +37,49 @@
 # To run the tests with valgrind checking, uncomment the next line and comment the
 # following line. Can also define other prefixes if wanted.
 
-#set PREFIX = "valgrind --tool=memcheck"
-set PREFIX = ""
-set SUFFIX = ""
-set BINDIR = @CMAKE_CURRENT_BINARY_DIR@
-set SRCDIR = @CMAKE_CURRENT_SOURCE_DIR@
-set NCDUMP = @NETCDF_NCDUMP@
+#PREFIX = "valgrind --tool=memcheck"
+PREFIX=""
+SUFFIX=""
+BINDIR=@CMAKE_CURRENT_BINARY_DIR@
+SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
+NCDUMP=@NETCDF_NCDUMP@
+DIFF="diff -w"
 
 # testwt - single precision write test
 echo "************************************************************************"
 echo "************************************************************************"
+rm -f test.output
 echo "testwt ..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f_testwt${SUFFIX} >> test.output
 echo "end testwt" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | diff - ${SRCDIR}/test.dmp | tee testwt.res
+${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 
 # testrd - single precision read test
 echo "testrd ..."
 echo "testrd ... [Expect ex_create NOCLOBBER error from this test]"
-${PREFIX} ${BINDIR}/f_testrd${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd.dmp | tee testrd.res
+${PREFIX} ${BINDIR}/f_testrd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
 
 # testcp_ss - single-to-single precision copy test
 echo "testcp_ss ..."
 echo "begin testcp_ss" >> test.output
 ${PREFIX} ${BINDIR}/f_testcp${SUFFIX} >> test.output
 echo "end testcp_ss" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version | diff - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
+${NCDUMP} -d5,5 testcp.exo | grep -v version | ${DIFF} - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
 
 # testcpln - single-to-single, large to normal copy test
 echo "testcpln ..."
 echo "begin testcpln" >> test.output
 ${PREFIX} ${BINDIR}/f_testcpln${SUFFIX} >> test.output
 echo "end testcpln" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version | diff - ${SRCDIR}/testcpln.dmp | tee testcpln.res
+${NCDUMP} -d5,5 testcp.exo | grep -v version | ${DIFF} - ${SRCDIR}/testcpln.dmp | tee testcpln.res
 
 # testcpnl - single-to-single, normal to large copy test
 echo "testcpnl ..."
 echo "begin testcpnl" >> test.output
 ${PREFIX} ${BINDIR}/f_testcpnl${SUFFIX} >> test.output
 echo "end testcpnl" >> test.output
-${NCDUMP} -d5,5 testcpnl.exo | grep -v version | diff - ${SRCDIR}/testcpnl.dmp | tee testcpnl.res
+${NCDUMP} -d5,5 testcpnl.exo | grep -v version | ${DIFF} - ${SRCDIR}/testcpnl.dmp | tee testcpnl.res
 
 # testwt1 - single precision write test with multiple side sets
 echo "testwt1 ..."
@@ -84,45 +87,45 @@ echo "testwt1 ... [Expect WEDGE6 warning from this test]"
 echo "begin testwt1" >> test.output
 ${PREFIX} ${BINDIR}/f_testwt1${SUFFIX} >> test.output
 echo "end testwt1" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | diff - ${SRCDIR}/test1.dmp | tee testwt1.res
+${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/test1.dmp | tee testwt1.res
 
 # testrd1 - single precision read test with multiple side sets
 echo "testrd1 ..."
 echo "testrd1 ... [Expect failure locating elem var 1 for elem block 12]"
-${PREFIX} ${BINDIR}/f_testrd1${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd1.dmp | tee testrd1.res
+${PREFIX} ${BINDIR}/f_testrd1${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd1.dmp | tee testrd1.res
 
 # testwtd - double precision write test
 echo "testwtd ..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f_testwtd${SUFFIX} >> test.output
 echo "end testwtd" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | diff - ${SRCDIR}/testd.dmp | tee testwtd.res
+${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
 
 # testrdd - double precision read test
 echo "testrdd ..."
-${PREFIX} ${BINDIR}/f_testrdd${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+${PREFIX} ${BINDIR}/f_testrdd${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
 
 # testwt2 - single precision write 2 files (simultaneously open) test
 echo "testwt2 ..."
 echo "begin testwt2" >> test.output
-${PREFIX} ${BINDIR}/f_testwt2${SUFFIX} >> test.output |&grep -v "property name string" 
+${PREFIX} ${BINDIR}/f_testwt2${SUFFIX} >> test.output | grep -v "property name string" 
 echo "end testwt2" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | diff - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
-${NCDUMP} -d5,5 test2.exo | grep -v version | diff - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res
+${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/test2-1.dmp | tee testwt2-1.res
+${NCDUMP} -d5,5 test2.exo | grep -v version | ${DIFF} - ${SRCDIR}/test2-2.dmp | tee testwt2-2.res
 
 echo "testwt_nsid ..."
 echo "begin testwt_nsid" > test.output
 ${PREFIX} ${BINDIR}/f_testwt_nsid${SUFFIX} >> test.output
 echo "end testwt_nsid" >> test.output
-${NCDUMP} -d5,5 test-nsided.exo | grep -v version | diff - ${SRCDIR}/test-nsided.dmp | tee testwt_nsid.res
+${NCDUMP} -d5,5 test-nsided.exo | grep -v version | ${DIFF} - ${SRCDIR}/test-nsided.dmp | tee testwt_nsid.res
 
 # testrd_nsid - single precision read test
 echo "testrd_nsid ..."
-${PREFIX} ${BINDIR}/f_testrd_nsid${SUFFIX} | grep -v version | diff - ${SRCDIR}/testrd_nsid.dmp | tee testrd_nsid.res
+${PREFIX} ${BINDIR}/f_testrd_nsid${SUFFIX} | grep -v version | ${DIFF} - ${SRCDIR}/testrd_nsid.dmp | tee testrd_nsid.res
 
 # test_nem - nemesis routines
 echo "test_nem ..."
-${PREFIX} ${BINDIR}/f_test_nem${SUFFIX} | diff -w - ${SRCDIR}/test_nem.dmp | tee test_nem.res
+${PREFIX} ${BINDIR}/f_test_nem${SUFFIX} | ${DIFF} -w - ${SRCDIR}/test_nem.dmp | tee test_nem.res
 
 echo "************************************************************************"
 echo "************************************************************************"

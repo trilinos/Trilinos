@@ -36,6 +36,11 @@
 namespace Ioxf {
   int Initializer::useCount = 0;
 
+  /** \brief Initialize the xdmf database parts of the Ioss library.
+   *
+   *  Calls appropriate internal functions and methods to
+   *  initialize the xdmf database parts of the Ioss library.
+   */
   Initializer::Initializer()
   {
     if (useCount == 0)

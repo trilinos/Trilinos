@@ -41,6 +41,9 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A named value that has a known type.
+   *
+   */
   class Property
   {
   public:
@@ -70,13 +73,42 @@ namespace Ioss {
     double      get_real() const;
     void *      get_pointer() const;
 
+    /** \brief Tells whether the property is calculated, rather than stored.
+     *
+     * \returns True if property is calculated; False if it is stored directly.
+     */
     bool is_implicit() const { return isImplicit_; }
+
+    /** \brief Tells whether the property is stored, rather than calculated.
+     *
+     * \returns True if property is stored directly; False if it is calculated.
+     */
     bool is_explicit() const { return !isImplicit_; }
+
+    /** Tells whether the property has a valid type (currently REAL, INTEGER, POINTER, or STRING)
+     *
+     *  \returns True if the property type is valid.
+     */
     bool is_valid() const { return type_ != INVALID; }
+
+    /** Tells whether the property has an invalid type (currently not one of REAL, INTEGER, POINTER,
+     * or STRING)
+     *
+     *  \returns True if the property type is invalid.
+     */
     bool is_invalid() const { return type_ == INVALID; }
 
+    /** \brief Get the property name.
+     *
+     *  \returns The property name.
+     */
     std::string get_name() const { return name_; }
-    BasicType   get_type() const { return type_; }
+
+    /** \brief Get the property type.
+     *
+     *  \returns The property type.
+     */
+    BasicType get_type() const { return type_; }
 
   private:
     Property &   operator=(const Property &); // Do not implement

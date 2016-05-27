@@ -127,6 +127,19 @@ namespace {
 } // namespace
 
 namespace Ioss {
+
+  /** \brief Constructor reads in all metadata from disk.
+   *
+   *  This constructor connects this region to the database, opens the
+   *  underlying file, reads all the metadata in the file into Region
+   *  and its subentities, and closes the underlying file. Region properties,
+   *  such as spatial_dimension, element_block_count, element_count, etc, are
+   *  also added to the Region's property manager.
+   *
+   *  \param[in] iodatabase The name of the database associated with the Region.
+   *  \param[in] myname The name of the Region.
+   *
+   */
   Region::Region(DatabaseIO *iodatabase, const std::string &my_name)
       : GroupingEntity(iodatabase, my_name, 1), currentState(-1), stateCount(0),
         modelDefined(false), transientDefined(false)
@@ -221,6 +234,11 @@ namespace Ioss {
 
   void Region::delete_database() { GroupingEntity::really_delete_database(); }
 
+  /** \brief Print a summary of entities in the region.
+   *
+   *  \param[in,out] strm The output stream to use for printing.
+   *  \param[in] do_transient Include output of TRANSIENT variables.
+   */
   void Region::output_summary(std::ostream &strm, bool do_transient)
   {
     strm << "\n Database: " << get_database()->get_filename() << "\n";
@@ -301,12 +319,18 @@ namespace Ioss {
     }
   }
 
+  /** \brief Set the Region and the associated DatabaseIO to the given State.
+   *
+   *  All transitions must begin from the 'STATE_CLOSED' state or be to
+   *  the 'STATE_CLOSED' state (There are no nested begin/end pairs at
+   *  this time.)
+   *
+   *  \param[in] new_state The new State to which the Region and DatabaseIO should be set.
+   *  \returns True if successful.
+   *
+   */
   bool Region::begin_mode(State new_state)
   {
-    // All transitions must begin from the 'STATE_CLOSED' state or be to
-    // the 'STATE_CLOSED' state (There are no nested begin/end pairs at
-    // this time.)
-
     bool success = false;
     if (new_state == STATE_CLOSED) {
       success = set_state(new_state);
@@ -355,6 +379,12 @@ namespace Ioss {
     return success;
   }
 
+  /** \brief Return the Region and the associated DatabaseIO to STATE_CLOSED.
+   *
+   *  \param[in] current_state The State to end.
+   *  \returns True if successful.
+   *
+   */
   bool Region::end_mode(State current_state)
   {
     // Check that 'current_state' matches the current state of the
@@ -414,6 +444,13 @@ namespace Ioss {
     return success;
   }
 
+  /** \brief Add a state for a specified time.
+   *
+   *  The states in the region will be 1-based.
+   *
+   *  \param[in] The time at the new state.
+   *  \returns The state index (1-based).
+   */
   int Region::add_state(double time)
   {
     static bool warning_output = false;
@@ -461,11 +498,13 @@ namespace Ioss {
     ;
   }
 
+  /** \brief Get the time corresponding to the specified state or the currently active state.
+   *
+   *  \param[in] state The state index (1-based) or -1 for the currently active state.
+   *  \returns The time at the specified state or the currently active state.
+   */
   double Region::get_state_time(int state) const
   {
-
-    // Return time corresponding to specified state.
-    // If state == -1, return time for currently active state
     double time = 0.0;
     if (state == -1) {
       if (get_database()->is_input() || get_database()->usage() == WRITE_RESULTS ||
@@ -508,6 +547,13 @@ namespace Ioss {
     return time;
   }
 
+  /** \brief Get the maximum time step index (1-based) and time for the region.
+   *
+   *  \returns A pair consisting of the step (1-based) corresponding to
+   *           the maximum time on the database and the corresponding maximum
+   *           time value. Note that this may not necessarily be the last step
+   *           on the database if cycle and overlay are being used.
+   */
   std::pair<int, double> Region::get_max_time() const
   {
     if (!get_database()->is_input() && get_database()->usage() != WRITE_RESULTS &&
@@ -533,6 +579,13 @@ namespace Ioss {
     return std::make_pair(step + 1, max_time);
   }
 
+  /** \brief Get the minimum time step index (1-based) and time for the region.
+   *
+   *  \returns A pair consisting of the step (1-based) corresponding to
+   *           the minimum time on the database and the corresponding minimum
+   *           time value. Note that this may not necessarily be the first step
+   *           on the database if cycle and overlay are being used.
+   */
   std::pair<int, double> Region::get_min_time() const
   {
     if (!get_database()->is_input() && get_database()->usage() != WRITE_RESULTS &&
@@ -558,6 +611,11 @@ namespace Ioss {
     return std::make_pair(step + 1, min_time);
   }
 
+  /** \brief Begin a state (moment in time).
+   *
+   *  \param[in] state The state index (1-based).
+   *  \returns The time of this state.
+   */
   double Region::begin_state(int state)
   {
     double time = 0.0;
@@ -598,6 +656,11 @@ namespace Ioss {
     return time;
   }
 
+  /** \brief End a state (moment in time).
+   *
+   *  \param[in] state The state index (1-based).
+   *  \returns The time of this state.
+   */
   double Region::end_state(int state)
   {
     if (state != currentState) {
@@ -623,6 +686,11 @@ namespace Ioss {
     return time;
   }
 
+  /** \brief Add a node block to the region.
+   *
+   *  \param[in] node_block The node block to add
+   *  \returns True if successful.
+   */
   bool Region::add(NodeBlock *node_block)
   {
     check_for_duplicate_names(this, node_block);
@@ -638,6 +706,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a coordinate frame to the region.
+   *
+   *  \param[in] frame The coordinate frame to add
+   *  \returns True if successful.
+   */
   bool Region::add(const CoordinateFrame &frame)
   {
     // Check that region is in correct state for adding entities
@@ -648,6 +721,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add an element block to the region.
+   *
+   *  \param[in] element_block The element block to add
+   *  \returns True if successful.
+   */
   bool Region::add(ElementBlock *element_block)
   {
     check_for_duplicate_names(this, element_block);
@@ -695,6 +773,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a face block to the region.
+   *
+   *  \param[in] face_block The face block to add
+   *  \returns True if successful.
+   */
   bool Region::add(FaceBlock *face_block)
   {
     check_for_duplicate_names(this, face_block);
@@ -741,6 +824,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add an edge block to the region.
+   *
+   *  \param[in] edge_block The edge block to add
+   *  \returns True if successful.
+   */
   bool Region::add(EdgeBlock *edge_block)
   {
     check_for_duplicate_names(this, edge_block);
@@ -787,6 +875,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a side set to the region.
+   *
+   *  \param[in] sideset The side set to add
+   *  \returns True if successful.
+   */
   bool Region::add(SideSet *sideset)
   {
     check_for_duplicate_names(this, sideset);
@@ -800,6 +893,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a node set to the region.
+   *
+   *  \param[in] nodeset The node set to add
+   *  \returns True if successful.
+   */
   bool Region::add(NodeSet *nodeset)
   {
     check_for_duplicate_names(this, nodeset);
@@ -813,6 +911,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add an edge set to the region.
+   *
+   *  \param[in] edgeset The edge set to add
+   *  \returns True if successful.
+   */
   bool Region::add(EdgeSet *edgeset)
   {
     check_for_duplicate_names(this, edgeset);
@@ -826,6 +929,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a face set to the region.
+   *
+   *  \param[in] faceset The face set to add
+   *  \returns True if successful.
+   */
   bool Region::add(FaceSet *faceset)
   {
     check_for_duplicate_names(this, faceset);
@@ -839,6 +947,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add an element set to the region.
+   *
+   *  \param[in] elementset The element set to add
+   *  \returns True if successful.
+   */
   bool Region::add(ElementSet *elementset)
   {
     check_for_duplicate_names(this, elementset);
@@ -852,6 +965,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Add a comm set to the region.
+   *
+   *  \param[in] commset The comm set to add
+   *  \returns True if successful.
+   */
   bool Region::add(CommSet *commset)
   {
     check_for_duplicate_names(this, commset);
@@ -865,28 +983,77 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Get all the region's NodeBlock objects.
+   *
+   *  \returns A vector of all the region's NodeBlock objects.
+   */
   const NodeBlockContainer &Region::get_node_blocks() const { return nodeBlocks; }
 
+  /** \brief Get all the region's EdgeBlock objects.
+   *
+   *  \returns A vector of all the region's EdgeBlock objects.
+   */
   const EdgeBlockContainer &Region::get_edge_blocks() const { return edgeBlocks; }
 
+  /** \brief Get all the region's FaceBlock objects.
+   *
+   *  \returns A vector of all the region's FaceBlock objects.
+   */
   const FaceBlockContainer &Region::get_face_blocks() const { return faceBlocks; }
 
+  /** \brief Get all the region's ElementBlock objects.
+   *
+   *  \returns A vector of all the region's ElementBlock objects.
+   */
   const ElementBlockContainer &Region::get_element_blocks() const { return elementBlocks; }
 
+  /** \brief Get all the region's SideSet objects.
+   *
+   *  \returns A vector of all the region's SideSet objects.
+   */
   const SideSetContainer &Region::get_sidesets() const { return sideSets; }
 
+  /** \brief Get all the region's NodeSet objects.
+   *
+   *  \returns A vector of all the region's NodeSet objects.
+   */
   const NodeSetContainer &Region::get_nodesets() const { return nodeSets; }
 
+  /** \brief Get all the region's EdgeSet objects.
+   *
+   *  \returns A vector of all the region's EdgeSet objects.
+   */
   const EdgeSetContainer &Region::get_edgesets() const { return edgeSets; }
 
+  /** \brief Get all the region's FaceSet objects.
+   *
+   *  \returns A vector of all the region's FaceSet objects.
+   */
   const FaceSetContainer &Region::get_facesets() const { return faceSets; }
 
+  /** \brief Get all the region's ElementSet objects.
+   *
+   *  \returns A vector of all the region's ElementSet objects.
+   */
   const ElementSetContainer &Region::get_elementsets() const { return elementSets; }
 
+  /** \brief Get all the region's CommSet objects.
+   *
+   *  \returns A vector of all the region's CommSet objects.
+   */
   const CommSetContainer &Region::get_commsets() const { return commSets; }
 
+  /** \brief Get all the region's CoordinateFrame objects.
+   *
+   *  \returns A vector of all the region's CoordinateFrame objects.
+   */
   const CoordinateFrameContainer &Region::get_coordinate_frames() const { return coordinateFrames; }
 
+  /** \brief Add a grouping entity's name as an alias for itself.
+   *
+   *  \param[in] ge The grouping entity.
+   *  \returns True if successful
+   */
   bool Region::add_alias(const GroupingEntity *ge)
   {
     // See if an entity with this name already exists...
@@ -930,11 +1097,17 @@ namespace Ioss {
     return success;
   }
 
+  /** \brief Add an alias for a name in a region.
+   *
+   *  For use with the USTRING type in Sierra, create an uppercase
+   *  version of all aliases...
+   *
+   *  \param[in] db_name The original name.
+   *  \param[in] alias the alias
+   *  \returns True if successful
+   */
   bool Region::add_alias(const std::string &db_name, const std::string &alias)
   {
-    // For use with the USTRING type in Sierra, create an uppercase
-    // version of all aliases...
-
     // Possible that 'db_name' is itself an alias, resolve down to "canonical"
     // name...
     std::string canon = db_name;
@@ -958,6 +1131,11 @@ namespace Ioss {
     return false;
   }
 
+  /** \brief Get the original name for an alias.
+   *
+   *  \param[in] alias The alias name.
+   *  \returns The original name.
+   */
   std::string Region::get_alias(const std::string &alias) const
   {
     std::string ci_alias = uppercase(alias);
@@ -968,6 +1146,14 @@ namespace Ioss {
     return (*I).second;
   }
 
+  /** \brief Get all aliases for a name in the region.
+   *
+   *  \param[in] my_name The original name.
+   *  \param[in,out] aliases On input, any vector of strings.
+   *                         On output, all aliases for my_name are appended.
+   *  \returns The number of aliases that were appended.
+   *
+   */
   int Region::get_aliases(const std::string &my_name, std::vector<std::string> &aliases) const
   {
     size_t size = aliases.size();
@@ -981,8 +1167,18 @@ namespace Ioss {
     return static_cast<int>(aliases.size() - size);
   }
 
+  /** \brief Get all original name / alias pairs for the region.
+   *
+   *  \returns All original name / alias pairs for the region.
+   */
   const AliasMap &Region::get_alias_map() const { return aliases_; }
 
+  /** \brief Get an entity of a known EntityType
+   *
+   *  \param[in] my_name The name of the entity to get
+   *  \param[in] io_type The known type of the entity.
+   *  \returns The entity with the given name of the given type, or nullptr if not found.
+   */
   GroupingEntity *Region::get_entity(const std::string &my_name, EntityType io_type) const
   {
     if (io_type == NODEBLOCK) {
@@ -1021,6 +1217,15 @@ namespace Ioss {
     return nullptr;
   }
 
+  /** \brief Get an entity of a unknown EntityType
+   *
+   *  Searches for an entity with the given name in a fixed order of
+   *  entity types. First NODEBLOCK entities are searched. Then ELEMENTBLOCK
+   *  entities, etc.
+   *
+   *  \param[in] my_name The name of the entity to get
+   *  \returns The entity with the given name, or nullptr if not found.
+   */
   GroupingEntity *Region::get_entity(const std::string &my_name) const
   {
     GroupingEntity *entity = nullptr;
@@ -1072,6 +1277,11 @@ namespace Ioss {
     return entity;
   }
 
+  /** \brief Get the node block with the given name.
+   *
+   *  \param[in] my_name The name of the node block to get.
+   *  \returns The node block, or nullptr if not found.
+   */
   NodeBlock *Region::get_node_block(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1087,6 +1297,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the edge block with the given name.
+   *
+   *  \param[in] my_name The name of the edge block to get.
+   *  \returns The edge block, or nullptr if not found.
+   */
   EdgeBlock *Region::get_edge_block(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1102,6 +1317,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the face block with the given name.
+   *
+   *  \param[in] my_name The name of the face block to get.
+   *  \returns The face block, or nullptr if not found.
+   */
   FaceBlock *Region::get_face_block(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1117,6 +1337,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the element block with the given name.
+   *
+   *  \param[in] my_name The name of the element block to get.
+   *  \returns The element block, or nullptr if not found.
+   */
   ElementBlock *Region::get_element_block(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1132,6 +1357,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the side set with the given name.
+   *
+   *  \param[in] my_name The name of the side set to get.
+   *  \returns The side set, or nullptr if not found.
+   */
   SideSet *Region::get_sideset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1147,6 +1377,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the side block with the given name.
+   *
+   *  \param[in] my_name The name of the side block to get.
+   *  \returns The side block, or nullptr if not found.
+   */
   SideBlock *Region::get_sideblock(const std::string &my_name) const
   {
     SideBlock *ge = nullptr;
@@ -1159,6 +1394,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the node set with the given name.
+   *
+   *  \param[in] my_name The name of the node set to get.
+   *  \returns The node set, or nullptr if not found.
+   */
   NodeSet *Region::get_nodeset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1174,6 +1414,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the edge set with the given name.
+   *
+   *  \param[in] my_name The name of the edge set to get.
+   *  \returns The edge set, or nullptr if not found.
+   */
   EdgeSet *Region::get_edgeset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1189,6 +1434,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the face set with the given name.
+   *
+   *  \param[in] my_name The name of the face set to get.
+   *  \returns The face set, or nullptr if not found.
+   */
   FaceSet *Region::get_faceset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1204,6 +1454,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the element set with the given name.
+   *
+   *  \param[in] my_name The name of the element set to get.
+   *  \returns The element set, or nullptr if not found.
+   */
   ElementSet *Region::get_elementset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1219,6 +1474,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the comm set with the given name.
+   *
+   *  \param[in] my_name The name of the comm set to get.
+   *  \returns The comm set, or nullptr if not found.
+   */
   CommSet *Region::get_commset(const std::string &my_name) const
   {
     const std::string db_name = get_alias(my_name);
@@ -1234,6 +1494,11 @@ namespace Ioss {
     return ge;
   }
 
+  /** \brief Get the coordinate frame with the given name.
+   *
+   *  \param[in] my_name The name of the coordinate frame to get.
+   *  \returns The coordinate frame, or nullptr if not found.
+   */
   const CoordinateFrame &Region::get_coordinate_frame(int64_t id) const
   {
     for (auto &coor_frame : coordinateFrames) {
@@ -1246,6 +1511,14 @@ namespace Ioss {
     IOSS_ERROR(errmsg);
   }
 
+  /** \brief Determine whether the entity with the given name and type exists.
+   *
+   *  \param[in] my_name The name of the entity to search for.
+   *  \param[in] io_type The type of the entity.
+   *  \param[out] my_type A string representing the type if the entity is found.
+   *                      "INVALID" if the entity is not found or the type is invalid.
+   *  \returns True if the type is valid and the entity is found.
+   */
   bool Region::is_valid_io_entity(const std::string &my_name, unsigned int io_type,
                                   std::string *my_type) const
   {
@@ -1319,10 +1592,12 @@ namespace Ioss {
     return false;
   }
 
-  // Retrieve the element block that contains the specified element
-  // The 'local_id' is the local database id (1-based), not the global id.
-  // returns nullptr if no element block contains this element (local_id <= 0
-  // or greater than number of elements in database)
+  /** \brief Get the element block containing a specified element.
+   *
+   *  \param[in] local_id The local database id (1-based), not the global id.
+   *  \returns The element block, or nullptr if no element block contains this
+   *           element (local_id <= 0 or greater than number of elements in database)
+   */
   ElementBlock *Region::get_element_block(size_t local_id) const
   {
     for (auto eb : elementBlocks) {
@@ -1337,6 +1612,14 @@ namespace Ioss {
     return nullptr;
   }
 
+  /** \brief Get an implicit property -- These are calcuated from data stored
+   *         in the grouping entity instead of having an explicit value assigned.
+   *
+   *  An example would be 'element_block_count' for a region.
+   *
+   *  \param[in] my_name The property name.
+   *  \returns The property.
+   */
   Property Region::get_implicit_property(const std::string &my_name) const
   {
     if (my_name == "spatial_dimension") {
@@ -1451,11 +1734,12 @@ namespace Ioss {
     return get_database()->put_field(this, field, data, data_size);
   }
 
+  /** \brief Transfer all relevant aliases from this region to another region
+   *
+   *  \param[in] The region to which the aliases are to be transferred.
+   */
   void Region::transfer_mesh_aliases(Region *to) const
   {
-    // This routine transfers all relavant aliases from the 'this'
-    // region and applies them to the 'to' file.
-
     // Iterate through list, [ returns <alias, base_entity_name> ], if
     // 'base_entity_name' is defined on the restart file, add 'alias' as
     // an alias for it...
@@ -1468,40 +1752,46 @@ namespace Ioss {
     }
   }
 
+  /** \brief Ensure that the restart and results files have the same ids.
+   *
+   *  There is very little connection between an input (mesh) database
+   *  and an output (results/restart) database.  Basically, the entity
+   *  names are the same between the two files.  This works fine in the
+   *  case that an input database has 'generated' entity names of the
+   *  form 'block_10' or 'surface_32' since then the output database
+   *  can de-generate or decode the name and infer that the block
+   *  should have an id of 10 and the surface an id of 32.
+   *
+   *  However, if alias or other renaming happens, then the output
+   *  block may have a name of the form 'fireset' and the underlying
+   *  database cannot infer that the id of the block should be 10.
+   *  Instead, it sets the id to an arbitrary number (1,2,...).  This
+   *  is annoying in the case of the results file since there is no
+   *  correspondence between the mesh numbering and the results
+   *  numbering. In the case of the restart output file, it can be
+   *  disastrous since when the file is used to restart the analysis,
+   *  there is no match between the mesh blocks and those found on the
+   *  restart file and the restart fails.
+   *
+   *  So... We need to somehow ensure that the restart (and results)
+   *  files have the same ids.  To do this, we do the following:
+   *
+   *  1. The mesh database will set the property 'id' on input.
+   *
+   *  2. The results/restart files will have a 'name' based on either
+   *     the true name or an alias name.  Whichever, that alias will
+   *     appear on the mesh database also, so we can query the mesh
+   *     database aliases to get the entity.
+   *
+   *  3. Once we have the entity, we can query the 'id' property and
+   *     add the same 'id' property to the results/restart database.
+   *  4. Also set the 'name' property to the base 'name' on the output file.
+   *
+   *  5. Note that a property may already exist and must be removed
+   *    before the 'correct' value is set.
+   */
   void Region::synchronize_id_and_name(const Region *from, bool sync_attribute_field_names)
   {
-    // There is very little connection between an input (mesh) database
-    // and an output (results/restart) database.  Basically, the entity
-    // names are the same between the two files.  This works fine in the
-    // case that an input database has 'generated' entity names of the
-    // form 'block_10' or 'surface_32' since then the output database
-    // can de-generate or decode the name and infer that the block
-    // should have an id of 10 and the surface an id of 32.
-    //
-    // However, if alias or other renaming happens, then the output
-    // block may have a name of the form 'fireset' and the underlying
-    // database cannot infer that the id of the block should be 10.
-    // Instead, it sets the id to an arbitrary number (1,2,...).  This
-    // is annoying in the case of the results file since there is no
-    // correspondence between the mesh numbering and the results
-    // numbering. In the case of the restart output file, it can be
-    // disastrous since when the file is used to restart the analysis,
-    // there is no match between the mesh blocks and those found on the
-    // restart file and the restart fails.
-    //
-    // So... We need to somehow ensure that the restart (and results)
-    // files have the same ids.  To do this, we do the following:
-    //
-    // 1. The mesh database will set the property 'id' on input.
-    // 2. The results/restart files will have a 'name' based on either
-    //    the true name or an alias name.  Whichever, that alias will
-    //    appear on the mesh database also, so we can query the mesh
-    //    database aliases to get the entity.
-    // 3. Once we have the entity, we can query the 'id' property and
-    //    add the same 'id' property to the results/restart database.
-    // 4. Also set the 'name' property to the base 'name' on the output file.
-    // 5. Note that a property may already exist and must be removed
-    //    before the 'correct' value is set.
     for (auto alias_pair : aliases_) {
       std::string alias = alias_pair.first;
       std::string base  = alias_pair.second;

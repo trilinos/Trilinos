@@ -41,6 +41,8 @@
 #include <string>
 #include <vector>
 
+/** \brief A special namespace for the io_shell demonstration program interface.
+ */
 namespace IOShell {
   class Interface
   {

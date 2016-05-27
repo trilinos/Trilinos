@@ -44,6 +44,12 @@
 
 Ioss::EdgeSet::EdgeSet() : Ioss::EntitySet(nullptr, "invalid", 0) {}
 
+/** \brief Create an edge set.
+ *
+ *  \param[in] io_database The database associated with the region containing the edge set.
+ *  \param[in] my_name The edge set's name.
+ *  \param[in] number_edges The number of edges in the edge set.
+ */
 Ioss::EdgeSet::EdgeSet(Ioss::DatabaseIO *io_database, const std::string &my_name,
                        int64_t number_edges)
     : Ioss::EntitySet(io_database, my_name, number_edges)

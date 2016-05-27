@@ -277,7 +277,7 @@ computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::P
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
 
-   realloc(centroid,1,baseDimension);
+   centroid = Kokkos::DynRankView<double,PHX::Device>("centroid",1,baseDimension);
 
    // loop over each possible basis
    for(std::map<std::string,RCP<const panzer::PureBasis> >::const_iterator itr=bases.begin();

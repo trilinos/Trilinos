@@ -49,8 +49,117 @@
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//
+// mfh 25 May 2016: Temporary fix for #393.
+//
+// Don't use lambdas in the BCRS mat-vec for GCC < 4.8, due to a GCC
+// 4.7.2 compiler bug ("internal compiler error") when compiling them.
+// Also, lambdas for Kokkos::parallel_* don't work with CUDA, so don't
+// use them in that case, either.
+//
+#if defined(__CUDACC__)
+   // Lambdas for Kokkos::parallel_* don't work with CUDA 7.5 either.
+#  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#    undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
+#  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+
+#elif defined(__GNUC__)
+   // GCC 4.7.2 is broken (see #393), but GCC 4.8, 4.9, etc. are not
+   // (with regards to #393).  To be safe, we'll assume GCC 4.x.y is
+   // broken for all x <= 7, and for all y.
+#  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+#    if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#      undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
+#    endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#  else // GCC >= 4.8
+#    if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#      define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
+#    endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+
+#else // some other compiler
+
+   // Optimistically assume that other compilers aren't broken.
+#  if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#    define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
+#  endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#endif // defined(__CUDACC__), defined(__GNUC__)
+
+
 namespace Tpetra {
+
 namespace Experimental {
+
+namespace { // (anonymous)
+
+// Implementation of BlockCrsMatrix::getLocalDiagCopy (non-deprecated
+// version that takes two Kokkos::View arguments).
+template<class Scalar, class LO, class GO, class Node>
+class GetLocalDiagCopy {
+public:
+  typedef typename Node::device_type device_type;
+  typedef size_t diag_offset_type;
+  typedef Kokkos::View<const size_t*, device_type,
+                       Kokkos::MemoryUnmanaged> diag_offsets_type;
+  typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
+  typedef typename global_graph_type::local_graph_type local_graph_type;
+  typedef typename local_graph_type::row_map_type row_map_type;
+  typedef typename row_map_type::HostMirror abs_offset_type;
+  typedef typename ::Tpetra::Experimental::BlockMultiVector<Scalar,
+                                                            LO, GO, Node>::impl_scalar_type impl_scalar_type;
+  typedef Kokkos::View<impl_scalar_type***, device_type,
+                       Kokkos::MemoryUnmanaged> diag_type;
+  typedef Kokkos::View<const impl_scalar_type*, device_type,
+                       Kokkos::MemoryUnmanaged> values_type;
+
+  // Constructor
+  GetLocalDiagCopy (const diag_type& diag,
+                    const values_type& val,
+                    const diag_offsets_type& diagOffsets,
+                    const abs_offset_type& ptr,
+                    const LO blockSize) :
+    diag_ (diag),
+    diagOffsets_ (diagOffsets),
+    ptr_ (ptr),
+    blockSize_ (blockSize),
+    offsetPerBlock_ (blockSize_*blockSize_),
+    val_(val)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const LO& lclRowInd) const
+  {
+    using Kokkos::ALL;
+
+    // Get row offset
+    const size_t absOffset = ptr_[lclRowInd];
+
+    // Get offset relative to start of row
+    const size_t relOffset = diagOffsets_[lclRowInd];
+
+    // Get the total offset
+    const size_t pointOffset = (absOffset+relOffset)*offsetPerBlock_;
+
+    // Get a view of the block.  BCRS currently uses LayoutRight
+    // regardless of the device.
+    typedef Kokkos::View<const impl_scalar_type**, Kokkos::LayoutRight,
+      device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      const_little_block_type;
+    const_little_block_type D_in (val_.ptr_on_device () + pointOffset,
+                                  blockSize_, blockSize_);
+    auto D_out = Kokkos::subview (diag_, lclRowInd, ALL (), ALL ());
+    COPY (D_in, D_out);
+  }
+
+  private:
+    diag_type diag_;
+    diag_offsets_type diagOffsets_;
+    abs_offset_type ptr_;
+    LO blockSize_;
+    LO offsetPerBlock_;
+    values_type val_;
+  };
+} // namespace (anonymous)
 
   template<class Scalar, class LO, class GO, class Node>
   std::ostream&
@@ -638,8 +747,7 @@ namespace Experimental {
   {
     using Kokkos::ALL;
     using Kokkos::parallel_for;
-    typedef typename Kokkos::View<impl_scalar_type***, device_type,
-      Kokkos::MemoryUnmanaged>::HostMirror::execution_space host_exec_space;
+    typedef typename device_type::execution_space execution_space;
 
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO blockSize = this->getBlockSize ();
@@ -657,13 +765,10 @@ namespace Experimental {
 
     // mfh 12 Dec 2015: Use the host execution space, since we haven't
     // quite made everything work with CUDA yet.
-    typedef Kokkos::RangePolicy<host_exec_space, LO> policy_type;
-    parallel_for (policy_type (0, lclNumMeshRows), [=] (const LO& lclMeshRow) {
-        const size_t offset = offsets(lclMeshRow);
-        auto D_in = this->getConstLocalBlockFromRelOffset (lclMeshRow, offset);
-        auto D_out = Kokkos::subview (diag, lclMeshRow, ALL (), ALL ());
-        COPY (D_in, D_out);
-      });
+    typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
+    typedef GetLocalDiagCopy<Scalar,LO,GO,Node> functor_type;
+    parallel_for (policy_type (0, lclNumMeshRows),
+                  functor_type (diag, valView_, offsets, ptr_, blockSize_));
   }
 
 
@@ -1168,11 +1273,9 @@ namespace Experimental {
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
     const LO blockSize = getBlockSize ();
 
-    // FIXME (mfh 23 May 2016) This code needs to build even if the
-    // CUDA option for device lambdas is not enabled.  Thus, I'm
-    // disabling the Kokkos thread-parallel code path for now when
-    // building with CUDA.  See #178.
-#if ! defined(__CUDACC__)
+    // FIXME (mfh 23 May 2016, 25 May 2016) See #393 and #178, as well
+    // as comments defining this macro at the top of this file.
+#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
     // KJ : workset size; for now, let's just give a number
     const int rowsPerTeam = 20;
 
@@ -1188,12 +1291,12 @@ namespace Experimental {
                                               Kokkos::PerTeam  (scratchSizePerTeam),
                                               Kokkos::PerThread(scratchSizePerThread) );
     }
-#endif // ! defined(__CUDACC__)
+#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     // KJ : do we really need to separate numVecs == 1 and multiple numVecs ?
 
     for (LO j = 0; j < numVecs; ++j) {
-#if ! defined(__CUDACC__)
+#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 #  if 1 // team parallel for version
       Kokkos::parallel_for( team_exec, KOKKOS_LAMBDA( const typename team_policy_type::member_type & member ) {
           const LO leagueRank = member.league_rank();
@@ -1298,12 +1401,10 @@ namespace Experimental {
         } ); // for each local row of the matrix
 
 #  endif // 1
-#else // defined(__CUDACC__)
+#else // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
-      // FIXME (mfh 23 May 2016) The above doesn't work with CUDA out
-      // of the box.  We need to rewrite it to use a functor.  See
-      // #178.  Once we do that, we can and should get rid of this
-      // sequential code path.
+      // FIXME (mfh 23 May 2016, 25 May 2016) See #393, #178, and
+      // comments at the top of this function and file.
 
       Teuchos::Array<impl_scalar_type> localMem (blockSize);
       little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
@@ -1335,7 +1436,7 @@ namespace Experimental {
         COPY (Y_lcl, Y_cur);
       } // for each local row of the matrix
 
-#endif // ! defined(__CUDACC__)
+#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
     } // for each column j of the input / output block multivector
   }

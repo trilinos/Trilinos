@@ -39,8 +39,8 @@
 #include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
-#include <numeric>
 #include <assert.h>
+#include <numeric>
 
 #if !defined(NO_CGNS_SUPPORT)
 #include <cgns/Iocgns_IOFactory.h>

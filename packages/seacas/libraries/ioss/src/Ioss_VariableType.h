@@ -88,6 +88,8 @@ namespace Ioss {
     char data[MAX_SUFFIX + 1];
   };
 
+  /** \brief A generic variable type
+   */
   class VariableType
   {
   public:

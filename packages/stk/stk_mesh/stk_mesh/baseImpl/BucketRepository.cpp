@@ -477,6 +477,11 @@ std::vector<Partition *> BucketRepository::get_partitions(EntityRank rank) const
   return retval;
 }
 
+void BucketRepository::delete_bucket(Bucket * bucket)
+{
+    bucket->getPartition()->delete_bucket(bucket);
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

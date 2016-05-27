@@ -67,7 +67,7 @@ public:
   virtual void yy_switch_to_buffer(struct yy_buffer_state *new_buffer) = 0;
   virtual struct yy_buffer_state *yy_create_buffer(std::istream *s, int size) = 0;
   virtual void yy_delete_buffer(struct yy_buffer_state *b) = 0;
-  virtual void yyrestart(std::istream *s)              = 0;
+  virtual void yyrestart(std::istream *s)                  = 0;
 
   virtual int yylex() = 0;
 
@@ -80,8 +80,7 @@ public:
 
   // Switch to new input/output streams.  A nil stream pointer
   // indicates "keep the current one".
-  virtual void switch_streams(std::istream *new_in  = nullptr,
-                              std::ostream *new_out = nullptr) = 0;
+  virtual void switch_streams(std::istream *new_in = nullptr, std::ostream *new_out = nullptr) = 0;
 
   int lineno() const { return yylineno; }
 
@@ -123,8 +122,7 @@ public:
   void yypop_buffer_state();
 
   virtual int  yylex() override;
-  virtual void switch_streams(std::istream *new_in,
-                              std::ostream *new_out = nullptr) override;
+  virtual void switch_streams(std::istream *new_in, std::ostream *new_out = nullptr) override;
   virtual int yywrap();
 
 protected:

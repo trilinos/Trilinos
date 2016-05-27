@@ -48,6 +48,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of nodes.
+   */
   class NodeSet : public EntitySet
   {
   public:

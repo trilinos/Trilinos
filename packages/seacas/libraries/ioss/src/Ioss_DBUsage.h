@@ -35,13 +35,22 @@
 
 namespace Ioss {
 
+  /** \brief Specifies how an Ioss::DatabaseIO object will be used.
+   */
   enum DatabaseUsage {
-    WRITE_RESTART   = 1,
-    READ_RESTART    = 2,
-    WRITE_RESULTS   = 4,
-    READ_MODEL      = 8,
-    WRITE_HISTORY   = 16,
-    WRITE_HEARTBEAT = 32
+    WRITE_RESTART = 1, /**< The current state of the simulation, including model and field data
+                            will be written to this database. */
+    READ_RESTART = 2,  /**< A previous state of the simulation, including model and field data
+                            will be read from this database. */
+    WRITE_RESULTS = 4, /**< Mesh-based results data, such as nodal displacements, will be written
+                            to this database. */
+    READ_MODEL = 8,    /**< Model data such as node coordinates, element connectivities will be read
+                            from this database. */
+    WRITE_HISTORY =
+        16, /**< Global results data, such as total energy, will be written to this database. */
+    WRITE_HEARTBEAT =
+        32 /**< Text-based results data for particular nodes, edges, faces, elements,
+                or global variables at particular times will be written to this database. */
   };
 
   enum IfDatabaseExistsBehavior {

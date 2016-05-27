@@ -245,6 +245,10 @@ namespace Ioss {
     return 8;
   }
 
+  /** \brief Set the number of bytes used to represent an integer.
+   *
+   *  \param[in] The number of bytes. This is 4 for INT32 or 8 for INT64.
+   */
   void DatabaseIO::set_int_byte_size_api(DataSize size) const
   {
     dbIntSizeAPI = size; // mutable
@@ -260,6 +264,11 @@ namespace Ioss {
     return suffix;
   }
 
+  /** \brief Set the character used to separate a field suffix from the field basename
+   *         when recognizing vector, tensor fields.
+   *
+   *  \param[in] separator The separator character.
+   */
   void DatabaseIO::set_field_separator(const char separator)
   {
     if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
@@ -505,17 +514,35 @@ namespace Ioss {
     }
   }
 
+  /** \brief Add multiple information records (informative strings) to the database.
+   *
+   *  \param[in] info The strings to add.
+   */
   void DatabaseIO::add_information_records(const std::vector<std::string> &info)
   {
     informationRecords.reserve(informationRecords.size() + info.size());
     informationRecords.insert(informationRecords.end(), info.begin(), info.end());
   }
 
+  /** \brief Add an information record (an informative string) to the database.
+   *
+   *  \param[in] info The string to add.
+   */
   void DatabaseIO::add_information_record(const std::string &info)
   {
     informationRecords.push_back(info);
   }
 
+  /** \brief Add a QA record, which consists of 4 strings, to the database
+   *
+   *  The 4 function parameters correspond to the 4 QA record strings.
+   *
+   *  \param[in] code A descriptive code name, such as the application that modified the database.
+   *  \param[in] code_qa A descriptive string, such as the version of the application that modified
+   * the database.
+   *  \param[in] date A relevant date, such as the date the database was modified.
+   *  \param[in] time A relevant time, such as the time the database was modified.
+   */
   void DatabaseIO::add_qa_record(const std::string &code, const std::string &code_qa,
                                  const std::string &date, const std::string &time)
   {

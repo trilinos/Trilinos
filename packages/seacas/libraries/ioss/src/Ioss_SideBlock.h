@@ -58,6 +58,8 @@ namespace Ioss {
 
 namespace Ioss {
 
+  /** \brief A collection of element sides having the same topology.
+   */
   class SideBlock : public EntityBlock
   {
   public:

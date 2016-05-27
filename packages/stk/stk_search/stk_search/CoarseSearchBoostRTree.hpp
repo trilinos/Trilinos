@@ -244,7 +244,6 @@ void create_parallel_domain(SpatialIndex& local_domain, stk::ParallelMachine com
   namespace bgi = boost::geometry::index;
 
   typedef typename SpatialIndex::bounds_type box_type;
-  typedef typename bg::point_type<box_type>::type  point_type;
   typedef typename SpatialIndex::value_type value_type;
   typedef std::pair<box_type,int> box_proc_type;
   typedef bgi::rtree< box_proc_type, bgi::quadratic<16> > global_index_type;
