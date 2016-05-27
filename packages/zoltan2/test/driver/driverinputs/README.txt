@@ -75,12 +75,12 @@ Sublists titled "metriccheck1", "metriccheck2", etc define each check to be cond
 
 For example:
      <ParameterList name="Metrics">
-      <ParameterList name="metriccheck1">
-        <Parameter name="check" type="string" value="imbalance"/>
-        <Parameter name="weight" type="int" value="0"/>
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
-      </ParameterList>
+       <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="weight" type="int" value="0"/>
+         <Parameter name="lower" type="double" value="0.99"/>
+         <Parameter name="upper" type="double" value="1.4"/>
+       </ParameterList>
     </ParameterList>
     
 The 'check' value is type string and can accept the following key names which correspond to API calls in EvaluatePartition
@@ -246,7 +246,7 @@ Example 3a: A Partitioning problem definition block.
      (OPTIONAL) Define block of metric tolerances
      #####################################################-->
     
-     <ParameterList name="Metrics">
+    <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
@@ -260,7 +260,7 @@ Example 3a: A Partitioning problem definition block.
 Example 4. Metric Definition for ‘object count’ for ImbalanceMetrics
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-     <ParameterList name="Metrics">
+    <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
@@ -272,7 +272,7 @@ Example 4. Metric Definition for ‘object count’ for ImbalanceMetrics
 Example 5. Metric Definition for ‘total edge cuts’ for GraphMetrics
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-     <ParameterList name="Metrics">
+    <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value=“total edge cuts”/>
         <Parameter name="lower" type="double" value="0.99"/>
@@ -302,7 +302,7 @@ Example 7.
     <Parameter name="Problem" type="string" value="TEST/PROBLEM TITLE #1"/>
     <Parameter name="Reference" type="string" value="TEST/PROBLEM TITLE #2"/>
     
-     <ParameterList name="Metrics">
+    <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value=“total edge cuts”/>
         <Parameter name="lower" type="double" value=“0.5”/>

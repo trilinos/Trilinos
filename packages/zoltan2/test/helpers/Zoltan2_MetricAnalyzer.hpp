@@ -100,9 +100,7 @@ public:
   /// @param[out] msg_stream a std::ostringstream stream to return information from the analysis
   ///
   /// @return returns a boolean value indicated pass/failure.
-  static bool analyzeMetrics( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
-							  const ParameterList &metricsParameters,
-                              std::ostringstream & msg_stream )
+  static bool analyzeMetrics( const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject, const ParameterList &metricsParameters, std::ostringstream & msg_stream )
   {
     if (metricsParameters.numParams() == 0) {
       return true; // specification is that we do nothing - we may just be testing our status
@@ -116,7 +114,7 @@ public:
     int countFailedMetricChecks = 0;
     for (auto metricInfo = metricInfoSet.begin(); metricInfo != metricInfoSet.end(); ++metricInfo) {
       if (!MetricAnalyzer::executeMetricCheck(*metricInfo, msg_stream)) {
-	++countFailedMetricChecks;
+        ++countFailedMetricChecks;
       }
     }
 
@@ -133,10 +131,10 @@ public:
   }
 
   static void LoadMetricInfo(std::vector<MetricAnalyzerInfo> & metricInfoSet,
-		  const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
-		  const ParameterList &metricsParameters) {
+                             const RCP<const Zoltan2::EvaluatePartition <basic_id_t> > &metricObject,
+                             const ParameterList &metricsParameters) {
 
-	  // at this point we should be looking at a metricsPlist with the following format - note that weight is optional
+    // at this point we should be looking at a metricsPlist with the following format - note that weight is optional
 
 //      <ParameterList name="metriccheck1">
 //        <Parameter name="check" type="string" value="imbalance"/>
@@ -161,7 +159,7 @@ public:
       // we could be flexible on these headers but for now let's enforce it to get any convention inconsistencies cleaned up
       std::string expectedHeadingName = "metriccheck" + std::to_string(headingIndex);
       if( expectedHeadingName != headingName) {
-	throw std::logic_error( "The parameter list expected to find a heading with name '" + expectedHeadingName + "' but instead found '" + headingName );
+        throw std::logic_error( "The parameter list expected to find a heading with name '" + expectedHeadingName + "' but instead found '" + headingName );
       }
 
       // get the parameters specific to the check we want to run
@@ -192,31 +190,31 @@ private:
     // Here I am enforcing a parallel usage to the way API calls exist in EvaluatePartition
     if (keyWord == API_STRING_getWeightImbalance) {
       if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {	// -1 is the code for optional (meaning it was not specified)
-	if( selectedNormedSetting == 1 ) {
-	  theValue = metricObject->getNormedImbalance();
-	}
-	else {
-	  theValue = metricObject->getObjectCountImbalance(); // this will be index 0
-	  }
+        if( selectedNormedSetting == 1 ) {
+          theValue = metricObject->getNormedImbalance();
+        }
+        else {
+          theValue = metricObject->getObjectCountImbalance(); // this will be index
+          }
       }
       else {
-	theValue = metricObject->getWeightImbalance(weightIndex); // this will get the proper index specified
-	}
+        theValue = metricObject->getWeightImbalance(weightIndex); // this will get the proper index specified
+      }
     }
     else if (keyWord == API_STRING_getTotalEdgeCuts) {
       if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-	theValue = metricObject->getTotalEdgeCut();
+        theValue = metricObject->getTotalEdgeCut();
       }
       else {
-	theValue = metricObject->getTotalWeightEdgeCut(weightIndex);
+        theValue = metricObject->getTotalWeightEdgeCut(weightIndex);
       }
     }
     else if (keyWord == API_STRING_getMaxEdgeCuts) {
       if( weightIndex == UNDEFINED_PARAMETER_INT_INDEX ) {
-	theValue = metricObject->getMaxEdgeCut();
+        theValue = metricObject->getMaxEdgeCut();
       }
       else {
-	theValue = metricObject->getMaxWeightEdgeCut(weightIndex);
+        theValue = metricObject->getMaxWeightEdgeCut(weightIndex);
       }
     }
     else {
@@ -231,29 +229,29 @@ private:
     bool bDoesThisTestPass = true;	// we will set this false if a specific test fails
     if (metricInfo.bFoundUpperBound && metricInfo.bFoundLowerBound) {
       if (metricInfo.theValue < metricInfo.lowerValue || metricInfo.theValue > metricInfo.upperValue) {
-	msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
-	bDoesThisTestPass = false;
+        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
+        bDoesThisTestPass = false;
       }
       else {
-	msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
+        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is in range: " << metricInfo.lowerValue << " to " << metricInfo.upperValue << std::endl;
       }
     }
     else if (metricInfo.bFoundUpperBound) {
       if (metricInfo.theValue > metricInfo.upperValue) {
-	msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not below " << metricInfo.upperValue << std::endl;
-	bDoesThisTestPass = false;
+        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not below " << metricInfo.upperValue << std::endl;
+        bDoesThisTestPass = false;
       }
       else {
-	msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is below: " << metricInfo.upperValue << std::endl;
+        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is below: " << metricInfo.upperValue << std::endl;
       }
     }
     else {
       if (metricInfo.theValue < metricInfo.lowerValue) {
-	msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not above " << metricInfo.lowerValue << std::endl;
-	bDoesThisTestPass = false;
+        msg_stream << "FAILED: " + metricInfo.parameterDescription + " value: " << metricInfo.theValue << " is not above " << metricInfo.lowerValue << std::endl;
+        bDoesThisTestPass = false;
       }
       else {
-	msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is above: " << metricInfo.lowerValue << std::endl;
+        msg_stream << "Success: " + metricInfo.parameterDescription  + " value: " << metricInfo.theValue << " is above: " << metricInfo.lowerValue << std::endl;
       }
     }
     return bDoesThisTestPass;
@@ -265,11 +263,11 @@ private:
     for (auto iterateAllKeys = metricCheckParameters.begin(); iterateAllKeys != metricCheckParameters.end(); ++iterateAllKeys) {
       auto checkName = metricCheckParameters.name(iterateAllKeys);
       if ( checkName != WEIGHT_PARAMETER_NAME &&
-	  checkName != KEYWORD_PARAMETER_NAME &&
-	  checkName != UPPER_PARAMETER_NAME &&
-	  checkName != LOWER_PARAMETER_NAME &&
-	  checkName != NORMED_PARAMETER_NAME ) {
-	throw std::logic_error( "Key name: '" + checkName + "' is not understood." );
+          checkName != KEYWORD_PARAMETER_NAME &&
+          checkName != UPPER_PARAMETER_NAME &&
+          checkName != LOWER_PARAMETER_NAME &&
+          checkName != NORMED_PARAMETER_NAME ) {
+        throw std::logic_error( "Key name: '" + checkName + "' is not understood." );
       }
     }
 
@@ -278,8 +276,8 @@ private:
     if( metricCheckParameters.isParameter(WEIGHT_PARAMETER_NAME)) {
       selectedWeightIndex = metricCheckParameters.get<int>(WEIGHT_PARAMETER_NAME);
       if( selectedWeightIndex < 0 ) {
-	throw std::logic_error( "Optional weight index was specified as: " + std::to_string(selectedWeightIndex) + "   Weight index must be 0 or positive." ); // I think that's the best I can do for error checking weight index right now - we may want to specify the cap when we know it
-	}
+        throw std::logic_error( "Optional weight index was specified as: " + std::to_string(selectedWeightIndex) + "   Weight index must be 0 or positive." ); // I think that's the best I can do for error checking weight index right now - we may want to specify the cap when we know it
+      }
     }
 
     // pick up the norm index - this parameter is optional so we check it first - this way we can communicate with EvaluatePartition properly in the next step
@@ -288,7 +286,7 @@ private:
       bool bNormSetting = metricCheckParameters.get<bool>(NORMED_PARAMETER_NAME);
       selectedNormedSetting = bNormSetting ? 1 : 0;
       if( selectedNormedSetting != 0 && selectedNormedSetting != 1 ) {
-	throw std::logic_error( "Optional normed parameter was specified as: " + std::to_string(selectedNormedSetting) + "   Normed parameter must be true or false." );
+        throw std::logic_error( "Optional normed parameter was specified as: " + std::to_string(selectedNormedSetting) + "   Normed parameter must be true or false." );
       }
     }
 
@@ -305,25 +303,25 @@ private:
       result.bFoundLowerBound = metricCheckParameters.isParameter(LOWER_PARAMETER_NAME);
 
       if (!result.bFoundUpperBound && !result.bFoundLowerBound) {
-	throw std::logic_error( "The parameter list failed to find an entry for '" + std::string(UPPER_PARAMETER_NAME) + "' or '" + std::string(LOWER_PARAMETER_NAME) + "' and at least one is required." );
+        throw std::logic_error( "The parameter list failed to find an entry for '" + std::string(UPPER_PARAMETER_NAME) + "' or '" + std::string(LOWER_PARAMETER_NAME) + "' and at least one is required." );
       }
       else if (result.bFoundUpperBound && result.bFoundLowerBound) {
-	result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
-	result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
+        result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
+        result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
       }
       else if (result.bFoundUpperBound) {
-	result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
+        result.upperValue = metricCheckParameters.get<double>(UPPER_PARAMETER_NAME);
       }
       else {
-	result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
+        result.lowerValue = metricCheckParameters.get<double>(LOWER_PARAMETER_NAME);
       }
 
       result.parameterDescription = theKeyWord;
       if( selectedWeightIndex != UNDEFINED_PARAMETER_INT_INDEX ) {
-	result.parameterDescription = result.parameterDescription + " (weight: " + std::to_string(selectedWeightIndex) + ")";
+        result.parameterDescription = result.parameterDescription + " (weight: " + std::to_string(selectedWeightIndex) + ")";
       }
       else if( selectedNormedSetting != UNDEFINED_PARAMETER_INT_INDEX ) {	// throw above would catch the case where both of these were set
-	result.parameterDescription = result.parameterDescription + " (normed: " + ( ( selectedNormedSetting == 0 ) ? "false" : "true" ) + ")";
+        result.parameterDescription = result.parameterDescription + " (normed: " + ( ( selectedNormedSetting == 0 ) ? "false" : "true" ) + ")";
       }
     }
     return result;

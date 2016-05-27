@@ -128,11 +128,11 @@ private:
   base_metric_array_type metricsBase_;
 
   void sharedConstructor(const Adapter *ia,
-			 ParameterList *p,
-			 const RCP<const Comm<int> > &problemComm,
-			 const PartitioningSolution<Adapter> *soln,
-			 const RCP<const GraphModel
-			 <typename Adapter::base_adapter_t> > &graphModel);
+                         ParameterList *p,
+                         const RCP<const Comm<int> > &problemComm,
+                         const PartitioningSolution<Adapter> *soln,
+                         const RCP<const GraphModel
+                         <typename Adapter::base_adapter_t> > &graphModel);
 
 public:
 
@@ -148,7 +148,7 @@ public:
     ParameterList *p,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null):
+        Teuchos::null):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       RCP<const Comm<int> > problemComm = DefaultComm<int>::getComm();
@@ -170,7 +170,7 @@ public:
     const RCP<const Comm<int> > &problemComm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null):
+        Teuchos::null):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       sharedConstructor(ia, p, problemComm, soln, graphModel);
@@ -191,13 +191,13 @@ public:
     MPI_Comm comm,
     const PartitioningSolution<Adapter> *soln,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel=
-		    Teuchos::null):
+        Teuchos::null):
     numGlobalParts_(0), targetGlobalParts_(0), numNonEmpty_(0), metricsBase_()
     {
       RCP<Teuchos::OpaqueWrapper<MPI_Comm> > wrapper =
-	Teuchos::opaqueWrapper(comm);
+          Teuchos::opaqueWrapper(comm);
       RCP<const Comm<int> > problemComm =
-	rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
+          rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
       sharedConstructor(ia, p, problemComm, soln, graphModel);
     }
 #endif
@@ -234,10 +234,10 @@ public:
     size_t sizeOfArrayView = 0;
     for( size_t n = 0; n < metricsBase_.size(); ++n ) {
       if( metricsBase_[n]->getMetricType() == metricType ) {
-	if (beginIndex == -1) {
-	  beginIndex = n;
-	}
-	++sizeOfArrayView;
+        if (beginIndex == -1) {
+          beginIndex = n;
+        }
+        ++sizeOfArrayView;
       }
     }
     if (sizeOfArrayView == 0) {
@@ -364,10 +364,10 @@ public:
     ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType( metricType );
     if (metrics.size() != 0) { // this could be a critical decision - do we want a blank table with headers when the list is empty - for debugging that is probably better but it's very messy to have lots of empty tables in the logs
       if( metricType == GRAPH_METRICS_TYPE_NAME ) {
-	Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
+        Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
       }
       else if( metricType == IMBALANCE_METRICS_TYPE_NAME ) {
-	Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
+        Zoltan2::printImbalanceMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, numNonEmpty_, metrics);
       }
     }
   }
@@ -462,10 +462,10 @@ public:
       parts = NULL;
       bia->getPartsView(parts);
       if (parts == NULL) {
-	// User has not provided input parts in input adapter
-	part_t *procs = new part_t [numLocalObjects];
-	for (size_t i=0;i<numLocalObjects;i++) procs[i]=problemComm->getRank();
-	parts = procs;
+        // User has not provided input parts in input adapter
+        part_t *procs = new part_t [numLocalObjects];
+        for (size_t i=0;i<numLocalObjects;i++) procs[i]=problemComm->getRank();
+        parts = procs;
       }
     }
     ArrayView<const part_t> partArray(parts, numLocalObjects);
@@ -474,18 +474,18 @@ public:
 
     if (graphModel == Teuchos::null) {
       try {
-	globalWeightedCutsByPart<Adapter>(env,
-					  problemComm, graph, partArray,
-					  numGlobalParts_, metricsBase_,
-					  globalSums);
+        globalWeightedCutsByPart<Adapter>(env,
+                                          problemComm, graph, partArray,
+                                          numGlobalParts_, metricsBase_,
+                                          globalSums);
       }
       Z2_FORWARD_EXCEPTIONS;
     } else {
       try {
-	globalWeightedCutsByPart<Adapter>(env,
-					  problemComm, graphModel, partArray,
-					  numGlobalParts_, metricsBase_,
-					  globalSums);
+        globalWeightedCutsByPart<Adapter>(env,
+                                          problemComm, graphModel, partArray,
+                                          numGlobalParts_, metricsBase_,
+                                          globalSums);
       }
       Z2_FORWARD_EXCEPTIONS;
     }

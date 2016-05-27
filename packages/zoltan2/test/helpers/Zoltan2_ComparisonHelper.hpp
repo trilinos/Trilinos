@@ -643,12 +643,12 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
       // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
       // we can iterate over either to get the questions
       for (int n = 0; n < metricInfoSetPrb.size(); ++n) {
-	if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
-	  all_tests_pass = 0;
-	}
-	if(rank == 0) {
-	  cout << msg.str() << endl;
-	}
+        if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
+          all_tests_pass = 0;
+        }
+        if(rank == 0) {
+          cout << msg.str() << endl;
+        }
       }
     }
     else if(prb_timers.find(metric_name) != prb_timers.end() && ref_timers.find(metric_name) != ref_timers.end()) {
@@ -657,10 +657,10 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
                                                 prb_timers.at(metric_name),
                                                 ref_timers.at(metric_name),
                                                 metrics.front(), msg)) {
-	all_tests_pass = 0;
-	if (rank == 0) {
-	  cout << "timer comparison test caused a FAILED event." << endl;
-	}
+        all_tests_pass = 0;
+        if (rank == 0) {
+          cout << "timer comparison test caused a FAILED event." << endl;
+        }
       }
       
       if(rank == 0) {

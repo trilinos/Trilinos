@@ -307,8 +307,8 @@ bool run(const UserInputForTests &uinput,
       int stride=0;
       reinterpret_cast<xcrsGraph_adapter *>(ia)->getEdgeWeightsView(weights, stride, edim);
       for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=offsets[i]; j < offsets[i + 1]; j++)
-	  printf("%d %d %d %f\n", edim, vertexIds[i], adjIds[j], weights[stride*j]);
+        for (lno_t j=offsets[i]; j < offsets[i + 1]; j++)
+          printf("%d %d %d %f\n", edim, vertexIds[i], adjIds[j], weights[stride*j]);
     }
   }
 #endif
@@ -479,7 +479,7 @@ bool mainExecute(int argc, char *argv[], int &rank)
     RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
       if (!run(uinput, problems.front(), !comparisons.empty(), comparison_manager, comm)) {
-    	std::cout << "Problem run returned false" << std::endl;
+        std::cout << "Problem run returned false" << std::endl;
         bPass = false;
       }
       problems.pop();
@@ -491,9 +491,9 @@ bool mainExecute(int argc, char *argv[], int &rank)
 
     while (!comparisons.empty()) {
       if (!comparison_manager->Compare(comparisons.front(),comm)) {
-    	if (rank == 0) {
-    	  std::cout << "Comparison manager returned false so the test should fail." << std::endl;
-    	}
+        if (rank == 0) {
+          std::cout << "Comparison manager returned false so the test should fail." << std::endl;
+        }
         bPass = false;
       }
       comparisons.pop();
