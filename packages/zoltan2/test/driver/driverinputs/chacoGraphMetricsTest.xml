@@ -60,25 +60,23 @@
     <ParameterList name="Metrics">
       <ParameterList name="metriccheck1">
         <Parameter name="check" type="string" value="max edge cuts"/>
-       	<Parameter name="weight" type="int" value="0"/>
 	    <Parameter name="lower" type="double" value="1.0"/>
 	    <Parameter name="upper" type="double" value="999.0"/>
 	  </ParameterList>
       <ParameterList name="metriccheck2">
         <Parameter name="check" type="string" value="max edge cuts"/>
-       	<Parameter name="weight" type="int" value="1"/>
+       	<Parameter name="weight" type="int" value="0"/>
 	    <Parameter name="lower" type="double" value="1.0"/>
 	    <Parameter name="upper" type="double" value="999.0"/>
 	  </ParameterList>
 	  <ParameterList name="metriccheck3">
 	    <Parameter name="check" type="string" value="total edge cuts"/>
-	    <Parameter name="weight" type="int" value="0"/>
 	    <Parameter name="lower" type="double" value="1.0"/>
 	    <Parameter name="upper" type="double" value="999.0"/>
 	  </ParameterList>
 	  <ParameterList name="metriccheck4">
 	    <Parameter name="check" type="string" value="total edge cuts"/>
-	    <Parameter name="weight" type="int" value="1"/>
+	    <Parameter name="weight" type="int" value="0"/>
 	    <Parameter name="lower" type="double" value="1.0"/>
 	    <Parameter name="upper" type="double" value="999.0"/>
 	  </ParameterList>

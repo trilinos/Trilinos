@@ -525,12 +525,14 @@ int main(int argc, char *argv[])
       std::cout << "Test driver for rank " << rank << " caught a logic_error which may be a formatting error and will return false." << std::endl;
 	}
     result = 1;
+    throw;
   }
   catch(...) {
 	if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
 	}
 	result = 1;
+    throw;
   }
 
   if (rank == 0) {
