@@ -520,21 +520,20 @@ int main(int argc, char *argv[])
       std::cout << "mainExecute for rank " << rank << " returns: " << result << std::endl;
     }
   }
-  catch(std::logic_error) {
+  catch(std::logic_error e) {
     if (rank == 0) {
-      std::cout << "Test driver for rank " << rank << " caught a logic_error which may be a formatting error and will return false." << std::endl;
+      std::cout << "Test driver for rank " << rank << " caught the following exception: " << e.what() << std::endl;
     }
     result = 1;
-    throw;
   }
   catch(...) {
     if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
     }
     result = 1;
-    throw;
   }
 
+  // here we should reduce all results and make sure rank = 0 gives the proper fail message
   if (rank == 0) {
     if (result == 1) {
       std::cout << "main for rank " << rank << " is exiting in FAILED state and returning: " << result << std::endl;
