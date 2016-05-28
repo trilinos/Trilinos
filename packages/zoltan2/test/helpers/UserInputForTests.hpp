@@ -1774,21 +1774,21 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     edgWeights_ = toEdgeWeights;
     */
 
-	toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
-	edgWeights_ = rcp(new tMVector_t(toMap, nEwgts));
+    toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
+    edgWeights_ = rcp(new tMVector_t(toMap, nEwgts));
 
-	size_t maxSize = M_->getNodeMaxNumRowEntries();
-	Array<zlno_t> colind(maxSize);
-	Array<zscalar_t> vals(maxSize);
-	size_t nEntries;
+    size_t maxSize = M_->getNodeMaxNumRowEntries();
+    Array<zlno_t> colind(maxSize);
+    Array<zscalar_t> vals(maxSize);
+    size_t nEntries;
 
-	for (size_t i = 0, idx = 0; i < M_->getNodeNumRows(); i++) {
-	  M_->getLocalRowCopy(i, colind, vals, nEntries);
-	  for (size_t j = 0; j < nEntries; j++) {
-	    edgWeights_->replaceLocalValue(idx, 0, vals[j]); // Assuming nEwgts==1
-	    idx++;
-	  }
-	}
+    for (size_t i = 0, idx = 0; i < M_->getNodeNumRows(); i++) {
+      M_->getLocalRowCopy(i, colind, vals, nEntries);
+      for (size_t j = 0; j < nEntries; j++) {
+        edgWeights_->replaceLocalValue(idx, 0, vals[j]); // Assuming nEwgts==1
+        idx++;
+      }
+    }
   }
 
   if (start) {

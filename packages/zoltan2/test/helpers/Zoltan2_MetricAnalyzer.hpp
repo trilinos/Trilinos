@@ -195,7 +195,7 @@ private:
         }
         else {
           theValue = metricObject->getObjectCountImbalance(); // this will be index
-          }
+        }
       }
       else {
         theValue = metricObject->getWeightImbalance(weightIndex); // this will get the proper index specified
