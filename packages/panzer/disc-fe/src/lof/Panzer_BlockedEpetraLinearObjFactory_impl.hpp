@@ -75,46 +75,13 @@ namespace panzer {
 
 template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                              const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > & blkProvider,
-                              const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & gidProviders)
-   : blockProvider_(blkProvider), blockedDOFManager_(Teuchos::null), useColGidProviders_(false), comm_(comm)
-{ 
-   gidProviders_ = gidProviders;
-
-   makeRoomForBlocks(gidProviders_.size());
-
-   // build and register the gather/scatter evaluators with 
-   // the base class.
-   this->buildGatherScatterEvaluators(*this);
-
-   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
-}
-
-template <typename Traits,typename LocalOrdinalT>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
-BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                              const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), colGidProviders_(false), useColGidProviders_(false), comm_(comm), rawMpiComm_(Teuchos::null)
-{ 
-   for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
-      gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
-
-   makeRoomForBlocks(gidProviders_.size());
-
-   // build and register the gather/scatter evaluators with 
-   // the base class.
-   this->buildGatherScatterEvaluators(*this);
-
-   tComm_ = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(dynamic_cast<const Epetra_MpiComm &>(*comm).Comm())));
-}
-
-template <typename Traits,typename LocalOrdinalT>
-BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockProvider_(gidProvider), blockedDOFManager_(gidProvider), colGidProviders_(false), useColGidProviders_(false), comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
+   : blockedDOFManager_(gidProvider), colGidProviders_(false), useColGidProviders_(false), comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
+   rowDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(gidProvider));
+   colDOFManagerContainer_ = rowDOFManagerContainer_;
+
    comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
    for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
@@ -136,8 +103,10 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
                               const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider)
    : comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
+   rowDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(gidProvider));
+   colDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(colGidProvider));
+
    blockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(gidProvider,true);
-   blockProvider_= blockedDOFManager_;
    if(colGidProvider!=Teuchos::null) {
      colBlockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(colGidProvider);
 
@@ -1213,7 +1182,7 @@ buildEpetraGhostedGraph(int i,int j) const
    rowProvider = getGlobalIndexer(i);
    colProvider = getColGlobalIndexer(j);
 
-   blockProvider_->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
+   blockedDOFManager_->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                         // same element blocks
 
    // graph information about the mesh
@@ -1222,7 +1191,7 @@ buildEpetraGhostedGraph(int i,int j) const
       std::string blockId = *blockItr;
 
       // grab elements for this block
-      const std::vector<LocalOrdinalT> & elements = blockProvider_->getElementBlock(blockId); // each sub provider "should" have the
+      const std::vector<LocalOrdinalT> & elements = blockedDOFManager_->getElementBlock(blockId); // each sub provider "should" have the
                                                                                               // same elements in each element block
 
       // get information about number of indicies

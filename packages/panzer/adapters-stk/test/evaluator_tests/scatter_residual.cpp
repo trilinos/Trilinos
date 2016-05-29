@@ -77,8 +77,6 @@ using Teuchos::rcp;
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "user_app_EquationSetFactory.hpp"
 
 #include <cstdio> // for get char
@@ -98,12 +96,12 @@ namespace panzer {
   {
 
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
-    int myRank = eComm->MyPID();
+    int myRank = tComm->getRank();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
@@ -151,7 +149,7 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
-       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F,*loc);
@@ -306,12 +304,12 @@ namespace panzer {
   {
 
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
-    int myRank = eComm->MyPID();
+    int myRank = tComm->getRank();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
@@ -359,7 +357,7 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
-       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
     be_lof->initializeGhostedContainer(LinearObjContainer::X | LinearObjContainer::F | LinearObjContainer::Mat,*loc);

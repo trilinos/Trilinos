@@ -20,7 +20,9 @@ SET(UNIT_TEST_DRIVER
 # 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tBlockedLinearObjFactory
-#   SOURCES tBlockedLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+#   SOURCES tBlockedLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp 
+#           ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp
+#           ${UNIT_TEST_DRIVER}
 #   COMM mpi
 #   NUM_MPI_PROCS 2
 #   )
@@ -39,6 +41,13 @@ SET(UNIT_TEST_DRIVER
 #   NUM_MPI_PROCS 2
 #   )
 
+# The intention is that this INCLUDE only happens for tests below this point.
+# If this assumption is incorrect, or the build system is changed this might
+# have to be fixed!
+###############################################################################
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LinearObjFactory_Tests
   SOURCES tEpetraLinearObjFactory.cpp 
@@ -47,17 +56,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
           tBlockedTpetraLinearObjFactory.cpp 
           tTpetra_GlbEvalData.cpp 
           tEpetra_GlbEvalData.cpp 
-          UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
+          UnitTest_UniqueGlobalIndexer.cpp 
+          ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp
+          ${UNIT_TEST_DRIVER}
   COMM mpi
   NUM_MPI_PROCS 2
   )
-
-# The intention is that this INCLUDE only happens for tests below this point.
-# If this assumption is incorrect, or the build system is changed this might
-# have to be fixed!
-###############################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tCloneLOF

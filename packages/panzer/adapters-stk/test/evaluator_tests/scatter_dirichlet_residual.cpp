@@ -78,7 +78,6 @@ using Teuchos::rcp;
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
-#include "Epetra_MpiComm.h"
 #include "Epetra_CrsMatrix.h"
 
 #include "user_app_EquationSetFactory.hpp"
@@ -98,13 +97,13 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_residual)
   {
 
-#ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-#endif
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+   #else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+   #endif
 
-    int myRank = eComm->MyPID();
+    int myRank = tComm->getRank();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
@@ -152,7 +151,7 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
-       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();
@@ -348,13 +347,13 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(block_assembly, scatter_dirichlet_jacobian)
   {
     
-#ifdef HAVE_MPI
-    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-    Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-#endif
+   #ifdef HAVE_MPI
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+   #else
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
+   #endif
 
-    int myRank = eComm->MyPID();
+    int myRank = tComm->getRank();
 
     const std::size_t workset_size = 4;
     const std::string fieldName1_q1 = "U";
@@ -402,7 +401,7 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > be_lof 
-       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),dofManager));
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = be_lof;
     Teuchos::RCP<LinearObjContainer> dd_loc = be_lof->buildGhostedLinearObjContainer();
     Teuchos::RCP<LinearObjContainer> loc = be_lof->buildGhostedLinearObjContainer();

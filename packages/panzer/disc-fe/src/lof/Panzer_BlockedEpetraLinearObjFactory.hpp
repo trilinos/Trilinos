@@ -81,11 +81,6 @@ class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
                                     , public ThyraObjFactory<double> {
 public:
 
-   BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                 const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > & blkProvider,
-                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & gidProviders);
-   BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider);
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                  const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider);
 
@@ -166,7 +161,7 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,int> >(blockProvider_)); }
+   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,int> >(blockedDOFManager_)); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
@@ -299,6 +294,76 @@ public:
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
 protected:
+/*************** Utility class for handling blocked and nonblocked DOF managers *******************/
+
+  /** This classes is mean to abstract away the different global indexer types and hide
+    * if this is a blocked data structure or a unblocked one.
+    */
+  class DOFManagerContainer {
+  public:
+    DOFManagerContainer() {} 
+    DOFManagerContainer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi) 
+    { setGlobalIndexer(ugi); } 
+
+    void setGlobalIndexer(const Teuchos::RCP<const UniqueGlobalIndexerBase> & ugi)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+
+      auto blockedDOFManager = rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(ugi);
+      auto flatDOFManager    = rcp_dynamic_cast<const UniqueGlobalIndexer<LocalOrdinalT,int> >(ugi);
+
+      if(blockedDOFManager!=Teuchos::null) {
+        // set BlockedDOFManager
+        blockedDOFManager_ = blockedDOFManager;
+ 
+        // get all GID providers
+        auto dofManagers =  blockedDOFManager_->getFieldDOFManagers();
+        for(auto itr=dofManagers.begin();itr!=dofManagers.end();++itr)
+          gidProviders_.push_back(*itr);
+      }
+      else if(flatDOFManager!=Teuchos::null) {
+        // for absolute clarity, nullify the blockedDOFManager_
+        blockedDOFManager_ = Teuchos::null;
+
+        // you have only a single GID provider
+        gidProviders_.push_back(flatDOFManager);
+      }
+      else {
+        TEUCHOS_ASSERT(false);
+      }
+    }
+
+    //! Get the number of global indexers (not including the blocked one) contained.
+    int getFieldBlocks() const
+    { return Teuchos::as<int>(gidProviders_.size()); }
+
+    /** Return true if this contains a blocked DOFManager as opposed to only a single DOFManager.
+      * If this returns true then <code>getGlobalIndexer</code> will return a <code>BlockedDOFManager<int,GO></code>,
+      * other wise it will return a <code>UniqueGlobalIndexer<int,GO></code>.
+      */
+    bool containsBlockedDOFManager() const
+    { return blockedDOFManager_ ==Teuchos::null; }
+ 
+    //! Get the "parent" global indexer (if <code>getFieldBlocks()>1</code> this will be blocked, otherwise it may be either)
+    Teuchos::RCP<const UniqueGlobalIndexerBase> getGlobalIndexer() const
+    {
+      if(blockedDOFManager_!=Teuchos::null) 
+        return blockedDOFManager_;
+
+      TEUCHOS_ASSERT(gidProviders_.size()==1);
+      return gidProviders_[0];
+    }
+
+    //! Get DOFManagers associated with the blocks
+    const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & getFieldDOFManagers() const
+    { return gidProviders_; }
+
+  private:
+    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
+    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;
+  };
+
 /*************** Generic methods/members *******************/
 
    // Get the global indexer associated with a particular block
@@ -309,7 +374,9 @@ protected:
    //! Allocate the space in the std::vector objects so we can fill with appropriate Epetra data
    void makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt=0);
 
-   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,int> > > blockProvider_;
+   Teuchos::RCP<const DOFManagerContainer> rowDOFManagerContainer_;
+   Teuchos::RCP<const DOFManagerContainer> colDOFManagerContainer_;
+
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > blockedDOFManager_;
    Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > colBlockedDOFManager_;
    std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > gidProviders_;

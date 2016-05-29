@@ -60,6 +60,7 @@
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_PauseToAttach.hpp"
+#include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
@@ -71,9 +72,10 @@
 #include "Thyra_VectorStdOps.hpp"
 
 #include "Epetra_Comm.h"
-#include "Epetra_MpiComm.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
+
+#include "UnitTest_ConnManager.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -98,6 +100,45 @@ Teuchos::RCP<const Epetra_CrsMatrix> getSubBlock(int i,int j,const Thyra::Linear
    return rcp_dynamic_cast<const Epetra_CrsMatrix>(e_blo);
 }
 
+template <typename Intrepid2Type>
+Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
+{
+  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
+ 
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // build a geometric pattern from a single basis
+  RCP<Intrepid2::Basis<double,FieldContainer> > basis = rcp(new Intrepid2Type);
+  RCP<const panzer::FieldPattern> pattern = rcp(new panzer::Intrepid2FieldPattern(basis));
+  return pattern;
+}
+
+Teuchos::RCP<const panzer::BlockedDOFManager<int,int> > buildBlockedIndexer(int myRank,int numProc,int numBlocks)
+{
+  typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
+
+  std::string names[] = {"U","V","W","X"};
+
+  Teuchos::RCP<const FieldPattern> patternC1
+         = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+  Teuchos::RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+  Teuchos::RCP<panzer::BlockedDOFManager<int,int> > indexer = rcp(new panzer::BlockedDOFManager<int,int>());
+
+  indexer->setConnManager(connManager,MPI_COMM_WORLD);
+
+  std::vector<std::vector<std::string> > fieldOrder(numBlocks);
+  for(int i=0;i<numBlocks;i++) {
+    indexer->addField(names[i],patternC1);
+
+    fieldOrder[i].push_back(names[i]);
+  }
+  indexer->setFieldOrder(fieldOrder);
+  indexer->buildGlobalUnknowns();
+
+  return indexer;
+}
+
 TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 {
 
@@ -108,11 +149,10 @@ TEUCHOS_UNIT_TEST(tBlockedLinearObjFactory, intializeContainer_epetra)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
 {
-
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -125,23 +165,12 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    int numBlocks = 3;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
-   std::vector<int> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
-
-   BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(eComm,blkIndexer,indexers);
+   BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(tComm,blkIndexer);
 
    RCP<LinearObjContainer> container = factory.buildLinearObjContainer();
    RCP<LinearObjContainer> ghosted = factory.buildGhostedLinearObjContainer();
@@ -261,9 +290,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -275,41 +304,54 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    // pauseToAttach();
 
    int numBlocks = 2;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
  
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 2x2 square blocks
-
+   out << "Built indexer = " << blkIndexer << std::endl;
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm,blkIndexer,indexers));
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm,blkIndexer));
+
+   out << "LA Factory = " << la_factory << std::endl;
 
    Teuchos::RCP<LinearObjContainer> global  = la_factory->buildLinearObjContainer();
    Teuchos::RCP<LinearObjContainer> ghosted = la_factory->buildGhostedLinearObjContainer();
 
+   out << "LOC = " << global << " " << ghosted << std::endl;
+
    la_factory->initializeContainer(LinearObjContainer::Mat,*global);
    la_factory->initializeGhostedContainer(LinearObjContainer::Mat,*ghosted);
 
+   out << "Initialized matrices" << std::endl;
+
    Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(ghosted)->initializeMatrix(1.0);
 
+   out << "Initialize matrix" << std::endl;
+
    la_factory->ghostToGlobalContainer(*ghosted,*global,LinearObjContainer::Mat);
+
+   out << "GhostToGlobal" << std::endl;
 
    Teuchos::RCP<Thyra::LinearOpBase<double> > th_A = Teuchos::rcp_dynamic_cast<BlockedEpetraLinearObjContainer>(global)->get_A();
    Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > blk_A = Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(th_A);
    
+   out << "Blk A " << blk_A << std::endl;
+   out << "Blk A " << Teuchos::describe(*blk_A,Teuchos::VERB_MEDIUM) << std::endl;
   
    Teuchos::RCP<Epetra_Operator> cA_00 = Thyra::get_Epetra_Operator(*blk_A->getNonconstBlock(0,0));
+   out << "00" << std::endl;
+
    Teuchos::RCP<Epetra_Operator> cA_01 = Thyra::get_Epetra_Operator(*blk_A->getNonconstBlock(0,1));
+   out << "01" << std::endl;
+
    Teuchos::RCP<Epetra_Operator> cA_10 = Thyra::get_Epetra_Operator(*blk_A->getNonconstBlock(1,0));
+   out << "10" << std::endl;
+
    Teuchos::RCP<Epetra_Operator> cA_11 = Thyra::get_Epetra_Operator(*blk_A->getNonconstBlock(1,1));
+   out << "11" << std::endl;
 
    Teuchos::RCP<Epetra_CrsMatrix> A_00 = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(cA_00);
    Teuchos::RCP<Epetra_CrsMatrix> A_01 = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(cA_01);
@@ -317,16 +359,16 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, ghostToGlobal)
    Teuchos::RCP<Epetra_CrsMatrix> A_10 = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(cA_10);
    Teuchos::RCP<Epetra_CrsMatrix> A_11 = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(cA_11);
 
-   std::cout << "A_00 = \n";
+   out << "A_00 = \n";
    A_00->Print(out);
 
-   std::cout << "A_01 = \n";
+   out << "A_01 = \n";
    A_01->Print(out);
 
-   std::cout << "A_10 = \n";
+   out << "A_10 = \n";
    A_10->Print(out);
 
-   std::cout << "A_11 = \n";
+   out << "A_11 = \n";
    A_11->Print(out);
 }
 
@@ -335,9 +377,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -349,22 +391,15 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, graph_constr)
    // pauseToAttach();
 
    int numBlocks = 2;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
  
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 2x2 square blocks
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm,blkIndexer,indexers));
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm,blkIndexer));
 
    Teuchos::RCP<Epetra_CrsMatrix> A_00 = la_factory->getGhostedEpetraMatrix(0,0); A_00->PutScalar(1.0);
    Teuchos::RCP<Epetra_CrsMatrix> A_01 = la_factory->getGhostedEpetraMatrix(0,1); A_01->PutScalar(1.0);
@@ -390,9 +425,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -404,26 +439,15 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, adjustDirichlet)
    // pauseToAttach();
 
    int numBlocks = 3;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
  
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
-
-   std::vector<int> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm,blkIndexer,indexers));
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm,blkIndexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -576,9 +600,9 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -590,24 +614,15 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
    // pauseToAttach();
 
    int numBlocks = 2;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
  
    typedef BlockedEpetraLinearObjContainer BLOC;
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer_node
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer_cell
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer_Element<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   indexers.push_back(indexer_node);
-   indexers.push_back(indexer_cell);
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(eComm,blkIndexer,indexers));
+         = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm,blkIndexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -797,11 +812,10 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, node_cell)
 
 TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
 {
-
    #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+      Teuchos::RCP<Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
+      NOPE_PANZER_DOESNT_SUPPORT_SERIAL
    #endif
 
    using Teuchos::RCP;
@@ -814,23 +828,12 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, exclusion)
    typedef BlockedEpetraLinearObjContainer BLOC;
 
    int numBlocks = 3;
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
+   int myRank = tComm->getRank();
+   int numProc = tComm->getSize();
 
-   RCP<panzer::UniqueGlobalIndexer<int,int> > indexer 
-         = rcp(new panzer::unit_test::UniqueGlobalIndexer<int,int>(myRank,numProc));
-   RCP<const panzer::UniqueGlobalIndexer<int,std::pair<int,int> > > blkIndexer 
-         = rcp(new panzer::unit_test::BlockUniqueGlobalIndexer<int,int>(numBlocks,myRank,numProc));
+   RCP<const panzer::BlockedDOFManager<int,int> > blkIndexer = buildBlockedIndexer(myRank,numProc,numBlocks);
 
-   std::vector<int> ownedIndices, ownedAndSharedIndices;
-   indexer->getOwnedIndices(ownedIndices);
-   indexer->getOwnedAndSharedIndices(ownedAndSharedIndices);
-
-   std::vector<RCP<const panzer::UniqueGlobalIndexer<int,int> > > indexers;
-   for(int i=0;i<numBlocks;i++)
-      indexers.push_back(indexer); // 3x3 square blocks
-
-   BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(eComm,blkIndexer,indexers);
+   BlockedEpetraLinearObjFactory<panzer::Traits,int> factory(tComm,blkIndexer);
  
    // exclude some pairs
    std::vector<std::pair<int,int> > exPairs;
