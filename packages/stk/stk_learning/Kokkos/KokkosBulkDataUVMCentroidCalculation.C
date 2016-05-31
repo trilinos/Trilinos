@@ -1,5 +1,33 @@
 #include "KokkosBulkDataCentroidCalculation.h"
 
+namespace ngp {
+
+typedef Kokkos::View<stk::mesh::Entity*, Kokkos::LayoutStride, UVMMemSpace> ConnectedNodesType;
+
+struct Bucket {
+    Bucket() : connectivity() {}
+
+    void allocate_connectivity(unsigned bucket_id, unsigned numElements, unsigned numNodesPerElem) {
+        connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id), numElements, numNodesPerElem);
+    }    
+
+    KOKKOS_INLINE_FUNCTION
+    unsigned get_num_nodes_per_entity() const {
+        return connectivity.extent(1);
+    }    
+
+    KOKKOS_INLINE_FUNCTION
+    ConnectedNodesType get_nodes(unsigned elementIndex) const {
+        return Kokkos::subview(connectivity, elementIndex, Kokkos::ALL());
+    }    
+    
+    BucketConnectivityType connectivity;
+};
+
+}
+
+typedef Kokkos::View<ngp::Bucket*, Layout, UVMMemSpace> BucketsType;
+
 
 struct GpuGatherUVMScratchData
 {
@@ -15,37 +43,39 @@ struct GpuGatherUVMScratchData
 
     void setup_elem_entities_and_connectivity_tables(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector, bool combineBuckets)
     {
-        const stk::mesh::BucketVector& elementBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-        unsigned numElementBuckets = elementBuckets.size();
+        const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
+        unsigned numElementBuckets = elemBuckets.size();
 
         combineAllBuckets = combineBuckets;
 
         numParallelItems = numElementBuckets;
         if (combineBuckets) {
             numParallelItems = 0;
-            for(const stk::mesh::Bucket* bktptr : elementBuckets) {
+            for(const stk::mesh::Bucket* bktptr : elemBuckets) {
                 numParallelItems += bktptr->size();
             }
             
             elemEntities = EntityBucketsType("ElemEntities", 1);
             elemEntities(0) = EntityViewType("ElemEntities0", numParallelItems);
 
-            elementNodeConnectivity = ViewOfBucketsType("ElementNodeConnectivity", 1);
-            unsigned nodesPerElem = elementBuckets[0]->topology().num_nodes();
-            elementNodeConnectivity(0) = BucketConnectivityType("BucketConnectivity0", numParallelItems, nodesPerElem);
+            elementBuckets = BucketsType("ElementNodeConnectivity", 1);
+            unsigned nodesPerElem = elemBuckets[0]->topology().num_nodes();
+            ngp::Bucket& bkt = elementBuckets(0);
+            bkt.allocate_connectivity(0, numParallelItems, nodesPerElem);
         }
         else {
             elemEntities = EntityBucketsType("ElemEntities", numElementBuckets);
-            elementNodeConnectivity = ViewOfBucketsType("ElementNodeConnectivity", numElementBuckets);
+            elementBuckets = BucketsType("ElementNodeConnectivity", numElementBuckets);
         }
 
         unsigned elemOffset = 0;
         for (unsigned elemBucketIndex = 0; elemBucketIndex < numElementBuckets; ++elemBucketIndex)
         {
-            const stk::mesh::Bucket& bucket = *elementBuckets[elemBucketIndex];
+            const stk::mesh::Bucket& bucket = *elemBuckets[elemBucketIndex];
             unsigned nodesPerElem = bucket.topology().num_nodes();
             if (!combineBuckets) {
-                elementNodeConnectivity(bucket.bucket_id()) = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket.bucket_id()), bucket.size(), nodesPerElem);
+                ngp::Bucket& bkt = elementBuckets(bucket.bucket_id());
+                bkt.allocate_connectivity(bucket.bucket_id(), bucket.size(), nodesPerElem);
                 elemEntities(bucket.bucket_id()) = EntityViewType("ElemEntities"+std::to_string(bucket.bucket_id()), bucket.size());
                 elemOffset = 0;
             }
@@ -58,7 +88,7 @@ struct GpuGatherUVMScratchData
                 const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
                 for(unsigned iNode = 0; iNode < nodesPerElem; ++iNode)
                 {
-                    elementNodeConnectivity(bucket_id)(elemOffset, iNode) = elemNodes[iNode];
+                    elementBuckets(bucket_id).connectivity(elemOffset, iNode) = elemNodes[iNode];
                 }
                 ++elemOffset;
             }
@@ -160,9 +190,9 @@ struct GpuGatherUVMScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, compact), const int elementBucketIndex) const
     {
-        BucketConnectivityType bucket = elementNodeConnectivity(elementBucketIndex);
+        ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
         const unsigned numElements = elemEntities(elementBucketIndex).extent(0);
-        const unsigned nodesPerElem = bucket.extent(1);
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
         const unsigned dim = elementCentroids.extent(1);
         double temp[3] = {0.0, 0.0, 0.0};
         for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
@@ -171,9 +201,10 @@ struct GpuGatherUVMScratchData
             {
                 temp[k] = 0.0;
             }
+            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(bucket(elementIndex, nodeIndex));
+                unsigned idx = get_index(nodesView(nodeIndex));
                 for(unsigned k=0; k<dim; ++k) {
                     temp[k] += nodeCoords(idx, k);
                 }
@@ -188,17 +219,18 @@ struct GpuGatherUVMScratchData
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
     {
         const int elementBucketIndex = team.league_rank();
-        BucketConnectivityType bucket = elementNodeConnectivity(elementBucketIndex);
+        ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
         const auto entityView = elemEntities(elementBucketIndex);
         const unsigned numElements = elemEntities(elementBucketIndex).extent(0);
-        const unsigned nodesPerElem = bucket.extent(1);
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
         const unsigned dim = elementCentroids.extent(1);
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double temp[3] = {0.0, 0.0, 0.0};
             const unsigned elemFieldIndex = get_index(entityView(elementIndex));
+            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(bucket(elementIndex, nodeIndex));
+                unsigned idx = get_index(nodesView(nodeIndex));
                 for(unsigned k=0; k<dim; ++k) {
                     temp[k] += nodeCoords(idx, k);
                 }
@@ -211,15 +243,16 @@ struct GpuGatherUVMScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, compact), const int elementIndex) const
     {
-        BucketConnectivityType bucket = elementNodeConnectivity(0);
-        const unsigned nodesPerElem = bucket.extent(1);
+        ngp::Bucket& bucket = elementBuckets(0);
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
         const unsigned dim = elementCentroids.extent(1);
         stk::mesh::Entity elem = elemEntities(0)(elementIndex);
         const unsigned elemFieldIndex = get_index(elem);
         double temp[3] = {0, 0, 0};
+        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
         for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
         {
-            unsigned idx = get_index(bucket(elementIndex, nodeIndex));
+            unsigned idx = get_index(nodesView(nodeIndex));
             for(unsigned k=0; k<dim; ++k) {
                 temp[k] += nodeCoords(idx, k);
             }
@@ -231,49 +264,51 @@ struct GpuGatherUVMScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, unroll), const int elementIndex) const
     {
-        BucketConnectivityType bucket = elementNodeConnectivity(0);
-        const unsigned nodesPerElem = bucket.extent(1);
+        ngp::Bucket& bucket = elementBuckets(0);
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
         stk::mesh::Entity elem = elemEntities(0)(elementIndex);
         const unsigned elemFieldIndex = get_index(elem);
-	double tempx = 0, tempy = 0, tempz = 0;
+        double tempx = 0, tempy = 0, tempz = 0;
+        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
         for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
         {
-            unsigned idx = get_index(bucket(elementIndex, nodeIndex));
-	    tempx += constNodeCoords(idx, 0);
-	    tempy += constNodeCoords(idx, 1);
-	    tempz += constNodeCoords(idx, 2);
+            unsigned idx = get_index(nodesView(nodeIndex));
+                    tempx += nodeCoords(idx, 0);
+                    tempy += nodeCoords(idx, 1);
+                    tempz += nodeCoords(idx, 2);
         }
-	elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
-	elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
-	elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
+                elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
+                elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
+                elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
     }
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, unroll), const TeamHandleType& team) const
     {
         const int elementBucketIndex = team.league_rank();
-        BucketConnectivityType bucket = elementNodeConnectivity(elementBucketIndex);
+        ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
         const auto entityView = elemEntities(elementBucketIndex);
         const unsigned numElements = elemEntities(elementBucketIndex).extent(0);
-        const unsigned nodesPerElem = bucket.extent(1);
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double tempx = 0, tempy = 0, tempz = 0;
             const unsigned elemFieldIndex = get_index(entityView(elementIndex));
+            ngp::ConnectedNodesType elemNodes = bucket.get_nodes(elementIndex);
             for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(bucket(elementIndex, nodeIndex));
-		tempx += constNodeCoords(idx, 0);
-		tempy += constNodeCoords(idx, 1);
-		tempz += constNodeCoords(idx, 2);
+                unsigned idx = get_index(elemNodes(nodeIndex));
+                    tempx += constNodeCoords(idx, 0);
+                    tempy += constNodeCoords(idx, 1);
+                    tempz += constNodeCoords(idx, 2);
             }
-	    elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
-	    elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
-	    elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
+                elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
+                elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
+                elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
         });
     }
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, team, unroll), const TeamHandleType& team) const
     {
-
+        printf("element-team-unroll not implemented!\n");
     }
 
 //    KOKKOS_INLINE_FUNCTION void operator()(const member_type &teamMember) const
@@ -293,7 +328,7 @@ struct GpuGatherUVMScratchData
     unsigned numParallelItems;
     bool combineAllBuckets;
 
-    ViewOfBucketsType elementNodeConnectivity;
+    BucketsType elementBuckets;
     EntityBucketsType elemEntities;
 
     DeviceViewMatrixType nodeCoords;
@@ -306,6 +341,42 @@ struct GpuGatherUVMScratchData
     DeviceViewMatrixType::HostMirror hostElementCentroids;
     DeviceViewMeshIndicesType::HostMirror hostMeshIndices;
 };
+
+void run_bucket_test()
+{
+    const unsigned numElements = 9;
+    const unsigned numNodesPerElement = 4;
+    const unsigned bucketId = 0;
+
+    ngp::Bucket bucket;
+    bucket.allocate_connectivity(bucketId, numElements, numNodesPerElement);
+
+    unsigned counter = 0;
+    for(unsigned elemIndex=0; elemIndex<numElements; ++elemIndex) {
+        for(unsigned nodeIndex=0; nodeIndex<numNodesPerElement; ++nodeIndex) {
+           bucket.connectivity(elemIndex,nodeIndex) = stk::mesh::Entity(counter);
+           ++counter;
+        }
+    }
+
+    double errorCheck = 0;
+    Kokkos::parallel_reduce(numElements, KOKKOS_LAMBDA(int elementIndex, double& update) {
+        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+        unsigned expectedCounter = elementIndex*numNodesPerElement;
+        for(unsigned nodeIndex=0; nodeIndex<numNodesPerElement; ++nodeIndex) {
+            if (nodesView(nodeIndex) != expectedCounter) {
+                update += 1.0;
+            }
+            ++expectedCounter;
+        }
+    }, errorCheck);
+    EXPECT_EQ(0.0, errorCheck);
+}
+
+TEST_F(MTK_Kokkos, bucket0)
+{
+    run_bucket_test();
+}
 
 TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_uvm)
 {
