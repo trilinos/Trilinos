@@ -1349,9 +1349,11 @@ namespace {
     A1.setAllToScalar (three);
 
 #ifdef HAVE_TPETRA_DEBUG
-    // The above setAllToScalar should have run on device.
-    TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
-    TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
+    if (! std::is_same<typename Kokkos::HostSpace, typename BCM::device_type::memory_space>::value) {
+      // The above setAllToScalar should have run on device.
+      TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
+      TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
+    }
 #endif // HAVE_TPETRA_DEBUG
 
     out << "The matrix A1, after construction:" << endl;
