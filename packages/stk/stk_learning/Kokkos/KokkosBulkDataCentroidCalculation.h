@@ -145,8 +145,36 @@ public:
 	size_t N = functor.getNumParallelItems();\
         Kokkos::parallel_for(name, Kokkos::TeamPolicy< TYPE_OPERATOR(SCOPE, team, EXPANSION) >(N, 512), functor);\
 
+    void print_name(int choice) {
+            if (choice == 0)
+            {
+	        std::cout << "bucket_solo_compact" << std::endl;
+            }
+            else if (choice == 1)
+            {
+	        std::cout << "bucket_team_compact" << std::endl;
+            }
+            else if (choice == 2)
+            {
+	        std::cout << "element_solo_compact" << std::endl;
+            }
+            else if (choice == 3)
+            {
+	        std::cout << "bucket_team_unroll" << std::endl;
+            }
+            else if (choice == 4)
+            {
+	        std::cout << "element_team_unroll" << std::endl;
+            }
+            else if (choice == 5)
+            {
+	        std::cout << "element_solo_unroll" << std::endl;
+            }
+    }
+
     void calculate_centroids(int num_repeat, int choice)
     {
+        print_name(choice);
         for (int repeat=0 ; repeat<num_repeat ; ++repeat)
         {
             if (choice == 0)
