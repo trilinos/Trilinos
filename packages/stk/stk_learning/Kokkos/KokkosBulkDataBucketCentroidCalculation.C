@@ -2,7 +2,7 @@
 
 namespace ngp {
 
-typedef Kokkos::View<stk::mesh::Entity*, Kokkos::LayoutStride, UVMMemSpace> ConnectedNodesType;
+typedef Kokkos::View<stk::mesh::Entity*, Kokkos::LayoutStride, MemSpace> ConnectedNodesType;
 
 struct Bucket {
     Bucket()
@@ -10,8 +10,16 @@ struct Bucket {
 
     void initialize(unsigned bucket_id, stk::mesh::EntityRank rank, unsigned numEntities, unsigned numNodesPerEntity) {
         entities = EntityViewType("BucketEntities"+std::to_string(bucket_id), numEntities);
+        hostEntities = Kokkos::create_mirror_view(entities);
         connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id), numEntities, numNodesPerEntity);
+        hostConnectivity = Kokkos::create_mirror_view(connectivity);
     }    
+
+    void copy_to_device()
+    {
+        Kokkos::deep_copy(entities, hostEntities);
+        Kokkos::deep_copy(connectivity, hostConnectivity);
+    }
 
     STK_FUNCTION
     unsigned bucket_id() const { return bucketId; }
@@ -37,8 +45,12 @@ struct Bucket {
     
     unsigned bucketId;
     stk::mesh::EntityRank entityRank;
+
     EntityViewType entities;
+    EntityViewType::HostMirror hostEntities;
+
     BucketConnectivityType connectivity;
+    BucketConnectivityType::HostMirror hostConnectivity;
 };
 
 }
@@ -46,9 +58,9 @@ struct Bucket {
 typedef Kokkos::View<ngp::Bucket*, Layout, UVMMemSpace> BucketsType;
 
 
-struct GpuGatherUVMScratchData
+struct GpuGatherBucketScratchData
 {
-    GpuGatherUVMScratchData()
+    GpuGatherBucketScratchData()
     : combineAllBuckets(false)
     {
     }
@@ -96,14 +108,17 @@ struct GpuGatherUVMScratchData
             for(unsigned elemIndex = 0; elemIndex < bucket.size(); ++elemIndex)
             {
                 stk::mesh::Entity element = bucket[elemIndex];
-                elementBuckets(bucket_id).entities(elemOffset) = element;
+                elementBuckets(bucket_id).hostEntities(elemOffset) = element;
                 const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
                 for(unsigned iNode = 0; iNode < nodesPerElem; ++iNode)
                 {
-                    elementBuckets(bucket_id).connectivity(elemOffset, iNode) = elemNodes[iNode];
+                    elementBuckets(bucket_id).hostConnectivity(elemOffset, iNode) = elemNodes[iNode];
                 }
                 ++elemOffset;
             }
+        }
+        for(unsigned b=0; b<elementBuckets.size(); ++b) {
+            elementBuckets(b).copy_to_device();
         }
     }
 
@@ -378,13 +393,11 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_uvm)
 {
     MyApp app;
 
-    GpuGatherUVMScratchData scratch;
+    GpuGatherBucketScratchData scratch;
     bool combineBuckets = app.choice==2 ? true : false;
     scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part(), combineBuckets);
 
-    CentroidCalculator<GpuGatherUVMScratchData> calculator(scratch);
-
-    calculator.calculate_centroids(1, app.choice);
+    CentroidCalculator<GpuGatherBucketScratchData> calculator(scratch);
 
     app.start_timer();
     calculator.calculate_centroids(app.num_repeat, app.choice);

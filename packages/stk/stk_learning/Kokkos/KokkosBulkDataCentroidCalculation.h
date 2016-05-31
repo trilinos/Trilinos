@@ -57,19 +57,13 @@
 
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> DeviceViewEntitiesType;
 
-typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> DeviceBucketConnectivityType;
-
-typedef Kokkos::View<DeviceBucketConnectivityType*, Layout, MemSpace>  DeviceViewConnectivityType;
-
 typedef Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> DeviceViewMeshIndicesType;
 
 typedef Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstDeviceViewMeshIndicesType;
 
-typedef Kokkos::View<stk::mesh::Entity*, UVMMemSpace> EntityViewType;
-typedef Kokkos::View<EntityViewType*, UVMMemSpace> EntityBucketsType;
+typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 
-typedef Kokkos::View<stk::mesh::Entity**, Layout, UVMMemSpace> BucketConnectivityType;
-typedef Kokkos::View<BucketConnectivityType*, Layout, UVMMemSpace> ViewOfBucketsType;
+typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
 
 typedef Kokkos::View<stk::mesh::Entity*, Layout, MemSpace> DeviceViewFlatConnectivityType;
 

@@ -64,11 +64,11 @@ void run_it()
 {
     typedef Kokkos::View<int*, Layout, MemSpace> IntViewType;
 
-    typedef Kokkos::View<int**, Layout, MemSpace> BucketConnectivityType;
-    typedef Kokkos::View<int**, Layout, Kokkos::HostSpace> HostBucketConnectivityType;
+    typedef Kokkos::View<int**, Layout, MemSpace> BucketConnectivityView;
+    typedef Kokkos::View<int**, Layout, Kokkos::HostSpace> HostBucketConnectivityView;
 
-    typedef Kokkos::View<BucketConnectivityType*, Layout, MemSpace> ViewOfBuckets;
-    typedef Kokkos::View<HostBucketConnectivityType*, Layout, Kokkos::HostSpace> HostViewOfBuckets;
+    typedef Kokkos::View<BucketConnectivityView*, Layout, MemSpace> ViewOfBuckets;
+    typedef Kokkos::View<HostBucketConnectivityView*, Layout, Kokkos::HostSpace> HostViewOfBuckets;
 
 
     const unsigned numBuckets = 2;
@@ -95,7 +95,7 @@ void run_it()
     HostViewOfBuckets hostViewOfBuckets("H_viewOfBuckets", numBuckets);
     int offset = 0;
     for(unsigned i=0; i<numBuckets; ++i) {
-        hostViewOfBuckets(i) = HostBucketConnectivityType("H_Bucket"+std::to_string(i), numElemsPerBucket[i], numNodesPerElem[i]);
+        hostViewOfBuckets(i) = HostBucketConnectivityView("H_Bucket"+std::to_string(i), numElemsPerBucket[i], numNodesPerElem[i]);
         hostExpectedBucketOffsets(i) = offset;
 
         for(unsigned elemIndex=0; elemIndex<numElemsPerBucket[i]; ++elemIndex) {
@@ -119,7 +119,7 @@ void run_it()
 
     double errorCheck = 0.0;
     Kokkos::parallel_reduce(numBuckets, KOKKOS_LAMBDA(int i, double& update) {
-        BucketConnectivityType bucket = viewOfBuckets(i);
+        BucketConnectivityView bucket = viewOfBuckets(i);
         int expectedOffset = expectedBucketOffsets(i);
         for(int elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
             for(int nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
@@ -145,8 +145,8 @@ TEST_F(MTK_Kokkos, DISABLED_view_of_views)
 void run_it_uvm()
 {
     typedef Kokkos::View<int*, Layout, MemSpace> IntViewType;
-    typedef Kokkos::View<int**, Layout, Kokkos::CudaUVMSpace> BucketConnectivityType;
-    typedef Kokkos::View<BucketConnectivityType*, Layout, Kokkos::CudaUVMSpace> ViewOfBuckets;
+    typedef Kokkos::View<int**, Layout, Kokkos::CudaUVMSpace> BucketConnectivityView;
+    typedef Kokkos::View<BucketConnectivityView*, Layout, Kokkos::CudaUVMSpace> ViewOfBuckets;
 
 
     const unsigned numBuckets = 2;
@@ -173,7 +173,7 @@ void run_it_uvm()
     ViewOfBuckets viewOfBuckets("viewOfBuckets", numBuckets);
     int offset = 0;
     for(unsigned i=0; i<numBuckets; ++i) {
-        viewOfBuckets(i) = BucketConnectivityType("Bucket"+std::to_string(i), numElemsPerBucket[i], numNodesPerElem[i]);
+        viewOfBuckets(i) = BucketConnectivityView("Bucket"+std::to_string(i), numElemsPerBucket[i], numNodesPerElem[i]);
         hostExpectedBucketOffsets(i) = offset;
 
         for(unsigned elemIndex=0; elemIndex<numElemsPerBucket[i]; ++elemIndex) {
@@ -187,7 +187,7 @@ void run_it_uvm()
 
     double errorCheck = 0.0;
     Kokkos::parallel_reduce(numBuckets, KOKKOS_LAMBDA(int i, double& update) {
-        BucketConnectivityType bucket = viewOfBuckets(i);
+        BucketConnectivityView bucket = viewOfBuckets(i);
         int expectedOffset = expectedBucketOffsets(i);
         for(unsigned elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
             for(unsigned nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
