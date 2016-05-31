@@ -58,7 +58,8 @@
 // use them in that case, either.
 //
 // mfh 31 May 2016: GCC 4.9.[23] appears to be broken ("internal
-// compiler error") too.
+// compiler error") too.  Ditto for GCC 5.1.  I'll just disable the
+// thing for any GCC version.
 //
 #if defined(__CUDACC__)
    // Lambdas for Kokkos::parallel_* don't work with CUDA 7.5 either.
@@ -67,18 +68,10 @@
 #  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
 #elif defined(__GNUC__)
-   // GCC 4.7.2 is broken (see #393).  So is 4.9.[23] (with regards to
-   // #393).  To be safe, we'll assume GCC 4.x.y is broken for all x
-   // <= 7 or x == 9, and for all y.
-#  if __GNUC__ == 4 && (__GNUC_MINOR__ <= 7 || __GNUC_MINOR__ == 9)
-#    if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#      undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
-#    endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#  else // GCC >= 4.8
-#    if ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#      define TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA 1
-#    endif // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+
+#  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
+#    undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
+#  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
 #else // some other compiler
 
