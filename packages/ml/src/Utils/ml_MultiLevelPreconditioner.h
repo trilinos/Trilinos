@@ -923,24 +923,24 @@ private:
 ******************************************************************************/
 
 enum free_s {useFree, useDelete, neither};
-template <class T> class MyVec {
+template <class T> class MLVec {
   public:
 
     // different constructors & destructors
 
-    MyVec();              
-    MyVec(int size);
-    MyVec(T *startptr, T *endptr, bool okToChangePtr = false, free_s freeType = neither);
-    ~MyVec();
+    MLVec();              
+    MLVec(int size);
+    MLVec(T *startptr, T *endptr, bool okToChangePtr = false, free_s freeType = neither);
+    ~MLVec();
 
     int     size() const;        // return vector size
     T       *getptr();           // return pointer to start of raw vector data
     void    wrap(T *startptr, T *endptr,// same as above construct but allows
-            bool okToChangePtr = false, // one to first create an empty MyVec
+            bool okToChangePtr = false, // one to first create an empty MLVec
             free_s freeType = neither); // and then wrap it with data.
-                                 // is not invoked when MyVec goes away
-    void    relinquishData();    // disassociates data from MyVec, so free 
-                                 // is not invoked when MyVec goes away
+                                 // is not invoked when MLVec goes away
+    void    relinquishData();    // disassociates data from MLVec, so free 
+                                 // is not invoked when MLVec goes away
     void    resize(int newSize); // change vector size. If newSize is smaller
                                  // than size(), keep first newSize values
     bool    empty() const;       // indicates whether vector is empty
@@ -958,17 +958,17 @@ template <class T> class MyVec {
 
 // Create an empty vector 
 
-template <class T> MyVec<T>::MyVec() {
+template <class T> MLVec<T>::MLVec() {
   data_          = NULL;      size_          = 0;
   okToChangePtr_ = true;      getPtrInvoked_ = false;
   freeType_      = neither;
 }
 
 // Create an vector without any data but allocate space
-template <class T> MyVec<T>::MyVec(int size) {
+template <class T> MLVec<T>::MLVec(int size) {
 
   TEUCHOS_TEST_FOR_EXCEPTION(size < 0,std::logic_error,
-  "MyVec error, cannot create a negative size (= " << size << ") vector\n");
+  "MLVec error, cannot create a negative size (= " << size << ") vector\n");
 
   data_          = NULL;        size_          = size;
   okToChangePtr_ = true;        getPtrInvoked_ = false;
@@ -978,7 +978,7 @@ template <class T> MyVec<T>::MyVec(int size) {
      data_ = (T *) ML_allocate(sizeof(T)*size); 
 
      TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL,std::logic_error,
-     "MyVec error, not enough space for vector of size " << size << "\n");
+     "MLVec error, not enough space for vector of size " << size << "\n");
 
      freeType_ = useFree;
   }
@@ -988,36 +988,36 @@ template <class T> MyVec<T>::MyVec(int size) {
 // and 'end' respectively. In most cases, this means that the pointers
 // associated with the raw data cannot be changed, and that the raw data
 // should remain when this vector goes away 
-template <class T> MyVec<T>::MyVec(T *start, T *end, bool okToChangePtr,
+template <class T> MLVec<T>::MLVec(T *start, T *end, bool okToChangePtr,
                                    free_s freeType) { 
 
   TEUCHOS_TEST_FOR_EXCEPTION(end < start,std::logic_error,
-  "MyVec error, cannot create a negative size (= " << end-start<< ") vector\n");
+  "MLVec error, cannot create a negative size (= " << end-start<< ") vector\n");
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
   getPtrInvoked_ = false;
 }
-template <class T> void MyVec<T>::wrap(T *start, T *end, bool okToChangePtr,
+template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
                                    free_s freeType) { 
 
   TEUCHOS_TEST_FOR_EXCEPTION((data_ != NULL)||(size_  != 0)||(okToChangePtr_ != true)||
                              (getPtrInvoked_ != false)||(freeType_!= neither),
                              std::logic_error,
-  "MyVec wrap error, wrap() must be invoked on vectors created with default constructor\n");
+  "MLVec wrap error, wrap() must be invoked on vectors created with default constructor\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(end < start,std::logic_error,
-  "MyVec error, cannot create a negative size (= " << end-start<< ") vector\n");
+  "MLVec error, cannot create a negative size (= " << end-start<< ") vector\n");
 
   freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
   data_          = start;      size_          = end - start;
   getPtrInvoked_ = false;
 }
 
-template <class T> MyVec<T>::~MyVec()              { 
+template <class T> MLVec<T>::~MLVec()              { 
    if (data_ != NULL) {
       TEUCHOS_TEST_FOR_EXCEPTION(size_ == 0,std::logic_error,
-      "MyVec error, data pointer should be null for 0 length vectors\n");
+      "MLVec error, data pointer should be null for 0 length vectors\n");
       if (okToChangePtr_ && (freeType_ == useFree))   ML_free(data_); 
       if (okToChangePtr_ && (freeType_ == useDelete)) delete data_;
    }
@@ -1025,8 +1025,8 @@ template <class T> MyVec<T>::~MyVec()              {
 
 // data_ is no longer associated with this vector. The raw data continues to
 // exist.  Can be used in conjunction with getptr() to first get the raw
-// data out of MyVec and then effectively empty MyVec.
-template <class T> void MyVec<T>::relinquishData() { 
+// data out of MLVec and then effectively empty MLVec.
+template <class T> void MLVec<T>::relinquishData() { 
 
   TEUCHOS_TEST_FOR_EXCEPTION((data_ != NULL) && (getPtrInvoked_ == false),
   std::logic_error,"relinquishData without invoking getPtr() should lead"
@@ -1036,9 +1036,9 @@ template <class T> void MyVec<T>::relinquishData() {
   okToChangePtr_ = true;     getPtrInvoked_ = false;
   freeType_      = neither;
 }
-template <class T> int MyVec<T>::size() const  {   return size_; }
-template <class T> T* MyVec<T>::getptr() {getPtrInvoked_ =true; return data_;}
-template <class T> bool MyVec<T>::empty() const {if (size_ > 0) return false; 
+template <class T> int MLVec<T>::size() const  {   return size_; }
+template <class T> T* MLVec<T>::getptr() {getPtrInvoked_ =true; return data_;}
+template <class T> bool MLVec<T>::empty() const {if (size_ > 0) return false; 
                                                  else return true;}
 
 // change the size of the vector. There are lots of restrictions as to when 
@@ -1046,17 +1046,17 @@ template <class T> bool MyVec<T>::empty() const {if (size_ > 0) return false;
 // original vector was zero length (i.e. just allocate memory), the new vector
 // is zero length (i.e. just free memory), the new vector is longer or shorter
 // than the original vector.
-template <class T> void MyVec<T>::resize(int newsize) {
+template <class T> void MLVec<T>::resize(int newsize) {
 
   if (newsize == size_) return;
 
   TEUCHOS_TEST_FOR_EXCEPTION( newsize < 0, 
-  std::logic_error,"MyVec error, cannot resize to a negative length (= " << 
+  std::logic_error,"MLVec error, cannot resize to a negative length (= " << 
   newsize << ") vector \n");
 
   TEUCHOS_TEST_FOR_EXCEPTION((newsize > size_) && (size_ > 0) && 
                              (freeType_ == useDelete), std::logic_error,
-  "MyVec error, cannot resize vector allocated with new\n");
+  "MLVec error, cannot resize vector allocated with new\n");
 
   if ( (newsize <= size_) && (size_ > 0) && (freeType_ == useDelete) &&
        (okToChangePtr_) ) { size_ = newsize; return; }
@@ -1067,7 +1067,7 @@ template <class T> void MyVec<T>::resize(int newsize) {
          data_ = (T *) ML_allocate(sizeof(T)*newsize);
 
          TEUCHOS_TEST_FOR_EXCEPTION( data_ == NULL, std::logic_error,
-         "MyVec error, not enough resize space for " << newsize <<
+         "MLVec error, not enough resize space for " << newsize <<
          " length vector\n");
 
          freeType_ = useFree;
@@ -1083,7 +1083,7 @@ template <class T> void MyVec<T>::resize(int newsize) {
           ML_free(data_);
           data_ = newStuff;
          TEUCHOS_TEST_FOR_EXCEPTION( data_ == NULL, std::logic_error,
-         "MyVec error, not enough resize realloc space for " << newsize <<
+         "MLVec error, not enough resize realloc space for " << newsize <<
          " length vector\n");
 
        }
@@ -1092,14 +1092,14 @@ template <class T> void MyVec<T>::resize(int newsize) {
           else if (freeType_ == useDelete) { delete data_; data_ = NULL; }
 
          TEUCHOS_TEST_FOR_EXCEPTION( freeType_ == neither, std::logic_error,
-         "MyVec error, do not know how to free this vector\n"); 
+         "MLVec error, do not know how to free this vector\n"); 
         
        }
      }
      size_ = newsize;
   }
   TEUCHOS_TEST_FOR_EXCEPTION(okToChangePtr_ == false, std::logic_error,
-  "MyVec error, not allowed to resize this type of wrapped vector\n"); 
+  "MLVec error, not allowed to resize this type of wrapped vector\n"); 
 }
 
 
@@ -1119,7 +1119,7 @@ struct wrappedCommStruct {
     int                vecSize;  
 };
 
-template <class T> int nodalComm(MyVec<T>& vector, MyVec<int>& myLocalNodeIds,
+template <class T> int nodalComm(MLVec<T>& vector, MLVec<int>& myLocalNodeIds,
                                  struct wrappedCommStruct& framework)
 {
    /***************************************************************************
@@ -1134,7 +1134,7 @@ template <class T> int nodalComm(MyVec<T>& vector, MyVec<int>& myLocalNodeIds,
     entries will be duplicates. 
    ***************************************************************************/
 
-    MyVec<T> temp(myLocalNodeIds.size());
+    MLVec<T> temp(myLocalNodeIds.size());
 
     // copy from nodal vector to dof vector
     for (int i = 0; i < myLocalNodeIds.size(); i++)
@@ -1149,7 +1149,7 @@ template <class T> int nodalComm(MyVec<T>& vector, MyVec<int>& myLocalNodeIds,
     return 0;
 }
 
-template <class T> int dofComm(MyVec<T>& vector,
+template <class T> int dofComm(MLVec<T>& vector,
                                struct wrappedCommStruct& framework)
 {
    /***************************************************************************
@@ -1165,7 +1165,7 @@ template <class T> int dofComm(MyVec<T>& vector,
     degrees-of-freedom (so it is only appropriate on coarser levels).
    ***************************************************************************/
 
-   MyVec<double> aCopy(vector.size());
+   MLVec<double> aCopy(vector.size());
 
    // need to make a copy of the data as we will only use framework comm()
    // functions that work with doubles
@@ -1201,84 +1201,84 @@ template <class T> int dofComm(MyVec<T>& vector,
 
 extern "C" int dofCommUsingMlNodalMatrix(double *data, void *widget);
 
-extern int sortCols(const MyVec<int>& ARowPtr, MyVec<int>& ACols, 
-                    MyVec<double>& AVals);
+extern int MLsortCols(const MLVec<int>& ARowPtr, MLVec<int>& ACols, 
+                    MLVec<double>& AVals);
 
-extern int nMyGhost(struct wrappedCommStruct& framework);
+extern int MLnMyGhost(struct wrappedCommStruct& framework);
 
-extern int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
-        MyVec<int> &myLocalNodeIds, int nLocalDofs, 
+extern int MLfillNodalMaps(MLVec<int> &amalgRowMap, MLVec<int> &amalgColMap,
+        MLVec<int> &myLocalNodeIds, int nLocalDofs, 
         struct wrappedCommStruct &framework,
         int nLocalNodes, int nLocalPlusGhostNodes);
 
-extern int colGlobalIds(struct wrappedCommStruct& framework, MyVec<int>& myGids);
+extern int MLcolGlobalIds(struct wrappedCommStruct& framework, MLVec<int>& myGids);
 
-extern int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs,
+extern int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs,
                    int nLocalPlusGhostDofs, struct wrappedCommStruct &framework,
                    int &nLocalNodes, int &nLocalPlusGhostNodes);
 
-extern int extractDiag(const MyVec<int>& rowPtr, const MyVec<int>& cols,
-                       const MyVec<double>& , MyVec<double>& diagonal,
+extern int MLextractDiag(const MLVec<int>& rowPtr, const MLVec<int>& cols,
+                       const MLVec<double>& , MLVec<double>& diagonal,
                        struct wrappedCommStruct &framework);
 
-extern int findDirichlets(const MyVec<int>& rowPtr, const MyVec<int>& cols,
-                          const MyVec<double>& vals,
-                          const MyVec<double>& diagonal,
-                          double tol, MyVec<bool>& dirOrNot,
+extern int MLfindDirichlets(const MLVec<int>& rowPtr, const MLVec<int>& cols,
+                          const MLVec<double>& vals,
+                          const MLVec<double>& diagonal,
+                          double tol, MLVec<bool>& dirOrNot,
                           struct wrappedCommStruct &framework);
 
-extern int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols,
-                           MyVec<double>& vals, const MyVec<double>& diagonal,
-                           bool squeeze, MyVec<double>& solution,
-                           MyVec<double>& rhs, const MyVec<bool>& dirOrNot, 
+extern int MLrmDirichletCols(MLVec<int>& rowPtr, MLVec<int>& cols,
+                           MLVec<double>& vals, const MLVec<double>& diagonal,
+                           bool squeeze, MLVec<double>& solution,
+                           MLVec<double>& rhs, const MLVec<bool>& dirOrNot, 
                            struct wrappedCommStruct &framework);
 
-extern int squeezeOutNnzs(MyVec<int>& rowPtr, MyVec<int>& cols,
-                          MyVec<double>& vals, const MyVec<bool>& keep);
+extern int MLsqueezeOutNnzs(MLVec<int>& rowPtr, MLVec<int>& cols,
+                          MLVec<double>& vals, const MLVec<bool>& keep);
 
-extern int buildMap(const MyVec<bool>& dofPresent, MyVec<int>& map, int NDof);
+extern int MLbuildMap(const MLVec<bool>& dofPresent, MLVec<int>& map, int NDof);
 
-extern int variableDofAmalg(int nCols, const MyVec<int>& rowPtr,
-                          const MyVec<int>& cols, const MyVec<double>& vals,
-                          int nNodes, int maxDofPerNode, const MyVec<int>& map,
-                          const MyVec<double>& diag, double tol,
-                          MyVec<int>& amalgRowPtr, MyVec<int>& amalgCols,
+extern int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr,
+                          const MLVec<int>& cols, const MLVec<double>& vals,
+                          int nNodes, int maxDofPerNode, const MLVec<int>& map,
+                          const MLVec<double>& diag, double tol,
+                          MLVec<int>& amalgRowPtr, MLVec<int>& amalgCols,
                           struct wrappedCommStruct &framework,
-                          MyVec<int>& myLocalNodeIds);
+                          MLVec<int>& myLocalNodeIds);
 
 
-extern int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent,
-                                    int maxDofPerNode, MyVec<int>& rowPtr,
-                                    MyVec<int>& cols, int nCols,
+extern int MLrmDifferentDofsCrossings(const MLVec<bool>& dofPresent,
+                                    int maxDofPerNode, MLVec<int>& rowPtr,
+                                    MLVec<int>& cols, int nCols,
                                     struct wrappedCommStruct& framework, 
-                                    MyVec<int> &myLocalNodeIds);
+                                    MLVec<int> &myLocalNodeIds);
 
-extern int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols,
-                          MyVec<double>& vals, const MyVec<double>& x,
-                          const MyVec<double>& y, const MyVec<double>& z);
+extern int MLbuildLaplacian(const MLVec<int>& rowPtr, const MLVec<int>& cols,
+                          MLVec<double>& vals, const MLVec<double>& x,
+                          const MLVec<double>& y, const MLVec<double>& z);
 
-extern int unamalgP(const MyVec<int>& amalgRowPtr,
-                    const MyVec<int>& amalgCols,
-                    const MyVec<double>& amalgVals, int maxDofPerNode,
-                    const MyVec<char>& status, bool fineIsPadded,
-                  MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals);
+extern int MLunamalgP(const MLVec<int>& amalgRowPtr,
+                    const MLVec<int>& amalgCols,
+                    const MLVec<double>& amalgVals, int maxDofPerNode,
+                    const MLVec<char>& status, bool fineIsPadded,
+                  MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals);
 
-extern int findEmptyRows(const MyVec<int>& rowPtr, const MyVec<int>& cols,
-                         const MyVec<double>& vals, MyVec<bool>& rowEmpty);
+extern int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& cols,
+                         const MLVec<double>& vals, MLVec<bool>& rowEmpty);
 
-extern int replaceEmptyByDirichlet(MyVec<int>& rowPtr, MyVec<int>& cols,
-                        MyVec<double>& vals, const MyVec<bool>& colEmpty);
+extern int MLreplaceEmptyByDirichlet(MLVec<int>& rowPtr, MLVec<int>& cols,
+                        MLVec<double>& vals, const MLVec<bool>& colEmpty);
 
-extern int fineStatus(const MyVec<bool>& dofPresent,
-                           const MyVec<int>& map, const MyVec<bool>& dirOrNot,
-                           MyVec<char>& status);
+extern int MLfineStatus(const MLVec<bool>& dofPresent,
+                           const MLVec<int>& map, const MLVec<bool>& dirOrNot,
+                           MLVec<char>& status);
 
-extern int coarseStatus(const MyVec<bool>& rowEmpty,
-                        const MyVec<bool>& dirOrNot, MyVec<char>& status);
+extern int MLcoarseStatus(const MLVec<bool>& rowEmpty,
+                        const MLVec<bool>& dirOrNot, MLVec<char>& status);
 
 
 
-extern int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost);
+extern int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost);
 
 #endif /* NewStuff */
 #endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */

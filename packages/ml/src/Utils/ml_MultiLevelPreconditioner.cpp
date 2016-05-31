@@ -496,7 +496,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
                          const Teuchos::ParameterList & List,
                          const int & nNodes,
                          const int & maxDofPerNode,
-                         bool * NotMyVecDofPresent,   // how do I get a const back ..
+                         bool * NotMLVecDofPresent,   // how do I get a const back ..
                          Epetra_Vector & Lhs,
                          Epetra_Vector & Rhs,
                          const bool  rhsAndsolProvided,
@@ -520,7 +520,7 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   int  nGlobalNodes;
   int itemp = nNodes;
 
-  MyVec<bool> dofPresent(NotMyVecDofPresent,NotMyVecDofPresent+nNodes*maxDofPerNode);
+  MLVec<bool> dofPresent(NotMLVecDofPresent,NotMLVecDofPresent+nNodes*maxDofPerNode);
 
   RowMatrix.Comm().SumAll(&itemp,&nGlobalNodes,1);
   
@@ -539,31 +539,31 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
   epetraFramework.data     = (void *) Acrs;
   epetraFramework.nProcs   = RowMatrix.Comm().NumProc();
   epetraFramework.myPid    = RowMatrix.Comm().MyPID();
-  int nGhost = nMyGhost(epetraFramework);
+  int nGhost = MLnMyGhost(epetraFramework);
 
   // allocate vectors
 
-  MyVec<bool>   dirOrNot(nDofs + nGhost);
-  MyVec<double> theDiag(nDofs + nGhost);
-  MyVec<int>    map(nDofs);
-  MyVec<int>    amalgRowPtr, amalgCols;
-  MyVec<int>    myLocalNodeIds(nDofs+nGhost);
-  MyVec<int>    amalgRowMap;
-  MyVec<int>    amalgColMap;
+  MLVec<bool>   dirOrNot(nDofs + nGhost);
+  MLVec<double> theDiag(nDofs + nGhost);
+  MLVec<int>    map(nDofs);
+  MLVec<int>    amalgRowPtr, amalgCols;
+  MLVec<int>    myLocalNodeIds(nDofs+nGhost);
+  MLVec<int>    amalgRowMap;
+  MLVec<int>    amalgColMap;
 
-  // Make MyVec versions of Crs arrays by wrapping them.
+  // Make MLVec versions of Crs arrays by wrapping them.
 
   double *vtemp;  int *ctemp,*rtemp;
   Acrs->ExtractCrsDataPointers(rtemp, ctemp, vtemp );
 
-  MyVec<int>    rowPtr(rtemp,rtemp + nDofs + 1);
-  MyVec<int>    cols(ctemp,ctemp   + rtemp[nDofs]);
-  MyVec<double> vals(vtemp,vtemp   + rtemp[nDofs]);
+  MLVec<int>    rowPtr(rtemp,rtemp + nDofs + 1);
+  MLVec<int>    cols(ctemp,ctemp   + rtemp[nDofs]);
+  MLVec<double> vals(vtemp,vtemp   + rtemp[nDofs]);
 
   // grab diagonal and detect Dirichlets
 
-  extractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
-  findDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
+  MLextractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
+  MLfindDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
 
   // if the rhs and solution are provided, remove column entries 
   // associated with Dirichlet rows. Here, we overwrite the original 
@@ -576,28 +576,28 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
      Lhs.ExtractView(&ptrLHS);
      Rhs.ExtractView(&ptrRHS);
 
-     MyVec<double> myvecRHS(ptrRHS, ptrRHS + nDofs );
-     MyVec<double> myvecLHS(ptrLHS, ptrLHS + nDofs );
+     MLVec<double> myvecRHS(ptrRHS, ptrRHS + nDofs );
+     MLVec<double> myvecLHS(ptrLHS, ptrLHS + nDofs );
 
-     rmDirichletCols(rowPtr, cols, vals, theDiag, true,
+     MLrmDirichletCols(rowPtr, cols, vals, theDiag, true,
                      myvecLHS, myvecRHS, dirOrNot, epetraFramework);
    }
 
 
-   buildMap(dofPresent, map, nDofs);
+   MLbuildMap(dofPresent, map, nDofs);
 
    for (int i = 0; i < nDofs; i++)
       myLocalNodeIds[i] = (int) floor( map[i]/maxDofPerNode);
 
    int nLocalNodes, nLocalPlusGhostNodes;
 
-   assignGhostLocalNodeIds( myLocalNodeIds, nDofs, nDofs+nGhost,
+   MLassignGhostLocalNodeIds( myLocalNodeIds, nDofs, nDofs+nGhost,
         epetraFramework, nLocalNodes, nLocalPlusGhostNodes);
 
-   fillNodalMaps(amalgRowMap, amalgColMap, myLocalNodeIds,
+   MLfillNodalMaps(amalgRowMap, amalgColMap, myLocalNodeIds,
         nDofs,  epetraFramework,  nLocalNodes, nLocalPlusGhostNodes);
 
-   variableDofAmalg(nDofs+nGhost, rowPtr, cols, vals, nNodes,maxDofPerNode,
+   MLvariableDofAmalg(nDofs+nGhost, rowPtr, cols, vals, nNodes,maxDofPerNode,
                     map, theDiag, 1.80e-9, amalgRowPtr, amalgCols,
                     epetraFramework, myLocalNodeIds);
 
@@ -606,15 +606,15 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
    // remove (i,j) connnections in amalgamated matrix associated with nodes
    // where the number of dofs per node is different
 
-   rmDifferentDofsCrossings(dofPresent,maxDofPerNode,amalgRowPtr,amalgCols,nDofs+nGhost, epetraFramework, myLocalNodeIds);
+   MLrmDifferentDofsCrossings(dofPresent,maxDofPerNode,amalgRowPtr,amalgCols,nDofs+nGhost, epetraFramework, myLocalNodeIds);
 
    int iiii = amalgColMap.size();
    
-   MyVec<double> ghostedXXX(iiii); 
+   MLVec<double> ghostedXXX(iiii); 
    if (YYY == NULL) iiii = 0;
-   MyVec<double> ghostedYYY(iiii);
+   MLVec<double> ghostedYYY(iiii);
    if (ZZZ == NULL) iiii = 0;
-   MyVec<double> ghostedZZZ(iiii);
+   MLVec<double> ghostedZZZ(iiii);
 
    for (int i = 0; i < nNodes; i++) ghostedXXX[i] = XXX[i];
    nodalComm(ghostedXXX, myLocalNodeIds, epetraFramework);
@@ -628,14 +628,14 @@ MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
       nodalComm(ghostedZZZ, myLocalNodeIds, epetraFramework);
    }
 
-   MyVec<double> lapVals(amalgRowPtr[nNodes]);
+   MLVec<double> lapVals(amalgRowPtr[nNodes]);
 
-   buildLaplacian(amalgRowPtr, amalgCols, lapVals, ghostedXXX,ghostedYYY,ghostedZZZ);
+   MLbuildLaplacian(amalgRowPtr, amalgCols, lapVals, ghostedXXX,ghostedYYY,ghostedZZZ);
 
-   sortCols(amalgRowPtr, amalgCols, lapVals);
+   MLsortCols(amalgRowPtr, amalgCols, lapVals);
 
-   MyVec<char> status(nNodes*maxDofPerNode);
-   fineStatus(dofPresent, map, dirOrNot, status);
+   MLVec<char> status(nNodes*maxDofPerNode);
+   MLfineStatus(dofPresent, map, dirOrNot, status);
 
    dirOrNot.resize(0);      // free space
 
@@ -741,15 +741,15 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     
     nNodesCoarse = ml_->Pmat[levelIndex+levelIncr].invec_leng;
 
-    MyVec<int>     PAmalgRowPtr(ptr->rowptr,ptr->rowptr+nNodesFine+1); 
-    MyVec<int>     PAmalgCols(ptr->columns,ptr->columns+(ptr->rowptr)[nNodesFine] );
-    MyVec<double>  PAmalgVals(ptr->values,ptr->values + (ptr->rowptr)[nNodesFine] );
-    MyVec<int>     newPRowPtr(nDofs+1);
+    MLVec<int>     PAmalgRowPtr(ptr->rowptr,ptr->rowptr+nNodesFine+1); 
+    MLVec<int>     PAmalgCols(ptr->columns,ptr->columns+(ptr->rowptr)[nNodesFine] );
+    MLVec<double>  PAmalgVals(ptr->values,ptr->values + (ptr->rowptr)[nNodesFine] );
+    MLVec<int>     newPRowPtr(nDofs+1);
 
-    MyVec<int>     newPCols(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
-    MyVec<double>  newPVals(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
+    MLVec<int>     newPCols(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
+    MLVec<double>  newPVals(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
 
-    unamalgP(PAmalgRowPtr, PAmalgCols, PAmalgVals,
+    MLunamalgP(PAmalgRowPtr, PAmalgCols, PAmalgVals,
              maxDofPerNode, status, (ii != 0), newPRowPtr, newPCols, newPVals);
 
     int nGhostNew = 0;
@@ -767,7 +767,7 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     mlFramework.maxDofPerNode = maxDofPerNode;
     mlFramework.vecSize    = maxDofPerNode*(nGhostNew+ml_->Pmat[levelIndex+levelIncr].invec_leng);
    
-    ML_Shove(&(altml->Pmat[levelIndex+levelIncr]),newPRowPtr,newPCols,newPVals,
+    MLShove(&(altml->Pmat[levelIndex+levelIncr]),newPRowPtr,newPCols,newPVals,
             ml_->Pmat[levelIndex+levelIncr].invec_leng*maxDofPerNode,
             dofCommUsingMlNodalMatrix, mlFramework, maxDofPerNode*nGhostNew);
 
@@ -797,18 +797,18 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     // zeros on the diagonal and replace them by ones. However, I'd
     // like to prepare the code for MueLu and CRS matrices. So ...
     // I instead copy the MSR data to a buncy of CRS arrays. I then
-    // invoke findEmptyRows() & replaceEmptyByDir() that are intended
+    // invoke MLfindEmptyRows() & MLreplaceEmptyByDir() that are intended
     // for CRS matrices. Finally, I need to copy these back to the
     // MSR that ML wants.
   
     // For a code like MueLu that works with CRS matrices, we could
-    // perhaps just wrap the CRS vectors into MyVec's instead of copy as is
+    // perhaps just wrap the CRS vectors into MLVec's instead of copy as is
     // done for ML. We'd have to be careful that there is actually 
     // enough storage for the new 1's entries.
     //
-    //  MyVec<int>    AcoarseRowPtr(newptr->rowptr, newptr->rowptr +  nCoarse+1); 
-    //  MyVec<int>    AcoarseCols(  newptr->columns,newptr->columns + (newptr->rowptr)[nCoarse] );
-    //  MyVec<double> AcoarseVals(  newptr->values, newptr->values  + (newptr->rowptr)[nCoarse] );
+    //  MLVec<int>    AcoarseRowPtr(newptr->rowptr, newptr->rowptr +  nCoarse+1); 
+    //  MLVec<int>    AcoarseCols(  newptr->columns,newptr->columns + (newptr->rowptr)[nCoarse] );
+    //  MLVec<double> AcoarseVals(  newptr->values, newptr->values  + (newptr->rowptr)[nCoarse] );
     // 
     //    
 
@@ -818,9 +818,9 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     for (int i = 0; i < (newptr->columns)[nCoarse]; i++) 
       if (newptr->values[i] != 0.0) count++;
 
-    MyVec<int>      AcoarseRowPtr( nCoarse+1); 
-    MyVec<int>     AcoarseCols(  count );
-    MyVec<double>  AcoarseVals(  count );
+    MLVec<int>      AcoarseRowPtr( nCoarse+1); 
+    MLVec<int>     AcoarseCols(  count );
+    MLVec<double>  AcoarseVals(  count );
 
     // grab MSR stuff and put it into CRS style arrays
 
@@ -840,9 +840,9 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     }
     AcoarseRowPtr[nCoarse] = count;
 
-    MyVec<bool> rowEmpty;
-    findEmptyRows(AcoarseRowPtr,AcoarseCols, AcoarseVals, rowEmpty);
-    replaceEmptyByDirichlet(AcoarseRowPtr,AcoarseCols,AcoarseVals, rowEmpty);
+    MLVec<bool> rowEmpty;
+    MLfindEmptyRows(AcoarseRowPtr,AcoarseCols, AcoarseVals, rowEmpty);
+    MLreplaceEmptyByDirichlet(AcoarseRowPtr,AcoarseCols,AcoarseVals, rowEmpty);
 
     // grabs CRS arrays and put results back into MSR format
     count = (newptr->columns)[0];
@@ -861,11 +861,11 @@ RangeMap_ = &(RowMatrix.OperatorRangeMap());
     // compute the status array for the next level indicating whether dofs
     // are padded or real. 
 
-    MyVec<bool>   empty;
+    MLVec<bool>   empty;
     if (ii != ml_->ML_num_actual_levels - 2) 
-      coarseStatus(rowEmpty, empty , status);
+      MLcoarseStatus(rowEmpty, empty , status);
 
-    rowEmpty.resize(0);   // MyVec.resize(0) actually frees space
+    rowEmpty.resize(0);   // MLVec.resize(0) actually frees space
 
     levelIndex = levelIndex + levelIncr;
     nNodesFine = nNodesCoarse;
@@ -3972,7 +3972,7 @@ ResetTime()
 // All of these functions are used by the multiphysics variable dof per node 
 // precondiitoner. They should be made as private functions of this class.
 
-int colGlobalIds(struct wrappedCommStruct& framework, MyVec<int>& myGids)
+int MLcolGlobalIds(struct wrappedCommStruct& framework, MLVec<int>& myGids)
 {
    /***************************************************************************
     Gets global column ids from an epetra matrx. 
@@ -3981,7 +3981,7 @@ int colGlobalIds(struct wrappedCommStruct& framework, MyVec<int>& myGids)
    int nLocal;
 
    if (framework.whichOne == mlType) {
-       std::cout << "colGlobalIds not implemented for mlType " << std::endl;
+       std::cout << "MLcolGlobalIds not implemented for mlType " << std::endl;
    }
    else {
       Epetra_CrsMatrix *Amat = (Epetra_CrsMatrix *) framework.data;
@@ -4011,7 +4011,7 @@ int dofCommUsingMlNodalMatrix(double *data, void *widget)
     struct wrappedCommStruct *framework = (struct wrappedCommStruct *) widget;
     int n = framework->vecSize;
 
-    MyVec<double> vector(data,data+n);
+    MLVec<double> vector(data,data+n);
 
     int maxDofPerNode = framework->maxDofPerNode;
     ML_Operator *Amat = (ML_Operator *) framework->data;
@@ -4019,7 +4019,7 @@ int dofCommUsingMlNodalMatrix(double *data, void *widget)
     if (Amat->getrow == NULL) return 0;
     if (Amat->getrow->pre_comm == NULL) return 0;
 
-    MyVec<double> temp(vector.size()/maxDofPerNode);
+    MLVec<double> temp(vector.size()/maxDofPerNode);
 
     for (int j = 0; j < maxDofPerNode; j++) {
        for (int i = 0; i < vector.size()/maxDofPerNode; i++)
@@ -4037,7 +4037,7 @@ int dofCommUsingMlNodalMatrix(double *data, void *widget)
     return 0;
 }
 
-int nMyGhost(struct wrappedCommStruct& framework)
+int MLnMyGhost(struct wrappedCommStruct& framework)
 {
    /***************************************************************************
     Determine the number of ghost nodes based on either an ML matrix or an 
@@ -4068,7 +4068,7 @@ int nMyGhost(struct wrappedCommStruct& framework)
   @param[in] rowPtr,cols,vals    Crs matrix std:vectors
   @param     Mat                 On input, a populated ML Operator. On output, old ML Operator is cleaned and a new Crs matrix is filled into the operator
 */
-int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost)
+int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost)
 {
     int outvec_leng = rowPtr.size() - 1;
 
@@ -4077,8 +4077,8 @@ int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<doubl
 
     ptr->rowptr = rowPtr.getptr();         // getptr() + relinquishData
     rowPtr.relinquishData();               // effectively pulls data 
-    ptr->columns = cols.getptr();          // out of a MyVec and empties 
-    cols.relinquishData();                 // MyVec's contents
+    ptr->columns = cols.getptr();          // out of a MLVec and empties 
+    cols.relinquishData();                 // MLVec's contents
     ptr->values = vals.getptr();
     vals.relinquishData();
 
@@ -4105,7 +4105,7 @@ int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<doubl
 }
 /******************************************************************************
  *****************************************************************************/
-int extractDiag(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, MyVec<double>& diagonal, struct wrappedCommStruct &framework)
+int MLextractDiag(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, MLVec<double>& diagonal, struct wrappedCommStruct &framework)
 {
 /******************************************************************************
  * extract matrix diagonal and store in diagonal. 
@@ -4121,7 +4121,7 @@ int extractDiag(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<do
 }
 /******************************************************************************
  *  *****************************************************************************/
-int findDirichlets(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, const MyVec<double>& diagonal, double tol, MyVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
+int MLfindDirichlets(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, const MLVec<double>& diagonal, double tol, MLVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
 {
 /******************************************************************************
  * Look at each matrix row and mark it as Dirichlet if there is only one 
@@ -4154,7 +4154,7 @@ int findDirichlets(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec
 }
 /******************************************************************************
  *  *****************************************************************************/
-int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<double>& diagonal, bool squeeze, MyVec<double>& solution, MyVec<double>& rhs, const MyVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
+int MLrmDirichletCols(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, const MLVec<double>& diagonal, bool squeeze, MLVec<double>& solution, MLVec<double>& rhs, const MLVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
 {
 /******************************************************************************
  *  Remove any matrix col entries associated Dirichlet boundary conditions.
@@ -4174,7 +4174,7 @@ int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, c
     for (int i = 0; i < (int) rowPtr.size()-1; i++)
        if (dirOrNot[i]) solution[i] = rhs[i]/diagonal[i];
   }
-  MyVec<double> rhsCopy(dirOrNot.size()); 
+  MLVec<double> rhsCopy(dirOrNot.size()); 
   for (int i = 0; i < (int) rowPtr.size()-1; i++) rhsCopy[i] = rhs[i];
   dofComm(rhsCopy, framework);
 
@@ -4190,14 +4190,14 @@ int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, c
   }
   /* squeeze out zeros */
 
-  MyVec<bool> empty;
-  if (squeeze) squeezeOutNnzs(rowPtr, cols, vals, empty);
+  MLVec<bool> empty;
+  if (squeeze) MLsqueezeOutNnzs(rowPtr, cols, vals, empty);
 
   return(0);
 }
 /******************************************************************************
  *  *****************************************************************************/
-int squeezeOutNnzs(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<bool>& keep)
+int MLsqueezeOutNnzs(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, const MLVec<bool>& keep)
 {
 /******************************************************************************
  * Get rid of nonzero entries that have 0's in them and properly change
@@ -4240,7 +4240,7 @@ int squeezeOutNnzs(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, co
 }
 /******************************************************************************
  *****************************************************************************/
-int buildMap(const MyVec<bool>& dofPresent, MyVec<int>& map, int nDofs)
+int MLbuildMap(const MLVec<bool>& dofPresent, MLVec<int>& map, int nDofs)
 {
 /******************************************************************************
  *  Compute map that maps dofs in a variable dof matrix to dofs in a padded
@@ -4274,14 +4274,14 @@ int buildMap(const MyVec<bool>& dofPresent, MyVec<int>& map, int nDofs)
    }
 
    TEUCHOS_TEST_FOR_EXCEPTION(nDofs != count,std::logic_error,
-      "buildMap error, # dofs in dofPresent does not match expected value:"
+      "MLbuildMap error, # dofs in dofPresent does not match expected value:"
       << nDofs << " vs. " << count << "\n" );
 
    return(0);
 }
 
 
-int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs, int nLocalPlusGhostDofs, struct wrappedCommStruct &framework, int &nLocalNodes, int &nLocalPlusGhostNodes)
+int MLassignGhostLocalNodeIds(MLVec<int> &myLocalNodeIds, int nLocalDofs, int nLocalPlusGhostDofs, struct wrappedCommStruct &framework, int &nLocalNodes, int &nLocalPlusGhostNodes)
 {
 /******************************************************************************
     Assign the ghost portion of myLocalNodeIds[], which will be the local
@@ -4322,7 +4322,7 @@ int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs, int nLoc
           tempId[k] is a different node from tempId[k-1]
 *****************************************************************************/
 
-   MyVec<int> myProc(nLocalPlusGhostDofs);
+   MLVec<int> myProc(nLocalPlusGhostDofs);
    for (int i = 0; i < nLocalDofs; i++) myProc[i] = framework.myPid;
 
    dofComm(myLocalNodeIds, framework);
@@ -4426,8 +4426,8 @@ int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs, int nLoc
    return 0;
 }
 
-int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
-        MyVec<int> &myLocalNodeIds, int nLocalDofs, 
+int MLfillNodalMaps(MLVec<int> &amalgRowMap, MLVec<int> &amalgColMap,
+        MLVec<int> &myLocalNodeIds, int nLocalDofs, 
         struct wrappedCommStruct &framework,
         int nLocalNodes, int nLocalPlusGhostNodes)
 {
@@ -4444,9 +4444,9 @@ int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
     communication.
 */
 
-   MyVec<int> myGids; 
+   MLVec<int> myGids; 
 
-   colGlobalIds(framework, myGids);
+   MLcolGlobalIds(framework, myGids);
 
    amalgRowMap.resize(nLocalNodes);
    amalgColMap.resize(nLocalPlusGhostNodes);
@@ -4474,13 +4474,13 @@ int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
 
 /******************************************************************************
  *****************************************************************************/
-int variableDofAmalg(int nCols, const MyVec<int>& rowPtr, 
-                     const MyVec<int>& cols, const MyVec<double>& vals, 
-                     int nNodes, int maxDofPerNode, const MyVec<int>& map,
-                     const MyVec<double>& diag, double tol, 
-                     MyVec<int>& amalgRowPtr, MyVec<int>& amalgCols,
+int MLvariableDofAmalg(int nCols, const MLVec<int>& rowPtr, 
+                     const MLVec<int>& cols, const MLVec<double>& vals, 
+                     int nNodes, int maxDofPerNode, const MLVec<int>& map,
+                     const MLVec<double>& diag, double tol, 
+                     MLVec<int>& amalgRowPtr, MLVec<int>& amalgCols,
                      struct wrappedCommStruct &framework,
-                     MyVec<int>& myLocalNodeIds)
+                     MLVec<int>& myLocalNodeIds)
 {
 /******************************************************************************
  *  Amalgmate crs matrix (rowPtr,cols,vals) and store result in 
@@ -4505,8 +4505,8 @@ int variableDofAmalg(int nCols, const MyVec<int>& rowPtr,
    amalgRowPtr.resize(nNodes+1);
    amalgCols.resize(rowPtr[nLocal]);
    nNonZeros   = 0;
-   MyVec<bool> isNonZero(nCols);
-   MyVec<int> nonZeroList(nCols);
+   MLVec<bool> isNonZero(nCols);
+   MLVec<int> nonZeroList(nCols);
    for (int i = 0; i < nCols; i++) isNonZero[i] = false;
 
    oldBlockRow = 0;
@@ -4544,7 +4544,7 @@ int variableDofAmalg(int nCols, const MyVec<int>& rowPtr,
    amalgRowPtr[blockRow+1] = newNzs;
 
    TEUCHOS_TEST_FOR_EXCEPTION(blockRow+1 != nNodes,std::logic_error,
-      "variableDofAmalg error, computed # block rows (" << blockRow+1 <<
+      "MLvariableDofAmalg error, computed # block rows (" << blockRow+1 <<
       ") != nNodes (" << nNodes << ")\n");
 
    amalgCols.resize(amalgRowPtr[nNodes]);
@@ -4553,7 +4553,7 @@ int variableDofAmalg(int nCols, const MyVec<int>& rowPtr,
 }
 /******************************************************************************
  *****************************************************************************/
-int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent, int maxDofPerNode, MyVec<int>& rowPtr, MyVec<int>& cols, int nCols, struct wrappedCommStruct& framework, MyVec<int> &myLocalNodeIds)
+int MLrmDifferentDofsCrossings(const MLVec<bool>& dofPresent, int maxDofPerNode, MLVec<int>& rowPtr, MLVec<int>& cols, int nCols, struct wrappedCommStruct& framework, MLVec<int> &myLocalNodeIds)
 {
 /******************************************************************************
  *  Remove matrix entries (i,j) where the ith node and the jth node
@@ -4576,8 +4576,8 @@ int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent, int maxDofPerNode, M
    int nRows = rowPtr.size()-1;
 
 
-   MyVec<int> uniqueId(nCols);
-   MyVec<bool> keep(rowPtr[nRows]);
+   MLVec<int> uniqueId(nCols);
+   MLVec<bool> keep(rowPtr[nRows]);
 
    for (int i = 0; i < rowPtr[nRows]; i++) keep[i] = true;
    ii = 0;
@@ -4597,8 +4597,8 @@ int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent, int maxDofPerNode, M
       }
    }
 
-   MyVec<double>   empty;
-   squeezeOutNnzs(rowPtr, cols, empty, keep); 
+   MLVec<double>   empty;
+   MLsqueezeOutNnzs(rowPtr, cols, empty, keep); 
 
    return(0);
 }
@@ -4606,7 +4606,7 @@ int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent, int maxDofPerNode, M
 
 /******************************************************************************
  *****************************************************************************/
-int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<double>& vals, const MyVec<double>& x, const MyVec<double>& y, const MyVec<double>& z)
+int MLbuildLaplacian(const MLVec<int>& rowPtr, const MLVec<int>& cols, MLVec<double>& vals, const MLVec<double>& x, const MLVec<double>& y, const MLVec<double>& z)
 {
 /******************************************************************************
  *  Given an inputMatrix (rowPtr,cols) Build a Laplacian matrix defined by 
@@ -4631,7 +4631,7 @@ int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<doubl
                                  (y[i]-y[cols[j]])*(y[i]-y[cols[j]]));
 
                TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == 0.0,std::logic_error,
-               "buildLaplacian error, " << i << " and " << cols[j] <<
+               "MLbuildLaplacian error, " << i << " and " << cols[j] <<
                " have same coordinates: " << x[i] << ", " << y[i] << "\n");
 
                vals[j] = -1./vals[j];
@@ -4642,7 +4642,7 @@ int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<doubl
          if (sum == 0.0) sum = 1.0;
 
          TEUCHOS_TEST_FOR_EXCEPTION(diag == -1,std::logic_error,
-               "buildLaplacian error, row " << i << " has zero diagonal\n");
+               "MLbuildLaplacian error, row " << i << " has zero diagonal\n");
 
          vals[diag] = sum;
       }
@@ -4657,7 +4657,7 @@ int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<doubl
                                  (y[i]-y[cols[j]])*(y[i]-y[cols[j]]) +
                                  (z[i]-z[cols[j]])*(z[i]-z[cols[j]]));
                TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == 0.0,std::logic_error,
-               "buildLaplacian error, " << i << " and " << cols[j] <<
+               "MLbuildLaplacian error, " << i << " and " << cols[j] <<
                " have same coordinates\n");
                vals[j] = -1./vals[j];
                sum = sum - vals[j];
@@ -4666,7 +4666,7 @@ int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<doubl
          }
          if (sum == 0.0) sum = 1.0;
          TEUCHOS_TEST_FOR_EXCEPTION(diag == -1,std::logic_error,
-               "buildLaplacian error, row " << i << " has zero diagonal\n");
+               "MLbuildLaplacian error, row " << i << " has zero diagonal\n");
          vals[diag] = sum;
       }
    }
@@ -4716,8 +4716,8 @@ In both of the above cases, the coarse level discretization matrix is assumed to
 @params vals   CRS vals for resulting unamalgamated prolongator
 */
 
-int unamalgP(const MyVec<int>& amalgRowPtr, const MyVec<int>& amalgCols, const MyVec<double>& amalgVals, 
- int maxDofPerNode, const MyVec<char>& status, bool fineIsPadded, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals)
+int MLunamalgP(const MLVec<int>& amalgRowPtr, const MLVec<int>& amalgCols, const MLVec<double>& amalgVals, 
+ int maxDofPerNode, const MLVec<char>& status, bool fineIsPadded, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals)
 {
 
    int paddedNrows;
@@ -4780,7 +4780,7 @@ int unamalgP(const MyVec<int>& amalgRowPtr, const MyVec<int>& amalgCols, const M
    return(rowCount);
 } 
 
-int findEmptyRows(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, MyVec<bool>& rowEmpty)
+int MLfindEmptyRows(const MLVec<int>& rowPtr, const MLVec<int>& cols, const MLVec<double>& vals, MLVec<bool>& rowEmpty)
 {
 /******************************************************************************
   Find rows that have no nonzero entries. 
@@ -4804,7 +4804,7 @@ int findEmptyRows(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<
    }
    return(0);
 }
-int replaceEmptyByDirichlet(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<bool>& rowEmpty)
+int MLreplaceEmptyByDirichlet(MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double>& vals, const MLVec<bool>& rowEmpty)
 {
 /*****************************************************************************
 
@@ -4852,12 +4852,12 @@ int replaceEmptyByDirichlet(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>&
       rowEnd    = rowStart-1;
    }
    TEUCHOS_TEST_FOR_EXCEPTION(lastMoved != 0,std::logic_error,
-               "replaceEmptyByDirichlet error, number of empties"
+               "MLreplaceEmptyByDirichlet error, number of empties"
                " seems to be wrong\n");
    return(0);
 }
 
-int fineStatus(const MyVec<bool>& dofPresent, const MyVec<int>& map, const MyVec<bool>& dirOrNot, MyVec<char>& status)
+int MLfineStatus(const MLVec<bool>& dofPresent, const MLVec<int>& map, const MLVec<bool>& dirOrNot, MLVec<char>& status)
 {
 /*****************************************************************************
   Fill the status array on the finest level based on the information in both
@@ -4880,7 +4880,7 @@ int fineStatus(const MyVec<bool>& dofPresent, const MyVec<int>& map, const MyVec
    }
    return(0);
 }
-int coarseStatus(const MyVec<bool>& rowEmpty, const MyVec<bool>& dirOrNot, MyVec<char>& status)
+int MLcoarseStatus(const MLVec<bool>& rowEmpty, const MLVec<bool>& dirOrNot, MLVec<char>& status)
 {
 /*****************************************************************************
   Fill the status array on a coarse level based on the information in dirOrNot.  
@@ -4890,7 +4890,7 @@ int coarseStatus(const MyVec<bool>& rowEmpty, const MyVec<bool>& dirOrNot, MyVec
                                     and not a Dirichlet BC. 
                     status()==p ==> element is padded dof.
 
-  The main difference with fineStatus() is that it is assumed that the 
+  The main difference with MLfineStatus() is that it is assumed that the 
   dofsPerNode at all nodes is equal to maxDofsPerNode (that is padding
   has already been used so that this is true) and that no Dirichlet
   points remain.
@@ -4910,7 +4910,7 @@ int coarseStatus(const MyVec<bool>& rowEmpty, const MyVec<bool>& dirOrNot, MyVec
    return(0);
 }
 
-int sortCols(const MyVec<int>& ARowPtr, MyVec<int>& ACols, MyVec<double>& AVals)
+int MLsortCols(const MLVec<int>& ARowPtr, MLVec<int>& ACols, MLVec<double>& AVals)
 {
    int i,j;
 
