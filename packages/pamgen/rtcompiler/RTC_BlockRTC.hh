@@ -15,10 +15,10 @@ namespace PG_RuntimeCompiler {
 /**
  * The Block class represents a block of code. A block of code begins with
  * a { and ends with a }. Blocks of code can contain Lines of code and other
- * blocks of code which are its sub-blocks. Sub-blocks of code will have 
+ * blocks of code which are its sub-blocks. Sub-blocks of code will have
  * access to all the variables that its parent has access to. Block extends
  * Executable because a Block of code can be executed.
- */ 
+ */
 
 class Block: public Executable
 {
@@ -31,21 +31,21 @@ class Block: public Executable
    *               time this Block was created
    */
   Block(const std::map<std::string, Variable*>& vars);
-  
+
   /**
-   * Destructor -> The destructor will call the delete every statement in the 
-   *               Block. It will also delete all of the variables that were 
+   * Destructor -> The destructor will call the delete every statement in the
+   *               Block. It will also delete all of the variables that were
    *               declared inside this Block.
    */
   virtual ~Block();
- 
+
   /**
    * addStatement -> This method adds a statement object to statement list
    *
    * @param statement - The statement we are adding
    */
   void addStatement(Executable* statement);
-  
+
   /**
    * addVariable -> This method adds the a variable to the variable list
    *
@@ -70,7 +70,7 @@ class Block: public Executable
    * @param errs  - A string containing errors
    */
   void createSubStatements(Tokenizer& lines, std::string& errs);
-  
+
   std::ostream& operator<<(std::ostream& os) const;
 
  private:
@@ -84,19 +84,19 @@ class Block: public Executable
 
  protected:
 
-  std::list<Executable*> _statements; /**!< A list of executable objects 
+  std::list<Executable*> _statements; /**!< A list of executable objects
                                        *    contained by this block. These
-                                       *    objects may be Lines of code or 
-                                       *    other Blocks. When a Block of code 
-                                       *    is executed, it will execute all 
+                                       *    objects may be Lines of code or
+                                       *    other Blocks. When a Block of code
+                                       *    is executed, it will execute all
                                        *    the objects in its _statements list
                                        */
 
-  std::map<std::string, Variable*> _vars; /**!< The map of available variables 
+  std::map<std::string, Variable*> _vars; /**!< The map of available variables
                                            *    for this Block. When a variable
                                            *    is declared, it's added to this
                                            *    list. It maps names to Variable
-                                           *    objects. 
+                                           *    objects.
                                            */
 };
 

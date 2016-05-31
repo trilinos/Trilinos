@@ -10,7 +10,7 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * A Value object represents the operands in the code the user gives us. 
+ * A Value object represents the operands in the code the user gives us.
  */
 
 class Value: public Object
@@ -28,7 +28,7 @@ class Value: public Object
    */
   Value(Type type, ObjectType objType) : Object(objType) {_type = type;}
 
-  /** 
+  /**
    * getType -> This method returns the Type of the Value.
    */
   Type getType() const {return _type;}
@@ -41,7 +41,7 @@ class Value: public Object
   /**
    * getValue -> Should not be called
    */
-  virtual double getArrayValue(int offset) const { assert(false); return 0;}
+  virtual double getArrayValue(long offset) const { assert(false); return 0;}
 
   /**
    * setValue -> Should not be called
@@ -51,12 +51,12 @@ class Value: public Object
   /**
    * setArrayValue -> Should not be called
    */
-  virtual void setArrayValue(double value, int offset) { assert(false); }
+  virtual void setArrayValue(double value, long offset) { assert(false); }
 
   /**
    * getSize - The size of everything is zero, except for arrays
    */
-  virtual int  getSize() const { return 0;}
+  virtual long getSize() const { return 0;}
 };
 
 }

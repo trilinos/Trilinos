@@ -47,21 +47,25 @@ bool Function::addVar(const string& type, const string& name)
   //create a new variable
   Variable* ptr;
   if (type == "int")
-    ptr = new ScalarVar<int>(name, IntT);
+    ptr = new ScalarVar<int>(name);
+  else if (type == "long")
+    ptr = new ScalarVar<long>(name);
   else if (type == "char")
-    ptr = new ScalarVar<char>(name, CharT);
+    ptr = new ScalarVar<char>(name);
   else if (type == "float")
-    ptr = new ScalarVar<float>(name, FloatT);
+    ptr = new ScalarVar<float>(name);
   else if (type == "double")
-    ptr = new ScalarVar<double>(name, DoubleT);
+    ptr = new ScalarVar<double>(name);
   else if (type == "int[]")
-    ptr = new ArrayVar<int>(name, IntT);
+    ptr = new ArrayVar<int>(name);
+  else if (type == "long[]")
+    ptr = new ArrayVar<long>(name);
   else if (type == "char[]")
-    ptr = new ArrayVar<char>(name, CharT);
+    ptr = new ArrayVar<char>(name);
   else if (type == "float[]")
-    ptr = new ArrayVar<float>(name, FloatT);
+    ptr = new ArrayVar<float>(name);
   else if (type == "double[]")
-    ptr = new ArrayVar<double>(name, DoubleT);
+    ptr = new ArrayVar<double>(name);
   else {
     _errors += "Illegal type provided for argument. Make sure you did not have whitespace in the strings passed to addVar.\n";
     return false;
@@ -188,6 +192,16 @@ void Function::checkType(unsigned int index, int size, int* addr, string& errs)
 /*****************************************************************************/
 {
   CHECKARGERR((_vars[index].first->getType() != IntT  ||
+               (_vars[index].first->getObjectType() == ScalarVarOT && size != 0) ||
+               (_vars[index].first->getObjectType() == ArrayVarOT  && size == 0)),
+              type_err(index))
+}
+
+/*****************************************************************************/
+void Function::checkType(unsigned int index, int size, long* addr, string& errs)
+/*****************************************************************************/
+{
+  CHECKARGERR((_vars[index].first->getType() != LongT  ||
                (_vars[index].first->getObjectType() == ScalarVarOT && size != 0) ||
                (_vars[index].first->getObjectType() == ArrayVarOT  && size == 0)),
               type_err(index))
