@@ -83,6 +83,7 @@ class Epetra_VbrMatrix;
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
+#include "ml_epetra_utils.h"
 
 namespace ML_Epetra
 {
@@ -306,6 +307,19 @@ public:
              const Teuchos::ParameterList & List,
              const bool ComputePrec = true);
 
+#ifdef NewStuff
+  //! Constructs a MultiLevelPreconditioner for multiphysics with variable dofs per node
+
+  MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
+			   const Teuchos::ParameterList & List,
+                           const int & nNodes,
+                           const int & maxDofPerNode,
+                           bool * dofPresent,
+                           Epetra_Vector & Lhs, 
+                           Epetra_Vector & Rhs, 
+                           const bool  rhsAndsolProvided,
+			   const bool ComputePrec = true);
+#endif
 #ifdef HAVE_ML_AZTECOO
   //! MultiLevelPreconditioner constructor for Maxwell's equations.
   /*! Takes the stiffness and mass terms of the matrix combined.  The edge
@@ -812,6 +826,8 @@ private:
 
   Teuchos::ParameterList *DiagLists_;
 
+  //! special flag (currently for variable dof per node multiphysics AMG) skips smoother when building Laplacian hierarchy. 
+  bool DontSetSmoothers_;
   //@}
 
   //@{ \name Maxwell variables
@@ -896,6 +912,375 @@ private:
 
 } // namespace ML_Epetra
 
+#ifdef NewStuff
+/******************************************************************************
+  Vector class that is used for for multiphysics multigrid on matrices with
+  varaible dofs per node. Didn't want anything specific to epetra, ML, and 
+  MueLu; didn't like new/malloc features of std::vector, and I have a hard
+  time figuring out teuchos stuff ... so I implemented my own. The syntax
+  is pretty similar to std::vector, but it is more efficient from a memory
+  allocation perspective (though less flexible). 
+******************************************************************************/
+
+enum free_s {useFree, useDelete, neither};
+template <class T> class MyVec {
+  public:
+
+    // different constructors & destructors
+
+    MyVec();              
+    MyVec(int size);
+    MyVec(T *startptr, T *endptr, bool okToChangePtr = false, free_s freeType = neither);
+    ~MyVec();
+
+    int     size() const;        // return vector size
+    T       *getptr();           // return pointer to start of raw vector data
+    void    wrap(T *startptr, T *endptr,// same as above construct but allows
+            bool okToChangePtr = false, // one to first create an empty MyVec
+            free_s freeType = neither); // and then wrap it with data.
+                                 // is not invoked when MyVec goes away
+    void    relinquishData();    // disassociates data from MyVec, so free 
+                                 // is not invoked when MyVec goes away
+    void    resize(int newSize); // change vector size. If newSize is smaller
+                                 // than size(), keep first newSize values
+    bool    empty() const;       // indicates whether vector is empty
+
+    inline T& operator [] (int index) { return data_[index]; }
+    inline const T& operator [] (int index) const { return data_[index]; }
+
+  private:
+    int    size_;
+    T      *data_;
+    bool   okToChangePtr_;   // These last few indicate the status of vector.
+    free_s freeType_;        // This is used to see if memory can be freed, 
+    bool   getPtrInvoked_;   // reallocated, or pointers can be moved. 
+};
+
+// Create an empty vector 
+
+template <class T> MyVec<T>::MyVec() {
+  data_          = NULL;      size_          = 0;
+  okToChangePtr_ = true;      getPtrInvoked_ = false;
+  freeType_      = neither;
+}
+
+// Create an vector without any data but allocate space
+template <class T> MyVec<T>::MyVec(int size) {
+
+  TEUCHOS_TEST_FOR_EXCEPTION(size < 0,std::logic_error,
+  "MyVec error, cannot create a negative size (= " << size << ") vector\n");
+
+  data_          = NULL;        size_          = size;
+  okToChangePtr_ = true;        getPtrInvoked_ = false;
+  freeType_      = neither;
+
+  if (size > 0) {
+     data_ = (T *) ML_allocate(sizeof(T)*size); 
+
+     TEUCHOS_TEST_FOR_EXCEPTION(data_ == NULL,std::logic_error,
+     "MyVec error, not enough space for vector of size " << size << "\n");
+
+     freeType_ = useFree;
+  }
+}
+
+// Create a vector that wraps existing data that starts and ends at 'start'
+// and 'end' respectively. In most cases, this means that the pointers
+// associated with the raw data cannot be changed, and that the raw data
+// should remain when this vector goes away 
+template <class T> MyVec<T>::MyVec(T *start, T *end, bool okToChangePtr,
+                                   free_s freeType) { 
+
+  TEUCHOS_TEST_FOR_EXCEPTION(end < start,std::logic_error,
+  "MyVec error, cannot create a negative size (= " << end-start<< ") vector\n");
+
+  freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
+  data_          = start;      size_          = end - start;
+  getPtrInvoked_ = false;
+}
+template <class T> void MyVec<T>::wrap(T *start, T *end, bool okToChangePtr,
+                                   free_s freeType) { 
+
+  TEUCHOS_TEST_FOR_EXCEPTION((data_ != NULL)||(size_  != 0)||(okToChangePtr_ != true)||
+                             (getPtrInvoked_ != false)||(freeType_!= neither),
+                             std::logic_error,
+  "MyVec wrap error, wrap() must be invoked on vectors created with default constructor\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(end < start,std::logic_error,
+  "MyVec error, cannot create a negative size (= " << end-start<< ") vector\n");
+
+  freeType_      = freeType;   okToChangePtr_ = okToChangePtr;
+  data_          = start;      size_          = end - start;
+  getPtrInvoked_ = false;
+}
+
+template <class T> MyVec<T>::~MyVec()              { 
+   if (data_ != NULL) {
+      TEUCHOS_TEST_FOR_EXCEPTION(size_ == 0,std::logic_error,
+      "MyVec error, data pointer should be null for 0 length vectors\n");
+      if (okToChangePtr_ && (freeType_ == useFree))   ML_free(data_); 
+      if (okToChangePtr_ && (freeType_ == useDelete)) delete data_;
+   }
+}
+
+// data_ is no longer associated with this vector. The raw data continues to
+// exist.  Can be used in conjunction with getptr() to first get the raw
+// data out of MyVec and then effectively empty MyVec.
+template <class T> void MyVec<T>::relinquishData() { 
+
+  TEUCHOS_TEST_FOR_EXCEPTION((data_ != NULL) && (getPtrInvoked_ == false),
+  std::logic_error,"relinquishData without invoking getPtr() should lead"
+  " to memory leak\n");
+
+  data_          = NULL;     size_          = 0; 
+  okToChangePtr_ = true;     getPtrInvoked_ = false;
+  freeType_      = neither;
+}
+template <class T> int MyVec<T>::size() const  {   return size_; }
+template <class T> T* MyVec<T>::getptr() {getPtrInvoked_ =true; return data_;}
+template <class T> bool MyVec<T>::empty() const {if (size_ > 0) return false; 
+                                                 else return true;}
+
+// change the size of the vector. There are lots of restrictions as to when 
+// this is allowed. There are also lots of cases depending on whether the 
+// original vector was zero length (i.e. just allocate memory), the new vector
+// is zero length (i.e. just free memory), the new vector is longer or shorter
+// than the original vector.
+template <class T> void MyVec<T>::resize(int newsize) {
+
+  if (newsize == size_) return;
+
+  TEUCHOS_TEST_FOR_EXCEPTION( newsize < 0, 
+  std::logic_error,"MyVec error, cannot resize to a negative length (= " << 
+  newsize << ") vector \n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION((newsize > size_) && (size_ > 0) && 
+                             (freeType_ == useDelete), std::logic_error,
+  "MyVec error, cannot resize vector allocated with new\n");
+
+  if ( (newsize <= size_) && (size_ > 0) && (freeType_ == useDelete) &&
+       (okToChangePtr_) ) { size_ = newsize; return; }
+
+  if (okToChangePtr_) {
+     if (size_ == 0) {
+       if ( newsize > 0) {
+         data_ = (T *) ML_allocate(sizeof(T)*newsize);
+
+         TEUCHOS_TEST_FOR_EXCEPTION( data_ == NULL, std::logic_error,
+         "MyVec error, not enough resize space for " << newsize <<
+         " length vector\n");
+
+         freeType_ = useFree;
+       }
+     }
+     else {
+       if ( newsize > 0) {
+          T* newStuff = (T *) ML_allocate(sizeof(T)*newsize);
+          if (size_ < newsize) 
+             for (int i = 0; i < size_; i++) newStuff[i] = data_[i];
+          else 
+             for (int i = 0; i < newsize; i++) newStuff[i] = data_[i];
+          ML_free(data_);
+          data_ = newStuff;
+         TEUCHOS_TEST_FOR_EXCEPTION( data_ == NULL, std::logic_error,
+         "MyVec error, not enough resize realloc space for " << newsize <<
+         " length vector\n");
+
+       }
+       else {
+          if (freeType_ == useFree) { ML_free(data_); data_ = NULL; }
+          else if (freeType_ == useDelete) { delete data_; data_ = NULL; }
+
+         TEUCHOS_TEST_FOR_EXCEPTION( freeType_ == neither, std::logic_error,
+         "MyVec error, do not know how to free this vector\n"); 
+        
+       }
+     }
+     size_ = newsize;
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(okToChangePtr_ == false, std::logic_error,
+  "MyVec error, not allowed to resize this type of wrapped vector\n"); 
+}
+
+
+/******************************************************************************
+  Data structures & functions to hide communication details associated with 
+  epetra matrices, ML matrices, or MueLu matrices (i.e.  xpetra operators). 
+******************************************************************************/
+
+enum epetraOrMLOrMueLu {epetraType , mlType, mueluType}; 
+
+struct wrappedCommStruct {
+    epetraOrMLOrMueLu whichOne;
+    void                 *data;  // matrix on which communication is based
+    int                 nProcs;  // total number of processors participating
+    int                  myPid;  
+    int          maxDofPerNode;
+    int                vecSize;  
+};
+
+template <class T> int nodalComm(MyVec<T>& vector, MyVec<int>& myLocalNodeIds,
+                                 struct wrappedCommStruct& framework)
+{
+   /***************************************************************************
+    Performs communication to update an amalgamated/nodal vector using either
+    an ML style or an epetra style unamalgamated/dof matrix to define the
+    communication/import pattern. To do this, it utilzes myLocalNodeIds[i]
+    which indicates that the ith dof lies within the myLocalNodeIds[i]th
+    node. The ghost portion of myLocalNodeIds[] was computed by 
+    assignGhostLocalNodeIds().
+
+    Note: As several dofs lie within each node, several of myLocalNodeIds[]'s
+    entries will be duplicates. 
+   ***************************************************************************/
+
+    MyVec<T> temp(myLocalNodeIds.size());
+
+    // copy from nodal vector to dof vector
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+       temp[i] = vector[ myLocalNodeIds[i]];
+
+    dofComm(temp, framework);
+
+    // copy from dof vector to nodal vector
+    for (int i = 0; i < myLocalNodeIds.size(); i++)
+       vector[ myLocalNodeIds[i]] = temp[i];
+
+    return 0;
+}
+
+template <class T> int dofComm(MyVec<T>& vector,
+                               struct wrappedCommStruct& framework)
+{
+   /***************************************************************************
+    Performs communication to update vector using either an ML style matrix
+    or an epetra style matrix to define the communication/import pattern.
+
+    Note: Directly utilizes the communication of the underlying matrix
+    as opposed to nodalComm() and dofCommUsingMlNodalMatrix(). nodalComm() uses
+    an unamalgamated matrix to define the communication associated with an
+    amalgamated matrix. dofCommUsingMlNodalMatrix() uses an amalgamated/nodal
+    matrix maxDofPerNode times to interpolate each dof of an unamalgamated
+    matrix. dofCommUsingMlNodalMatrix() assumes all nodes have maxDofPerNode
+    degrees-of-freedom (so it is only appropriate on coarser levels).
+   ***************************************************************************/
+
+   MyVec<double> aCopy(vector.size());
+
+   // need to make a copy of the data as we will only use framework comm()
+   // functions that work with doubles
+
+   for (int i = 0; i < vector.size(); i++) aCopy[i] = (double) vector[i];
+
+   double *vectorData = aCopy.getptr();
+
+   if (framework.whichOne == mlType) {
+
+      ML_Operator *Amat = (ML_Operator *) framework.data;
+
+      // grab the data pointer
+
+      if (Amat == NULL) return 0;
+      if (Amat->getrow == NULL) return 0;
+      if (Amat->getrow->pre_comm == NULL) return 0;
+
+      ML_exchange_bdry(vectorData,Amat->getrow->pre_comm,
+                 Amat->invec_leng,Amat->comm,ML_OVERWRITE,NULL);
+   }
+   else {
+      Epetra_CrsMatrix *Amat = (Epetra_CrsMatrix *) framework.data;
+      Epetra_RowMatrix *ArMat = (Epetra_RowMatrix *) Amat;
+
+      ML_Epetra_comm_wrapper(vectorData, (void *) ArMat);
+   }
+
+   for (int i = 0; i < vector.size(); i++) vector[i] = (T) aCopy[i];
+
+   return(0);
+}
+
+extern "C" int dofCommUsingMlNodalMatrix(double *data, void *widget);
+
+extern int sortCols(const MyVec<int>& ARowPtr, MyVec<int>& ACols, 
+                    MyVec<double>& AVals);
+
+extern int nMyGhost(struct wrappedCommStruct& framework);
+
+extern int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
+        MyVec<int> &myLocalNodeIds, int nLocalDofs, 
+        struct wrappedCommStruct &framework,
+        int nLocalNodes, int nLocalPlusGhostNodes);
+
+extern int colGlobalIds(struct wrappedCommStruct& framework, MyVec<int>& myGids);
+
+extern int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs,
+                   int nLocalPlusGhostDofs, struct wrappedCommStruct &framework,
+                   int &nLocalNodes, int &nLocalPlusGhostNodes);
+
+extern int extractDiag(const MyVec<int>& rowPtr, const MyVec<int>& cols,
+                       const MyVec<double>& , MyVec<double>& diagonal,
+                       struct wrappedCommStruct &framework);
+
+extern int findDirichlets(const MyVec<int>& rowPtr, const MyVec<int>& cols,
+                          const MyVec<double>& vals,
+                          const MyVec<double>& diagonal,
+                          double tol, MyVec<bool>& dirOrNot,
+                          struct wrappedCommStruct &framework);
+
+extern int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols,
+                           MyVec<double>& vals, const MyVec<double>& diagonal,
+                           bool squeeze, MyVec<double>& solution,
+                           MyVec<double>& rhs, const MyVec<bool>& dirOrNot, 
+                           struct wrappedCommStruct &framework);
+
+extern int squeezeOutNnzs(MyVec<int>& rowPtr, MyVec<int>& cols,
+                          MyVec<double>& vals, const MyVec<bool>& keep);
+
+extern int buildMap(const MyVec<bool>& dofPresent, MyVec<int>& map, int NDof);
+
+extern int variableDofAmalg(int nCols, const MyVec<int>& rowPtr,
+                          const MyVec<int>& cols, const MyVec<double>& vals,
+                          int nNodes, int maxDofPerNode, const MyVec<int>& map,
+                          const MyVec<double>& diag, double tol,
+                          MyVec<int>& amalgRowPtr, MyVec<int>& amalgCols,
+                          struct wrappedCommStruct &framework,
+                          MyVec<int>& myLocalNodeIds);
+
+
+extern int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent,
+                                    int maxDofPerNode, MyVec<int>& rowPtr,
+                                    MyVec<int>& cols, int nCols,
+                                    struct wrappedCommStruct& framework, 
+                                    MyVec<int> &myLocalNodeIds);
+
+extern int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols,
+                          MyVec<double>& vals, const MyVec<double>& x,
+                          const MyVec<double>& y, const MyVec<double>& z);
+
+extern int unamalgP(const MyVec<int>& amalgRowPtr,
+                    const MyVec<int>& amalgCols,
+                    const MyVec<double>& amalgVals, int maxDofPerNode,
+                    const MyVec<char>& status, bool fineIsPadded,
+                  MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals);
+
+extern int findEmptyRows(const MyVec<int>& rowPtr, const MyVec<int>& cols,
+                         const MyVec<double>& vals, MyVec<bool>& rowEmpty);
+
+extern int replaceEmptyByDirichlet(MyVec<int>& rowPtr, MyVec<int>& cols,
+                        MyVec<double>& vals, const MyVec<bool>& colEmpty);
+
+extern int fineStatus(const MyVec<bool>& dofPresent,
+                           const MyVec<int>& map, const MyVec<bool>& dirOrNot,
+                           MyVec<char>& status);
+
+extern int coarseStatus(const MyVec<bool>& rowEmpty,
+                        const MyVec<bool>& dirOrNot, MyVec<char>& status);
+
+
+
+extern int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost);
+
+#endif /* NewStuff */
 #endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */
 
 #endif /* define ML_MULTILEVELPRECONDITIONER_H */

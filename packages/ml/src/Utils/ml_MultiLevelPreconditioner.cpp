@@ -481,6 +481,405 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
     ML_CHK_ERRV(ComputePreconditioner());
 
 }
+#ifdef NewStuff
+// ================================================ ====== ==== ==== == =
+/*! Constructor for multiphysics problems with variable dofs per node.  This version uses a 
+ *  discrete laplacian and padding on coarse grids to make a hierarchy. It also allows for 
+ *  the removal of column nonzeros associated with Dirichlet points. To use this option
+ *  the rhs and initial guess must be provided.
+ */
+#ifdef out
+extern int *update, *update_index, *external, *extern_index;
+#endif
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(Epetra_RowMatrix & RowMatrix,
+                         const Teuchos::ParameterList & List,
+                         const int & nNodes,
+                         const int & maxDofPerNode,
+                         bool * NotMyVecDofPresent,   // how do I get a const back ..
+                         Epetra_Vector & Lhs,
+                         Epetra_Vector & Rhs,
+                         const bool  rhsAndsolProvided,
+                         const bool ComputePrec) :
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
+{
+  Epetra_CrsMatrix *Acrs =
+              dynamic_cast<Epetra_CrsMatrix *>(&RowMatrix);
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(Acrs == NULL,
+             ErrorMsg_ << "matrix must be crs to use this constructor\n"); 
+
+  int nDofs = Acrs->NumMyRows();
+  int *dofGlobals;
+
+  Acrs->RowMap().MyGlobalElementsPtr(dofGlobals);
+
+  List_ = List;
+
+  int  nGlobalNodes;
+  int itemp = nNodes;
+
+  MyVec<bool> dofPresent(NotMyVecDofPresent,NotMyVecDofPresent+nNodes*maxDofPerNode);
+
+  RowMatrix.Comm().SumAll(&itemp,&nGlobalNodes,1);
+  
+  double *XXX = NULL, *YYY = NULL, *ZZZ = NULL;
+
+  XXX = List_.get("x-coordinates",(double *) 0);
+  YYY = List_.get("y-coordinates",(double *) 0);
+  ZZZ = List_.get("z-coordinates",(double *) 0);
+
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(XXX == NULL,
+             ErrorMsg_ << "Must supply coordinates to use multiphysics variable dof constructor\n"); 
+
+  struct wrappedCommStruct epetraFramework;
+
+  epetraFramework.whichOne = epetraType;
+  epetraFramework.data     = (void *) Acrs;
+  epetraFramework.nProcs   = RowMatrix.Comm().NumProc();
+  epetraFramework.myPid    = RowMatrix.Comm().MyPID();
+  int nGhost = nMyGhost(epetraFramework);
+
+  // allocate vectors
+
+  MyVec<bool>   dirOrNot(nDofs + nGhost);
+  MyVec<double> theDiag(nDofs + nGhost);
+  MyVec<int>    map(nDofs);
+  MyVec<int>    amalgRowPtr, amalgCols;
+  MyVec<int>    myLocalNodeIds(nDofs+nGhost);
+  MyVec<int>    amalgRowMap;
+  MyVec<int>    amalgColMap;
+
+  // Make MyVec versions of Crs arrays by wrapping them.
+
+  double *vtemp;  int *ctemp,*rtemp;
+  Acrs->ExtractCrsDataPointers(rtemp, ctemp, vtemp );
+
+  MyVec<int>    rowPtr(rtemp,rtemp + nDofs + 1);
+  MyVec<int>    cols(ctemp,ctemp   + rtemp[nDofs]);
+  MyVec<double> vals(vtemp,vtemp   + rtemp[nDofs]);
+
+  // grab diagonal and detect Dirichlets
+
+  extractDiag(rowPtr,   cols, vals, theDiag, epetraFramework);
+  findDirichlets(rowPtr,cols, vals, theDiag, 1.e-5, dirOrNot, epetraFramework);
+
+  // if the rhs and solution are provided, remove column entries 
+  // associated with Dirichlet rows. Here, we overwrite the original 
+  // matrix arrays to reflect removal.
+
+  if (rhsAndsolProvided) {
+
+     double *ptrRHS, *ptrLHS;
+
+     Lhs.ExtractView(&ptrLHS);
+     Rhs.ExtractView(&ptrRHS);
+
+     MyVec<double> myvecRHS(ptrRHS, ptrRHS + nDofs );
+     MyVec<double> myvecLHS(ptrLHS, ptrLHS + nDofs );
+
+     rmDirichletCols(rowPtr, cols, vals, theDiag, true,
+                     myvecLHS, myvecRHS, dirOrNot, epetraFramework);
+   }
+
+
+   buildMap(dofPresent, map, nDofs);
+
+   for (int i = 0; i < nDofs; i++)
+      myLocalNodeIds[i] = (int) floor( map[i]/maxDofPerNode);
+
+   int nLocalNodes, nLocalPlusGhostNodes;
+
+   assignGhostLocalNodeIds( myLocalNodeIds, nDofs, nDofs+nGhost,
+        epetraFramework, nLocalNodes, nLocalPlusGhostNodes);
+
+   fillNodalMaps(amalgRowMap, amalgColMap, myLocalNodeIds,
+        nDofs,  epetraFramework,  nLocalNodes, nLocalPlusGhostNodes);
+
+   variableDofAmalg(nDofs+nGhost, rowPtr, cols, vals, nNodes,maxDofPerNode,
+                    map, theDiag, 1.80e-9, amalgRowPtr, amalgCols,
+                    epetraFramework, myLocalNodeIds);
+
+   theDiag.resize(0);   // free space
+
+   // remove (i,j) connnections in amalgamated matrix associated with nodes
+   // where the number of dofs per node is different
+
+   rmDifferentDofsCrossings(dofPresent,maxDofPerNode,amalgRowPtr,amalgCols,nDofs+nGhost, epetraFramework, myLocalNodeIds);
+
+   int iiii = amalgColMap.size();
+   
+   MyVec<double> ghostedXXX(iiii); 
+   if (YYY == NULL) iiii = 0;
+   MyVec<double> ghostedYYY(iiii);
+   if (ZZZ == NULL) iiii = 0;
+   MyVec<double> ghostedZZZ(iiii);
+
+   for (int i = 0; i < nNodes; i++) ghostedXXX[i] = XXX[i];
+   nodalComm(ghostedXXX, myLocalNodeIds, epetraFramework);
+
+   if (YYY != NULL) {
+      for (int i = 0; i < nNodes; i++) ghostedYYY[i] = YYY[i];
+      nodalComm(ghostedYYY, myLocalNodeIds, epetraFramework);
+   }
+   if (ZZZ != NULL) {
+      for (int i = 0; i < nNodes; i++) ghostedZZZ[i] = ZZZ[i];
+      nodalComm(ghostedZZZ, myLocalNodeIds, epetraFramework);
+   }
+
+   MyVec<double> lapVals(amalgRowPtr[nNodes]);
+
+   buildLaplacian(amalgRowPtr, amalgCols, lapVals, ghostedXXX,ghostedYYY,ghostedZZZ);
+
+   sortCols(amalgRowPtr, amalgCols, lapVals);
+
+   MyVec<char> status(nNodes*maxDofPerNode);
+   fineStatus(dofPresent, map, dirOrNot, status);
+
+   dirOrNot.resize(0);      // free space
+
+   map.resize(0);           // free space
+   Epetra_Map* epetAmalgRowMap=new Epetra_Map(-1,nNodes, amalgRowMap.getptr(), 0, RowMatrix.Comm());
+   Epetra_Map* epetAmalgColMap=new Epetra_Map(-1,amalgColMap.size(),amalgColMap.getptr(),0,RowMatrix.Comm());
+
+   // Need to take CRS vectors and create an epetra matrix
+
+   // If we don't want to supply a column map, things should work by
+   // uncommenting all toggle lines below and commenting out the
+   // corresponding colmap lines.
+
+   Epetra_CrsMatrix* LapMat = new Epetra_CrsMatrix(Copy,*epetAmalgRowMap,*epetAmalgColMap,0);
+// Epetra_CrsMatrix* LapMat = new Epetra_CrsMatrix(Copy,*epetAmalgRowMap,0); // toggle
+
+   for (int i = 0 ; i < nNodes ; ++i) {
+     LapMat->InsertMyValues(i,amalgRowPtr[i+1]-amalgRowPtr[i],
+                     &(lapVals[amalgRowPtr[i]]), &(amalgCols[amalgRowPtr[i]]));
+     /*    toggle
+     for (int j = amalgRowPtr[i]; j < amalgRowPtr[i+1]; j++) {
+       LapMat->InsertGlobalValues(amalgRowMap[i],1, &(lapVals[j]),&(amalgColMap[amalgCols[j]]));
+     } */
+   }
+   amalgRowPtr.resize(0); amalgCols.resize(0); lapVals.resize(0); // free space
+
+   LapMat->FillComplete(*epetAmalgRowMap,*epetAmalgRowMap);
+// LapMat->FillComplete();      // toggle
+// LapMat->OptimizeStorage();   // toggle
+
+#ifdef out
+// this stuff is just for forcing ML do do the same thing on one and many procs
+// the code is hidden behind an ifdef in ML_agg_MIS.c. You can use run in parallel
+// turning on ML_AGGR_OUTAGGR. This will output a bunch of files (one per proc per
+// level). You need to cat together files associated with each level (e.g.,
+// cat agg*_0 > agg_0 ; cat agg*_1 > agg_1 ; ....). Then, recompile with 
+// ML_AGGR_OUTAGGR undefined but ML_AGGR_INAGGR defined. Not run in serial.
+// If the smoother is jacobi, and the max eigenvalue is fixed independent of the 
+// number of procs (e.g., hacking in return 2.0; inside ML_Krylov_Get_MaxEigenvalue()),
+// then the output should be the same as the parallel run
+
+// if you take play with this, don't forget to ifdef out the extern int above
+   LapMat->ColMap().MyGlobalElementsPtr(update);
+update_index = (int *) ML_allocate(sizeof(int)*(nDofs+nGhost));
+extern_index = (int *) ML_allocate(sizeof(int)*(nDofs+nGhost));
+for (int i = 0; i < nNodes; i++) update_index[i] = i;
+for (int i = 0; i < nGhost; i++) extern_index[i] = i+nNodes;
+external = &(update[nNodes]);
+#endif 
+
+  RowMatrix_ = LapMat;
+  AllocatedRowMatrix_ = false;  
+                                
+  ML_CHK_ERRV(Initialize());
+
+  DontSetSmoothers_ = true;   // don't make smoothers based on Laplacian
+                              // smoothers on the real matrix will be done below
+  // construct hierarchy
+  if (ComputePrec == true)
+    ML_CHK_ERRV(ComputePreconditioner());
+
+  DontSetSmoothers_ = false;
+
+  ML *altml;
+  altml = ml_;
+
+Comm_ = &(RowMatrix.Comm());
+DomainMap_ = &(RowMatrix.OperatorDomainMap());
+RangeMap_ = &(RowMatrix.OperatorRangeMap());
+
+  
+  int levelIndex, levelIncr = -1;
+
+  levelIndex = ml_->ML_finest_level;
+  if (levelIndex == 0) levelIncr = 1;
+
+  // shove the real matrix into ML
+    
+  int numMyRows = Acrs->NumMyRows();
+  int N_ghost   = Acrs->NumMyCols() - numMyRows;
+
+  ML_Operator_Clean(&(altml->Amat[levelIndex]));
+  ML_Operator_Init(&(altml->Amat[levelIndex]), altml->comm);
+  delete LapMat;
+  delete epetAmalgColMap;
+  delete epetAmalgRowMap;  
+  ML_Init_Amatrix(altml,levelIndex,numMyRows, numMyRows, (void *) Acrs);
+  altml->Amat[levelIndex].type = ML_TYPE_CRS_MATRIX;
+  ML_Set_Amatrix_Getrow(altml, levelIndex, ML_Epetra_CrsMatrix_getrow,
+                        ML_Epetra_CrsMatrix_comm_wrapper,
+                        numMyRows+N_ghost);
+
+  ML_Set_Amatrix_Matvec(altml, levelIndex, ML_Epetra_CrsMatrix_matvec);
+
+  int nNodesCoarse;
+  int nDofsCoarse;
+  int nNodesFine = nNodes;
+
+  for (int ii = 0; ii < ml_->ML_num_actual_levels - 1 ; ii++) {
+    struct ML_CSR_MSRdata* ptr= (struct ML_CSR_MSRdata *) ml_->Pmat[levelIndex+levelIncr].data;
+
+     // wrap crs stuff into std vectors
+    
+    nNodesCoarse = ml_->Pmat[levelIndex+levelIncr].invec_leng;
+
+    MyVec<int>     PAmalgRowPtr(ptr->rowptr,ptr->rowptr+nNodesFine+1); 
+    MyVec<int>     PAmalgCols(ptr->columns,ptr->columns+(ptr->rowptr)[nNodesFine] );
+    MyVec<double>  PAmalgVals(ptr->values,ptr->values + (ptr->rowptr)[nNodesFine] );
+    MyVec<int>     newPRowPtr(nDofs+1);
+
+    MyVec<int>     newPCols(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
+    MyVec<double>  newPVals(PAmalgRowPtr[nNodesFine]*maxDofPerNode);
+
+    unamalgP(PAmalgRowPtr, PAmalgCols, PAmalgVals,
+             maxDofPerNode, status, (ii != 0), newPRowPtr, newPCols, newPVals);
+
+    int nGhostNew = 0;
+
+    if ( (ml_->Pmat[levelIndex+levelIncr].getrow != NULL) &&
+         (ml_->Pmat[levelIndex+levelIncr].getrow->pre_comm != NULL) )
+      nGhostNew = ML_CommInfoOP_Compute_TotalRcvLength(ml_->Pmat[levelIndex+levelIncr].getrow->pre_comm);
+
+
+    struct wrappedCommStruct mlFramework;
+    mlFramework.whichOne = mlType;
+    mlFramework.data     = (void *) &(ml_->Pmat[levelIndex+levelIncr]);
+    mlFramework.nProcs   = RowMatrix.Comm().NumProc();
+    mlFramework.myPid    = RowMatrix.Comm().MyPID();
+    mlFramework.maxDofPerNode = maxDofPerNode;
+    mlFramework.vecSize    = maxDofPerNode*(nGhostNew+ml_->Pmat[levelIndex+levelIncr].invec_leng);
+   
+    ML_Shove(&(altml->Pmat[levelIndex+levelIncr]),newPRowPtr,newPCols,newPVals,
+            ml_->Pmat[levelIndex+levelIncr].invec_leng*maxDofPerNode,
+            dofCommUsingMlNodalMatrix, mlFramework, maxDofPerNode*nGhostNew);
+
+    ML_Operator_Set_1Levels(&(altml->Pmat[levelIndex+levelIncr]),
+                           &(altml->SingleLevel[levelIndex+levelIncr]),
+                           &(altml->SingleLevel[levelIndex]));
+
+    // take the transpose and push in Rmat
+   
+    ML_Operator_Clean(&(altml->Rmat[levelIndex]));
+    ML_Operator_Init(&(altml->Rmat[levelIndex]), altml->comm);
+    ML_Gen_Restrictor_TransP(altml, levelIndex, levelIndex+levelIncr, NULL);
+    ML_Operator_Clean(&(altml->Amat[levelIndex+levelIncr]));
+    ML_Operator_Init(&(altml->Amat[levelIndex+levelIncr]), altml->comm);
+    ML_Gen_AmatrixRAP(altml, levelIndex, levelIndex+levelIncr);
+    nDofsCoarse = altml->Amat[levelIndex+levelIncr].outvec_leng;
+
+    struct ML_CSR_MSRdata* newptr= (struct ML_CSR_MSRdata *) altml->Amat[levelIndex+levelIncr].data;
+
+    int nCoarse = altml->Amat[levelIndex+levelIncr].outvec_leng;
+
+    // the coarse level matrix might have some empty rows due to the 
+    // padding intended to force all coarse matrices to have the same
+    // number of dofs per node. For these empty rows, we want to 
+    // stick in some Dirichlet points. It turns out that this would
+    // be real easy with ML's MSR matrices. We would just looks for 
+    // zeros on the diagonal and replace them by ones. However, I'd
+    // like to prepare the code for MueLu and CRS matrices. So ...
+    // I instead copy the MSR data to a buncy of CRS arrays. I then
+    // invoke findEmptyRows() & replaceEmptyByDir() that are intended
+    // for CRS matrices. Finally, I need to copy these back to the
+    // MSR that ML wants.
+  
+    // For a code like MueLu that works with CRS matrices, we could
+    // perhaps just wrap the CRS vectors into MyVec's instead of copy as is
+    // done for ML. We'd have to be careful that there is actually 
+    // enough storage for the new 1's entries.
+    //
+    //  MyVec<int>    AcoarseRowPtr(newptr->rowptr, newptr->rowptr +  nCoarse+1); 
+    //  MyVec<int>    AcoarseCols(  newptr->columns,newptr->columns + (newptr->rowptr)[nCoarse] );
+    //  MyVec<double> AcoarseVals(  newptr->values, newptr->values  + (newptr->rowptr)[nCoarse] );
+    // 
+    //    
+
+    // count the number of nonzeros (for ML)
+
+    int count = 0;
+    for (int i = 0; i < (newptr->columns)[nCoarse]; i++) 
+      if (newptr->values[i] != 0.0) count++;
+
+    MyVec<int>      AcoarseRowPtr( nCoarse+1); 
+    MyVec<int>     AcoarseCols(  count );
+    MyVec<double>  AcoarseVals(  count );
+
+    // grab MSR stuff and put it into CRS style arrays
+
+    count = 0;
+    for (int i = 0; i < nCoarse; i++) {
+       AcoarseRowPtr[i] = count;
+       if (newptr->values[i] != 0.0) {
+          AcoarseCols[count  ] = i;
+          AcoarseVals[count++] = newptr->values[i];
+       }
+       for (int j = (newptr->columns)[i]; j < (newptr->columns)[i+1]; j++) {
+          if (newptr->values[j] != 0.0) {
+             AcoarseCols[count  ] = newptr->columns[j];
+             AcoarseVals[count++] = newptr->values[j];
+          }
+       }
+    }
+    AcoarseRowPtr[nCoarse] = count;
+
+    MyVec<bool> rowEmpty;
+    findEmptyRows(AcoarseRowPtr,AcoarseCols, AcoarseVals, rowEmpty);
+    replaceEmptyByDirichlet(AcoarseRowPtr,AcoarseCols,AcoarseVals, rowEmpty);
+
+    // grabs CRS arrays and put results back into MSR format
+    count = (newptr->columns)[0];
+    for (int i = 0; i < nCoarse; i++) {
+       for (int j = AcoarseRowPtr[i]; j < AcoarseRowPtr[i+1]; j++) {
+          if ( AcoarseCols[j] == i)   (newptr->values)[i] = AcoarseVals[j];
+          else {
+             (newptr->columns)[count ] =  AcoarseCols[j];
+             (newptr->values)[count++] =  AcoarseVals[j];
+          }
+       }
+       (newptr->columns)[i+1] =  count;
+    }
+    AcoarseRowPtr.resize(0); AcoarseCols.resize(0); AcoarseVals.resize(0); 
+    
+    // compute the status array for the next level indicating whether dofs
+    // are padded or real. 
+
+    MyVec<bool>   empty;
+    if (ii != ml_->ML_num_actual_levels - 2) 
+      coarseStatus(rowEmpty, empty , status);
+
+    rowEmpty.resize(0);   // MyVec.resize(0) actually frees space
+
+    levelIndex = levelIndex + levelIncr;
+    nNodesFine = nNodesCoarse;
+    nDofs      = nDofsCoarse;
+
+  }
+
+  SetSmoothers();
+  CreateLabel();
+
+
+
+}
+#endif
 
 // ================================================ ====== ==== ==== == =
 
@@ -605,6 +1004,9 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   AfineML_ = 0;
   SubMatMLPrec_ = 0;
 
+#ifdef NewStuff
+  DontSetSmoothers_ = false;
+#endif
   verbose_ = false;
   MaxLevels_ = 20;
   IsComputePreconditionerOK_ = false;
@@ -1650,7 +2052,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // Generate all smoothers and coarse grid solver.                         //
   // ====================================================================== //
 
-  ML_CHK_ERR(SetSmoothers());
+#ifdef NewStuff
+  if (!DontSetSmoothers_)
+#endif
+     ML_CHK_ERR(SetSmoothers());
+
   InitialTime.ResetStartTime();
 
   if (AnalyzeMemory_) {
@@ -2222,7 +2628,6 @@ ApplyInverse(const Epetra_MultiVector& X,
           ML_NONZERO, flt_ml_->comm, ML_NO_RES_NORM, flt_ml_);
     }
   }
-
   // ====== //
   // timing //
   // ====== //
@@ -3563,4 +3968,957 @@ ResetTime()
 } //MLP::ResetTime()
 */
 
+#ifdef NewStuff
+// All of these functions are used by the multiphysics variable dof per node 
+// precondiitoner. They should be made as private functions of this class.
+
+int colGlobalIds(struct wrappedCommStruct& framework, MyVec<int>& myGids)
+{
+   /***************************************************************************
+    Gets global column ids from an epetra matrx. 
+   ***************************************************************************/
+
+   int nLocal;
+
+   if (framework.whichOne == mlType) {
+       std::cout << "colGlobalIds not implemented for mlType " << std::endl;
+   }
+   else {
+      Epetra_CrsMatrix *Amat = (Epetra_CrsMatrix *) framework.data;
+      nLocal = Amat->ColMap().NumMyPoints();
+
+      myGids.resize(nLocal);
+      int *iptr = myGids.getptr();
+      Amat->ColMap().MyGlobalElements( iptr );
+      return(nLocal);
+   }
+   return 0;
+}
+
+
+
+int dofCommUsingMlNodalMatrix(double *data, void *widget)
+{
+   /***************************************************************************
+    Performs communication to update an unamalgamated/dof vector using
+    an ML style amalgamated/nodal matrix to define the
+    communication/import pattern. It assumes that all nodes have
+    maxDofPerNode dofs and repeatedly employs the nodal matrix's
+    communication function to update each the 1st dof within all
+    nodes, the 2nd dof within all nodes, ...
+   ***************************************************************************/
+
+    struct wrappedCommStruct *framework = (struct wrappedCommStruct *) widget;
+    int n = framework->vecSize;
+
+    MyVec<double> vector(data,data+n);
+
+    int maxDofPerNode = framework->maxDofPerNode;
+    ML_Operator *Amat = (ML_Operator *) framework->data;
+    if (Amat == NULL) return 0;
+    if (Amat->getrow == NULL) return 0;
+    if (Amat->getrow->pre_comm == NULL) return 0;
+
+    MyVec<double> temp(vector.size()/maxDofPerNode);
+
+    for (int j = 0; j < maxDofPerNode; j++) {
+       for (int i = 0; i < vector.size()/maxDofPerNode; i++)
+          temp[i] = vector[i*maxDofPerNode+j];
+
+       ML_exchange_bdry(temp.getptr(),Amat->getrow->pre_comm,
+                 Amat->invec_leng,Amat->comm,ML_OVERWRITE,NULL);
+
+       for (int i = 0; i < vector.size()/maxDofPerNode; i++)
+          vector[i*maxDofPerNode+j] = temp[i];
+    }
+
+
+
+    return 0;
+}
+
+int nMyGhost(struct wrappedCommStruct& framework)
+{
+   /***************************************************************************
+    Determine the number of ghost nodes based on either an ML matrix or an 
+    epetra matrix. 
+   ***************************************************************************/
+
+   if (framework.whichOne == mlType) {
+      ML_Operator *Amat = (ML_Operator *) framework.data;
+      if (Amat == NULL) return 0;
+      if (Amat->getrow == NULL) return 0;
+      if (Amat->getrow->pre_comm == NULL) return 0;
+      return( ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm));
+   }
+   else {
+      Epetra_CrsMatrix *Amat = (Epetra_CrsMatrix *) framework.data;
+      return( Amat->RowMatrixColMap().NumMyElements() -
+              Amat->OperatorDomainMap().NumMyElements());
+   }
+}
+
+/*! 
+  @brief Take Crs std::vec's, make arrays and shove them into an ML Operator 
+ 
+  This includes allocating double arrays and a widget to point to them and
+  calling all the appropriate ML functions to clean out what used to be in the 
+  operator before inserting the new matrix.
+
+  @param[in] rowPtr,cols,vals    Crs matrix std:vectors
+  @param     Mat                 On input, a populated ML Operator. On output, old ML Operator is cleaned and a new Crs matrix is filled into the operator
+*/
+int ML_Shove(ML_Operator *Mat, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, int invec_leng, int (*commfunc  )(double *vec, void *data), struct wrappedCommStruct& framework, int nGhost)
+{
+    int outvec_leng = rowPtr.size() - 1;
+
+    struct ML_CSR_MSRdata* ptr = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+    if (ptr == NULL) pr_error("ML_Operator_Add: no space for temp\n");
+
+    ptr->rowptr = rowPtr.getptr();         // getptr() + relinquishData
+    rowPtr.relinquishData();               // effectively pulls data 
+    ptr->columns = cols.getptr();          // out of a MyVec and empties 
+    cols.relinquishData();                 // MyVec's contents
+    ptr->values = vals.getptr();
+    vals.relinquishData();
+
+    ML_Comm * temp_comm = Mat->comm;
+
+    // Need to create new communication widget before cleaning out Mat
+    // as Mat may be used within commfunc.
+
+    ML_CommInfoOP *newPrecComm = NULL;
+    ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework, 
+                              Mat->comm, invec_leng, nGhost);
+    ML_Operator_Clean(Mat);
+    ML_Operator_Init(Mat, temp_comm);
+    ML_Operator_Set_ApplyFuncData(Mat, invec_leng, outvec_leng,
+                                  ptr, outvec_leng, NULL,0);
+    ML_Operator_Set_Getrow(Mat, outvec_leng, CSR_getrow);
+    ML_Operator_Set_ApplyFunc(Mat, CSR_matvec);
+    Mat->data_destroy = ML_CSR_MSRdata_Destroy;
+    Mat->N_nonzeros     = cols.size();
+
+    Mat->getrow->pre_comm = newPrecComm;
+
+  return(0);
+}
+/******************************************************************************
+ *****************************************************************************/
+int extractDiag(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, MyVec<double>& diagonal, struct wrappedCommStruct &framework)
+{
+/******************************************************************************
+ * extract matrix diagonal and store in diagonal. 
+ *****************************************************************************/
+
+   for (int i = 0; i < (int) rowPtr.size()-1; i++) {
+      for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+         if (i == cols[j])  diagonal[i] = vals[j];
+      }
+   }
+   dofComm(diagonal, framework);
+   return(0);
+}
+/******************************************************************************
+ *  *****************************************************************************/
+int findDirichlets(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, const MyVec<double>& diagonal, double tol, MyVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
+{
+/******************************************************************************
+ * Look at each matrix row and mark it as Dirichlet if there is only one 
+ * "not small" nonzero on the diagonal. In determining whether a nonzero is 
+ * "not small" use
+ *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) > tol 
+ * 
+ * On output,  dirOrNot is set to to true for Dirichlet rows, false for non-
+ * Dirichlet rows
+ *****************************************************************************/
+  int zeroOnDiag = 0,hasDiag, count;
+
+  for (int i = 0; i < (int) rowPtr.size()-1; i++) {
+     dirOrNot[i] = false;
+     count   = 0;
+     hasDiag = 0;
+     for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+        if (i != cols[j]) {
+           if (fabs(vals[j]/sqrt(fabs(diagonal[i]*diagonal[cols[j]]))) >tol)
+              count++;
+        }
+        else hasDiag = 1;
+      }
+      if (hasDiag == 0)    { zeroOnDiag = 1; }
+      else if (count == 0) dirOrNot[i] = true;
+   }
+   dofComm(dirOrNot, framework);
+
+   return(zeroOnDiag);
+}
+/******************************************************************************
+ *  *****************************************************************************/
+int rmDirichletCols(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<double>& diagonal, bool squeeze, MyVec<double>& solution, MyVec<double>& rhs, const MyVec<bool>& dirOrNot, struct wrappedCommStruct &framework)
+{
+/******************************************************************************
+ *  Remove any matrix col entries associated Dirichlet boundary conditions.
+ *  In doing this the right hand side must be properly adjusted to take into
+ *  account that the Dirichlet bcs are no longer in the matrix. Additionally,
+ *  the solution at Dirichlet points is also set if a solution is provided.
+ *  When removing matrix entries, we can either set a zero in vals[k] or
+ *  if squeeze == 1 we can actually really remove the entries and change
+ *  rowPtr to reflect the removal.
+ *  
+ *  On output:  rowPtr, cols, vals, rhs, and possible solution
+ *    are updated to reflect the removed entries.
+ *  
+ *  ******************************************************************************/
+
+  if (!solution.empty()) {
+    for (int i = 0; i < (int) rowPtr.size()-1; i++)
+       if (dirOrNot[i]) solution[i] = rhs[i]/diagonal[i];
+  }
+  MyVec<double> rhsCopy(dirOrNot.size()); 
+  for (int i = 0; i < (int) rowPtr.size()-1; i++) rhsCopy[i] = rhs[i];
+  dofComm(rhsCopy, framework);
+
+  for (int i = 0; i < (int) rowPtr.size()-1; i++) {
+     for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+        if (i != cols[j]) {
+            if (dirOrNot[cols[j]]) {
+               rhs[i] = rhs[i] - vals[j]*rhsCopy[cols[j]]/diagonal[cols[j]];
+               vals[j] = 0.0;
+            }
+        }
+     }
+  }
+  /* squeeze out zeros */
+
+  MyVec<bool> empty;
+  if (squeeze) squeezeOutNnzs(rowPtr, cols, vals, empty);
+
+  return(0);
+}
+/******************************************************************************
+ *  *****************************************************************************/
+int squeezeOutNnzs(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<bool>& keep)
+{
+/******************************************************************************
+ * Get rid of nonzero entries that have 0's in them and properly change
+ * rowPtr to reflect this removal (either vals == NULL & vals != NULL
+ * or the contrary)
+ * 
+ *****************************************************************************/
+  int count, newStart;
+
+  count = 0;
+  int nRows = rowPtr.size()-1;
+
+  if (!vals.empty()) {
+     for (int i = 0; i < nRows; i++) {
+        newStart = count;
+        for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+           if (vals[j] != 0.0) {
+              cols[count  ] = cols[j];
+              vals[count++] = vals[j];
+           }
+        }
+        rowPtr[i] = newStart;
+     }
+   }
+   else {
+     for (int i = 0; i < nRows; i++) {
+        newStart = count;
+        for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+           if (keep[j]) {
+              cols[count++] = cols[j];
+           }
+        }
+        rowPtr[i] = newStart;
+     }
+   }
+
+   rowPtr[nRows] = count;
+
+  return(0);
+}
+/******************************************************************************
+ *****************************************************************************/
+int buildMap(const MyVec<bool>& dofPresent, MyVec<int>& map, int nDofs)
+{
+/******************************************************************************
+ *  Compute map that maps dofs in a variable dof matrix to dofs in a padded
+ *  matrix. Specifically, on input: 
+ *     dofPresent[ i*maxDofPerNode+j] indicates whether or not the jth dof
+ *                                    at the ith node is present in the 
+ *                                    variable dof matrix (e.g., the ith node
+ *                                    has an air pressure dof). true means the
+ *                                    dof is present while false means it is not
+ *
+ *
+ * On output:
+ *    map[k]                          indicates that the kth dof in the variable
+ *                                    dof matrix would correspond to the 
+ *                                    map[k]th dof in a padded system. This
+ *                                    padded system is not ever created but
+ *                                    would be the associated matrix if every
+ *                                    node had maxDofPerNode dofs.
+ *
+ *    nDofs                           length of map that should equal the 
+ *                                    dimension of the variable dof matrix.
+ *                                    It is returned here to double check this.
+ *  NOTE: in parallel we would want to do something so that map[j] also
+ *  has padded dofs for j's associated with ghost information.
+ *****************************************************************************/
+   int count;
+
+   count = 0;
+   for (int i = 0; i < (int) dofPresent.size(); i++) {
+     if (dofPresent[i]) map[count++] = i; 
+   }
+
+   TEUCHOS_TEST_FOR_EXCEPTION(nDofs != count,std::logic_error,
+      "buildMap error, # dofs in dofPresent does not match expected value:"
+      << nDofs << " vs. " << count << "\n" );
+
+   return(0);
+}
+
+
+int assignGhostLocalNodeIds(MyVec<int> &myLocalNodeIds, int nLocalDofs, int nLocalPlusGhostDofs, struct wrappedCommStruct &framework, int &nLocalNodes, int &nLocalPlusGhostNodes)
+{
+/******************************************************************************
+    Assign the ghost portion of myLocalNodeIds[], which will be the local
+    amalgamated node id associated with the kth local non-amalgamated dof.
+    It is assumed that the non-ghost portion is properly set. 
+
+    For ghosts, we assign a "unique" number from nLocalNodes to 
+    nLocalNodes+nGhostNodes-1 (which is actually nLocalPlusGhostNodes-1
+    in the code). Here, nLocalNodes refers to the number of mesh nodes owned 
+    by the processor. nGhostNodes is the total number of ghost mesh nodes
+    associated with all of its ghost dofs. When I say "unique", I mean that 
+    I get to pick any local numbering of the ghost nodes so long as the 
+    following is true:
+       a) no two ghost dofs that are associated with different
+          mesh nodes have the same nodal id. 
+       b) all ghost nodes that are associated with a processor
+          have consecutive numbering
+   
+    This is done is as follows:
+   
+       a) communicate so that for each ghost dof, a processor knows the local
+          node id on the owning proc and knows the processor that owns it
+   
+       b) for each owning proc ...
+            i) copy the owning proc local node id into a new array, and record
+               as well where this information came from. That is,
+   
+                  tempId[  j] = myLocalNodeIds[i];
+                  location[j] = i;
+   
+            ii) sort tempId to make it easier to determine whether two ghosts
+                belong to the same node. Also shuffle location[] in the same
+                way as tempId[] so tempId[j] corresonds to myLocalNodeIds[ location[j] ]. 
+   
+       c) go through tempId[] and assign a unique ghost node id to tempId[k] if
+          it has a different owning proc or a different local node id on the
+          owning proc. That is, increment the number of ghost node ids when
+          tempId[k] is a different node from tempId[k-1]
+*****************************************************************************/
+
+   MyVec<int> myProc(nLocalPlusGhostDofs);
+   for (int i = 0; i < nLocalDofs; i++) myProc[i] = framework.myPid;
+
+   dofComm(myLocalNodeIds, framework);
+   dofComm(myProc, framework);
+
+   // At this point, the ghost part of myLocalNodeIds corresponds to the
+   // local ids associated with the owning processor. We want to convert
+   // these to local ids associated with the processor on which these are
+   // ghosts. Thus, we have to re-number them. In doing this re-numbering
+   // we must make sure that we find all ghosts with the same id & proc 
+   // and assign a unique local id to this group. To do this find, we sort
+   // sort all ghost myLocalNodeIds that are owned by the same processor.
+   // Then we can look for duplicates (i.e. several ghost entries
+   // corresponding to dofs with the same node id) easily and make sure these
+   // are all assigned the same local id. To do the sorting  
+   // we'll make a temporary copy of the ghosts via tempId and tempProc and 
+   // sort this multiple times for each group owned by the same processor
+
+   int* location= (int *) ML_allocate(sizeof(int)*(nLocalPlusGhostDofs - nLocalDofs + 1));
+   int* tempId  = (int *) ML_allocate(sizeof(int)*(nLocalPlusGhostDofs - nLocalDofs + 1));
+   int* tempProc= (int *) ML_allocate(sizeof(int)*(nLocalPlusGhostDofs - nLocalDofs + 1));
+
+   TEUCHOS_TEST_FOR_EXCEPTION(tempProc == NULL,std::logic_error,
+   "poo error, not enough space for vector of size " << nLocalPlusGhostDofs-nLocalDofs << "\n");
+
+   int notProcessed = nLocalDofs;
+   int tempIndex = 0;
+   int first, neighbor;
+
+   while ( notProcessed < nLocalPlusGhostDofs ) {
+
+     neighbor = myProc[notProcessed];
+     first = tempIndex;
+     location[tempIndex  ] = notProcessed;
+     tempId[  tempIndex++] = myLocalNodeIds[notProcessed];
+     myProc[notProcessed]  = -1 - neighbor; // temporarily mark by negative # to
+                                           // indicate this guy has been visited
+
+     for (int i = notProcessed+1; i < nLocalPlusGhostDofs; i++) {
+        if ( myProc[i] == neighbor ) {
+           location[tempIndex  ] = i;
+           tempId[  tempIndex++] = myLocalNodeIds[i];
+           myProc[     i       ]= -1; // mark as visited 
+        }
+     }
+     ML_az_sort(&(tempId[first]), tempIndex-first, &(location[first]), NULL);
+
+     for (int i = first; i < tempIndex; i++) tempProc[i] = neighbor;
+     
+     // find next notProcessed corresponding to first non-visited guy
+
+     notProcessed++;
+     while ( (notProcessed < nLocalPlusGhostDofs) && (myProc[notProcessed] < 0) )
+       notProcessed++;
+   }
+   TEUCHOS_TEST_FOR_EXCEPTION(tempIndex != nLocalPlusGhostDofs-nLocalDofs,std::logic_error,
+   "poo error, number of nonzero ghosts is not consistent\n"); 
+   
+     
+   // now assign ids to all ghost nodes (giving the same id to those with
+   // the same myProc[] and the same local id (on the proc
+   // that actually owns the variable associated with the ghost)
+
+   int lagged = -1;
+   nLocalNodes = 0; 
+
+   if (nLocalDofs > 0) nLocalNodes = myLocalNodeIds[nLocalDofs-1] + 1;
+   nLocalPlusGhostNodes = nLocalNodes;
+
+   if (nLocalDofs < nLocalPlusGhostDofs) nLocalPlusGhostNodes++; // 1st ghost node is unique
+                                               // (not already accounted for)
+
+   // check if two adjacent ghost dofs correspond to different nodes. To do 
+   // this, check if they are from different processors or whether they have 
+   // different local node ids
+   
+   for (int i = nLocalDofs+1; i < nLocalPlusGhostDofs; i++) {
+   
+      lagged = nLocalPlusGhostNodes-1;
+
+      // i is a new unique ghost node (not already accounted for)
+      if ((tempId[i-nLocalDofs] != tempId[i-1-nLocalDofs]) || 
+          (tempProc[i-nLocalDofs]         != tempProc[i-1-nLocalDofs]))
+         nLocalPlusGhostNodes++;
+
+      tempId[i-1-nLocalDofs] = lagged;
+   }
+   if (nLocalPlusGhostDofs > nLocalDofs) 
+      tempId[nLocalPlusGhostDofs-1-nLocalDofs] = nLocalPlusGhostNodes-1;
+
+
+   // now copy the nodal ids to the proper spot in myLocalNodeIds[]
+
+   for (int i = nLocalDofs; i < nLocalPlusGhostDofs; i++)
+      myLocalNodeIds[location[i-nLocalDofs]] = tempId[i-nLocalDofs];
+
+   ML_free(location); 
+   ML_free(tempProc); 
+   ML_free(tempId); 
+
+   return 0;
+}
+
+int fillNodalMaps(MyVec<int> &amalgRowMap, MyVec<int> &amalgColMap,
+        MyVec<int> &myLocalNodeIds, int nLocalDofs, 
+        struct wrappedCommStruct &framework,
+        int nLocalNodes, int nLocalPlusGhostNodes)
+{
+/*
+    Fill amalgRowMap and amalgColMap.
+
+    amalgRowMap is easy. It corresponds to the global id of the 1st dof of each node 
+    (owned by this processor). It is easy because it doesn't involve communication.
+
+    amalgColMap is essentially the colmap version of amalgRowMap. We basically 
+    assign the local portion of amalgColMap in the same way as amalgRowMap. To
+    get the ghost part of amalgColMap, we use nodalComm(). This routine uses
+    myLocalNodeIds[] in conjunction with a function to perform amalgamated dof
+    communication.
+*/
+
+   MyVec<int> myGids; 
+
+   colGlobalIds(framework, myGids);
+
+   amalgRowMap.resize(nLocalNodes);
+   amalgColMap.resize(nLocalPlusGhostNodes);
+
+   int count = 0;
+   if (nLocalDofs > 0) { 
+      amalgRowMap[count] = myGids[0];
+      amalgColMap[count] = myGids[0];
+      count++;
+   }
+   // dofs belonging to same node must be consecutive only for the local
+   // part of myLocalNodeIds[] 
+
+   for (int i = 1; i < nLocalDofs; i++) {
+      if (myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
+         amalgRowMap[count] = myGids[i];
+         amalgColMap[count] = myGids[i];
+         count++;
+      }
+   }
+   nodalComm(amalgColMap,  myLocalNodeIds, framework); 
+
+   return 0;
+}
+
+/******************************************************************************
+ *****************************************************************************/
+int variableDofAmalg(int nCols, const MyVec<int>& rowPtr, 
+                     const MyVec<int>& cols, const MyVec<double>& vals, 
+                     int nNodes, int maxDofPerNode, const MyVec<int>& map,
+                     const MyVec<double>& diag, double tol, 
+                     MyVec<int>& amalgRowPtr, MyVec<int>& amalgCols,
+                     struct wrappedCommStruct &framework,
+                     MyVec<int>& myLocalNodeIds)
+{
+/******************************************************************************
+ *  Amalgmate crs matrix (rowPtr,cols,vals) and store result in 
+ *  amalgRowPtr, amalgCols.  Optionally, small vals in the non-amalgamated
+ *  matrix can be dropped when performing this amalgamation  when 
+ *
+ *           abs(A(i,j))/sqrt(abs(diag[i]*diag[j])) < tol 
+ *
+ *  Here, the local non-amalgamated matrix is of size nRows x nCols and the
+ *  resulting amalgamated matrix should have nNodes local rows.  On input,
+ *  map(i) indicates that the ith dof in the non-amalgamated matrix corresponds
+ *  to the map(i)th dof in a padded version of the non-amalgamated matrix.
+ *  A padded version of the matrix would have maxDofPerNode dofs at every grid
+ *  node.
+ *****************************************************************************/
+   int  blockRow = 0, blockColumn, newNzs, oldBlockRow;
+   int  nNonZeros, doNotDrop;
+   int  nLocal = rowPtr.size()-1; 
+
+
+
+   amalgRowPtr.resize(nNodes+1);
+   amalgCols.resize(rowPtr[nLocal]);
+   nNonZeros   = 0;
+   MyVec<bool> isNonZero(nCols);
+   MyVec<int> nonZeroList(nCols);
+   for (int i = 0; i < nCols; i++) isNonZero[i] = false;
+
+   oldBlockRow = 0;
+   newNzs = 0;
+   amalgRowPtr[0] = newNzs;
+
+   doNotDrop = 0; 
+   if  (tol ==     0.0) doNotDrop = 1;
+   if  (vals.empty())  doNotDrop = 1;
+
+   for (int i = 0; i < nLocal; i++ ) {
+      blockRow = (int) floor( map[i]/maxDofPerNode);
+      if (blockRow != oldBlockRow) {
+         /* zero out info recording nonzeros in oldBlockRow */
+
+         for (int j = 0; j < nNonZeros; j++) isNonZero[nonZeroList[j]] = false;
+         nNonZeros = 0;
+
+        amalgRowPtr[blockRow] = newNzs;  /* record start of next row */
+      }
+
+      for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+        if (doNotDrop || 
+            ( fabs(vals[j]/sqrt(fabs(diag[i]*diag[cols[j]]))) >= tol)) {
+           blockColumn = myLocalNodeIds[cols[j]];
+           if  (isNonZero[blockColumn] == false) {
+              isNonZero[blockColumn]    = true;
+              nonZeroList[nNonZeros++ ] = blockColumn;
+              amalgCols[newNzs++] = blockColumn;
+           }
+        }
+      }
+      oldBlockRow = blockRow;
+   }
+   amalgRowPtr[blockRow+1] = newNzs;
+
+   TEUCHOS_TEST_FOR_EXCEPTION(blockRow+1 != nNodes,std::logic_error,
+      "variableDofAmalg error, computed # block rows (" << blockRow+1 <<
+      ") != nNodes (" << nNodes << ")\n");
+
+   amalgCols.resize(amalgRowPtr[nNodes]);
+
+   return(0);
+}
+/******************************************************************************
+ *****************************************************************************/
+int rmDifferentDofsCrossings(const MyVec<bool>& dofPresent, int maxDofPerNode, MyVec<int>& rowPtr, MyVec<int>& cols, int nCols, struct wrappedCommStruct& framework, MyVec<int> &myLocalNodeIds)
+{
+/******************************************************************************
+ *  Remove matrix entries (i,j) where the ith node and the jth node
+ *  have different dofs that are 'present'. 
+ *
+ *  Specifically, on input: 
+ *    dofPresent[ i*maxDofPerNode+k] indicates whether or not the kth dof
+ *                                   at the ith node is present in the 
+ *                                   variable dof matrix (e.g., the ith node
+ *                                   has an air pressure dof). true means the
+ *                                   dof is present while false means it is not
+ *                                     
+ *  We create a unique id for the ith node (i.e. uniqueId[i]) via 
+ *      sum_{k=0 to maxDofPerNode-1} dofPresent[i*maxDofPerNode+k]*2^k
+ *  and use this unique idea to remove entries (i,j) when
+ *  uniqueId[i] != uniqueId[j]
+ *
+ *****************************************************************************/
+   int temp, ii;
+   int nRows = rowPtr.size()-1;
+
+
+   MyVec<int> uniqueId(nCols);
+   MyVec<bool> keep(rowPtr[nRows]);
+
+   for (int i = 0; i < rowPtr[nRows]; i++) keep[i] = true;
+   ii = 0;
+   for (int i = 0; i < nRows; i++) {
+       temp = 1;
+       uniqueId[i] = 0;
+       for (int j = 0; j < maxDofPerNode; j++) {
+          if (dofPresent[ii++]) uniqueId[i] += temp;
+          temp = temp*2;
+       }
+   }
+   nodalComm(uniqueId, myLocalNodeIds, framework);
+
+   for (int i = 0; i < nRows; i++) {
+      for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+         if  (uniqueId[i] !=  uniqueId[cols[j]])  keep[j] = false;
+      }
+   }
+
+   MyVec<double>   empty;
+   squeezeOutNnzs(rowPtr, cols, empty, keep); 
+
+   return(0);
+}
+
+
+/******************************************************************************
+ *****************************************************************************/
+int buildLaplacian(const MyVec<int>& rowPtr, const MyVec<int>& cols, MyVec<double>& vals, const MyVec<double>& x, const MyVec<double>& y, const MyVec<double>& z)
+{
+/******************************************************************************
+ *  Given an inputMatrix (rowPtr,cols) Build a Laplacian matrix defined by 
+ *
+ *  L(i,j)  = 0                     if  inputMatrix(i,j) = 0
+ *  L(i,j)  = 1/nodalDistance(i,j)  otherwise
+ *
+ *  RST: MIGHT WANT TO DO SOMETHING WITH ALL DIRICHLETS SO THAT ROWSUMS THAT
+ *  WERE PREVIOUSLY NONZERO REMAIN THAT WAY?
+ *****************************************************************************/
+   int    diag;
+   double sum;
+
+   if ( z.empty() ) {
+
+      for (int i= 0 ; i < (int) rowPtr.size()-1; i++) {
+         sum = 0.0;
+         diag = -1;
+         for (int j= rowPtr[i] ; j < rowPtr[i+1]; j++) {
+            if ( cols[j] != i ) {
+               vals[j] = sqrt( (x[i]-x[cols[j]])*(x[i]-x[cols[j]]) +
+                                 (y[i]-y[cols[j]])*(y[i]-y[cols[j]]));
+
+               TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == 0.0,std::logic_error,
+               "buildLaplacian error, " << i << " and " << cols[j] <<
+               " have same coordinates: " << x[i] << ", " << y[i] << "\n");
+
+               vals[j] = -1./vals[j];
+               sum = sum - vals[j];
+            }
+            else diag = j;
+         }
+         if (sum == 0.0) sum = 1.0;
+
+         TEUCHOS_TEST_FOR_EXCEPTION(diag == -1,std::logic_error,
+               "buildLaplacian error, row " << i << " has zero diagonal\n");
+
+         vals[diag] = sum;
+      }
+   }
+   else {
+      for (int i= 0 ; i < (int) rowPtr.size()-1; i++) {
+         sum = 0.0;
+         diag = -1;
+         for (int j= rowPtr[i] ; j < rowPtr[i+1]; j++) {
+            if ( cols[j] != i ) {
+               vals[j] = sqrt( (x[i]-x[cols[j]])*(x[i]-x[cols[j]]) +
+                                 (y[i]-y[cols[j]])*(y[i]-y[cols[j]]) +
+                                 (z[i]-z[cols[j]])*(z[i]-z[cols[j]]));
+               TEUCHOS_TEST_FOR_EXCEPTION(vals[j] == 0.0,std::logic_error,
+               "buildLaplacian error, " << i << " and " << cols[j] <<
+               " have same coordinates\n");
+               vals[j] = -1./vals[j];
+               sum = sum - vals[j];
+            }
+            else diag = j;
+         }
+         if (sum == 0.0) sum = 1.0;
+         TEUCHOS_TEST_FOR_EXCEPTION(diag == -1,std::logic_error,
+               "buildLaplacian error, row " << i << " has zero diagonal\n");
+         vals[diag] = sum;
+      }
+   }
+   return(0);
+}
+
+
+/*! @brief Unamalgamate prolongator so that it is suitable for PDE systems
+ *
+ 
+Unamalgamate Pmat (represented as a CRS matrix via amalgRowPtr, amalgCols, amalgVals
+for two different situations:
+  Case 1:  Fine level matrix is padded
+           In this case, we basically replicate the unamalgamated
+           operator, except that padded dofs and Dirichlet points use 
+           injection. Thus, PUnAmalg is equivalent to something like
+                       (  Pmat      0       0  )
+                       (    0     Pmat      0  )
+                       (    0       0     Pmat )
+           where entries associated with fine level padded dofs or Dir. BCs
+           are replaced by rows with a single nonzero (whose 
+           value equals one) and the entire matrix is instead ordered
+           so that dofs associated with nodes are consecutive.
+ 
+  Case 2:  Fine level matrix is not padded. 
+           Thus, PUnAmalg is equivalent to 
+                       (  Pmat      0       0  )
+                       (    0     Pmat      0  )
+                       (    0       0     Pmat )
+           where rows associated with dofs not present on finest level (e.g.,
+           an air pressure dof within water region) are removed and rows
+           associated with Dir. BCs are replaced by rows with a single 
+           nonzero (whose value equals one) and the entire matrix is 
+           instead ordered so dofs associated with nodes are consecutive.
+
+In both of the above cases, the coarse level discretization matrix is assumed to be padded.
+
+@params amalgNRows local number of rows for amalgamted prolongator
+@params amalgRowPtr  CRS local row pointer for amalgamted prolongator
+@params amalgCols  CRS local cols for amalgamted prolongator
+@params amalgVals  CRS vals for amalgamted prolongator
+@params maxDofPerNode maximum number of degrees-of-freedom at any mesh node
+@params status    status[i*maxDofPerNode+j] refers to the jth dof at the ith node.  status()==s ==> standard element: present in fine operator and not a Dirichlet BC. status()==d ==> element corresponds to Dirichlet BC.  status()==p ==> element not present or is padded dof.
+@params fineIsPadded Indicates whether fine grid matrix includes padded dofs for those not really present in the PDE system 
+@params rowPtr   CRS local row pointer for resulting unamalgamated prolongator
+@params cols   CRS local cols for resulting unamalgamated prolongator
+@params vals   CRS vals for resulting unamalgamated prolongator
+*/
+
+int unamalgP(const MyVec<int>& amalgRowPtr, const MyVec<int>& amalgCols, const MyVec<double>& amalgVals, 
+ int maxDofPerNode, const MyVec<char>& status, bool fineIsPadded, MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals)
+{
+
+   int paddedNrows;
+   int Cnt, rowLength, rowCount = 0;
+ 
+   paddedNrows = (amalgRowPtr.size()-1)*maxDofPerNode;
+
+   if (fineIsPadded) {
+      /* Build Pmat for padded fine level matrices. Note: padded fine level */
+      /* dofs are transfered by injection. That is, these interpolation     */
+      /* stencils do not take averages of coarse level variables. Further,  */
+      /* fine level Dirichlet points also use injection.                    */
+
+      Cnt  = 0;
+      for (int i=0; i < (int) amalgRowPtr.size()-1; i++) { 
+       rowLength = amalgRowPtr[i+1] -  amalgRowPtr[i];
+       for (int j = 0; j < maxDofPerNode; j++) {
+          rowPtr[i*maxDofPerNode+j] = Cnt;
+          if (status[i*maxDofPerNode+j] == 's') {
+             for (int k = 0; k < rowLength; k++) {
+                cols[Cnt  ] = amalgCols[k+amalgRowPtr[i]]*maxDofPerNode+j;
+                vals[Cnt++] = amalgVals[k+amalgRowPtr[i]];
+             }
+          }
+       }
+
+      }
+      rowPtr[paddedNrows] = Cnt;
+      rowCount = paddedNrows;
+   
+   }
+   else {
+      /* Build Pmat for non-padded fine level matrices.  Need to map from   */
+      /* non-padded dofs to padded dofs. For this, look at status array and */
+      /* skip padded dofs.                                                  */
+
+     Cnt = 0;
+     for (int i=0; i < (int) amalgRowPtr.size()-1; i++) { 
+        rowLength = amalgRowPtr[i+1] -  amalgRowPtr[i];
+
+        for (int j = 0; j < maxDofPerNode; j++) {
+           /* no interpolation for padded fine nodes (as these don't exist) */
+
+          if (status[i*maxDofPerNode+j] == 's') {
+             rowPtr[rowCount++] = Cnt;
+             for (int k = 0; k < rowLength; k++) {
+                cols[Cnt  ] = amalgCols[k+amalgRowPtr[i]]*maxDofPerNode+j;
+                vals[Cnt++] = amalgVals[k+amalgRowPtr[i]];
+             }
+          }
+          if (status[i*maxDofPerNode+j] == 'd') 
+             rowPtr[rowCount++] = Cnt;
+        }
+     }
+     rowPtr[rowCount] = Cnt;
+
+   }
+
+
+   return(rowCount);
+} 
+
+int findEmptyRows(const MyVec<int>& rowPtr, const MyVec<int>& cols, const MyVec<double>& vals, MyVec<bool>& rowEmpty)
+{
+/******************************************************************************
+  Find rows that have no nonzero entries. 
+
+  Padded matrices might give rise to empty rows (e.g., after RAP) that we want
+  to replace with Dirichlet rows (where the Dirichlet point has no connections
+  to the rest of the matrix).
+ 
+ *****************************************************************************/
+   
+   rowEmpty.resize(rowPtr.size()-1);
+
+   for (int i = 0; i < (int) rowPtr.size()-1; i++) {
+      rowEmpty[i] = true;
+      for (int j = rowPtr[i]; j < rowPtr[i+1]; j++) {
+         if (vals[j] != 0.0) { 
+            rowEmpty[i] = false;
+            break;
+         }
+      }
+   }
+   return(0);
+}
+int replaceEmptyByDirichlet(MyVec<int>& rowPtr, MyVec<int>& cols, MyVec<double>& vals, const MyVec<bool>& rowEmpty)
+{
+/*****************************************************************************
+
+  Take any empty rows and stuff a Dirichlet condition into the row.
+
+  Padded matrices might give rise to empty rows (e.g., after RAP) that we want
+  to replace with Dirichlet rows (where the Dirichlet point has no connections
+  to the rest of the matrix).
+ 
+ *****************************************************************************/
+   int nEmpties, rowStart, rowEnd, lastMoved;
+   int nRows = rowPtr.size()-1;
+
+
+   /* count empties */
+
+   nEmpties = 0;
+
+   for (int i = 0; i < nRows; i++)
+      if (rowEmpty[i]) nEmpties++;
+
+   /* allocate extra space for empties */
+
+   cols.resize(rowPtr[nRows]+nEmpties);
+   vals.resize(rowPtr[nRows]+nEmpties);
+
+   lastMoved   = rowPtr[nRows]+nEmpties;
+   rowEnd = rowPtr[nRows]-1;
+   rowPtr[nRows] = lastMoved;
+   for (int i = nRows ; i > 0; i--) {
+      rowStart = rowPtr[i-1];
+      /* first copy row */
+      for (int j = rowEnd; j >= rowStart; j--) {
+           lastMoved--;
+           cols[lastMoved] = cols[j];
+           vals[lastMoved] = vals[j];
+      }
+      /* now see if we need to add someone */
+      if (rowEmpty[i-1]) {
+         lastMoved--;
+         cols[lastMoved] = i-1;
+         vals[ lastMoved] = 1.0;
+      }
+      rowPtr[i-1] = lastMoved;
+      rowEnd    = rowStart-1;
+   }
+   TEUCHOS_TEST_FOR_EXCEPTION(lastMoved != 0,std::logic_error,
+               "replaceEmptyByDirichlet error, number of empties"
+               " seems to be wrong\n");
+   return(0);
+}
+
+int fineStatus(const MyVec<bool>& dofPresent, const MyVec<int>& map, const MyVec<bool>& dirOrNot, MyVec<char>& status)
+{
+/*****************************************************************************
+  Fill the status array on the finest level based on the information in both
+  dofPresent and dirOrNot.  status[i*maxDofPerNode+j] refers to the jth dof 
+  at the ith node.  status()==s ==> standard element: present in fine operator
+                                    and not a Dirichlet BC. 
+                    status()==d ==> element corresponds to Dirichlet BC.
+                    status()==p ==> element not present (or on coarse levels
+                                                         is padded)
+ ****************************************************************************/
+
+   for (int i = 0; i < (int) status.size(); i++) status[i] = 's';
+   for (int i = 0; i < (int) status.size(); i++) {
+      if (dofPresent[i] == false) status[i] = 'p';
+   }
+   if (!dirOrNot.empty()) {
+      for (int i = 0; i < (int) map.size(); i++) {
+         if (dirOrNot[i]) status[map[i]] = 'd';
+      }
+   }
+   return(0);
+}
+int coarseStatus(const MyVec<bool>& rowEmpty, const MyVec<bool>& dirOrNot, MyVec<char>& status)
+{
+/*****************************************************************************
+  Fill the status array on a coarse level based on the information in dirOrNot.  
+  status[i*maxDofPerNode+j] refers to the jth dof at the ith node.  
+
+                    status()==s ==> standard element: present in fine operator
+                                    and not a Dirichlet BC. 
+                    status()==p ==> element is padded dof.
+
+  The main difference with fineStatus() is that it is assumed that the 
+  dofsPerNode at all nodes is equal to maxDofsPerNode (that is padding
+  has already been used so that this is true) and that no Dirichlet
+  points remain.
+ ****************************************************************************/
+
+   status.resize(rowEmpty.size());
+   for (int i = 0; i < (int) rowEmpty.size(); i++) {
+      status[i] = 's';
+      if (rowEmpty[i]) status[i] = 'p';
+   }
+   if (!dirOrNot.empty()) {
+      for (int i = 0; i < (int) rowEmpty.size(); i++) {
+         if (dirOrNot[i]) status[i] = 'p';
+      }
+   }
+
+   return(0);
+}
+
+int sortCols(const MyVec<int>& ARowPtr, MyVec<int>& ACols, MyVec<double>& AVals)
+{
+   int i,j;
+
+   for (i = 0; i < (int) ARowPtr.size()-1; i++) {
+      j = ARowPtr[i];
+      ML_az_sort(&(ACols[j]), ARowPtr[i+1]-j, NULL, &(AVals[j]));
+   }
+   return(0);
+}
+#endif
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
