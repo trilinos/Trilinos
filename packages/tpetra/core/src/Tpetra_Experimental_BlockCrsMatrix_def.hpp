@@ -57,6 +57,9 @@
 // Also, lambdas for Kokkos::parallel_* don't work with CUDA, so don't
 // use them in that case, either.
 //
+// mfh 31 May 2016: GCC 4.9.[23] appears to be broken ("internal
+// compiler error") too.
+//
 #if defined(__CUDACC__)
    // Lambdas for Kokkos::parallel_* don't work with CUDA 7.5 either.
 #  if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
@@ -64,10 +67,10 @@
 #  endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 
 #elif defined(__GNUC__)
-   // GCC 4.7.2 is broken (see #393), but GCC 4.8, 4.9, etc. are not
-   // (with regards to #393).  To be safe, we'll assume GCC 4.x.y is
-   // broken for all x <= 7, and for all y.
-#  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
+   // GCC 4.7.2 is broken (see #393).  So is 4.9.[23] (with regards to
+   // #393).  To be safe, we'll assume GCC 4.x.y is broken for all x
+   // <= 7 or x == 9, and for all y.
+#  if __GNUC__ == 4 && (__GNUC_MINOR__ <= 7 || __GNUC_MINOR__ == 9)
 #    if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
 #      undef TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA
 #    endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
