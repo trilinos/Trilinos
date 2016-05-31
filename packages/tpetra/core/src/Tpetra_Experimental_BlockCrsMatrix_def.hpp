@@ -454,7 +454,9 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   setAllToScalar (const Scalar& alpha)
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::setAllToScalar: ";
+#endif // HAVE_TPETRA_DEBUG
 
     if (this->template need_sync<device_type> ()) {
       // If we need to sync to device, then the data were last
@@ -2963,7 +2965,9 @@ public:
     using Teuchos::RCP;
     using Teuchos::wait;
     using std::endl;
+#ifdef HAVE_TPETRA_DEBUG
     const char prefix[] = "Tpetra::Experimental::BlockCrsMatrix::describe: ";
+#endif // HAVE_TPETRA_DEBUG
 
     // Set default verbosity if applicable.
     const Teuchos::EVerbosityLevel vl =
