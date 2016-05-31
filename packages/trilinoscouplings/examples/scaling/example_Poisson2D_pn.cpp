@@ -1,5 +1,3 @@
-
-#define OLD_P2 0
 // @HEADER
 // ************************************************************************
 //
@@ -313,15 +311,6 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 
 
 
-#if (OLD_P2==1)
-const int myshuffle[9] = {0,1,2,3,4,5,6,7,8};
-#else
-const int myshuffle[9] = {0,2,8,6,1,5,7,3,4};
-#endif
-
-  
-
-
 /**********************************************************************************/
 /******************************** MAIN ********************************************/
 /**********************************************************************************/
@@ -426,6 +415,7 @@ int main(int argc, char *argv[]) {
 
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
+  int degree = inputMeshList.get("degree",2);
 
   // Get Isorropia and Zoltan parameters.
   Teuchos::ParameterList iso_paramlist = inputMeshList.sublist
@@ -442,19 +432,13 @@ int main(int argc, char *argv[]) {
 
   // Get cell topology for base hexahedron
   shards::CellTopology P1_cellType(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-#if (OLD_P2==1)
-  shards::CellTopology Pn_cellType(shards::getCellTopologyData<shards::Quadrilateral<9> >() );
-#else
   shards::CellTopology Pn_cellType(shards::getCellTopologyData<shards::Quadrilateral<> >() );
-#endif
   assert(P1_cellType.getDimension() == Pn_cellType.getDimension());
 
   // Get dimensions
   int P1_numNodesPerElem = P1_cellType.getNodeCount();
-  //  int Pn_numNodesPerElem = Pn_cellType.getNodeCount();
   int spaceDim = P1_cellType.getDimension();
   int dim = 2;
-  int degree = 2; // FIXME hardwired
 
   /**********************************************************************************/
   /******************************* GENERATE MESH ************************************/
@@ -667,7 +651,6 @@ int main(int argc, char *argv[]) {
 
   // Generate higher order mesh
   // NOTE: Only correct in serial
-
   int Pn_numNodes = numNodes + (degree-1)*P1_edgeCoord.dimension(0) + (degree-1)*(degree-1)*numElems;
   int Pn_numNodesperElem = (degree+1)*(degree+1); // Quads
   FieldContainer<int>    elemToNode(numElems,Pn_numNodesperElem); 
@@ -676,26 +659,9 @@ int main(int argc, char *argv[]) {
 
   printf("Pn_numNodes = %d Pn_numNodesperElem = %d\n",Pn_numNodes,Pn_numNodesperElem);
 
-#if (OLD_P2==1)
-  printf("CMS: Running p=2\n");
-  PromoteMesh(2,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
-	      elemToNode, nodeCoord, nodeOnBoundary);
-#else
-  printf("CMS: Running p=n Kirby\n");
+  printf("Running p=%d Kirby\n",degree);
   PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
 		       elemToNode, nodeCoord, nodeOnBoundary);
-#endif
-
-  /*
-  int P3_numNodes = numNodes + 2*P1_edgeCoord.dimension(0) + 4*numElems;
-  FieldContainer<int>    P3_elemToNode(numElems,16); //because quads
-  FieldContainer<double> P3_nodeCoord(P3_numNodes,dim);
-  FieldContainer<int>   P3_nodeOnBoundary(P3_numNodes);
-
-  PromoteMesh_Pn_Kirby(3,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,P1_nodeOnBoundary,
-		       P3_elemToNode, P3_nodeCoord, P3_nodeOnBoundary);
-  */
-
   // ---------------------------
 
   long long numElems_aux = numElems*4;  //4 P1 elements per Pn element in auxiliary mesh
@@ -755,17 +721,10 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Define basis
-#if (OLD_P2==1)
-  Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> > myHGradBasis;
-#else
   Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > myHGradBasis(degree,POINTTYPE_EQUISPACED);
-#endif
   Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp(&myHGradBasis, false);
 
   int numFieldsG = myHGradBasis.getCardinality();
-
-  //  printf("numFieldsG = %d, Pn_numNodesPerElem = %d\n",numFieldsG,Pn_numNodesPerElem);
-
 
   FieldContainer<double> HGBValues(numFieldsG, numCubPoints);
   FieldContainer<double> HGBGrads(numFieldsG, numCubPoints, spaceDim);
@@ -775,7 +734,7 @@ int main(int argc, char *argv[]) {
   myHGradBasis.getValues(HGBGrads, cubPoints, OPERATOR_GRAD);
 
 
-#define OUTPUT_REFERENCE_FUNCTIONS
+  //#define OUTPUT_REFERENCE_FUNCTIONS
 #ifdef OUTPUT_REFERENCE_FUNCTIONS
   // Evaluate basis values and gradients at DOF points 
   FieldContainer<double> DofCoords(numFieldsG,spaceDim);
@@ -786,13 +745,11 @@ int main(int argc, char *argv[]) {
 
   printf("*** Dof Coords ***\n");
  for(int j=0; j<numFieldsG; j++)
-   printf("[%d] %10.2e %10.2e\n",j,DofCoords(myshuffle[j],0),DofCoords(myshuffle[j],1));
+   printf("[%d] %10.2e %10.2e\n",j,DofCoords(j,0),DofCoords(j,1));
 
  printf("*** CubPoints & Weights ***\n");
  for(int j=0; j<numCubPoints; j++)
    printf("[%d] %10.2e %10.2e (%10.2e)\n",j,cubPoints(j,0),cubPoints(j,1),cubWeights(j));
-
- 
 
  printf("*** HGBValues @ Dofs ***\n");
   for(int i=0; i<numFieldsG; i++) {
@@ -809,7 +766,7 @@ int main(int argc, char *argv[]) {
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numCubPoints; j++) {
-      printf("%10.2e ",zwrap(HGBValues(myshuffle[i],j)));
+      printf("%10.2e ",zwrap(HGBValues(i,j)));
 
     }
     printf("\n");
@@ -820,7 +777,7 @@ int main(int argc, char *argv[]) {
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numCubPoints; j++) {
-      printf("(%10.2e %10.2e)",zwrap(HGBGrads(myshuffle[i],j,0)),zwrap(HGBGrads(myshuffle[i],j,1)));
+      printf("(%10.2e %10.2e)",zwrap(HGBGrads(i,j,0)),zwrap(HGBGrads(i,j,1)));
     }
     printf("\n");
   }
@@ -962,20 +919,6 @@ int main(int argc, char *argv[]) {
       iOwned++;
     }
   }
-
-
-#ifdef DUMP_DATA
-#if (OLD_P2 == 1)
-    EpetraExt::MultiVectorToMatrixMarketFile("v_vector.p2.dat",v,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("v_vector.pn.dat",v,0,0,false);
-#endif
-#undef DUMP_DATA
-#endif
-
-
-
-
     
   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
 			  << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
@@ -1023,16 +966,6 @@ int main(int argc, char *argv[]) {
   StiffMatrix.GlobalAssemble();
   StiffMatrix.FillComplete();
   rhsVector.GlobalAssemble();
-
-
-#ifdef DUMP_DATA
-#if(OLD_P2 ==1)
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_prebc.p2.dat",rhsVector,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_prebc.pn.dat",rhsVector,0,0,false);
-#endif
-#undef DUMP_DATA
-#endif
 
   if(MyPID==0) {std::cout << msg << "Global assembly                             "
 			  << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -1123,27 +1056,8 @@ int main(int argc, char *argv[]) {
   Epetra_MultiVector rhsDir(globalMapG,true);
   StiffMatrix.Apply(v,rhsDir);
 
-#ifdef DUMP_DATA
-#if(OLD_P2 ==1)
-    EpetraExt::MultiVectorToMatrixMarketFile("rhsdir.p2.dat",rhsDir,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("rhsdir.pn.dat",rhsDir,0,0,false);
-#endif
-#undef DUMP_DATA
-#endif
-
   // Update right-hand side
   rhsVector.Update(-1.0,rhsDir,1.0);
-
-#ifdef DUMP_DATA
-#if(OLD_P2 ==1)
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_dt.p2.dat",rhsVector,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_dt.pn.dat",rhsVector,0,0,false);
-#endif
-#undef DUMP_DATA
-#endif
-
 
   // Adjust rhs due to Dirichlet boundary conditions
   iOwned=0;
@@ -1155,18 +1069,6 @@ int main(int argc, char *argv[]) {
       iOwned++;
     }
   }
-
-#ifdef DUMP_DATA
-#if(OLD_P2 ==1)
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.p2.dat",rhsVector,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.pn.dat",rhsVector,0,0,false);
-#endif
-#undef DUMP_DATA
-#endif
-
-
-
 
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
@@ -1206,11 +1108,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
   // Dump matrices to disk
-#if(OLD_P2 ==1)
-  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.p2.dat",StiffMatrix);
-#else
-  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.pn.dat",StiffMatrix);
-#endif
+  EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix_aux.dat",StiffMatrix_aux);
   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_aux.dat",rhsVector_aux,0,0,false);
@@ -1728,11 +1626,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 
 #ifdef DUMP_DATA
-#if(OLD_P2 ==1)
-    EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector.p2.dat",*lhs,0,0,false);
-#else
-    EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector.pn.dat",*lhs,0,0,false);
-#endif
+    EpetraExt::MultiVectorToMatrixMarketFile("lhs_vector.dat",*lhs,0,0,false);
 #undef DUMP_DATA
 #endif
 
@@ -2281,26 +2175,23 @@ void CreateLinearSystem(int numWorksets,
     IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
     IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
-    if(numNodesPerElem==9) {
 
+#ifdef DEBUG_OUTPUT
       printf("*** cubPoints ***\n");
       for(int j=0; j<numCubPoints; j++)
 	printf("(%d) [%10.2e %10.2e]\n",j,cubPoints(j,0),cubPoints(j,1));
 
-
       printf("*** cellWorkset ***\n");
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numNodesPerElem; j++)
-	  printf("(%d,%d) [%10.2e %10.2e]\n",i,j,cellWorkset(i,myshuffle[j],0),cellWorkset(i,myshuffle[j],1));
+	  printf("(%d,%d) [%10.2e %10.2e]\n",i,j,cellWorkset(i,j,0),cellWorkset(i,j,1));
       
       printf("*** Jacobian ***\n");
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numCubPoints; j++)
 	  printf("(%d,%d) [%10.2e %10.2e; %10.2e %10.2e]\n",i,j,zwrap(worksetJacobian(i,j,0,0)),zwrap(worksetJacobian(i,j,0,1)),zwrap(worksetJacobian(i,j,1,0)),zwrap(worksetJacobian(i,j,1,1)));
-
+#endif
     
-
-    }
 
     if(MyPID==0) {std::cout << msg << "Calculate Jacobians                         "
 			    << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
@@ -2372,8 +2263,7 @@ void CreateLinearSystem(int numWorksets,
                                        worksetHGBValuesWeighted,  COMP_BLAS);
 
 
-    if(numNodesPerElem==9) {
-      
+#ifdef DEBUG_OUTPUT      
       printf("*** worksetSourceTerm ***\n");
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numCubPoints; j++)
@@ -2391,7 +2281,7 @@ void CreateLinearSystem(int numWorksets,
 	for(int j=0; j<numFieldsG; j++) {
 	  printf("(%d,%d) ",i,j);
 	  for(int k=0; k<numCubPoints; k++) {
-	    printf("%10.2e ",zwrap(worksetHGBValues(i,myshuffle[j],k)));	    
+	    printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));	    
 	  }
 	  printf("\n");
 	}
@@ -2401,23 +2291,15 @@ void CreateLinearSystem(int numWorksets,
 	for(int j=0; j<numFieldsG; j++) {
 	  printf("(%d,%d) ",i,j);
 	  for(int k=0; k<numCubPoints; k++) {
-	    printf("%10.2e ",zwrap(worksetHGBValues(i,myshuffle[j],k)));	    
+	    printf("%10.2e ",zwrap(worksetHGBValues(i,j,k)));	    
 	  }
 	  printf("\n");
-	}
-      
-
-
+	}     
       printf("*** worksetRHS ***\n");
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numFieldsG; j++)
-	  printf("(%d,%d) %10.2e\n",i,j,worksetRHS(i,myshuffle[j]));
-
-      
-      
-    }
-
-
+	  printf("(%d,%d) %10.2e\n",i,j,worksetRHS(i,j));
+#endif
 
     if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
 			    << Time.ElapsedTime() << " sec \n"; Time.ResetStartTime();}
