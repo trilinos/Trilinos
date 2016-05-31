@@ -254,7 +254,6 @@ struct GpuGatherFlatScratchData
     {
         stk::mesh::Entity element = elemEntities(elementIndex);
         const unsigned elementBucketIndex = get_bucket_id(element);
-        const unsigned numElements = elemsPerBucket(elementBucketIndex);
         const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
         const unsigned dim = elementCentroids.extent(1);
 	int elementOffsetInBucket = elementIndex - elemBucketOffsets(elementBucketIndex);	  
@@ -278,9 +277,7 @@ struct GpuGatherFlatScratchData
     {
         stk::mesh::Entity element = elemEntities(elementIndex);
         const unsigned elementBucketIndex = get_bucket_id(element);
-        const unsigned numElements = elemsPerBucket(elementBucketIndex);
         const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
-        const unsigned dim = elementCentroids.extent(1);
 	int elementOffsetInBucket = elementIndex - elemBucketOffsets(elementBucketIndex);	  
 	int connOffset = connBucketOffsets(elementBucketIndex) + elementOffsetInBucket*nodesPerElem;
 	const unsigned elemFieldIndex = get_index(element);
@@ -303,7 +300,6 @@ struct GpuGatherFlatScratchData
 
         const unsigned numElements = elemsPerBucket(elementBucketIndex);
         const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
-        const unsigned dim = elementCentroids.extent(1);
 
         const int elemBucketOffset = elemBucketOffsets(elementBucketIndex);
 	const int connBucketOffset = connBucketOffsets(elementBucketIndex);

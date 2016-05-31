@@ -106,6 +106,7 @@ struct ScratchData
 //        });
 //    }
 
+
     DeviceViewMatrixType elementNodes;
     DeviceViewMatrixType elementCentroids;
 
@@ -123,18 +124,11 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_device)
     CentroidCalculator<ScratchData> calculator(scratch);
 
     app.start_timer();
-    calculator.calculate_centroids(app.num_repeat, app.choice);
+    calculator.calculate_centroids(app.num_repeat, 5 /* app.choice */ );
     app.stop_timer();
     app.report_bandwidth();
 
     calculator.copy_centroids_to_host();
     calculator.test_centroid_of_element_1();
 
-#if 0
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(app.meta.locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
-    for(unsigned elementIndex=0; elementIndex<elements.size(); ++elementIndex) {
-        calculator.test_centroid_of_element(app.hostCentroid, elements[elementIndex], elementIndex);
-    }
-#endif
 }

@@ -125,23 +125,23 @@ public:
     }
 
     void test_centroid_of_element(const std::vector<double>& expectedCentroidValues, 
-				  const stk::mesh::Entity element, 
-				  const unsigned elementIndex)
+				  const stk::mesh::Entity element)
     {
+        std::vector<double> elementCentroid = functor.get_centroid_of_element(element);
+        EXPECT_EQ(elementCentroid.size(), elementCentroid);
+	
         for (unsigned k=0 ; k < functor.hostElementCentroids.extent(1) ; ++k) {
-            EXPECT_NEAR(expectedCentroidValues[k], functor.hostElementCentroids(elementIndex, k), 0.000001);
+            EXPECT_NEAR(expectedCentroidValues[k], elementCentroid[k], 0.000001);
 	}
     }
 
 #define EXECUTE_SOLO(SCOPE, EXPANSION)\
         const char *name = NAME_OPERATOR(SCOPE, solo, EXPANSION);\
-	//printf("Executing operator: %s\n",name);\
 	size_t N = functor.getNumParallelItems();\
 	Kokkos::parallel_for(name, Kokkos::RangePolicy< TYPE_OPERATOR(SCOPE, solo, EXPANSION) >(0,N), functor);\
 
 #define EXECUTE_TEAM(SCOPE, EXPANSION)\
         const char *name = NAME_OPERATOR(SCOPE, team, EXPANSION);\
-	//printf("Executing operator: %s\n",name);\
 	size_t N = functor.getNumParallelItems();\
         Kokkos::parallel_for(name, Kokkos::TeamPolicy< TYPE_OPERATOR(SCOPE, team, EXPANSION) >(N, 512), functor);\
 
@@ -220,7 +220,7 @@ struct MyApp {
     void report_bandwidth(double time) const
     {
         size_t num_coords = (dim)*(dim)*(dim)*10*3;
-        std::cerr << "For mesh with " << num_coords << " coordinates.\n";
+        std::cerr << "For mesh with " << num_coords << " coordinates acceses.\n";
         double Gbytes = 1.0e-9 * double(sizeof(my_double) * ( num_coords )) ;
         std::cerr << "bandwidth(" << Gbytes * num_repeat / time << " GB/s )" << std::endl;
     }

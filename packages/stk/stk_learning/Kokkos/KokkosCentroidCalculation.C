@@ -121,8 +121,8 @@ void run_it()
     Kokkos::parallel_reduce(numBuckets, KOKKOS_LAMBDA(int i, double& update) {
         BucketConnectivityType bucket = viewOfBuckets(i);
         int expectedOffset = expectedBucketOffsets(i);
-        for(unsigned elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
-            for(unsigned nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
+        for(int elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
+            for(int nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
                int offset = bucket(elemIndex, nodeIndex);
                printf("i=%d, elemIndex=%d, nodeIndex=%d, offset=%d, expectedOffset=%d\n",i, elemIndex,nodeIndex,offset,expectedOffset);
                if (offset != expectedOffset) {
@@ -136,11 +136,12 @@ void run_it()
     EXPECT_EQ(0.0, errorCheck);
 }
 
-TEST_F(MTK_Kokkos, view_of_views)
+TEST_F(MTK_Kokkos, DISABLED_view_of_views)
 {
     run_it();
 }
 
+#if defined(KOKKOS_HAVE_CUDA)
 void run_it_uvm()
 {
     typedef Kokkos::View<int*, Layout, MemSpace> IntViewType;
@@ -207,6 +208,7 @@ TEST_F(MTK_Kokkos, view_of_views_uvm)
 {
     run_it_uvm();
 }
+#endif
 
 void run_it_flat()
 {
@@ -274,11 +276,11 @@ void run_it_flat()
         int expectedConnId = expectedBucketOffsets(i);
         unsigned bucketOffset = bucketOffsets(i);
 
-        for(unsigned elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
-            unsigned elemOffset = elemIndex*nodesPerElem(i) + bucketOffset;
+        for(int elemIndex=0; elemIndex<elemsPerBucket(i); ++elemIndex) {
+            int elemOffset = elemIndex*nodesPerElem(i) + bucketOffset;
     
-            for(unsigned nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
-               unsigned nodeOffset = elemOffset + nodeIndex;
+            for(int nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
+               int nodeOffset = elemOffset + nodeIndex;
                int connId = viewOfBuckets(nodeOffset);
                printf("i=%d, elemIndex=%d, nodeIndex=%d, connId=%d, expectedConnId=%d\n",i, elemIndex,nodeIndex,connId,expectedConnId);
                if (connId != expectedConnId) {

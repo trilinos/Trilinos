@@ -233,7 +233,6 @@ struct GpuGatherUVMScratchData
     {
         BucketConnectivityType bucket = elementNodeConnectivity(0);
         const unsigned nodesPerElem = bucket.extent(1);
-        const unsigned dim = elementCentroids.extent(1);
         stk::mesh::Entity elem = elemEntities(0)(elementIndex);
         const unsigned elemFieldIndex = get_index(elem);
 	double tempx = 0, tempy = 0, tempz = 0;
@@ -256,7 +255,6 @@ struct GpuGatherUVMScratchData
         const auto entityView = elemEntities(elementBucketIndex);
         const unsigned numElements = elemEntities(elementBucketIndex).extent(0);
         const unsigned nodesPerElem = bucket.extent(1);
-        const unsigned dim = elementCentroids.extent(1);
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double tempx = 0, tempy = 0, tempz = 0;
             const unsigned elemFieldIndex = get_index(entityView(elementIndex));
