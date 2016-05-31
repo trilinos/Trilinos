@@ -247,7 +247,7 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      const ValueType tol = Parameters::Tolerence;
+      const ValueType tol = tolerence<ValueType>();
       int errorFlag = 0;
 
       typedef ValueType pointValueType;

@@ -118,7 +118,7 @@ namespace Intrepid2 {
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       
-      const value_type tol = Parameters::Tolerence*10000.0;
+      const value_type tol = tolerence<ValueType>()*10000.0;
       int errorFlag = 0;
       
       

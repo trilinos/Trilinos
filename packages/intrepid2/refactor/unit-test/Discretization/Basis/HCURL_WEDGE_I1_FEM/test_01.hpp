@@ -114,7 +114,7 @@ namespace Test {
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
-      const ValueType tol = Parameters::Tolerence;
+      const ValueType tol = tolerence<ValueType>();
 
       int errorFlag = 0;
 
