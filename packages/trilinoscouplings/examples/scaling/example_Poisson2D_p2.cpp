@@ -897,16 +897,16 @@ int main(int argc, char *argv[]) {
   //Cubature
 
   // Get numerical integration points and weights
-  cubDegree = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
-  myCub = cubFactory.create(P1_cellType, cubDegree);
+  int cubDegree_aux = 2; //TODO  This was 3 for P=2.  I think this should be 2 now .... Ask Chris.
+  Teuchos::RCP<Cubature<double> >  myCub_aux = cubFactory.create(P1_cellType, cubDegree_aux);
 
-  cubDim       = myCub->getDimension();
-  numCubPoints = myCub->getNumPoints();
+  int cubDim_aux       = myCub_aux->getDimension();
+  int numCubPoints_aux = myCub_aux->getNumPoints();
 
-  cubPoints(numCubPoints, cubDim);
-  cubWeights(numCubPoints);
-  myCub->getCubature(cubPoints, cubWeights);
-
+  FieldContainer<double> cubPoints_aux(numCubPoints_aux, cubDim_aux);
+  FieldContainer<double> cubWeights_aux(numCubPoints_aux);
+  myCub_aux->getCubature(cubPoints_aux, cubWeights_aux);
+  
   if(MyPID==0) {std::cout << "Getting cubature for auxiliary P1 mesh      "
 			  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
@@ -915,14 +915,14 @@ int main(int argc, char *argv[]) {
   // Define basis
   Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
-  FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints);
-  FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints, spaceDim);
-  HGBValues_aux(numFieldsG_aux, numCubPoints);
-  HGBGrads_aux(numFieldsG_aux, numCubPoints, spaceDim);
+  FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
+  FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
+  HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
+  HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
-  myHGradBasis_aux.getValues(HGBValues_aux, cubPoints, OPERATOR_VALUE);
-  myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints, OPERATOR_GRAD);
+  myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
+  myHGradBasis_aux.getValues(HGBGrads_aux, cubPoints_aux, OPERATOR_GRAD);
 
   if(MyPID==0) {std::cout << "Getting basis for auxiliary P1 mesh         "
 			  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
@@ -937,8 +937,8 @@ int main(int argc, char *argv[]) {
                      desiredWorksetSize,
                      aux_P1_elemToNode,
                      nodeCoord,
-                     cubPoints,
-                     cubWeights,
+                     cubPoints_aux,
+                     cubWeights_aux,
                      HGBGrads_aux,
                      HGBValues_aux,
                      P2_globalNodeIds,
@@ -1025,6 +1025,7 @@ int main(int argc, char *argv[]) {
 			  << " sec \n"; Time.ResetStartTime();}
 
 
+#define DUMP_DATA
 #ifdef DUMP_DATA
   // Dump matrices to disk
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
@@ -1117,7 +1118,7 @@ int main(int argc, char *argv[]) {
 
   // Get cubature points and weights for error calc (may be different from previous)
   Intrepid::DefaultCubatureFactory<double>  cubFactoryErr;
-  int cubDegErr = 4;
+  int cubDegErr = 6;
   Teuchos::RCP<Intrepid::Cubature<double> > cellCubatureErr = cubFactoryErr.create(P2_cellType, cubDegErr);
   int cubDimErr       = cellCubatureErr->getDimension();
   int numCubPointsErr = cellCubatureErr->getNumPoints();
@@ -1818,7 +1819,7 @@ void CreateLinearSystem(int numWorksets,
   long long numElems = elemToNode.dimension(0);
   int numNodesPerElem = cellType.getNodeCount();
 
-  /*
+  
     std::cout << "CreateLinearSystem:" << std::endl;
     std::cout << "     numCubPoints = " << numCubPoints << std::endl;
     std::cout << "     cubDim = " << cubDim << std::endl;
@@ -1828,7 +1829,7 @@ void CreateLinearSystem(int numWorksets,
     std::cout << "     numNodesPerElem = " << numNodesPerElem << std::endl;
     std::cout << "     length(globalNodeIds) = " << globalNodeIds.size() << std::endl;
     std::cout << "     length(nodeCoord) = " << nodeCoord.dimension(0) << std::endl;
-  */
+  
 
   if(nodeCoord.dimension(0) != Teuchos::as<int>(globalNodeIds.size())) {
     std::ostringstream errStr;
