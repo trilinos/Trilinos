@@ -14,7 +14,7 @@ struct ScratchData
         stk::mesh::get_selected_entities(selector, bulk.buckets(stk::topology::ELEM_RANK), elements);
         unsigned numElements = elements.size();
 
-        elementNodes = DeviceViewMatrixType("DElementsNumNodes", numElements, 8, bulk.mesh_meta_data().spatial_dimension());
+        elementNodes = DeviceArray3DType("DElementsNumNodes", numElements, 8, bulk.mesh_meta_data().spatial_dimension());
         hostElementNodes =  Kokkos::create_mirror_view(elementNodes);
 
         for (unsigned elemIndex = 0; elemIndex < numElements; ++elemIndex)
@@ -22,6 +22,7 @@ struct ScratchData
             stk::mesh::Entity element = elements[elemIndex];
             const stk::mesh::Entity * elemNodes = bulk.begin_nodes(element);
             const unsigned numNodesThisElem = bulk.num_nodes(element);
+	    EXPECT_EQ(8u, numNodesThisElem);	    
             for(unsigned iNode = 0; iNode < numNodesThisElem; ++iNode)
             {
                 stk::mesh::Entity node = elemNodes[iNode];
@@ -35,7 +36,7 @@ struct ScratchData
 
         Kokkos::deep_copy(elementNodes, hostElementNodes);
 
-        elementCentroids = DeviceViewMatrixType("Centroids", numElements, bulk.mesh_meta_data().spatial_dimension());
+        elementCentroids = DeviceArray2DType("Centroids", numElements, bulk.mesh_meta_data().spatial_dimension());
         hostElementCentroids =  Kokkos::create_mirror_view(elementCentroids);
     }
 
@@ -55,10 +56,12 @@ struct ScratchData
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, unroll) , const int element) const
     {
         const unsigned dim = elementCentroids.extent(1);
+	const unsigned numNodes = elementNodes.extent(1);
+	
         for(unsigned k=0;k<dim;++k) // loop over x y z coordinates
         {
             double temp = 0.0;
-            for(unsigned node=0;node<8;++node) // loop over every node of this element
+            for(unsigned node=0;node<numNodes;++node) // loop over every node of this element
                 temp += elementNodes(element, node, k); // sum the coordinates
             elementCentroids(element, k) = temp * 0.125;
         }
@@ -78,8 +81,9 @@ struct ScratchData
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, compact), const int element) const
     {
         const unsigned dim = elementCentroids.extent(1);
+	const unsigned numNodes = elementNodes.extent(1);
 	double temp[3] = {0, 0, 0};
-	for(unsigned node=0;node<8;++node) // loop over every node of this element
+	for(unsigned node=0;node<numNodes;++node) // loop over every node of this element
 	{
 	  for(unsigned k=0; k<dim; ++k) // loop over x y z coordinates
 	    temp[k] += elementNodes(element, node, k); // sum the coordinates
@@ -107,11 +111,11 @@ struct ScratchData
 //    }
 
 
-    DeviceViewMatrixType elementNodes;
-    DeviceViewMatrixType elementCentroids;
+    DeviceArray3DType elementNodes;
+    DeviceArray2DType elementCentroids;
 
-    DeviceViewMatrixType::HostMirror hostElementNodes;
-    DeviceViewMatrixType::HostMirror hostElementCentroids;
+    DeviceArray3DType::HostMirror hostElementNodes;
+    DeviceArray2DType::HostMirror hostElementCentroids;
 };
 
 TEST_F(MTK_Kokkos, calculate_centroid_field_on_device)
@@ -131,4 +135,9 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_device)
     calculator.copy_centroids_to_host();
     calculator.test_centroid_of_element_1();
 
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(app.meta.locally_owned_part(), app.bulk->buckets(stk::topology::ELEM_RANK), elements);
+    for(unsigned elementIndex=0; elementIndex<elements.size(); ++elementIndex) {
+        calculator.test_centroid_of_element(app.hostCentroid, elements[elementIndex], elementIndex);
+    }
 }

@@ -282,7 +282,6 @@ void run_it_flat()
             for(int nodeIndex=0; nodeIndex<nodesPerElem(i); ++nodeIndex) {
                int nodeOffset = elemOffset + nodeIndex;
                int connId = viewOfBuckets(nodeOffset);
-               printf("i=%d, elemIndex=%d, nodeIndex=%d, connId=%d, expectedConnId=%d\n",i, elemIndex,nodeIndex,connId,expectedConnId);
                if (connId != expectedConnId) {
                    update += 1.0;
                }

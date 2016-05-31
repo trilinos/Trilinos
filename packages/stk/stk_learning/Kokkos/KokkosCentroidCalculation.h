@@ -95,9 +95,14 @@ typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
 typedef Kokkos::LayoutLeft   Layout ;
 
-typedef Kokkos::View<double**, Layout, Kokkos::HostSpace>   HostViewMatrixType;
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewMatrixType;
 typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceViewMatrixType;
+
+typedef Kokkos::View<double**, Layout, MemSpace>   DeviceArray2DType;
+typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray2DType;
+
+typedef Kokkos::View<double***, Layout, MemSpace>   DeviceArray3DType;
+typedef Kokkos::View<const double***, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceArray3DType;
 
 typedef Kokkos::View<int*, Layout, MemSpace> DeviceViewIntType;
 
