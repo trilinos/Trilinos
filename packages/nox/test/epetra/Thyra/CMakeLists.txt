@@ -45,6 +45,13 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Thyra_RightScaling
+    SOURCES ModelEvaluator2DSim.hpp ModelEvaluator2DSim_def.hpp Thyra_RightScaling.C
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "Test passed!"
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Thyra_Heq
     SOURCES  ModelEvaluatorHeq.hpp ModelEvaluatorHeq_def.hpp Thyra_Heq.C
     NUM_MPI_PROCS 1
