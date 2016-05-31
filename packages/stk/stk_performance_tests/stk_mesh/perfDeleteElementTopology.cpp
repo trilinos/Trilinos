@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
+#include <string>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -8,6 +9,36 @@
 
 namespace
 {
+
+class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::MeshFixture
+{
+protected:
+    DestroyElementTopologyPerformanceTest()
+    {
+        create_num_fields_of_rank(10, stk::topology::NODE_RANK);
+        create_num_fields_of_rank(10, stk::topology::ELEM_RANK);
+        setup_mesh("generated:100x100x128", stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+
+    void expect_no_entities()
+    {
+        EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::ELEM_RANK)));
+        EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::NODE_RANK)));
+    }
+private:
+    void create_num_fields_of_rank(const unsigned numFields, stk::mesh::EntityRank rank)
+    {
+        const std::string name = "field_" + std::to_string(rank) + "_";
+        for(unsigned i = 0; i < numFields; i++)
+            create_vector_field_on_universal_part(rank, name + std::to_string(i));
+    }
+    void create_vector_field_on_universal_part(stk::mesh::EntityRank rank, const std::string& name)
+    {
+        auto& field = get_meta().declare_field<stk::mesh::Field<double>>(rank, name, 3);
+        stk::mesh::put_field(field, get_meta().universal_part());
+    }
+};
+
 
 class DestroyElementTopologyPerformance : public stk::unit_test_util::PerformanceTester
 {
@@ -22,36 +53,12 @@ protected:
 private:
     stk::mesh::BulkData & bulkData;
 };
-
-class DestroyElementTopologyPerformanceTest : public stk::unit_test_util::MeshFixture
-{
-protected:
-    DestroyElementTopologyPerformanceTest()
-    {
-        declare_num_fields_of_rank(10, stk::topology::NODE_RANK);
-        declare_num_fields_of_rank(10, stk::topology::ELEM_RANK);
-        setup_mesh("generated:100x100x128", stk::mesh::BulkData::NO_AUTO_AURA);
-    }
-
-private:
-    void declare_num_fields_of_rank(const unsigned numFields, stk::mesh::EntityRank rank)
-    {
-        const std::string name = "field_" + std::to_string(rank) + "_";
-        for(unsigned i = 0; i < numFields; i++)
-        {
-            stk::mesh::Field<double>& field = get_meta().declare_field<stk::mesh::Field<double>>(rank, name+std::to_string(i), 3);
-            stk::mesh::put_field(field, get_meta().universal_part());
-        }
-    }
-};
-
 TEST_F(DestroyElementTopologyPerformanceTest, DestroyElementTopology)
 {
-    DestroyElementTopologyPerformance perfTester(get_bulk());
-    perfTester.run_performance_test();
-
-    EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::ELEM_RANK)));
+    DestroyElementTopologyPerformance(get_bulk()).run_performance_test();
+    expect_no_entities();
 }
+
 
 class DestroyAllElementsIndividuallyPerformance : public stk::unit_test_util::PerformanceTester
 {
@@ -61,9 +68,8 @@ protected:
     virtual void run_algorithm_to_time()
     {
         bulkData.modification_begin();
-        destroy_entities_of_rank(stk::topology::ELEM_RANK);
-        destroy_entities_of_rank(stk::topology::FACE_RANK);
-        destroy_entities_of_rank(stk::topology::NODE_RANK);
+        for(stk::mesh::EntityRank rank : {stk::topology::ELEM_RANK, stk::topology::FACE_RANK ,stk::topology::NODE_RANK})
+            destroy_entities_of_rank(rank);
         bulkData.modification_end();
     }
     virtual size_t get_value_to_output_as_iteration_count() { return 1; }
@@ -77,13 +83,10 @@ private:
     }
     stk::mesh::BulkData & bulkData;
 };
-
 TEST_F(DestroyElementTopologyPerformanceTest, DestroyElementsIndividually)
 {
-    DestroyAllElementsIndividuallyPerformance perfTester(get_bulk());
-    perfTester.run_performance_test();
-
-    EXPECT_EQ(0u, stk::mesh::count_selected_entities(get_meta().universal_part(), get_bulk().buckets(stk::topology::ELEM_RANK)));
+    DestroyAllElementsIndividuallyPerformance(get_bulk()).run_performance_test();
+    expect_no_entities();
 }
 
 }
