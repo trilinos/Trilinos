@@ -202,8 +202,6 @@ C ... Test coordinate frames
       implicit none
       include 'exodusII.inc'
 
-      real fdum
-      character*1 cdum
       integer iout
 
       integer exoid, ierr, i, j
@@ -214,12 +212,12 @@ C ... Test coordinate frames
 
       data iout /6/
 
-      call exinq(exoid, EXNCF, numfrm, fdum, cdum, ierr)
-      write (iout, '(/"after exinq, error = ", i3)' ) ierr
+      numfrm = exinqi(exoid, EXNCF)
       write (iout,
      1  '(/"There are ",i2," coordinate frames")')
      2  numfrm
 
+      numfrm = 3
       call exgfrm(exoid, numfrm, cfids, coord, tags, ierr);
       write (6,'("after exgfrm, error = ", i4)') ierr
 

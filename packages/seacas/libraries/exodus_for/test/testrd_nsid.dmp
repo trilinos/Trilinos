@@ -151,8 +151,6 @@ connect array for elem block 10
  Element   6, Nodes/Element =   8 --  17 18 19 20 27 28 30 29
  Element   7, Nodes/Element =   3 --  31 32 33
 
-after exinq, error =   0
-
 There are  3 coordinate frames
 after exgfrm, error =    0
     1   RECTANGULAR                           0.10      0.20      0.30      0.40      0.50      0.60      0.70      0.80      0.90
