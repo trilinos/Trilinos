@@ -148,7 +148,7 @@ using namespace Intrepid;
 
 
 // for debugging
-#define zwrap(x) (std::abs(x)<1e-10 ? 0.0 : std::abs(x))
+#define zwrap(x) (std::abs(x)<1e-10 ? 0.0 : x)
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -160,10 +160,6 @@ typedef Intrepid::CellTools<double>      IntrepidCTools;
 
 
 // forward declarations
-
-void PromoteMesh(const int degree, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-                 FieldContainer<int> & P2_elemToNode, FieldContainer<double> & P2_nodeCoord,FieldContainer<int> & P2_nodeOnBoundary);
-
 void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
 			  FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
 
@@ -1689,102 +1685,15 @@ void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const Field
     }
   }
   
+  //#define DEBUG_EDGE_ENUMERATION
+#ifdef DEBUG_EDGE_ENUMERATION
+  printf("**** Edge coordinates ***\n");
+  for(int i=0; i<num_edges; i++)
+    printf("[%2d] %10.2f %10.2f\n",i,edgeCoord(i,0),edgeCoord(i,1));
+#endif
+
 }
 
-/*********************************************************************************************************/
-
-void PromoteMesh(const int degree,
-                 const FieldContainer<int>    & P1_elemToNode,
-                 const FieldContainer<double> & P1_nodeCoord,
-                 const FieldContainer<double> & P1_edgeCoord,
-                 const FieldContainer<int>    & P1_elemToEdge,
-                 const FieldContainer<int>    & P1_elemToEdgeOrient,
-                 const FieldContainer<int>    & P1_nodeOnBoundary,
-                 FieldContainer<int>          & P2_elemToNode,
-                 FieldContainer<double>       & P2_nodeCoord,
-                 FieldContainer<int>          & P2_nodeOnBoundary) {
-
-  int numElems           = P1_elemToNode.dimension(0);
-  int P1_numNodesperElem = P1_elemToNode.dimension(1);
-  int P1_numEdgesperElem = P1_elemToEdge.dimension(1);
-  int P2_numNodesperElem = P2_elemToNode.dimension(1);
-  int P1_numNodes        = P1_nodeCoord.dimension(0);
-  int P1_numEdges        = P1_edgeCoord.dimension(0);
-  //  int P2_numNodes        = P2_nodeCoord.dimension(0);
-  int dim                = P1_nodeCoord.dimension(1);
-  
-
-  // Sanity checks
-  if(P1_numNodesperElem !=4 || P2_numNodesperElem !=9 ) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
-  if(P1_elemToEdge.dimension(0)!=numElems || P1_elemToEdge.dimension(1)!=4 || P1_elemToEdge.dimension(0)!=P1_elemToEdgeOrient.dimension(0) || P1_elemToEdge.dimension(1)!=P1_elemToEdgeOrient.dimension(1) ||
-     P2_elemToNode.dimension(0)!=numElems || P2_nodeCoord.dimension(0) != P1_numNodes+P1_numEdges+numElems)
-    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
-
-  /*Quad-9 Layout:   
-    inode3 -- inode6 -- inode2    
-    |                   |
-    inode7    inode8    inode5
-    |                   |       
-    inode0 -- inode4 -- inode1
-  */
-  // Make the new el2node array
-  for(int i=0; i<numElems; i++)  {    
-    // P1 nodes
-    for(int j=0; j<P1_numNodesperElem; j++) 
-      P2_elemToNode(i,j) = P1_elemToNode(i,j);
-    
-    // P1 edges
-    for(int j=0; j<P1_numEdgesperElem; j++) 
-      P2_elemToNode(i,P1_numNodesperElem+j) = P1_numNodes+P1_elemToEdge(i,j);
-
-    // P1 cells
-    P2_elemToNode(i,P1_numNodesperElem+P1_numEdgesperElem) = P1_numNodes+P1_numEdges+i;
-
-  }
-
-  // Make the new coordinates
-  // P1 nodes
-  for(int i=0; i<P1_numNodes; i++) 
-    for(int j=0; j<dim; j++)
-      P2_nodeCoord(i,j) = P1_nodeCoord(i,j);
-
-  // P1 edges
-  for(int i=0; i<P1_numEdges; i++) 
-    for(int j=0; j<dim; j++)
-      P2_nodeCoord(P1_numNodes+i,j) = P1_edgeCoord(i,j);
-
-  // P1 cells
-  for(int i=0; i<numElems; i++) 
-    for(int j=0; j<dim; j++) {
-      P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) =0;
-      for(int k=0; k<P1_numNodesperElem; k++)
-        P2_nodeCoord(P1_numNodes+P1_numEdges+i,j) += P1_nodeCoord(P1_elemToNode(i,k),j) / P1_numNodesperElem;
-    }
-  
-
-
-  // Update the boundary conditions
-  int edge_node0_id[4]={0,1,2,3};
-  int edge_node1_id[4]={1,2,3,0};
-
-  // P1 nodes
-  for(int i=0; i<P1_numNodes; i++) 
-    P2_nodeOnBoundary(i) = P1_nodeOnBoundary(i);
-
-  
-  // P1 edges
-  // Not all that efficient
-  for(int i=0; i<numElems; i++) {
-    for(int j=0; j<P1_numEdgesperElem; j++) {
-      int P1_edge = P1_elemToEdge(i,j);
-      int n0 = P1_elemToNode(i,edge_node0_id[j]);
-      int n1 = P1_elemToNode(i,edge_node1_id[j]);
-
-      if(P1_nodeOnBoundary(n0) && P2_nodeOnBoundary(n1)) 
-        P2_nodeOnBoundary(P1_numNodes+P1_edge) = 1;
-    }
-  }
-}
 
 
 /*********************************************************************************************************/
@@ -1798,7 +1707,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
                  FieldContainer<int>          & Pn_elemToNode,
                  FieldContainer<double>       & Pn_nodeCoord,
                  FieldContainer<int>          & Pn_nodeOnBoundary) {
-  //#define DEBUG_OUTPUT
+  //#define DEBUG_PROMOTE_MESH
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
   int P1_numEdgesperElem = P1_elemToEdge.dimension(1);
@@ -1808,7 +1717,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int dim                = P1_nodeCoord.dimension(1);
 
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_PROMOTE_MESH
   int Pn_numNodes        = Pn_nodeCoord.dimension(0);
 #endif
 
@@ -1816,10 +1725,10 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   int Pn_ExpectedNumNodes     = P1_numNodes + (degree-1)*P1_numEdges + (degree-1)*(degree-1)*numElems;  
 
   // Sanity checks
-  if(P1_numNodesperElem !=4 || Pn_numNodesperElem !=Pn_ExpectedNodesperElem ) throw std::runtime_error("Error: GenerateEdgeEnumeration only works on Quads!");
+  if(P1_numNodesperElem !=4 || Pn_numNodesperElem !=Pn_ExpectedNodesperElem ) throw std::runtime_error("Error: PromoteMesh_Pn_Kirby only works on Quads!");
   if(P1_elemToEdge.dimension(0)!=numElems || P1_elemToEdge.dimension(1)!=4 || P1_elemToEdge.dimension(0)!=P1_elemToEdgeOrient.dimension(0) || P1_elemToEdge.dimension(1)!=P1_elemToEdgeOrient.dimension(1) ||
      Pn_elemToNode.dimension(0)!=numElems || Pn_nodeCoord.dimension(0) != Pn_ExpectedNumNodes)
-    throw std::runtime_error("Error: GenerateEdgeEnumeration array size mismatch");
+    throw std::runtime_error("Error: PromoteMesh_Pn_Kirby array size mismatch");
 
   const CellTopologyData &cellTopoData = *shards::getCellTopologyData<shards::Quadrilateral<4> >();                                                  
   shards::CellTopology cellTopo(&cellTopoData);
@@ -1844,12 +1753,14 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
     inode0 -- inode1 -- inode2 -- inode3
   */
 
-  // We still number the global nodes in the exodus-style (node,edge,face) ordering, but
+  // We still number the global nodes in the exodus-style (node,edge,face) ordering, *by global orientation* but
   // the elem2node map has to account for Kirby-style elements
-
   int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
+  int edge_node0_id[4]={0,1,2,3};
+  int edge_node1_id[4]={1,2,3,0};
 
   // As you advance along each edge, we'll skip by the following amount to get to the next Kirby dof
+  // edge_skip is in *local* orientation, so we'll multiply it by the elemToEdgeOrient value
   int edge_skip[4] = {1,degree+1,-1,-(degree+1)};
   int center_root = degree+2;
 
@@ -1861,9 +1772,11 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   
     // P1 edges
     for(int j=0; j<P1_numEdgesperElem; j++){
-      int base_id =  p1_node_in_pn[j];
+      int orient   = P1_elemToEdgeOrient(i,j);
+      int base_id = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
+      int skip     =  orient*edge_skip[j];
       for(int k=0; k<degree-1; k++) 
-	Pn_elemToNode(i,base_id+(k+1)*edge_skip[j]) = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+	Pn_elemToNode(i,base_id+(k+1)*skip) = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
     }
 
     // P1 cells
@@ -1879,8 +1792,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
   FieldContainer<double> PhysNodeCoords(1,Pn_numNodesperElem,dim);  
   Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > BasisPn(degree,pointType);
   BasisPn.getDofCoords(RefNodeCoords);
-  
-#ifdef DEBUG_OUTPUT
+
+#ifdef DEBUG_PROMOTE_MESH
   printf("**** P=%d reference nodal coordinates ***\n",degree);
   for(int i=0; i<Pn_numNodesperElem; i++)
     printf("[%2d] %10.2f %10.2f\n",i,RefNodeCoords(i,0),RefNodeCoords(i,1));
@@ -1903,7 +1816,8 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
    // Map the reference node location to physical   
    Intrepid::CellTools<double>::mapToPhysicalFrame(PhysNodeCoords,RefNodeCoords2,my_p1_nodes,cellTopo);
 
-#ifdef DEBUG_OUTPUT
+
+#ifdef DEBUG_PROMOTE_MESH
    printf("[%2d] PhysNodes  : ",i);
    for(int j=0; j<Pn_numNodesperElem; j++)
      printf("(%10.2f %10.2f) ",PhysNodeCoords(0,j,0),PhysNodeCoords(0,j,1));
@@ -1917,11 +1831,19 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
      for(int k=0; k<dim; k++)
        Pn_nodeCoord(jj,k) = PhysNodeCoords(0,j,k);
    }
+
  }
 
+#ifdef DEBUG_PROMOTE_MESH
+ for(int i=0; i<numElems; i++)  { 
+   printf("[%2d] Effective  : ",i);
+   for(int j=0; j<Pn_numNodesperElem; j++)
+     printf("(%10.2f %10.2f) ",Pn_nodeCoord(Pn_elemToNode(i,j),0),Pn_nodeCoord(Pn_elemToNode(i,j),1));
+   printf("\n");
+ }
+#endif
+
   // Update the boundary conditions
-  int edge_node0_id[4]={0,1,2,3};
-  int edge_node1_id[4]={1,2,3,0};
 
   // P1 nodes
   for(int i=0; i<P1_numNodes; i++) 
@@ -1940,7 +1862,7 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
     }
   }
 
-#ifdef DEBUG_OUTPUT
+#ifdef DEBUG_PROMOTE_MESH
   // debug
   printf("**** P=%d elem2node  ***\n",degree);
   for(int i=0; i<numElems; i++) {
@@ -2136,7 +2058,7 @@ void CreateLinearSystem(int numWorksets,
     IntrepidCTools::setJacobianInv(worksetJacobInv, worksetJacobian );
     IntrepidCTools::setJacobianDet(worksetJacobDet, worksetJacobian );
 
-
+    //#define DEBUG_OUTPUT
 #ifdef DEBUG_OUTPUT
       printf("*** cubPoints ***\n");
       for(int j=0; j<numCubPoints; j++)
@@ -2151,6 +2073,12 @@ void CreateLinearSystem(int numWorksets,
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numCubPoints; j++)
 	  printf("(%d,%d) [%10.2e %10.2e; %10.2e %10.2e]\n",i,j,zwrap(worksetJacobian(i,j,0,0)),zwrap(worksetJacobian(i,j,0,1)),zwrap(worksetJacobian(i,j,1,0)),zwrap(worksetJacobian(i,j,1,1)));
+
+      printf("*** det J ***\n");
+      for(int i=0; i<worksetSize; i++)
+	for(int j=0; j<numCubPoints; j++)
+	  printf("(%d,%d) %10.2e\n",i,j,zwrap(worksetJacobDet(i,j)));
+
 #endif
     
 
@@ -2222,8 +2150,6 @@ void CreateLinearSystem(int numWorksets,
     IntrepidFSTools::integrate<double>(worksetRHS,                             // f.(u)*J*w
                                        worksetSourceTerm,
                                        worksetHGBValuesWeighted,  COMP_BLAS);
-
-
 #ifdef DEBUG_OUTPUT      
       printf("*** worksetSourceTerm ***\n");
       for(int i=0; i<worksetSize; i++)
@@ -2256,10 +2182,26 @@ void CreateLinearSystem(int numWorksets,
 	  }
 	  printf("\n");
 	}     
+
       printf("*** worksetRHS ***\n");
       for(int i=0; i<worksetSize; i++)
 	for(int j=0; j<numFieldsG; j++)
 	  printf("(%d,%d) %10.2e\n",i,j,worksetRHS(i,j));
+
+      printf("*** worksetStiffMatrix ***\n");
+      for(int i=0; i<worksetSize; i++) {
+	printf("(%d) [ ",i);
+	for(int j=0; j<numFieldsG; j++) {
+	  for(int k=0; k<numFieldsG; k++) {
+	    printf("%10.2e ",zwrap(worksetStiffMatrix(i,j,k)));	    
+	  }
+	  if(j!=numFieldsG-1) printf(";");
+	}
+	printf("]\n");
+      }     
+
+
+
 #endif
 
     if(MyPID==0) {std::cout << msg << "Compute right-hand side                     "
