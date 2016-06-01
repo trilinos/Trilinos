@@ -1575,7 +1575,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
-  solver.Iterate(200, 1e-10);
+  solver.Iterate(200, 1e-12);
 
   delete MLPrec;
 
