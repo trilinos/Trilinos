@@ -244,8 +244,29 @@ struct GpuGatherBucketScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, unroll), const int elementBucketIndex) const
     {
+        ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
+        const unsigned numElements = bucket.size();
+        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
+        const unsigned dim = elementCentroids.extent(1);
+        double temp[3] = {0.0, 0.0, 0.0};
+        for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
+            const unsigned elemFieldIndex = get_index(bucket[elementIndex]);
+            temp[0] = 0.0;
+            temp[1] = 0.0;
+            temp[2] = 0.0;
+            ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
+            for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
+            {
+                unsigned idx = get_index(nodesView(nodeIndex));
+                temp[0] += nodeCoords(idx, 0);
+                temp[1] += nodeCoords(idx, 1);
+                temp[2] += nodeCoords(idx, 2);
+            }
+            elementCentroids(elemFieldIndex, 0) = temp[0] * 0.125;
+            elementCentroids(elemFieldIndex, 1) = temp[1] * 0.125;
+            elementCentroids(elemFieldIndex, 2) = temp[2] * 0.125;
+        }
     }
-  
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
     {
@@ -393,7 +414,7 @@ TEST_F(MTK_Kokkos, bucket0)
     run_bucket_test();
 }
 
-TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_uvm)
+TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
 {
     MyApp app;
 
