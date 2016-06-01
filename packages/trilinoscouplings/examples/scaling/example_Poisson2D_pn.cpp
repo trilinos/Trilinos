@@ -186,8 +186,8 @@ void CreateLinearSystem(int numWorkSets,
 
 void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Teuchos::RCP<Epetra_CrsMatrix> & P);
 
-void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode,
-                      Epetra_Map const & P1_map_aux, Epetra_Map const &P2_map,
+void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
+                      Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
                       Teuchos::RCP<Epetra_CrsMatrix> & I);
 
 void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetra_MultiVector & x, Epetra_MultiVector & b, const Epetra_MultiVector & soln);
@@ -1039,7 +1039,7 @@ int main(int argc, char *argv[]) {
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
   Teuchos::RCP<Epetra_CrsMatrix> P_identity;
   if (inputSolverList.isParameter("aux P1")) {
-    GenerateIdentityCoarsening_p2_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
+    GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
   
@@ -2282,25 +2282,25 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
 }
 
 /*********************************************************************************************************/
-void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode,
-                      Epetra_Map const & P1_map_aux, Epetra_Map const &P2_map,
+void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
+                      Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
                       Teuchos::RCP<Epetra_CrsMatrix> & P) {
 
-  // Generate prolongator matrix that will be used to transfer from P1 on auxiliary mesh to  P2 on base mesh.
+  // Generate prolongator matrix that will be used to transfer from P1 on auxiliary mesh to Pn on base mesh.
   // It's just the identity matrix.
-  // By construction, the node numbering on the P1 auxiliary mesh is the same as on the P2 base mesh
-  // (see CreateP1MeshFromP2Mesh).  The P2 map is the range map, the P1 auxiliary map is the domain map.
+  // By construction, the node numbering on the P1 auxiliary mesh is the same as on the Pn base mesh
+  // (see CreateP1MeshFromPnMesh).  The P2 map is the range map, the P1 auxiliary map is the domain map.
   
   double one = 1.0;
-  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,P2_map,0));
+  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
 
   //We must keep track of the nodes already encountered.  Inserting more than once will cause
   //the values to be summed.  Using a hashtable would work -- we abuse std::map for this purpose.
   std::map<int,int> hashTable;
-  int Nelem=P2_elemToNode.dimension(0);
+  int Nelem=Pn_elemToNode.dimension(0);
   for(int i=0; i<Nelem; i++) {
-    for(int j=0; j<P2_elemToNode.dimension(1); j++) {
-      int row = P2_elemToNode(i,j);
+    for(int j=0; j<Pn_elemToNode.dimension(1); j++) {
+      int row = Pn_elemToNode(i,j);
       if (hashTable.find(row) == hashTable.end()) {
         //not found
         P->InsertGlobalValues(row,1,&one,&row);
@@ -2309,7 +2309,7 @@ void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNo
     }
   }
 
-  P->FillComplete(P1_map_aux,P2_map);
+  P->FillComplete(P1_map_aux,Pn_map);
 }
 
 
