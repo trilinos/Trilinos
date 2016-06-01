@@ -13,7 +13,7 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * A Operator object represnts the operators in the code the user gives us. 
+ * A Operator object represnts the operators in the code the user gives us.
  */
 
 class Value;
@@ -27,46 +27,46 @@ class Operator: public Object
    *
    * @param op - An enum specifying which operator this is
    */
-  Operator(const std::string& name, bool isUnary, 
+  Operator(const std::string& name, bool isUnary,
            int precedence, bool isLeftAssoc);
 
   /**
    * Destructor -> The destructor is a no-op
-   */  
+   */
   virtual ~Operator() {}
 
   /**
-   * getName() -> This method returns the string name of the 
+   * getName() -> This method returns the string name of the
    *              Operator(ex: "Add","Subtract",...)
-   */  
+   */
   std::string getName() const { return _name;}
 
   int getPrecedence() const {return _precedence;}
-  
+
   bool isLeftAssociative() const {return _leftAssociative;}
 
   /**
-   * doBinaryOp -> This method performs an operation on arg1 and arg2 and 
+   * doBinaryOp -> This method performs an operation on arg1 and arg2 and
    *               stores the result in store.
-   * 
+   *
    * @param arg1  - The first  argument to the operation
    * @param arg2  - The second argument to the operation
    * @param store - The memory where the result is stored
-   */ 
-  virtual void performOp(Value* arg1, Value* arg2, 
+   */
+  virtual void performOp(Value* arg1, Value* arg2,
                          ScalarNumber<double>& store) = 0;
 
   virtual void performOp(Value* arg, ScalarNumber<double>& store) = 0;
 
   std::ostream& operator<<(std::ostream& os) const;
-  
+
   bool isUnary() const {return _isUnary;}
 
   static Operator* getOp(const std::string& name);
-  
+
   static void init();
  protected:
-  
+
   bool        _isUnary;
   std::string _name; //!< A string representation of the operator
   int         _precedence;
@@ -77,7 +77,7 @@ class Operator: public Object
   static bool ISINIT;
 };
 
-class AddO : public Operator 
+class AddO : public Operator
 {
  public:
   AddO() : Operator("+", false, 6, true) {}
@@ -86,7 +86,7 @@ class AddO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class SubtractO : public Operator 
+class SubtractO : public Operator
 {
  public:
   SubtractO() : Operator("-", false, 6, true) {}
@@ -95,7 +95,7 @@ class SubtractO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class MultiplyO : public Operator 
+class MultiplyO : public Operator
 {
  public:
   MultiplyO() : Operator("*", false, 7, true) {}
@@ -104,7 +104,7 @@ class MultiplyO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class DivideO : public Operator 
+class DivideO : public Operator
 {
  public:
   DivideO() : Operator("/", false, 7, true) {}
@@ -113,7 +113,7 @@ class DivideO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class EqualityO : public Operator 
+class EqualityO : public Operator
 {
  public:
   EqualityO() : Operator("==", false, 3, true) {}
@@ -122,7 +122,7 @@ class EqualityO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class GreaterO : public Operator 
+class GreaterO : public Operator
 {
  public:
   GreaterO() : Operator(">", false, 4, true) {}
@@ -131,7 +131,7 @@ class GreaterO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class LessO : public Operator 
+class LessO : public Operator
 {
  public:
   LessO() : Operator("<", false, 4, true) {}
@@ -140,7 +140,7 @@ class LessO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class GreaterEqualO : public Operator 
+class GreaterEqualO : public Operator
 {
  public:
   GreaterEqualO() : Operator(">=", false, 4, true) {}
@@ -149,7 +149,7 @@ class GreaterEqualO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class LessEqualO : public Operator 
+class LessEqualO : public Operator
 {
  public:
   LessEqualO() : Operator("<=", false, 4, true) {}
@@ -158,7 +158,7 @@ class LessEqualO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class AssignmentO : public Operator 
+class AssignmentO : public Operator
 {
  public:
   AssignmentO() : Operator("=", false, 0, false) {}
@@ -167,7 +167,7 @@ class AssignmentO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class LogicOrO : public Operator 
+class LogicOrO : public Operator
 {
  public:
   LogicOrO() : Operator("||", false, 1, true) {}
@@ -176,7 +176,7 @@ class LogicOrO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class LogicAndO : public Operator 
+class LogicAndO : public Operator
 {
  public:
   LogicAndO() : Operator("&&", false, 2, true) {}
@@ -185,7 +185,7 @@ class LogicAndO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class InEqualityO : public Operator 
+class InEqualityO : public Operator
 {
  public:
   InEqualityO() : Operator("!=", false, 3, true) {}
@@ -194,7 +194,7 @@ class InEqualityO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class ModuloO : public Operator 
+class ModuloO : public Operator
 {
  public:
   ModuloO() : Operator("%", false, 7, true) {}
@@ -203,7 +203,7 @@ class ModuloO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class ExponentO : public Operator 
+class ExponentO : public Operator
 {
  public:
   ExponentO() : Operator("^", false, 8, false) {}
@@ -214,7 +214,7 @@ class ExponentO : public Operator
 
 //Important - OpenParen, CloseParen, and ArrayInit are structural operators,
 //not arithmetic operators, therefore they cannot be performed.
-class OpenParenO : public Operator 
+class OpenParenO : public Operator
 {
  public:
   OpenParenO() : Operator("(", false, 0, true) {}
@@ -223,7 +223,7 @@ class OpenParenO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class CloseParenO : public Operator 
+class CloseParenO : public Operator
 {
  public:
   CloseParenO() : Operator(")", false, 0, true) {}
@@ -241,7 +241,7 @@ class ArrayInitO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store) {assert(0);}
 };
 
-class NegationO : public Operator 
+class NegationO : public Operator
 {
  public:
   NegationO() : Operator("_", true, 11, false) {}
@@ -250,7 +250,7 @@ class NegationO : public Operator
   void performOp(Value* arg, ScalarNumber<double>& store);
 };
 
-class LogicNotO : public Operator 
+class LogicNotO : public Operator
 {
  public:
   LogicNotO() : Operator("!", true, 11, false) {}

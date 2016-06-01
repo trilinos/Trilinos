@@ -10,10 +10,10 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * A Number object represnts the constants in the code the user gives us. 
+ * A Number object represnts the constants in the code the user gives us.
  */
 
-template <class T> 
+template <class T>
 class ArrayNumber: public Value
 {
  public:
@@ -21,26 +21,26 @@ class ArrayNumber: public Value
   /**
    * Constructor -> Trivial
    *
-   * @param type  - The type of the number
    * @param value - The value of the number
+   * @param size  - The length of the array
    */
-  ArrayNumber(Type type, const T* value, int size): Value(type, ArrayNumberOT) 
-  { 
+  ArrayNumber(const T* value, long size): Value(TypeToTypeT<T>::value, ArrayNumberOT)
+  {
     assert(size > 0);
     assert(value != NULL);
 
     _size  = size;
     _value = new T[size];
-    for (int i = 0; i < size; ++i) 
+    for (int i = 0; i < size; ++i)
       _value[i] = value[i];
   }
-  
+
   ~ArrayNumber() { delete[] _value; }
 
   /**
    * getValue -> Returns the value of the number
    */
-  double getArrayValue(int offset) const {
+  double getArrayValue(long offset) const {
     assert(offset >= 0 && offset < _size);
 
     return (double) _value[offset];
@@ -50,14 +50,14 @@ class ArrayNumber: public Value
    * setValue -> Changes the value of the number
    *
    * @param value - The new value for the number
-   */ 
-  void setArrayValue(double value, int offset) {
+   */
+  void setArrayValue(double value, long offset) {
     assert(offset >= 0 && offset < _size);
 
     _value[offset] = (T) value;
   }
 
-  int getSize() const {return _size;}
+  long getSize() const {return _size;}
 
   std::ostream& operator<<(std::ostream& os) const {
     os << "ArrayNumber:{";
@@ -69,7 +69,7 @@ class ArrayNumber: public Value
 
  protected:
   T*  _value; //!< The value of this number
-  int _size;
+  long _size;
 };
 
 }

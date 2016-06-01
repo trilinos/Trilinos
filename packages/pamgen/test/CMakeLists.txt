@@ -190,3 +190,9 @@ d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt
 1tri_elem.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )
+
+#
+# RTC testing
+#
+
+ADD_SUBDIRECTORY(rtc_test)
