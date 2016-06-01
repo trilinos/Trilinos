@@ -1526,7 +1526,7 @@ namespace Iopx {
             }
 
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
-                                                 split_type);
+                                                 split_type, side_set_name);
           }
           else if (split_type == Ioss::SPLIT_BY_ELEMENT_BLOCK) {
             // There are multiple side types in the model.  Iterate
@@ -1566,7 +1566,7 @@ namespace Iopx {
               }
             }
             Ioex::separate_surface_element_sides(element, sides, get_region(), topo_map, side_map,
-                                                 split_type);
+                                                 split_type, side_set_name);
           }
         }
 
