@@ -46,6 +46,21 @@
 
 #include "ROL_RiskMeasure.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::CoherentExpUtility
+    \brief Provides the interface for the coherent entropic risk measure.
+
+    The coherent entropic risk measure is
+    \f[
+       \mathcal{R}(X) = \inf_{\lambda > 0} \left\{
+         \lambda \log\mathbb{E}\left[\exp\left(\frac{X}{\lambda}\right)\right]
+         \right\}.
+    \f]
+    \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$\lambda\f$, then minimizes jointly for \f$(x_0,\lambda)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>

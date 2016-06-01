@@ -46,6 +46,35 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::LogExponentialQuadrangle
+    \brief Provides an interface for the entropic risk using the expectation
+           risk quadrangle.
+
+    The entropic risk measure (also called the exponential utility and the
+    log-exponential risk measure) is
+    \f[
+       \mathcal{R}(X) = \lambda
+       \log\mathbb{E}\left[\exp\left(\frac{X}{\lambda}\right)\right]
+    \f]
+    for \f$\lambda > 0\f$.  The entropic risk is convex, translation
+    equivariant and monotonic.
+
+    This class defines the entropic risk measure using the framework of the
+    expectation risk quadrangle.  In this case, the scalar regret function
+    is
+    \f[
+       v(x) = \lambda(\exp\left(\frac{x}{\lambda}\right)-1).
+    \f]
+    The entropic risk measure is then implemented as
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}}\left\{
+           t + \mathbb{E}[v(X-t)] \right\}.
+    \f]
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -60,12 +89,23 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
+      @param[in]     coeff    is the scale parameter \f$\lambda\f$
+  */
   LogExponentialQuadrangle(const Real coeff = 1)
     : ExpectationQuad<Real>(), coeff_(coeff) {
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measures"->"Log-Exponential Quadrangle"
+      and withing the "Log-Exponential Quadrangle" sublist should have
+      \li "Rate" (greater than 0). 
+  */
   LogExponentialQuadrangle(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList &list

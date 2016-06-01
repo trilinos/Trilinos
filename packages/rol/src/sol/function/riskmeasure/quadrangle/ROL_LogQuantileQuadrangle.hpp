@@ -47,6 +47,29 @@
 #include "ROL_ExpectationQuad.hpp"
 #include "ROL_PlusFunction.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::LogQuantileQuadrangle
+    \brief Provides an interface for the conditioanl entropic risk using
+           the expectation risk quadrangle.
+
+    This class defines the conditional entropic risk measure using the
+    framework of the expectation risk quadrangle.  In this case, the scalar
+    regret function is
+    \f[
+       v(x) = \lambda(\exp\left(\frac{x}{\lambda}\right)-1)_+ - \alpha (-x)_+
+    \f]
+    for \f$\lambda > 0\f$ and \f$0 \le \alpha < 1\f$. 
+    The entropic risk measure is then implemented as
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}}\left\{
+           t + \mathbb{E}[v(X-t)] \right\}.
+    \f]
+    The conditional entropic risk is convex, translation equivariant and
+    monotonic.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -55,16 +78,16 @@ private:
 
   Teuchos::RCP<PlusFunction<Real> > pf_;
 
-  Real prob_;
-  Real scale_;
+  Real alpha_;
+  Real rate_;
   Real eps_;
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((prob_ <= zero) || (prob_ >= one), std::invalid_argument,
-      ">>> ERROR (ROL::LogQuantileQuadrangle): Confidence level must be between 0 and 1!");
-    TEUCHOS_TEST_FOR_EXCEPTION((scale_ <= zero), std::invalid_argument,
-      ">>> ERROR (ROL::LogQuantileQuadrangle): Growth constant must be positive!");
+    TEUCHOS_TEST_FOR_EXCEPTION((alpha_ <= zero) || (alpha_ >= one), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): Linear growth rate must be between 0 and 1!");
+    TEUCHOS_TEST_FOR_EXCEPTION((rate_ <= zero), std::invalid_argument,
+      ">>> ERROR (ROL::LogQuantileQuadrangle): Exponential growth rate must be positive!");
     TEUCHOS_TEST_FOR_EXCEPTION((eps_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Smoothing parameter must be positive!");
     TEUCHOS_TEST_FOR_EXCEPTION(pf_ == Teuchos::null, std::invalid_argument,
@@ -72,21 +95,38 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
-  LogQuantileQuadrangle(Real prob, Real scale, Real eps,
+      @param[in]     alpha    is the scale parameter for the negative branch of the scalar regret
+      @param[in]     rate     is the rate parameter for the positive branch of the scalar regret
+      @param[in]     eps      is the smoothing parameter for the approximate plus function
+      @param[in]     pf       is the plus function or an approximation
+  */
+  LogQuantileQuadrangle(Real alpha, Real rate, Real eps,
                         Teuchos::RCP<PlusFunction<Real> > &pf ) 
-    : ExpectationQuad<Real>(), prob_(prob), scale_(scale), eps_(eps), pf_(pf) {
+    : ExpectationQuad<Real>(), alpha_(alpha), rate_(rate), eps_(eps), pf_(pf) {
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measures"->"Log-Quantile Quadrangle"
+      and withing the "Log-Quantile Quadrangle" sublist should have
+      \li "Slope for Linear Growth" (between 0 and 1)
+      \li "Rate for Exponential Growth" (must be positive)
+      \li "Smoothing Parameter" (must be positive)
+      \li A sublist for plus function information.
+  */
   LogQuantileQuadrangle(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Log-Quantile Quadrangle");
     // Check CVaR inputs
-    prob_  = list.get<Real>("Confidence Level");
-    scale_ = list.get<Real>("Growth Constant");
-    eps_   = list.get<Real>("Smoothing Parameter");
+    alpha_  = list.get<Real>("Slope for Linear Growth");
+    rate_   = list.get<Real>("Rate for Exponential Growth");
+    eps_    = list.get<Real>("Smoothing Parameter");
     // Build plus function
     pf_ = Teuchos::rcp( new PlusFunction<Real>(list) );
     checkInputs();
@@ -110,11 +150,12 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION( (deriv < 0), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle::regret): deriv less than 0!");
 
-    Real arg  = std::exp(scale_*x);
-    Real sarg = scale_*arg;
-    Real reg  = one/(one-prob_) * (pf_->evaluate(arg-one,deriv) *
-                  ((deriv == 0) ? one : ((deriv == 1) ? sarg : sarg*sarg))
-                + ((deriv == 2) ? pf_->evaluate(arg-one,deriv-1)*scale_*sarg : zero));
+    Real arg  = std::exp(rate_*x);
+    Real sarg = rate_*arg;
+    Real reg  = (pf_->evaluate(arg-one,deriv) *
+                  ((deriv == 0) ? one/rate_ : ((deriv == 1) ? arg : sarg*arg))
+                + ((deriv == 2) ? pf_->evaluate(arg-one,deriv-1)*sarg : zero))
+                + ((deriv%2 == 0) ? -one : one) * alpha_ * pf_->evaluate(-x,deriv);
     return reg;
   }
 

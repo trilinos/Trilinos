@@ -48,6 +48,41 @@
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_Types.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::ExpectationQuad
+    \brief Provides a general interface for risk measures generated through
+           the expectation risk quadrangle.
+
+    The expectation risk quadrangle is a specialization of the general
+    risk quadrangle that provides a rigorous connection between risk-averse
+    optimization and statistical estimation.  The risk quadrangle provides
+    fundamental relationships between measures of risk, regret, error and
+    deviation.  An expectation risk quadrangle is defined through scalar
+    regret and error functions.  The scalar regret function,
+    \f$v:\mathbb{R}\to(-\infty,\infty]\f$, must be proper, closed, convex
+    and satisfy \f$v(0)=0\f$ and \f$v(x) > x\f$ for all \f$x\neq 0\f$.
+    Similarly, the scalar error function,
+    \f$e:\mathbb{R}\to[0,\infty]\f$, must be proper, closed, convex
+    and satisfy \f$e(0)=0\f$ and \f$e(x) > 0\f$ for all \f$x\neq 0\f$.
+    \f$v\f$ and \f$e\f$ are obtained from one another through the relations
+    \f[
+       v(x) = e(x) + x \quad\text{and}\quad e(x) = v(x) - x.
+    \f]
+    Given \f$v\f$ (or equivalently \f$e\f$), the associated risk measure
+    is
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \mathbb{E}\left[v(X-t)\right]
+         \right\}.
+    \f]
+    In general, \f$\mathcal{R}\f$ is convex and translation equivariant.
+    Moreover, \f$\mathcal{R}\f$ is monotonic if \f$v\f$ is increasing
+    and \f$\mathcal{R}\f$ is positive homogeneous if \f$v\f$ is.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+*/
+
+
 namespace ROL {
 
 template<class Real>
@@ -64,8 +99,17 @@ private:
 public:
   ExpectationQuad(void) : RiskMeasure<Real>(), xstat_(0), vstat_(0), firstReset_(true) {}
 
+  /** \brief Evaluate the scalar regret function at x.
+
+      @param[in]   x      is the scalar input
+      @param[in]   deriv  is the derivative order
+
+      This function returns \f$v(x)\f$ or a derivative of \f$v(x)\f$.
+  */
   virtual Real regret(Real x, int deriv = 0) = 0;
 
+  /** \brief Run default derivative tests for the scalar regret function.
+  */
   virtual void checkRegret(void) {
     Real zero(0), half(0.5), two(2), one(1), oem3(1.e-3), fem4(5.e-4), p1(0.1);
     // Check v(0) = 0

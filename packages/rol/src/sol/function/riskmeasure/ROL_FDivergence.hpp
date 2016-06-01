@@ -48,6 +48,40 @@
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_Types.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::FDivergence
+    \brief Provides a general interface for the F-divergence distributionally robust
+    expectation.
+
+    This class defines a risk measure \f$\mathcal{R}\f$ which arises in distributionally
+    robust stochastic programming.  \f$\mathcal{R}\f$ is given by
+    \f[
+       \mathcal{R}(X) = \sup_{\vartheta\in\mathfrak{A}}
+           \mathbb{E}[\vartheta X]
+    \f]
+    where \f$\mathfrak{A}\f$ is called the ambiguity (or uncertainty) set and 
+    is defined by a constraint on the F-divergence, i.e.,
+    \f[
+       \mathfrak{A} = \{\vartheta\in\mathcal{X}^*\,:\,
+         \mathbb{E}[\vartheta] = 1,\; \vartheta \ge 0,\;\text{and}\;
+         \mathbb{E}[F(\vartheta)] \le \epsilon\}
+    \f]
+    where \f$F:\mathbb{R}\to[0,\infty]\f$ convex, lower semicontinuous and satisfies
+    \f$F(1) = 1\f$ and \f$F(x) = \infty\f$ for \f$x < 0\f$.
+    \f$\mathcal{R}\f$ is a law-invariant, coherent risk measure.  Moreover, by a
+    duality argument, \f$\mathcal{R}\f$ can be reformulated as
+    \f[
+       \mathcal{R}(X) = \inf_{\lambda > 0,\,\mu}\left\{
+             \lambda \epsilon + \mu + \mathbb{E}\left[
+                (\lambda F)^*(X-\mu)\right]\right\}.
+    \f]
+    Here, \f$(\lambda F)^*\f$ denotes the Legendre-Fenchel transformation of
+    \f$(\lambda F)\f$.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$(\lambda,\mu)\f$, then minimizes jointly for
+    \f$(x_0,\lambda,\mu)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -77,12 +111,24 @@ private:
   }
 
 public:
+  /** \brief Constructor.
+
+      @param[in]     eps    is the tolerance for the F-divergence constraint
+  */
   FDivergence(const Real thresh) : RiskMeasure<Real>(), thresh_(thresh),
     xlam_(0), xmu_(0), vlam_(0), vmu_(0), valLam_(0), valMu_(0),
     firstReset_(true) {
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"F-Divergence" and
+      within the "F-Divergence" sublist should have the following parameters
+      \li "Threshold" (greater than 0)
+  */
   FDivergence(Teuchos::ParameterList &parlist) : RiskMeasure<Real>(),
     xlam_(0), xmu_(0), vlam_(0), vmu_(0), valLam_(0), valMu_(0),
     firstReset_(true) {
@@ -92,7 +138,27 @@ public:
     checkInputs();
   }
 
+  /** \brief Implementation of the scalar primal F function.
+
+      @param[in]     x     is a scalar input
+      @param[in]     deriv is the derivative order
+
+      Upon return, Fprimal returns \f$F(x)\f$ or a derivative of \f$F(x)\f$.
+  */
   virtual Real Fprimal(Real x, int deriv = 0) = 0;
+
+  /** \brief Implementation of the scalar dual F function.
+
+      @param[in]     x     is a scalar input
+      @param[in]     deriv is the derivative order
+
+      Upon return, Fdual returns \f$F^*(x)\f$ or a derivative of \f$F^*(x)\f$.
+      Here, \f$F^*\f$ denotes the Legendre-Fenchel transformation of \f$F\f$,
+      i.e.,
+      \f[
+          F^*(y) = \sup_{x\in\mathbb{R}}\{xy - F(x)\}.
+      \f]
+  */
   virtual Real Fdual(Real x, int deriv = 0) = 0;
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {

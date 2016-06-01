@@ -46,6 +46,43 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::SmoothedWorstCaseQuadrangle
+    \brief Provides an interface for a smoothed version of the worst-case
+           scenario risk measure using the expectation risk quadrangle.
+
+    The worst-case scenario risk measure is
+    \f[
+       \mathcal{R}(X) = \sup_{\omega\in\Omega} X(\omega).
+    \f]
+    \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+    Clearly, \f$\mathcal{R}\f$ is not differentiable.  As such, this class
+    defines a smoothed version of \f$\mathcal{R}\f$ the expectation risk
+    quadrangle.  In the nonsmooth case, the scalar regret function is
+    \f$v(x) = 0\f$ if \f$x \le 0\f$ and \f$v(x) = \infty\f$ if \f$x > 0\f$.
+    Similarly, the scalar error function is \f$e(x) = -x\f$ if \f$x \le 0 \f$
+    and \f$e(x) = \infty\f$ if \f$x > 0\f$.  To smooth \f$\mathcal{R}\f$, we
+    perform Moreau-Yosida regularization on the scalar error function, i.e.,
+    \f[
+      e_\epsilon(x) = \inf_{y\in\mathbb{R}} \left\{ e(y) + \frac{1}{2\epsilon}
+                        (x-y)^2\right\}
+                 %   = \left\{\begin{array}{l l}
+                 %       -\left(x+\frac{\epsilon}{2}\right) &
+                 %           \text{if \f$x \le -\epsilon\f$}\\
+                 %       \frac{1}{2\epsilon}x^2 & \text{if \f$x > -\epsilon\f$}.
+                 %     \end{array}\right.
+    \f]
+    for \f$\epsilon > 0\f$.  The corresponding scalar regret function is
+    \f$v_\epsilon(x) = e_\epsilon(x) + x\f$.  \f$\mathcal{R}\f$ is then
+    implemented as
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}}\left\{
+           t + \mathbb{E}[v_\epsilon(X-t)] \right\}.
+    \f]
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -61,12 +98,23 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
+      @param[in]     eps     is the regularization parameter
+  */
   SmoothedWorstCaseQuadrangle(const Real eps)
     : ExpectationQuad<Real>(), eps_(eps) {
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Smoothed Worst-Case Quadrangle" and
+      within the "Smoothed Worst-Case Quadrangle" sublist should have the following parameters
+      \li "Smoothing Parameter" (must be positive).
+  */
   SmoothedWorstCaseQuadrangle(Teuchos::ParameterList &parlist) : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Smoothed Worst-Case Quadrangle");

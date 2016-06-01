@@ -46,6 +46,59 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::MoreauYosidaCVaR
+    \brief Provides an interface for a smooth approximation of the conditional
+           value-at-risk.
+
+    The conditional value-at-risk (also called the average value-at-risk
+    or the expected shortfall) with confidence level \f$0\le \beta < 1\f$
+    is
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \frac{1}{1-\beta} \mathbb{E}\left[(X-t)_+\right]
+         \right\}
+    \f]
+    where \f$(x)_+ = \max\{0,x\}\f$.  If the distribution of \f$X\f$ is
+    continuous, then \f$\mathcal{R}\f$ is the conditional expectation of
+    \f$X\f$ exceeding the \f$\beta\f$-quantile of \f$X\f$ and the optimal
+    \f$t\f$ is the \f$\beta\f$-quantile.
+    Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+
+    The conditional value-at-risk is in general not smooth due to
+    \f$(\cdot)_+\f$.  One approach to smoothing the conditional-value-at-risk
+    is to regularize its biconjugate form.  That is, since \f$\mathcal{R}\f$
+    is coherent, we have that
+    \f[
+       \mathcal{R}(X) = \sup_{\vartheta\in\mathfrak{A}}\mathbb{E}[\vartheta X]
+    \f]
+    where \f$\mathfrak{A}\f$ is the effective domain of the conjugate of
+    \f$\mathcal{R}\f$, i.e.,
+    \f[
+       \mathfrak{A} = \mathrm{dom}\,\mathcal{R}^*
+                    = \{\vartheta\in\mathcal{X}^*\,:\,
+                        \mathcal{R}^*(\vartheta) < \infty\}
+    \f]
+    where \f$\mathcal{R}^*\f$ denotes the Legendre-Fenchel transformation of
+    \f$\mathcal{R}\f$.  This risk measure implements the penalized conditional
+    value-at-risk
+    \f[
+       \mathcal{R}(X) = \sup_{\vartheta\in\mathfrak{A}}
+         \left\{\mathbb{E}[\vartheta X]
+          - \frac{\gamma}{2}\mathbb{E}[\vartheta^2]\right\}
+    \f]
+    for \f$\gamma > 0\f$.  This is implemented using the expectation risk
+    quadrangle interface.  Thus, we represent \f$\mathcal{R}\f$ as
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \mathbb{E}\left[v(X-t)\right]
+         \right\}
+    \f]
+    for an appropriately defined scalar regret function \f$v\f$.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -73,13 +126,26 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
+      @param[in]     prob    is the confidence level
+      @param[in]     eps     is the regularization parameter
+  */
   MoreauYosidaCVaR(Real prob, Real eps )
     : ExpectationQuad<Real>(), prob_(prob), eps_(eps) {
     checkInputs();
     setParameters();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Moreau-Yosida CVaR" and
+      within the "Moreau-Yosida CVaR" sublist should have the following parameters
+      \li "Confidence Level" (between 0 and 1)
+      \li "Smoothing Parameter" (must be positive)
+  */
   MoreauYosidaCVaR(Teuchos::ParameterList &parlist)
     : ExpectationQuad<Real>() {
     Teuchos::ParameterList& list

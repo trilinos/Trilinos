@@ -48,6 +48,20 @@
 
 namespace ROL {
 
+/** @ingroup stochastic_group
+    \class ROL::ExpUtility
+    \brief Provides an interface for the entropic risk.
+
+    The entropic risk measure (also called the exponential utility and the
+    log-exponential risk measure) is
+    \f[
+       \mathcal{R}(X) = \lambda
+       \log\mathbb{E}\left[\exp\left(\frac{X}{\lambda}\right)\right]
+    \f]
+    for \f$\lambda > 0\f$.  The entropic risk is convex, translation
+    equivariant and monotonic.
+*/
+
 template<class Real>
 class ExpUtility : public RiskMeasure<Real> {
 private:
@@ -65,11 +79,23 @@ private:
   }
 
 public:
+  /** \brief Constructor.
+
+      @param[in]     coeff    is the scale parameter \f$\lambda\f$
+  */
   ExpUtility(const Real coeff = 1)
     : RiskMeasure<Real>(), firstReset_(true), coeff_(coeff) {
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measures"->"Exponential Utility"
+      and withing the "Exponential Utility" sublist should have
+      \li "Rate" (greater than 0).
+  */
   ExpUtility(Teuchos::ParameterList &parlist)
     : RiskMeasure<Real>(), firstReset_(true) {
     Teuchos::ParameterList &list

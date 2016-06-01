@@ -52,8 +52,10 @@ namespace ROL {
 template<class Real>
 inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
                             int &nStatistic, std::vector<Real> &lower,
-                            std::vector<Real> &upper, bool isBoundActivated) {
-  name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
+                            std::vector<Real> &upper, bool &isBoundActivated,
+                            const bool printToStream = false,
+                            std::ostream &outStream = std::cout) {
+  name = parlist.sublist("SOL").sublist("Risk Measure").get<std::string>("Name");
   Real zero(0);
   lower.clear(); upper.clear();
   nStatistic = 0; isBoundActivated = false;
@@ -178,6 +180,40 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> (ROL::RiskMeasureInfo): Invalid risk measure " << name << "!");
+  }
+
+  // Print Information
+  if ( printToStream ) {
+    Teuchos::oblackholestream oldFormatState;
+    oldFormatState.copyfmt(outStream);
+
+    outStream << std::endl;
+    outStream << std::scientific << std::setprecision(6);
+    outStream << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    outStream << "  RISK MEASURE INFORMATION" << std::endl;
+    outStream << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    outStream << "  NAME" << std::endl;
+    outStream << "    " << name << std::endl;
+    outStream << "  NUMBER OF STATISTICS" << std::endl;
+    outStream << "    " << nStatistic << std::endl;
+    outStream << "  ARE BOUNDS ACTIVATED" << std::endl;
+    outStream << "    " << (isBoundActivated ? "TRUE" : "FALSE") << std::endl;
+    if ( isBoundActivated ) {
+      outStream << "  STATISTIC LOWER BOUNDS" << std::endl;
+      for (int i = 0; i < nStatistic-1; ++i) {
+        outStream << "    " << lower[i] << std::endl;
+      }
+      outStream << "    " << lower[nStatistic-1] << std::endl;
+      outStream << "  STATISTIC UPPER BOUNDS" << std::endl;
+      for (int i = 0; i < nStatistic-1; ++i) {
+        outStream << "    " << upper[i] << std::endl;
+      }
+      outStream << "    " << upper[nStatistic-1] << std::endl;
+    }
+    outStream << std::setfill('-') << std::setw(80) << "-" << std::endl;
+    outStream << std::endl;
+
+    outStream.copyfmt(oldFormatState);
   }
 }
 

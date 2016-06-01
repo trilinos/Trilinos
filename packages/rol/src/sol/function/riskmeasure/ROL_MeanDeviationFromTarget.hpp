@@ -52,6 +52,26 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::MeanDeviationFromTarget
+    \brief Provides an interface for the mean plus a sum of arbitrary order
+    deviations from targets.
+
+    The mean plus deviations from targets risk measure is
+    \f[
+       \mathcal{R}(X) = \mathbb{E}[X]
+        + \sum_{k=1}^n c_k \mathbb{E}[\wp(X-t_k)^{p_k}]^{1/p_k}
+    \f]
+    where \f$\wp:\mathbb{R}\to[0,\infty)\f$ is either the absolute value
+    or \f$(x)_+ = \max\{0,x\}\f$, \f$c_k > 0\f$ and \f$p_k\in\mathbb{N}\f$.
+    In general, \f$\mathcal{R}\f$ is law-invariant, but not coherent since
+    it violates translation equivariance.
+
+    When using derivative-based optimization, the user can
+    provide a smooth approximation of \f$(\cdot)_+\f$ using the
+    ROL::PositiveFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -107,7 +127,16 @@ private:
   }
 
 public:
+  /** \brief Constructor.
 
+      @param[in]     target  is the target scalar value
+      @param[in]     order   is the deviation order
+      @param[in]     coeff   is the weight for deviation term
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus deviation from target risk measure
+      with a single deviation.
+  */
   MeanDeviationFromTarget( const Real target, const Real order, const Real coeff,
                            const Teuchos::RCP<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
@@ -119,6 +148,16 @@ public:
     initialize();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     target  is a vector of targets
+      @param[in]     order   is a vector of deviation orders
+      @param[in]     coeff   is a vector of weights for the deviation terms
+      @param[in]     pf      is the plus function or an approximation
+
+      This constructor produces a mean plus deviation from target risk measure
+      with an arbitrary number of deviations.
+  */
   MeanDeviationFromTarget( const std::vector<Real> &target,
                            const std::vector<Real> &order,
                            const std::vector<Real> &coeff, 
@@ -139,6 +178,18 @@ public:
     initialize();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Mean Plus Deviation From Target" and
+      within the "Mean Plus Deviation From Target" sublist should have the following parameters
+      \li "Targets" (array of scalars)
+      \li "Orders" (array of unsigned integers)
+      \li "Coefficients" (array of positive scalars)
+      \li "Deviation Type" (eighter "Upper" or "Absolute")
+      \li A sublist for positive function information.
+  */
   MeanDeviationFromTarget( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), firstReset_(true) {
     Teuchos::ParameterList &list

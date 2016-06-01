@@ -46,6 +46,22 @@
 
 #include "ROL_RiskMeasureFactory.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::ConvexCombinationRiskMeasure
+    \brief Provides an interface for a convex combination of
+           risk measures.
+
+    This function provides the capability to produce a convex combination
+    of risk measure, i.e.,
+    \f[
+       \mathcal{R}(X) = \sum_{k=1}^n \lambda_k \mathcal{R}_k(X)
+    \f]
+    where \f$\mathcal{R}_k\f$ are risk measures and \f$\lambda_k \ge 0\f$
+    with \f$\lambda_1 + \ldots + \lambda_n = 1\f$.  In general,
+    \f$\mathcal{R}\f$ is not law-invariant or coherent unless each
+    \f$\mathcal{R}_k\f$ is.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -78,6 +94,15 @@ private:
   }
 
 public:
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Convex Combination Risk Measure" and
+      within the "Convex Combination Risk Measure" sublist should have the following parameters
+      \li "Convex Combination Parameters" (greater than 0 and sum to 1)
+      \li Sublists labeled 1 to n with risk measure definitions.
+  */
   ConvexCombinationRiskMeasure(Teuchos::ParameterList &parlist)
     : RiskMeasure<Real>(), size_(0), firstReset_(true) {
     Teuchos::ParameterList &list

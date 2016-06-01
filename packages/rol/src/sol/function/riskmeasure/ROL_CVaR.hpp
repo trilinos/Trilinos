@@ -48,6 +48,31 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskVector.hpp"
 
+/** @ingroup stochastic_group
+    \class ROL::CVaR
+    \brief Provides an interface for a convex combination of the
+           expected value and the conditional value-at-risk.
+
+    The conditional value-at-risk (also called the average value-at-risk
+    or the expected shortfall) with confidence level \f$0\le \beta < 1\f$
+    is
+    \f[
+       \mathcal{R}(X) = \inf_{t\in\mathbb{R}} \left\{
+         t + \frac{1}{1-\beta} \mathbb{E}\left[(X-t)_+\right]
+         \right\}
+    \f]
+    where \f$(x)_+ = \max\{0,x\}\f$.  If the distribution of \f$X\f$ is
+    continuous, then \f$\mathcal{R}\f$ is the conditional expectation of
+    \f$X\f$ exceeding the \f$\beta\f$-quantile of \f$X\f$ and the optimal
+    \f$t\f$ is the \f$\beta\f$-quantile.
+    Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+    ROL implements this by augmenting the optimization vector \f$x_0\f$ with
+    the parameter \f$t\f$, then minimizes jointly for \f$(x_0,t)\f$.
+
+    When using derivative-based optimization, the user can provide a smooth
+    approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
+*/
+
 namespace ROL {
 
 template<class Real>
@@ -76,6 +101,14 @@ private:
 
 public:
 
+  /** \brief Constructor.
+
+      @param[in]     prob    is the confidence level
+      @param[in]     coeff   is the convex combination parameter (coeff=0
+                             corresponds to the expected value whereas coeff=1
+                             corresponds to the conditional value-at-risk)
+      @param[in]     pf      is the plus function or an approximation
+  */
   CVaR( const Real prob, const Real coeff,
         const Teuchos::RCP<PlusFunction<Real> > &pf )
     : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff),
@@ -83,6 +116,16 @@ public:
     checkInputs();
   }
 
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"CVaR" and
+      within the "CVaR" sublist should have the following parameters
+      \li "Confidence Level" (between 0 and 1)
+      \li "Convex Combination Parameter" (between 0 and 1)
+      \li A sublist for plus function information.
+  */
   CVaR( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(), xvar_(0), vvar_(0), firstReset_(true) {
     Teuchos::ParameterList &list
