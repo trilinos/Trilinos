@@ -209,12 +209,12 @@ public:
     param_[5] = DegreesToRadians(pointload_Angle_);
 
     stochParam_.clear(); stochParam_.resize(6);
-    stochParam_[0] = Elist.get<bool>("Stochastic Bodyforce Magnitude");
-    stochParam_[1] = Elist.get<bool>("Stochastic Bodyforce Angle");
-    stochParam_[2] = Elist.get<bool>("Stochastic Traction Magnitude");
-    stochParam_[3] = Elist.get<bool>("Stochastic Traction Angle");
-    stochParam_[4] = Elist.get<bool>("Stochastic Pointload Magnitude");
-    stochParam_[5] = Elist.get<bool>("Stochastic Pointload Angle");
+    stochParam_[0] = Elist.get("Stochastic Bodyforce Magnitude",false);
+    stochParam_[1] = Elist.get("Stochastic Bodyforce Angle",false);
+    stochParam_[2] = Elist.get("Stochastic Traction Magnitude",false);
+    stochParam_[3] = Elist.get("Stochastic Traction Angle",false);
+    stochParam_[4] = Elist.get("Stochastic Pointload Magnitude",false);
+    stochParam_[5] = Elist.get("Stochastic Pointload Angle",false);
 
     PrintLoadingInformation();
     
