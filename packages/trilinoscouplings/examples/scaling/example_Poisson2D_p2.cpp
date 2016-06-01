@@ -1025,7 +1025,7 @@ int main(int argc, char *argv[]) {
 			  << " sec \n"; Time.ResetStartTime();}
 
 
-#define DUMP_DATA
+  //#define DUMP_DATA
 #ifdef DUMP_DATA
   // Dump matrices to disk
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
