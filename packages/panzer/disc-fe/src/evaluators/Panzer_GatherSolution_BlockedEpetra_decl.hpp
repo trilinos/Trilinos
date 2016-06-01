@@ -56,10 +56,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-// epetra forward decl
-class Epetra_Vector;
-class Epetra_CrsMatrix;
-
 // thyra forward decl
 namespace Thyra {
   template <typename> class ProductVectorBase;
@@ -71,9 +67,6 @@ class BlockedEpetraLinearObjContainer;
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class UniqueGlobalIndexer; //forward declaration
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class BlockedDOFManager; //forward declaration
 
 /** \brief Gathers solution values from the Newton solution vector into
     the nodal fields of the field manager
@@ -89,14 +82,10 @@ template<typename EvalT, typename TRAITS,typename LO,typename GO> class GatherSo
 public:
    typedef typename EvalT::ScalarT ScalarT;
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-   { }
-
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & gidProviders,
-                                const Teuchos::ParameterList& p);
+   GatherSolution_BlockedEpetra(const Teuchos::ParameterList& p) {}
 
    virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,TRAITS,LO,GO>(Teuchos::null,pl)); }
+   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,TRAITS,LO,GO>(pl)); }
 
    void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm)
    { }
@@ -124,11 +113,11 @@ class GatherSolution_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
 
 public:
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : gidIndexer_(indexer) {}
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
+     : indexers_(indexers) {}
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
+                               const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
@@ -138,7 +127,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>(indexers_,pl)); }
 
 
 private:
@@ -146,11 +135,10 @@ private:
   typedef typename panzer::Traits::Residual EvalT;
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -182,11 +170,11 @@ class GatherSolution_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
 
 public:
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : gidIndexer_(indexer) {}
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
+     : indexers_(indexers) {}
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
+                               const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
@@ -196,7 +184,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>(indexers_,pl)); }
 
 
 private:
@@ -204,11 +192,10 @@ private:
   typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
@@ -235,10 +222,11 @@ class GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
     public panzer::CloneableEvaluator  {
 
 public:
-  GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : gidIndexer_(indexer) {}
 
-  GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
+     : indexers_(indexers) {}
+
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
                                const Teuchos::ParameterList& p);
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
@@ -249,18 +237,17 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>(indexers_,pl)); }
 
 private:
 
   typedef typename panzer::Traits::Jacobian EvalT;
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 

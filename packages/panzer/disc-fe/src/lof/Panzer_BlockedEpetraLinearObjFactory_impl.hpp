@@ -77,17 +77,14 @@ template <typename Traits,typename LocalOrdinalT>
 BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider)
-   : blockedDOFManager_(gidProvider), colGidProviders_(false), useColGidProviders_(false), comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
+   : useColGidProviders_(false), eComm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
    rowDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(gidProvider));
    colDOFManagerContainer_ = rowDOFManagerContainer_;
 
-   comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
+   eComm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
-   for(std::size_t i=0;i<gidProvider->getFieldDOFManagers().size();i++)
-      gidProviders_.push_back(gidProvider->getFieldDOFManagers()[i]);
-
-   makeRoomForBlocks(gidProviders_.size());
+   makeRoomForBlocks(rowDOFManagerContainer_->getFieldBlocks());
 
    // build and register the gather/scatter evaluators with 
    // the base class.
@@ -101,12 +98,12 @@ BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                               const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
                               const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider)
-   : comm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
+   : eComm_(Teuchos::null), rawMpiComm_(comm->getRawMpiComm())
 { 
    rowDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(gidProvider));
    colDOFManagerContainer_ = Teuchos::rcp(new DOFManagerContainer(colGidProvider));
 
-   blockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(gidProvider,true);
+/*
    if(colGidProvider!=Teuchos::null) {
      colBlockedDOFManager_ = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LocalOrdinalT,int> >(colGidProvider);
 
@@ -133,18 +130,13 @@ BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > &
        colBlockedDOFManager_ = colBIndexer;
      }
    }
+*/
 
-   comm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
-
-   for(std::size_t i=0;i<blockedDOFManager_->getFieldDOFManagers().size();i++)
-      gidProviders_.push_back(blockedDOFManager_->getFieldDOFManagers()[i]);
-
-   for(std::size_t i=0;i<colBlockedDOFManager_->getFieldDOFManagers().size();i++)
-      colGidProviders_.push_back(colBlockedDOFManager_->getFieldDOFManagers()[i]);
+   eComm_ = Teuchos::rcp(new Epetra_MpiComm(*rawMpiComm_));
 
    useColGidProviders_ = true;
 
-   makeRoomForBlocks(gidProviders_.size(),colGidProviders_.size());
+   makeRoomForBlocks(rowDOFManagerContainer_->getFieldBlocks(),colDOFManagerContainer_->getFieldBlocks());
 
    // build and register the gather/scatter evaluators with 
    // the base class.
@@ -474,6 +466,14 @@ buildDomainContainer() const
   using Teuchos::RCP;
   using Teuchos::rcp;
 
+  // if a "single field" DOFManager is used, return a single RO_GED
+  if(!colDOFManagerContainer_->containsBlockedDOFManager()) {
+    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ged = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
+    ged->initialize(getGhostedImport(0),getGhostedMap(0),getMap(0));
+
+    return ged;
+  }
+
   std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
   for(int i=0;i<getBlockColCount();i++) {
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> vec_ged = rcp(new EpetraVector_ReadOnly_GlobalEvaluationData);
@@ -584,17 +584,14 @@ template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getGlobalIndexer(int i) const
 {
-   return gidProviders_[i];
+   return rowDOFManagerContainer_->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename LocalOrdinalT>
 Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getColGlobalIndexer(int i) const
 {
-   if(not useColGidProviders_)
-     return gidProviders_[i];
-
-   return colGidProviders_[i];
+   return colDOFManagerContainer_->getFieldDOFManagers()[i];
 }
 
 template <typename Traits,typename LocalOrdinalT>
@@ -606,7 +603,7 @@ makeRoomForBlocks(std::size_t blockCnt,std::size_t colBlockCnt)
    importers_.resize(blockCnt); 
    exporters_.resize(blockCnt); 
 
-   if(useColGidProviders_) {
+   if(colBlockCnt>0) {
      colMaps_.resize(colBlockCnt); 
      colGhostedMaps_.resize(colBlockCnt); 
      colImporters_.resize(colBlockCnt); 
@@ -1090,14 +1087,14 @@ buildEpetraMap(int i) const
    // get the global indices
    getGlobalIndexer(i)->getOwnedIndices(indices);
 
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
 
 template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 buildEpetraColMap(int i) const
 {
-   if(useColGidProviders_)
+   if(not useColGidProviders_)
      return buildEpetraMap(i);
 
    std::vector<int> indices;
@@ -1105,7 +1102,7 @@ buildEpetraColMap(int i) const
    // get the global indices
    getColGlobalIndexer(i)->getOwnedIndices(indices);
 
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
 
 // build the ghosted map
@@ -1118,7 +1115,7 @@ buildEpetraGhostedMap(int i) const
    // get the global indices
    getGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
 
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
 
 // build the ghosted map
@@ -1126,7 +1123,7 @@ template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<Epetra_Map> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 buildEpetraColGhostedMap(int i) const
 {
-   if(useColGidProviders_)
+   if(not useColGidProviders_)
      return buildEpetraGhostedMap(i);
 
    std::vector<int> indices;
@@ -1134,7 +1131,7 @@ buildEpetraColGhostedMap(int i) const
    // get the global indices
    getColGlobalIndexer(i)->getOwnedAndSharedIndices(indices);
 
-   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*comm_));
+   return Teuchos::rcp(new Epetra_Map(-1,indices.size(),&indices[0],0,*eComm_));
 }
 
 // get the graph of the crs matrix
@@ -1182,7 +1179,7 @@ buildEpetraGhostedGraph(int i,int j) const
    rowProvider = getGlobalIndexer(i);
    colProvider = getColGlobalIndexer(j);
 
-   blockedDOFManager_->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
+   rowProvider->getElementBlockIds(elementBlockIds); // each sub provider "should" have the
                                                         // same element blocks
 
    // graph information about the mesh
@@ -1191,8 +1188,8 @@ buildEpetraGhostedGraph(int i,int j) const
       std::string blockId = *blockItr;
 
       // grab elements for this block
-      const std::vector<LocalOrdinalT> & elements = blockedDOFManager_->getElementBlock(blockId); // each sub provider "should" have the
-                                                                                              // same elements in each element block
+      const std::vector<LocalOrdinalT> & elements = rowProvider->getElementBlock(blockId); // each sub provider "should" have the
+                                                                                           // same elements in each element block
 
       // get information about number of indicies
       std::vector<int> row_gids;
@@ -1240,24 +1237,21 @@ template <typename Traits,typename LocalOrdinalT>
 const Teuchos::RCP<const Epetra_Comm> BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getEpetraComm() const
 {
-   return comm_;
+   return eComm_;
 }
 
 template <typename Traits,typename LocalOrdinalT>
 int BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getBlockRowCount() const
 {
-   return gidProviders_.size();
+  return rowDOFManagerContainer_->getFieldBlocks();
 }
 
 template <typename Traits,typename LocalOrdinalT>
 int BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 getBlockColCount() const
 {
-   if(not useColGidProviders_)
-     return gidProviders_.size();
-
-   return colGidProviders_.size();
+  return colDOFManagerContainer_->getFieldBlocks();
 }
 
 }

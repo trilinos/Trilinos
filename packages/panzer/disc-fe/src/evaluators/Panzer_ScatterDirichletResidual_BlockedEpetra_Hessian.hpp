@@ -62,13 +62,14 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,G
     public panzer::CloneableEvaluator  {
   
 public:
-  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & cIndexer)
-     : globalIndexer_(indexer) {}
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
+     {}
   
-  ScatterDirichletResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
-                                         const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & cIndexer,
-                                         const Teuchos::ParameterList& p);
+  ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
+                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+                                         const Teuchos::ParameterList& p,
+                                         bool useDiscreteAdjoint=false);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm);
@@ -78,7 +79,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
@@ -92,6 +93,9 @@ private:
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const panzer::BlockedDOFManager<LO,GO> > globalIndexer_;
+
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 

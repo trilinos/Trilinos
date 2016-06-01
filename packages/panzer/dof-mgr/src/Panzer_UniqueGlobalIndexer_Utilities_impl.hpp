@@ -57,6 +57,76 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > >
+nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis)
+{
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > vec;
+
+  for(std::size_t blk=0;blk<ugis.size();blk++) 
+    vec.push_back(ugis[blk]);
+
+  return vec;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis)
+{
+  int fieldNum = -1;
+  for(std::size_t blk=0;blk<ugis.size();blk++) {
+    fieldNum = ugis[blk]->getFieldNum(fieldName);
+    if(fieldNum>=0)
+      return blk;
+  }
+
+  return fieldNum;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis)
+{
+  int fieldNum = -1;
+  for(std::size_t blk=0;blk<ugis.size();blk++) {
+    fieldNum = ugis[blk]->getFieldNum(fieldName);
+    if(fieldNum>=0)
+      return fieldNum;
+  }
+
+  return fieldNum;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets)
+{
+  blockOffsets.resize(ugis.size()+1); // number of fields, plus a sentinnel
+
+  int offset = 0;
+  for(std::size_t blk=0;blk<ugis.size();blk++) {
+    blockOffsets[blk] = offset;
+    offset += ugis[blk]->getElementBlockGIDCount(blockId);
+  }
+  blockOffsets[ugis.size()] = offset;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets)
+{
+  blockOffsets.resize(ugis.size()+1); // number of fields, plus a sentinnel
+
+  int offset = 0;
+  for(std::size_t blk=0;blk<ugis.size();blk++) {
+    blockOffsets[blk] = offset;
+    offset += ugis[blk]->getElementBlockGIDCount(blockId);
+  }
+  blockOffsets[ugis.size()] = offset;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 std::string 
 printUGILoadBalancingInformation(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & ugi)
 {
@@ -249,7 +319,7 @@ void updateGhostedDataReducedVector(const std::string & fieldName,const std::str
    const std::vector<LocalOrdinalT> & elements = ugi.getElementBlock(blockId);
    const std::vector<int> & fieldOffsets = ugi.getGIDFieldOffsets(blockId,fieldNum);
    
-   TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=(int) elements.size(),std::runtime_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(data.dimension(0)!=elements.size(),std::runtime_error,
                       "panzer::updateGhostedDataReducedVector: data cell dimension does not match up with block cell count");
 
    int rank = data.rank();

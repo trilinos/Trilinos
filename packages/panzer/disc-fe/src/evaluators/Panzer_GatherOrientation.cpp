@@ -48,15 +48,10 @@
 #include "Panzer_GatherOrientation_decl.hpp"
 #include "Panzer_GatherOrientation_impl.hpp"
 
-typedef std::pair<int,int> IntPair;
-
+// these are limited to only single value scalar types, the blocked version must
+// use the vector input
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,short,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,char,int)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntPair)
 
 #ifndef PANZER_ORDINAL64_IS_INT
-typedef std::pair<int,panzer::Ordinal64> IntLongPair;
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,panzer::Ordinal64)
-PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::GatherOrientation,int,IntLongPair)
 #endif

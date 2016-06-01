@@ -57,6 +57,75 @@
 
 namespace panzer {
 
+/** Convert a nonconst to a constat vector. This works around an RCP issue where the compiler
+  * gets confused by const.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > 
+nc2c_vector(const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
+  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * required field.
+  *
+  * \param[in] fieldName The field to look for.
+  * \param[in] ugis The global indexers to look in.
+  *
+  * \returns The index that this field is in. If this returns -1, no field was found.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Get the block associated with a particular field. This is an exhaustive (e.g. expensive)
+  * search. This returns the first found index into the <code>ugis</code> that contains the 
+  * required field.
+  *
+  * \param[in] fieldName The field to look for.
+  * \param[in] ugis The global indexers to look in.
+  *
+  * \returns The index that this field is in. If this returns -1, no field was found.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int getFieldBlock(const std::string & fieldName,
+                  const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis);
+
+/** Compute the offsets for the global indexer for a particular block id. This
+  * is useful for unknown numbering into a block format. The local element matrix
+  * will be logically ordered like the monolithic operator. These offsets are the
+  * local start and end of a particular block. For instance if you are intersted in
+  * block <code>i</code> then the start index would be at <code>blockOffsets[i]</code>
+  * and the end would be at <code>blockOffsets[i+1]</code> Note that this requires a
+  * sentinnel in the block offsets size. (Note that the use of element block and block
+  * are confusing but different in this context)
+  *
+  * \param[in] blockId Element block name that to do this for.
+  * \param[in] ugis Unique global indexers containing fields to be blocked
+  * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets);
+
+/** Compute the offsets for the global indexer for a particular block id. This
+  * is useful for unknown numbering into a block format. The local element matrix
+  * will be logically ordered like the monolithic operator. These offsets are the
+  * local start and end of a particular block. For instance if you are intersted in
+  * block <code>i</code> then the start index would be at <code>blockOffsets[i]</code>
+  * and the end would be at <code>blockOffsets[i+1]</code> Note that this requires a
+  * sentinnel in the block offsets size. (Note that the use of element block and block
+  * are confusing but different in this context)
+  *
+  * \param[in] blockId Element block name that to do this for.
+  * \param[in] ugis Unique global indexers containing fields to be blocked
+  * \param[out] blockOffsets Result vector with length <code>ugis.size()+1</code>.
+  */
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void computeBlockOffsets(const std::string & blockId,
+                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & ugis,
+                         std::vector<int> & blockOffsets);
+
 /** Print out unique global indexer load balancing information. This includes
   * the minimum unknown, maximum unknown count, mean unknown and standard deviation of
   * the unknowns for both owned and owned and shared.
