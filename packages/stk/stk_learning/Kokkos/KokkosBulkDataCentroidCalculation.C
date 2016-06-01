@@ -1,8 +1,8 @@
 #include "KokkosBulkDataCentroidCalculation.h"
 
-void calculate_centroids_on_host(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid)
+void calculate_centroids_on_host(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid, stk::mesh::Selector selector)
 {
-    const stk::mesh::BucketVector& buckets = bulkData.buckets(stk::topology::ELEM_RANK);
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, selector);
     for(size_t i=0;i<buckets.size();++i)
     {
         const stk::mesh::Bucket& bucket = *buckets[i];
@@ -38,7 +38,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_host)
     struct timeval begin,end;
     gettimeofday(&begin,NULL);
 
-    calculate_centroids_on_host(*app.bulk, *app.coords, app.centroid);
+    calculate_centroids_on_host(*app.bulk, *app.coords, app.centroid, app.bulk->mesh_meta_data().locally_owned_part());
 
     gettimeofday(&end,NULL);
 

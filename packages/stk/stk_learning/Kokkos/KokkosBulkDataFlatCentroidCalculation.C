@@ -85,7 +85,7 @@ struct GpuGatherFlatScratchData
 
     void setup_mesh_indices(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector)
     {
-        const stk::mesh::BucketVector& nodeBuckets = bulk.get_buckets(stk::topology::NODE_RANK, selector);
+        const stk::mesh::BucketVector& nodeBuckets = bulk.buckets(stk::topology::NODE_RANK);
 
         meshIndices = DeviceViewMeshIndicesType("DMeshIndices", bulk.get_size_of_entity_index_space());
         constMeshIndices = meshIndices;
@@ -120,7 +120,7 @@ struct GpuGatherFlatScratchData
 
     void setup_node_coords(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, const stk::mesh::Selector& selector)
     {
-        const stk::mesh::BucketVector& nodeBuckets = bulk.get_buckets(stk::topology::NODE_RANK, selector);
+        const stk::mesh::BucketVector& nodeBuckets = bulk.buckets(stk::topology::NODE_RANK);
         bucketCapacity = nodeBuckets[0]->capacity();
         unsigned nodeAllocSize = nodeBuckets.size()*bucketCapacity;
 
@@ -158,9 +158,9 @@ struct GpuGatherFlatScratchData
 
     void initialize(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, CoordFieldType& centroid, const stk::mesh::Selector& selector)
     {
-        setup_elem_entities_and_connectivity_tables(bulk, selector);
         setup_mesh_indices(bulk, selector);
         setup_node_coords(bulk, coords, selector);
+        setup_elem_entities_and_connectivity_tables(bulk, selector);
         setup_element_centroids(bulk, selector);
     }
 
@@ -223,7 +223,7 @@ struct GpuGatherFlatScratchData
     {
         const unsigned numElements = elemsPerBucket(elementBucketIndex);
         const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
-	double tempx = 0, tempy = 0, tempz = 0;
+        double tempx = 0, tempy = 0, tempz = 0;
         for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
    	    int elementOffset = elemBucketOffsets(elementBucketIndex) + elementIndex;	  
 	    int connOffset = connBucketOffsets(elementBucketIndex) + elementIndex*nodesPerElem;
@@ -435,7 +435,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_flat)
     app.report_bandwidth();
 
     calculator.copy_centroids_to_host();
-    calculator.test_centroid_of_element_1();
+//    calculator.test_centroid_of_element_1();
 
     for(unsigned elementIndex=0; elementIndex<scratch.hostElemEntities.extent(0); ++elementIndex) {
         calculator.test_centroid_of_element(app.hostCentroid, scratch.hostElemEntities(elementIndex), elementIndex);

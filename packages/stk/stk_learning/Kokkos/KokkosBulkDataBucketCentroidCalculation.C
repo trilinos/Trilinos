@@ -13,7 +13,7 @@ struct Bucket {
         hostEntities = Kokkos::create_mirror_view(entities);
         connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id), numEntities, numNodesPerEntity);
         hostConnectivity = Kokkos::create_mirror_view(connectivity);
-    }    
+    }
 
     void copy_to_device()
     {
@@ -31,18 +31,22 @@ struct Bucket {
     stk::mesh::EntityRank entity_rank() const { return entityRank; }
 
     STK_FUNCTION
-    unsigned get_num_nodes_per_entity() const { return connectivity.extent(1); }    
+    unsigned get_num_nodes_per_entity() const { return connectivity.extent(1); }
 
     STK_FUNCTION
     ConnectedNodesType get_nodes(unsigned offsetIntoBucket) const {
         return Kokkos::subview(connectivity, offsetIntoBucket, Kokkos::ALL());
-    }    
+    }
     
     STK_FUNCTION
     stk::mesh::Entity operator[](unsigned offsetIntoBucket) const {
         return entities(offsetIntoBucket);
     }
     
+    stk::mesh::Entity host_get_entity(unsigned offsetIntoBucket) const {
+        return hostEntities(offsetIntoBucket);
+    }
+
     unsigned bucketId;
     stk::mesh::EntityRank entityRank;
 
@@ -124,7 +128,7 @@ struct GpuGatherBucketScratchData
 
     void setup_mesh_indices(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector)
     {
-        const stk::mesh::BucketVector& nodeBuckets = bulk.get_buckets(stk::topology::NODE_RANK, selector);
+        const stk::mesh::BucketVector& nodeBuckets = bulk.buckets(stk::topology::NODE_RANK);
 
         meshIndices = DeviceViewMeshIndicesType("DMeshIndices", bulk.get_size_of_entity_index_space());
         constMeshIndices = meshIndices;
@@ -159,7 +163,7 @@ struct GpuGatherBucketScratchData
 
     void setup_node_coords(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, const stk::mesh::Selector& selector)
     {
-        const stk::mesh::BucketVector& nodeBuckets = bulk.get_buckets(stk::topology::NODE_RANK, selector);
+        const stk::mesh::BucketVector& nodeBuckets = bulk.buckets(stk::topology::NODE_RANK);
         bucketCapacity = nodeBuckets[0]->capacity();
         unsigned nodeAllocSize = nodeBuckets.size()*bucketCapacity;
 
@@ -197,9 +201,9 @@ struct GpuGatherBucketScratchData
 
     void initialize(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, CoordFieldType& centroid, const stk::mesh::Selector& selector, bool combineBuckets)
     {
-        setup_elem_entities_and_connectivity_tables(bulk, selector, combineBuckets);
         setup_mesh_indices(bulk, selector);
         setup_node_coords(bulk, coords, selector);
+        setup_elem_entities_and_connectivity_tables(bulk, selector, combineBuckets);
         setup_element_centroids(bulk, selector);
     }
 
@@ -247,7 +251,7 @@ struct GpuGatherBucketScratchData
         ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
         const unsigned numElements = bucket.size();
         const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
-        const unsigned dim = elementCentroids.extent(1);
+        //const unsigned dim = elementCentroids.extent(1);
         double temp[3] = {0.0, 0.0, 0.0};
         for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
             const unsigned elemFieldIndex = get_index(bucket[elementIndex]);
@@ -434,6 +438,14 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
     app.report_bandwidth();
 
     calculator.copy_centroids_to_host();
-    calculator.test_centroid_of_element_1();
+
+    for(unsigned bucketIndex=0; bucketIndex<scratch.elementBuckets.extent(0); ++bucketIndex) {
+      ngp::Bucket bucket = scratch.elementBuckets(bucketIndex);
+      unsigned numElements = bucket.size();
+      for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
+          unsigned elemFieldIndex = scratch.host_get_index(bucket.host_get_entity(elementIndex));
+          calculator.test_centroid_of_element(app.hostCentroid, bucket.host_get_entity(elementIndex), elemFieldIndex);
+      }
+    }
 }
 

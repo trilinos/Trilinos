@@ -63,7 +63,8 @@ typedef Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace, Kokkos::MemoryTr
 
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 
-typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
+//typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
+typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
 
 typedef Kokkos::View<stk::mesh::Entity*, Layout, MemSpace> DeviceViewFlatConnectivityType;
 
@@ -96,7 +97,7 @@ DEFINE_OPERATOR(element, solo, unroll , false)
 DEFINE_OPERATOR(element, team, compact, true)
 DEFINE_OPERATOR(element, team, unroll , true)
 
-void calculate_centroids_on_host(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid);
+void calculate_centroids_on_host(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid, stk::mesh::Selector selector);
 
 template<class FUNCTOR>
 class CentroidCalculator {
@@ -114,7 +115,6 @@ public:
 				  const unsigned elementIndex)
     {
         double *expectedCentroidValues = stk::mesh::field_data(expectedCentroid, element);
-
         for (unsigned k=0 ; k < functor.hostElementCentroids.extent(1) ; ++k) {
             EXPECT_NEAR(expectedCentroidValues[k], functor.hostElementCentroids(elementIndex, k), 0.000001);
 	}
@@ -141,12 +141,12 @@ public:
     }
     
     template<class T>
-      void execute_team(T choice, int num_repeat, int team_size)
+    void execute_team(T choice, int num_repeat, int team_size)
     {
         std::cout << "Executing operator: " << choice.name << std::endl;
         size_t N = functor.getNumParallelItems();
-	for (int repeat=0 ; repeat<num_repeat ; ++repeat)
-	    Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, team_size), functor);
+	    for (int repeat=0 ; repeat<num_repeat ; ++repeat)
+	        Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, Kokkos::AUTO), functor);
     }
 
     void calculate_centroids(int num_repeat, int choice, int team_size)
@@ -157,18 +157,18 @@ public:
         TYPE_OPERATOR(bucket,  team, unroll ) choice_3;
         TYPE_OPERATOR(element, team, unroll ) choice_4;
         TYPE_OPERATOR(element, solo, unroll ) choice_5;
-	TYPE_OPERATOR(bucket , solo, unroll ) choice_6;
+        TYPE_OPERATOR(bucket , solo, unroll ) choice_6;
 
-	switch(choice)
-	{
-	    case 0: execute_solo(choice_0, num_repeat           ); break;
-	    case 1: execute_team(choice_1, num_repeat, team_size); break;	  
-	    case 2: execute_solo(choice_2, num_repeat           ); break;	  
-	    case 3: execute_team(choice_3, num_repeat, team_size); break;
-	    case 4: execute_team(choice_4, num_repeat, team_size); break;
- 	    case 5: execute_solo(choice_5, num_repeat           ); break;
-	    case 6: execute_solo(choice_6, num_repeat           ); break;
- 	    default: printf("No current implementation available for choice %d\n",choice); break;
+        switch(choice)
+        {
+            case 0: execute_solo(choice_0, num_repeat           ); break;
+            case 1: execute_team(choice_1, num_repeat, team_size); break;
+            case 2: execute_solo(choice_2, num_repeat           ); break;
+            case 3: execute_team(choice_3, num_repeat, team_size); break;
+            case 4: execute_team(choice_4, num_repeat, team_size); break;
+            case 5: execute_solo(choice_5, num_repeat           ); break;
+            case 6: execute_solo(choice_6, num_repeat           ); break;
+            default: printf("No current implementation available for choice %d\n",choice); break;
         }
     }
 
@@ -205,7 +205,7 @@ struct MyApp {
     
         coords = meta.get_field<CoordFieldType>(stk::topology::NODE_RANK, "coordinates");
 
-	calculate_centroids_on_host(*bulk, *coords, hostCentroid);
+	calculate_centroids_on_host(*bulk, *coords, hostCentroid, bulk->mesh_meta_data().locally_owned_part());
     }
 
     ~MyApp() { delete bulk; }

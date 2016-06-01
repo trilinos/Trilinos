@@ -83,8 +83,6 @@ typedef Kokkos::HostSpace    UVMMemSpace;
 #endif
 
 
-// typedef Kokkos::LayoutLeft   Layout ;
-
 typedef Kokkos::RangePolicy<ExecSpace> range_policy ;
 
 typedef Kokkos::View<my_double*, MemSpace>   DeviceViewVectorType;
