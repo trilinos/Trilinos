@@ -49,6 +49,10 @@ struct ScratchData
     {
     }
 
+    KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, unroll), const int element) const
+    {
+    }
+
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
     {
     }

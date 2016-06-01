@@ -73,26 +73,28 @@ typedef TeamPolicyType::member_type TeamHandleType;
 
 typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> CoordFieldType;
 
-#define DEFINE_OPERATOR(PARALLELSCOPE, TEAMTYPE, EXPANSIONTYPE)	\
+#define STRINGIFY(x) #x
+
+#define DEFINE_OPERATOR(PARALLELSCOPE, TEAMTYPE, EXPANSIONTYPE, ISTEAM)	\
   struct PARALLELSCOPE##_##TEAMTYPE##_##EXPANSIONTYPE##_##operator {\
+      const char *name = STRINGIFY( PARALLELSCOPE##_##TEAMTYPE##_##EXPANSIONTYPE##_##operator ); \
+      const bool  isTeam = ISTEAM; \
   };\
 
 #define TYPE_OPERATOR(PARALLELSCOPE, TEAMTYPE, EXPANSIONTYPE)	\
   PARALLELSCOPE##_##TEAMTYPE##_##EXPANSIONTYPE##_##operator\
 
-#define STRINGIFY(x) #x
-
 #define NAME_OPERATOR(PARALLELSCOPE, TEAMTYPE, EXPANSIONTYPE)	\
   STRINGIFY( PARALLELSCOPE##_##TEAMTYPE##_##EXPANSIONTYPE##_##operator )\
 
-DEFINE_OPERATOR(bucket, solo, compact)
-DEFINE_OPERATOR(bucket, solo, unroll)
-DEFINE_OPERATOR(bucket, team, compact)
-DEFINE_OPERATOR(bucket, team, unroll)
-DEFINE_OPERATOR(element, solo, compact)
-DEFINE_OPERATOR(element, solo, unroll)
-DEFINE_OPERATOR(element, team, compact)
-DEFINE_OPERATOR(element, team, unroll)
+DEFINE_OPERATOR(bucket , solo, compact, false)
+DEFINE_OPERATOR(bucket , solo, unroll , false)
+DEFINE_OPERATOR(bucket , team, compact, true)
+DEFINE_OPERATOR(bucket , team, unroll , true)
+DEFINE_OPERATOR(element, solo, compact, false)
+DEFINE_OPERATOR(element, solo, unroll , false)
+DEFINE_OPERATOR(element, team, compact, true)
+DEFINE_OPERATOR(element, team, unroll , true)
 
 void calculate_centroids_on_host(const stk::mesh::BulkData& bulkData, const CoordFieldType& coordinates, CoordFieldType& centroid);
 
@@ -129,76 +131,44 @@ public:
 	}
     }
 
-#define EXECUTE_SOLO(SCOPE, EXPANSION)\
-        const char *name = NAME_OPERATOR(SCOPE, solo, EXPANSION);\
-	size_t N = functor.getNumParallelItems();\
-	Kokkos::parallel_for(name, Kokkos::RangePolicy< TYPE_OPERATOR(SCOPE, solo, EXPANSION) >(0,N), functor);\
-
-#define EXECUTE_TEAM(SCOPE, EXPANSION)\
-        const char *name = NAME_OPERATOR(SCOPE, team, EXPANSION);\
-	size_t N = functor.getNumParallelItems();\
-        Kokkos::parallel_for(name, Kokkos::TeamPolicy< TYPE_OPERATOR(SCOPE, team, EXPANSION) >(N, 512), functor);\
-
-    void print_name(int choice) {
-            if (choice == 0)
-            {
-	        std::cout << "bucket_solo_compact" << std::endl;
-            }
-            else if (choice == 1)
-            {
-	        std::cout << "bucket_team_compact" << std::endl;
-            }
-            else if (choice == 2)
-            {
-	        std::cout << "element_solo_compact" << std::endl;
-            }
-            else if (choice == 3)
-            {
-	        std::cout << "bucket_team_unroll" << std::endl;
-            }
-            else if (choice == 4)
-            {
-	        std::cout << "element_team_unroll" << std::endl;
-            }
-            else if (choice == 5)
-            {
-	        std::cout << "element_solo_unroll" << std::endl;
-            }
+    template<class T>
+    void execute_solo(T choice, int num_repeat)
+    {
+        std::cout << "Executing operator: " << choice.name << std::endl;
+        size_t N = functor.getNumParallelItems();
+        for (int repeat=0 ; repeat<num_repeat ; ++repeat)
+	    Kokkos::parallel_for(choice.name, Kokkos::RangePolicy< T >(0,N), functor);
+    }
+    
+    template<class T>
+    void execute_team(T choice, int num_repeat)
+    {
+        std::cout << "Executing operator: " << choice.name << std::endl;
+        size_t N = functor.getNumParallelItems();
+	for (int repeat=0 ; repeat<num_repeat ; ++repeat)
+	    Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, 512), functor);
     }
 
     void calculate_centroids(int num_repeat, int choice)
     {
-        print_name(choice);
-        for (int repeat=0 ; repeat<num_repeat ; ++repeat)
-        {
-            if (choice == 0)
-            {
-	        EXECUTE_SOLO(bucket, compact);
-            }
-            else if (choice == 1)
-            {
-	        EXECUTE_TEAM(bucket, compact);
-            }
-            else if (choice == 2)
-            {
-	        EXECUTE_SOLO(element, compact);
-            }
-            else if (choice == 3)
-            {
-	        EXECUTE_TEAM(bucket, unroll);
-            }
-            else if (choice == 4)
-            {
-	        EXECUTE_TEAM(element, unroll);
-            }
-            else if (choice == 5)
-            {
-	        EXECUTE_SOLO(element, unroll);
-            }
-	    else
-	    {
-	        printf("No current implementation available for choice %d\n",choice);
-	    }
+        TYPE_OPERATOR(bucket , solo, compact) choice_0;
+        TYPE_OPERATOR(bucket , team, compact) choice_1;
+        TYPE_OPERATOR(element, solo, compact) choice_2;
+        TYPE_OPERATOR(bucket,  team, unroll ) choice_3;
+        TYPE_OPERATOR(element, team, unroll ) choice_4;
+        TYPE_OPERATOR(element, solo, unroll ) choice_5;
+	TYPE_OPERATOR(bucket , solo, unroll ) choice_6;
+
+	switch(choice)
+	{
+	    case 0: execute_solo(choice_0, num_repeat); break;
+   	    case 1: execute_team(choice_1, num_repeat); break;	  
+	    case 2: execute_solo(choice_2, num_repeat); break;	  
+	    case 3: execute_team(choice_3, num_repeat); break;
+	    case 4: execute_team(choice_4, num_repeat); break;
+ 	    case 5: execute_solo(choice_5, num_repeat); break;
+	    case 6: execute_solo(choice_6, num_repeat); break;
+ 	    default: printf("No current implementation available for choice %d\n",choice); break;
         }
     }
 

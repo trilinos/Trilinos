@@ -1,4 +1,5 @@
 #include "KokkosBulkDataCentroidCalculation.h"
+#include "Kokkos_Atomic.hpp"
 
 struct GpuGatherFlatScratchData
 {
@@ -151,7 +152,7 @@ struct GpuGatherFlatScratchData
         bucketCapacity = elemBuckets[0]->capacity();
         unsigned elemAllocSize = elemBuckets.size()*bucketCapacity;
 
-        elementCentroids = DeviceViewMatrixType("DElemCentroids", elemAllocSize, bulk.mesh_meta_data().spatial_dimension());
+        elementCentroids = DeviceViewAtomicMatrixType("DElemCentroids", elemAllocSize, bulk.mesh_meta_data().spatial_dimension());
         hostElementCentroids =  Kokkos::create_mirror_view(elementCentroids);
     }
 
@@ -218,6 +219,11 @@ struct GpuGatherFlatScratchData
         }
     }
 
+    KOKKOS_INLINE_FUNCTION void operator()( TYPE_OPERATOR(bucket, solo, unroll) , const int elementBucketIndex) const
+    {
+
+    }
+  
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
     {
         const int elementBucketIndex = team.league_rank();
@@ -304,6 +310,7 @@ struct GpuGatherFlatScratchData
         const int elemBucketOffset = elemBucketOffsets(elementBucketIndex);
 	const int connBucketOffset = connBucketOffsets(elementBucketIndex);
 
+#if 1
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
             double tempx = 0, tempy = 0, tempz = 0;
    	    int elementOffset = elemBucketOffset + elementIndex;	  
@@ -321,6 +328,39 @@ struct GpuGatherFlatScratchData
 	    elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
 	    elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
        });
+#else
+	Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& elementIndex) {
+	    int elementOffset = elemBucketOffset + elementIndex;	  
+	    const unsigned elemFieldIndex = get_index(elemEntities(elementOffset));
+	
+	    elementCentroids(elemFieldIndex, 0) = 0;
+	    elementCentroids(elemFieldIndex, 1) = 0;
+	    elementCentroids(elemFieldIndex, 2) = 0;
+	});
+
+	const unsigned range = numElements*nodesPerElem;
+	
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, range), [&] (const int& rangeIndex) {
+            const int elementIndex = rangeIndex/nodesPerElem;
+	    unsigned nodeIndex = rangeIndex%nodesPerElem;
+	    
+   	    int elementOffset = elemBucketOffset + elementIndex;	  
+	    int connOffset    = connBucketOffset + elementIndex*nodesPerElem;
+	    const unsigned elemFieldIndex = get_index(elemEntities(elementOffset));
+
+	    const unsigned idx = get_index(elementNodeConnectivity(connOffset + nodeIndex));
+
+	    const double tempx = constNodeCoords(idx, 0) * 0.125;
+	    const double tempy = constNodeCoords(idx, 1) * 0.125;
+	    const double tempz = constNodeCoords(idx, 2) * 0.125;
+
+	    Kokkos::atomic_add(&elementCentroids(elemFieldIndex, 0), tempx);
+	    Kokkos::atomic_add(&elementCentroids(elemFieldIndex, 1), tempy);
+	    Kokkos::atomic_add(&elementCentroids(elemFieldIndex, 2), tempz);
+       });
+
+#endif
+
     }
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, team, unroll), const TeamHandleType& team) const
     {
@@ -333,10 +373,11 @@ struct GpuGatherFlatScratchData
     DeviceViewFlatConnectivityType elementNodeConnectivity;
     DeviceViewMatrixType nodeCoords;
     ConstDeviceViewMatrixType constNodeCoords;
-    DeviceViewMatrixType elementCentroids;
+    DeviceViewAtomicMatrixType elementCentroids;
     DeviceViewMeshIndicesType meshIndices;
     ConstDeviceViewMeshIndicesType constMeshIndices;
     DeviceViewEntitiesType elemEntities;
+
     DeviceViewIntType connBucketOffsets;
     DeviceViewIntType elemBucketOffsets;
     DeviceViewIntType elemsPerBucket;
@@ -344,9 +385,10 @@ struct GpuGatherFlatScratchData
 
     DeviceViewFlatConnectivityType::HostMirror hostElementNodeConnectivity;
     DeviceViewMatrixType::HostMirror hostNodeCoords;
-    DeviceViewMatrixType::HostMirror hostElementCentroids;
+    DeviceViewAtomicMatrixType::HostMirror hostElementCentroids;
     DeviceViewMeshIndicesType::HostMirror hostMeshIndices;
     DeviceViewEntitiesType::HostMirror  hostElemEntities;
+
     DeviceViewIntType::HostMirror hostConnBucketOffsets;
     DeviceViewIntType::HostMirror hostElemBucketOffsets;
     DeviceViewIntType::HostMirror hostElemsPerBucket;
@@ -371,6 +413,6 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_flat)
     calculator.test_centroid_of_element_1();
 
     for(unsigned elementIndex=0; elementIndex<scratch.hostElemEntities.extent(0); ++elementIndex) {
-      calculator.test_centroid_of_element(app.hostCentroid, scratch.hostElemEntities(elementIndex), elementIndex);
+        calculator.test_centroid_of_element(app.hostCentroid, scratch.hostElemEntities(elementIndex), elementIndex);
     }
 }
