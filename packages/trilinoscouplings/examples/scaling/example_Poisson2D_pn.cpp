@@ -135,7 +135,6 @@
 
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
-#include "ml_epetra_utils.h"
 
 #ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
@@ -194,6 +193,8 @@ void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode
 void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode,
                       Epetra_Map const & P1_map_aux, Epetra_Map const &P2_map,
                       Teuchos::RCP<Epetra_CrsMatrix> & I);
+
+void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetra_MultiVector & x, Epetra_MultiVector & b, const Epetra_MultiVector & soln);
 
 /**********************************************************************************/
 /***************** FUNCTION DECLARATION FOR ML PRECONDITIONER *********************/
@@ -744,43 +745,40 @@ int main(int argc, char *argv[]) {
 
 
   printf("*** Dof Coords ***\n");
- for(int j=0; j<numFieldsG; j++)
-   printf("[%d] %10.2e %10.2e\n",j,DofCoords(j,0),DofCoords(j,1));
-
- printf("*** CubPoints & Weights ***\n");
- for(int j=0; j<numCubPoints; j++)
-   printf("[%d] %10.2e %10.2e (%10.2e)\n",j,cubPoints(j,0),cubPoints(j,1),cubWeights(j));
-
- printf("*** HGBValues @ Dofs ***\n");
+  for(int j=0; j<numFieldsG; j++)
+    printf("[%d] %10.2e %10.2e\n",j,DofCoords(j,0),DofCoords(j,1));
+  
+  printf("*** CubPoints & Weights ***\n");
+  for(int j=0; j<numCubPoints; j++)
+    printf("[%d] %10.2e %10.2e (%10.2e)\n",j,cubPoints(j,0),cubPoints(j,1),cubWeights(j));
+  
+  printf("*** HGBValues @ Dofs ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numFieldsG; j++) {
-      printf("%10.2e ",zwrap(HGBValues_at_Dofs(i,j)));
-
+      printf("%10.2e ",zwrap(HGBValues_at_Dofs(i,j)));      
     }
     printf("\n");
   }
   
-
   printf("*** HGBValues ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numCubPoints; j++) {
       printf("%10.2e ",zwrap(HGBValues(i,j)));
-
+      
     }
     printf("\n");
   }
   
-
   printf("*** HGBGrad ***\n");
   for(int i=0; i<numFieldsG; i++) {
     printf("[%d] ",i);
     for(int j=0; j<numCubPoints; j++) {
       printf("(%10.2e %10.2e)",zwrap(HGBGrads(i,j,0)),zwrap(HGBGrads(i,j,1)));
+      printf("\n");
     }
-    printf("\n");
-  }
+  }    
 
   printf("*** Pn_nodeIsOwned ***\n");
   for(int i=0; i<Pn_numNodes; i++)
@@ -794,7 +792,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-
+  
   if(MyPID==0) {std::cout << "Getting basis                               "
 			  << Time.ElapsedTime() << " sec \n"  ; Time.ResetStartTime();}
 
@@ -847,6 +845,8 @@ int main(int argc, char *argv[]) {
   // Global arrays in Epetra format
   Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
   Epetra_FEVector rhsVector(globalMapG);
+  Epetra_FEVector femCoefficients(globalMapG);
+
 
   if(MyPID==0) {std::cout << msg << "Build global maps                           "
 			  << Time.ElapsedTime() << " sec \n";  Time.ResetStartTime();}
@@ -898,13 +898,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-
   // Vector for use in applying BCs
   Epetra_MultiVector v(globalMapG,true);
   v.PutScalar(0.0);
 
   // Set v to boundary values on Dirichlet nodes
-  int * BCNodes = new int [numBCNodes];
+  std::vector<int> BCNodes(numBCNodes);
   int indbc=0;
   int iOwned=0;
   for (int inode=0; inode<numNodes; inode++){
@@ -922,7 +921,7 @@ int main(int argc, char *argv[]) {
     
   if(MyPID==0) {std::cout << msg << "Get Dirichlet boundary values               "
 			  << Time.ElapsedTime() << " sec \n\n"; Time.ResetStartTime();}
-
+  
   /**********************************************************************************/
   /******************** DEFINE WORKSETS AND LOOP OVER THEM **************************/
   /**********************************************************************************/
@@ -1047,60 +1046,23 @@ int main(int argc, char *argv[]) {
     GenerateIdentityCoarsening_p2_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
-
+  
 /**********************************************************************************/
 /******************************* ADJUST MATRIX DUE TO BC **************************/
 /**********************************************************************************/
 
-  // Apply stiffness matrix to v
-  Epetra_MultiVector rhsDir(globalMapG,true);
-  StiffMatrix.Apply(v,rhsDir);
-
-  // Update right-hand side
-  rhsVector.Update(-1.0,rhsDir,1.0);
-
-  // Adjust rhs due to Dirichlet boundary conditions
-  iOwned=0;
-  for (int inode=0; inode<numNodes; inode++){
-    if (Pn_nodeIsOwned[inode]){
-      if (nodeOnBoundary(inode)){
-	rhsVector[0][iOwned]=v[0][iOwned];
-      }
-      iOwned++;
-    }
-  }
-
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
-  ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
+  Apply_Dirichlet_BCs(BCNodes,StiffMatrix,femCoefficients,rhsVector,v);
 
   ///////////////////////////////////////////
   // Apply BCs to auxiliary P1 matrix
   ///////////////////////////////////////////
-  // Apply stiffness matrix to v
-  StiffMatrix_aux.Apply(v,rhsDir);
-
-  // Update right-hand side
-  rhsVector_aux.Update(-1.0,rhsDir,1.0);
-
-  // Adjust rhs due to Dirichlet boundary conditions
-  iOwned=0;
-  for (int inode=0; inode<numNodes; inode++){
-    if (Pn_nodeIsOwned[inode]){
-      if (nodeOnBoundary(inode)){
-        rhsVector_aux[0][iOwned]=v[0][iOwned];
-      }
-      iOwned++;
-    }
-  }
-
   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
   //  and add one to diagonal.
   std::cout << "numBCNodes = " << numBCNodes << std::endl;
   std::cout << "globalMapG #elts = " << globalMapG.NumMyElements() << std::endl;
-  ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix_aux);
-
-  delete [] BCNodes;
+  Apply_Dirichlet_BCs(BCNodes,StiffMatrix_aux,rhsVector_aux,rhsVector_aux,v);
 
   if(MyPID==0) {std::cout << msg << "Adjust global matrix and rhs due to BCs     " << Time.ElapsedTime()
 			  << " sec \n"; Time.ResetStartTime();}
@@ -1112,7 +1074,7 @@ int main(int argc, char *argv[]) {
   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhsVector,0,0,false);
   EpetraExt::RowMatrixToMatlabFile("stiff_matrix_aux.dat",StiffMatrix_aux);
   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector_aux.dat",rhsVector_aux,0,0,false);
-#undef DUMP_DATA
+  //#undef DUMP_DATA
 #endif
 
   /**********************************************************************************/
@@ -1127,7 +1089,6 @@ int main(int argc, char *argv[]) {
   MLList.set("y-coordinates",Pn_nodeCoordy.data());
 
   Epetra_FEVector exactNodalVals(globalMapG);
-  Epetra_FEVector femCoefficients(globalMapG);
   double TotalErrorResidual = 0.0;
   double TotalErrorExactSol = 0.0;
 
@@ -1594,7 +1555,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol)
 {
   Epetra_MultiVector x(xexact);
-  x.PutScalar(0.0);
+  x = uh;
 
   Epetra_LinearProblem Problem(&*A0,&x,&b);
   Epetra_MultiVector* lhs = Problem.GetLHS();
@@ -2407,4 +2368,25 @@ void GenerateIdentityCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNo
   }
 
   P->FillComplete(P1_map_aux,P2_map);
+}
+
+
+
+
+/*********************************************************************************************************/
+void Apply_Dirichlet_BCs(std::vector<int> BCNodes, Epetra_FECrsMatrix & A, Epetra_MultiVector & x, Epetra_MultiVector & b, const Epetra_MultiVector & soln) {
+  int N=(int)BCNodes.size();
+  for(int i=0; i<N; i++) {
+    int lrid = BCNodes[i];
+    
+    int NumEntries, *Indices;
+    double *Values;
+
+    x[0][lrid]=b[0][lrid] = soln[0][lrid];
+
+    A.ExtractMyRowView(lrid,NumEntries,Values,Indices);
+    
+    for(int j=0; j<NumEntries; j++)
+      Values[j] = (Indices[j] == lrid) ? 1.0 : 0.0;      
+  }
 }
