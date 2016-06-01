@@ -105,7 +105,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
@@ -156,7 +156,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -288,7 +288,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -405,7 +405,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(false);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -675,7 +675,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager,mergetests)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();

@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -157,7 +157,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
@@ -252,7 +252,7 @@ TEUCHOS_UNIT_TEST(tCloneLOF, blocked_epetra_nonblocked_domain)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
 
    RCP<const FieldPattern> patternC1
          = buildFieldPattern<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();

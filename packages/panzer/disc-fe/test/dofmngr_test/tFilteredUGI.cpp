@@ -110,7 +110,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
@@ -204,7 +204,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
@@ -422,7 +422,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    RCP<DOFManager<int,int> > dofManager = rcp(new DOFManager<int,int>); 
    dofManager->setConnManager(connManager,MPI_COMM_WORLD);
 
