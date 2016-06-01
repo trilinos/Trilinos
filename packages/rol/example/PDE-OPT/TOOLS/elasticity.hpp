@@ -64,6 +64,7 @@ protected:
   int DBC_Case_;
 // parametrized loads
   std::vector<Real> param_;
+  std::vector<bool> stochParam_;
 // geometry and loads information
   Real xmin_;
   Real ymin_;
@@ -201,11 +202,19 @@ public:
 
     param_.clear(); param_.resize(6);
     param_[0] = bodyforce_Magnitude_;
-    param_[1] = bodyforce_Angle_;
+    param_[1] = DegreesToRadians(bodyforce_Angle_);
     param_[2] = traction_Magnitude_;
-    param_[3] = traction_Angle_;
+    param_[3] = DegreesToRadians(traction_Angle_);
     param_[4] = pointload_Magnitude_;
-    param_[5] = pointload_Angle_;
+    param_[5] = DegreesToRadians(pointload_Angle_);
+
+    stochParam_.clear(); stochParam_.resize(6);
+    stochParam_[0] = Elist.get<bool>("Stochastic Bodyforce Magnitude");
+    stochParam_[1] = Elist.get<bool>("Stochastic Bodyforce Angle");
+    stochParam_[2] = Elist.get<bool>("Stochastic Traction Magnitude");
+    stochParam_[3] = Elist.get<bool>("Stochastic Traction Angle");
+    stochParam_[4] = Elist.get<bool>("Stochastic Pointload Magnitude");
+    stochParam_[5] = Elist.get<bool>("Stochastic Pointload Angle");
 
     PrintLoadingInformation();
     
@@ -585,21 +594,19 @@ public:
   }
 
   virtual void updateF(const std::vector<Real> &param) {
-    //Real diff = std::sqrt(std::pow(param_[0]-param[0],2)
-    //                    + std::pow(param_[1]-param[1],2)
-    //                    + std::pow(param_[2]-param[2],2)
-    //                    + std::pow(param_[3]-param[3],2)
-    //                    + std::pow(param_[4]-param[4],2)
-    //                    + std::pow(param_[5]-param[5],2));
-    //if (diff > ROL::ROL_EPSILON<Real>()) {
-      param_ = param;
+    int ind = 0;
+    for (int i = 0; i < 6; ++i) {
+      if ( stochParam_[i] ) {
+        param_[i] = param[ind];
+        ind++;
+      }
+    }
 
-      ComputeLocalForceVec();
-      PDE_FEM<Real>::AssembleRHSVector();
-      PDE_FEM<Real>::VectorRemoveDBC();
+    ComputeLocalForceVec();
+    PDE_FEM<Real>::AssembleRHSVector();
+    PDE_FEM<Real>::VectorRemoveDBC();
 
-      PrintLoadingInformation();
-    //}
+    PrintLoadingInformation();
   }
 
 
@@ -739,25 +746,22 @@ public:
 // modification for stochastic loads should be made here
   virtual void funcRHS_BodyForce(std::vector<Real> &F,
                            const std::vector<Real> &x) const {
-    Real theta = DegreesToRadians(param_[1]);
     F.clear(); F.resize(this->spaceDim_);
-    F[0] = param_[0]*std::cos(theta);
-    F[1] = param_[0]*std::sin(theta);
+    F[0] = param_[0]*std::cos(param_[1]);
+    F[1] = param_[0]*std::sin(param_[1]);
   }
 
   virtual void funcRHS_NBC(std::vector<Real> &F,
                      const std::vector<Real> &x) const {
-    Real theta = DegreesToRadians(param_[3]);
     F.clear(); F.resize(this->spaceDim_);
-    F[0] = param_[2]*std::cos(theta);
-    F[1] = param_[2]*std::sin(theta);
+    F[0] = param_[2]*std::cos(param_[3]);
+    F[1] = param_[2]*std::sin(param_[3]);
   }
 
   virtual void funcRHS_PtLoad(std::vector<Real> &F) const {
-    Real theta = DegreesToRadians(param_[5]);
     F.clear(); F.resize(this->spaceDim_);
-    F[0] = param_[4]*std::cos(theta);
-    F[1] = param_[4]*std::sin(theta);
+    F[0] = param_[4]*std::cos(param_[5]);
+    F[1] = param_[4]*std::sin(param_[5]);
   }
 //
 //

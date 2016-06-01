@@ -83,7 +83,7 @@ Teuchos::RCP<Tpetra::MultiVector<> > createTpetraVector(const Teuchos::RCP<const
 }
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+//  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
@@ -201,7 +201,8 @@ int main(int argc, char *argv[]) {
     ROL::Elementwise::ReductionMax<RealT> ROLmax;
     buildSampler.getBatchManager()->reduceAll(&max,&gmax,ROLmax);
     buildSampler.getBatchManager()->sumAll(&sum,&gsum,1);
-    RealT scale = gmin;
+    bool useExpValScale = stoch_parlist->sublist("Problem").get("Use Expected Value Scaling",false);
+    RealT scale = (useExpValScale ? gsum : gmin);
 
     /*** Build objective function, constraint and reduced objective function. ***/
     Teuchos::RCP<ROL::ParametrizedObjective_SimOpt<RealT> > obj
@@ -227,7 +228,7 @@ int main(int argc, char *argv[]) {
     ROL::StochasticProblem<RealT> opt(*stoch_parlist,objReduced,buildSampler.get(),zp,bnd);
 
     /*** Check functional interface. ***/
-    bool checkDeriv = true;
+    bool checkDeriv = parlist->sublist("Problem").get("Derivative Check",false);
     if ( checkDeriv ) {
 //      *outStream << "Checking Objective:" << "\n";
 //      obj->checkGradient(x,d,true,*outStream);

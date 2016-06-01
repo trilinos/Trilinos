@@ -9,6 +9,7 @@
 
 // SOL Inputs
 #include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_SROMGenerator.hpp"
 #include "ROL_DistributionFactory.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
@@ -30,87 +31,76 @@ public:
                      Teuchos::ParameterList &Slist,
                      Teuchos::ParameterList &Elist) {
     /*** Build stochastic functionality. ***/
-    int sdim = 6;
-    distVec_.clear(); distVec_.resize(sdim,Teuchos::null);
+    Real scale = static_cast<Real>(M_PI)/static_cast<Real>(180);
+    int sdim = 0;
+    distVec_.clear();
     // Build distribution for volumetric force
-    bool vStoch = Slist.sublist("Problem").sublist("Volumetric Force").get<bool>("Stochastic");
-    if ( vStoch ) {
+    bool vStochMag = Elist.sublist("Elasticity").get<bool>("Stochastic Bodyforce Magnitude");
+    if ( vStochMag ) {
       Teuchos::ParameterList &magList
         = Slist.sublist("Problem").sublist("Volumetric Force").sublist("Magnitude");
-      distVec_[0] = ROL::DistributionFactory<Real>(magList);
-      Elist.sublist("Elasticity").set("Bodyforce Magnitude",distVec_[0]->moment(1));
+      distVec_.push_back(ROL::DistributionFactory<Real>(magList));
+      Elist.sublist("Elasticity").set("Bodyforce Magnitude",distVec_[sdim]->moment(1));
+      sdim++;
+    }
+    bool vStochAng = Elist.sublist("Elasticity").get<bool>("Stochastic Bodyforce Angle");
+    if ( vStochAng ) {
       Teuchos::ParameterList &angList
         = Slist.sublist("Problem").sublist("Volumetric Force").sublist("Angle");
-      distVec_[1] = ROL::DistributionFactory<Real>(angList);
-      Elist.sublist("Elasticity").set("Bodyforce Angle",distVec_[1]->moment(1));
-    }
-    else {
-      Real magCtr = Elist.sublist("Elasticity").get<Real>("Bodyforce Magnitude");
-      Teuchos::ParameterList magList;
-      magList.sublist("Distribution").set("Name","Dirac");
-      magList.sublist("Distribution").sublist("Dirac").set("Location",magCtr);
-      distVec_[0] = ROL::DistributionFactory<Real>(magList);
-      Real angCtr = Elist.sublist("Elasticity").get<Real>("Bodyforce Angle");
-      Teuchos::ParameterList angList;
-      angList.sublist("Distribution").set("Name","Dirac");
-      angList.sublist("Distribution").sublist("Dirac").set("Location",angCtr);
-      distVec_[1] = ROL::DistributionFactory<Real>(angList);
+      distVec_.push_back(ROL::DistributionFactory<Real>(angList));
+      Elist.sublist("Elasticity").set("Bodyforce Angle",scale * distVec_[sdim]->moment(1));
+      sdim++;
     }
     // Build distribution for traction force
-    bool tStoch = Slist.sublist("Problem").sublist("Traction Force").get<bool>("Stochastic");
-    if ( tStoch ) {
+    bool tStochMag = Elist.sublist("Elasticity").get<bool>("Stochastic Traction Magnitude");
+    if ( tStochMag ) {
       Teuchos::ParameterList &magList
         = Slist.sublist("Problem").sublist("Traction Force").sublist("Magnitude");
-      distVec_[2] = ROL::DistributionFactory<Real>(magList);
-      Elist.sublist("Elasticity").set("Traction Magnitude",distVec_[2]->moment(1));
+      distVec_.push_back(ROL::DistributionFactory<Real>(magList));
+      Elist.sublist("Elasticity").set("Traction Magnitude",distVec_[sdim]->moment(1));
+      sdim++;
+    }
+    bool tStochAng = Elist.sublist("Elasticity").get<bool>("Stochastic Traction Angle");
+    if ( tStochAng ) {
       Teuchos::ParameterList &angList
         = Slist.sublist("Problem").sublist("Traction Force").sublist("Angle");
-      distVec_[3] = ROL::DistributionFactory<Real>(angList);
-      Elist.sublist("Elasticity").set("Traction Angle",distVec_[3]->moment(1));
-    }
-    else {
-      Real magCtr = Elist.sublist("Elasticity").get<Real>("Traction Magnitude");
-      Teuchos::ParameterList magList;
-      magList.sublist("Distribution").set("Name","Dirac");
-      magList.sublist("Distribution").sublist("Dirac").set("Location",magCtr);
-      distVec_[2] = ROL::DistributionFactory<Real>(magList);
-      Real angCtr = Elist.sublist("Elasticity").get<Real>("Traction Angle");
-      Teuchos::ParameterList angList;
-      angList.sublist("Distribution").set("Name","Dirac");
-      angList.sublist("Distribution").sublist("Dirac").set("Location",angCtr);
-      distVec_[3] = ROL::DistributionFactory<Real>(angList);
+      distVec_.push_back(ROL::DistributionFactory<Real>(angList));
+      Elist.sublist("Elasticity").set("Traction Angle",scale * distVec_[sdim]->moment(1));
+      sdim++;
     }
     // Build distribution for point force
-    bool pStoch = Slist.sublist("Problem").sublist("Point Force").get<bool>("Stochastic");
-    if ( pStoch ) {
+    bool pStochMag = Elist.sublist("Elasticity").get<bool>("Stochastic Pointload Magnitude");
+    if ( pStochMag ) {
       Teuchos::ParameterList &magList
         = Slist.sublist("Problem").sublist("Point Force").sublist("Magnitude");
-      distVec_[4] = ROL::DistributionFactory<Real>(magList);
-      Elist.sublist("Elasticity").set("Pointload Magnitude",distVec_[4]->moment(1));
+      distVec_.push_back(ROL::DistributionFactory<Real>(magList));
+      Elist.sublist("Elasticity").set("Pointload Magnitude",distVec_[sdim]->moment(1));
+      sdim++;
+    }
+    bool pStochAng = Elist.sublist("Elasticity").get<bool>("Stochastic Pointload Angle");
+    if ( pStochAng ) {
       Teuchos::ParameterList &angList
         = Slist.sublist("Problem").sublist("Point Force").sublist("Angle");
-      distVec_[5] = ROL::DistributionFactory<Real>(angList);
-      Elist.sublist("Elasticity").set("Pointload Angle",distVec_[5]->moment(1));
-    }
-    else {
-      Real magCtr = Elist.sublist("Elasticity").get<Real>("Pointload Magnitude");
-      Teuchos::ParameterList magList;
-      magList.sublist("Distribution").set("Name","Dirac");
-      magList.sublist("Distribution").sublist("Dirac").set("Location",magCtr);
-      distVec_[4] = ROL::DistributionFactory<Real>(magList);
-      Real angCtr = Elist.sublist("Elasticity").get<Real>("Pointload Angle");
-      Teuchos::ParameterList angList;
-      angList.sublist("Distribution").set("Name","Dirac");
-      angList.sublist("Distribution").sublist("Dirac").set("Location",angCtr);
-      distVec_[5] = ROL::DistributionFactory<Real>(angList);
+      distVec_.push_back(ROL::DistributionFactory<Real>(angList));
+      Elist.sublist("Elasticity").set("Pointload Angle",scale * distVec_[sdim]->moment(1));
+      sdim++;
     }
     // Build sampler
-    int nsamp = Slist.sublist("Problem").get("Number of Monte Carlo Samples",100);
-    if ( !vStoch && !tStoch && !pStoch ) {
+    int nsamp = Slist.sublist("Problem").get("Number of Samples",100);
+    if ( !vStochMag && !vStochAng &&
+         !tStochMag && !tStochAng && 
+         !pStochMag && !pStochAng ) {
       nsamp = 1;
     }
     bman_ = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<Real>(comm));
-    sampler_  = Teuchos::rcp(new ROL::MonteCarloGenerator<Real>(nsamp,distVec_,bman_,false,false,0));
+    bool useOBS = Slist.sublist("Problem").get("Use Optimization-Based Sampling",false);
+    if ( useOBS ) {
+      Slist.sublist("SOL").sublist("Sample Generator").sublist("SROM").set("Number of Samples",nsamp);
+      sampler_ = Teuchos::rcp(new ROL::SROMGenerator<Real>(Slist,bman_,distVec_));
+    }
+    else {
+      sampler_ = Teuchos::rcp(new ROL::MonteCarloGenerator<Real>(nsamp,distVec_,bman_,false,false,0));
+    }
   }
 
   Teuchos::RCP<ROL::SampleGenerator<Real> >& get(void) {
@@ -131,14 +121,10 @@ public:
       for (int i = 0; i < sampler_->numMySamples(); ++i) {
         std::vector<Real> pt = sampler_->getMyPoint(i);
         Real wt = sampler_->getMyWeight(i);
-        file << std::setw(width) << std::left << pt[0]
-             << std::setw(width) << std::left << pt[1]
-             << std::setw(width) << std::left << pt[2]
-             << std::setw(width) << std::left << pt[3]
-             << std::setw(width) << std::left << pt[4]
-             << std::setw(width) << std::left << pt[5]
-             << std::setw(width) << std::left << wt
-             << std::endl; 
+        for (int j = 0; j < pt.size(); ++j) {
+          file << std::setw(width) << std::left << pt[j];
+        }
+        file << std::setw(width) << std::left << wt << std::endl; 
       }
       file.close();
     }
