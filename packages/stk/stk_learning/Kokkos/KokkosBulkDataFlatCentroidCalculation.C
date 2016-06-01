@@ -183,7 +183,7 @@ struct GpuGatherFlatScratchData
 
     unsigned getNumParallelItems() const
     {
-        if((2 == appChoice) || (4 == appChoice))
+        if((2 == appChoice) || (4 == appChoice) || (5 == appChoice))
 	  return hostElemEntities.extent(0);
 
         return hostConnBucketOffsets.extent(0);

@@ -394,7 +394,11 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_uvm)
     MyApp app;
 
     GpuGatherBucketScratchData scratch;
-    bool combineBuckets = app.choice==2 ? true : false;
+    bool combineBuckets = false;
+    if (app.choice == 2 || app.choice == 4 || app.choice == 5) {
+        combineBuckets = true;
+    }
+    
     scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part(), combineBuckets);
 
     CentroidCalculator<GpuGatherBucketScratchData> calculator(scratch);
