@@ -77,7 +77,7 @@
 */
 
 /*** Uncomment if you would like output data for plotting ***/
-#define DUMP_DATA
+//#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
