@@ -102,12 +102,8 @@ namespace Experimental {
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::mv_type
 BlockMultiVector<Scalar, LO, GO, Node>::
-getMultiVectorView ()
+getMultiVectorView () const
 {
-  // Make sure that mv_ has view semantics.
-  mv_.setCopyOrView (Teuchos::View);
-  // Now the one-argument copy constructor will make a shallow copy,
-  // and those view semantics will persist in all of its offspring.
   return mv_;
 }
 

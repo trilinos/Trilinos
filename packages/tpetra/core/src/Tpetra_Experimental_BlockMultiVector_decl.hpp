@@ -337,7 +337,7 @@ public:
   ///
   /// This is how you can give a BlockMultiVector to Trilinos' solvers
   /// and preconditioners.
-  mv_type getMultiVectorView ();
+  mv_type getMultiVectorView () const;
 
   //@}
   //! \name Coarse-grained operations
