@@ -910,6 +910,9 @@ private:
 
   // Subview's layout
   // If LayoutRight then FAD is contiguous
+  // For LayoutLeft, result is LayoutLeft only if 1st arg is a range,
+  // and since last (FAD) dimension is also a range, and these
+  // ranges must be consecutive, the input rank must be 1
   typedef typename std::conditional<
     ( /* Same layout IF */
       ( rank == 0 )
@@ -923,7 +926,7 @@ private:
       ( std::is_same< typename SrcTraits::array_layout
                     , Kokkos::LayoutLeft >::value
         &&
-        ( rank == 1 ) && R0
+        ( rank == 1 ) && (SrcTraits::rank == 1) && R0
       )
     ), typename SrcTraits::array_layout , Kokkos::LayoutStride
     >::type  array_layout ;
