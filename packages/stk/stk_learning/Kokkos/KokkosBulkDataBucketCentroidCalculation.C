@@ -408,7 +408,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_uvm)
     CentroidCalculator<GpuGatherBucketScratchData> calculator(scratch);
 
     app.start_timer();
-    calculator.calculate_centroids(app.num_repeat, app.choice);
+    calculator.calculate_centroids(app.num_repeat, app.choice, app.teamSize);
     app.stop_timer();
     app.report_bandwidth();
 

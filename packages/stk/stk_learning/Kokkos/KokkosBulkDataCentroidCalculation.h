@@ -141,15 +141,15 @@ public:
     }
     
     template<class T>
-    void execute_team(T choice, int num_repeat)
+      void execute_team(T choice, int num_repeat, int team_size)
     {
         std::cout << "Executing operator: " << choice.name << std::endl;
         size_t N = functor.getNumParallelItems();
 	for (int repeat=0 ; repeat<num_repeat ; ++repeat)
-	    Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, 512), functor);
+	    Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, team_size), functor);
     }
 
-    void calculate_centroids(int num_repeat, int choice)
+    void calculate_centroids(int num_repeat, int choice, int team_size)
     {
         TYPE_OPERATOR(bucket , solo, compact) choice_0;
         TYPE_OPERATOR(bucket , team, compact) choice_1;
@@ -161,13 +161,13 @@ public:
 
 	switch(choice)
 	{
-	    case 0: execute_solo(choice_0, num_repeat); break;
-   	    case 1: execute_team(choice_1, num_repeat); break;	  
-	    case 2: execute_solo(choice_2, num_repeat); break;	  
-	    case 3: execute_team(choice_3, num_repeat); break;
-	    case 4: execute_team(choice_4, num_repeat); break;
- 	    case 5: execute_solo(choice_5, num_repeat); break;
-	    case 6: execute_solo(choice_6, num_repeat); break;
+	    case 0: execute_solo(choice_0, num_repeat           ); break;
+	    case 1: execute_team(choice_1, num_repeat, team_size); break;	  
+	    case 2: execute_solo(choice_2, num_repeat           ); break;	  
+	    case 3: execute_team(choice_3, num_repeat, team_size); break;
+	    case 4: execute_team(choice_4, num_repeat, team_size); break;
+ 	    case 5: execute_solo(choice_5, num_repeat           ); break;
+	    case 6: execute_solo(choice_6, num_repeat           ); break;
  	    default: printf("No current implementation available for choice %d\n",choice); break;
         }
     }
@@ -190,6 +190,7 @@ struct MyApp {
         num_repeat = unitTestUtils::get_command_line_option<int>("-n", "1");
         dim = unitTestUtils::get_command_line_option<size_t>("-d", "10");
         choice = unitTestUtils::get_command_line_option<int>("-c", "0");
+        teamSize = unitTestUtils::get_command_line_option<int>("-t", "512");
     
         std::ostringstream os;
         os << "generated:" << dim << "x" << dim << "x" << dim << std::endl;
@@ -243,6 +244,7 @@ struct MyApp {
     int num_repeat;
     size_t dim;
     int choice;
+    int teamSize;  
     struct timeval begin, end;
 };
 

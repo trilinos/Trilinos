@@ -132,7 +132,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_device)
     CentroidCalculator<ScratchData> calculator(scratch);
 
     app.start_timer();
-    calculator.calculate_centroids(app.num_repeat, 5 /* app.choice */ );
+    calculator.calculate_centroids(app.num_repeat, 5, app.teamSize );
     app.stop_timer();
     app.report_bandwidth();
 

@@ -221,7 +221,33 @@ struct GpuGatherFlatScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()( TYPE_OPERATOR(bucket, solo, unroll) , const int elementBucketIndex) const
     {
+        const unsigned numElements = elemsPerBucket(elementBucketIndex);
+        const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
+        const unsigned dim = elementCentroids.extent(1);
+	double tempx = 0, tempy = 0, tempz = 0;
+        for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
+   	    int elementOffset = elemBucketOffsets(elementBucketIndex) + elementIndex;	  
+	    int connOffset = connBucketOffsets(elementBucketIndex) + elementIndex*nodesPerElem;
+	    stk::mesh::Entity element = elemEntities(elementOffset);
+	    const unsigned elemFieldIndex = get_index(element);
 
+	    tempx = 0;
+	    tempy = 0;
+	    tempz = 0;
+
+	    for(unsigned nodeIndex=0; nodeIndex<nodesPerElem; ++nodeIndex) // loop over every node of this element
+            {
+	        const unsigned idx = get_index(elementNodeConnectivity(connOffset + nodeIndex));
+		  
+		tempx += nodeCoords(idx, 0);
+		tempy += nodeCoords(idx, 1);
+		tempz += nodeCoords(idx, 2);
+	    }
+
+	    elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
+	    elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
+	    elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
+        }
     }
   
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, compact), const TeamHandleType& team) const
@@ -405,7 +431,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_flat)
     CentroidCalculator<GpuGatherFlatScratchData> calculator(scratch);
     
     app.start_timer();
-    calculator.calculate_centroids(app.num_repeat, app.choice);
+    calculator.calculate_centroids(app.num_repeat, app.choice, app.teamSize);
     app.stop_timer();
     app.report_bandwidth();
 
