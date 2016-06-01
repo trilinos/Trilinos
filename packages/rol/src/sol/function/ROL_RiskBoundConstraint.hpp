@@ -59,6 +59,7 @@ private:
   int nStat_;
   std::vector<Real> lower_;
   std::vector<Real> upper_;
+  Real min_diff_;
 
 public:
 
@@ -96,6 +97,14 @@ public:
         BoundConstraint<Real>::deactivate();
       }
     }
+    else {
+      Real tmp(0), half(0.5);
+      min_diff_ = ROL_INF<Real>();
+      for (int i = 0; i < nStat_; ++i) {
+        tmp = half*(upper_[i]-lower_[i]);
+        min_diff_ = ((min_diff_ < tmp) ? min_diff_ : tmp); 
+      }
+    }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
@@ -122,14 +131,14 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( xstat >= upper_[i] - eps ) {
-          vstat[i] = (Real)0;
+        if ( xstat >= upper_[i] - epsn ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
@@ -144,15 +153,15 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat >= upper_[i] - eps) && (gstat < (Real)0) ) {
-          vstat[i] = (Real)0;
+        if ( (xstat >= upper_[i] - epsn) && (gstat < zero) ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
@@ -168,14 +177,14 @@ public:
     }
   }
  
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( xstat <= lower_[i] + eps ) {
-          vstat[i] = (Real)0;
+        if ( xstat <= lower_[i] + epsn ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
@@ -190,15 +199,15 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat <= lower_[i] + eps) && (gstat > (Real)0) ) {
-          vstat[i] = (Real)0;
+        if ( (xstat <= lower_[i] + epsn) && (gstat > zero) ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
@@ -234,14 +243,14 @@ public:
     }
   }
 
-  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( (xstat <= lower_[i] + eps) || (xstat >= upper_[i] - eps) ) {
-          vstat[i] = (Real)0;
+        if ( (xstat <= lower_[i] + epsn) || (xstat >= upper_[i] - epsn) ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
@@ -256,16 +265,16 @@ public:
     }
   }
 
-  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
     if ( augmented_ && activated_ ) {
-      Real gstat(0), xstat(0);
-      std::vector<Real> vstat(nStat_,0);
+      Real gstat(0), xstat(0), zero(0), epsn(std::min(eps,min_diff_));
+      std::vector<Real> vstat(nStat_,zero);
       for (int i = 0; i < nStat_; i++) {
         gstat = Teuchos::dyn_cast<const RiskVector<Real> >(g).getStatistic(i);
         xstat = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(i);
-        if ( ((xstat <= lower_[i] + eps) && (gstat > (Real)0)) ||
-             ((xstat >= upper_[i] - eps) && (gstat < (Real)0)) ) {
-          vstat[i] = (Real)0;
+        if ( ((xstat <= lower_[i] + epsn) && (gstat > zero)) ||
+             ((xstat >= upper_[i] - epsn) && (gstat < zero)) ) {
+          vstat[i] = zero;
         }
         else {
           vstat[i] = Teuchos::dyn_cast<RiskVector<Real> >(v).getStatistic(i);
