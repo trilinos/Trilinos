@@ -77,7 +77,7 @@
 */
 
 /*** Uncomment if you would like output data for plotting ***/
-//#define DUMP_DATA
+#define DUMP_DATA
 
 /**************************************************************/
 /*                          Includes                          */
@@ -684,7 +684,7 @@ int main(int argc, char *argv[]) {
 
   // Get numerical integration points and weights
   DefaultCubatureFactory<double>  cubFactory;
-  int cubDegree = 3;
+  int cubDegree = 4;
   Teuchos::RCP<Cubature<double> > myCub = cubFactory.create(P2_cellType, cubDegree);
 
   int cubDim       = myCub->getDimension();
