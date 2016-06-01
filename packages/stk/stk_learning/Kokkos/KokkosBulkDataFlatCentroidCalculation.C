@@ -223,7 +223,6 @@ struct GpuGatherFlatScratchData
     {
         const unsigned numElements = elemsPerBucket(elementBucketIndex);
         const unsigned nodesPerElem = nodesPerElement(elementBucketIndex);
-        const unsigned dim = elementCentroids.extent(1);
 	double tempx = 0, tempy = 0, tempz = 0;
         for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
    	    int elementOffset = elemBucketOffsets(elementBucketIndex) + elementIndex;	  
