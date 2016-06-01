@@ -428,6 +428,8 @@ private:
   mutable double ApplyInverseTime_;
   //! Used for timing issues
   mutable Epetra_Time Time_;
+  //! SuperLU global LU data
+  mutable GlobalLU_t lu_;
   //! SuperLU stats
   mutable SuperLUStat_t stat_;
   //! SuperLU options
