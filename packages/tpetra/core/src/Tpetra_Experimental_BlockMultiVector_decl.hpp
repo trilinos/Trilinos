@@ -426,6 +426,49 @@ public:
                      const Scalar& beta);
 
   //@}
+  //! \name Implementation of "dual view semantics"
+  //@{
+
+  /// \brief Update data to the given target memory space, only if
+  ///   data in the "other" space have been marked as modified.
+  ///
+  /// If \c TargetMemorySpace is the same as this object's memory
+  /// space, then copy data from host to device.  Otherwise, copy data
+  /// from device to host.  In either case, only copy if the source of
+  /// the copy has been modified.
+  ///
+  /// This is a one-way synchronization only.  If the target of the
+  /// copy has been modified, this operation will discard those
+  /// modifications.  It will also reset both device and host modified
+  /// flags.
+  ///
+  /// \note This method doesn't know on its own whether you modified
+  ///   the data in either memory space.  You must manually mark the
+  ///   MultiVector as modified in the space in which you modified
+  ///   it, by calling the modify() method with the appropriate
+  ///   template parameter.
+  template<class TargetMemorySpace>
+  void sync () {
+    mv_.template sync<typename TargetMemorySpace::memory_space> ();
+  }
+
+  //! Whether this object needs synchronization to the given memory space.
+  template<class TargetMemorySpace>
+  bool need_sync () const {
+    return mv_.template need_sync<typename TargetMemorySpace::memory_space> ();
+  }
+
+  /// \brief Mark data as modified on the given memory space.
+  ///
+  /// If <tt>TargetDeviceType::memory_space</tt> is the same as this
+  /// object's memory space, then mark the device's data as modified.
+  /// Otherwise, mark the host's data as modified.
+  template<class TargetMemorySpace>
+  void modify () {
+    mv_.template modify<typename TargetMemorySpace::memory_space> ();
+  }
+
+  //@}
   //! \name Fine-grained data access
   //@{
 
