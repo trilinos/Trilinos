@@ -1465,6 +1465,11 @@ public:
  *  \brief ROL's stochastic optimization capability.
  */
 
+/** @defgroup risk_group Risk Measures
+ *  @ingroup stochastic_group
+ * \brief ROL's risk measure implementations.
+*/ 
+
 /** @defgroup examples_group Examples
  *  \brief ROL's examples
  *  <ul>

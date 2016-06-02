@@ -48,7 +48,7 @@
 #include "ROL_RiskMeasure.hpp"
 #include "ROL_Types.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::FDivergence
     \brief Provides a general interface for the F-divergence distributionally robust
     expectation.

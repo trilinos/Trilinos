@@ -46,7 +46,7 @@
 
 #include "ROL_RiskMeasure.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::CoherentExpUtility
     \brief Provides the interface for the coherent entropic risk measure.
 

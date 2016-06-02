@@ -46,7 +46,7 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::MoreauYosidaCVaR
     \brief Provides an interface for a smooth approximation of the conditional
            value-at-risk.

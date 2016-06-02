@@ -46,7 +46,7 @@
 
 #include "ROL_RiskMeasureFactory.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::ConvexCombinationRiskMeasure
     \brief Provides an interface for a convex combination of
            risk measures.

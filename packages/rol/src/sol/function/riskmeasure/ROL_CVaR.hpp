@@ -48,7 +48,7 @@
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskVector.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::CVaR
     \brief Provides an interface for a convex combination of the
            expected value and the conditional value-at-risk.

@@ -46,7 +46,7 @@
 
 #include "ROL_FDivergence.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::Chi2Divergence
     \brief Provides an interface for the chi-squared-divergence distributionally robust
     expectation.

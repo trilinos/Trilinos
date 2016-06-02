@@ -46,7 +46,7 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::MeanVarianceQuadrangle
     \brief Provides an interface for the mean plus variance risk measure
            using the expectation risk quadrangle.
