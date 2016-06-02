@@ -63,8 +63,9 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>
 public:
 
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
-     : rowIndexers_(rIndexers) {}
+                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+                                bool useDiscreteAdjoint=false)
+     : rowIndexers_(rIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
   
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
@@ -79,7 +80,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl,useDiscreteAdjoint_)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
@@ -105,6 +106,8 @@ private:
   Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   ScatterResidual_BlockedEpetra();
+
+  bool useDiscreteAdjoint_;
 };
 
 }

@@ -82,11 +82,13 @@ class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
 public:
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider);
+                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
+                                 bool useDiscreteAdjoint=false);
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                  const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
-                                 const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider);
+                                 const Teuchos::RCP<const UniqueGlobalIndexerBase> & colGidProvider,
+                                 bool useDiscreteAdjoint=false);
 
    virtual ~BlockedEpetraLinearObjFactory();
 
@@ -140,7 +142,8 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
    { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
-                                                                                           colDOFManagerContainer_->getFieldDOFManagers())); }
+                                                                                           colDOFManagerContainer_->getFieldDOFManagers(),
+                                                                                           useDiscreteAdjoint_)); }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -442,6 +445,8 @@ protected:
 
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> graphs_ ;
    mutable std::unordered_map<std::pair<int,int>,Teuchos::RCP<Epetra_CrsGraph>,panzer::pair_hash> ghostedGraphs_;
+
+   bool useDiscreteAdjoint_;
 };
 
 }

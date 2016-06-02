@@ -112,6 +112,8 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+  if (p.isType<bool>("Use Discrete Adjoint"))
+     useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -542,7 +544,8 @@ evaluateFields(typename TRAITS::EvalData workset)
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 
                // check hash table for jacobian sub block
-               std::pair<int,int> blockIndex = std::make_pair(rowIndexer,colIndexer);
+               std::pair<int,int> blockIndex = useDiscreteAdjoint_ ? std::make_pair(colIndexer,rowIndexer)
+                                                                   : std::make_pair(rowIndexer,colIndexer);
                Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[blockIndex];
 
                // if you didn't find one before, add it to the hash table
@@ -559,21 +562,29 @@ evaluateFields(typename TRAITS::EvalData workset)
                }
 
                // Sum Jacobian
-               int err = subJac->SumIntoMyValues(r_lid, end-start, &jacRow[start],&cLIDs[0]);
-               if(err!=0) {
-
-                 std::stringstream ss;
-                 ss << "Failed inserting row: " << "LID = " << r_lid << "): ";
-                 for(int i=start;i<end;i++)
-                   ss <<  cLIDs[i] << " ";
-                 ss << std::endl;
-                 ss << "Into block " << rowIndexer << ", " << colIndexer << std::endl;
-
-                 ss << "scatter field = ";
-                 scatterFields_[fieldIndex].print(ss);
-                 ss << std::endl;
+               if(!useDiscreteAdjoint_) {
+                 int err = subJac->SumIntoMyValues(r_lid, end-start, &jacRow[start],&cLIDs[0]);
+                 if(err!=0) {
+  
+                   std::stringstream ss;
+                   ss << "Failed inserting row: " << "LID = " << r_lid << "): ";
+                   for(int i=start;i<end;i++)
+                     ss <<  cLIDs[i] << " ";
+                   ss << std::endl;
+                   ss << "Into block " << rowIndexer << ", " << colIndexer << std::endl;
+  
+                   ss << "scatter field = ";
+                   scatterFields_[fieldIndex].print(ss);
+                   ss << std::endl;
                  
-                 TEUCHOS_TEST_FOR_EXCEPTION(err!=0,std::runtime_error,ss.str());
+                   TEUCHOS_TEST_FOR_EXCEPTION(err!=0,std::runtime_error,ss.str());
+                 }
+               }
+               else {
+                 for(std::size_t c=0;c<cLIDs.size();c++) {
+                   int err = subJac->SumIntoMyValues(cLIDs[c], 1, &jacRow[start+c],&r_lid);
+                   TEUCHOS_ASSERT_EQUALITY(err,0);
+                 }
                }
             }
          } // end rowBasisNum
