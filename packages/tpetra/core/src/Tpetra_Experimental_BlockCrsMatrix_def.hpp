@@ -83,8 +83,495 @@
 
 
 namespace Tpetra {
-
 namespace Experimental {
+
+namespace Impl {
+
+#if 0
+template<class AlphaCoeffType,
+         class GraphType,
+         class MatrixValuesType,
+         class InVecType,
+         class BetaCoeffType,
+         class OutVecType>
+class BcrsApplyNoTrans1VecTeamFunctor {
+private:
+  static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+                 "MatrixValuesType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<OutVecType>::value,
+                 "OutVecType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<InVecType>::value,
+                 "InVecType must be a Kokkos::View.");
+  static_assert (std::is_same<MatrixValuesType,
+                   typename MatrixValuesType::const_type>::value,
+                 "MatrixValuesType must be a const Kokkos::View.");
+  static_assert (std::is_same<OutVecType,
+                   typename OutVecType::non_const_type>::value,
+                 "OutVecType must be a nonconst Kokkos::View.");
+  static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
+                 "InVecType must be a const Kokkos::View.");
+  static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
+                 "MatrixValuesType must be a rank-1 Kokkos::View.");
+  static_assert (static_cast<int> (InVecType::rank) == 1,
+                 "InVecType must be a rank-1 Kokkos::View.");
+  static_assert (static_cast<int> (OutVecType::rank) == 1,
+                 "OutVecType must be a rank-1 Kokkos::View.");
+  typedef typename MatrixValuesType::non_const_value_type scalar_type;
+  typedef typename GraphType::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename execution_space::scratch_memory_space shmem_space;
+
+public:
+  //! Type of the (mesh) column indices in the sparse graph / matrix.
+  typedef typename std::remove_const<typename GraphType::data_type>::type
+    local_ordinal_type;
+  //! Use this for the Kokkos::parallel_for policy argument.
+  typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic>,
+                             execution_space,
+                             local_ordinal_type> policy_type;
+  /// \brief Set the current vector / current column of the input
+  ///   (multi)vector X to use.
+  ///
+  /// This lets us handle multiple columns by iterating over them one
+  /// column at a time, without needing to recreate the functor each
+  /// time.
+  void setX (const InVecType& X) { X_ = X; }
+
+  /// \brief Set the current vector / current column of the output
+  ///   (multi)vector Y to use.
+  ///
+  /// This lets us handle multiple columns by iterating over them one
+  /// column at a time, without needing to recreate the functor each
+  /// time.
+  void setY (const OutVecType& Y) { Y_ = Y; }
+
+  /// \brief Get the per-team scratch size (for setting up the TeamPolicy).
+  ///
+  /// This is used only for the team parallel_reduce.
+  KOKKOS_INLINE_FUNCTION local_ordinal_type
+  getScratchSizePerTeam () const
+  {
+    // WARNING (mfh 01 Jun 2016) This may not work for Scalar types
+    // that have run-time sizes, like some of those in Stokhos.
+    typedef typename std::decay<decltype (Y_(0))>::type y_value_type;
+    return blockSize_ * sizeof (y_value_type);
+  }
+
+  /// \brief Get the per-thread scratch size (for setting up the TeamPolicy).
+  ///
+  /// This is used only for the team parallel_for.
+  KOKKOS_INLINE_FUNCTION local_ordinal_type
+  getScratchSizePerThread () const
+  {
+    // WARNING (mfh 01 Jun 2016) This may not work for Scalar types
+    // that have run-time sizes, like some of those in Stokhos.
+    typedef typename std::decay<decltype (Y_(0))>::type y_value_type;
+    return blockSize_ * sizeof (y_value_type);
+  }
+
+private:
+  KOKKOS_INLINE_FUNCTION local_ordinal_type
+  getNumLclMeshRows () const
+  {
+    return ptr_.dimension_0 () == 0 ?
+      static_cast<local_ordinal_type> (0) :
+      static_cast<local_ordinal_type> (ptr_.dimension_0 () - 1);
+  }
+
+  static constexpr local_ordinal_type defaultRowsPerTeam = 20;
+
+public:
+  //! Get the number of teams (first argument of the TeamPolicy).
+  local_ordinal_type getNumTeams () const {
+    return 1;
+    // const local_ordinal_type numLclMeshRows = getNumLclMeshRows ();
+    // return (numLclMeshRows + rowsPerTeam_ - 1) / rowsPerTeam_;
+  }
+
+  //! Constructor.
+  BcrsApplyNoTrans1VecTeamFunctor (const typename std::decay<AlphaCoeffType>::type& alpha,
+                                   const GraphType& graph,
+                                   const MatrixValuesType& val,
+                                   const local_ordinal_type blockSize,
+                                   const InVecType& X,
+                                   const typename std::decay<BetaCoeffType>::type& beta,
+                                   const OutVecType& Y,
+                                   const local_ordinal_type rowsPerTeam = defaultRowsPerTeam) :
+    alpha_ (alpha),
+    ptr_ (graph.row_map),
+    ind_ (graph.entries),
+    val_ (val),
+    blockSize_ (blockSize),
+    X_ (X),
+    beta_ (beta),
+    Y_ (Y),
+    rowsPerTeam_ (rowsPerTeam)
+  {
+    // std::ostringstream os;
+    // os << "Functor ctor: numLclMeshRows = " << getNumLclMeshRows () << std::endl;
+    // std::cerr << os.str ();
+  }
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const typename policy_type::member_type& member) const
+  {
+    using ::Tpetra::Experimental::COPY;
+    using ::Tpetra::Experimental::FILL;
+    using ::Tpetra::Experimental::SCAL;
+    using ::Tpetra::Experimental::GEMV;
+    using Kokkos::Details::ArithTraits;
+    // I'm not writing 'using Kokkos::make_pair;' here, because that
+    // may break builds for users who make the mistake of putting
+    // 'using namespace std;' in the global namespace.  Please don't
+    // ever do that!  But just in case you do, I'll take this
+    // precaution.
+    using Kokkos::parallel_for;
+    using Kokkos::subview;
+    typedef local_ordinal_type LO;
+    typedef typename decltype (ptr_)::non_const_value_type offset_type;
+    typedef Kokkos::View<typename OutVecType::non_const_value_type*,
+      shmem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      shared_array_type;
+    typedef Kokkos::View<typename OutVecType::non_const_value_type*,
+      Kokkos::LayoutRight,
+      device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      out_little_vec_type;
+    typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
+      Kokkos::LayoutRight,
+      device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      little_block_type;
+
+    const LO leagueRank = member.league_rank();
+
+    // This looks wrong!  All the threads are writing into the same local storage.
+    // shared_array_type threadLocalMem =
+    //   shared_array_type (member.thread_scratch (1), blockSize_);
+    shared_array_type threadLocalMem =
+      shared_array_type (member.thread_scratch (1), blockSize_ * rowsPerTeam_);
+
+    // This looks wrong!  All the threads are writing into the same local storage.
+    //out_little_vec_type Y_tlm (threadLocalMem.ptr_on_device (), blockSize_, 1);
+
+    const LO numLclMeshRows = getNumLclMeshRows ();
+    const LO rowBeg = leagueRank * rowsPerTeam_;
+    const LO rowTmp = rowBeg + rowsPerTeam_;
+    const LO rowEnd = rowTmp < numLclMeshRows ? rowTmp : numLclMeshRows;
+
+    // {
+    //   std::ostringstream os;
+    //   os << leagueRank << "," << member.team_rank () << ": "
+    //      << rowBeg << "," << rowEnd << std::endl;
+    //   std::cerr << os.str ();
+    // }
+
+    // Each team takes rowsPerTeam_ (block) rows.
+    // Each thread in the team takes a single (block) row.
+    parallel_for (Kokkos::TeamThreadRange (member, rowBeg, rowEnd),
+                  [&] (const LO& lclRow) {
+                    // Each thread in the team gets its own temp storage.
+                    out_little_vec_type Y_tlm (threadLocalMem.ptr_on_device () + blockSize_ * member.team_rank (), blockSize_);
+
+                    const offset_type Y_ptBeg = lclRow * blockSize_;
+                    const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
+                    auto Y_cur =
+                      subview (Y_, ::Kokkos::make_pair (Y_ptBeg, Y_ptEnd));
+                    if (beta_ == ArithTraits<BetaCoeffType>::zero ()) {
+                      FILL (Y_tlm, ArithTraits<BetaCoeffType>::zero ());
+                    }
+                    else if (beta_ == ArithTraits<BetaCoeffType>::one ()) {
+                      COPY (Y_cur, Y_tlm);
+                    }
+                    else { // beta != 0 && beta != 1
+                      COPY (Y_cur, Y_tlm);
+                      SCAL (beta_, Y_tlm);
+                    }
+
+                    if (alpha_ != ArithTraits<AlphaCoeffType>::zero ()) {
+                      const offset_type blkBeg = ptr_[lclRow];
+                      const offset_type blkEnd = ptr_[lclRow+1];
+                      // Precompute to save integer math in the inner loop.
+                      const offset_type bs2 = blockSize_ * blockSize_;
+                      for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
+                           ++absBlkOff) {
+                        little_block_type A_cur (val_.ptr_on_device () + absBlkOff * bs2,
+                                                 blockSize_, blockSize_);
+                        const offset_type X_blkCol = ind_[absBlkOff];
+                        const offset_type X_ptBeg = X_blkCol * blockSize_;
+                        const offset_type X_ptEnd = X_ptBeg + blockSize_;
+                        auto X_cur =
+                          subview (X_, ::Kokkos::make_pair (X_ptBeg, X_ptEnd));
+                        // Y_tlm += alpha*A_cur*X_cur
+                        GEMV (alpha_, A_cur, X_cur, Y_tlm);
+                      } // for each entry in current local block row of matrix
+                      COPY (Y_tlm, Y_cur);
+                    }
+                  });
+  }
+
+private:
+  typename std::decay<AlphaCoeffType>::type alpha_;
+  typename GraphType::row_map_type::const_type ptr_;
+  typename GraphType::entries_type::const_type ind_;
+  MatrixValuesType val_;
+  local_ordinal_type blockSize_;
+  InVecType X_;
+  typename std::decay<BetaCoeffType>::type beta_;
+  OutVecType Y_;
+  local_ordinal_type rowsPerTeam_;
+};
+#endif // 0
+
+template<class AlphaCoeffType,
+         class GraphType,
+         class MatrixValuesType,
+         class InVecType,
+         class BetaCoeffType,
+         class OutVecType>
+class BcrsApplyNoTrans1VecFunctor {
+private:
+  static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+                 "MatrixValuesType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<OutVecType>::value,
+                 "OutVecType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<InVecType>::value,
+                 "InVecType must be a Kokkos::View.");
+  static_assert (std::is_same<MatrixValuesType,
+                   typename MatrixValuesType::const_type>::value,
+                 "MatrixValuesType must be a const Kokkos::View.");
+  static_assert (std::is_same<OutVecType,
+                   typename OutVecType::non_const_type>::value,
+                 "OutVecType must be a nonconst Kokkos::View.");
+  static_assert (std::is_same<InVecType, typename InVecType::const_type>::value,
+                 "InVecType must be a const Kokkos::View.");
+  static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
+                 "MatrixValuesType must be a rank-1 Kokkos::View.");
+  static_assert (static_cast<int> (InVecType::rank) == 1,
+                 "InVecType must be a rank-1 Kokkos::View.");
+  static_assert (static_cast<int> (OutVecType::rank) == 1,
+                 "OutVecType must be a rank-1 Kokkos::View.");
+  typedef typename MatrixValuesType::non_const_value_type scalar_type;
+
+public:
+  typedef typename GraphType::device_type device_type;
+
+  //! Type of the (mesh) column indices in the sparse graph / matrix.
+  typedef typename std::remove_const<typename GraphType::data_type>::type
+    local_ordinal_type;
+  //! Use this for the Kokkos::parallel_for policy argument.
+  typedef Kokkos::RangePolicy<Kokkos::Schedule<Kokkos::Dynamic>,
+                              typename device_type::execution_space,
+                              local_ordinal_type> policy_type;
+  /// \brief Set the current vector / current column of the input
+  ///   (multi)vector X to use.
+  ///
+  /// This lets us handle multiple columns by iterating over them one
+  /// column at a time, without needing to recreate the functor each
+  /// time.
+  void setX (const InVecType& X) { X_ = X; }
+
+  /// \brief Set the current vector / current column of the output
+  ///   (multi)vector Y to use.
+  ///
+  /// This lets us handle multiple columns by iterating over them one
+  /// column at a time, without needing to recreate the functor each
+  /// time.
+  void setY (const OutVecType& Y) { Y_ = Y; }
+
+  //! Constructor.
+  BcrsApplyNoTrans1VecFunctor (const typename std::decay<AlphaCoeffType>::type& alpha,
+                               const GraphType& graph,
+                               const MatrixValuesType& val,
+                               const local_ordinal_type blockSize,
+                               const InVecType& X,
+                               const typename std::decay<BetaCoeffType>::type& beta,
+                               const OutVecType& Y) :
+    alpha_ (alpha),
+    ptr_ (graph.row_map),
+    ind_ (graph.entries),
+    val_ (val),
+    blockSize_ (blockSize),
+    X_ (X),
+    beta_ (beta),
+    Y_ (Y)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void
+  operator () (const local_ordinal_type& lclRow) const
+  {
+    using ::Tpetra::Experimental::COPY;
+    using ::Tpetra::Experimental::FILL;
+    using ::Tpetra::Experimental::SCAL;
+    using ::Tpetra::Experimental::GEMV;
+    using Kokkos::Details::ArithTraits;
+    // I'm not writing 'using Kokkos::make_pair;' here, because that
+    // may break builds for users who make the mistake of putting
+    // 'using namespace std;' in the global namespace.  Please don't
+    // ever do that!  But just in case you do, I'll take this
+    // precaution.
+    using Kokkos::parallel_for;
+    using Kokkos::subview;
+    typedef local_ordinal_type LO;
+    typedef typename decltype (ptr_)::non_const_value_type offset_type;
+    typedef Kokkos::View<typename OutVecType::non_const_value_type*,
+      Kokkos::LayoutRight,
+      device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      out_little_vec_type;
+    typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
+      Kokkos::LayoutRight,
+      device_type,
+      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+      little_block_type;
+
+    const offset_type Y_ptBeg = lclRow * blockSize_;
+    const offset_type Y_ptEnd = Y_ptBeg + blockSize_;
+    auto Y_cur = subview (Y_, ::Kokkos::make_pair (Y_ptBeg, Y_ptEnd));
+
+    // This version of the code does not use temporary storage.
+    // Each thread writes to its own block of the target vector.
+    if (beta_ == ArithTraits<BetaCoeffType>::zero ()) {
+      FILL (Y_cur, ArithTraits<BetaCoeffType>::zero ());
+    }
+    else if (beta_ != ArithTraits<BetaCoeffType>::one ()) { // beta != 0 && beta != 1
+      SCAL (beta_, Y_cur);
+    }
+
+    if (alpha_ != ArithTraits<AlphaCoeffType>::zero ()) {
+      const offset_type blkBeg = ptr_[lclRow];
+      const offset_type blkEnd = ptr_[lclRow+1];
+      // Precompute to save integer math in the inner loop.
+      const offset_type bs2 = blockSize_ * blockSize_;
+      for (offset_type absBlkOff = blkBeg; absBlkOff < blkEnd;
+           ++absBlkOff) {
+        little_block_type A_cur (val_.ptr_on_device () + absBlkOff * bs2,
+                                 blockSize_, blockSize_);
+        const offset_type X_blkCol = ind_[absBlkOff];
+        const offset_type X_ptBeg = X_blkCol * blockSize_;
+        const offset_type X_ptEnd = X_ptBeg + blockSize_;
+        auto X_cur = subview (X_, ::Kokkos::make_pair (X_ptBeg, X_ptEnd));
+
+        GEMV (alpha_, A_cur, X_cur, Y_cur); // Y_cur += alpha*A_cur*X_cur
+      } // for each entry in current local block row of matrix
+    }
+  }
+
+private:
+  typename std::decay<AlphaCoeffType>::type alpha_;
+  typename GraphType::row_map_type::const_type ptr_;
+  typename GraphType::entries_type::const_type ind_;
+  MatrixValuesType val_;
+  local_ordinal_type blockSize_;
+  InVecType X_;
+  typename std::decay<BetaCoeffType>::type beta_;
+  OutVecType Y_;
+};
+
+template<class AlphaCoeffType,
+         class GraphType,
+         class MatrixValuesType,
+         class InMultiVecType,
+         class BetaCoeffType,
+         class OutMultiVecType>
+void
+bcrsLocalApplyNoTrans (const AlphaCoeffType& alpha,
+                       const GraphType& graph,
+                       const MatrixValuesType& val,
+                       const typename std::remove_const<typename GraphType::data_type>::type blockSize,
+                       const InMultiVecType& X,
+                       const BetaCoeffType& beta,
+                       const OutMultiVecType& Y
+#if 0
+                       , const typename std::remove_const<typename GraphType::data_type>::type rowsPerTeam = 20
+#endif // 0
+                       )
+{
+  static_assert (Kokkos::Impl::is_view<MatrixValuesType>::value,
+                 "MatrixValuesType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<OutMultiVecType>::value,
+                 "OutMultiVecType must be a Kokkos::View.");
+  static_assert (Kokkos::Impl::is_view<InMultiVecType>::value,
+                 "InMultiVecType must be a Kokkos::View.");
+  static_assert (static_cast<int> (MatrixValuesType::rank) == 1,
+                 "MatrixValuesType must be a rank-1 Kokkos::View.");
+  static_assert (static_cast<int> (OutMultiVecType::rank) == 2,
+                 "OutMultiVecType must be a rank-2 Kokkos::View.");
+  static_assert (static_cast<int> (InMultiVecType::rank) == 2,
+                 "InMultiVecType must be a rank-2 Kokkos::View.");
+
+  typedef typename MatrixValuesType::const_type matrix_values_type;
+  typedef typename OutMultiVecType::non_const_type out_multivec_type;
+  typedef typename InMultiVecType::const_type in_multivec_type;
+  typedef typename std::decay<AlphaCoeffType>::type alpha_type;
+  typedef typename std::decay<BetaCoeffType>::type beta_type;
+  typedef typename std::remove_const<typename GraphType::data_type>::type LO;
+
+  const LO numLocalMeshRows = graph.row_map.dimension_0 () == 0 ?
+    static_cast<LO> (0) :
+    static_cast<LO> (graph.row_map.dimension_0 () - 1);
+  const LO numVecs = Y.dimension_1 ();
+  if (numLocalMeshRows == 0 || numVecs == 0) {
+    return; // code below doesn't handle numVecs==0 correctly
+  }
+
+  // These assignments avoid instantiating the functor extra times
+  // unnecessarily, e.g., for X const vs. nonconst.  We only need the
+  // X const case, so only instantiate for that case.
+  in_multivec_type X_in = X;
+  out_multivec_type Y_out = Y;
+
+  // The functor only knows how to handle one vector at a time, and it
+  // expects 1-D Views.  Thus, we need to know the type of each column
+  // of X and Y.
+  typedef decltype (Kokkos::subview (X_in, Kokkos::ALL (), 0)) in_vec_type;
+  typedef decltype (Kokkos::subview (Y_out, Kokkos::ALL (), 0)) out_vec_type;
+#if 0
+  typedef BcrsApplyNoTrans1VecTeamFunctor<alpha_type, GraphType,
+    matrix_values_type, in_vec_type, beta_type, out_vec_type> functor_type;
+#else
+  typedef BcrsApplyNoTrans1VecFunctor<alpha_type, GraphType,
+    matrix_values_type, in_vec_type, beta_type, out_vec_type> functor_type;
+#endif // 0
+  typedef typename functor_type::policy_type policy_type;
+
+  auto X_0 = Kokkos::subview (X_in, Kokkos::ALL (), 0);
+  auto Y_0 = Kokkos::subview (Y_out, Kokkos::ALL (), 0);
+#if 0
+  functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0, rowsPerTeam);
+  const LO numTeams = functor.getNumTeams ();
+  policy_type policy (numTeams, Kokkos::AUTO ());
+  {
+    // KJ : hierarchy level of memory allocated e.g., cache (1),
+    // HBM (2), DDR (3), not used for now
+    const LO level = 1;
+    // KJ : for now provide two options for parallelizing (for vs. reduce)
+    const LO scratchSizePerTeam   = functor.getScratchSizePerTeam (); // used for team parallel_red
+    const LO scratchSizePerThread = functor.getScratchSizePerThread (); // used for team parallel_for
+    policy =
+      policy.set_scratch_size (level,
+                               Kokkos::PerTeam (scratchSizePerTeam),
+                               Kokkos::PerThread (scratchSizePerThread));
+  }
+#else
+  functor_type functor (alpha, graph, val, blockSize, X_0, beta, Y_0);
+  policy_type policy (0, numLocalMeshRows);
+#endif // 0
+
+  // Compute the first column of Y.
+  Kokkos::parallel_for (policy, functor);
+
+  // Compute the remaining columns of Y.
+  for (LO j = 1; j < numVecs; ++j) {
+    auto X_j = Kokkos::subview (X_in, Kokkos::ALL (), j);
+    auto Y_j = Kokkos::subview (Y_out, Kokkos::ALL (), j);
+    functor.setX (X_j);
+    functor.setY (Y_j);
+    Kokkos::parallel_for (policy, functor);
+  }
+}
+
+} // namespace Impl
 
 namespace { // (anonymous)
 
@@ -1373,191 +1860,23 @@ public:
                           const Scalar alpha,
                           const Scalar beta)
   {
-    // If using (new) Kokkos, prefer Kokkos::ArithTraits to
-    // Teuchos::ScalarTraits.
-    const Scalar zero = STS::zero ();
-    const Scalar one = STS::one ();
-    const LO numLocalMeshRows =
-      static_cast<LO> (rowMeshMap_.getNodeNumElements ());
-    const LO numVecs = static_cast<LO> (X.getNumVectors ());
-    const LO blockSize = getBlockSize ();
+    using Tpetra::Experimental::Impl::bcrsLocalApplyNoTrans;
 
-    // FIXME (mfh 23 May 2016, 25 May 2016) See #393 and #178, as well
-    // as comments defining this macro at the top of this file.
-#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-    // KJ : workset size; for now, let's just give a number
-    const int rowsPerTeam = 20;
+    const impl_scalar_type alpha_impl = alpha;
+    const auto graph = this->graph_.getLocalGraph ();
+    const impl_scalar_type beta_impl = beta;
+    const LO blockSize = this->getBlockSize ();
 
-    typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Dynamic>,execution_space> team_policy_type;
-    team_policy_type team_exec((numLocalMeshRows + rowsPerTeam - 1)/rowsPerTeam, Kokkos::AUTO());
-    {
-      const int level = 1; // KJ : hierarchy level of memory allocated e.g., cache (1), HBM (2), DDR (3), not used for now
+    auto X_mv = X.getMultiVectorView ();
+    auto Y_mv = Y.getMultiVectorView ();
+    Y_mv.template modify<device_type> ();
 
-      // KJ : for now provide two options for parallelizing (for vs. reduce)
-      const int scratchSizePerTeam   = blockSize*sizeof(impl_scalar_type); // used for team parallel_red
-      const int scratchSizePerThread = blockSize*sizeof(impl_scalar_type); // used for team parallel_for
-      team_exec = team_exec.set_scratch_size( level,
-                                              Kokkos::PerTeam  (scratchSizePerTeam),
-                                              Kokkos::PerThread(scratchSizePerThread) );
-    }
+    auto X_lcl = X_mv.template getLocalView<device_type> ();
+    auto Y_lcl = Y_mv.template getLocalView<device_type> ();
+    auto val = this->val_.template view<device_type> ();
 
-    typename crs_graph_type::local_graph_type::row_map_type::const_type ptrDev =
-      graph_.getLocalGraph ().row_map;
-    typename crs_graph_type::local_graph_type::entries_type::const_type indDev =
-      graph_.getLocalGraph ().entries;
-#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-
-    // KJ : do we really need to separate numVecs == 1 and multiple numVecs ?
-
-    for (LO j = 0; j < numVecs; ++j) {
-#if defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-#  if 1 // team parallel for version
-      Kokkos::parallel_for( team_exec, KOKKOS_LAMBDA( const typename team_policy_type::member_type & member ) {
-          const LO leagueRank = member.league_rank();
-
-          typedef typename execution_space::scratch_memory_space shmem_space ;
-
-          // FIXME (mfh 23 May 2016) This code needs to build even if
-          // the CUDA option for device lambdas is not enabled.  Thus,
-          // I'm using the host execution space for now.  See #178.
-          //
-          //typedef Kokkos::View<impl_scalar_type*,shmem_space,Kokkos::MemoryUnmanaged> shared_array_type;
-          typedef typename Kokkos::View<impl_scalar_type*,shmem_space,Kokkos::MemoryUnmanaged>::HostMirror shared_array_type;
-
-          shared_array_type threadLocalMem = shared_array_type(member.thread_scratch(1), blockSize);
-          little_vec_type Y_tlm (threadLocalMem.ptr_on_device (), blockSize, 1);
-
-          const LO rowBeg = leagueRank*rowsPerTeam;
-          const LO rowTmp = rowBeg + rowsPerTeam;
-          const LO rowEnd = rowTmp < numLocalMeshRows ? rowTmp : numLocalMeshRows;
-
-          Kokkos::parallel_for( Kokkos::TeamThreadRange(member, rowBeg, rowEnd), [&](const LO lclRow) {
-              little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
-
-              if (beta == zero) {
-                FILL (Y_tlm, zero);
-              } else if (beta == one) {
-                COPY (Y_cur, Y_tlm);
-              } else {
-                COPY (Y_cur, Y_tlm);
-                SCAL (beta, Y_tlm);
-              }
-
-              const size_t meshBeg = ptrDev[lclRow];
-              const size_t meshEnd = ptrDev[lclRow+1];
-
-              for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-                const LO meshCol = indDev[absBlkOff];
-                const_little_block_type A_cur =
-                  getConstLocalBlockFromAbsOffset (absBlkOff);
-                little_vec_type X_cur = X.getLocalBlock (meshCol, j);
-                // Y_tlm += alpha*A_cur*X_cur
-                //Y_tlm.matvecUpdate (alpha, A_cur, X_cur);
-                GEMV (alpha, A_cur, X_cur, Y_tlm);
-              } // for each entry in the current local row of the matrx
-
-              COPY (Y_tlm, Y_cur);
-            } ); // for each workset of rows
-        } ); // for each local row of the matrix
-#  else // team reduction version
-      Kokkos::parallel_for( team_exec, KOKKOS_LAMBDA( const typename team_policy_type::member_type & member ) {
-          const LO leagueRank = member.league_rank();
-
-          typedef typename execution_space::scratch_memory_space shmem_space ;
-          typedef Kokkos::View<impl_scalar_type*,shmem_space,Kokkos::MemoryUnmanaged> shared_array_type;
-
-          shared_array_type threadLocalMem = shared_array_type(member.thread_scratch(1), blockSize);
-          little_vec_type Y_tlm (threadLocalMem.ptr_on_device (), blockSize, 1);
-
-          shared_array_type sharedTeamMem = shared_array_type(member.team_scratch(1), blockSize);
-          little_vec_type Y_stm (sharedTeamMem.ptr_on_device (), blockSize, 1);
-
-          const LO rowBeg = leagueRank*rowsPerTeam;
-          const LO rowTmp = rowBeg + rowsPerTeam;
-          const LO rowEnd = rowTmp < numLocalMeshRows ? rowTmp : numLocalMeshRows;
-
-          for (LO lclRow = rowBeg; lclRow < rowEnd; ++lclRow) {
-            little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
-
-            FILL (Y_stm, zero);
-            if (beta == zero) {
-              FILL (Y_tlm, zero);
-            } else if (beta == one) {
-              COPY (Y_cur, Y_tlm);
-            } else {
-              COPY (Y_cur, Y_tlm);
-              SCAL (beta, Y_tlm);
-            }
-
-            const size_t meshBeg = ptrDev[lclRow];
-            const size_t meshEnd = ptrDev[lclRow+1];
-
-            // KJ : cannot pass little_vec_type as it does not have a default constructor;
-            // even if it exists, it should be initialized thread local little vector.
-            // attempted to bypass the problem but it would not work anyway
-            // ( it will linearize join or need lock inside ).
-            //
-            int dummy = 0;
-            Kokkos::parallel_reduce( Kokkos::TeamThreadRange(member, meshBeg, meshEnd), [&](const LO absBlkOff, int) {
-                const LO meshCol = indDev[absBlkOff];
-                const_little_block_type A_cur =
-                  getConstLocalBlockFromAbsOffset (absBlkOff);
-                little_vec_type X_cur = X.getLocalBlock (meshCol, j);
-                // Y_tlm += alpha*A_cur*X_cur
-                //Y_tlm.matvecUpdate (alpha, A_cur, X_cur);
-                GEMV (alpha, A_cur, X_cur, Y_tlm);
-              }, [&] (int, int) {
-                AXPY (one, Y_tlm, Y_stm);
-              }, dummy ); // for each entry in the current local row of the matrx
-
-              COPY (Y_stm, Y_cur);
-          } // for each workset of rows
-        } ); // for each local row of the matrix
-
-#  endif // 1
-#else // ! defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-
-      // FIXME (mfh 23 May 2016, 25 May 2016) See #393, #178, and
-      // comments at the top of this function and file.
-
-      // FIXME (mfh 26 May 2016) This is a host code, so we have to
-      // sync the matrix to host.
-      typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-      const_cast<this_type*> (this)->template sync<Kokkos::HostSpace> ();
-
-      Teuchos::Array<impl_scalar_type> localMem (blockSize);
-      little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
-
-      for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-        little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
-
-        if (beta == zero) {
-          FILL (Y_lcl, zero);
-        } else if (beta == one) {
-          COPY (Y_cur, Y_lcl);
-        } else {
-          COPY (Y_cur, Y_lcl);
-          SCAL (beta, Y_lcl);
-        }
-
-        const size_t meshBeg = ptrHost_[lclRow];
-        const size_t meshEnd = ptrHost_[lclRow+1];
-        for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
-          const LO meshCol = indHost_[absBlkOff];
-          const_little_block_type A_cur =
-            getConstLocalBlockFromAbsOffset (absBlkOff);
-          little_vec_type X_cur = X.getLocalBlock (meshCol, j);
-          // Y_lcl += alpha*A_cur*X_cur
-          //Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
-          GEMV (alpha, A_cur, X_cur, Y_lcl);
-        } // for each entry in the current local row of the matrix
-
-        COPY (Y_lcl, Y_cur);
-      } // for each local row of the matrix
-
-#endif // defined(TPETRA_BLOCKCRSMATRIX_APPLY_USE_LAMBDA)
-
-    } // for each column j of the input / output block multivector
+    bcrsLocalApplyNoTrans (alpha_impl, graph, val, blockSize, X_lcl,
+                           beta_impl, Y_lcl);
   }
 
   template<class Scalar, class LO, class GO, class Node>
