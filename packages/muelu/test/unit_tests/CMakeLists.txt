@@ -86,10 +86,18 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
+  IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra OR NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
+    IF (${PACKAGE_NAME}_ENABLE_Experimental)
+      APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
+    ENDIF()
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
+  IF (${PACKAGE_NAME}_ENABLE_Experimental)
+    APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
