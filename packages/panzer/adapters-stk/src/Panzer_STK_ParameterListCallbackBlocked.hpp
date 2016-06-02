@@ -111,6 +111,8 @@ private:
   std::map<std::string,std::vector<double> > zcoords_;
 
   mutable std::map<std::string,Teuchos::RCP<const panzer::ArrayToFieldVector<LocalOrdinalT,GlobalOrdinalT,Node> > > arrayToVector_;
+
+  Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > coordsVec_;
    
 };
 
