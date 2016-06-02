@@ -1241,8 +1241,6 @@ private:
                                  OrdinalVector& ordinal_scratch,
                                  PartVector& part_scratch); // Mod Mark
 
-  MetaData & meta_data() const { return m_mesh_meta_data ; }
-
   int determine_new_owner( Entity ) const;  // Mod Mark
 
   Entity internal_declare_entity( EntityRank ent_rank , EntityId ent_id ,

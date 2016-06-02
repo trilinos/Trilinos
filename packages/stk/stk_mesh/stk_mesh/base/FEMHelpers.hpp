@@ -175,7 +175,7 @@ void get_parts_with_topology(stk::topology topology,
 {
   parts.clear();
 
-  stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(mesh);
+  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
 
   const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
 

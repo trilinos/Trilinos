@@ -110,7 +110,7 @@ Entity declare_element(BulkData & mesh,
         const EntityId elem_id,
         const EntityIdVector & node_ids)
 {
-    MetaData & fem_meta = MetaData::get(mesh);
+    const MetaData & fem_meta = mesh.mesh_meta_data();
     stk::topology top = fem_meta.get_topology(*parts[0]);
     ThrowAssert(node_ids.size() >= top.num_nodes());
 

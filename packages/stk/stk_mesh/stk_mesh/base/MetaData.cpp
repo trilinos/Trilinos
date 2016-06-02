@@ -144,15 +144,15 @@ void MetaData::set_mesh_on_fields(BulkData* bulk)
   }
 }
 
-MetaData & MetaData::get( const BulkData & bulk_data) {
-  return bulk_data.meta_data();
+const MetaData & MetaData::get( const BulkData & bulk_data) {
+  return bulk_data.mesh_meta_data();
 }
 
-MetaData & MetaData::get( const Bucket & bucket) {
+const MetaData & MetaData::get( const Bucket & bucket) {
   return MetaData::get(BulkData::get(bucket));
 }
 
-MetaData & MetaData::get( const Ghosting & ghost) {
+const MetaData & MetaData::get( const Ghosting & ghost) {
   return MetaData::get(BulkData::get(ghost));
 }
 //----------------------------------------------------------------------
