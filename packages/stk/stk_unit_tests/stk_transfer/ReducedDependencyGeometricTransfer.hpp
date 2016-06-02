@@ -356,7 +356,7 @@ ReducedDependecyGeometricTransfer<INTERPOLATE>::copy_domain_to_range_processors(
   typename MeshA::EntityProcVec entities_to_copy_from ;
 
   determine_entities_to_copy(entities_to_copy_to, entities_to_copy_from);
-  copy_entities(*m_meshb, entities_to_copy_to, m_name);
+  copy_entities(*m_meshb, entities_to_copy_from, m_name);
 }
 
 template <class INTERPOLATE> void ReducedDependecyGeometricTransfer<INTERPOLATE>::delete_range_points_found(
