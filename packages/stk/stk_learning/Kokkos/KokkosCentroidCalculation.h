@@ -91,7 +91,11 @@ typedef Kokkos::View<my_double*, Kokkos::HostSpace>   HostViewVectorType;
 typedef Kokkos::TeamPolicy<ExecSpace>               team_policy ;
 typedef Kokkos::TeamPolicy<ExecSpace>::member_type  member_type ;
 
+#ifdef KOKKOS_HAVE_CUDA
 typedef Kokkos::LayoutLeft   Layout ;
+#else
+typedef Kokkos::LayoutRight   Layout ;
+#endif
 
 typedef Kokkos::View<double**, Layout, MemSpace>   DeviceViewMatrixType;
 typedef Kokkos::View<const double**, Layout, MemSpace, Kokkos::MemoryTraits<Kokkos::RandomAccess> >   ConstDeviceViewMatrixType;

@@ -63,8 +63,7 @@ typedef Kokkos::View<const stk::mesh::FastMeshIndex*, MemSpace, Kokkos::MemoryTr
 
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 
-//typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
-typedef Kokkos::View<stk::mesh::Entity**, MemSpace> BucketConnectivityType;
+typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
 
 typedef Kokkos::View<stk::mesh::Entity*, Layout, MemSpace> DeviceViewFlatConnectivityType;
 
@@ -146,7 +145,7 @@ public:
         std::cout << "Executing operator: " << choice.name << std::endl;
         size_t N = functor.getNumParallelItems();
 	    for (int repeat=0 ; repeat<num_repeat ; ++repeat)
-	        Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, Kokkos::AUTO), functor);
+	        Kokkos::parallel_for(choice.name, Kokkos::TeamPolicy< T >(N, team_size), functor);
     }
 
     void calculate_centroids(int num_repeat, int choice, int team_size)

@@ -59,7 +59,7 @@ struct Bucket {
 
 }
 
-typedef Kokkos::View<ngp::Bucket*, Layout, UVMMemSpace> BucketsType;
+typedef Kokkos::View<ngp::Bucket*, UVMMemSpace> BucketsType;
 
 
 struct GpuGatherBucketScratchData
@@ -213,7 +213,7 @@ struct GpuGatherBucketScratchData
         return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;
     }
 
-    STK_FUNCTION unsigned get_index(stk::mesh::Entity entity) const
+    STK_FUNCTION int get_index(stk::mesh::Entity entity) const
     {
         const stk::mesh::FastMeshIndex& meshIndex = constMeshIndices(entity.local_offset());
         return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;
@@ -249,26 +249,25 @@ struct GpuGatherBucketScratchData
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, solo, unroll), const int elementBucketIndex) const
     {
         ngp::Bucket& bucket = elementBuckets(elementBucketIndex);
-        const unsigned numElements = bucket.size();
-        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
-        //const unsigned dim = elementCentroids.extent(1);
-        double temp[3] = {0.0, 0.0, 0.0};
-        for(unsigned elementIndex=0; elementIndex<numElements; ++elementIndex) {
-            const unsigned elemFieldIndex = get_index(bucket[elementIndex]);
-            temp[0] = 0.0;
-            temp[1] = 0.0;
-            temp[2] = 0.0;
+        const int numElements = bucket.size();
+        const int nodesPerElem = bucket.get_num_nodes_per_entity();
+        double tempx = 0.0, tempy = 0.0, tempz = 0.0;
+        for(int elementIndex=0; elementIndex<numElements; ++elementIndex) {
+            const int elemFieldIndex = get_index(bucket[elementIndex]);
+            tempx = 0.0;
+            tempy = 0.0;
+            tempz = 0.0;
             ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
-            for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
+            for(int nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
             {
-                unsigned idx = get_index(nodesView(nodeIndex));
-                temp[0] += nodeCoords(idx, 0);
-                temp[1] += nodeCoords(idx, 1);
-                temp[2] += nodeCoords(idx, 2);
+                int idx = get_index(nodesView(nodeIndex));
+                tempx += constNodeCoords(idx, 0);
+                tempy += constNodeCoords(idx, 1);
+                tempz += constNodeCoords(idx, 2);
             }
-            elementCentroids(elemFieldIndex, 0) = temp[0] * 0.125;
-            elementCentroids(elemFieldIndex, 1) = temp[1] * 0.125;
-            elementCentroids(elemFieldIndex, 2) = temp[2] * 0.125;
+            elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
+            elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
+            elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
         }
     }
 
@@ -394,10 +393,11 @@ void run_bucket_test()
     unsigned counter = 0;
     for(unsigned elemIndex=0; elemIndex<numElements; ++elemIndex) {
         for(unsigned nodeIndex=0; nodeIndex<numNodesPerElement; ++nodeIndex) {
-           bucket.connectivity(elemIndex,nodeIndex) = stk::mesh::Entity(counter);
+           bucket.hostConnectivity(elemIndex,nodeIndex) = stk::mesh::Entity(counter);
            ++counter;
         }
     }
+    Kokkos::deep_copy(bucket.connectivity, bucket.hostConnectivity);
 
     double errorCheck = 0;
     Kokkos::parallel_reduce(numElements, KOKKOS_LAMBDA(int elementIndex, double& update) {
