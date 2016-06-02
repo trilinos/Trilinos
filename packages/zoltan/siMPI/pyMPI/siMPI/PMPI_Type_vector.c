@@ -31,10 +31,7 @@ int PMPI_Type_vector(
   size = (MPI_Aint)count*_MPI_calculateSize(blocklen, old_type);
   *newtype = _MPI_TYPE_LIST[index].id = _MPI_TYPE_COUNT+_MPI_TYPE_OFFSET;
   _MPI_TYPE_COUNT++;
-  _MPI_TYPE_LIST[index].size = size;
   _MPI_TYPE_LIST[index].extent = size;
-  _MPI_TYPE_LIST[index].ub = size;
-  _MPI_TYPE_LIST[index].lb = (MPI_Aint) 0;
   _MPI_TYPE_LIST[index].sendType = _MPI_VECTOR;
   _MPI_TYPE_LIST[index].next = 0;
   _MPI_TYPE_LIST[index].info = (_MPI_TYPE_INFO *) _MPI_safeMalloc(sizeof(_MPI_TYPE_INFO), "MPI_TYPE_INDEXED: Error with malloc");
@@ -55,7 +52,6 @@ int PMPI_Type_vector(
     currType = (_MPI_TYPE_DES *) _MPI_safeMalloc(sizeof(_MPI_TYPE_DES), "MPI_TYPE_VECTOR: Error with malloc.");
     prevType->next = currType;
     currType->id = old_type;
-    currType->size = blocklen*_MPI_getSize(old_type);
     size += blocklen*_MPI_getSize(old_type);
     currType->extent = size;
     currType->next = 0;

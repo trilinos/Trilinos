@@ -43,10 +43,7 @@ int PMPI_Type_indexed(
 
   /* ====================== */
   /* Save Query information */
-  _MPI_TYPE_LIST[index].size = size;
   _MPI_TYPE_LIST[index].extent = size;
-  _MPI_TYPE_LIST[index].ub = size;
-  _MPI_TYPE_LIST[index].lb = (MPI_Aint) 0;
   _MPI_TYPE_LIST[index].sendType = _MPI_INDEXED;
   _MPI_TYPE_LIST[index].next = 0;
   _MPI_TYPE_LIST[index].info = (_MPI_TYPE_INFO *) _MPI_safeMalloc(sizeof(_MPI_TYPE_INFO), "MPI_TYPE_INDEXED: Error with malloc");
@@ -71,8 +68,7 @@ int PMPI_Type_indexed(
     currType = (_MPI_TYPE_DES *) _MPI_safeMalloc(sizeof(_MPI_TYPE_DES), "MPI_TYPE_INDEXED: Error with malloc");
     prevType->next = currType;
     currType->id = old_type;
-    currType->size = blocklens[index]*_MPI_getSize(old_type);
-    size += currType->size;
+    size += blocklens[index]*_MPI_getSize(old_type);
     currType->extent = size;
     currType->next = 0;
     prevType = currType;

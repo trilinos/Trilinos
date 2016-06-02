@@ -288,7 +288,6 @@ int _MPI_Type_Invalid(int index)
   if ( (index>=0)&&(index<_MPI_TYPE_ARRAY_SIZE) )
   {
     _MPI_TYPE_LIST[index].id = _MPI_NOT_VALID;
-    _MPI_TYPE_LIST[index].size = 0;
     _MPI_TYPE_LIST[index].extent = 0;
     _MPI_TYPE_LIST[index].next = (_MPI_TYPE_DES *) NULL;
     return MPI_SUCCESS;

@@ -28,10 +28,7 @@ int PMPI_Type_contiguous(
 
   *newtype = _MPI_TYPE_LIST[index].id = _MPI_TYPE_COUNT+_MPI_TYPE_OFFSET;
   _MPI_TYPE_COUNT++;
-  _MPI_TYPE_LIST[index].size = size;
   _MPI_TYPE_LIST[index].extent = size;
-  _MPI_TYPE_LIST[index].ub = size;
-  _MPI_TYPE_LIST[index].lb = (MPI_Aint) 0;
   _MPI_TYPE_LIST[index].sendType = _MPI_CONTIG;
   _MPI_TYPE_LIST[index].next = 0;
   _MPI_TYPE_LIST[index].info = 0;
@@ -46,8 +43,7 @@ int PMPI_Type_contiguous(
     currType = (_MPI_TYPE_DES *) _MPI_safeMalloc(sizeof(_MPI_TYPE_DES), "MPI_TYPE_CONTIGUOUS: Error with malloc.");
     prevType->next = currType;
     currType->id = old_type;
-    currType->size = _MPI_getSize(old_type);
-    size += currType->size;
+    size += _MPI_getSize(old_type);
     currType->extent = size;
     currType->next = 0;
     prevType = currType;
