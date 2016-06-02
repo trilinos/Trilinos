@@ -46,7 +46,7 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::LogExponentialQuadrangle
     \brief Provides an interface for the entropic risk using the expectation
            risk quadrangle.

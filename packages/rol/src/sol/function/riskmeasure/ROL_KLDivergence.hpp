@@ -46,7 +46,7 @@
 
 #include "ROL_RiskMeasure.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::KLDivergence
     \brief Provides an interface for the Kullback-Leibler distributionally robust
     expectation.

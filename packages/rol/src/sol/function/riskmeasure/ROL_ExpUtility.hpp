@@ -48,7 +48,7 @@
 
 namespace ROL {
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::ExpUtility
     \brief Provides an interface for the entropic risk.
 

@@ -46,7 +46,7 @@
 
 #include "ROL_ExpectationQuad.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::SmoothedWorstCaseQuadrangle
     \brief Provides an interface for a smoothed version of the worst-case
            scenario risk measure using the expectation risk quadrangle.

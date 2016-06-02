@@ -47,7 +47,7 @@
 #include "ROL_ExpectationQuad.hpp"
 #include "ROL_PlusFunction.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::QuantileQuadrangle
     \brief Provides an interface for a convex combination of the
            expected value and the conditional value-at-risk using the

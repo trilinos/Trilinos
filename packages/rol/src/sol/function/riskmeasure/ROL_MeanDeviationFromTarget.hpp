@@ -52,7 +52,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::MeanDeviationFromTarget
     \brief Provides an interface for the mean plus a sum of arbitrary order
     deviations from targets.

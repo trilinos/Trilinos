@@ -47,7 +47,7 @@
 #include "ROL_ExpectationQuad.hpp"
 #include "ROL_PlusFunction.hpp"
 
-/** @ingroup stochastic_group
+/** @ingroup risk_group
     \class ROL::LogQuantileQuadrangle
     \brief Provides an interface for the conditioanl entropic risk using
            the expectation risk quadrangle.
