@@ -858,48 +858,71 @@ private:
   // void clearLocalErrorStateAndStream ();
 
 public:
-  /// \brief Mark the matrix's values as modified in the given space.
-  ///
-  /// \tparam Space Space in which the matrix's values may need sync'ing.
-  template<class Space>
+  //! \name Implementation of "dual view semantics"
+  //@{
+
+  //! Mark the matrix's values as modified in the given memory space.
+  template<class MemorySpace>
   void modify ()
   {
-    val_.template modify<Space> ();
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::modify.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    val_.template modify<typename MemorySpace::memory_space> ();
   }
 
-  /// \brief Whether the matrix's values need sync'ing to the given space.
-  ///
-  /// \tparam Space Space in which the matrix's values may need sync'ing.
-  template<class Space>
+  //! Whether the matrix's values need sync'ing to the given memory space.
+  template<class MemorySpace>
   bool need_sync () const
   {
-    return val_.template need_sync<Space> ();
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::need_sync.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    return val_.template need_sync<typename MemorySpace::memory_space> ();
   }
 
-  /// \brief Sync the matrix's values <i>to</i> the given space.
-  ///
-  /// \tparam Space Space to which to sync the values.
-  template<class Space>
+  //! Sync the matrix's values <i>to</i> the given memory space.
+  template<class MemorySpace>
   void sync ()
   {
-    val_.template sync<Space> ();
+    // It's legit to use a memory space, execution space, or
+    // Kokkos::Device specialization as the template parameter of
+    // Kokkos::DualView::sync.  That method just extracts the
+    // memory_space typedef of its template parameter anyway.
+    // However, insisting on a memory space avoids unnecessary
+    // instantiations.
+    val_.template sync<typename MemorySpace::memory_space> ();
   }
 
-private:
   /// \brief Get the host or device View of the matrix's values (\c val_).
   ///
-  /// \tparam Space Space for which to get the View.
+  /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES OF
+  ///   BACKWARDS COMPATIBILITY.  YOU HAVE BEEN WARNED.  CAVEAT
+  ///   LECTOR!!!
+  ///
+  /// \tparam MemorySpace Memory space for which to get the
+  ///   Kokkos::View.
   ///
   /// This is <i>not</i> const, because we reserve the right to do
   /// lazy allocation on device / "fast" memory.  Host / "slow" memory
   /// allocations generally are not lazy; that way, the host fill
   /// interface always works in a thread-parallel context without
   /// needing to synchronize on the allocation.
-  template<class Space>
-  auto getValues () -> decltype (val_.template view<Space> ())
+  template<class MemorySpace>
+  auto getValues () -> decltype (val_.template view<typename MemorySpace::memory_space> ())
   {
-    return val_.template view<Space> ();
+    return val_.template view<typename MemorySpace::memory_space> ();
   }
+
+  //@}
+
+private:
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
