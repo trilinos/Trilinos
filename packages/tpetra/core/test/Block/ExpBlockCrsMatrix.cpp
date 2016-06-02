@@ -388,7 +388,7 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
         TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( X_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
@@ -401,7 +401,7 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -431,7 +431,7 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -493,7 +493,7 @@ namespace {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
           TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( X_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -508,7 +508,7 @@ namespace {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -541,7 +541,7 @@ namespace {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -599,7 +599,7 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
         TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( X_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
@@ -619,7 +619,7 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -649,7 +649,7 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
         TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-        TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -711,7 +711,7 @@ namespace {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
           TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( X_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -733,7 +733,7 @@ namespace {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -766,7 +766,7 @@ namespace {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
           TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
-          TEST_ASSERT( Y_lcl.dimension_0 () == blockSize );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
