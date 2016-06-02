@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr, threed)
   #endif
 
   int np = comm.getSize(); // number of processors
-  int rank = comm.getRank(); // number of processors
+  int rank = comm.getRank(); // processor rank
 
   // mesh description
   Ordinal64 nx = 10, ny = 7, nz = 4;

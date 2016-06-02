@@ -63,7 +63,9 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
 {
   // preconditions
   TEUCHOS_ASSERT(0<nx*ny);
-  TEUCHOS_ASSERT(comm.getSize()==px*py);
+  TEUCHOS_TEST_FOR_EXCEPTION(comm.getSize()!=px*py,std::logic_error,
+                                "Processor assignment does not equal processor count: " << comm.getSize() 
+                             << " != " << px << " * " << py );
   TEUCHOS_ASSERT(0<bx*by);
   TEUCHOS_ASSERT(nx/px>=1.0);
   TEUCHOS_ASSERT(ny/py>=1.0);
@@ -105,7 +107,9 @@ initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny
 {
   // preconditions
   TEUCHOS_ASSERT(0<nx*ny*nz);
-  TEUCHOS_ASSERT(comm.getSize()==px*py*pz);
+  TEUCHOS_TEST_FOR_EXCEPTION(comm.getSize()!=px*py*pz,std::logic_error,
+                                "Processor assignment does not equal processor count: " << comm.getSize() 
+                             << " != " << px << " * " << py << " * " << pz);
   TEUCHOS_ASSERT(0<bx*by*bz);
   TEUCHOS_ASSERT(nx/px>=1.0);
   TEUCHOS_ASSERT(ny/py>=1.0);
