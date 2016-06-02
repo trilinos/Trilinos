@@ -169,8 +169,13 @@ int _MPI_calculateStructureSize (MPI_Datatype type)
     MPI_Abort (MPI_COMM_NULL, MPI_ERR_TYPE);
   }
   datatype = &_MPI_TYPE_LIST[index];
+
+  /* KDD 6/2/16 Comment below says this return value should be extent, 
+     KDD 6/2/16 not size. I agree.
   size = datatype->size;
+  */
   /*EDIT should be extent */
+  size = datatype->extent;
 
   return size;
 }
