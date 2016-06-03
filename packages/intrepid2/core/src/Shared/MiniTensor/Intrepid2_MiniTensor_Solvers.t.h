@@ -464,6 +464,16 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Tensor<T, N> const
   Hessian = fn.hessian(soln);
 
+  // Compute full Newton step first.
+  Vector<T, N>
+  step = - Intrepid2::solve(Hessian, resi);
+
+  T const
+  norm_step = Intrepid2::norm(step);
+
+  // Take full Newton step if inside trust region.
+  if (norm_step < region_size) return step;
+
   // Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
   TrustRegionExact<T, N>
   tr_exact;
@@ -471,7 +481,6 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   tr_exact.initial_lambda = 0.0;
   tr_exact.region_size = region_size;
 
-  Vector<T, N>
   step = tr_exact.step(Hessian, resi);
 
   Vector<T, N> const
