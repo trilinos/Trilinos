@@ -750,25 +750,17 @@ inline const ScalarType& SerialTriDiMatrix<OrdinalType,ScalarType>::operator () 
   switch (diff) {
   case -1:
     return DL_[colIndex];
-    break;
   case 0:
     return D_[colIndex];
-    break;
   case 1:
     return DU_[rowIndex];
-    break;
   case 2:
     return DU2_[rowIndex];
-    break;
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
                                "SerialTriDiMatrix<T>::operator (row,col) "
                                "Index (" << rowIndex <<","<<colIndex<<") out of range ");
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
-                             "SerialTriDiMatrix<T>::operator (row,col) "
-                             "Index (" << rowIndex <<","<<colIndex<<") out of range ");
-  return D_[0];
 }
 
 template<typename OrdinalType,typename ScalarType>
@@ -781,26 +773,17 @@ inline ScalarType& Teuchos::SerialTriDiMatrix<OrdinalType,ScalarType>::operator 
   switch (diff) {
   case -1:
     return DL_[colIndex];
-    break;
   case 0:
     return D_[colIndex];
-    break;
   case 1:
     return DU_[rowIndex];
-    break;
   case 2:
     return DU2_[rowIndex];
-    break;
   default:
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
                                "SerialTriDiMatrix<T>::operator (row,col) "
                                "Index (" << rowIndex <<","<<colIndex<<") out of range ");
   }
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::out_of_range,
-                             "SerialTriDiMatrix<T>::operator (row,col) "
-                             "Index (" << rowIndex <<","<<colIndex<<") out of range ");
-  //  TEUCHOS_CHK_ERR(-1);
-  return D_[0];
 }
 
 //----------------------------------------------------------------------------------------------------
@@ -813,7 +796,6 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialTriDiMatrix<OrdinalType,S
   OrdinalType i, j;
   typename ScalarTraits<ScalarType>::magnitudeType anorm = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
   typename ScalarTraits<ScalarType>::magnitudeType absSum = ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::zero());
-  ScalarType* ptr;
 
   // Fix this for Tri DI
 
@@ -874,10 +856,10 @@ template<typename OrdinalType, typename ScalarType>
 bool SerialTriDiMatrix<OrdinalType, ScalarType>::operator== (const SerialTriDiMatrix<OrdinalType, ScalarType> &Operand) const
 {
   bool allmatch = true;
-  bool result = 1;
+  // bool result = 1; // unused
   if((numRowsCols_ != Operand.numRowsCols_) )
     {
-      result = 0;
+      // result = 0; // unused
     }
   else
     {
