@@ -611,10 +611,6 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
   // get sources
   RCP<const ComparisonSource> sourcePrb = this->sources[prb_name];
   RCP<const ComparisonSource> sourceRef = this->sources[ref_name];
-  
-  // get metric objects
-  auto metricObjectPrb = sourcePrb.get()->metricObject.get();
-  auto metricObjectRef = sourceRef.get()->metricObject.get();
 
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);

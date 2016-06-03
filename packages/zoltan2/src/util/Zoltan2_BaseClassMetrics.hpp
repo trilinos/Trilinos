@@ -90,21 +90,24 @@ public:
 
 /*! \brief Constructor - for compiling but not used */
 BaseClassMetrics() :
-  values_(), metricName_(METRICS_UNSET_STRING) {
+  metricName_(METRICS_UNSET_STRING), values_() {
 
 }
 
 /*! \brief Constructor */
 BaseClassMetrics(int memCount, std::string mname) :
-  values_(), metricName_(mname) {
+  metricName_(mname), values_() {
   resetValues(memCount);
 }
 
 /*! \brief Constructor */
 BaseClassMetrics(int memCount) :
-  values_(), metricName_(METRICS_UNSET_STRING) {
+  metricName_(METRICS_UNSET_STRING), values_() {
   resetValues(memCount);
 }
+    
+/*! \virtual Deconstructor */
+virtual ~BaseClassMetrics() {}
 
 /*! \abstract printLine. Not abstract so that we can generically support stl containers like maps. */
 virtual void printLine(std::ostream &os) const {};

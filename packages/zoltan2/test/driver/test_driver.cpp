@@ -418,7 +418,6 @@ bool mainExecute(int argc, char *argv[], int &rank)
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
-  Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   rank = comm->getRank(); // get rank
 
@@ -511,36 +510,37 @@ bool mainExecute(int argc, char *argv[], int &rank)
 
 int main(int argc, char *argv[])
 {
+  Teuchos::GlobalMPISession session(&argc, &argv); // note this is here because when session goes out of scope we cannot call MPI commands like reduce
+
   int result = 0;
   int rank = -1; // mainExecute will set this - this structure was setup to make the catch handling more apparent
   try {
     result = mainExecute(argc, argv, rank) ? 0 : 1; // code 0 is ok, 1 is a failed test
-
-    if (rank == 0 && result != 0) {
-      std::cout << "mainExecute for rank " << rank << " returns: " << result << std::endl;
-    }
   }
-  catch(std::logic_error e) {
+  catch(std::logic_error e) { // logic_error exceptions can be thrown by EvaluatePartition or MetricAnalyzer if any problem is detected in the formatting of the input xml
     if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught the following exception: " << e.what() << std::endl;
     }
-    result = 1;
+    result = 1; // fail for any exception
   }
   catch(...) {
     if (rank == 0) {
       std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
     }
-    result = 1;
+    result = 1; // fail for any exception
   }
 
-  // here we should reduce all results and make sure rank = 0 gives the proper fail message
+  // clean up - reduce the result codes
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  comm->barrier();
+  Teuchos::Ptr<int> resultReduced(new int);
+  Teuchos::Ptr<int> rankReduced(new int); // sanity check - make sure we get the number of processors
+  reduceAll<int,int>(*(comm.get()), Teuchos::EReductionType::REDUCE_MAX, result, resultReduced); // for a passed test all of these values should return 0 - if any result is 1 this will reduce to 1 and the test will fail
+  reduceAll<int,int>(*(comm.get()), Teuchos::EReductionType::REDUCE_MAX, rank, rankReduced); // for a single process, we except 0, but for multiple processes we expect to get the maximum rank
+  int numberOfProcesses = *rankReduced + 1; // process 1 is rank 0
+  // provide a final message which guarantees that the test will fail if any of the processes failed
   if (rank == 0) {
-    if (result == 1) {
-      std::cout << "main for rank " << rank << " is exiting in FAILED state and returning: " << result << std::endl;
-    }
-    else {
-      std::cout << "main for rank " << rank << " is exiting in PASSED state and returning: " << result << std::endl;
-    }
+    std::cout << "Test Driver with " << (*rankReduced) + 1 << " processes has reduced result code " << (*resultReduced) << " and is exiting in the " << ((*resultReduced == 0 ) ? "PASSED" : "FAILED") << " state." << std::endl;
   }
 
   return result;
