@@ -283,6 +283,7 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type cell, value_type &dst) const {
         dst |= (_inputDet(cell) < 0.0);
+        _inputDet(cell) *= Util::sign(_inputDet(cell));
       }
     };
   }
@@ -291,7 +292,7 @@ namespace Intrepid2 {
   template<typename outputValValueType,   class ...outputValProperties,
            typename inputDetValueType,    class ...inputDetProperties,
            typename inputWeightValueType, class ...inputWeightProperties>
-  void
+  bool
   FunctionSpaceTools<SpT>::
   computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>   outputVals,
                       const Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>    inputDet,
@@ -314,10 +315,13 @@ namespace Intrepid2 {
     typename FunctorType::value_type hasNegativeDet = false;
     Kokkos::parallel_reduce( policy, FunctorType(outputVals, inputDet, inputWeights), hasNegativeDet );
     
-    INTREPID2_TEST_FOR_EXCEPTION( hasNegativeDet, std::runtime_error,
-                                  ">>> ERROR (FunctionSpaceTools::computeCellMeasure): inputDet has negative values");
+    // do not throw error for negative jacobian
+    //INTREPID2_TEST_FOR_EXCEPTION( hasNegativeDet, std::runtime_error,
+    //                              ">>> ERROR (FunctionSpaceTools::computeCellMeasure): inputDet has negative values");
     
     ArrayTools<SpT>::scalarMultiplyDataData(outputVals, inputDet, inputWeights);
+    
+    return hasNegativeDet;
   } 
 
   // ------------------------------------------------------------------------------------

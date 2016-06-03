@@ -444,7 +444,7 @@ namespace Intrepid2 {
     template<typename outputValValueType,   class ...outputValProperties,
              typename inputDetValueType,    class ...inputDetPropertes,
              typename inputWeightValueType, class ...inputWeightPropertes>
-    static void 
+    static bool 
     computeCellMeasure( /**/  Kokkos::DynRankView<outputValValueType,  outputValProperties...>  outputVals,
                         const Kokkos::DynRankView<inputDetValueType,   inputDetPropertes...>    inputDet,
                         const Kokkos::DynRankView<inputWeightValueType,inputWeightPropertes...> inputWeights );

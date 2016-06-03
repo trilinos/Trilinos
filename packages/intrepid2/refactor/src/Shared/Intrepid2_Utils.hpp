@@ -139,6 +139,12 @@ namespace Intrepid2 {
 
     template<typename T>
     KOKKOS_FORCEINLINE_FUNCTION
+    static T sign(const T a) {
+      return (a < 0 ? -1 : 1);
+    }
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
     static T min(const T a, const T b) {
       return (a < b ? a : b);
     }
