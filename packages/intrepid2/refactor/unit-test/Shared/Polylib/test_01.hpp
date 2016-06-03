@@ -234,7 +234,7 @@ namespace Intrepid2 {
 
       // this test upto order 30 - offset (1,2,3)
       const ordinal_type npLower = 5, npUpper = 15;
-      const ValueType tol = 1000.0 * tolerence<ValueType>();
+      const ValueType tol = 1000.0 * tolerence();
 
       try {
         Kokkos::View<ValueType*,HostSpaceType> 

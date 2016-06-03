@@ -421,7 +421,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = tolerence<ValueType>();
+    const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
@@ -452,7 +452,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = tolerence<ValueType>();
+    const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
@@ -488,7 +488,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType tol = tolerence<ValueType>();
+    const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
@@ -524,7 +524,7 @@ namespace Intrepid2 {
            const ordinal_type np,
            const ValueType alpha,
            const ValueType beta) {
-    const ValueType one = 1.0, two = 2.0, tol = tolerence<ValueType>();
+    const ValueType one = 1.0, two = 2.0, tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zglj(i);
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
@@ -718,7 +718,7 @@ namespace Intrepid2 {
 
     const ValueType dth = M_PI/(2.0*(ValueType)n);
     const ValueType one = 1.0, two = 2.0;
-    const ValueType tol = tolerence<ValueType>();
+    const ValueType tol = tolerence();
 
     ValueType r_buf, poly_buf, pder_buf;
     Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 

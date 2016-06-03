@@ -124,7 +124,7 @@ namespace Intrepid2 {
       typedef ValueType weightValueType;
       typedef CubatureDirectTriDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTriType;
 
-      const auto tol = 10.0 * tolerence<ValueType>();
+      const auto tol = 10.0 * tolerence();
 
       int errorFlag = 0;
       

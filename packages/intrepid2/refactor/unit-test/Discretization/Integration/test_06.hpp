@@ -124,7 +124,7 @@ namespace Intrepid2 {
       typedef CubatureDirectTetDefault<DeviceSpaceType,pointValueType,weightValueType> CubatureTetType;
       
       // tolerence is too tight to test upto order 20
-      const auto tol = 1000.0 * tolerence<ValueType>();
+      const auto tol = 1000.0 * tolerence();
 
       int errorFlag = 0;
 

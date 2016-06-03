@@ -63,7 +63,7 @@ namespace Intrepid2 {
   Basis_HGRAD_PYR_C1_FEM<SpT,OT,PT>::Serial<opType>::
   getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input ) {
-    const auto eps = epsilon<inputPointValueType>();
+    const auto eps = epsilon();
 
     const auto x = input(0);
     const auto y = input(1);

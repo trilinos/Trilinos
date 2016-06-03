@@ -282,7 +282,7 @@ namespace Intrepid2 {
       outStream->precision(20);
 
       try {
-        const value_type tol = tolerence<ValueType>()*100.0;
+        const value_type tol = tolerence()*100.0;
         
         // two-dimensional base containers
         for (auto dim=3; dim>0; dim--) {

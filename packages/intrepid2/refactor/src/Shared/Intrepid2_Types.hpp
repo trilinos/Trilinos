@@ -62,13 +62,13 @@ namespace Intrepid2 {
   typedef Kokkos::Serial DeviceStackSpace;
 
   template<typename ValueType>
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   ValueType epsilon() {
     return 0;
   }
 
   template<>
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   double epsilon<double>() {
     typedef union {
       long long i64;
@@ -82,7 +82,7 @@ namespace Intrepid2 {
   }
 
   template<>
-  KOKKOS_INLINE_FUNCTION
+  KOKKOS_FORCEINLINE_FUNCTION
   float epsilon<float>() {
     typedef union {
       int i32;
@@ -95,10 +95,19 @@ namespace Intrepid2 {
     return (s.i32 < 0 ? 1 - s.f32 : s.f32 - 1);
   }
 
-  template<typename ValueType>
-  KOKKOS_INLINE_FUNCTION
-  ValueType tolerence() {
-    return 100.0*epsilon<ValueType>();
+  KOKKOS_FORCEINLINE_FUNCTION
+  double epsilon() {
+    return epsilon<double>();
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  double tolerence() {
+    return 100.0*epsilon();
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  double threshold() {
+    return 10.0*epsilon();
   }
 
   /// define constants
@@ -114,13 +123,14 @@ namespace Intrepid2 {
     static constexpr unsigned int MaxNewton            = 15;      /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
     static constexpr unsigned int MaxDerivative        = 10;      /// Maximum order of derivatives allowed in intrepid.
 
-    static constexpr double Epsilon   = 1.0e-16; 
-    static constexpr double Threshold = 1.0e-15;
-    static constexpr double Tolerence = 1.0e-14;
+    // we do not want to use hard-wired epsilon, threshold and tolerence. 
+    // static constexpr double Epsilon   = 1.0e-16; 
+    // static constexpr double Threshold = 1.0e-15;
+    // static constexpr double Tolerence = 1.0e-14;
   };
-//  const double Parameters::Epsilon   =       epsilon<double>();   /// Platform-dependent machine epsilon.
-//  const double Parameters::Threshold =  10.0*epsilon<double>();   /// Tolerance for various cell inclusion tests
-//  const double Parameters::Tolerence = 100.0*epsilon<double>();   /// General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
+  //  const double Parameters::Epsilon   =       epsilon<double>();   /// Platform-dependent machine epsilon.
+  //  const double Parameters::Threshold =  10.0*epsilon<double>();   /// Tolerance for various cell inclusion tests
+  //  const double Parameters::Tolerence = 100.0*epsilon<double>();   /// General purpose tolerance in, e.g., internal Newton's method to invert ref to phys maps
 
   // ===================================================================
   // Enum classes

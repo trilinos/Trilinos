@@ -113,7 +113,7 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-      const ValueType tol = tolerence<ValueType>();
+      const ValueType tol = tolerence();
       int errorFlag = 0;
 
       // for virtual function, value and point types are declared in the class
@@ -322,7 +322,7 @@ namespace Intrepid2 {
 
 
      //D2: flat array with the values of D2 applied to basis functions. Multi-index is (P,F,K)
-     const auto eps = epsilon<ValueType>();
+     const auto eps = epsilon();
      const ValueType basisD2[] = {
        0, 0.25,-0.25, 0,-0.25, 0.5, 0,-0.25, 0.25, 0, 0.25,-0.5, 0, 0.25,-0.25, 0,-0.25, 0.5, 0,-0.25, 0.25, 0, 0.25,-0.5, 0, 0, 0, 0, 0, 0, \
        0, 0.25,-0.25, 0, 0.25,-0.5, 0,-0.25, 0.25, 0,-0.25, 0.5, 0, 0.25,-0.25, 0, 0.25,-0.5, 0,-0.25, 0.25, 0,-0.25, 0.5, 0, 0, 0, 0, 0, 0, \

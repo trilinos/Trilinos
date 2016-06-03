@@ -122,7 +122,7 @@ namespace Intrepid2 {
     const auto numPoints = physPoints.dimension(1);
 
     typedef RealSpaceTools<SpT> rst;
-    const auto tol = Parameters::Tolerence;
+    const auto tol = tolerence();
 
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
     typedef Kokkos::DynRankView<initGuessValueType,SpT> xViewType;

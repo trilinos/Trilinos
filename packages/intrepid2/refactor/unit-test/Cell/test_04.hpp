@@ -119,7 +119,7 @@ namespace Intrepid2 {
       typedef RealSpaceTools<DeviceSpaceType> rst;
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
 
-      const ValueType tol = tolerence<ValueType>()*100.0;
+      const ValueType tol = tolerence()*100.0;
 
       int errorFlag  = 0;
 
