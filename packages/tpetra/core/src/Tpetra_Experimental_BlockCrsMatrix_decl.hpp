@@ -707,12 +707,11 @@ protected:
                               const Scalar vals[],
                               const LO numOffsets) const;
 
-  /// \brief \name Implementation of DistObject (or DistObjectKA).
+  /// \brief \name Implementation of Tpetra::DistObject.
   ///
-  /// The methods here implement Tpetra::DistObject or
-  /// Tpetra::DistObjectKA, depending on a configure-time option.
-  /// They let BlockMultiVector participate in Import and Export
-  /// operations.  Users don't have to worry about these methods.
+  /// The methods here implement Tpetra::DistObject.  They let
+  /// BlockMultiVector participate in Import and Export operations.
+  /// Users don't have to worry about these methods.
   //@{
 
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);

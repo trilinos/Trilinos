@@ -175,9 +175,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_Kokkos_DistObject
   TPETRA_ENABLE_KOKKOS_DISTOBJECT
-  "Experimental option to access alternate DistObject interface, DistObjectKA."
+  "Experimental option to access alternate DistObject interface, DistObjectKA.  This option has been DEPRECATED and must no longer be set.  See Github Issue #387.  Do NOT set this option."
   OFF
   )
+IF (DEFINED Tpetra_ENABLE_Kokkos_DistObject)
+  IF (Tpetra_ENABLE_Kokkos_DistObject)
+    MESSAGE(FATAL_ERROR "The Tpetra_ENABLE_Kokkos_DistObject option has been DEPRECATED and must no longer be set.  See Github Issue #387.")
+  ENDIF ()
+ENDIF ()
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_ENABLE_MMM_Timings

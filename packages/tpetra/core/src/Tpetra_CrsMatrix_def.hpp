@@ -6976,18 +6976,6 @@ namespace Tpetra {
     }
 
     // Pack & Prepare w/ owning PIDs
-    //
-    // FIXME (mfh 15 May 2014) This should work fine if CrsMatrix
-    // inherits from DistObject (in which case all arrays that get
-    // passed in here are Teuchos::Array), but it won't work if
-    // CrsMatrix inherits from DistObjectKA (in which case all arrays
-    // that get passed in here are Kokkos::View).  In the latter case,
-    // exports_ and numExportPacketsPerLID_ each have only a device
-    // view.
-    //
-    // Currently, CrsMatrix inherits from DistObject, not
-    // DistObjectKA, so the code below should be fine for the Kokkos
-    // refactor version of CrsMatrix.
 #ifdef HAVE_TPETRA_DEBUG
     {
       using Teuchos::outArg;
