@@ -744,7 +744,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
   const local_ordinal_type rowStride = blockSize_;
-  const local_ordinal_type colStride = 1;
 
   BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize_);
   const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
