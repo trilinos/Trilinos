@@ -1,0 +1,263 @@
+This section is meant to get you using \ifpacktwo{} as quickly as possible.
+\S\ref{sec:overview} gives a brief overview of \ifpacktwo{}.
+\S\ref{sec:configuration_and_build} lists \ifpacktwo{}'s dependencies on other
+\trilinos{} libraries and provides a sample cmake configuration line. Finally,
+some examples of code are given in~\S\ref{sec:examples in code}.
+
+\section{Overview of \ifpacktwo{}}
+\label{sec:overview}
+\ifpacktwo{} is a C++ linear solver library in the \trilinos{} project~\cite{Heroux2012}.
+It originally began as a migration of \ifpack{} package capabilities to a new linear
+algebra stack. While it retains some commonalities with the original package, it
+has since diverged significantly from it and should be treated as completely
+independent package.
+
+\ifpacktwo{} only works with \tpetra{}~\cite{TpetraURL} matrix,
+vector, and map types. Like \tpetra{}, it allows for different ordinal
+(index) and scalar types. \ifpacktwo{} was designed to be efficient on a wide
+range of computer architectures, from workstations to supercomputers~\cite{Lin2014}.
+It relies on the ``MPI+X" principle, where ``X'' can be threading or
+CUDA\@. The ``X'' portion, node-level parallelism, is controlled by a node
+template type. Users should refer to \tpetra{}'s documentation for information
+about node and device types.
+
+\ifpacktwo provides a number of different solvers, including
+\begin{itemize}
+  \item Jacobi, Gauss-Seidel, polynomial, distributed relaxation;
+  \item domain decomposition solvers;
+  \item incomplete factorizations.
+\end{itemize}
+This list of solvers is not exhaustive. Instead, references for further
+information are provided throughout the text. There are many excellent
+references for iterative methods, including~\cite{Saad2003}.
+
+Complete information on available capabilities and options can be found
+in~\S\ref{sec:options}.
+
+\section{Configuration and Build}\label{sec:configuration_and_build}
+
+\ifpacktwo{} requires a C++11 compatible compiler for compilation. The
+minimum required version of compilers are GCC (4.7.2 and later),
+Intel (13 and later), and clang (3.5 and later).
+
+\subsection{Dependencies}
+
+Table~\ref{tab:dependencies} enumerates the dependencies of \ifpacktwo. Certain
+dependencies are optional, whereas others are required.  Furthermore,
+\ifpacktwo's tests depend on certain libraries that are not required if you only
+want to link against the \ifpacktwo library and do not want to compile its
+tests. Additionally, some functionality in \ifpacktwo{} may depend on other
+Trilinos packages (for instance, \amesostwo{}) that may require additional
+dependencies. We refer to the documentation of those packages for a full list of
+dependencies.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{3.5cm} c c c c}
+    \toprule
+    \multirow{2}{*}{Dependency} & \multicolumn{2}{c}{Library} & \multicolumn{2}{c}{Testing} \\
+    \cmidrule(r){2-3} \cmidrule(l){4-5} & Required & Optional & Required & Optional  \\
+    \midrule
+    % \belos                       & $\times$ &          & $\times$ & \\
+    \teuchos                     & $\times$ &          & $\times$ & \\
+    \tpetra                      & $\times$ &          & $\times$ & \\
+    \tpetrakernels               & $\times$ &          &          & \\
+    \amesostwo                   &          & $\times$ &          & $\times$  \\
+    \galeri                      &          &          &          & $\times$  \\
+    \xpetra                      &          & $\times$ &          & $\times$  \\
+    \zoltantwo                   &          & $\times$ &          & $\times$  \\
+    \textsc{ThyraTpetraAdapters} &          & $\times$ &          & \\
+    \textsc{ShyLUBasker}         &          & $\times$ &          & $\times$ \\
+    \textsc{ShyLUHTS}            &          & $\times$ &          & $\times$ \\
+    \midrule
+    % BLAS                         & $\times$ &          & $\times$ & \\
+    % LAPACK                       & $\times$ &          & $\times$ & \\
+    MPI                          &          & $\times$ &          & $\times$  \\
+    % Cholmod                      &          & $\times$ &          & $\times$  \\
+    % SuperLU 4.3                  &          & $\times$ &          & $\times$  \\
+    % QD                           &          & $\times$ &          & $\times$  \\
+    \bottomrule
+  \end{tabular}
+  \caption{\label{tab:dependencies}\ifpacktwo{}'s required and optional dependencies,
+    subdivided by whether a dependency is that of the \ifpacktwo{}{} library itself
+    (\textit{Library}), or of some \ifpacktwo{}{} test (\textit{Testing}). }
+\end{table}
+
+\amesostwo and \superlu are necessary if you want to use either a sparse direct
+solve or ILUTP as a subdomain solve in processor-based domain decomposition.
+\zoltantwo and \xpetra are necessary if you want to reorder a matrix (e.g.,
+reverse Cuthill McKee).
+
+\subsection{Configuration}
+The preferred way to configure and build \ifpacktwo{} is to do that outside of the source directory.
+Here we provide a sample configure script that will enable \ifpacktwo{} and all of its optional dependencies:
+\begin{lstlisting}
+  export TRILINOS_HOME=/path/to/your/Trilinos/source/directory
+  cmake -D BUILD_SHARED_LIBS:BOOL=ON \
+        -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
+        -D CMAKE_CXX_FLAGS:STRING="-g" \
+        -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+        -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+        -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+        -D Trilinos_ENABLE_Ifpack2:BOOL=ON \
+        -D Ifpack2_ENABLE_TESTS:STRING=ON \
+        -D Ifpack2_ENABLE_EXAMPLES:STRING=ON \
+        -D TPL_ENABLE_BLAS:BOOL=ON \
+        -D TPL_ENABLE_MPI:BOOL=ON \
+        ${TRILINOS_HOME}
+\end{lstlisting}
+
+\noindent
+More configure examples can be found in \texttt{Trilinos/sampleScripts}.
+For more information on configuring, see the \trilinos Cmake Quickstart guide \cite{TrilinosCmakeQuickStart}.
+
+\section{Interface to \ifpacktwo{} methods}
+All \ifpacktwo operators inherit from the base class
+\texttt{Ifpack2::Preconditioner}. This in turn inherits from
+\texttt{Tpetra::Operator}. Thus, you may use an \ifpacktwo operator anywhere
+that a \texttt{Tpetra::Operator} works. For example, you may use \ifpacktwo operators
+directly as preconditioners in \trilinos' \belos package of iterative solvers.
+
+You may either create an \ifpacktwo operator directly, by using the class and
+options that you want, or by using \texttt{Ifpack2::Factory}. Some of
+\ifpacktwo preconditioners only accept a \texttt{Tpetra::\\CrsMatrix} instance as
+input, while others also may accept a \texttt{Tpetra::RowMatrix} (the base class
+of \texttt{Tpetra::CrsMatrix}). They will decide at run time whether the input
+\texttt{Tpetra::RowMatrix} is an instance of the right subclass.
+
+\texttt{Ifpack2::Preconditioner} includes the following methods:
+\begin{itemize}
+  \item \texttt{initialize()}
+
+    Performs all operations based on the graph of the matrix (without
+    considering the numerical values).
+
+  \item \texttt{compute()}
+
+    Computes everything required to apply the preconditioner, using the matrix's
+    values.
+
+  \item \texttt{apply()}
+
+    Applies or ``solves with'' the preconditioner.
+\end{itemize}
+Every time that \texttt{initialize()} is called, the object destroys all the
+previously allocated information, and reinitializes the preconditioner. Every
+time \texttt{compute()} is called, the object recomputes the actual values of the
+preconditioner.
+
+An \ifpacktwo preconditioner may also inherit from
+\texttt{Ifpack2::CanChangeMatrix} class in order to express that users can
+change its matrix (the matrix that it preconditions) after construction using a
+\texttt{setMatrix} method.  Changing the matrix puts the preconditioner back in
+an ``pre-initialized'' state.  You must first call \texttt{initialize()}, then
+\texttt{compute()}, before you may call \texttt{apply()} on this preconditioner.
+Depending on the implementation, it may be legal to set the matrix to null. In
+that case, you may not call \texttt{initialize()} or \texttt{compute()} until
+you have subsequently set a nonnull matrix.
+
+\textbf{Warning.} If you are familiar with the \ifpack package, please be aware
+that the behaviour of the \ifpacktwo preconditioner is different from \ifpack.
+In \ifpack, the \texttt{ApplyInverse()} method applies or ``solves with'' the
+preconditioner $M^{-1}$, and the \texttt{Apply()} method ``applies'' the
+preconditioner $M$. In \ifpacktwo, the \texttt{apply()} method applies or
+``solves with'' the preconditioner $M^{-1}$. \ifpacktwo has no method comparable
+to \ifpack's \texttt{Apply()}.
+
+\section{Example: \ifpacktwo preconditioner within \belos}\label{sec:examples in code}
+
+The most commonly used scenario involving \ifpacktwo{} is using one of its
+preconditioners preconditioners inside an iterative linear solver. In
+\trilinos{}, the \belos{} package provides important Krylov subspace methods (such
+as preconditioned CG and GMRES).
+
+At this point, we assume that the reader is comfortable with \teuchos{} referenced-counted
+pointers (RCPs) for memory management (an introduction to RCPs can be found
+in~\cite{RCP2010}) and the \parameterlist class~\cite{TeuchosURL}.
+
+First, we create an \ifpacktwo{} preconditioner using a provided \parameterlist
+\begin{lstlisting}[language=C++]
+ typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+   Tpetra_Operator;
+
+ Teuchos::RCP<Tpetra_Operator> A;
+ // create A here ...
+ Teuchos::ParameterList paramList;
+ paramList.set( "chebyshev: degree", 1 );
+ paramList.set( "chebyshev: min eigenvalue", 0.5 );
+ paramList.set( "chebyshev: max eigenvalue", 2.0 );
+ // ...
+ Ifpack2::Factory factory;
+ RCP<Ifpack2::Ifpack2Preconditioner<> > ifpack2Preconditioner;
+ ifpack2Preconditioner = factory.create( "CHEBYSHEV", A )
+ ifpack2Preconditioner->setParameters( paramList );
+ ifpack2Preconditioner->initialize();
+ ifpack2Preconditioner->compute();
+\end{lstlisting}
+
+Besides the linear operator $A$, we also need an initial guess vector for the
+solution $X$ and a right hand side vector $B$ for solving a linear system.
+\begin{lstlisting}[language=C++]
+ typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Tpetra_Map;
+ typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+   Tpetra_MultiVector;
+
+ Teuchos::RCP<const Tpetra_Map> map = A->getDomainMap();
+
+ // create initial vector
+ Teuchos::RCP<Tpetra_MultiVector> X =
+   Teuchos::rcp( new Tpetra_MultiVector(map, numrhs) );
+
+ // create right-hand side
+ X->randomize();
+ Teuchos::RCP<Tpetra_MultiVector> B =
+   Teuchos::rcp( new Tpetra_MultiVector(map, numrhs) );
+ A->apply( *X, *B );
+ X->putScalar( 0.0 );
+\end{lstlisting}
+To generate a dummy example, the above code first declares two vectors. Then, a
+right hand side vector is calculated as the matrix-vector product of a random vector
+with the operator $A$. Finally, an initial guess is initialized with zeros.
+
+Then, one can define a \texttt{Belos::LinearProblem} object where the
+\texttt{ifpack2Preconditioner} is used for left preconditioning.
+\begin{lstlisting}[language=C++]
+ typedef Belos::LinearProblem<Scalar, Tpetra_MultiVector, Tpetra_Operator>
+   Belos_LinearProblem;
+
+ Teuchos::RCP<Belos_LinearProblem> problem =
+   Teuchos::rcp( new Belos_LinearProblem( A, X, B ) );
+ problem->setLeftPrec( mueLuPreconditioner );
+ bool set = problem.setProblem();
+\end{lstlisting}
+
+Next, we set up a \belos{} solver using some basic parameters.
+\begin{lstlisting}[language=C++]
+ Teuchos::RCP<Teuchos::ParameterList> belosList =
+   Teuchos::rcp(new Teuchos::ParameterList);
+ belosList->set( "Block Size", 1 );
+ belosList->set( "Maximum Iterations", 100 );
+ belosList->set( "Convergence Tolerance", 1e-10 );
+ belosList->set( "Output Frequency", 1 );
+ belosList->set( "Verbosity", Belos::TimingDetails + Belos::FinalSummary );
+
+ Belos::SolverFactory<Scalar, Tpetra_MultiVector, Tpetra_Operator> solverFactory;
+ Teuchos::RCP<Belos::SolverManager<Scalar, Tpetra_MultiVector, Tpetra_Operator> >
+   solver = solverFactory.create( "Block CG", belosList );
+ solver->setProblem( problem );
+\end{lstlisting}
+
+Finally, we solve the system.
+\begin{lstlisting}[language=C++]
+ Belos::ReturnType ret = solver.solve();
+\end{lstlisting}
+
+It is often more convenient to specify the parameters as part of an XML-formatted options file.
+Look in the subdirectory {\tt Trilinos/packages/ifpack2/test/belos} for examples of this.
+
+This section is only meant to give a brief introduction on how to use
+\ifpacktwo{} as a preconditioner within the \trilinos{} packages for iterative
+solvers. There are other, more complicated, ways to use to work with
+\ifpacktwo{}. For more information on these topics, the reader may refer to the
+examples and tests in the \ifpacktwo{} source directory
+(\texttt{Trilinos/packages/ifpack2}).
