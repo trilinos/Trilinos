@@ -95,10 +95,28 @@ namespace Intrepid2 {
         Util::unrollIndex( i, j,
                            _inMats.dimension(0),
                            iter );
-        
-        auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
-        
-        _detArray(i, j) = Serial::det(mat);
+        // current implementation subview overhead exists
+        {
+          auto mat = Kokkos::subview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
+          _detArray(i, j) = Serial::det(mat);
+        }
+
+        // direct access (base is 8 rank)
+        // {
+        //   const auto dim = _inMats.dimension(2);
+        //   const auto val = ( dim == 3 ? ( _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) * _inMats(i,j,2,2,0,0,0,0) +
+        //                                   _inMats(i,j,1,0,0,0,0,0) * _inMats(i,j,2,1,0,0,0,0) * _inMats(i,j,0,2,0,0,0,0) +
+        //                                   _inMats(i,j,2,0,0,0,0,0) * _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,1,2,0,0,0,0) -
+        //                                   _inMats(i,j,2,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) * _inMats(i,j,0,2,0,0,0,0) -
+        //                                   _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,2,1,0,0,0,0) * _inMats(i,j,1,2,0,0,0,0) -
+        //                                   _inMats(i,j,1,0,0,0,0,0) * _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,2,2,0,0,0,0) ) :
+        //                      dim == 2 ? ( _inMats(i,j,0,0,0,0,0,0) * _inMats(i,j,1,1,0,0,0,0) -
+        //                                   _inMats(i,j,0,1,0,0,0,0) * _inMats(i,j,1,0,0,0,0,0) ) :
+        //                      /**/       ( _inMats(i,j,0,0,0,0,0,0) ) );
+          
+        //   _detArray(i, j, 0,0, 0,0,0,0) = val;
+        // }
+
       }
     };
 
@@ -119,6 +137,11 @@ namespace Intrepid2 {
         Util::unrollIndex( i, j,
                            _inMats.dimension(0),
                            iter );
+        // current implementation subview overhead exists
+        {
+          auto mat = Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
+          _detArray(i, j) = Serial::det(mat);
+        }
 
         // direct access overhead with zero dimensions
         // {
@@ -136,11 +159,6 @@ namespace Intrepid2 {
         //   _detArray(i, j) = val;
         // }
 
-        // current implementation subview overhead exists
-        {
-          auto mat = Kokkos::subdynrankview(_inMats, i, j, Kokkos::ALL(), Kokkos::ALL());
-          _detArray(i, j) = Serial::det(mat);
-        }
       }
     };
 
@@ -192,10 +210,14 @@ namespace Intrepid2 {
         { // Kokkos View
           typedef Kokkos::View<ValueType****,DeviceSpaceType> inViewType;
           typedef Kokkos::View<ValueType**,  DeviceSpaceType> outViewType;
+          //typedef Kokkos::View<ValueType********,DeviceSpaceType> inViewType;
+          //typedef Kokkos::View<ValueType********,  DeviceSpaceType> outViewType;
           typedef F_det_view<outViewType,inViewType>          FunctorType;
 
           inViewType  in ("inView",  C,P,D,D);
           outViewType out("outView", C,P);          
+          //inViewType  in ("inView",  C,P,D,D,1,1,1,1);
+          //outViewType out("outView", C,P,1,1,1,1,1,1);          
           const auto loopSize = C*P;
           Kokkos::RangePolicy<DeviceSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
