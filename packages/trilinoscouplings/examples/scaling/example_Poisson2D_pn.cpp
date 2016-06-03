@@ -184,7 +184,8 @@ void CreateLinearSystem(int numWorkSets,
                         Epetra_Time &Time
 			);
 
-void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Teuchos::RCP<Epetra_CrsMatrix> & P);
+
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P);
 
 void GenerateIdentityCoarsening_pn_to_p1(const FieldContainer<int> & Pn_elemToNode,
                       Epetra_Map const & P1_map_aux, Epetra_Map const &Pn_map,
@@ -720,6 +721,12 @@ int main(int argc, char *argv[]) {
   // Define basis
   Basis_HGRAD_QUAD_Cn_FEM<double, FieldContainer<double> > myHGradBasis(degree,POINTTYPE_EQUISPACED);
   Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_rcp(&myHGradBasis, false);
+  Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > myHGradBasisWithDofCoords_rcp(&myHGradBasis, false);
+
+  // Auxillary p=1 basis
+  Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
+  Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_aux_rcp(&myHGradBasis_aux, false);
+
 
   int numFieldsG = myHGradBasis.getCardinality();
 
@@ -834,7 +841,8 @@ int main(int argc, char *argv[]) {
     throw std::runtime_error("Can only specify \"aux P1\" or \"linear P1\", not both.");
   Teuchos::RCP<Epetra_CrsMatrix> P_linear;
   if (inputSolverList.isParameter("linear P1")) {
-    GenerateLinearCoarsening_p2_to_p1(elemToNode,P1_globalMap,globalMapG,P_linear);
+    printf("Generating Linear Pn-to-P1 coarsening...\n");
+    GenerateLinearCoarsening_pn_kirby_to_p1(degree,elemToNode, myHGradBasisWithDofCoords_rcp, myHGradBasis_aux_rcp,P1_globalMap,globalMapG,P_linear);
     inputSolverList.remove("linear P1"); //even though LevelWrap happily accepts this parameter
   }
 
@@ -988,8 +996,6 @@ int main(int argc, char *argv[]) {
   //Basis
 
   // Define basis
-  Basis_HGRAD_QUAD_C1_FEM<double, FieldContainer<double> > myHGradBasis_aux;
-  Teuchos::RCP<Basis<double,FieldContainer<double> > > myHGradBasis_aux_rcp(&myHGradBasis_aux, false);
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
   FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
@@ -1039,6 +1045,7 @@ int main(int argc, char *argv[]) {
   // Generate Pn-to-P1 identity coarsening (base mesh to auxiliary mesh).
   Teuchos::RCP<Epetra_CrsMatrix> P_identity;
   if (inputSolverList.isParameter("aux P1")) {
+    printf("Generating Identity Pn-to-P1 coarsening...\n");
     GenerateIdentityCoarsening_pn_to_p1(elemToNode, StiffMatrix_aux.DomainMap(), StiffMatrix.RangeMap(), P_identity);
     inputSolverList.remove("aux P1"); //even though LevelWrap happily accepts this parameter
   }
@@ -1112,8 +1119,6 @@ int main(int argc, char *argv[]) {
     interpolationMatrix = P_linear;
   }
 
-
-  interpolationMatrix = Teuchos::null; //HAQ
 
   TestMultiLevelPreconditionerLaplace(probType, MLList,
                                       Teuchos::rcpFromRef(StiffMatrix), interpolationMatrix, exactNodalVals,
@@ -2243,42 +2248,49 @@ void CreateLinearSystem(int numWorksets,
 } //CreateLinearSystem
 
 /*********************************************************************************************************/
-void GenerateLinearCoarsening_p2_to_p1(const FieldContainer<int> & P2_elemToNode, Epetra_Map & P1_map, Epetra_Map & P2_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
+void GenerateLinearCoarsening_pn_kirby_to_p1(const int degree,const FieldContainer<int> & Pn_elemToNode, Teuchos::RCP<Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> > > &PnBasis_rcp,Teuchos::RCP<Basis<double,FieldContainer<double> > > &P1Basis_rcp, Epetra_Map & P1_map, Epetra_Map & Pn_map,Teuchos::RCP<Epetra_CrsMatrix>& P) {
 
-  // Generate a P matrix that uses the linear coarsening from p2 to p1 on the base mesh.
-  // This presumes that the P2 element has all of the P1 nodes numbered first
-  // Resulting matrix is #P2nodes x #P1nodes
-  double one     = 1.0;
-  double half    = 0.5;    
-  double quarter = 0.25;
-  int edge_node0_id[4]={0,1,2,3};
-  int edge_node1_id[4]={1,2,3,0};
-  
-  int Nelem=P2_elemToNode.dimension(0);
-  if(P2_elemToNode.dimension(1) != 9) throw std::runtime_error("Unidentified element type");
-  
-  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,P2_map,0));
+  // Sanity checks
+  assert(Pn_elemToNode.getDimension(1) == PnBasis_rcp->getCardinality());
+  assert(P1Basis_rcp->getCardinality() == 4);
 
-  for(int i=0; i<Nelem; i++)
-    for(int j=0; j<P2_elemToNode.dimension(1); j++) {
-      int row = P2_elemToNode(i,j);
+  // Generate a P matrix that uses the linear coarsening from pn to p1 on the base mesh.
+  // This presumes that the Pn element is number according to the Kirby convention (aka straight across, bottom to top)
+  // Resulting matrix is #Pnnodes x #P1nodes
+  //  int edge_node0_id[4]={0,1,2,3};
+  //  int edge_node1_id[4]={1,2,3,0};
+  int p1_node_in_pn[4] = {0,degree, (degree+1)*(degree+1)-1, degree*(degree+1)};
 
-      if(j<4) {
-        P->InsertGlobalValues(row,1,&one,&row);
-      }
-      else if (j>=4 && j<8){
-        int col0 = P2_elemToNode(i,edge_node0_id[j-4]);
-        int col1 = P2_elemToNode(i,edge_node1_id[j-4]);
-        P->InsertGlobalValues(row,1,&half,&col0);
-        P->InsertGlobalValues(row,1,&half,&col1);
-      }
-      else {
-        int cols[4] = {P2_elemToNode(i,0),P2_elemToNode(i,1),P2_elemToNode(i,2),P2_elemToNode(i,3)};
-        double vals[4] = {quarter, quarter,quarter,quarter};
-        P->InsertGlobalValues(row,4,&vals[0],&cols[0]);
+  // Get the reference coordinates for the Pn element  
+  int numFieldsPn = PnBasis_rcp->getCardinality();
+  int spaceDim    = PnBasis_rcp->getBaseCellTopology().getDimension();
+  FieldContainer<double> PnDofCoords(numFieldsPn,spaceDim);
+  PnBasis_rcp->getDofCoords(PnDofCoords);
+
+  // Evaluate the linear basis functions at the Pn nodes
+  int numFieldsP1 = P1Basis_rcp->getCardinality();
+  FieldContainer<double> P1Values_at_PnDofs(numFieldsP1,numFieldsPn);
+  P1Basis_rcp->getValues(P1Values_at_PnDofs, PnDofCoords, OPERATOR_VALUE);
+
+
+
+  // Generate P
+  int Nelem=Pn_elemToNode.dimension(0);  
+  P = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Pn_map,0));
+
+  // Assemble
+  for(int i=0; i<Nelem; i++) {
+    for(int j=0; j<numFieldsPn; j++) {
+      int row = Pn_elemToNode(i,j);
+      for(int k=0; k<numFieldsP1; k++) {
+	int col = Pn_elemToNode(i,p1_node_in_pn[k]);
+	double val = P1Values_at_PnDofs(k,j);
+	P->InsertGlobalValues(row,1,&val,&col);
       }
     }
-  P->FillComplete(P1_map,P2_map);
+  }
+  P->FillComplete(P1_map,Pn_map);
+
 }
 
 /*********************************************************************************************************/
