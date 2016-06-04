@@ -300,7 +300,11 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Deleting the mesh ... \n\n";
 
   Delete_Pamgen_Mesh();
+  // clean up - reduce the result codes
 
+  // make sure another process doesn't mangle the PASS output or the test will read as a fail when it should pass
+  std::cout << std::flush;
+  CommT->barrier();
   if (me == 0)
     std::cout << "PASS" << std::endl;
 

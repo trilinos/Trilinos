@@ -57,18 +57,30 @@
       <Parameter name="algorithm" type="string" value="multijagged"/>
     </ParameterList>
     
-    <ParameterList name="Graph Metrics">
-      <ParameterList name="weight 0">
-	<ParameterList name="global sum">
-	  <Parameter name="lower" type="double" value="39.0"/>
-	  <Parameter name="upper" type="double" value="39.0"/>
-	</ParameterList>
-	<ParameterList name="global maximum">
-	  <Parameter name="lower" type="double" value="20.5"/>
-	  <Parameter name="upper" type="double" value="20.5"/>
-	</ParameterList>
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="max edge cuts"/>
+        <Parameter name="lower" type="double" value="1.0"/>
+        <Parameter name="upper" type="double" value="999.0"/>
       </ParameterList>
-    </ParameterList>
-      
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="max edge cuts"/>
+        <Parameter name="weight" type="int" value="0"/>
+        <Parameter name="lower" type="double" value="1.0"/>
+        <Parameter name="upper" type="double" value="999.0"/>
+      </ParameterList>
+      <ParameterList name="metriccheck3">
+        <Parameter name="check" type="string" value="total edge cuts"/>
+        <Parameter name="lower" type="double" value="1.0"/>
+        <Parameter name="upper" type="double" value="999.0"/>
+      </ParameterList>
+      <ParameterList name="metriccheck4">
+        <Parameter name="check" type="string" value="total edge cuts"/>
+        <Parameter name="weight" type="int" value="0"/>
+        <Parameter name="lower" type="double" value="1.0"/>
+        <Parameter name="upper" type="double" value="999.0"/>
+      </ParameterList>
+     </ParameterList>
+
   </ParameterList>
 </ParameterList>

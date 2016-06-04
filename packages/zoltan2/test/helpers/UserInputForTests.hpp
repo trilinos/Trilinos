@@ -1489,10 +1489,13 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     
     // There are Zoltan2 test graphs that have no edges.
     
+    // nEwgts must be 1 or 0 - add error
+
     if (start == NULL)
       haveEdges = false;
     
-    if (verbose_){
+    if (verbose_)
+    {
       std::cout << "UserInputForTests, " << nvtxs << " vertices,";
       if (haveEdges)
         std::cout << start[nvtxs] << " edges,";
@@ -1529,11 +1532,6 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       memset(nzPerRow, 0, sizeof(size_t) * nvtxs);
     }
     
-    if (haveEdges){
-      free(start);
-      start = NULL;
-    }
-    
     // Make sure base gid is zero.
     
     if (nedges){
@@ -1566,7 +1564,6 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
   RCP<const map_t> fromMap;
   
   // Create a Tpetra::CrsMatrix where rank 0 has entire matrix.
-  
   if (rank == 0){
     fromMap = rcp(new map_t(nvtxs, nvtxs, base, tcomm_));
     
@@ -1585,19 +1582,16 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       adj = NULL;
       
       zgno_t *nextId = edgeIds;
-      Array<zscalar_t> values(maxRowLen, 1.0);
-      
+      Array<zscalar_t> values(nedges, 1.0);
+      if (nedges > 0 && nEwgts > 0) {
+        for (int i=0; i < nedges; i++)
+          values[i] = ewgts[i];
+      }
+
       for (int i=0; i < nvtxs; i++){
         if (nzPerRow[i] > 0){
           ArrayView<const zgno_t> rowNz(nextId, nzPerRow[i]);
-#ifdef KDDKDDPRINT
-  std::cout << "INSERTING ROW " << i << ": ";
-  for (int j = 0; j < nzPerRow[i]; j++) {
-    std::cout << rowNz[j] << " ";
-  }
-  std::cout << std::endl;
-#endif
-          fromMatrix->insertGlobalValues(i, rowNz, values.view(0,nzPerRow[i]));
+          fromMatrix->insertGlobalValues(i, rowNz, values.view(start[i], start[i+1] - start[i]));
           nextId += nzPerRow[i];
         }
       }
@@ -1732,7 +1726,8 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
   // Edge weights, if any
   
   if (haveEdges && nEwgts > 0){
-    
+
+	/*// No longer distributing edge weights
     ArrayRCP<zscalar_t> weightBuf;
     ArrayView<const zscalar_t> *wgts = new ArrayView<const zscalar_t> [nEwgts];
     
@@ -1765,6 +1760,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
     RCP<tMVector_t> fromEdgeWeights;
     RCP<tMVector_t> toEdgeWeights;
     RCP<import_t> edgeImporter;
+
     if (distributeInput) {
       fromEdgeWeights =
       rcp(new tMVector_t(fromMap, eweights.view(0, nEwgts), nEwgts));
@@ -1776,6 +1772,28 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, bool haveAssign,
       toEdgeWeights = fromEdgeWeights;
     
     edgWeights_ = toEdgeWeights;
+    */
+
+    toMap = rcp(new map_t(nedges, M_->getNodeNumEntries(), base, tcomm_));
+    edgWeights_ = rcp(new tMVector_t(toMap, nEwgts));
+
+    size_t maxSize = M_->getNodeMaxNumRowEntries();
+    Array<zlno_t> colind(maxSize);
+    Array<zscalar_t> vals(maxSize);
+    size_t nEntries;
+
+    for (size_t i = 0, idx = 0; i < M_->getNodeNumRows(); i++) {
+      M_->getLocalRowCopy(i, colind, vals, nEntries);
+      for (size_t j = 0; j < nEntries; j++) {
+        edgWeights_->replaceLocalValue(idx, 0, vals[j]); // Assuming nEwgts==1
+        idx++;
+      }
+    }
+  }
+
+  if (start) {
+    free(start);
+    start = NULL;
   }
 }
 

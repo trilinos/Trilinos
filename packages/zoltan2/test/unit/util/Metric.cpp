@@ -252,9 +252,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
 
   if (rank==0){
-    zscalar_t imb;
+    ;
     try{
-      metricObject->getObjectCountImbalance(imb); 
+      zscalar_t imb = metricObject->getObjectCountImbalance();
       cout << "Object imbalance: " << imb << endl;
     }
     catch (std::exception &e){
@@ -265,10 +265,9 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
 
   if (rank==0 && nWeights > 0){
-    zscalar_t imb;
     try{
       for (int i=0; i < nWeights; i++){
-        metricObject->getWeightImbalance(imb, i);
+    	zscalar_t imb = metricObject->getWeightImbalance(i);
         cout << "Weight " << i << " imbalance: " << imb << endl;
       }
     }
@@ -277,7 +276,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     }
     if (!fail && nWeights > 1){
       try{
-        metricObject->getNormedImbalance(imb);
+    	zscalar_t imb = metricObject->getNormedImbalance();
         cout << "Normed weight imbalance: " << imb << endl;
       }
       catch (std::exception &e){

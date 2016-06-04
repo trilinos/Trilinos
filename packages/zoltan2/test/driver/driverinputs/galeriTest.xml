@@ -1,4 +1,4 @@
-<!--////////////////////////////////////////////////////////////////////////////
+  <!--////////////////////////////////////////////////////////////////////////////
  ////////////////////////////////////////////////////////////////////////////////
  
  REQUIRED BLOCKS:
@@ -70,8 +70,9 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
+     <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
@@ -95,8 +96,9 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
+     <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
@@ -118,15 +120,15 @@
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
+     <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
     </ParameterList>
     
   </ParameterList>
-  
   
   <ParameterList name="Problem 4: mj-basic vector adapter">
     <Parameter name="kind" type="string" value="partitioning"/>
@@ -138,15 +140,15 @@
       <Parameter name="input adapter" type="string" value="BasicVector"/>
     </ParameterList>
     
-    
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="algorithm" type="string" value="multijagged"/>
       <Parameter name="rectilinear" type="string" value="yes"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
+     <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.4"/>
       </ParameterList>
@@ -154,25 +156,25 @@
   </ParameterList>
   
   <!-- 3. COMPARISON BLOCK DEFINITIONS -->
-  
-<!--
-  <ParameterList name="Comparison"> 
-    <Parameter name="A" type="string" value="Problem 1"/>
-    <Parameter name="B" type="string" value="Problem 2"/>
-  </ParameterList>
-  
-  <ParameterList name="Comparison">
-    <Parameter name="A" type="string" value="Problem 1"/>
-    <Parameter name="B" type="string" value="Problem 3"/>
-  </ParameterList>
-  
-  <ParameterList name="Comparison"> 
-    <Parameter name="Problem" type="string" value="Problem 3"/>
-    <Parameter name="Reference" type="string" value="Problem 2"/>
+ 
+ <!-- 
+ <ParameterList name="Comparison">
+   <Parameter name="A" type="string" value="Problem 2"/>
+   <Parameter name="B" type="string" value="Problem 3"/>
+ </ParameterList>
+ -->
+
+ <!--
+ <ParameterList name="Comparison">
+   <Parameter name="Problem" type="string" value="Problem 3"/>
+   <Parameter name="Reference" type="string" value="Problem 2"/>
     
-    <ParameterList name="object count">
-      <Parameter name="lower" type="double" value="1.0"/>
-      <Parameter name="upper" type="double" value="1.3"/>
+    <ParameterList name="Metrics"> 
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.1"/>
+        <Parameter name="upper" type="double" value="2.0"/>
+      </ParameterList>
     </ParameterList>
     
     <ParameterList name="solve time">
@@ -190,7 +192,9 @@
       <Parameter name="upper" type="double" value="1.5"/>
     </ParameterList>
     
-  </ParameterList>
+</ParameterList>
 -->
   
 </ParameterList>
+
+
