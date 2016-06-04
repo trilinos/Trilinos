@@ -156,7 +156,7 @@ Depending on the implementation, it may be legal to set the matrix to null. In
 that case, you may not call \texttt{initialize()} or \texttt{compute()} until
 you have subsequently set a nonnull matrix.
 
-\textbf{Warning.} If you are familiar with the \ifpack package, please be aware
+\textbf{Warning.} If you are familiar with the \ifpack package~\cite{ifpack}, please be aware
 that the behaviour of the \ifpacktwo preconditioner is different from \ifpack.
 In \ifpack, the \texttt{ApplyInverse()} method applies or ``solves with'' the
 preconditioner $M^{-1}$, and the \texttt{Apply()} method ``applies'' the
