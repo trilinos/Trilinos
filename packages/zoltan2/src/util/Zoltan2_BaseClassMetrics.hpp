@@ -132,7 +132,7 @@ bool hasMetricValue(const std::string & metric_name) const {
 /*! \ return a metric value specified by name */
 scalar_t getMetricValue(const std::string & metric_name) const
 {
-  int metricIndex = convertMetricNameToIndex( metric_name);
+  size_t metricIndex = convertMetricNameToIndex( metric_name);
   if( metricIndex == getMetrics().size() )
     return 0.0; // throw an error
   return values_[metricIndex];
@@ -141,16 +141,16 @@ scalar_t getMetricValue(const std::string & metric_name) const
 /*! \ set a metric value specified by name */
 void setMetricValue(const std::string & metric_name, scalar_t value) const
 {
-  int metricIndex = convertMetricNameToIndex( metric_name);
+  size_t metricIndex = convertMetricNameToIndex( metric_name);
   if( metricIndex != getMetrics().size() )
-    values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utlity functions - but we probably want to error handle here for bad names
+    values_[metricIndex] = value;	// MDM - I'm doing this for the moment to build the behavior in the utility functions - but we probably want to error handle here for bad names
 }
 
 /*! \utility function converts the name to an enum index. */
-int convertMetricNameToIndex(const std::string & metric_name) const
+size_t convertMetricNameToIndex(const std::string & metric_name) const
 {
   const std::vector<std::string> & metricNames = getMetrics();
-  int metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
+  size_t metricIndex = std::find(metricNames.begin(), metricNames.end(), metric_name) - metricNames.begin();
   return metricIndex; // this can return metricNames.size() if not found
 }
 

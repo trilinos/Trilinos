@@ -638,7 +638,7 @@ bool ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist, const R
       // there is some redundancy here because the metric info holds both the questions and the results
       // this happened because I wanted to reuse the MetricAnalyzer code for loading metric checks or comparisons
       // we can iterate over either to get the questions
-      for (int n = 0; n < metricInfoSetPrb.size(); ++n) {
+      for (size_t n = 0; n < metricInfoSetPrb.size(); ++n) {
         if(!ComparisonHelper::metricComparisonTest(comm, metricInfoSetPrb[n], metricInfoSetRef[n], metrics.front(), msg)) {
           all_tests_pass = 0;
         }

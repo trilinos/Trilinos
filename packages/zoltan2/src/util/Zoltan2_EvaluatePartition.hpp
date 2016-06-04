@@ -123,7 +123,7 @@ private:
   part_t numNonEmpty_;              // of actual
 
   typedef BaseClassMetrics<scalar_t> base_metric_type;
-  typedef ArrayRCP<RCP<base_metric_type>> base_metric_array_type;
+  typedef ArrayRCP<RCP<base_metric_type> > base_metric_array_type;
 
   base_metric_array_type metricsBase_;
 
@@ -226,30 +226,30 @@ public:
 
   /*! \brief Return the  metric list for types matching the given metric type.
    */
-  ArrayView<RCP<base_metric_type>> getAllMetricsOfType(std::string metricType) const
+  ArrayView<RCP<base_metric_type> > getAllMetricsOfType(std::string metricType) const
   {
     // find the beginning and the end of the contiguous block
     // the list is an ArrayRCP and must preserve any ordering
-    size_t beginIndex = -1;
-    size_t sizeOfArrayView = 0;
-    for( size_t n = 0; n < metricsBase_.size(); ++n ) {
+    int beginIndex = -1;
+    int sizeOfArrayView = 0;
+    for(typename base_metric_array_type::size_type n = 0; n < metricsBase_.size(); ++n) {
       if( metricsBase_[n]->getMetricType() == metricType ) {
         if (beginIndex == -1) {
-          beginIndex = n;
+          beginIndex = int(n);
         }
         ++sizeOfArrayView;
       }
     }
     if (sizeOfArrayView == 0) {
-      return ArrayView<RCP<base_metric_type>>(); // empty array view
-      }
+      return ArrayView<RCP<base_metric_type> >(); // empty array view
+    }
     return metricsBase_.view(beginIndex, sizeOfArrayView);
   }
 
   /*! \brief Return the object count imbalance.
    */
   scalar_t getObjectCountImbalance() const {
-    ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
     if( metrics.size() <= 0 ) {
       throw std::logic_error( "getObjectCountImbalance() was called but no metrics data was generated for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + "." );
     }
@@ -261,7 +261,7 @@ public:
    *  If we have weights (which start at the second element) the spec is to have this return that element.
    */
   scalar_t getNormedImbalance() const{
-    ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
 
     if( metrics.size() <= 0 ) {
       throw std::logic_error( "getNormedImbalance() was called but no metrics data was generated for " + std::string(IMBALANCE_METRICS_TYPE_NAME) + "." );
@@ -289,7 +289,7 @@ public:
 
     // if we have multiple weights (meaning array size if 2 or greater) than the weights begin on index 2
     // if we have one weight 0 (option 2) then the weights begin on index 1
-    ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > metrics = getAllMetricsOfType(IMBALANCE_METRICS_TYPE_NAME);
 
     int weight0IndexStartsAtThisArrayIndex = ( metrics.size() > 2 ) ? 2 : 1;
     int numberOfWeights = metrics.size() - weight0IndexStartsAtThisArrayIndex;
@@ -303,7 +303,7 @@ public:
   /*! \brief Return the max cut for the requested weight.
    */
   scalar_t getMaxEdgeCut() const{
-    ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
       throw std::logic_error( "getMaxEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
     }
@@ -313,7 +313,7 @@ public:
   /*! \brief getMaxWeightEdgeCuts weighted for the specified index
    */
   scalar_t getMaxWeightEdgeCut(int weightIndex) const{
-    ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
     if( graphMetrics.size() <= 1 ) {
       throw std::logic_error( "getMaxWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
@@ -327,7 +327,7 @@ public:
   /*! \brief getTotalEdgeCut
    */
   scalar_t getTotalEdgeCut() const{
-    ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     if( graphMetrics.size() < 1 ) {
       throw std::logic_error( "getTotalEdgeCut() was called but no metrics data was generated for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
     }
@@ -337,7 +337,7 @@ public:
   /*! \brief getTotalWeightEdgeCut weighted for the specified index
    */
   scalar_t getTotalWeightEdgeCut(int weightIndex) const{
-    ArrayView<RCP<base_metric_type>> graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
+    ArrayView<RCP<base_metric_type> > graphMetrics = getAllMetricsOfType(GRAPH_METRICS_TYPE_NAME);
     int indexInArray = weightIndex + 1; // this was changed - it used to start at 0
     if( graphMetrics.size() <= 1 ) { // the size() - 2 is because weight 0 starts at array element 1 (so if the array size is 2, the maximum specified weight index is weight 0 ( 2-2 = 0 )
       throw std::logic_error( "getTotalWeightEdgeCut(int weightIndex) was called with weight index " + std::to_string(weightIndex) + " but no weights were available for " + std::string(GRAPH_METRICS_TYPE_NAME) + "." );
@@ -361,7 +361,7 @@ public:
    */
   void printMetrics(std::ostream &os, std::string metricType) const {
     // Might need changing. The issue here is that they each have unique parameters to pass.
-    ArrayView<RCP<base_metric_type>> metrics = getAllMetricsOfType( metricType );
+    ArrayView<RCP<base_metric_type> > metrics = getAllMetricsOfType( metricType );
     if (metrics.size() != 0) { // this could be a critical decision - do we want a blank table with headers when the list is empty - for debugging that is probably better but it's very messy to have lots of empty tables in the logs
       if( metricType == GRAPH_METRICS_TYPE_NAME ) {
         Zoltan2::printGraphMetrics<scalar_t, part_t>(os, targetGlobalParts_, numGlobalParts_, metrics);
