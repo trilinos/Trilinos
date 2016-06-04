@@ -413,13 +413,12 @@ bool run(const UserInputForTests &uinput,
   return bSuccess;
 }
 
-bool mainExecute(int argc, char *argv[], int &rank)
+bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm) 
 {
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment and timer
   ////////////////////////////////////////////////////////////
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  rank = comm->getRank(); // get rank
+  int rank = comm->getRank(); // get rank
 
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
@@ -510,37 +509,51 @@ bool mainExecute(int argc, char *argv[], int &rank)
 
 int main(int argc, char *argv[])
 {
-  Teuchos::GlobalMPISession session(&argc, &argv); // note this is here because when session goes out of scope we cannot call MPI commands like reduce
+  Teuchos::GlobalMPISession session(&argc, &argv); 
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   int result = 0;
-  int rank = -1; // mainExecute will set this - this structure was setup to make the catch handling more apparent
+  int rank = comm->getRank();
   try {
-    result = mainExecute(argc, argv, rank) ? 0 : 1; // code 0 is ok, 1 is a failed test
+    result = mainExecute(argc, argv, comm) ? 0 : 1; // code 0 is ok,
+                                                    // 1 is a failed test
   }
-  catch(std::logic_error e) { // logic_error exceptions can be thrown by EvaluatePartition or MetricAnalyzer if any problem is detected in the formatting of the input xml
+  catch(std::logic_error e) { 
+    // logic_error exceptions can be thrown by EvaluatePartition or 
+    // MetricAnalyzer if any problem is detected in the formatting of the 
+    // input xml
     if (rank == 0) {
-      std::cout << "Test driver for rank " << rank << " caught the following exception: " << e.what() << std::endl;
+      std::cout << "Test driver for rank " << rank 
+                << " caught the following exception: " << e.what() << std::endl;
     }
     result = 1; // fail for any exception
   }
   catch(...) {
     if (rank == 0) {
-      std::cout << "Test driver for rank " << rank << " caught an unknown exception and will return false." << std::endl;
+      std::cout << "Test driver for rank " << rank 
+                << " caught an unknown exception and will return false." 
+                << std::endl;
     }
     result = 1; // fail for any exception
   }
 
   // clean up - reduce the result codes
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   comm->barrier();
-  Teuchos::Ptr<int> resultReduced(new int);
-  Teuchos::Ptr<int> rankReduced(new int); // sanity check - make sure we get the number of processors
-  reduceAll<int,int>(*(comm.get()), Teuchos::EReductionType::REDUCE_MAX, result, resultReduced); // for a passed test all of these values should return 0 - if any result is 1 this will reduce to 1 and the test will fail
-  reduceAll<int,int>(*(comm.get()), Teuchos::EReductionType::REDUCE_MAX, rank, rankReduced); // for a single process, we except 0, but for multiple processes we expect to get the maximum rank
-  int numberOfProcesses = *rankReduced + 1; // process 1 is rank 0
-  // provide a final message which guarantees that the test will fail if any of the processes failed
+  int resultReduced;
+
+  // for a passed test all of these values should return 0 - 
+  // if any result is 1 this will reduce to 1 and the test will fail
+  reduceAll<int,int>(*comm, Teuchos::EReductionType::REDUCE_MAX, 1, 
+                     &result, &resultReduced); 
+
+  // provide a final message which guarantees that the test will fail 
+  // if any of the processes failed
   if (rank == 0) {
-    std::cout << "Test Driver with " << (*rankReduced) + 1 << " processes has reduced result code " << (*resultReduced) << " and is exiting in the " << ((*resultReduced == 0 ) ? "PASSED" : "FAILED") << " state." << std::endl;
+    std::cout << "Test Driver with " << comm->getSize() 
+              << " processes has reduced result code " << resultReduced
+              << " and is exiting in the " 
+              << ((resultReduced == 0 ) ? "PASSED" : "FAILED") << " state." 
+              << std::endl;
   }
 
   return result;
