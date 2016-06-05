@@ -181,9 +181,9 @@ namespace Tpetra {
   /// an object can be the target of an Import or Export, it can also
   /// be the source of an Import or Export.
   template <class Packet,
-            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type,
+            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
   class DistObject :
     virtual public SrcDistObject,

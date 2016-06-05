@@ -400,9 +400,9 @@ namespace Tpetra {
   /// product functions produce small dense matrices that are required
   /// by all images.  Replicated local objects handle these
   /// situations.
-  template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type>
+  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type>
   class Map : public Teuchos::Describable {
   public:
     //! @name Typedefs

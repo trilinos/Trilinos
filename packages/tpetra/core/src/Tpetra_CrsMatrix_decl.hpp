@@ -182,10 +182,10 @@ namespace Tpetra {
   /// object, that keeps the same source and target Map objects but
   /// has a different communication plan.  We have not yet implemented
   /// this optimization.
-  template <class Scalar = Details::DefaultTypes::scalar_type,
-            class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type,
+  template <class Scalar = ::Tpetra::Details::DefaultTypes::scalar_type,
+            class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
   class CrsMatrix :
     public RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>,

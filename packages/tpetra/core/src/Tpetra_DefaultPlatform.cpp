@@ -52,9 +52,9 @@ namespace Tpetra {
     using Teuchos::rcp;
     if (platform_.is_null ()) {
 #ifdef HAVE_TPETRA_MPI
-      platform_ = rcp (new MpiPlatform<Tpetra::Details::DefaultTypes::node_type> ());
+      platform_ = rcp (new MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> ());
 #else
-      platform_ = rcp (new SerialPlatform<Tpetra::Details::DefaultTypes::node_type> ());
+      platform_ = rcp (new SerialPlatform< ::Tpetra::Details::DefaultTypes::node_type> ());
 #endif
     }
     return *platform_;

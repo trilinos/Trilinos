@@ -211,7 +211,7 @@ namespace Tpetra {
     return comm_;
   }
 
-  Teuchos::RCP<MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::NodeType>
+  Teuchos::RCP<MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type>::NodeType>
   MpiPlatform<Tpetra::Details::DefaultTypes::node_type>::
   getNode () const
   {

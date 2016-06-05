@@ -62,9 +62,9 @@ namespace Details {
 /// \brief Common base class of Import and Export
 /// \warning This is an implementation detail of Tpetra.  We make no
 ///   promises of backwards compatibility with this class.
-template<class LO = DefaultTypes::local_ordinal_type,
-         class GO = DefaultTypes::global_ordinal_type,
-         class NT = DefaultTypes::node_type>
+template<class LO = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+         class GO = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+         class NT = ::Tpetra::Details::DefaultTypes::node_type>
 class Transfer : public Teuchos::Describable {
 public:
   //! Destructor (declared virtual for memory safety of derived classes).
