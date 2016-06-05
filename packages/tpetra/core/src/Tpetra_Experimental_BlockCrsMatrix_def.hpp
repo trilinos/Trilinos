@@ -412,13 +412,7 @@ public:
     // precaution.
     using Kokkos::parallel_for;
     using Kokkos::subview;
-    typedef local_ordinal_type LO;
     typedef typename decltype (ptr_)::non_const_value_type offset_type;
-    typedef Kokkos::View<typename OutVecType::non_const_value_type*,
-      Kokkos::LayoutRight,
-      device_type,
-      Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-      out_little_vec_type;
     typedef Kokkos::View<typename MatrixValuesType::const_value_type**,
       Kokkos::LayoutRight,
       device_type,
