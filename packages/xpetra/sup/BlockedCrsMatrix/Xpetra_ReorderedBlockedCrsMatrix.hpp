@@ -261,6 +261,8 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
     // extract leaf node
     Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
 
+    if (mat == Teuchos::null) return Teuchos::null;
+
     // check, whether leaf node is of type Xpetra::CrsMatrixWrap
     Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matwrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(matwrap != Teuchos::null) {
@@ -283,6 +285,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
       rbmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
       TEUCHOS_ASSERT(rbmat != Teuchos::null);
     }
+    TEUCHOS_ASSERT(mat->getNodeNumEntries() == rbmat->getNodeNumEntries());
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
@@ -328,17 +331,21 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
 
     rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
 
+    size_t cntNNZ = 0;
+
     if (rowSz == 0 && colSz > 0) {
       for(size_t j = 0; j < colSz; j++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
         Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowMgr, colSubMgr, bmat);
         rbmat->setMatrix(0,j,Teuchos::rcp_const_cast<Matrix>(submat));
+        if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
       }
     } else if (rowSz > 0 && colSz == 0) {
       for(size_t i = 0; i < rowSz; i++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
         Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowSubMgr, colMgr, bmat);
         rbmat->setMatrix(i,0,Teuchos::rcp_const_cast<Matrix>(submat));
+        if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
       }
     } else {
       for(size_t i = 0; i < rowSz; i++) {
@@ -347,9 +354,11 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
           Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
           Teuchos::RCP<const Matrix> submat = mergeSubBlocks(rowSubMgr, colSubMgr, bmat);
           rbmat->setMatrix(i,j,Teuchos::rcp_const_cast<Matrix>(submat));
+          if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
         }
       }
     }
+    TEUCHOS_ASSERT(rbmat->getNodeNumEntries() == cntNNZ);
   }
   rbmat->fillComplete();
   return rbmat;
@@ -383,6 +392,8 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
     // this matrix uses Thyra style GIDs as global row, range, domain and column indices
     Teuchos::RCP<Matrix> mat = bmat->getMatrix(rowleaf->GetIndex(), colleaf->GetIndex());
 
+    if(mat == Teuchos::null) return Teuchos::null; //std::cout << "Block " << rowleaf->GetIndex() << "," << colleaf->GetIndex() << " is zero" << std::endl;
+
     // check, whether leaf node is of type Xpetra::CrsMatrixWrap
     Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > matwrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(mat);
     if(matwrap != Teuchos::null) {
@@ -415,6 +426,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
       rbmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
       TEUCHOS_ASSERT(rbmat != Teuchos::null);
     }
+    TEUCHOS_ASSERT(mat->getNodeNumEntries() == rbmat->getNodeNumEntries());
   } else {
     // create the map extractors
     // we cannot create block matrix in thyra mode since merged maps might not start with 0 GID
@@ -473,17 +485,21 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
     // TODO matrix should have both rowMgr and colMgr??
     rbmat = Teuchos::rcp(new ReorderedBlockedCrsMatrix(rgMapExtractor,doMapExtractor, 33, rowMgr,bmat));
 
+    size_t cntNNZ = 0;
+
     if (rowSz == 0 && colSz > 0) {
       for(size_t j = 0; j < colSz; j++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
         Teuchos::RCP<const Matrix> submat = mergeSubBlocksThyra(rowMgr, colSubMgr, bmat);
         rbmat->setMatrix(0,j,Teuchos::rcp_const_cast<Matrix>(submat));
+        if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
       }
     } else if (rowSz > 0 && colSz == 0) {
       for(size_t i = 0; i < rowSz; i++) {
         Teuchos::RCP<const Xpetra::BlockReorderManager> rowSubMgr = rowMgr->GetBlock(Teuchos::as<int>(i));
         Teuchos::RCP<const Matrix> submat = mergeSubBlocksThyra(rowSubMgr, colMgr, bmat);
         rbmat->setMatrix(i,0,Teuchos::rcp_const_cast<Matrix>(submat));
+        if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
       }
     } else {
       for(size_t i = 0; i < rowSz; i++) {
@@ -492,9 +508,11 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > merg
           Teuchos::RCP<const Xpetra::BlockReorderManager> colSubMgr = colMgr->GetBlock(Teuchos::as<int>(j));
           Teuchos::RCP<const Matrix> submat = mergeSubBlocksThyra(rowSubMgr, colSubMgr, bmat);
           rbmat->setMatrix(i,j,Teuchos::rcp_const_cast<Matrix>(submat));
+          if(submat != Teuchos::null) cntNNZ += submat->getNodeNumEntries();
         }
       }
     }
+    TEUCHOS_ASSERT(rbmat->getNodeNumEntries() == cntNNZ);
   }
 
   rbmat->fillComplete();
@@ -511,7 +529,7 @@ Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > buil
     rbmat = mergeSubBlocksThyra(brm, brm, bmat);
   }
 
-  TEUCHOS_ASSERT(rbmat != Teuchos::null);
+  // TAW, 6/7/2016: rbmat might be Teuchos::null for empty blocks!
   return rbmat;
 }
 
