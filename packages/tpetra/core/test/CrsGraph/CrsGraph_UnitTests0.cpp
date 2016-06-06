@@ -692,7 +692,6 @@ namespace {
     using Teuchos::as;
     using std::endl;
     typedef Tpetra::CrsGraph<LO, GO, Node> GRAPH;
-    typedef Tpetra::global_size_t GST;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
