@@ -5,6 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers/BlockedTransfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers/BlockedSmoothers)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Utils)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../adapters)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Smoothers)
 
@@ -86,18 +87,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Amesos)
   APPEND_SET(SOURCES Smoothers/AmesosSmoother.cpp)
-  IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra OR NOT ${PACKAGE_NAME}_ENABLE_Amesos2)
-    IF (${PACKAGE_NAME}_ENABLE_Experimental)
-      APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
-    ENDIF()
-  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
-  IF (${PACKAGE_NAME}_ENABLE_Experimental)
-    APPEND_SET(SOURCES Smoothers/BlockedDirectSolver.cpp)
-  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
@@ -137,6 +130,16 @@ IF (${PACKAGE_NAME}_ENABLE_Zoltan AND TPL_ENABLE_MPI)
   )
 ENDIF()
 
+IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+  INCLUDE_DIRECTORIES(${yaml-cpp_INCLUDE_DIRS})
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Interface/YamlParameterList)
+  APPEND_SET(SOURCES yaml/YamlParameterList.cpp)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(MueLu_Yaml_cp
+    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/yaml/
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/yaml/
+    SOURCE_FILES Match1.yaml Match1.xml Match2.yaml Match2.xml Match3.yaml Match3.xml Arrays.yaml IllegalKeyString.yaml IntVsDouble.xml IntVsDouble.yaml MueLuConfig.yaml MueLuConfig.xml InconsistentArray.yaml
+  )
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
   TRIBITS_ADD_EXECUTABLE(

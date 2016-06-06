@@ -49,6 +49,10 @@ if (${PACKAGE_NAME}_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${DIR}/../../adapters/tpetra)
 ENDIF()
 
+IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+  INCLUDE_DIRECTORIES(YamlParameterList)
+ENDIF()
+
 ###############################################
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
