@@ -245,11 +245,10 @@ extern "C" {
   }
 
   /// Sets x as the "seed" for the pseudo-random number generator.
-  double random_seed(double x) {
+  void random_seed(double x) {
     int y = static_cast<int>(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
-    return 0.0;
   }
 
   /// Non-platform specific (pseudo) random number generator.
@@ -264,11 +263,7 @@ extern "C" {
   /// Non-platform specific (pseudo) random number generator.
   double random1(double seed) {
     random_seed(seed);
-    sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
-    sRandomRangeHighValue += sRandomRangeLowValue;
-    sRandomRangeLowValue += sRandomRangeHighValue;
-    int val = std::abs(sRandomRangeHighValue);
-    return double(val) / double(RAND_MAX);
+    return random0();
   }
 
   /// Returns the angle (given in radians) in degrees.

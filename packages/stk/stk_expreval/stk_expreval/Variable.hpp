@@ -394,8 +394,6 @@ public:
   /**
    * @brief Member function <b>getDefaultResolver</b> returns a reference to the
    * default resolver.
-   *
-   * @return a <b>Resolver</b> ...
    */
   static Resolver &getDefaultResolver();
 
