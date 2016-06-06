@@ -746,7 +746,6 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
 
-#ifdef TEMP_OFF
   // ======================================== //
   // first verify that we can get convergence //
   // with all point relaxation methods        //
@@ -870,7 +869,7 @@ int main(int argc, char *argv[])
     int Iters1= CompareLineSmoother(A,coord);    
     printf(" comparelinesmoother (coordinate) iters %d \n",Iters1);
   }	
-#endif
+
 
   // ================================= //
   // check if (entry) line smoothing works      //
@@ -880,8 +879,7 @@ int main(int argc, char *argv[])
     printf(" comparelinesmoother (entries) iters %d \n",Iters1);
   }			
 
-#ifdef TEST_OFF
- // ================================== //
+  // ================================== //
   // check if All singleton version of CompareLineSmoother    //
   // ================================== //
   {
@@ -903,7 +901,6 @@ int main(int argc, char *argv[])
   {
     TestPassed = TestPassed && TestTriDiVariableBlocking(A->Comm());
   }
-#endif
 
   // ============ //
   // final output //

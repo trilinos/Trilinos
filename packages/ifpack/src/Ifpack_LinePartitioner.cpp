@@ -153,7 +153,6 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
   int num_lines = 0;
 
   for(int i=0; i<N; i+=NumEqns) {
-    printf("Unknown %d (line %d)\n",i,num_lines);
     int nz=0;
     // Short circuit if I've already been blocked
     if(blockIndices[i] !=-1) continue;
@@ -182,23 +181,16 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
 
     Epetra_Util::Sort(true,neighbor_len,merit,0,0,1,&indices,0,0);
 
-    printf("-- Merit = ");
-    for(int k=0; k<neighbor_len; k++)
-      printf("%d(%10.1e) ",indices[k],merit[k]);
-    printf("\n");
-
     // Number myself
     for(int k=0; k<NumEqns; k++)
       blockIndices[i + k] = num_lines;
 
     // Fire off a neighbor line search (nearest neighbor)
     if(neighbor_len > 2 && merit[1] < tol*merit[neighbor_len-1]) {      
-      printf("- Adding unknown %d\n",indices[1]);
       local_automatic_line_search(NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
     }
     // Fire off a neighbor line search (second nearest neighbor)
     if(neighbor_len > 3 && merit[2] < tol*merit[neighbor_len-1]) {
-      printf("- Adding unknown %d\n",indices[2]);
       local_automatic_line_search(NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
     }
 
@@ -229,28 +221,6 @@ int Ifpack_LinePartitioner::ComputePartitions()
 
   // Use the auto partitioner 
   NumLocalParts_ = Compute_Blocks_AutoLine(&Partition_[0]);
-  
-
-
-  {
-    int NN = MaxNumEntries();
-    std::vector<int> cols(NN);
-    std::vector<double> vals(NN,0.0);
-    printf("*** DEBUG mode = %d***\n",mode_);
-    for(int i=0; i<NumMyRows(); i++) {
-      int n=0;
-      if(mode_==MATRIX_ENTRIES) Matrix_->ExtractMyRowCopy(i,NN,n,vals.data(),cols.data());
-      else Graph_->ExtractMyRowCopy(i,NN,n,cols.data());
-      printf("[%d] Part = %d Entries = [",i,Partition_[i]);
-      for(int j=0; j<n; j++)
-	printf("%3d(%6.1e) ",cols[j],vals[j]);
-      printf("]\n");
-    }
-
-  }
-
-
-
 
   // Resize Parts_
   Parts_.resize(NumLocalParts_);
