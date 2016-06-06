@@ -327,6 +327,8 @@ namespace NOX {
 
       void unscaleResidualAndJacobian() const;
 
+      void computeScaledSolution();
+
     protected:
 
       //! Problem interface
@@ -385,18 +387,21 @@ namespace NOX {
       //! Residual OutArgs
       mutable ::Thyra::ModelEvaluatorBase::OutArgs<double> out_args_;
 
-      /** \brief Optional wieghting vector for function scaling
+      /** \brief Optional wieghting vector for function scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
 
            This is pulled out of the initial guess vector
       */
       Teuchos::RCP<const ::Thyra::VectorBase<double> > weight_vec_;
+      //! Optional wieghting vector for solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
       Teuchos::RCP<const ::Thyra::VectorBase<double> > right_weight_vec_;
 
-      //! Inverse of weight vector used to unscale problem
+      //! Inverse of weight vector used to unscale function (left) scaling. NOX assumes that this vector can be updated in between nonlinear iterations.
       mutable Teuchos::RCP< ::Thyra::VectorBase<double> > inv_weight_vec_;
+      //! Inverse of weight vector used to unscale solution (right) scaling. NOX assumes that this vector will not change during an entire nonlinear solve.
       Teuchos::RCP< ::Thyra::VectorBase<double> > inv_right_weight_vec_;
 
-      mutable Teuchos::RCP<NOX::Abstract::Vector> scaled_x_vec_;
+      //! Scaled solution vector scaled by the 
+      mutable Teuchos::RCP<NOX::Thyra::Vector> scaled_x_vec_;
     };
 
   } // namespace LAPACK

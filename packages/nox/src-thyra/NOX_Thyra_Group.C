@@ -91,6 +91,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
     right_weight_vec_ = right_weight_vector;
     inv_right_weight_vec_ = right_weight_vec_->clone_v();
     ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
   }
 
   f_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
@@ -154,6 +155,9 @@ Group(const NOX::Thyra::Vector& initial_guess,
 
   if (nonnull(right_weight_vector)) {
     right_weight_vec_ = right_weight_vector;
+    inv_right_weight_vec_ = right_weight_vec_->clone_v();
+    ::Thyra::reciprocal(*right_weight_vec_, inv_right_weight_vec_.ptr());
+    scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
   }
 
   f_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*x_vec_, ShapeCopy));
@@ -197,6 +201,9 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
   if (nonnull(source.weight_vec_))
     weight_vec_ = source.weight_vec_;
 
+  if (nonnull(source.right_weight_vec_) && (type == NOX::DeepCopy))
+    scaled_x_vec_ = Teuchos::rcp(new NOX::Thyra::Vector(*source.scaled_x_vec_, type));
+
   in_args_ = model_->createInArgs();
   out_args_ = model_->createOutArgs();
 
@@ -219,8 +226,6 @@ NOX::Thyra::Group::Group(const NOX::Thyra::Group& source, NOX::CopyType type) :
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                "NOX Error - Copy type is invalid!");
   }
-
-
 }
 
 NOX::Thyra::Group::~Group()
@@ -279,6 +284,12 @@ NOX::Abstract::Group& NOX::Thyra::Group::operator=(const Group& source)
 
   if (nonnull(source.weight_vec_))
     weight_vec_ = source.weight_vec_;
+
+  if (nonnull(source.right_weight_vec_)) {
+    right_weight_vec_ = source.right_weight_vec_;
+    inv_right_weight_vec_ = source.inv_right_weight_vec_;
+    *scaled_x_vec_ = *source.scaled_x_vec_;    
+  }
 
   // If valid, this takes ownership of the shared Jacobian
   if (nonnull(shared_jacobian_))
@@ -358,6 +369,9 @@ void NOX::Thyra::Group::setX(const NOX::Thyra::Vector& y)
 {
   resetIsValidFlags();
   *x_vec_ = y;
+
+  if (nonnull(right_weight_vec_))
+      computeScaledSolution();
 }
 
 
@@ -380,6 +394,9 @@ void NOX::Thyra::Group::computeX(const NOX::Thyra::Group& grp,
 {
   this->resetIsValidFlags();
   x_vec_->update(1.0, *(grp.x_vec_), step, d);
+
+  if (nonnull(right_weight_vec_))
+      computeScaledSolution();
 }
 
 NOX::Abstract::Group::ReturnType NOX::Thyra::Group::computeF()
@@ -622,15 +639,10 @@ const NOX::Abstract::Vector& NOX::Thyra::Group::getX() const
 
 const NOX::Abstract::Vector& NOX::Thyra::Group::getScaledX() const
 { 
-  if(inv_right_weight_vec_!=Teuchos::null){
-    scaled_x_vec_ = x_vec_->clone();
-    NOX::Thyra::Vector scaling(inv_right_weight_vec_);
-    scaled_x_vec_->scale(scaling);
+  if(nonnull(inv_right_weight_vec_))
     return *scaled_x_vec_;
-  }
-  else {
+  else
     return *x_vec_;
-  }
 }
 
 const NOX::Abstract::Vector& NOX::Thyra::Group::getF() const
@@ -904,6 +916,13 @@ void NOX::Thyra::Group::unscaleResidualAndJacobian() const
     W_scaled->scaleRight(*inv_right_weight_vec_);
 
   }
+}
+
+void NOX::Thyra::Group::computeScaledSolution()
+{
+  *scaled_x_vec_ = *x_vec_;
+  NOX::Thyra::Vector scaling(inv_right_weight_vec_);
+  scaled_x_vec_->scale(scaling);  
 }
 
 Teuchos::RCP< const ::Thyra::ModelEvaluator<double> >
