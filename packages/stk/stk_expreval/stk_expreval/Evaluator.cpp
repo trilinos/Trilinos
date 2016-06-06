@@ -742,7 +742,6 @@ parseFunction(
   LexemVector::const_iterator rparen,
   LexemVector::const_iterator to)
 {
-
   if ((*from).getToken() != TOKEN_IDENTIFIER)
     throw std::runtime_error("syntax error parsing function");
 
@@ -832,7 +831,6 @@ parseFunctionArg(
 
   LexemVector::const_iterator endIterator = to;
 
-
   LexemVector::const_iterator it = from;
   while(it != to) {
     Token curToken = (*it).getToken();
@@ -918,16 +916,14 @@ Eval::Eval(
     m_expression(expression),
     m_syntaxStatus(false),
     m_parseStatus(false),
-    m_headNode(0)
+    m_headNode(nullptr)
 {}
-
 
 Eval::~Eval()
 {
-  for (std::vector<Node *>::iterator it = m_nodes.begin(); it != m_nodes.end(); ++it)
-    delete (*it);
+  for (auto& node : m_nodes)
+    delete node;
 }
-
 
 Node *
 Eval::newNode(
@@ -937,7 +933,6 @@ Eval::newNode(
   m_nodes.push_back(new_node);
   return new_node;
 }
-
 
 void
 Eval::syntax()
@@ -972,8 +967,8 @@ Eval::parse()
       if (!m_undefinedFunctionSet.empty()) {
         std::ostringstream strout;
         strout << "In expression '" << m_expression << "', the following functions are not defined:" << std::endl;
-        for (UndefinedFunctionSet::iterator it = m_undefinedFunctionSet.begin(); it != m_undefinedFunctionSet.end(); ++it)
-          strout << (*it) << std::endl;
+        for (const auto& it : m_undefinedFunctionSet)
+          strout << it << std::endl;
         throw std::runtime_error(strout.str());
       }
 
@@ -997,7 +992,6 @@ Eval::resolve()
     m_variableMap.getResolver().resolve(it);
   }
 }
-
 
 double
 Eval::evaluate() const

@@ -330,14 +330,12 @@ public:
   public:
     /**
      * Creates a new <b>Resolver</b> instance.
-     *
      */
     Resolver()
     {}
 
     /**
      * Destroys a <b>Resolver</b> instance.
-     *
      */
     virtual ~Resolver()
     {}
@@ -366,7 +364,6 @@ private:
 
   /**
    * @brief Class <b>DefaultResolver</b> implement a default resolver.
-   *
    */
   class DefaultResolver : public Resolver
   {
@@ -376,7 +373,6 @@ private:
 
     /**
      * Destroys a <b>DefaultResolver</b> instance.
-     *
      */
     virtual ~DefaultResolver()
     {}
