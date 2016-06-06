@@ -36,11 +36,13 @@
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Selector.hpp>
 
 namespace stk {
 namespace mesh {
 
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy);
+void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete);
 
 }} // namespace stk::mesh
 

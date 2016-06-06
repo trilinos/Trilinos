@@ -1,6 +1,7 @@
 #include "DestroyElements.hpp"
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -23,6 +24,12 @@ bool has_upward_connectivity(const stk::mesh::BulkData &bulk, stk::mesh::Entity 
 }
 
 void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy)
+{
+    stk::mesh::Selector orphansToDelete(bulk.mesh_meta_data().universal_part());
+    destroy_elements(bulk, elementsToDestroy, orphansToDelete);
+}
+
+void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elementsToDestroy, stk::mesh::Selector orphansToDelete)
 {
     bulk.modification_begin();
     stk::mesh::EntityVector downwardConnectivity;
@@ -50,7 +57,7 @@ void destroy_elements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector &elemen
     for(int i = numConnections-1; i >= 0; --i)
     {
         stk::mesh::Entity connectedEntity =  downwardConnectivity[i];
-        if(!has_upward_connectivity(bulk, connectedEntity))
+        if(!has_upward_connectivity(bulk, connectedEntity) && orphansToDelete(bulk.bucket(connectedEntity)))
             bulk.destroy_entity(connectedEntity);
     }
     bulk.modification_end();
