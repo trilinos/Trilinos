@@ -43,6 +43,9 @@
 #ifndef __Panzer_EpetraLinearObjFactory_decl_hpp__
 #define __Panzer_EpetraLinearObjFactory_decl_hpp__
 
+#define PANZER_USE_BLOCKED_EPETRA_LOF
+
+#ifndef PANZER_USE_BLOCKED_EPETRA_LOF
 #include <map>
 
 // Epetra includes
@@ -73,9 +76,6 @@ class EpetraLinearObjFactory : public LinearObjFactory<Traits>
                              , public ThyraObjFactory<double> {
 public:
 
-   EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                          const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
-                          bool useDiscreteAdjoint=false);
    EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                           const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
                           bool useDiscreteAdjoint=false);
@@ -216,23 +216,40 @@ public:
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
 
+   //! get the map from the matrix (included for migration to blocked epetra LOF)
+   const Teuchos::RCP<Epetra_Map> getMap(int) const { return getMap(); }
+
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getColMap() const;
+
+   virtual const Teuchos::RCP<Epetra_Map> getColMap(int) const { return getColMap(); }
 
    //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap() const;
 
    //! get the ghosted map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int) const { return getGhostedMap(); }
+
+   //! get the ghosted map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap() const;
+
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap(int) const { return getGhostedColMap(); }
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph() const;
 
+   //! get the graph of the crs matrix (included for migration to blocked epetra LOF)
+   const Teuchos::RCP<Epetra_CrsGraph> getGraph(int,int) const { return getGraph(); }
+
    //! get the ghosted graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGhostedGraph() const;
 
+   const Teuchos::RCP<Epetra_CrsGraph> getGhostedGraph(int,int) const { return getGhostedGraph(); }
+
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport() const;
+
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int ) const { return getGhostedImport(); }
 
    //! get importer for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport() const;
@@ -307,5 +324,18 @@ protected:
 };
 
 }
+
+#else
+
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
+
+namespace panzer {
+
+template <typename Traits,typename LocalOrdinalT>
+using EpetraLinearObjFactory = BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>;
+
+}
+
+#endif
 
 #endif

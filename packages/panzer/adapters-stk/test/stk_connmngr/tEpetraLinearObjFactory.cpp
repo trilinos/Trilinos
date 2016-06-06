@@ -113,6 +113,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
    int numProcs = stk_classic::parallel_machine_size(Comm);
    int myRank = stk_classic::parallel_machine_rank(Comm);
 
@@ -128,11 +130,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
-   Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
-   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
-   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
-   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
+   Teuchos::RCP<Epetra_Map> map = laFactory.getMap(0);
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap(0);
+   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
    std::vector<int> owned,ownedAndShared;
    dofManager->getOwnedIndices(owned);
@@ -222,6 +224,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
 
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
    int numProcs = stk_classic::parallel_machine_size(Comm);
    int myRank = stk_classic::parallel_machine_rank(Comm);
 
@@ -237,11 +241,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
-   Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
-   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
-   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
-   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
+   Teuchos::RCP<Epetra_Map> map = laFactory.getMap(0);
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap(0);
+   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
    std::vector<int> owned,ownedAndShared;
    dofManager->getOwnedIndices(owned);

@@ -58,6 +58,7 @@
 #include "Panzer_ParameterLibrary.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_ResponseMESupportBase.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
 
 #include "Thyra_VectorBase.hpp"
 
@@ -68,7 +69,6 @@
 namespace panzer {
 
   class FieldManagerBuilder;
-  template<typename, typename>  class EpetraLinearObjFactory;
   class EpetraLinearObjContainer;
   struct GlobalData;
 

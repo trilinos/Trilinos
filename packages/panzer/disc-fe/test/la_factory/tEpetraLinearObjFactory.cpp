@@ -83,92 +83,6 @@ RCP<Epetra_MultiVector> getEpetraMultiVector(RCP<Thyra::MultiVectorBase<double> 
    return Thyra::get_Epetra_MultiVector(eMap,vec);
 }
 
-#if 0
-TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, vector_constr)
-{
-
-   // build global (or serial communicator)
-   #ifdef HAVE_MPI
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-   #else
-      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
-   #endif
-
-   int myRank = eComm->MyPID();
-   int numProc = eComm->NumProc();
-
-   RCP<panzer::UniqueGlobalIndexer<short,int> > indexer 
-         = rcp(new unit_test::UniqueGlobalIndexer(myRank,numProc));
- 
-   // setup factory
-   panzer::EpetraLinearObjFactory<panzer::Traits,short> la_factory(eComm.getConst(),indexer);
-
-   // build vectors from factory
-   RCP<Thyra::MultiVectorBase<double> > ghostedVec = la_factory.getGhostedVector();
-   RCP<Thyra::MultiVectorBase<double> > vec = la_factory.getVector();
-   
-   // convert to epetra vectors
-   RCP<Epetra_Map> eMap = la_factory.getMap();
-   RCP<Epetra_Map> eGhostedMap = la_factory.getGhostedMap();
-   RCP<Epetra_MultiVector> ptrEVec = getEpetraMultiVector(vec,*eMap);
-   RCP<Epetra_MultiVector> ptrEGhostedVec = getEpetraMultiVector(ghostedVec,*eGhostedMap);
-   Epetra_Vector & eVec = *(*ptrEVec)(0);
-   Epetra_Vector & eGhostedVec = *(*ptrEGhostedVec)(0);
-
-   // check sizes of global epetra vectors
-   TEST_EQUALITY(eVec.NumVectors(),1);
-   TEST_EQUALITY(eVec.GlobalLength(),12);
-   TEST_EQUALITY(eVec.MyLength(),6);
-
-   TEST_EQUALITY(eGhostedVec.NumVectors(),1);
-   TEST_EQUALITY(eGhostedVec.GlobalLength(),16);
-   TEST_EQUALITY(eGhostedVec.MyLength(),8);
-
-   // fill epetra vectors
-   for(int i=0;i<eVec.MyLength();i++) 
-      eVec[i] = double(eMap->GID(i))+0.1;
-   for(int i=0;i<eGhostedVec.MyLength();i++) 
-      eGhostedVec[i] = double(eGhostedMap->GID(i))+0.1;
-
-   // run parallel assembly for global vector
-   eVec.PutScalar(-10000.0);
-   la_factory.ghostToGlobalVector(*ghostedVec,*vec);
-
-   // check global vector 
-   {
-      for(int i=0;i<eVec.MyLength();i++) {
-         int gid = eMap->GID(i); 
-   
-         if(gid==2 || gid==3 || gid==4 || gid==5) {
-            TEST_FLOATING_EQUALITY(eVec[i],2.0*(double(gid)+0.1),1e-14);
-         }
-         else {
-            TEST_FLOATING_EQUALITY(eVec[i],double(gid)+0.1,1e-14);
-         }
-      }
-   }
-
-   // construct ghosted vector
-   eGhostedVec.PutScalar(-10000.0);
-   la_factory.globalToGhostVector(*vec,*ghostedVec);
-
-   // check ghosted vector 
-   {
-      eVec.PutScalar(0.0);
-      for(int i=0;i<eGhostedVec.MyLength();i++) {
-         int gid = eGhostedMap->GID(i); 
-   
-         if(gid==2 || gid==3 || gid==4 || gid==5) {
-            TEST_FLOATING_EQUALITY(eGhostedVec[i],2.0*(double(gid)+0.1),1e-14);
-         }
-         else {
-            TEST_FLOATING_EQUALITY(eGhostedVec[i],double(gid)+0.1,1e-14);
-         }
-      }
-   }
-}
-#endif
-
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
 {
 
@@ -178,6 +92,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
    #else
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
+
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -191,7 +107,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, gather_scatter_constr)
  
    // setup factory
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),indexer));
 
    // build parameter lists for gather and scatters
    //////////////////////////////////////////////////////////////////
@@ -459,6 +375,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
  
@@ -469,7 +387,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, adjustDirichlet)
 
    // setup factory
    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),indexer));
 
    RCP<LinearObjContainer> ghosted_0   = la_factory->buildGhostedLinearObjContainer();
    RCP<LinearObjContainer> ghosted_1   = la_factory->buildGhostedLinearObjContainer();
@@ -574,6 +492,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
  
@@ -588,7 +508,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, initializeContianer)
  
    // setup factory
    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > la_factory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(eComm.getConst(),indexer));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),indexer));
 
    RCP<LinearObjContainer> container = la_factory->buildLinearObjContainer();
    RCP<LinearObjContainer> ghostedContainer = la_factory->buildGhostedLinearObjContainer();

@@ -75,8 +75,6 @@ using Teuchos::rcp;
 
 #include "TestEvaluators.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include <vector>
 #include <map>
 #include <string>
@@ -509,9 +507,9 @@ namespace panzer_stk_classic {
     using Teuchos::RCP;
 
   #ifdef HAVE_MPI
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
   #else
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = THIS IS WRONG PANZER DOESN'T SUPPORT SERIAL
   #endif
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
@@ -589,9 +587,8 @@ namespace panzer_stk_classic {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 

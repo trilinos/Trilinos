@@ -64,6 +64,11 @@
 #include "Panzer_GatherTangent_BlockedEpetra.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_ScatterDirichletResidual_BlockedEpetra.hpp"
+#include "Panzer_ScatterResidual_Epetra.hpp"
+#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
+#include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_GatherTangent_Epetra.hpp"
+#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ThyraObjFactory.hpp"
 #include "Panzer_HashUtils.hpp"
 
@@ -82,7 +87,7 @@ class BlockedEpetraLinearObjFactory : public LinearObjFactory<Traits>
 public:
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,int> > & gidProvider,
+                                 const Teuchos::RCP<const UniqueGlobalIndexerBase> & gidProvider,
                                  bool useDiscreteAdjoint=false);
 
    BlockedEpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
@@ -141,24 +146,43 @@ public:
    //! Use preconstructed scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatter() const
-   { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
+   { 
+     if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
+        !rowDOFManagerContainer_->containsBlockedDOFManager())
+       return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0],
+                                                                                      colDOFManagerContainer_->getFieldDOFManagers()[0],
+                                                                                      useDiscreteAdjoint_));
+     return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
                                                                                            colDOFManagerContainer_->getFieldDOFManagers(),
-                                                                                           useDiscreteAdjoint_)); }
+                                                                                           useDiscreteAdjoint_)); 
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
-   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); }
+   { 
+     if(!rowDOFManagerContainer_->containsBlockedDOFManager())
+       return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
+     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
-   { return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); }
+   { 
+     if(!rowDOFManagerContainer_->containsBlockedDOFManager())
+       return Teuchos::rcp(new GatherTangent_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
+     return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherDomain() const
-   { return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers())); }
+   { 
+     if(!colDOFManagerContainer_->containsBlockedDOFManager())
+       return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers()[0]));
+     return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(colDOFManagerContainer_->getFieldDOFManagers())); 
+   }
 
    //! Use preconstructed gather evaluators
    template <typename EvalT>
@@ -168,8 +192,14 @@ public:
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator> buildScatterDirichlet() const
-   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
-                                                                                                    colDOFManagerContainer_->getFieldDOFManagers())); }
+   { 
+     if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
+        !rowDOFManagerContainer_->containsBlockedDOFManager())
+       return Teuchos::rcp(new ScatterDirichletResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0],
+                                                                                               colDOFManagerContainer_->getFieldDOFManagers()[0])); 
+     return Teuchos::rcp(new ScatterDirichletResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
+                                                                                                    colDOFManagerContainer_->getFieldDOFManagers())); 
+   }
 
 /*************** Generic helper functions for container setup *******************/
    
@@ -185,21 +215,7 @@ public:
      * \note This will overwrite everything in the container and zero out values
      *       not requested.
      */
-   void initializeContainer(int mem,BlockedEpetraLinearObjContainer & loc) const;
-
-   /** Initialize container with a specific set of member values.
-     *
-     * \note This will overwrite everything in the container and zero out values
-     *       not requested.
-     */
    void initializeGhostedContainer(int,LinearObjContainer & loc) const;
-
-   /** Initialize container with a specific set of member values.
-     *
-     * \note This will overwrite everything in the container and zero out values
-     *       not requested.
-     */
-   void initializeGhostedContainer(int mem,BlockedEpetraLinearObjContainer & loc) const;
 
 /*************** Thyra based methods *******************/
 
@@ -221,10 +237,10 @@ public:
    // and now the ghosted versions
 
    //! Get the domain vector space (x and dxdt)
-   Teuchos::RCP<Thyra::VectorSpaceBase<double> > getGhostedThyraDomainSpace() const;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraDomainSpace() const;
 
    //! Get the range vector space (f)
-   Teuchos::RCP<Thyra::VectorSpaceBase<double> > getGhostedThyraRangeSpace() const;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getGhostedThyraRangeSpace() const;
 
    //! Get a domain vector
    Teuchos::RCP<Thyra::VectorBase<double> > getGhostedThyraDomainVector() const;
@@ -233,7 +249,7 @@ public:
    Teuchos::RCP<Thyra::VectorBase<double> > getGhostedThyraRangeVector() const;
 
    //! Get a Thyra operator
-   Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > getGhostedThyraMatrix() const;
+   Teuchos::RCP<Thyra::LinearOpBase<double> > getGhostedThyraMatrix() const;
 
 /*************** Epetra based methods *******************/
 
@@ -247,7 +263,7 @@ public:
    virtual const Teuchos::RCP<Epetra_Map> getGhostedMap(int i) const;
 
    //! get the ghosted map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> getColGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedColMap(int i) const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph(int i,int j) const;
@@ -259,13 +275,13 @@ public:
    virtual const Teuchos::RCP<Epetra_Import> getGhostedImport(int i) const;
 
    //! get importer for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Import> getColGhostedImport(int i) const;
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedColImport(int i) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getGhostedExport(int j) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Export> getColGhostedExport(int j) const;
+   virtual const Teuchos::RCP<Epetra_Export> getGhostedColExport(int j) const;
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Epetra_Comm> getEpetraComm() const;
@@ -288,6 +304,14 @@ public:
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
    { return colDOFManagerContainer_->getGlobalIndexer(); }
 
+   //! Get global indexers associated with the blocks
+   const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & getRangeGlobalIndexers() const
+   { return rowDOFManagerContainer_->getFieldDOFManagers(); }
+
+   //! Get global indexers associated with the blocks
+   const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > > & getDomainGlobalIndexers() const
+   { return colDOFManagerContainer_->getFieldDOFManagers(); }
+
    //! exclude a block pair from the matrix
    void addExcludedPair(int rowBlock,int colBlock);
 
@@ -295,6 +319,21 @@ public:
    void addExcludedPairs(const std::vector<std::pair<int,int> > & exPairs);
 
 protected:
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeContainer_internal(int mem,ThyraObjContainer<double> & loc) const;
+
+   /** Initialize container with a specific set of member values.
+     *
+     * \note This will overwrite everything in the container and zero out values
+     *       not requested.
+     */
+   void initializeGhostedContainer_internal(int mem,ThyraObjContainer<double> & loc) const;
+
 /*************** Utility class for handling blocked and nonblocked DOF managers *******************/
 
   /** This classes is mean to abstract away the different global indexer types and hide
@@ -398,11 +437,11 @@ protected:
    void globalToGhostThyraVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & in,
                                  const Teuchos::RCP<Thyra::VectorBase<double> > & out,bool col) const;
 
-   mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > rangeSpace_;
-   mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > domainSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
 
-   mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > ghostedRangeSpace_;
-   mutable Teuchos::RCP<Thyra::ProductVectorSpaceBase<double> > ghostedDomainSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedRangeSpace_;
+   mutable Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedDomainSpace_;
 
 /*************** Epetra based methods/members *******************/
 
@@ -417,16 +456,17 @@ protected:
    void ghostToGlobalEpetraMatrix(int blockRow,const Epetra_CrsMatrix & in,Epetra_CrsMatrix & out) const;
 
    // get the map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> buildEpetraMap(int i) const;
-   virtual const Teuchos::RCP<Epetra_Map> buildEpetraGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap(int i) const;
 
    // get the map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> buildEpetraColMap(int i) const;
-   virtual const Teuchos::RCP<Epetra_Map> buildEpetraColGhostedMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildColMap(int i) const;
+   virtual const Teuchos::RCP<Epetra_Map> buildColGhostedMap(int i) const;
 
    // get the graph of the crs matrix
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildEpetraGraph(int i,int j) const;
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildEpetraGhostedGraph(int i,int j) const;
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph(int i,int j) const;
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGhostedGraph(int i,int j,bool optimizeStorage) const;
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildFilteredGhostedGraph(int i,int j) const;
 
    // storage for Epetra graphs and maps
    Teuchos::RCP<const Epetra_Comm> eComm_;

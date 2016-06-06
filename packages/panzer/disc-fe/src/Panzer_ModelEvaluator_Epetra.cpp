@@ -77,7 +77,7 @@ class EpetraLOF_EOpFactory : public Teuchos::AbstractFactory<Epetra_Operator> {
    Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
 public:
     EpetraLOF_EOpFactory(const panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof)
-       : W_graph_(lof.getGraph()) {}
+       : W_graph_(lof.getGraph(0,0)) {}
     
     virtual Teuchos::RCP<Epetra_Operator> create() const
     { return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_)); }
@@ -167,7 +167,7 @@ void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObj
                      "panzer::ModelEvaluator_Epetra::initializeEpetraObjs: The response library "
                      "was not correctly initialized before calling initializeEpetraObjs.");
 
-  map_x_ = lof.getMap();
+  map_x_ = lof.getMap(0);
   x0_ = rcp(new Epetra_Vector(*map_x_));
   x_dot_init_ = rcp(new Epetra_Vector(*map_x_));
   x_dot_init_->PutScalar(0.0);
