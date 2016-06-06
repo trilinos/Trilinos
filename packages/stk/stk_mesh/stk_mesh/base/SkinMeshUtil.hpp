@@ -8,6 +8,7 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ParallelInfoForGraph.hpp>
+#include <stk_mesh/base/SideSetEntry.hpp>
 #include <vector>
 
 namespace stk {
@@ -42,11 +43,9 @@ private:
     std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId,
                                                       int numElemSides);
 
-    std::vector<int> get_sides_for_skinning(const stk::mesh::Selector& skinSelector,
-                                            const stk::mesh::Bucket& bucket,
+    std::vector<int> get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                             stk::mesh::Entity element,
-                                            stk::mesh::impl::LocalId localId,
-                                            const stk::mesh::Selector* airSelector = nullptr);
+                                            stk::mesh::impl::LocalId localId);
 
     void mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
                                 std::vector<bool> &isOnlyConnectedRemotely);
@@ -59,9 +58,10 @@ private:
                                            std::vector<bool> &isOnlyConnectedRemotely);
 
     stk::mesh::ElemElemGraph& eeGraph;
-    const stk::mesh::Selector& skinSelector;
+    stk::mesh::Selector skinSelector;
     stk::mesh::impl::ParallelSelectedInfo remoteSkinSelector;
-    const stk::mesh::Selector* airSelector;
+    const bool useAirSelector = false;
+    stk::mesh::Selector airSelector;
     stk::mesh::impl::ParallelSelectedInfo remoteAirSelector;
 };
 
