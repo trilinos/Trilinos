@@ -52,6 +52,7 @@ ${PAPER}.bbl: ${PAPER}.aux
 	${BTEX} ${PAPER}
 
 ${PAPER}.aux: ${PAPER}.tex ${PARTS} force
+	grep Trilinos_VERSION_STRING ../../../../Version.cmake | cut -f 2 -d \" > version.tex
 	${TEX} ${PAPER}
 
 force:
@@ -66,4 +67,4 @@ tarfile:
 	compress ${PAPER}.tar
 
 clean:
-	/bin/rm -f ${PAPER}.pdf ${PAPER}.ps ${PAPER}.dj ${PAPER}.dvi *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.tar *.tar.Z ${PAPER}.out
+	/bin/rm -f ${PAPER}.pdf ${PAPER}.ps ${PAPER}.dj ${PAPER}.dvi *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.tar *.tar.Z ${PAPER}.out version.tex
