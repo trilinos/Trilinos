@@ -1,4 +1,4 @@
-#ifndef __TACHO_CHOL_UPPER_UNBLOCKED__HPP__
+#ifndef __TACHO_CHOL_UPPER_UNBLOCKED_HPP__
 #define __TACHO_CHOL_UPPER_UNBLOCKED_HPP__
 
 /// \file Tacho_Chol_Upper_Unblocked.hpp
