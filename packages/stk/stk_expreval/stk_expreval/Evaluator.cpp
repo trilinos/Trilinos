@@ -305,7 +305,7 @@ parseStatements(
   LexemVector::const_iterator	to)
 {
   if ((*from).getToken() == TOKEN_END)
-    return NULL;
+    return nullptr;
 
   if ((*from).getToken() == TOKEN_SEMI)
     return parseStatements(eval, from + 1, to);
@@ -750,7 +750,7 @@ parseFunction(
 
   const std::string &function_name = (*from).getString();
 
-  CFunctionBase *c_function = NULL;
+  CFunctionBase *c_function = nullptr;
   CFunctionMap::iterator it = getCFunctionMap().find(function_name);
   Node *function = eval.newNode(OPCODE_FUNCTION);
   // only 1 function found with that function name.
@@ -822,7 +822,7 @@ parseFunctionArg(
   LexemVector::const_iterator	to)
 {
   if (from == to) {
-    return NULL;
+    return nullptr;
   }
 
   //

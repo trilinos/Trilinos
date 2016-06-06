@@ -235,12 +235,12 @@ extern "C" {
 
   /// Return the current time
   double current_time() {
-    return static_cast<double>(::time(NULL));
+    return static_cast<double>(::time(nullptr));
   }
 
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
   static double randomize() {
-    std::srand(::time(NULL));
+    std::srand(::time(nullptr));
     return 0.0;
   }
 
