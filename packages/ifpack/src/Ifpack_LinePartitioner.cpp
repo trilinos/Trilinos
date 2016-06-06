@@ -46,6 +46,25 @@
 #include "Ifpack_LinePartitioner.h"
 #include "Ifpack_Graph.h"
 #include "Epetra_Util.h"
+#include <cfloat>
+
+// ============================================================================
+
+inline double compute_distance_coordinates(double x0, double y0, double z0, int nn, const double*xvals,const double*yvals,const double*zvals) {
+  double mydist=0.0;
+  if(xvals) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
+  if(yvals) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
+  if(zvals) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
+  return sqrt(mydist);
+}  
+
+inline double compute_distance_matrix_entries(const double *vals, int id, int NumEqns) {
+  double sum=0.0;
+  for(int i=0; i<NumEqns; i++)
+    sum+=std::abs(vals[id+i]);
+  return sum;
+}
+
 
 // ============================================================================
 inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int * blockIndices, int last, int next, int LineID, double tol, int *itemp, double * dtemp) const {
@@ -56,15 +75,18 @@ inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int
   int allocated_space = MaxNumEntries();
   int * cols    = itemp;
   int * indices = &itemp[allocated_space];
-  double * dist = dtemp;
-
+  double * merit= dtemp;
+  double * vals = &dtemp[allocated_space];
 
   while (blockIndices[next] == -1) {
     // Get the next row
     int n=0;
     int neighbors_in_line=0;
 
-    Graph_->ExtractMyRowCopy(next,allocated_space,n,cols);
+    if(mode_==MATRIX_ENTRIES) Matrix_->ExtractMyRowCopy(next,allocated_space,n,vals,cols);
+    else Graph_->ExtractMyRowCopy(next,allocated_space,n,cols);
+
+    // Coordinate distance info
     double x0 = (xvals) ? xvals[next/NumEqns] : 0.0;
     double y0 = (yvals) ? yvals[next/NumEqns] : 0.0;
     double z0 = (zvals) ? zvals[next/NumEqns] : 0.0;
@@ -72,14 +94,16 @@ inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int
     // Calculate neighbor distances & sort
     int neighbor_len=0;
     for(int i=0; i<n; i+=NumEqns) {
-      double mydist = 0.0;
       if(cols[i] >=N) continue; // Check for off-proc entries
       int nn = cols[i] / NumEqns;
-      if(blockIndices[nn]==LineID) neighbors_in_line++;
-      if(xvals) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
-      if(yvals) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
-      if(zvals) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
-      dist[neighbor_len] = sqrt(mydist);
+      if(blockIndices[nn]==LineID) neighbors_in_line++;      
+      if(mode_==COORDINATES) merit[neighbor_len] = compute_distance_coordinates(x0,y0,z0,nn,xvals,yvals,zvals);
+      else {
+	merit[neighbor_len] =  - compute_distance_matrix_entries(vals,i,NumEqns); // Make this negative here, so we can use the same if tests at coordinates
+	// Boost the diagonal here to ensure it goes first
+	if(cols[i]==next) merit[neighbor_len] = -DBL_MAX;
+      }
+
       indices[neighbor_len]=cols[i];
       neighbor_len++;
     }
@@ -92,13 +116,13 @@ inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int
       blockIndices[next + k] = LineID;
     
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal))
-    Epetra_Util::Sort(true,neighbor_len,dist,0,0,1,&indices,0,0);
+    Epetra_Util::Sort(true,neighbor_len,merit,0,0,1,&indices,0,0);
 
-    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
+    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && merit[1]  < tol*merit[neighbor_len-1]) {
       last=next;
       next=indices[1];
     }
-    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
+    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && merit[2] < tol*merit[neighbor_len-1]) {
       last=next;
       next=indices[2];
     }
@@ -119,49 +143,62 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
     
   int * cols    = new int[2*allocated_space];
   int * indices = &cols[allocated_space];
-  double * dist = new double[allocated_space];
+  double * merit = new double[2*allocated_space];
+  double * vals = &merit[allocated_space];
 
   int * itemp   = new int[2*allocated_space];
-  double *dtemp = new double[allocated_space];
+  double *dtemp = new double[2*allocated_space];
+
 
   int num_lines = 0;
 
   for(int i=0; i<N; i+=NumEqns) {
+    printf("Unknown %d (line %d)\n",i,num_lines);
     int nz=0;
     // Short circuit if I've already been blocked
     if(blockIndices[i] !=-1) continue;
 
     // Get neighbors and sort by distance
-    Graph_->ExtractMyRowCopy(i,allocated_space,nz,cols);
+    if(mode_==MATRIX_ENTRIES) Matrix_->ExtractMyRowCopy(i,allocated_space,nz,vals,cols);
+    else Graph_->ExtractMyRowCopy(i,allocated_space,nz,cols);
+
     double x0 = (xvals) ? xvals[i/NumEqns] : 0.0;
     double y0 = (yvals) ? yvals[i/NumEqns] : 0.0;
     double z0 = (zvals) ? zvals[i/NumEqns] : 0.0;
 
     int neighbor_len=0;
     for(int j=0; j<nz; j+=NumEqns) {
-      double mydist = 0.0;
       int nn = cols[j] / NumEqns;
       if(cols[j] >=N) continue; // Check for off-proc entries
-      if(xvals) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
-      if(yvals) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
-      if(zvals) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
-      dist[neighbor_len] = sqrt(mydist);
-      indices[neighbor_len]=cols[j];
+      if(mode_==COORDINATES) merit[neighbor_len] = compute_distance_coordinates(x0,y0,z0,nn,xvals,yvals,zvals);
+      else {
+	merit[neighbor_len] =  - compute_distance_matrix_entries(vals,j,NumEqns); // Make this negative here, so we can use the same if tests at coordinates
+	// Boost the diagonal here to ensure it goes first
+	if(cols[j]==i)   merit[neighbor_len] = -DBL_MAX;
+      }
+      indices[neighbor_len] = cols[j];
       neighbor_len++;
     }
 
-    Epetra_Util::Sort(true,neighbor_len,dist,0,0,1,&indices,0,0);
+    Epetra_Util::Sort(true,neighbor_len,merit,0,0,1,&indices,0,0);
+
+    printf("-- Merit = ");
+    for(int k=0; k<neighbor_len; k++)
+      printf("%d(%10.1e) ",indices[k],merit[k]);
+    printf("\n");
 
     // Number myself
     for(int k=0; k<NumEqns; k++)
       blockIndices[i + k] = num_lines;
 
     // Fire off a neighbor line search (nearest neighbor)
-    if(neighbor_len > 2 && dist[1]/dist[neighbor_len-1] < tol) {
+    if(neighbor_len > 2 && merit[1] < tol*merit[neighbor_len-1]) {      
+      printf("- Adding unknown %d\n",indices[1]);
       local_automatic_line_search(NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
     }
     // Fire off a neighbor line search (second nearest neighbor)
-    if(neighbor_len > 3 && dist[2]/dist[neighbor_len-1] < tol) {
+    if(neighbor_len > 3 && merit[2] < tol*merit[neighbor_len-1]) {
+      printf("- Adding unknown %d\n",indices[2]);
       local_automatic_line_search(NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
     }
 
@@ -170,7 +207,7 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
   
   // Cleanup
   delete [] cols;
-  delete [] dist;
+  delete [] merit;
   delete [] itemp;
   delete [] dtemp;
 
@@ -180,7 +217,7 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
 int Ifpack_LinePartitioner::ComputePartitions()
 {
   // Sanity Checks
-  if(!xcoord_ && !ycoord_ && !zcoord_)  IFPACK_CHK_ERR(-1);
+  if(mode_==COORDINATES &&  !xcoord_ && !ycoord_ && !zcoord_)  IFPACK_CHK_ERR(-1);
   if((int)Partition_.size() != NumMyRows())  IFPACK_CHK_ERR(-2);
 
   // Short circuit
@@ -193,6 +230,28 @@ int Ifpack_LinePartitioner::ComputePartitions()
   // Use the auto partitioner 
   NumLocalParts_ = Compute_Blocks_AutoLine(&Partition_[0]);
   
+
+
+  {
+    int NN = MaxNumEntries();
+    std::vector<int> cols(NN);
+    std::vector<double> vals(NN,0.0);
+    printf("*** DEBUG mode = %d***\n",mode_);
+    for(int i=0; i<NumMyRows(); i++) {
+      int n=0;
+      if(mode_==MATRIX_ENTRIES) Matrix_->ExtractMyRowCopy(i,NN,n,vals.data(),cols.data());
+      else Graph_->ExtractMyRowCopy(i,NN,n,cols.data());
+      printf("[%d] Part = %d Entries = [",i,Partition_[i]);
+      for(int j=0; j<n; j++)
+	printf("%3d(%6.1e) ",cols[j],vals[j]);
+      printf("]\n");
+    }
+
+  }
+
+
+
+
   // Resize Parts_
   Parts_.resize(NumLocalParts_);
   return(0);

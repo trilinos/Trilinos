@@ -293,6 +293,47 @@ int CompareLineSmoother(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos
 
   return(AztecOOSolver.NumIters());
 }
+
+
+// ====================================================================== 
+int CompareLineSmootherEntries(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
+{
+  Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
+  Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
+  LHS.PutScalar(0.0); RHS.Random();
+
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
+
+  Teuchos::ParameterList List;
+  List.set("relaxation: damping factor", 1.0);
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: sweeps",1);
+  List.set("partitioner: overlap",0);
+  List.set("partitioner: type", "line");
+  List.set("partitioner: line mode","matrix entries");
+  List.set("partitioner: line detection threshold",10.0);
+
+  RHS.PutScalar(1.0);
+  LHS.PutScalar(0.0);
+
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(&*A);
+  Prec.SetParameters(List);
+  Prec.Compute();
+
+  // set AztecOO solver object
+  AztecOO AztecOOSolver(Problem);
+  AztecOOSolver.SetAztecOption(AZ_solver,Solver);
+  if (verbose)
+    AztecOOSolver.SetAztecOption(AZ_output,32);
+  else
+    AztecOOSolver.SetAztecOption(AZ_output,AZ_none);
+  AztecOOSolver.SetPrecOperator(&Prec);
+
+  AztecOOSolver.Iterate(2550,1e-5);
+
+  return(AztecOOSolver.NumIters());
+}
+
 // ====================================================================== 
 int AllSingle(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, Teuchos::RCP<Epetra_MultiVector> coord)
 {
@@ -705,6 +746,7 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
 
+#ifdef TEMP_OFF
   // ======================================== //
   // first verify that we can get convergence //
   // with all point relaxation methods        //
@@ -822,13 +864,23 @@ int main(int argc, char *argv[])
   }
 
   // ================================== //
-  // check if line smoothing works      //
+  // check if (coordinate) line smoothing works      //
   // ================================== //
   {
-    int Iters1=
-    CompareLineSmoother(A,coord);    
-    printf(" comparelinesmoother iters %d \n",Iters1);
-  }				
+    int Iters1= CompareLineSmoother(A,coord);    
+    printf(" comparelinesmoother (coordinate) iters %d \n",Iters1);
+  }	
+#endif
+
+  // ================================= //
+  // check if (entry) line smoothing works      //
+  // ================================== //
+  {
+    int Iters1= CompareLineSmootherEntries(A);    
+    printf(" comparelinesmoother (entries) iters %d \n",Iters1);
+  }			
+
+#ifdef TEST_OFF
  // ================================== //
   // check if All singleton version of CompareLineSmoother    //
   // ================================== //
@@ -851,7 +903,7 @@ int main(int argc, char *argv[])
   {
     TestPassed = TestPassed && TestTriDiVariableBlocking(A->Comm());
   }
-
+#endif
 
   // ============ //
   // final output //
