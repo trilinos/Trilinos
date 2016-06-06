@@ -369,23 +369,15 @@ extern "C" {
   /// Weibull distribution probability distribution function.
   double weibull_pdf(double x, double shape, double scale)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     weibull_dist weibull1(shape, scale);
     return boost::math::pdf(weibull1, x);
-#endif
   }
 
   /// Normal (Gaussian) distribution probability distribution function.
   double normal_pdf(double x, double mean, double standard_deviation)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     normal_dist normal1(mean, standard_deviation);
     return boost::math::pdf(normal1, x);
-#endif
   }
 
   /// Uniform distribution probability distribution function.
@@ -406,30 +398,18 @@ extern "C" {
   /// Gamma continuous probability distribution function.
   inline double gamma_pdf(double x, double shape, double scale)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::pdf(gamma_dist(shape,scale), x);
-#endif
   }
 
   inline double phi(double beta)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::pdf(normal_dist(0.,1.), beta);
-#endif
   }
 
   /// Returns a probability < 0.5 for negative beta and a probability > 0.5 for positive beta.
   inline double Phi(double beta)
   {
-#if defined(__PATHSCALE__)
-    return 0.0;
-#else
     return boost::math::cdf(normal_dist(0.,1.), beta);
-#endif
   }
 
   inline double bounded_normal_pdf(double x, double mean, double std_dev, double lwr, double upr)
