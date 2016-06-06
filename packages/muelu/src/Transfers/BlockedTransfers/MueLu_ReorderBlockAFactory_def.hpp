@@ -81,6 +81,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReorderBlockAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+    FactoryMonitor m(*this, "ReorderBlockA factory", currentLevel);
+
     const ParameterList& pL = GetParameterList();
     std::string reorderStr = pL.get<std::string>("Reorder Type");
 
@@ -88,8 +90,10 @@ namespace MueLu {
     RCP<BlockedCrsMatrix> A   = rcp_dynamic_cast<BlockedCrsMatrix>(Ain);
 
     TEUCHOS_TEST_FOR_EXCEPTION(A.is_null(),     Exceptions::BadCast,      "Input matrix A is not a BlockedCrsMatrix.");
+    GetOStream(Statistics1) << "Got a " << A->Rows() << "x" << A->Cols() << " blocked operator as input" << std::endl;
 
     Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString(reorderStr);
+    GetOStream(Debug) << "Reordering A using " << brm->toString() << std::endl;
 
     Teuchos::RCP<const ReorderedBlockedCrsMatrix> brop =
         Teuchos::rcp_dynamic_cast<const ReorderedBlockedCrsMatrix>(Xpetra::buildReorderedBlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(brm, A));
