@@ -197,7 +197,7 @@ MeshData parse_input(const std::string& meshDescription)
         size_t userLineNumber = lineI+1;
         std::string line = make_upper_case(remove_spaces(lines[lineI]));
         const std::vector<std::string> tokens = split(line,',');
-        ThrowRequireMsg(tokens.size()>=4, "Error!  Each line must contain the following fields (with at least one node):  Processor, Element Topology, GlobalId, NodeIds.  Error on line " << userLineNumber << ".");
+        ThrowRequireMsg(tokens.size()>=4, "Error!  Each line must contain the following fields (with at least one node):  Processor, GlobalId, Element Topology, NodeIds.  Error on line " << userLineNumber << ".");
         ElementData elementData;
         elementData.proc = std::stoi(tokens[0]);
         elementData.identifier = static_cast<stk::mesh::EntityId>(std::stoi(tokens[1]));
