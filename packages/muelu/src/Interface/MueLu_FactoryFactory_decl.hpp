@@ -695,8 +695,11 @@ namespace MueLu {
       // create a new blocked smoother
       RCP<T> bs = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
-      // important: set block factory for A here! TODO think about this in more detail
-      bs->SetFactory("A", MueLu::NoFactory::getRCP());
+      // important: set block factory for A here!
+      // TAW: 7/6/2016: We should not need to set/hardcode the blocked operator here.
+      //                The user might want to overwrite this in the xml file, so just
+      //                use what is declared as "A"
+      //bs->SetFactory("A", MueLu::NoFactory::getRCP());
 
       for (int i = 0; i<Teuchos::as<int>(facManagers.size()); i++) {
         bs->AddFactoryManager(facManagers[i],i);
