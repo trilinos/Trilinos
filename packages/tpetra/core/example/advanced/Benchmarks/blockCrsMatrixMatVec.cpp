@@ -521,7 +521,6 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
 
   // We're filling on the host, so generate random numbers on the host.
   typedef Kokkos::Random_XorShift64_Pool<host_execution_space> pool_type;
-  typedef pool_type::generator_type generator_type;
 
   Teuchos::OSTab tab0 (out);
   out << "Create BlockCrsMatrix for "
