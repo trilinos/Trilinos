@@ -137,7 +137,7 @@ TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
 template<class Scalar>
 void TimeStepControl<Scalar>::getNextTimeStep(
   const RCP<SolutionHistory<Scalar> > & solutionHistory,
-  const bool stepperStatus, bool & integratorStatus) const
+  Status & integratorStatus) const
 {
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   RCP<SolutionStateMetaData<Scalar> > metaData = workingState->metaData;
@@ -148,6 +148,8 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   int & order = metaData->order;
   Scalar & dt = metaData->dt;
   bool & output = metaData->output;
+
+  RCP<StepperState<Scalar> > stepperState = workingState->stepperState;
 
   output = false;
 
@@ -163,7 +165,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   if (stepType == CONSTANT_STEP_SIZE) {
 
     // Stepper failure
-    if (stepperStatus != true) {
+    if (stepperState->stepperStatus == Status::FAILED) {
       if (order+1 <= orderMax) {
         order++;
         RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -177,7 +179,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
              << "or order!\n"
              << "    Time step type == CONSTANT_STEP_SIZE\n"
              << "    order = " << order << std::endl;
-        integratorStatus = false;
+        integratorStatus = FAILED;
         return;
       }
     }
@@ -200,7 +202,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
              << "  order = " << order
              << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="<<errorMaxAbs<<")"
              << std::endl;
-        integratorStatus = false;
+        integratorStatus = FAILED;
         return;
       }
     }
@@ -223,7 +225,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
              << "  order = " << order
              << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="<<errorMaxRel<<")"
              << std::endl;
-        integratorStatus = false;
+        integratorStatus = FAILED;
         return;
       }
     }
@@ -268,7 +270,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   } else { // VARIABLE_STEP_SIZE
 
     // \todo The following controls should be generalized to plugable options.
-    if (stepperStatus != true) dt /=2;
+    if (stepperState->stepperStatus == Status::FAILED) dt /=2;
     if (errorAbs > errorMaxAbs) dt /= 2;
     if (errorRel > errorMaxRel) dt /= 2;
     if (order < orderMin) dt *= 2;

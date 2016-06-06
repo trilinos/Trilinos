@@ -81,7 +81,7 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const;
 
     /// Initialize the working state
-    void initWorkingState(const bool stepperStatus);
+    void initWorkingState();
 
     /// Promote the working state to current state
     void promoteWorkingState();

@@ -38,9 +38,8 @@ SolutionState<Scalar>::SolutionState(
   const int    order_,
   const int    nFailures_,
   const int    nConsecutiveFailures_,
-  const SolutionStatus status_,
+  const Status solutionStatus_,
   const bool   output_,
-  const bool   isAccepted_,
   const bool   isInterpolated_,
   const bool   isRestartable_,
   const Scalar accuracy_,
@@ -55,7 +54,7 @@ SolutionState<Scalar>::SolutionState(
 {
   metaData = Teuchos::rcp(new SolutionStateMetaData<Scalar> (time_,
       dt_, iStep_, errorAbs_, errorRel_, order_, nFailures_,
-      nConsecutiveFailures_, status_, output_, isAccepted_,
+      nConsecutiveFailures_, solutionStatus_, output_,
       isRestartable_, isInterpolated_, accuracy_));
 }
 

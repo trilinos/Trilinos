@@ -45,9 +45,9 @@ public:
     /// Advance the solution to timeFinal, and return true if successful.
     bool advanceTime(const Scalar timeFinal);
     /// Only accept step after meeting time step criteria.
-    void acceptTimeStep(bool & stepperStatus, bool & integratorStatus);
+    void acceptTimeStep();
     /// Perform tasks after end of integrator.
-    void endIntegrator(bool stepperStatus, bool integratorStatus) const;
+    void endIntegrator();
   //@}
 
   /// \name Accessor methods
@@ -101,6 +101,12 @@ protected:
   Teuchos::RCP<Teuchos::Time>  stepperTimer;
 
   std::vector<int>    outputScreenIndices; ///< Vector of screen output indices.
+
+  /** The integratorStatus is primarily in the WORKING Status, and
+   *  PASSED/FAILED are noted at the end of the run.  A FAILED value
+   *  is used to jump out of the time-integration loop.
+   */
+  Status integratorStatus;
 };
 } // namespace Tempus
 

@@ -54,7 +54,8 @@ public:
   /// \name Basic stepper methods
   //@{
     /// Take the specified timestep, dt, and return true if successful.
-    virtual bool takeStep(const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
+    virtual void takeStep(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
     virtual void setStepperState(
       const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState) = 0;

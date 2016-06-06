@@ -49,7 +49,7 @@ public:
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
     const RCP<SolutionHistory<Scalar> > & solutionHistory,
-    const bool stepperStatus, bool & integratorStatus) const;
+    Status & integratorStatus) const;
 
   /** \brief Check if time is within minimum and maximum time. */
   virtual bool timeInRange(const Scalar time) const;

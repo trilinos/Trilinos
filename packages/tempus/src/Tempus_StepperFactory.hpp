@@ -19,18 +19,20 @@ enum StepperType {
   FORWARD_EULER
 };
 
-static std::string ForwardEuler_name = "Forward Euler";
-static std::string Stepper_name      = "Stepper";
-static std::string Stepper_default   = ForwardEuler_name;
+static std::string ForwardEuler_name  = "Forward Euler";
+static std::string Stepper_name       = "Stepper";
+static std::string Stepper_default    = ForwardEuler_name;
 
 Teuchos::Array<std::string> Stepper_names = Teuchos::tuple<std::string>(
-    ForwardEuler_name);
+  ForwardEuler_name);
 
 const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<StepperType> >
 StepperValidator = Teuchos::rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<StepperType>(
     Stepper_names,
-    Teuchos::tuple<Tempus::StepperType>(FORWARD_EULER), Stepper_name));
+    Teuchos::tuple<Tempus::StepperType>(
+      FORWARD_EULER),
+    Stepper_name));
 
 
 const std::string toString(const StepperType s)

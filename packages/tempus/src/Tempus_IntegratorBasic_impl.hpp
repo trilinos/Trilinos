@@ -52,6 +52,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   RCP<ParameterList>                              pList_,
   const RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver)
+     : integratorStatus (WORKING)
 {
 
   // Create classes from nested blocks prior to setParameters call.
@@ -169,6 +170,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
        << "============================================================================\n"
        << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
        << std::endl;
+  integratorStatus = WORKING;
 }
 
 
@@ -178,10 +180,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
   startIntegrator();
   integratorObserver->observeStartIntegrator();
 
-  bool integratorStatus = true;
-  bool stepperStatus = true;
-
-  while (integratorStatus == true and
+  while (integratorStatus == WORKING and
          timeStepControl->timeInRange (solutionHistory->getCurrentTime()) and
          timeStepControl->indexInRange(solutionHistory->getCurrentIndex())){
 
@@ -189,51 +188,49 @@ bool IntegratorBasic<Scalar>::advanceTime()
     stepperTimer->start();
     integratorObserver->observeStartTimeStep();
 
-    solutionHistory->initWorkingState(stepperStatus);
+    solutionHistory->initWorkingState();
 
-    timeStepControl->getNextTimeStep(solutionHistory, stepperStatus,
-                                     integratorStatus);
+    timeStepControl->getNextTimeStep(solutionHistory, integratorStatus);
 
-    integratorObserver->observeNextTimeStep(stepperStatus, integratorStatus);
+    integratorObserver->observeNextTimeStep(integratorStatus);
 
-    if (integratorStatus != true) break;
+    if (integratorStatus == FAILED) break;
 
     integratorObserver->observeBeforeTakeStep();
 
-    stepperStatus = stepper->takeStep(solutionHistory);
+    stepper->takeStep(solutionHistory);
 
     integratorObserver->observeAfterTakeStep();
 
     stepperTimer->stop();
-    acceptTimeStep(stepperStatus, integratorStatus);
-    integratorObserver->observeAcceptedTimeStep(stepperStatus,integratorStatus);
+    acceptTimeStep();
+    integratorObserver->observeAcceptedTimeStep(integratorStatus);
   }
 
-  endIntegrator(stepperStatus, integratorStatus);
-  integratorObserver->observeEndIntegrator(stepperStatus, integratorStatus);
+  endIntegrator();
+  integratorObserver->observeEndIntegrator(integratorStatus);
 
-  return integratorStatus;
+  return (integratorStatus == Status::PASSED);
 }
 
 
 template <class Scalar>
-void IntegratorBasic<Scalar>::acceptTimeStep(
-  bool & stepperStatus, bool & integratorStatus)
+void IntegratorBasic<Scalar>::acceptTimeStep()
 {
   RCP<SolutionStateMetaData<Scalar> > wsmd =
     solutionHistory->getWorkingState()->metaData;
 
-  // Stepper failure
-  if (stepperStatus != true) {
+       // Stepper failure
+  if ( solutionHistory->getWorkingState()->getSolutionStatus() == FAILED or
+       solutionHistory->getWorkingState()->getStepperStatus() == FAILED or
+       // Constant time step failure
+       ((timeStepControl->stepType == CONSTANT_STEP_SIZE) and
+       (wsmd->dt != timeStepControl->dtConstant))
+     )
+  {
     wsmd->nFailures++;
     wsmd->nConsecutiveFailures++;
-  }
-
-  // Constant time step failure
-  if ((timeStepControl->stepType == CONSTANT_STEP_SIZE) and
-      (wsmd->dt != timeStepControl->dtConstant)) {
-    wsmd->nFailures++;
-    wsmd->nConsecutiveFailures++;
+    wsmd->solutionStatus = FAILED;
   }
 
   // Too many failures
@@ -243,7 +240,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
          << "  (nFailures = "<<wsmd->nFailures << ") >= (nFailuresMax = "
          <<timeStepControl->nFailuresMax<<")" << std::endl;
-    integratorStatus = false;
+    integratorStatus = FAILED;
     return;
   }
   if (wsmd->nConsecutiveFailures >= timeStepControl->nConsecutiveFailuresMax) {
@@ -255,7 +252,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
          << ") >= (nConsecutiveFailuresMax = "
          <<timeStepControl->nConsecutiveFailuresMax
          << ")" << std::endl;
-    integratorStatus = false;
+    integratorStatus = FAILED;
     return;
   }
 
@@ -297,14 +294,16 @@ void IntegratorBasic<Scalar>::acceptTimeStep(
 
 
 template <class Scalar>
-void IntegratorBasic<Scalar>::endIntegrator(
-  bool stepperStatus, bool integratorStatus) const
+void IntegratorBasic<Scalar>::endIntegrator()
 {
   std::string exitStatus;
-  if (stepperStatus != true or integratorStatus != true)
+  if (solutionHistory->getCurrentState()->getSolutionStatus() ==
+      Status::FAILED or integratorStatus == Status::FAILED) {
     exitStatus = "Time integration FAILURE!";
-  else
+  } else {
+    integratorStatus = Status::PASSED;
     exitStatus = "Time integration complete.";
+  }
 
   integratorTimer->stop();
   const double runtime = integratorTimer->totalElapsedTime();

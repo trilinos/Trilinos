@@ -32,9 +32,8 @@ public:
     const int    order_,
     const int    nFailures_,
     const int    nConsecutiveFailures_,
-    const SolutionStatus status_,
+    const Status solutionStatus_,
     const bool   output_,
-    const bool   isAccepted_,
     const bool   isRestartable_,
     const bool   isInterpolated_,
     const Scalar accuracy_);
@@ -48,20 +47,27 @@ public:
   /// Destructor
   virtual ~SolutionStateMetaData() {};
 
-  Scalar time;            ///< Time of solution
-  int    iStep;           ///< Time step index for this solution
-  Scalar dt;              ///< Time step for this solution
-  Scalar errorAbs;        ///< Absolute local truncation error
-  Scalar errorRel;        ///< Relative local truncation error
-  int order;              ///< Order of this solution
-  int nFailures;          ///< Total number of stepper failures
+  Scalar time;              ///< Time of solution
+  int    iStep;             ///< Time step index for this solution
+  Scalar dt;                ///< Time step for this solution
+  Scalar errorAbs;          ///< Absolute local truncation error
+  Scalar errorRel;          ///< Relative local truncation error
+  int order;                ///< Order of this solution
+  int nFailures;            ///< Total number of stepper failures
   int nConsecutiveFailures; ///< Consecutive number of stepper failures
-  SolutionStatus status;  ///< Status of SolutionState (passing, failed)
-  bool   output;          ///< SolutionState should be or has been outputted
-  bool   isAccepted;      ///< SolutionState accepted (i.e, no more changes)
-  bool   isRestartable;   ///< T - soln can be used as a restart
-  bool   isInterpolated;  ///< F - soln is time integrated; T - soln is interpolated
-  Scalar accuracy;        ///< Interpolation accuracy of solution
+
+  /** The solutionStatus is used to indicate
+      - if the solution is still being worked on; WORKING
+      - if the solution is accepted and completed (e.g., past solutions
+        in SolutionHistory); PASSED.
+      - if the time step has FAILED.  This may be caused by the Stepper
+        failing, or Integrator not accepting the time step.
+  */
+  Status solutionStatus;
+  bool   output;            ///< SolutionState should be or has been outputted
+  bool   isRestartable;     ///< T - soln can be used as a restart
+  bool   isInterpolated;    ///< F - soln is time integrated; T - soln is interpolated
+  Scalar accuracy;          ///< Interpolation accuracy of solution
 
   /// \name Overridden from Teuchos::Describable
   //@{

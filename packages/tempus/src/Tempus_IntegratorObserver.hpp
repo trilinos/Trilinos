@@ -50,8 +50,7 @@ public:
     virtual void observeStartTimeStep(){}
 
     /// Observe after the next time step size is selected.
-    virtual void observeNextTimeStep(
-      bool stepperStatus, bool & integratorStatus){}
+    virtual void observeNextTimeStep(Status & integratorStatus){}
 
     /// Observe before Stepper takes step.
     virtual void observeBeforeTakeStep(){}
@@ -60,12 +59,10 @@ public:
     virtual void observeAfterTakeStep(){}
 
     /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(
-      bool & stepperStatus, bool & integratorStatus){}
+    virtual void observeAcceptedTimeStep(Status & integratorStatus){}
 
     /// Observe the end of the time integrator.
-    virtual void observeEndIntegrator(
-      const bool stepperStatus, const bool integratorStatus){}
+    virtual void observeEndIntegrator(const Status integratorStatus){}
   //@}
 
 protected:

@@ -13,7 +13,7 @@ namespace Tempus {
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  RCP<ParameterList>                               pList_,
+  RCP<ParameterList>                         pList_,
   const RCP<Thyra::ModelEvaluator<Scalar> >& model_ )
  : model(model_)
 {
@@ -25,13 +25,13 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
 }
 
 template<class Scalar>
-bool StepperForwardEuler<Scalar>::takeStep(
+void StepperForwardEuler<Scalar>::takeStep(
   const RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(workingState), std::logic_error,
-    "Error - SolutionState, workingstate, is invalid!\n");
+    "Error - SolutionState, workingState, is invalid!\n");
 
   typedef Thyra::ModelEvaluatorBase MEB;
   const Scalar time = workingState->getTime();
@@ -53,7 +53,8 @@ bool StepperForwardEuler<Scalar>::takeStep(
   // Forward Euler update, x = x + dt*xdot
   Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
 
-  return (true);
+  workingState->stepperState->stepperStatus = Status::PASSED;
+  return;
 }
 
 

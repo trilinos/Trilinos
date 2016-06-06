@@ -15,9 +15,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    order         (1),
    nFailures     (0),
    nConsecutiveFailures(0),
-   status        (PASSED),
+   solutionStatus(WORKING),
    output        (false),
-   isAccepted    (false),
    isRestartable (true),
    isInterpolated(false),
    accuracy      (0.0)
@@ -33,11 +32,10 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const int    order_,
   const int    nFailures_,
   const int    nConsecutiveFailures_,
-  const SolutionStatus status_,
+  const Status solutionStatus_,
   const bool   output_,
-  const bool   isAccepted_,
-  const bool   isInterpolated_,
   const bool   isRestartable_,
+  const bool   isInterpolated_,
   const Scalar accuracy_)
   :time          (time_),
    iStep         (iStep_),
@@ -47,9 +45,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    order         (order_),
    nFailures     (nFailures_),
    nConsecutiveFailures(nConsecutiveFailures_),
-   status        (status_),
+   solutionStatus(solutionStatus_),
    output        (output_),
-   isAccepted    (isAccepted_),
    isRestartable (isRestartable_),
    isInterpolated(isInterpolated_),
    accuracy      (accuracy_)
@@ -65,9 +62,8 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    order         (ssmd_.order),
    nFailures     (ssmd_.nFailures),
    nConsecutiveFailures(ssmd_.nConsecutiveFailures),
-   status        (ssmd_.status),
+   solutionStatus(ssmd_.solutionStatus),
    output        (ssmd_.output),
-   isAccepted    (ssmd_.isAccepted),
    isRestartable (ssmd_.isRestartable),
    isInterpolated(ssmd_.isInterpolated),
    accuracy      (ssmd_.accuracy)
@@ -87,9 +83,8 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       order,
       nFailures,
       nConsecutiveFailures,
-      status,
+      solutionStatus,
       output,
-      isAccepted,
       isRestartable,
       isInterpolated,
       accuracy));
@@ -121,9 +116,8 @@ void SolutionStateMetaData<Scalar>::describe(
         << "order          = " << order << std::endl
         << "nFailures      = " << nFailures << std::endl
         << "nConsecutiveFailures = " << nConsecutiveFailures << std::endl
-        << "status         = " << toString(status) << std::endl
+        << "solutionStatus = " << toString(solutionStatus) << std::endl
         << "output         = " << output << std::endl
-        << "isAccepted     = " << isAccepted    << std::endl
         << "isRestartable  = " << isRestartable << std::endl
         << "isInterpolated = " << isInterpolated << std::endl
         << "accuracy       = " << accuracy << std::endl;

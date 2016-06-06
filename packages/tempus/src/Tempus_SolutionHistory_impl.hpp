@@ -217,21 +217,23 @@ RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getWorkingState() const
 
 /** Initialize the working state */
 template<class Scalar>
-void SolutionHistory<Scalar>::initWorkingState(const bool stepperStatus)
+void SolutionHistory<Scalar>::initWorkingState()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(currentState == Teuchos::null, std::logic_error,
     "Error - SolutionHistory::initWorkingState()\n"
     "Can not initialize working state without a current state!\n");
 
-  if (stepperStatus != true) return;
+  // If workingState has a valid pointer, we are still working on it,
+  // i.e., step failed and trying again.  So do not initialize it.
+  if (workingState != Teuchos::null) return;
 
   if (storageLimit == 1) {
     workingState = currentState;
-    workingState->metaData->status = SolutionStatus::WORKING;
+    workingState->metaData->solutionStatus = Status::WORKING;
     currentState = Teuchos::null;
   } else {
     workingState = currentState->clone();
-    workingState->metaData->status = SolutionStatus::WORKING;
+    workingState->metaData->solutionStatus = Status::WORKING;
     addState(workingState);
   }
 
@@ -247,8 +249,7 @@ void SolutionHistory<Scalar>::promoteWorkingState()
   md->iStep++;
   md->nFailures = std::max(0,md->nFailures-1);
   md->nConsecutiveFailures = 0;
-  md->status = SolutionStatus::PASSED;
-  md->isAccepted = true;
+  md->solutionStatus = Status::PASSED;
   md->isRestartable = true;
   md->isInterpolated = false;
   currentState = workingState;

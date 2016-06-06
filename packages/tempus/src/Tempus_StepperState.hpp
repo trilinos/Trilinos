@@ -17,7 +17,7 @@ template<class Scalar>
  *   - The StepperState should be held by the SolutionState so that it has
  *     all the information needed to restart the solution.
  *   - Many time integrators will simply need this base class, because
- *     they do not have any other additional stat information.
+ *     they do not have any other additional state information.
  *   - StepperState can be inherited to expand the state information.
  *   - Examples of other information that could be included in derived
  *     StepperStates:
@@ -25,6 +25,8 @@ template<class Scalar>
  *     - Metadata and SolutionHistory for a BDF method
  *   - The base class currently has the Stepper name so the Stepper can
  *     check if the StepperState is usable.
+ *   - The StepperState also keeps track of the the Stepper status, i.e.,
+ *     PASSED or FAILED.
  */
 class StepperState :
   public Teuchos::Describable,
@@ -33,13 +35,15 @@ class StepperState :
 {
 public:
   /// Constructor
-  StepperState(std::string name_):stepperName(name_){}
+  StepperState(std::string name_, Status stepperStatus_ = WORKING)
+    : stepperName(name_), stepperStatus(stepperStatus_){}
 
   /// This is a deep copy
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
      Teuchos::RCP<StepperState<Scalar> > ss_out =
-       Teuchos::rcp(new StepperState<Scalar> (this->stepperName));
+       Teuchos::rcp(new StepperState<Scalar> (this->stepperName,
+                                              this->stepperStatus));
      return ss_out;
   }
 
@@ -53,12 +57,18 @@ public:
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const
     {
-      out << description() << "::describe" << std::endl;
-      out << "  stepperName = " << stepperName << std::endl;
+      out << description() << "::describe" << std::endl
+          << "  stepperName   = " << stepperName << std::endl
+          << "  stepperStatus = " << toString(stepperStatus) << std::endl;
     }
   //@}
 
-  std::string stepperName;  ///< Name of the creating Stepper.
+  std::string stepperName;    ///< Name of the creating Stepper.
+
+  /** The stepperStatus is used to indicate whether the Stepper has PASSED or
+   FAILED.  WORKING is used for prior and during the Stepper.
+   */
+  Status      stepperStatus;
 
 };
 } // namespace Tempus

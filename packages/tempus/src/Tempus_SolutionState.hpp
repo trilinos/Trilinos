@@ -62,9 +62,8 @@ public:
     const int    order,
     const int    nFailures,
     const int    nConsecutiveFailures,
-    const SolutionStatus status,
+    const Status solutionStatus,
     const bool   output,
-    const bool   isAccepted,
     const bool   isRestartable,
     const bool   isInterpolated,
     const Scalar accuracy,
@@ -79,17 +78,25 @@ public:
   /// This is a deep copy and copies the underlying vectors
   virtual Teuchos::RCP<SolutionState<Scalar> > clone() const;
 
-  /// Get time
-  virtual Scalar getTime() const{return metaData->time;}
-
-  /// Get index
-  virtual Scalar getIndex() const{return metaData->iStep;}
-
-  /// Get time step
-  virtual Scalar getTimeStep() const{return metaData->dt;}
-
   /// \name Accessor methods
   //@{
+    /// Get time
+    virtual Scalar getTime() const {return metaData->time;}
+
+    /// Get index
+    virtual Scalar getIndex() const {return metaData->iStep;}
+
+    /// Get time step
+    virtual Scalar getTimeStep() const {return metaData->dt;}
+
+    /// Return the Solution status
+    virtual Status getSolutionStatus() const
+      {return metaData->solutionStatus;};
+
+    /// Return the Stepper status
+    virtual Status getStepperStatus() const
+      {return stepperState->stepperStatus;};
+
     /// Get the current solution, x.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x;}
 
@@ -97,7 +104,8 @@ public:
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
 
     /// Get the current time second derivative of the solution, xdotdot.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot() {return xdotdot;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot()
+      {return xdotdot;}
   //@}
 
 

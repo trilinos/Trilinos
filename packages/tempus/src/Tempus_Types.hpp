@@ -47,27 +47,27 @@ const char* toString(const StepType stepType)
 }
 
 
-/** \brief Solution Status. */
-enum SolutionStatus {
-  WORKING,    ///< Solution is the working solution and not yet completed
-  PASSED,     ///< Solution has passed and is archivable.
-  FAILED,     ///< Solution has failed.
+/** \brief Status for the Integrator, the Stepper and the SolutionState */
+enum Status {
+  PASSED,
+  FAILED,
+  WORKING
 };
 
 
-/** \brief Convert SolutionStatus to string. */
+/** \brief Convert Status to string. */
 inline
-const char* toString(const SolutionStatus status)
+const char* toString(const Status status)
 {
   switch(status) {
-    case WORKING:
-      return "WORKING";
     case PASSED:
       return "PASSED";
     case FAILED:
       return "FAILED";
+    case WORKING:
+      return "WORKING";
     default:
-      TEUCHOS_TEST_FOR_EXCEPT("Invalid SolutionStatus!");
+      TEUCHOS_TEST_FOR_EXCEPT("Invalid Status!");
   }
   return 0; // Should never get here!
 }

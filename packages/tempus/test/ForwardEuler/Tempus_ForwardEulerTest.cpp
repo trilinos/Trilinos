@@ -42,8 +42,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
       integratorBasic<double>(pl, model);
 
     // Integrate to timeMax
-    bool itgrStatus = integrator->advanceTime();
-    TEST_ASSERT(itgrStatus)
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
 
     // Test if at 'Final Time'
     double time = integrator->getTime();
