@@ -239,7 +239,7 @@ extern "C" {
   }
 
   /// Sets the current time as the "seed" to randomize the next call to real_rand.
-  static double randomize() {
+  double randomize() {
     std::srand(::time(nullptr));
     return 0.0;
   }
@@ -331,7 +331,7 @@ extern "C" {
     }
   }
 
-  static double haversine_pulse(double t, double t1, double t2)
+  double haversine_pulse(double t, double t1, double t2)
   {
     if( t < t1 )
     {
@@ -347,7 +347,7 @@ extern "C" {
     }
   }
 
-  static double cycloidal_ramp(double t, double t1, double t2)
+  double cycloidal_ramp(double t, double t1, double t2)
   {
     if( t < t1 )
     {
