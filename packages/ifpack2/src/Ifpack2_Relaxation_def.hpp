@@ -703,10 +703,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::reduceAll;
   typedef local_ordinal_type LO;
-  typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef typename node_type::device_type device_type;
-  typedef typename Kokkos::View<IST*, device_type>::HostMirror::device_type
-    host_device_type;
 
   {
     // Reset the timer each time, since Relaxation uses the same Time
