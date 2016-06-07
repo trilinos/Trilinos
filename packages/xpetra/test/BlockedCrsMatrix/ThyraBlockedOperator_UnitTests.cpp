@@ -77,6 +77,8 @@
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
+#include <Xpetra_BlockReorderManager.hpp>
+#include <Xpetra_ReorderedBlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixUtils.hpp>
 #include <Xpetra_IO.hpp>
 
@@ -626,6 +628,72 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, SplitMatrixForThyra, M,
   TEST_EQUALITY(bOp->getDomainMap(1)->getMinAllGlobalIndex(), 0);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL(ThyraBlockedOperator, ReorderBlockOperator2ThyraBlockedCrsMat, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map< LO, GO, Node> MapClass;
+  typedef Xpetra::Vector<Scalar, LO, GO, Node> VectorClass;
+  typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> VectorFactoryClass;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrixClass;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 8;
+  Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrixThyra<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+
+  Teuchos::RCP<const Xpetra::BlockReorderManager> brm = Xpetra::blockedReorderFromString("[ 6 [3 2] ]");
+
+  Teuchos::RCP<const BlockedCrsMatrixClass> brop =
+      Teuchos::rcp_dynamic_cast<const BlockedCrsMatrixClass>(buildReorderedBlockedCrsMatrix(brm, bop));
+
+  Teuchos::RCP<const MapClass> fullmap = brop->getRowMap();
+
+  TEST_EQUALITY(brop->Rows(),2);
+  TEST_EQUALITY(brop->Cols(),2);
+  TEST_EQUALITY(brop->getRangeMapExtractor()->getThyraMode(), true);
+  TEST_EQUALITY(brop->getDomainMapExtractor()->getThyraMode(), true);
+
+#ifdef HAVE_XPETRA_THYRA
+  // create Thyra operator
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thOp =
+      Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(Teuchos::rcp_const_cast<BlockedCrsMatrixClass>(brop));
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thOp));
+
+  Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > thbOp =
+      Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<Scalar> >(thOp);
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thbOp));
+
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productRange  = thbOp->productRange();
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productDomain = thbOp->productDomain();
+
+  TEST_EQUALITY(productRange->numBlocks()  ,2);
+  TEST_EQUALITY(productDomain->numBlocks() ,2);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->dim())  ,fullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->dim()) ,fullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,comm->getSize() * 160);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,comm->getSize() * 160);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,comm->getSize() * 30);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,comm->getSize() * 30);
+
+  Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thbOp11 =
+      Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(thbOp->getBlock(1,1));
+  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thbOp11));
+
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productRange11  = thbOp11->productRange();
+  Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productDomain11 = thbOp11->productDomain();
+  TEST_EQUALITY(productRange11->numBlocks()  ,2);
+  TEST_EQUALITY(productDomain11->numBlocks() ,2);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->dim())  ,comm->getSize() * 30);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->dim()) ,comm->getSize() * 30);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(0)->dim())  ,comm->getSize() * 20);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(0)->dim()) ,comm->getSize() * 20);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange11->getBlock(1)->dim())  ,comm->getSize() * 10);
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain11->getBlock(1)->dim()) ,comm->getSize() * 10);
+
+#endif // HAVE_XPETRA_THYRA
+}
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMarket, M, MA, Scalar, LO, GO, Node )
 {
@@ -824,7 +892,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( ThyraBlockedOperator, ReadWriteMatrixMatrixMa
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, SplitMatrixForThyra, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ReadWriteMatrixMatrixMarket, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, XpetraBlockedCrsMatConstructor, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ThyraBlockedOperator2XpetraBlockedCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( ThyraBlockedOperator, ReorderBlockOperator2ThyraBlockedCrsMat, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N) \
