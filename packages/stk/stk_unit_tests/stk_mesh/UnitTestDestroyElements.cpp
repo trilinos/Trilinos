@@ -323,12 +323,12 @@ protected:
 
         stk::mesh::EntityVector orphanedNodes{
             get_bulk().get_entity(stk::topology::NODE_RANK, 5),
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 6)
+            get_bulk().get_entity(stk::topology::NODE_RANK, 6)
         };
 
         stk::mesh::EntityVector sharedNodes{
             get_bulk().get_entity(stk::topology::NODE_RANK, 2),
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 3)
+            get_bulk().get_entity(stk::topology::NODE_RANK, 3)
         };
 
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2)};
