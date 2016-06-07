@@ -188,7 +188,7 @@ struct CrsMatrixGetDiagCopyFunctor {
     const LO lclColInd = colMap_.getLocalElement (gblInd);
 
     if (lclColInd != INV) {
-      auto curRow = A_.template rowConst<LO> (lclRowInd);
+      auto curRow = A_.rowConst (lclRowInd);
 
       // FIXME (mfh 12 May 2016) Use binary search when the row is
       // long enough.  findRelOffset currently lives in TpetraCore (in
@@ -2869,7 +2869,6 @@ namespace Tpetra {
   scale (const Scalar& alpha)
   {
     typedef LocalOrdinal LO;
-    typedef Kokkos::SparseRowView<local_matrix_type> row_view_type;
     typedef typename Teuchos::Array<Scalar>::size_type size_type;
     const char tfecfFuncName[] = "scale: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
@@ -2890,7 +2889,7 @@ namespace Tpetra {
       if (staticGraph_->getProfileType () == StaticProfile) {
         const LO lclNumRows = lclMatrix_.numRows ();
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          row_view_type row_i = lclMatrix_.template row<typename row_view_type::size_type> (lclRow);
+          auto row_i = lclMatrix_.row (lclRow);
           for (LO k = 0; k < row_i.length; ++k) {
             // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
             row_i.value (k) *= theAlpha;
@@ -3252,7 +3251,7 @@ namespace Tpetra {
     Kokkos::parallel_for (policy_type (0, myNumRows), [&] (const LO& lclRow) {
       lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
       if (h_offsets[lclRow] != INV) {
-        auto curRow = lclMatrix_.template rowConst<size_t> (lclRow);
+        auto curRow = lclMatrix_.rowConst (lclRow);
         lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
       }
     });

@@ -1197,9 +1197,9 @@ namespace {
 
     for (LO r = 0; r < view2.numRows(); ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
+      auto rowview = view2.row (r);
 
-      for(LO c = 0; c < rowview.length; c++) {
+      for (LO c = 0; c < rowview.length; ++c) {
         Scalar   vv  = rowview.value  (c);
         LO       cc = rowview.colidx (c);
         TEST_EQUALITY(rowview.length, 1);
@@ -1235,9 +1235,9 @@ namespace {
 
     for (LO r = 0; r < view2.numRows(); ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = view2.template row<size_type>(r);
+      auto rowview = view2.row (r);
 
-      for(LO c = 0; c < rowview.length; c++) {
+      for (LO c = 0; c < rowview.length; ++c) {
         Scalar   vv  = rowview.value  (c);
         LO       cc = rowview.colidx (c);
         TEST_EQUALITY(rowview.length, 1);

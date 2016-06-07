@@ -110,7 +110,7 @@ struct CrsMatrixGetDiagCopyWithOffsetsFunctor {
     D_(lclRow) = ZERO;
     const offset_type offset = offsets_(lclRow);
     if (offset != INV) {
-      auto curRow = A_.template rowConst<offset_type> (lclRow);
+      auto curRow = A_.rowConst (lclRow);
       D_(lclRow) = curRow.value(offset);
     }
   }

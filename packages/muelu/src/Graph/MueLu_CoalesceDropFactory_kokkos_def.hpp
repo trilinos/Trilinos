@@ -190,7 +190,7 @@ namespace MueLu {
 
         LO realnnz = 0;
         Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", numRows, KOKKOS_LAMBDA(const LO row, LO& nnz) {
-          auto rowView = kokkosMatrix.template row<LO>(row);
+          auto rowView = kokkosMatrix.row (row);
           auto length  = rowView.length;
 
           LO rownnz = 0;
@@ -226,7 +226,7 @@ namespace MueLu {
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
         typename entries_type::non_const_type        cols    ("entries",       realnnz);
         Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, KOKKOS_LAMBDA(const LO row, GO& dropped) {
-          auto rowView = kokkosMatrix.template row<LO>(row);
+          auto rowView = kokkosMatrix.row (row);
           auto length = rowView.length;
 
           LO rownnz = 0;

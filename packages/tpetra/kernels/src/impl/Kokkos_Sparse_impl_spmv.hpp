@@ -134,7 +134,7 @@ struct SPMV_Transpose_Functor {
         return;
       }
 
-      const SparseRowViewConst<AMatrix,SizeType> row = m_A.template rowConst<SizeType>(iRow);
+      const auto row = m_A.rowConst (iRow);
       const ordinal_type row_length = static_cast<ordinal_type> (row.length);
 
 #ifdef __CUDA_ARCH__
@@ -208,7 +208,7 @@ struct SPMV_Functor {
       if (iRow >= m_A.numRows ()) {
         return;
       }
-      const SparseRowViewConst<AMatrix,SizeType> row = m_A.template rowConst<SizeType>(iRow);
+      const auto row = m_A.rowConst (iRow);
       const ordinal_type row_length = static_cast<ordinal_type> (row.length);
       value_type sum = 0;
 
@@ -819,7 +819,7 @@ struct SPMV_MV_Transpose_Functor {
         return;
       }
 
-      const SparseRowViewConst<AMatrix,SizeType> row = m_A.template rowConst<SizeType>(iRow);
+      const auto row = m_A.rowConst (iRow);
       const ordinal_type row_length = static_cast<ordinal_type> (row.length);
 
 #ifdef __CUDA_ARCH__
@@ -926,7 +926,7 @@ struct SPMV_MV_LayoutLeft_Functor {
       sum[k] = 0;
     }
 
-    const SparseRowViewConst<AMatrix,SizeType> row = m_A.template rowConst<SizeType>(iRow);
+    const auto row = m_A.rowConst (iRow);
 
     // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
     // lacks a typedef for determining the type of the return value of
@@ -1072,7 +1072,7 @@ struct SPMV_MV_LayoutLeft_Functor {
   {
     value_type sum = 0;
 
-    const SparseRowViewConst<AMatrix,SizeType> row = m_A.template rowConst<SizeType>(iRow);
+    const auto row = m_A.rowConst (iRow);
 
     // NOTE (mfh 20 Mar 2015) Unfortunately, Kokkos::Vectorization
     // lacks a typedef for determining the type of the return value of

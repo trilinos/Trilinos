@@ -381,7 +381,7 @@ public:
     Teuchos::ArrayRCP< size_t > NumEntriesPerRowToAlloc(lclNumRows);
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
       NumEntriesPerRowToAlloc[r] = rowview.length;
     }
 
@@ -393,7 +393,7 @@ public:
     // loop over all rows and colums of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
 
       // arrays for current row data
       Teuchos::ArrayRCP<ordinal_type> indout(rowview.length,Teuchos::ScalarTraits<ordinal_type>::zero());
@@ -1328,7 +1328,7 @@ public:
     Teuchos::ArrayRCP< size_t > NumEntriesPerRowToAlloc(lclNumRows);
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
       NumEntriesPerRowToAlloc[r] = rowview.length;
     }
 
@@ -1340,7 +1340,7 @@ public:
     // loop over all rows and colums of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
 
       // arrays for current row data
       Teuchos::ArrayRCP<ordinal_type> indout(rowview.length,Teuchos::ScalarTraits<ordinal_type>::zero());
