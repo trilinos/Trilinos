@@ -135,6 +135,8 @@ namespace Iovs {
     static void load_plugin_library(const std::string& plugin_name,
                                     const std::string& plugin_library_name);
 
+    static std::string create_output_file_path(const std::string& input_deck_name,
+                                               const Ioss::PropertyManager &properties);
     static bool plugin_library_exists(const std::string& plugin_name);
 
     int64_t handle_node_ids(void* ids, int64_t num_to_get);
