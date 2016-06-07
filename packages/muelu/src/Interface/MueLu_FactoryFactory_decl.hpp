@@ -718,8 +718,13 @@ namespace MueLu {
       // create a new blocked smoother
       RCP<TekoSmoother> bs = Build2<TekoSmoother>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
-      // important: set block factory for A here! TODO think about this in more detail
-      bs->SetFactory("A", MueLu::NoFactory::getRCP());
+      // important: set block factory for A here!
+      // TAW: 7/6/2016: We should not need to set/hardcode the blocked operator here.
+      //                The user might want to overwrite this in the xml file, so just
+      //                use what is declared as "A"
+      //bs->SetFactory("A", MueLu::NoFactory::getRCP());
+
+      // Set Teko parameters ("Inverse Factory Library")
       bs->SetTekoParameters(tekoParams);
 
       return rcp(new SmootherFactory(bs));
