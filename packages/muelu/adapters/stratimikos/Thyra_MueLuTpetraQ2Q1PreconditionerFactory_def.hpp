@@ -485,10 +485,8 @@ namespace Thyra {
     for (int i = 1; i < H->GetNumLevels(); i++) {
       RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
       RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
-      RCP<CrsMatrix>        Ppcrs = Pcrs->getMatrix(1,1);
-      RCP<Matrix>           Pp    = rcp(new CrsMatrixWrap(Ppcrs));
-      RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
-      RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
+      RCP<Matrix>           Pp    = Pcrs->getMatrix(1,1);
+      RCP<Matrix>           Pv    = Pcrs->getMatrix(0,0);
 
       Xpetra::IO<SC,LO,GO,NO>::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
       Xpetra::IO<SC,LO,GO,NO>::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
