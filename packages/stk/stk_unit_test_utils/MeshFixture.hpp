@@ -64,6 +64,11 @@ protected:
         metaData = nullptr;
     }
 
+    int get_parallel_rank()
+    {
+        return get_bulk().parallel_rank();
+    }
+
     virtual stk::mesh::MetaData& get_meta()
     {
         ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");

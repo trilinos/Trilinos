@@ -48,25 +48,30 @@ stk::mesh::EntityVector get_faces_for_entity(const stk::mesh::BulkData &bulk, co
     return entityFaces;
 }
 
-class HexMesh : public stk::unit_test_util::MeshFixture
+class HexMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
     HexMesh()
     {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+
+    void initialize_my_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        delete_meta();
+        allocate_meta(3);
+        setup_empty_mesh(auraOption);
         std::string meshDesc =
             "0,1,HEX_8,1,2,3,4,5,6,7,8\n\
              0,2,HEX_8,2,9,10,3,6,11,12,7";
         stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
     }
-};
 
-TEST_F(HexMesh, DeleteOneElement)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
+        initialize_my_mesh(auraOption);
+
         stk::mesh::EntityVector orphanedNodes{
-                    get_bulk().get_entity(stk::topology::NODE_RANK, 9),
+                    get_bulk().get_entity(stk::topology::NODE_RANK,  9),
                     get_bulk().get_entity(stk::topology::NODE_RANK, 10),
                     get_bulk().get_entity(stk::topology::NODE_RANK, 11),
                     get_bulk().get_entity(stk::topology::NODE_RANK, 12)
@@ -82,6 +87,11 @@ TEST_F(HexMesh, DeleteOneElement)
         expect_invalid(get_bulk(), orphanedNodes);
         expect_invalid(get_bulk(), elementToDestroy);
     }
+};
+
+TEST_F(HexMesh, DeleteOneElement)
+{
+    run_test_on_num_procs(1, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 class TetMesh : public stk::unit_test_util::MeshFixture
@@ -89,7 +99,13 @@ class TetMesh : public stk::unit_test_util::MeshFixture
 protected:
     TetMesh()
     {
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+    }
+
+    void initialize_my_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        delete_meta();
+        allocate_meta(3);
+        setup_empty_mesh(auraOption);
         std::string meshDesc =
                "0,1,TET_4,1,2,3,4\n\
                 0,2,TET_4,2,5,3,4";
@@ -107,6 +123,7 @@ TEST_F(TetMesh, DeleteOneElement)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
+        initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {}, false);
 
         stk::mesh::EntityVector orphanedNodes{
@@ -141,6 +158,7 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
+        initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::create_all_sides(get_bulk(), get_meta().universal_part(), {}, false);
 
         stk::mesh::EntityVector orphanedNodes{
@@ -148,10 +166,9 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
         };
 
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1)};
-
         stk::mesh::EntityVector facesOfDestroyedElement;
 
-        if(get_bulk().parallel_rank() == 0)
+        if(get_parallel_rank() == 0)
         {
             facesOfDestroyedElement = get_faces_for_entity(get_bulk(), elementToDestroy[0]);
             EXPECT_EQ(facesOfDestroyedElement.size(), 4u);
@@ -162,7 +179,7 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
             expect_valid(get_bulk(), orphanedNodes);
             expect_valid(get_bulk(), elementToDestroy);
         }
-        else if(get_bulk().parallel_rank() == 1)
+        else if(get_parallel_rank() == 1)
         {
             stk::mesh::Entity element2 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2);
             EXPECT_TRUE(get_bulk().is_valid(element2));
@@ -172,12 +189,12 @@ TEST_F(TetMesh, DeleteElementOnProcBoundaryWithOwnedFace)
         expect_invalid(get_bulk(), orphanedNodes);
         expect_invalid(get_bulk(), elementToDestroy);
 
-        if(get_bulk().parallel_rank() == 0)
+        if(get_parallel_rank() == 0)
         {
             for(stk::mesh::Entity face : facesOfDestroyedElement)
                 EXPECT_FALSE(get_bulk().is_valid(face));
         }
-        else if(get_bulk().parallel_rank() == 1)
+        else if(get_parallel_rank() == 1)
         {
             stk::mesh::EntityVector faces = get_faces_for_entity(get_bulk(), get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2));
             expect_not_shared(get_bulk(), faces);
@@ -189,6 +206,7 @@ TEST_F(TetMesh, DeleteGhostedElement)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
     {
+        initialize_my_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::mesh::EntityVector orphanedNodes{
             get_bulk().get_entity(stk::topology::NODE_RANK, 1)
         };
@@ -202,7 +220,7 @@ TEST_F(TetMesh, DeleteGhostedElement)
         get_bulk().modification_begin();
         stk::mesh::Ghosting &ghosting = get_bulk().create_ghosting("ghost");
         stk::mesh::EntityProcVec ghostedElement;
-        if(get_bulk().parallel_rank() == 0)
+        if(get_parallel_rank() == 0)
         {
             stk::mesh::Entity element1 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1);
             ghostedElement = {stk::mesh::EntityProc(element1, 1)};
@@ -213,11 +231,11 @@ TEST_F(TetMesh, DeleteGhostedElement)
         stk::mesh::EntityVector elementToDestroy{get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1)};
         expect_valid(get_bulk(), elementToDestroy);
 
-        if(get_bulk().parallel_rank() == 0)
+        if(get_parallel_rank() == 0)
         {
             expect_valid(get_bulk(), orphanedNodes);
         }
-        else if(get_bulk().parallel_rank() == 1)
+        else if(get_parallel_rank() == 1)
         {
             stk::mesh::Entity element2 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2);
             EXPECT_TRUE(get_bulk().is_valid(element2));
@@ -227,36 +245,39 @@ TEST_F(TetMesh, DeleteGhostedElement)
         expect_invalid(get_bulk(), orphanedNodes);
         expect_invalid(get_bulk(), elementToDestroy);
 
-        if(get_bulk().parallel_rank() == 0)
+        if(get_parallel_rank() == 0)
         {
             expect_invalid(get_bulk(), sharedNodes);
         }
-        else if(get_bulk().parallel_rank() == 1)
+        else if(get_parallel_rank() == 1)
         {
             expect_not_shared(get_bulk(), sharedNodes);
         }
     }
 }
 
-class BeamMesh : public stk::unit_test_util::MeshFixture
+class BeamMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
     BeamMesh()
     {
+    }
+
+    void initialize_my_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
         delete_meta();
         allocate_meta(2);
-        setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        setup_empty_mesh(auraOption);
         std::string meshDesc =
             "0,1,BEAM_2,1,2\n\
              0,2,BEAM_2,2,3";
         stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
     }
-};
 
-TEST_F(BeamMesh, DeleteOneElement)
-{
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
+    void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
+        initialize_my_mesh(auraOption);
+
         stk::mesh::EntityVector orphanedNodes{
             get_bulk().get_entity(stk::topology::NODE_RANK, 3)
         };
@@ -271,16 +292,21 @@ TEST_F(BeamMesh, DeleteOneElement)
         expect_invalid(get_bulk(), orphanedNodes);
         expect_invalid(get_bulk(), elementToDestroy);
     }
+};
+
+TEST_F(BeamMesh, DeleteOneElement)
+{
+    run_test_on_num_procs(1, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-class QuadMesh : public stk::unit_test_util::MeshFixture
+class QuadMesh : public stk::unit_test_util::MeshTestFixture
 {
 protected:
     QuadMesh()
     {
     }
 
-    void setup_my_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void initialize_my_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         delete_meta();
         allocate_meta(2);
@@ -293,7 +319,7 @@ protected:
 
     void run_test(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        setup_my_mesh(auraOption);
+        initialize_my_mesh(auraOption);
 
         stk::mesh::EntityVector orphanedNodes{
             get_bulk().get_entity(stk::topology::NODE_RANK, 5),
@@ -309,7 +335,7 @@ protected:
 
         expect_shared(get_bulk(), sharedNodes);
 
-        if(get_bulk().parallel_rank() == 1)
+        if(get_parallel_rank() == 1)
         {
             expect_valid(get_bulk(), orphanedNodes);
             expect_valid(get_bulk(), elementToDestroy);
@@ -320,11 +346,11 @@ protected:
         expect_invalid(get_bulk(), orphanedNodes);
         expect_invalid(get_bulk(), elementToDestroy);
 
-        if(get_bulk().parallel_rank() == 1)
+        if(get_parallel_rank() == 1)
         {
             expect_invalid(get_bulk(), sharedNodes);
         }
-        else if(get_bulk().parallel_rank() == 0)
+        else if(get_parallel_rank() == 0)
         {
             expect_not_shared(get_bulk(), sharedNodes);
         }
@@ -333,14 +359,12 @@ protected:
 
 TEST_F(QuadMesh, DeleteProcBoundaryElementWithoutAura)
 {
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-        run_test(stk::mesh::BulkData::NO_AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST_F(QuadMesh, DeleteProcBoundaryElementWithAura)
 {
-    if(stk::parallel_machine_size(MPI_COMM_WORLD) == 2)
-        run_test(stk::mesh::BulkData::AUTO_AURA);
+    run_test_on_num_procs(2, stk::mesh::BulkData::AUTO_AURA);
 }
 
 }
