@@ -345,7 +345,6 @@ namespace Tacho {
           const auto &block = _HF.Value(k);          
           nnz += block.NumNonZeros();
         }
-        std::cout << " hier nnz = "<< nnz << " flat nnz = " << _FF.NumNonZeros() << std::endl;
         TACHO_TEST_FOR_EXCEPTION(nnz != _FF.NumNonZeros(), std::runtime_error, 
                                  "Matrix of blocks does not cover the flat matrix (Scotch tree is not binary)");
       }
