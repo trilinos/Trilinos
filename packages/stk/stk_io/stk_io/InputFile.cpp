@@ -565,7 +565,7 @@ namespace stk {
       if (current_step != static_cast<int>(step))
 	region->begin_state(step);
 
-      return region->get_state_time(step);
+      return sti.t_analysis;
     }
 
   }

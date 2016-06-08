@@ -433,13 +433,22 @@ namespace impl
 				       std::vector<stk::io::MeshField> *missing=NULL);
 
       // For all transient input fields defined, read the data at the
-      // specified database time 'time' and populate the stk
-      // data structures with those values.  The database time closest
-      // to the specified time will be used with no interpolation (yet).
+      // specified database time 'time' and populate the stk data
+      // structures with those values.  
+      //
+      // If the MeshField specifies "CLOSEST" option, then the
+      // database time closestto the specified time will be used; if
+      // the MeshField specifies "LINEAR_INTERPOLATION" option, then
+      // the field values will be interpolated based on the two
+      // surrounding times on the database; if the time is less than
+      // the minimum time on the database or greater than the maximum
+      // time, then the field values at those extremes will be
+      // returned (no extrapolation).
+      // 
       // If 'missing' is non-NULL, then any fields that are not found
-      // on the input database will be put on the vector.  If 'missing'
-      // is NULL, then an exception will be thrown if any fields are
-      // not found.
+      // on the input database will be put on the vector.  If
+      // 'missing' is NULL, then an exception will be thrown if any
+      // fields are not found.
       double read_defined_input_fields(double time,
 				       std::vector<stk::io::MeshField> *missing=NULL);
 
