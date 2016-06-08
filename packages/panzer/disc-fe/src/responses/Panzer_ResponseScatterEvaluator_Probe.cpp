@@ -48,3 +48,4 @@
 #include "Panzer_ResponseScatterEvaluator_Probe_impl.hpp"
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ResponseScatterEvaluator_Probe,int,panzer::Ordinal64)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::ResponseScatterEvaluator_ProbeBase,int,panzer::Ordinal64)
