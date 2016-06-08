@@ -284,7 +284,7 @@ namespace Tacho {
       typedef typename CrsMatBaseTypeA::space_type space_type;
       typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
 
-      const ordinal_type m = Util::min(A.NumRows(), A.NumRows());
+      const ordinal_type m = Util::min(A.NumRows(), B.NumRows());
 
       space_type::execution_space::fence();
       Kokkos::parallel_for( range_policy_type(0, m),
@@ -303,6 +303,89 @@ namespace Tacho {
                             } );
       space_type::execution_space::fence();
     }
+
+    /// \brief elementwise add
+    template<typename CrsMatBaseType,
+             typename ScaleVectorType>
+    static void
+    computeRowScale(ScaleVectorType &s,
+                    const CrsMatBaseType &A) {
+      typedef typename CrsMatBaseType::ordinal_type ordinal_type;
+      typedef typename CrsMatBaseType::space_type space_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
+      
+      const ordinal_type m = A.NumRows();
+      
+      space_type::execution_space::fence();
+      Kokkos::parallel_for( range_policy_type(0, m),
+                            [&](const ordinal_type i)
+                            {
+                              auto j = A.RowPtrBegin(i);
+                              
+                              const auto jend = A.RowPtrEnd(i);
+
+                              // for complex abs should return magnitude type
+                              typename ScaleVectorType::value_type sum = 0.0;
+                              for ( ;j<jend;++j) 
+                                sum += Util::abs(A.Value(j));
+
+                              s(i) = sum;
+                            } );
+      space_type::execution_space::fence();
+    }
+
+    /// \brief elementwise add
+    template<typename CrsMatBaseType,
+             typename ScaleVectorType>
+    static void
+    applyScale(CrsMatBaseType &A,
+               const ScaleVectorType &s) {
+      typedef typename CrsMatBaseType::ordinal_type ordinal_type;
+      typedef typename CrsMatBaseType::space_type space_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
+      
+      const ordinal_type m = A.NumRows();
+      
+      space_type::execution_space::fence();
+      Kokkos::parallel_for( range_policy_type(0, m),
+                            [&](const ordinal_type i)
+                            {
+                              auto j = A.RowPtrBegin(i);
+                              
+                              const auto jend = A.RowPtrEnd(i);
+
+                              for ( ;j<jend;++j) 
+                                A.Value(j) *= s(i);
+                            } );
+      space_type::execution_space::fence();
+    }
+
+    /// \brief elementwise add
+    template<typename CrsMatBaseType,
+             typename ScaleVectorType>
+    static void
+    applyInverseScale(CrsMatBaseType &A,
+                      const ScaleVectorType &s) {
+      typedef typename CrsMatBaseType::ordinal_type ordinal_type;
+      typedef typename CrsMatBaseType::space_type space_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy_type;
+      
+      const ordinal_type m = A.NumRows();
+      
+      space_type::execution_space::fence();
+      Kokkos::parallel_for( range_policy_type(0, m),
+                            [&](const ordinal_type i)
+                            {
+                              auto j = A.RowPtrBegin(i);
+                              
+                              const auto jend = A.RowPtrEnd(i);
+
+                              for ( ;j<jend;++j) 
+                                A.Value(j) /= s(i);
+                            } );
+      space_type::execution_space::fence();
+    }
+
 
     /// \brief filter zero
     template<typename CrsMatBaseTypeA>

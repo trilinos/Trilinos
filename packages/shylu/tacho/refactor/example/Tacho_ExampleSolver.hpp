@@ -54,12 +54,9 @@ namespace Tacho {
       bool is_allocated;
     } data;
 
-    // non standard initialization and icpc complains
-    //= { .ap = NULL, .aj = NULL, .ax = NULL,
-    //.b = NULL, .is_allocated = false };
-
     timer.reset();
-    if (file_input.compare("null") != 0) {
+    const auto is_file_null = (file_input.compare("null") == 0);
+    if (!is_file_null) {
       data.is_allocated = false;
       std::cout << "Solver:: "
                 << "Matrix market input is selected"
@@ -75,19 +72,7 @@ namespace Tacho {
       }
       MatrixMarket::read(AA, in);
       
-      typename SolverType::DenseMatrixBaseHostType BB("BB", AA.NumRows(), nrhs), XX("XX");
-      XX.createConfTo(BB);
-
-      srand(time(NULL));  
-      const ordinal_type m = BB.NumRows();
-      for (auto rhs=0;rhs<nrhs;++rhs) 
-        for (auto i=0;i<m;++i) 
-          BB.Value(i, rhs) = ((value_type)rand()/(RAND_MAX));
-      
-      //tacho.setProblem(AA, BB, XX);
       tacho.setMatrix(AA);
-      tacho.setLeftHandSide(XX);
-      tacho.setRightHandSide(BB);
     } else {
       data.is_allocated = true;
       std::cout << "Solver:: "
@@ -95,7 +80,7 @@ namespace Tacho {
                 << std::endl;
 
       const ordinal_type m = 12, nnz = 46;
-
+      
       data.ap = new size_type[m+1]{
         0, 3, 7, 11, 15, 20, 23, 26, 31, 35, 39, 43, 46
       };
@@ -128,13 +113,6 @@ namespace Tacho {
         2, 1, 10 
       };
 
-      data.b = new value_type[m*nrhs];
-
-      srand(time(NULL));        
-      for (auto rhs=0;rhs<nrhs;++rhs) 
-        for (auto i=0;i<m;++i) 
-          data.b[i+m*rhs] = ((value_type)rand()/(RAND_MAX));
-      
       typename SolverType::CrsMatrixBaseHostType AA("AA", m, m, nnz);
 
       // copy user data
@@ -147,15 +125,8 @@ namespace Tacho {
         AA.Col(k) = data.aj[k];
         AA.Value(k) = data.ax[k];
       }
-      
-      typename SolverType::DenseMatrixBaseHostType BB("BB", m, nrhs), XX("XX");
-      XX.createConfTo(BB);
 
-      for (auto rhs=0;rhs<nrhs;++rhs)
-        for (auto i=0;i<m;++i)
-          BB.Value(i, rhs) = data.b[i+m*rhs];
-      
-      tacho.setProblem(AA, BB, XX);
+      tacho.setMatrix(AA);
     }
     const double t_input = timer.seconds();    
     std::cout << "Solver:: "
@@ -164,10 +135,38 @@ namespace Tacho {
 
     if (verbose) {
       tacho.getA().showMe(std::cout) << std::endl;
+    }
+
+    typename SolverType::DenseMatrixBaseHostType BB("BB", tacho.getA().NumRows(), nrhs), XX("XX");
+    XX.createConfTo(BB);
+    
+    {
+      const ordinal_type m = BB.NumRows();
+      if (!is_file_null) {
+        srand(time(NULL));  
+        for (auto rhs=0;rhs<nrhs;++rhs) 
+          for (auto i=0;i<m;++i) 
+            BB.Value(i, rhs) = 1.0; //((value_type)rand()/(RAND_MAX));
+      } else {
+        data.b = new value_type[m*nrhs];
+        
+        // init user data 
+        srand(time(NULL));        
+        for (auto rhs=0;rhs<nrhs;++rhs) 
+          for (auto i=0;i<m;++i) 
+            data.b[i+m*rhs] = ((value_type)rand()/(RAND_MAX));
+        
+        // copied to solver
+        for (auto rhs=0;rhs<nrhs;++rhs)
+          for (auto i=0;i<m;++i)
+            BB.Value(i, rhs) = data.b[i+m*rhs];
+      } 
+    }
+
+    if (verbose) {
       tacho.getB().showMe(std::cout) << std::endl;
       tacho.getX().showMe(std::cout) << std::endl;
     }
-
 
     ///
     /// Solver interface
@@ -182,6 +181,9 @@ namespace Tacho {
 #ifdef HAVE_SHYLUTACHO_VTUNE
     __itt_pause();
 #endif
+
+    tacho.setLeftHandSide(XX);
+    tacho.setRightHandSide(BB);
 
     TACHO_SOLVER_RUN(tacho.solve(), t_solve);
 

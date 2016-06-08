@@ -48,6 +48,38 @@ namespace Tacho {
       space_type::execution_space::fence();
     }
 
+    /// \brief elementwise copy 
+    template<typename DenseMatrixTypeA, 
+             typename DenseMatrixTypeB,
+             typename PermutationVectorType>
+    KOKKOS_INLINE_FUNCTION
+    static void
+    applyRowPermutation(DenseMatrixTypeA &A,
+                        const DenseMatrixTypeB &B,
+                        const PermutationVectorType &p) {
+      static_assert( Kokkos::Impl::is_same<
+                     typename DenseMatrixTypeA::space_type,
+                     typename DenseMatrixTypeB::space_type
+                     >::value,
+                     "Space type of input matrices does not match" );
+      
+      typedef typename DenseMatrixTypeA::space_type space_type;
+      typedef typename DenseMatrixTypeA::ordinal_type ordinal_type;
+      typedef Kokkos::RangePolicy<space_type,Kokkos::Schedule<Kokkos::Static> > range_policy;
+      
+      space_type::execution_space::fence();      
+      
+      Kokkos::parallel_for( range_policy(0, B.NumCols()), 
+                            [&](const ordinal_type j) 
+                            {
+                              //#pragma unroll
+                              for (auto i=0;i<B.NumRows();++i)
+                                A.Value(p(i),j) = B.Value(i,j);
+                            } );
+
+      space_type::execution_space::fence();
+    }
+
     /// \brief elementwise copy of lower/upper triangular of matrix including diagonals
     template<typename DenseMatrixTypeA, 
              typename DenseMatrixTypeB>

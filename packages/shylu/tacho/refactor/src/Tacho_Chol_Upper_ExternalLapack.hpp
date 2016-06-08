@@ -45,6 +45,9 @@ namespace Tacho {
                    A.NumRows(),
                    A.ValuePtr(), A.BaseObject().ColStride(),
                    &r_val);
+
+      if (r_val) 
+        TACHO_TEST_FOR_ABORT( r_val, "LAPACK Chol (potrf) returns non-zero error code (matrix is not spd or badly conditioned)" );
 #else
     TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );
 #endif

@@ -88,13 +88,21 @@ namespace Tacho {
     typedef Kokkos::pair<size_type,size_type> range_type;
     typedef Kokkos::Experimental::Future<int,HostSpaceType> future_type;
 
-    enum { 
-      Reorder = 0,
-      Analyze,
-      Factorize,
-      Solve,
-      MaxTimerID
-    } TimerID;
+    struct PhaseMask { 
+      static constexpr int Reorder = 1;
+      static constexpr int Analyze = 2;
+      static constexpr int Factorize = 4;
+      static constexpr int Solve = 8;
+      static constexpr int MaxPhase = 16;
+    };
+
+    struct ProblemSetMask { 
+      static constexpr int Matrix = 1;
+      static constexpr int LeftHandSide = 2;
+      static constexpr int RightHandSide = 4;
+      static constexpr int WorkspaceAllocated = 8;
+      static constexpr int SetProblem = (Matrix | LeftHandSide | RightHandSide);
+    };
 
   private:
     std::string _label;
@@ -129,8 +137,11 @@ namespace Tacho {
     DenseHierBaseHostType _HY;
     ordinal_type _nb;
 
+    // problem set: 3 bits are used to indicate problem set
+    ordinal_type _prob_set;
+
     // verbose output
-    double _t[MaxTimerID];
+    double _t[PhaseMask::MaxPhase];
     //bool _verbose;
 
   public:
@@ -164,24 +175,21 @@ namespace Tacho {
       _AA = AA;
       _XX = XX;
       _BB = BB;
-
-      // temporary storage
-      _YY.setLabel("YY");
-      _YY.createConfTo(_XX);      
+      _prob_set = ProblemSetMask::SetProblem;
     }
 
     void setMatrix(const CrsMatrixBaseHostType AA) {
       _AA = AA;
-    }
-    void setRightHandSide(const DenseMatrixBaseHostType BB) {
-      _BB = BB;
+      _prob_set |= ProblemSetMask::Matrix;
     }
     void setLeftHandSide(const DenseMatrixBaseHostType XX) {
       _XX = XX;
-
-      // temporary storage
-      _YY.setLabel("YY");
-      _YY.createConfTo(_XX);      
+      _prob_set |=  ProblemSetMask::LeftHandSide;
+      _prob_set &= ~ProblemSetMask::WorkspaceAllocated;
+    }
+    void setRightHandSide(const DenseMatrixBaseHostType BB) {
+      _BB = BB;
+      _prob_set |= ProblemSetMask::RightHandSide;
     }
 
     // void setAlgorithm(const int algo) {
@@ -203,6 +211,12 @@ namespace Tacho {
     }
 
     int reorder(int prunecut = 0) {
+      {
+        const auto prob_set = _prob_set & ProblemSetMask::Matrix;
+        TACHO_TEST_FOR_EXCEPTION(prob_set != ProblemSetMask::Matrix, std::runtime_error, 
+                                 "Matrix (A) is not properly set");
+      }
+
       // graph conversion
       Kokkos::View<ordinal_type*,HostSpaceType> rptr("Tacho::Solver::Graph::rptr", _AA.NumRows() + 1);
       Kokkos::View<size_type*,   HostSpaceType> cidx("Tacho::Solver::Graph::cidx", _AA.NumNonZeros());
@@ -235,22 +249,20 @@ namespace Tacho {
 
       GraphToolsHostType::getGraph(rptr, cidx, AA_scotch);
 
-      GraphToolsHostType_CAMD C;
-      C.setGraph(AA_scotch.NumRows(),
-                 rptr, cidx,
-                 S.NumBlocks(),
-                 S.RangeVector());
-      C.computeOrdering();
+      // GraphToolsHostType_CAMD C;
+      // C.setGraph(AA_scotch.NumRows(),
+      //            rptr, cidx,
+      //            S.NumBlocks(),
+      //            S.RangeVector());
+      // C.computeOrdering();
 
-      CrsMatrixBaseHostType AA_camd("AA_camd");
-      AA_camd.createConfTo(AA_scotch);
+      // CrsMatrixBaseHostType AA_camd("AA_camd");
+      // AA_camd.createConfTo(AA_scotch);
 
-      CrsMatrixTools::copy(AA_camd,
-                           C.PermVector(),
-                           C.InvPermVector(),
-                           AA_scotch);
-
-
+      // CrsMatrixTools::copy(AA_camd,
+      //                      C.PermVector(),
+      //                      C.InvPermVector(),
+      //                      AA_scotch);
 
       {
         const auto m = _AA.NumRows();
@@ -262,25 +274,34 @@ namespace Tacho {
       
         const auto s_perm = S.PermVector();
         const auto s_peri = S.InvPermVector();
-        const auto c_perm = C.PermVector();
-        const auto c_peri = C.InvPermVector();
+        //const auto c_perm = C.PermVector();
+        //const auto c_peri = C.InvPermVector();
         const auto s_range = S.RangeVector();
         const auto s_tree = S.TreeVector();
 
         for (auto i=0;i<m;++i) {
-          _perm(i)  = c_perm(s_perm(i));
-          _peri(i)  = s_peri(c_peri(i));
+          //_perm(i)  = c_perm(s_perm(i));
+          //_peri(i)  = s_peri(c_peri(i));
+          _perm(i)  = s_perm(i);
+          _peri(i)  = s_peri(i);
           _range(i) = s_range(i);
           _tree(i)  = s_tree(i);
         }
     
-        _AA_reorder = AA_camd;
+        //_AA_reorder = AA_camd;
+        _AA_reorder = AA_scotch;
       }
 
       return 0;
     }
 
     int analyze() {
+      {
+        const auto prob_set = _prob_set & ProblemSetMask::Matrix;
+        TACHO_TEST_FOR_EXCEPTION(prob_set != ProblemSetMask::Matrix, std::runtime_error, 
+                                 "Matrix (A) is not properly set");
+      }
+
       const int rows_per_team = 4096;
       const int fill_level = -1; // direct factorization
       SymbolicFactorizationType::createNonZeroPattern(_FF,
@@ -314,6 +335,19 @@ namespace Tacho {
                                block.setRowViewArray(Kokkos::subview(_rows, range_type(ap(k), ap(k+1))));
                              } );
         CrsMatrixTools::filterEmptyBlocks(_HF);
+      }
+
+      // ** check hier nnz and flat nnz
+      {
+        size_type nnz = 0;
+        const auto nblocks = _HF.NumNonZeros();        
+        for (auto k=0;k<nblocks;++k) {
+          const auto &block = _HF.Value(k);          
+          nnz += block.NumNonZeros();
+        }
+        std::cout << " hier nnz = "<< nnz << " flat nnz = " << _FF.NumNonZeros() << std::endl;
+        TACHO_TEST_FOR_EXCEPTION(nnz != _FF.NumNonZeros(), std::runtime_error, 
+                                 "Matrix of blocks does not cover the flat matrix (Scotch tree is not binary)");
       }
 
       // ** dense block construction
@@ -369,19 +403,16 @@ namespace Tacho {
                              } );
       }
 
-      // ** create right hand side structure; note that YY is used and XX is user provided storage
-      {
-        DenseMatrixTools::createHierMatrix(_HY, _YY,
-                                           _nblks,
-                                           _range,
-                                           _nb);
-
-      }
-
       return 0;
     }
 
     int factorize() {
+      {
+        const auto prob_set = _prob_set & ProblemSetMask::Matrix;
+        TACHO_TEST_FOR_EXCEPTION(prob_set != ProblemSetMask::Matrix, std::runtime_error, 
+                                 "Matrix (A) is not properly set");
+      }
+
       CrsTaskHierViewHostType TF(_HF);
       future_type future;
 
@@ -394,36 +425,58 @@ namespace Tacho {
                                           ::createTaskFunctor(_policy, TF), 0);
       _policy.spawn(future);
       Kokkos::Experimental::wait(_policy);
-      TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodesByBlocks");
+      TACHO_TEST_FOR_EXCEPTION(future.get(), std::runtime_error, 
+                               "Fail to perform CholeskySuperNodesByBlocks");
       
       return 0;
     }
     
     int solve() {
-
+      {
+        const auto prob_set = _prob_set & ProblemSetMask::SetProblem;
+        TACHO_TEST_FOR_EXCEPTION(prob_set != ProblemSetMask::SetProblem, std::runtime_error, 
+                                 "Problem is not properly set  for AX = B");
+      }
+      
       const auto m = _BB.NumRows();
       const auto n = _BB.NumCols();
-      if (n) {
-        // copy BB to XX with permutation
-        for (auto i=0;i<m;++i) 
-          for (auto j=0;j<n;++j) 
-            _YY.Value(_perm(i), j) = _BB.Value(i, j);
+      if (m && n) {
+        // create YY if necessary
+        {
+          const auto work_alloc = _prob_set & ProblemSetMask::WorkspaceAllocated;
+          if (!work_alloc) {
+            _YY.setLabel("YY");
+            _YY.createConfTo(_XX);
+            
+            DenseMatrixTools::createHierMatrix(_HY, _YY,
+                                               _nblks,
+                                               _range,
+                                               _nb);
+            
+          }
+        }
 
-        CrsTaskHierViewHostType _TF(_HF);
-        DenseTaskHierViewHostType _TY(_HY);
+        // copy BB to XX with permutation
+        DenseMatrixTools::applyRowPermutation(_YY, _BB, _perm);
+        // for (auto i=0;i<m;++i)
+        //   for (auto j=0;j<n;++j)
+        //     _YY.Value(_perm(i), j) = _BB.Value(i, j);
+
+        CrsTaskHierViewHostType TF(_HF);
+        DenseTaskHierViewHostType TY(_HY);
 
         auto future_forward_solve
           = _policy.proc_create_team(TriSolve<Uplo::Upper,Trans::ConjTranspose,
                                      AlgoTriSolve::ByBlocks,Variant::Two>
                                      ::createTaskFunctor(_policy,
-                                                         Diag::NonUnit, _TF, _TY), 0);
+                                                         Diag::NonUnit, TF, TY), 0);
         _policy.spawn(future_forward_solve);
 
         auto future_backward_solve
           = _policy.proc_create_team(TriSolve<Uplo::Upper,Trans::NoTranspose,
                                      AlgoTriSolve::ByBlocks,Variant::Two>
                                      ::createTaskFunctor(_policy,
-                                                         Diag::NonUnit, _TF, _TY), 1);
+                                                         Diag::NonUnit, TF, TY), 1);
 
         _policy.add_dependence(future_backward_solve, future_forward_solve);
         _policy.spawn(future_backward_solve);
@@ -434,9 +487,10 @@ namespace Tacho {
         TACHO_TEST_FOR_ABORT(future_backward_solve.get(), "Fail to perform TriSolveSuperNodesByBlocks (backward)");
 
         // copy YY to XX with permutation
-        for (auto i=0;i<m;++i) 
-          for (auto j=0;j<n;++j)  
-            _XX.Value(_peri(i), j) = _YY.Value(i, j);
+        DenseMatrixTools::applyRowPermutation(_XX, _YY, _peri);
+        // for (auto i=0;i<m;++i)
+        //   for (auto j=0;j<n;++j)
+        //     _XX.Value(_peri(i), j) = _YY.Value(i, j);
       }
       
       return 0;
