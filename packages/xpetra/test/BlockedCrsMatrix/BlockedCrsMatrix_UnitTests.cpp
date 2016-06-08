@@ -1914,12 +1914,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixAdd, M, MA, Sca
 
   int noBlocks = 3;
   Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
-  TEST_EQUALITY(bop->Rows(), noBlocks);
-  TEST_EQUALITY(bop->Cols(), noBlocks);
+  TEST_EQUALITY(bop->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bop->Cols(), Teuchos::as<size_t>(noBlocks));
 
   Teuchos::RCP<const BlockedCrsMatrixClass> bop2 = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
-  TEST_EQUALITY(bop2->Rows(), noBlocks);
-  TEST_EQUALITY(bop2->Cols(), noBlocks);
+  TEST_EQUALITY(bop2->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bop2->Cols(), Teuchos::as<size_t>(noBlocks));
 
   // matrix-matrix multiplication of blocked operators
   //Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> > bOpbOp = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixMultiplyBlock(*bop,false,*bop2,false,out);
@@ -1931,8 +1931,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixAdd, M, MA, Sca
   Teuchos::RCP<BlockedCrsMatrixClass> bOpOp2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(bOpOp);
   TEST_EQUALITY(bOpOp2 != Teuchos::null, true);
 
-  TEST_EQUALITY(bOpOp2->Rows(), noBlocks);
-  TEST_EQUALITY(bOpOp2->Cols(), noBlocks);
+  TEST_EQUALITY(bOpOp2->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bOpOp2->Cols(), Teuchos::as<size_t>(noBlocks));
   TEST_EQUALITY(bOpOp2->getRangeMapExtractor(), bop->getRangeMapExtractor());
   TEST_EQUALITY(bOpOp2->getDomainMapExtractor(), bop2->getDomainMapExtractor());
   TEST_EQUALITY(bOpOp2->getRangeMapExtractor()->getFullMap()->isSameAs(*(bop->getRangeMapExtractor()->getFullMap())), true);
@@ -2053,12 +2053,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMultDiag, M, MA
 
   int noBlocks = 3;
   Teuchos::RCP<const BlockedCrsMatrixClass> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
-  TEST_EQUALITY(bop->Rows(), noBlocks);
-  TEST_EQUALITY(bop->Cols(), noBlocks);
+  TEST_EQUALITY(bop->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bop->Cols(), Teuchos::as<size_t>(noBlocks));
 
   Teuchos::RCP<const BlockedCrsMatrixClass> bop2 = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
-  TEST_EQUALITY(bop2->Rows(), noBlocks);
-  TEST_EQUALITY(bop2->Cols(), noBlocks);
+  TEST_EQUALITY(bop2->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bop2->Cols(), Teuchos::as<size_t>(noBlocks));
 
   // matrix-matrix multiplication of blocked operators
   Teuchos::RCP<MatrixClass> bOpOp = Xpetra::MatrixMatrix<Scalar,LO,GO,Node>::TwoMatrixMultiplyBlock(*bop,false,*bop2,false,out);
@@ -2067,8 +2067,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMultDiag, M, MA
   Teuchos::RCP<BlockedCrsMatrixClass> bOpOp2 = Teuchos::rcp_dynamic_cast<BlockedCrsMatrixClass>(bOpOp);
   TEST_EQUALITY(bOpOp2 != Teuchos::null, true);
 
-  TEST_EQUALITY(bOpOp2->Rows(), noBlocks);
-  TEST_EQUALITY(bOpOp2->Cols(), noBlocks);
+  TEST_EQUALITY(bOpOp2->Rows(), Teuchos::as<size_t>(noBlocks));
+  TEST_EQUALITY(bOpOp2->Cols(), Teuchos::as<size_t>(noBlocks));
   TEST_EQUALITY(bOpOp2->getRangeMapExtractor(), bop->getRangeMapExtractor());
   TEST_EQUALITY(bOpOp2->getDomainMapExtractor(), bop2->getDomainMapExtractor());
   TEST_EQUALITY(bOpOp2->getRangeMapExtractor()->getFullMap()->isSameAs(*(bop->getRangeMapExtractor()->getFullMap())), true);
