@@ -522,6 +522,29 @@ namespace Iopx {
     return exodusFilePtr;
   }
 
+  int DatabaseIO::free_file_pointer() const
+  {
+    int flag;
+    MPI_Initialized(&flag);
+    if (!flag) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: MPI is not initialized.";
+      IOSS_ERROR(errmsg);
+    }
+
+    // Make sure all file pointers are valid...
+    std::cerr << "PROC " << myProcessor << ":" << exodusFilePtr  << "\n";
+    int fp_min = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
+    int fp_max = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MAX);
+    if (fp_min != fp_max && fp_min < 0) {
+      std::cerr << myProcessor << ":" << exodusFilePtr  << "\n";
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Inconsistent file pointer values.";
+      IOSS_ERROR(errmsg);
+    }
+    return Ioex::DatabaseIO::free_file_pointer();
+  }
+
   void DatabaseIO::read_meta_data()
   {
     int exoid = get_file_pointer(); // get_file_pointer() must be called first.
