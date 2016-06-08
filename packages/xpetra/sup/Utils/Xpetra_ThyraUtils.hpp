@@ -66,7 +66,6 @@
 #include "Xpetra_StridedMapFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixUtils.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 
 #include <Thyra_VectorSpaceBase.hpp>
@@ -114,7 +113,6 @@ private:
 #include "Xpetra_UseShortNames.hpp"
 
 public:
-
   static Teuchos::RCP<Xpetra::StridedMap<LocalOrdinal,GlobalOrdinal,Node> >
   toXpetra(const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >& vectorSpace, const Teuchos::RCP<const Teuchos::Comm<int> >& comm, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
 
@@ -630,7 +628,7 @@ public:
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = Xpetra::MatrixUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getInnermostCrsMatrix(mat);
+    Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock = mat->getInnermostCrsMatrix();
     Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(Ablock);
     TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
@@ -659,7 +657,8 @@ public:
         Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thBlock = Teuchos::null;
 
         // check whether the subblock is again a blocked operator
-        Teuchos::RCP<BlockedCrsMatrix> xpblock = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(xpmat);
+        Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > xpblock =
+            Teuchos::rcp_dynamic_cast<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xpmat);
         if(xpblock != Teuchos::null) {
           if(xpblock->Rows() == 1 && xpblock->Cols() == 1) {
             // If it is a single block operator, unwrap it

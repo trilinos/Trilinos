@@ -158,7 +158,7 @@ namespace Xpetra {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
-                            Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
+                            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
             break;
           }
@@ -1091,6 +1091,22 @@ namespace Xpetra {
       RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
       if (bmat == Teuchos::null) return mat;
       return bmat->getCrsMatrix();
+    }
+
+    Teuchos::RCP<Matrix> getInnermostCrsMatrix() {
+      size_t row = Rows()+1, col = Cols()+1;
+      for (size_t r = 0; r < Rows(); ++r)
+        for(size_t c = 0; c < Cols(); ++c)
+          if (getMatrix(r,c) != Teuchos::null) {
+            row = r;
+            col = c;
+            break;
+          }
+      TEUCHOS_TEST_FOR_EXCEPTION(row == Rows()+1 || col == Cols()+1, Xpetra::Exceptions::Incompatible, "Xpetra::BlockedCrsMatrix::getInnermostCrsMatrix: Could not find a non-zero sub-block in blocked operator.")
+      RCP<Matrix> mm = getMatrix(row,col);
+      RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mm);
+      if (bmat == Teuchos::null) return mm;
+      return bmat->getInnermostCrsMatrix();
     }
 
     /// return block (r,c)

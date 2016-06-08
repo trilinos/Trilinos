@@ -50,8 +50,7 @@
 
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
-//#include "Xpetra_MatrixUtils.hpp"
-#include "Xpetra_ThyraUtils.hpp"
+//#include "Xpetra_ThyraUtils.hpp"
 
 
 namespace Xpetra {
@@ -67,7 +66,7 @@ namespace Xpetra {
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::Matrix<double, int, int, EpetraNode> > Ablock = Xpetra::MatrixUtils<double, int, int, EpetraNode>::getInnermostCrsMatrix(mat);
+    Teuchos::RCP<Xpetra::Matrix<double, int, int, EpetraNode> > Ablock = mat->getInnermostCrsMatrix();
     Teuchos::RCP<Xpetra::CrsMatrixWrap<double, int, int, EpetraNode> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<double, int, int, EpetraNode>>(Ablock);
     TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
@@ -143,7 +142,7 @@ namespace Xpetra {
     int nRows = mat->Rows();
     int nCols = mat->Cols();
 
-    Teuchos::RCP<Xpetra::Matrix<double, int, long long, EpetraNode> > Ablock = Xpetra::MatrixUtils<double, int, long long, EpetraNode>::getInnermostCrsMatrix(mat);
+    Teuchos::RCP<Xpetra::Matrix<double, int, long long, EpetraNode> > Ablock = mat->getInnermostCrsMatrix();
     Teuchos::RCP<Xpetra::CrsMatrixWrap<double, int, long long, EpetraNode> > Ablock_wrap = Teuchos::rcp_dynamic_cast<Xpetra::CrsMatrixWrap<double, int, long long, EpetraNode>>(Ablock);
     TEUCHOS_TEST_FOR_EXCEPT(Ablock_wrap.is_null() == true);
 
