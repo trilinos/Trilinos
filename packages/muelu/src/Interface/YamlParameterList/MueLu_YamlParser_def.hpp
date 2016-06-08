@@ -58,8 +58,7 @@ void updateParametersFromYamlFile(const std::string& yamlFileName,
                                   const Teuchos::Ptr<Teuchos::ParameterList>& paramList)
 {
   //load the YAML file in as a new param list
-  MueLu::YAMLParameterListReader reader;
-  Teuchos::RCP<Teuchos::ParameterList> updated = reader.parseYamlFile(yamlFileName);
+  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlFile(yamlFileName);
   //now update the original list (overwriting values with same key)
   paramList->setParameters(*updated);
 }
@@ -68,8 +67,7 @@ void updateParametersFromYamlCString(const char* const data,
                                      const Teuchos::Ptr<Teuchos::ParameterList>& paramList,
                                      bool overwrite)
 {
-  MueLu::YAMLParameterListReader reader;
-  Teuchos::RCP<Teuchos::ParameterList> updated = reader.parseYamlText(data);
+  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data);
   if(overwrite)
   {
     paramList->setParameters(*updated);
@@ -84,8 +82,7 @@ void updateParametersFromYamlString(const std::string& yamlData,
                                   const Teuchos::Ptr<Teuchos::ParameterList>& paramList,
                                   bool overwrite)
 {
-  MueLu::YAMLParameterListReader reader;
-  Teuchos::RCP<Teuchos::ParameterList> updated = reader.parseYamlText(yamlData);
+  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData);
   if(overwrite)
   {
     paramList->setParameters(*updated);
@@ -98,8 +95,7 @@ void updateParametersFromYamlString(const std::string& yamlData,
 
 Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string& yamlFileName)
 {
-  MueLu::YAMLParameterListReader reader;
-  return reader.parseYamlFile(yamlFileName);
+  return YAMLParameterList::parseYamlFile(yamlFileName);
 }
 
 void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, const Teuchos::Ptr<Teuchos::ParameterList> &paramList, const Teuchos::Comm<int> &comm, bool overwrite)
@@ -156,29 +152,56 @@ void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, c
   }
 }
 
-/* YAMLParameterListReader functions */
+std::string convertXmlToYaml(const std::string& xmlFileName)
+{
+  //load the parameter list from xml
+  Teuchos::RCP<Teuchos::ParameterList> toConvert = Teuchos::getParametersFromXmlFile(xmlFileName);
+  //replace the file extension ".xml" with ".yaml", or append it if there was no extension
+  std::string yamlFileName;
+  if(xmlFileName.find(".xml") == std::string::npos)
+  {
+    yamlFileName = xmlFileName + ".yaml";
+  }
+  else
+  {
+    yamlFileName = xmlFileName.substr(0, xmlFileName.length() - 4) + ".yaml";
+  }
+  YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
+  return yamlFileName;
+}
 
-Teuchos::RCP<Teuchos::ParameterList> YAMLParameterListReader::parseYamlText(const std::string& text)
+void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName)
+{
+  //load the parameter list from xml
+  Teuchos::RCP<Teuchos::ParameterList> toConvert = Teuchos::getParametersFromXmlFile(xmlFileName);
+  //replace the file extension ".xml" with ".yaml", or append it if there was no extension
+  YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
+}
+
+namespace YAMLParameterList
+{
+
+Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text)
 {
   Teuchos::ParameterList pl;
   std::vector<YAML::Node> baseMap = YAML::LoadAll(text);
   return readParams(baseMap);
 }
 
-Teuchos::RCP<Teuchos::ParameterList> YAMLParameterListReader::parseYamlText(const char* text)
+Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const char* text)
 {
   Teuchos::ParameterList pl;
   std::vector<YAML::Node> baseMap = YAML::LoadAll(text);
   return readParams(baseMap);
 }
 
-Teuchos::RCP<Teuchos::ParameterList> YAMLParameterListReader::parseYamlFile(const std::string& yamlFile)
+Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile)
 {
   std::vector<YAML::Node> baseMap = YAML::LoadAllFromFile(yamlFile);
   return readParams(baseMap);
 }
 
-Teuchos::RCP<Teuchos::ParameterList> YAMLParameterListReader::readParams(std::vector<YAML::Node>& lists)
+Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<YAML::Node>& lists)
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList); //pl is the root ParameterList to be returned
   //If there is exactly one element in "lists", assume it is the anonymous top-level parameter list
@@ -190,26 +213,34 @@ Teuchos::RCP<Teuchos::ParameterList> YAMLParameterListReader::readParams(std::ve
   return pl;
 }
 
-void YAMLParameterListReader::processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
+void processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
 {
   if(node.Type() != YAML::NodeType::Map)
   {
     throw YamlStructureError("All top-level elements of the YAML file must be maps.");
   }
-  for(YAML::const_iterator i = node.begin(); i != node.end(); i++)
+  if(topLevel)
   {
-    //make sure the key type is a string
-    if(i->first.Type() != YAML::NodeType::Scalar)
+    parent.setName("ANONYMOUS");
+    processMapNode(node.begin()->second, parent);
+  }
+  else
+  {
+    for(YAML::const_iterator i = node.begin(); i != node.end(); i++)
     {
-      throw YamlKeyError("Keys must be plain strings");
+      //make sure the key type is a string
+      if(i->first.Type() != YAML::NodeType::Scalar)
+      {
+        throw YamlKeyError("Keys must be plain strings");
+      }
+      //if this conversion fails and throws for any reason (shouldn't), let the caller handle it
+      const std::string key = i->first.as<std::string>();
+      processKeyValueNode(key, i->second, parent, topLevel);
     }
-    //if this conversion fails and throws for any reason (shouldn't), let the caller handle it
-    const std::string key = i->first.as<std::string>();
-    processKeyValueNode(key, i->second, parent, topLevel);
   }
 }
 
-void YAMLParameterListReader::processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
+void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel)
 {
   //node (value) type can be a map (for nested param lists),
   //a scalar (int, double, string), or a sequence of doubles (vector<double>)
@@ -298,7 +329,7 @@ void YAMLParameterListReader::processKeyValueNode(const std::string& key, const 
   }
 }
 
-template<typename T> Teuchos::Array<T> YAMLParameterListReader::getYamlArray(const YAML::Node& node)
+template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node)
 {
   Teuchos::Array<T> arr;
   for(YAML::const_iterator it = node.begin(); it != node.end(); it++)
@@ -307,6 +338,153 @@ template<typename T> Teuchos::Array<T> YAMLParameterListReader::getYamlArray(con
   }
   return arr;
 }
+
+void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl)
+{
+  std::ofstream yaml(yamlFile);
+  yaml << "%YAML 1.1\n---\n";
+  yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
+  writeParameterList(*pl, yaml, 2);
+  yaml << "...";
+}
+
+void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel)
+{
+  yaml << '\n';
+  for(PLIter it = pl.begin(); it != pl.end(); it++)
+  {
+    writeParameter(pl.name(it), pl.entry(it), yaml, indentLevel);
+  }
+}
+
+void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel)
+{
+  for(int i = 0; i < indentLevel; i++)
+  {
+    yaml << ' ';
+  }
+  generalWriteString(paramName, yaml);
+  yaml << ": ";
+  if(entry.isList())
+  {
+    writeParameterList(Teuchos::getValue<Teuchos::ParameterList>(entry), yaml, indentLevel + 2);
+    return;
+  }
+  else if(entry.isArray())
+  {
+    yaml << '[';
+    if(entry.isType<Teuchos::Array<int> >())
+    {
+      Teuchos::Array<int>& arr = Teuchos::getValue<Teuchos::Array<int> >(entry);
+      for(int i = 0; i < arr.size(); i++)
+      {
+        yaml << arr[i];
+        if(i != arr.size() - 1)
+          yaml << ", ";
+      }
+    }
+    else if(entry.isType<Teuchos::Array<double> >())
+    {
+      Teuchos::Array<double>& arr = Teuchos::getValue<Teuchos::Array<double> >(entry);
+      for(int i = 0; i < arr.size(); i++)
+      {
+        generalWriteDouble(arr[i], yaml);
+        if(i != arr.size() - 1)
+          yaml << ", ";
+      }
+    }
+    else if(entry.isType<Teuchos::Array<std::string> >())
+    {
+      Teuchos::Array<std::string>& arr = Teuchos::getValue<Teuchos::Array<std::string> >(entry);
+      for(int i = 0; i < arr.size(); i++)
+      {
+        generalWriteString(arr[i], yaml);
+        if(i != arr.size() - 1)
+          yaml << ", ";
+      }
+    }
+    yaml << ']';
+  }
+  else if(entry.isType<int>())
+  {
+    yaml << Teuchos::getValue<int>(entry);
+  }
+  else if(entry.isType<double>())
+  {
+    generalWriteDouble(Teuchos::getValue<double>(entry), yaml);
+  }
+  else if(entry.isType<std::string>())
+  {
+    std::string& str = Teuchos::getValue<std::string>(entry);
+    if(strchr(str.c_str(), '\n'))
+    {
+      yaml << "|-\n";
+      //for each line, apply indent then print the line verbatim
+      size_t index = 0;
+      while(true)
+      {
+        size_t next = str.find('\n', index);
+        for(int i = 0; i < indentLevel + 2; i++)
+        {
+          yaml << ' ';
+        }
+        if(next == std::string::npos)
+        {
+          yaml << str.substr(index, std::string::npos);
+          break;
+        }
+        else
+        {
+          yaml << str.substr(index, next - index) << '\n';
+        }
+        index = next + 1;
+      }
+    }
+    else
+    {
+      generalWriteString(str, yaml);
+    }
+  }
+  else if(entry.isType<bool>())
+  {
+    yaml << (Teuchos::getValue<bool>(entry) ? "true" : "false");
+  }
+  yaml << '\n';
+}
+
+void generalWriteString(const std::string& str, std::ofstream& yaml)
+{
+  if(stringNeedsQuotes(str))
+  {
+    yaml << '\'' << str << '\'';
+  }
+  else
+  {
+    yaml << str;
+  }
+}
+
+void generalWriteDouble(double d, std::ofstream& yaml)
+{
+  yaml << std::showpoint << std::setprecision(8);
+  if(d < 1e6 && d > 1e-5)
+  {
+    //use regular notation
+    yaml << d;
+  }
+  else
+  {
+    yaml << std::scientific << d;
+  }
+  yaml << std::fixed;
+}
+
+bool stringNeedsQuotes(const std::string& str)
+{
+  return strpbrk(str.c_str(), ":{}[],&*#?|-<>=!%@\\");
+}
+
+} //namespace YAMLParameterList
 
 } //namespace MueLu
 

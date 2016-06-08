@@ -56,10 +56,10 @@
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 #include <string>
 #include <vector>
-#include <fstream>
-#include <streambuf>
 #include <cstdlib>
 #include <cstring>
 
@@ -93,21 +93,29 @@ void updateParametersFromYamlCString(const char* const yamlData,
 Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string& yamlFileName);
 void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, const Teuchos::Ptr<Teuchos::ParameterList> &paramList, const Teuchos::Comm<int> &comm, bool overwrite);
 
+std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
+void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileNamee); //writes to given filename
+
 //Class modeled after Teuchos::XMLParameterListReader
-class YAMLParameterListReader
+namespace YAMLParameterList
 {
-public:
   Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text);
   Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const char* text);
   Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile);
-private:
+  void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterList>& pl);
   Teuchos::RCP<Teuchos::ParameterList> readParams(std::vector<YAML::Node>& lists);
   //load all k-v pairs within node into param list (checks if node is map, and handles nesting)
   //topLevel means to put sub-pairs directly into parent and not create named sublists
   void processMapNode(const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
   void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos::ParameterList& parent, bool topLevel = false);
   template<typename T> Teuchos::Array<T> getYamlArray(const YAML::Node& node);
-};
+  void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel);
+  void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry& entry, std::ofstream& yaml, int indentLevel);    //throws if the entry's type is not supported
+  void generalWriteString(const std::string& str, std::ofstream& yaml);
+  void generalWriteDouble(double d, std::ofstream& yaml);
+  bool stringNeedsQuotes(const std::string& str);
+  typedef Teuchos::ParameterList::ConstIterator PLIter;
+}
 
 } //namespace
 
