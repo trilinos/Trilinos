@@ -313,8 +313,7 @@ static void spmv_alpha_beta_no_transpose(typename AMatrix::const_value_type& alp
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space , Kokkos::Schedule<Kokkos::Dynamic> >
        ( nteams , team_size , vector_length ) , op );
 
@@ -329,8 +328,7 @@ static void spmv_alpha_beta_no_transpose(typename AMatrix::const_value_type& alp
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -383,8 +381,7 @@ static void spmv_alpha_beta_transpose(typename AMatrix::const_value_type& alpha,
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -399,8 +396,7 @@ static void spmv_alpha_beta_transpose(typename AMatrix::const_value_type& alpha,
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -1280,8 +1276,7 @@ static void spmv_alpha_beta_mv_no_transpose(aCoeffs alpha, const AMatrix& A, con
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -1329,8 +1324,7 @@ static void spmv_alpha_beta_mv_no_transpose(aCoeffs alpha, const AMatrix& A, con
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -1390,8 +1384,7 @@ static void spmv_alpha_beta_mv_transpose(aCoeffs alpha, const AMatrix& A, const 
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
@@ -1439,8 +1432,7 @@ static void spmv_alpha_beta_mv_transpose(aCoeffs alpha, const AMatrix& A, const 
     const int rows_per_thread = RowsPerThread<typename AMatrix::execution_space >(NNZPerRow);
     const int team_size = Kokkos::TeamPolicy< typename AMatrix::execution_space >::team_size_recommended(op,vector_length);
     const int rows_per_team = rows_per_thread * team_size;
-    const typename AMatrix::size_type nteams =
-        (nrow+rows_per_team-1)/rows_per_team;
+    const size_type nteams = (nrow+rows_per_team-1)/rows_per_team;
     Kokkos::parallel_for( Kokkos::TeamPolicy< typename AMatrix::execution_space >
        ( nteams , team_size , vector_length ) , op );
 
