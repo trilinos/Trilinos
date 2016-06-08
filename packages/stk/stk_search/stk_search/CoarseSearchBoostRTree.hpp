@@ -39,6 +39,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
 #include <boost/geometry.hpp>
@@ -413,14 +414,14 @@ void coarse_search_boost_rtree_output_locally( std::vector< std::pair<DomainBox,
   output.erase(eitr, output.end());
 }
 
-
+namespace {
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
-void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
-                                std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
-                                stk::ParallelMachine comm,
-                                std::vector<std::pair<DomainIdent, RangeIdent> >& output,
-                                bool communicateRangeBoxInfo
-                              )
+void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+                                     std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
+                                     stk::ParallelMachine comm,
+                                     std::vector<std::pair<DomainIdent, RangeIdent> >& output,
+                                     bool communicateRangeBoxInfo
+                                   )
 {
   namespace bg = boost::geometry;
   namespace bgi = boost::geometry::index;
@@ -490,9 +491,46 @@ void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > 
       }
     }
   }
+}
+}
+
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+                                std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
+                                stk::ParallelMachine comm,
+                                std::vector<std::pair<DomainIdent, RangeIdent> >& output,
+                                bool communicateRangeBoxInfo
+                              )
+{
+  namespace bg = boost::geometry;
+  namespace bgi = boost::geometry::index;
+
+  // The search implementation needs to communicate all domain bounding boxes that intersect the
+  // bounding box for all range bounding boxes on a processor to that processor. In order to minimize
+  // the number of bounding boxes that are communicated we use whichever of the domain or range has
+  // fewer bounding boxes in it as the "domain" for the call to coarse_search_boost_rtree_impl().
+  const size_t local_sizes[2] = {local_domain.size(), local_range.size()};
+  size_t global_sizes[2];
+  all_reduce_sum(comm, local_sizes, global_sizes, 2);
+  const bool domain_has_more_boxes = global_sizes[0] > global_sizes[1];
+
+  if(domain_has_more_boxes)
+  {
+    coarse_search_boost_rtree_impl(local_domain, local_range, comm, output, communicateRangeBoxInfo);
+  }
+  else
+  {
+    std::vector<std::pair<RangeIdent, DomainIdent>> temp_output;
+    coarse_search_boost_rtree_impl(local_range, local_domain, comm, temp_output, communicateRangeBoxInfo);
+    output.reserve(temp_output.size());
+    for(auto && pair : temp_output)
+    {
+      output.emplace_back(pair.second, pair.first);
+    }
+  }
 
   std::sort(output.begin(), output.end());
-  typename OutputVector::iterator eitr = std::unique(output.begin(), output.end());
+  auto eitr = std::unique(output.begin(), output.end());
   output.erase(eitr, output.end());
 }
 
