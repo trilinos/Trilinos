@@ -533,11 +533,9 @@ namespace Iopx {
     }
 
     // Make sure all file pointers are valid...
-    std::cerr << "PROC " << myProcessor << ":" << exodusFilePtr  << "\n";
     int fp_min = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MIN);
     int fp_max = util().global_minmax(exodusFilePtr, Ioss::ParallelUtils::DO_MAX);
     if (fp_min != fp_max && fp_min < 0) {
-      std::cerr << myProcessor << ":" << exodusFilePtr  << "\n";
       std::ostringstream errmsg;
       errmsg << "ERROR: Inconsistent file pointer values.";
       IOSS_ERROR(errmsg);
