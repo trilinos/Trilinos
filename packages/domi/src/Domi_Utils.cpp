@@ -121,12 +121,12 @@ computeCommIndexes(int rank,
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::Array< int >
-computePeriodic(int numDims,
-                const Teuchos::ArrayView< const int > & periodic)
+createArrayOfInts(int numDims,
+                  const Teuchos::ArrayView< const int > & source)
 {
   Teuchos::Array< int > result(numDims, 0);
-  for (int axis = 0; axis < numDims && axis < periodic.size(); ++axis)
-    result[axis] = periodic[axis];
+  for (int axis = 0; axis < numDims && axis < source.size(); ++axis)
+    result[axis] = source[axis];
   return result;
 }
 
