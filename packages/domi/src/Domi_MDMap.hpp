@@ -167,6 +167,18 @@ public:
    *        number of dimensions, unspecified unspecified boundary
    *        padding sizes will be set to zero.
    *
+   * \param replicatedBoundary [in] An array of ints which are simple
+   *        flags denoting whether each axis contains replicated
+   *        boundary points (RBPs). RBPs pertain only to periodic
+   *        axes. As an example, consider a map that describes the
+   *        decomposition of a longitude coordinate. If the global
+   *        lower boundary of this domain is longitude = 0 degrees,
+   *        and the global upper boundary of this domain is longitude
+   *        = 360 degrees, then this axis has a replicated
+   *        boundary. Note that communication of the boundary padding
+   *        will skip these boundary points, and it is up to the user
+   *        to ensure that their values are equal or compatible.
+   *
    * \param layout [in] the storage order of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
@@ -174,6 +186,8 @@ public:
         const Teuchos::ArrayView< const int > & commPad =
           Teuchos::ArrayView< const int >(),
         const Teuchos::ArrayView< const int > & bndryPad =
+          Teuchos::ArrayView< const int >(),
+        const Teuchos::ArrayView< const int > & replicatedBoundary =
           Teuchos::ArrayView< const int >(),
         const Layout layout = DEFAULT_ORDER);
 
@@ -226,12 +240,26 @@ public:
    *        that represent the global indexes of the bounds on this
    *        processor, excluding padding
    *
+   * \param replicatedBoundary [in] An array of ints which are simple
+   *        flags denoting whether each axis contains replicated
+   *        boundary points (RBPs). RBPs pertain only to periodic
+   *        axes. As an example, consider a map that describes the
+   *        decomposition of a longitude coordinate. If the global
+   *        lower boundary of this domain is longitude = 0 degrees,
+   *        and the global upper boundary of this domain is longitude
+   *        = 360 degrees, then this axis has a replicated
+   *        boundary. Note that communication of the boundary padding
+   *        will skip these boundary points, and it is up to the user
+   *        to ensure that their values are equal or compatible.
+   *
    * \param layout [in] the storage order of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
         const Teuchos::ArrayView< Slice > & myGlobalBounds,
         const Teuchos::ArrayView< padding_type > & padding =
           Teuchos::ArrayView< padding_type >(),
+        const Teuchos::ArrayView< const int > & replicatedBoundary =
+          Teuchos::ArrayView< const int >(),
         const Layout layout = DEFAULT_ORDER);
 
   /** \brief Copy constructor
@@ -643,6 +671,10 @@ public:
    */
   bool isBndryPad(const Teuchos::ArrayView< dim_type > & index) const;
 
+  /** \brief Return whether the given axis supports a replicated boundary
+   */
+  bool isReplicatedBoundary(int axis) const;
+
   /** \brief Get the storage order
    */
   Layout getLayout() const;
@@ -945,10 +977,17 @@ private:
   // then these values will be set to the communication padding.
   Teuchos::Array< padding_type > _bndryPad;
 
+  // An array of flags, one for each axis, that specifies whether the
+  // endpoints of a periodic boundary are replicated (1 or true) or
+  // unique (0 or false). These flags only have meaning for axes that
+  // are periodic. The arrray type is int, beacause Array< bool > is
+  // specialized and sometimes difficult to work with.
+  Teuchos::Array< int > _replicatedBoundary;
+
   // The storage order
   Layout _layout;
 
-  // An array of axis maps the correspond to the full MDMap.  An axis
+  // An array of axis maps that correspond to the full MDMap.  An axis
   // map describes the map along a single axis. This member is mutable
   // because it is logically const but does not get constructed until
   // requested by the user.
@@ -996,6 +1035,7 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< const dim_type > & dimensions,
       const Teuchos::ArrayView< const int > & commPad,
       const Teuchos::ArrayView< const int > & bndryPad,
+      const Teuchos::ArrayView< const int > & replicatedBoundary,
       const Layout layout) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
@@ -1013,6 +1053,8 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
   _pad(),
   _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(),
+  _replicatedBoundary(createArrayOfInts(mdComm->numDims(),
+                                        replicatedBoundary)),
   _layout(layout)
 {
   // Temporarily store the number of dimensions
@@ -1085,6 +1127,7 @@ MDMap(Teuchos::ParameterList & plist) :
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
+  _replicatedBoundary(),
   _layout()
 {
   // Note that the call to the MDComm constructor in the constructor
@@ -1153,6 +1196,11 @@ MDMap(Teuchos::ParameterList & plist) :
   computeBounds();
   _localMax = computeSize(_localDims());
 
+  // Set the replicated boundary flags along each axis
+  Teuchos::Array< int > repBndry = plist.get("replicated boundary",
+                                             Teuchos::Array< int >());
+  _replicatedBoundary = createArrayOfInts(numDims, repBndry);
+
   // Set the layout
   std::string layout = plist.get("layout", "DEFAULT");
   std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
@@ -1198,6 +1246,7 @@ MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
+  _replicatedBoundary(),
   _layout()
 {
   // Note that the call to the MDComm constructor in the constructor
@@ -1271,6 +1320,129 @@ MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   computeBounds();
   _localMax = computeSize(_localDims());
 
+  // Set the replicated boundary flags along each axis
+  Teuchos::Array< int > repBndry = plist.get("replicated boundary",
+                                             Teuchos::Array< int >());
+  _replicatedBoundary = createArrayOfInts(numDims, repBndry);
+
+  // Set the layout
+  std::string layout = plist.get("layout", "DEFAULT");
+  std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
+  if (layout == "C ORDER")
+    _layout = C_ORDER;
+  else if (layout == "FORTRAN ORDER")
+    _layout = FORTRAN_ORDER;
+  else if (layout == "ROW MAJOR")
+    _layout = ROW_MAJOR;
+  else if (layout == "COLUMN MAJOR")
+    _layout = COLUMN_MAJOR;
+  else if (layout == "LAST INDEX FASTEST")
+    _layout = LAST_INDEX_FASTEST;
+  else if (layout == "FIRST INDEX FASTEST")
+    _layout = FIRST_INDEX_FASTEST;
+  else
+    _layout = DEFAULT_ORDER;
+
+  // Compute the strides
+  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
+  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+MDMap< Node >::
+MDMap(Teuchos::RCP< const MDComm > mdComm,
+      Teuchos::ParameterList & plist) :
+  _mdComm(mdComm),
+  _globalDims(mdComm->numDims()),
+  _globalBounds(),
+  _globalRankBounds(mdComm->numDims()),
+  _globalStrides(),
+  _globalMin(0),
+  _globalMax(),
+  _localDims(mdComm->numDims(), 0),
+  _localBounds(),
+  _localStrides(),
+  _localMin(0),
+  _localMax(),
+  _commPadSizes(mdComm->numDims(), 0),
+  _pad(),
+  _bndryPadSizes(mdComm->numDims(), 0),
+  _bndryPad(),
+  _replicatedBoundary(),
+  _layout()
+{
+  // Validate the ParameterList
+  plist.validateParameters(*getValidParameters());
+
+  // Temporarily store the number of dimensions
+  int numDims = _mdComm->numDims();
+
+  // Check the global dimensions
+  Teuchos::Array< dim_type > dimensions =
+    plist.get("dimensions", Teuchos::Array< dim_type >());
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    numDims != dimensions.size(),
+    InvalidArgument,
+    "Number of dimensions does not match MDComm number of dimensions");
+
+  // Initialize _bndryPadSizes, _commPadSizes and _globalDims from the
+  // ParameterList
+  int commPad  = plist.get("communication pad size", int(0));
+  int bndryPad = plist.get("boundary pad size"     , int(0));
+  Teuchos::Array< int > commPads  =
+    plist.get("communication pad sizes", Teuchos::Array< int >());
+  Teuchos::Array< int > bndryPads =
+    plist.get("boundary pad sizes"     , Teuchos::Array< int >());
+  _commPadSizes.resize( numDims);
+  _bndryPadSizes.resize(numDims);
+  _globalDims.resize(   numDims);
+
+  // Copy the communication and boundary padding sizes, compute the
+  // global dimensions and bounds, and the actual padding
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    if (axis < commPads.size() ) _commPadSizes[ axis] = commPads[ axis];
+    else                         _commPadSizes[ axis] = commPad;
+    if (axis < bndryPads.size()) _bndryPadSizes[axis] = bndryPads[axis];
+    else                         _bndryPadSizes[axis] = bndryPad;
+    if (_mdComm->isPeriodic(axis))
+      _bndryPad.push_back(Teuchos::tuple(_commPadSizes[axis],
+                                         _commPadSizes[axis]));
+    else
+      _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
+                                         _bndryPadSizes[axis]));
+    _globalDims[axis] = dimensions[axis] + _bndryPad[axis][0] +
+                        _bndryPad[axis][1];
+    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
+    int lower, upper;
+    if (getLowerNeighbor(axis) == -1)
+      lower = _bndryPadSizes[axis];
+    else
+      lower = _commPadSizes[axis];
+    if (getUpperNeighbor(axis) == -1)
+      upper = _bndryPadSizes[axis];
+    else
+      upper = _commPadSizes[axis];
+    _pad.push_back(Teuchos::tuple(lower, upper));
+  }
+
+  // Compute the global size
+  _globalMax = computeSize(_globalDims());
+
+  // Compute _globalRankBounds, _localBounds, and _localDims.
+  // Then compute the local size
+  _globalRankBounds.resize(numDims);
+  _localDims.resize(numDims);
+  computeBounds();
+  _localMax = computeSize(_localDims());
+
+  // Set the replicated boundary flags along each axis
+  Teuchos::Array< int > repBndry = plist.get("replicated boundary",
+                                             Teuchos::Array< int >());
+  _replicatedBoundary = createArrayOfInts(numDims, repBndry);
+
   // Set the layout
   std::string layout = plist.get("layout", "DEFAULT");
   std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
@@ -1301,6 +1473,7 @@ MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< Slice > & myGlobalBounds,
       const Teuchos::ArrayView< padding_type > & padding,
+      const Teuchos::ArrayView< const int > & replicatedBoundary,
       const Layout layout) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
@@ -1318,6 +1491,8 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
   _pad(mdComm->numDims(), Teuchos::tuple(0,0)),
   _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(mdComm->numDims()),
+  _replicatedBoundary(createArrayOfInts(mdComm->numDims(),
+                                        replicatedBoundary)),
   _layout(layout)
 {
   // Check that myGlobalBounds is the correct size
@@ -1466,118 +1641,6 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
 
 template< class Node >
 MDMap< Node >::
-MDMap(Teuchos::RCP< const MDComm > mdComm,
-      Teuchos::ParameterList & plist) :
-  _mdComm(mdComm),
-  _globalDims(mdComm->numDims()),
-  _globalBounds(),
-  _globalRankBounds(mdComm->numDims()),
-  _globalStrides(),
-  _globalMin(0),
-  _globalMax(),
-  _localDims(mdComm->numDims(), 0),
-  _localBounds(),
-  _localStrides(),
-  _localMin(0),
-  _localMax(),
-  _commPadSizes(mdComm->numDims(), 0),
-  _pad(),
-  _bndryPadSizes(mdComm->numDims(), 0),
-  _bndryPad(),
-  _layout()
-{
-  // Validate the ParameterList
-  plist.validateParameters(*getValidParameters());
-
-  // Temporarily store the number of dimensions
-  int numDims = _mdComm->numDims();
-
-  // Check the global dimensions
-  Teuchos::Array< dim_type > dimensions =
-    plist.get("dimensions", Teuchos::Array< dim_type >());
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    numDims != dimensions.size(),
-    InvalidArgument,
-    "Number of dimensions does not match MDComm number of dimensions");
-
-  // Initialize _bndryPadSizes, _commPadSizes and _globalDims from the
-  // ParameterList
-  int commPad  = plist.get("communication pad size", int(0));
-  int bndryPad = plist.get("boundary pad size"     , int(0));
-  Teuchos::Array< int > commPads  =
-    plist.get("communication pad sizes", Teuchos::Array< int >());
-  Teuchos::Array< int > bndryPads =
-    plist.get("boundary pad sizes"     , Teuchos::Array< int >());
-  _commPadSizes.resize( numDims);
-  _bndryPadSizes.resize(numDims);
-  _globalDims.resize(   numDims);
-
-  // Copy the communication and boundary padding sizes, compute the
-  // global dimensions and bounds, and the actual padding
-  for (int axis = 0; axis < numDims; ++axis)
-  {
-    if (axis < commPads.size() ) _commPadSizes[ axis] = commPads[ axis];
-    else                         _commPadSizes[ axis] = commPad;
-    if (axis < bndryPads.size()) _bndryPadSizes[axis] = bndryPads[axis];
-    else                         _bndryPadSizes[axis] = bndryPad;
-    if (_mdComm->isPeriodic(axis))
-      _bndryPad.push_back(Teuchos::tuple(_commPadSizes[axis],
-                                         _commPadSizes[axis]));
-    else
-      _bndryPad.push_back(Teuchos::tuple(_bndryPadSizes[axis],
-                                         _bndryPadSizes[axis]));
-    _globalDims[axis] = dimensions[axis] + _bndryPad[axis][0] +
-                        _bndryPad[axis][1];
-    _globalBounds.push_back(ConcreteSlice(_globalDims[axis]));
-    int lower, upper;
-    if (getLowerNeighbor(axis) == -1)
-      lower = _bndryPadSizes[axis];
-    else
-      lower = _commPadSizes[axis];
-    if (getUpperNeighbor(axis) == -1)
-      upper = _bndryPadSizes[axis];
-    else
-      upper = _commPadSizes[axis];
-    _pad.push_back(Teuchos::tuple(lower, upper));
-  }
-
-  // Compute the global size
-  _globalMax = computeSize(_globalDims());
-
-  // Compute _globalRankBounds, _localBounds, and _localDims.
-  // Then compute the local size
-  _globalRankBounds.resize(numDims);
-  _localDims.resize(numDims);
-  computeBounds();
-  _localMax = computeSize(_localDims());
-
-  // Set the layout
-  std::string layout = plist.get("layout", "DEFAULT");
-  std::transform(layout.begin(), layout.end(), layout.begin(), ::toupper);
-  if (layout == "C ORDER")
-    _layout = C_ORDER;
-  else if (layout == "FORTRAN ORDER")
-    _layout = FORTRAN_ORDER;
-  else if (layout == "ROW MAJOR")
-    _layout = ROW_MAJOR;
-  else if (layout == "COLUMN MAJOR")
-    _layout = COLUMN_MAJOR;
-  else if (layout == "LAST INDEX FASTEST")
-    _layout = LAST_INDEX_FASTEST;
-  else if (layout == "FIRST INDEX FASTEST")
-    _layout = FIRST_INDEX_FASTEST;
-  else
-    _layout = DEFAULT_ORDER;
-
-  // Compute the strides
-  _globalStrides = computeStrides< size_type, dim_type >(_globalDims, _layout);
-  _localStrides  = computeStrides< size_type, dim_type >(_localDims , _layout);
-}
-
-////////////////////////////////////////////////////////////////////////
-
-template< class Node >
-MDMap< Node >::
 MDMap(const MDMap< Node > & source) :
   _mdComm(source._mdComm),
   _globalDims(source._globalDims),
@@ -1595,6 +1658,7 @@ MDMap(const MDMap< Node > & source) :
   _pad(source._pad),
   _bndryPadSizes(source._bndryPadSizes),
   _bndryPad(source._bndryPad),
+  _replicatedBoundary(source._replicatedBoundary),
   _layout(source._layout)
 {
 }
@@ -1622,6 +1686,7 @@ MDMap(const MDMap< Node > & parent,
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
+  _replicatedBoundary(),
   _layout(parent._layout)
 {
   if (parent.onSubcommunicator())
@@ -1682,6 +1747,7 @@ MDMap(const MDMap< Node > & parent,
       _pad.push_back(Teuchos::tuple(0,0));
       _bndryPadSizes.push_back(0);
       _bndryPad.push_back(Teuchos::tuple(0,0));
+      _replicatedBoundary.push_back(0);
     }
     else
     {
@@ -1704,6 +1770,7 @@ MDMap(const MDMap< Node > & parent,
           _pad.push_back(parent._pad[myAxis]);
           _bndryPadSizes.push_back(parent._bndryPadSizes[myAxis]);
           _bndryPad.push_back(parent._bndryPad[myAxis]);
+          _replicatedBoundary.push_back(parent._replicatedBoundary[myAxis]);
         }
         else
         {
@@ -1745,6 +1812,7 @@ MDMap(const MDMap< Node > & parent,
   _pad(parent._pad),
   _bndryPadSizes(parent._bndryPadSizes),
   _bndryPad(parent._bndryPad),
+  _replicatedBoundary(parent._replicatedBoundary),
   _layout(parent._layout)
 {
   if (parent.onSubcommunicator())
@@ -1811,6 +1879,11 @@ MDMap(const MDMap< Node > & parent,
     _globalMin         += start * _globalStrides[axis];
     _globalMax         -= (parent.getGlobalDim(axis,true) - stop) *
                            _globalStrides[axis];
+
+    // Alter _replicatedBoundary
+    if ((parent.getGlobalBounds(axis,true).start() < _globalBounds[axis].start())
+        || (parent.getGlobalBounds(axis,true).stop() > _globalBounds[axis].stop()))
+      _replicatedBoundary[axis] = 0;
 
     // Build the slice for the MDComm sub-communicator constructor
     int pStart = -1;
@@ -2197,9 +2270,6 @@ getLocalBounds(int axis,
     return _localBounds[axis];
   else
   {
-    // std::cout << "getLocalBounds(" << axis << "," << withPad << "): _pad["
-    //           << axis << "] = " << _pad[axis] << ", _localBounds[" << axis
-    //           << "] = " << _localBounds[axis] << std::endl;
     dim_type start = _localBounds[axis].start() + _pad[axis][0];
     dim_type stop  = _localBounds[axis].stop()  - _pad[axis][1];
     return ConcreteSlice(start, stop);
@@ -2414,6 +2484,15 @@ isBndryPad(const Teuchos::ArrayView< dim_type > & index) const
     }
   }
   return result;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class Node >
+bool
+MDMap< Node >::isReplicatedBoundary(int axis) const
+{
+  return _mdComm->isPeriodic(axis) && bool(_replicatedBoundary[axis]);
 }
 
 ////////////////////////////////////////////////////////////////////////
