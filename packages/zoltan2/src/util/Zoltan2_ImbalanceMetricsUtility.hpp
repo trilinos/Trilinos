@@ -354,6 +354,7 @@ template <typename Adapter>
     multiCriteriaNorm mcNorm,
     const Adapter *ia,
     const PartitioningSolution<Adapter> *solution,
+    const ArrayView<const typename Adapter::part_t> &partArray,
     const RCP<const GraphModel<typename Adapter::base_adapter_t> > &graphModel,
     typename Adapter::part_t &numParts,
     typename Adapter::part_t &numNonemptyParts,
@@ -371,29 +372,6 @@ template <typename Adapter>
   // Local number of objects.
 
   size_t numLocalObjects = ia->getLocalNumIDs();
-
-  // Parts to which objects are assigned.
-
-  const part_t *parts;
-  if (solution) {
-    // User provided a partitioning solution; use it.
-    parts = solution->getPartListView();
-    env->localInputAssertion(__FILE__, __LINE__, "parts not set",
-      ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
-  } else {
-    // User did not provide a partitioning solution;
-    // Use input adapter partition.
-
-    parts = NULL;
-    ia->getPartsView(parts);
-    if (parts == NULL) {
-      // User has not provided input parts in input adapter
-      part_t *procs = new part_t [numLocalObjects];
-      for (size_t i = 0; i < numLocalObjects; i++) procs[i] = comm->getRank();
-      parts = procs;
-    }
-  }
-  ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   // Weights, if any, for each object.
 
@@ -458,22 +436,20 @@ template <typename Adapter>
   // Relative part sizes, if any, assigned to the parts.
 
   part_t targetNumParts = comm->getSize();
-
-  if (solution)
-    targetNumParts = solution->getTargetGlobalNumberOfParts();
-
   scalar_t *psizes = NULL;
 
   ArrayRCP<ArrayRCP<scalar_t> > partSizes(numCriteria);
-  for (int dim=0; dim < numCriteria; dim++){
-    if (solution)
-    if (solution->criteriaHasUniformPartSizes(dim) != true){
-      psizes = new scalar_t [targetNumParts];
-      env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
-      for (part_t i=0; i < targetNumParts; i++){
-        psizes[i] = solution->getCriteriaPartSize(dim, i);
+  if (solution) {
+    targetNumParts = solution->getTargetGlobalNumberOfParts();
+    for (int dim=0; dim < numCriteria; dim++){
+      if (solution->criteriaHasUniformPartSizes(dim) != true){
+        psizes = new scalar_t [targetNumParts];
+        env->localMemoryAssertion(__FILE__, __LINE__, numParts, psizes);
+        for (part_t i=0; i < targetNumParts; i++){
+          psizes[i] = solution->getCriteriaPartSize(dim, i);
+        }
+        partSizes[dim] = arcp(psizes, 0, targetNumParts, true);
       }
-      partSizes[dim] = arcp(psizes, 0, targetNumParts, true);
     }
   }
 
