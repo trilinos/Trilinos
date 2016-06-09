@@ -229,7 +229,7 @@ namespace Tacho {
       S.setTreeLevel();
       S.setStrategy( /**/ SCOTCH_STRATSPEED
                      |    SCOTCH_STRATLEVELMAX
-                     |    SCOTCH_STRATLEVELMIN
+                     //|    SCOTCH_STRATLEVELMIN
                      |    SCOTCH_STRATLEAFSIMPLE
                      |    SCOTCH_STRATSEPASIMPLE
                      );

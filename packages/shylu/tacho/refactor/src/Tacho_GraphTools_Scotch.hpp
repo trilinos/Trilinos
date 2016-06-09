@@ -146,7 +146,7 @@ namespace Tacho {
       if (level)
         _level = level;
       else
-        _level = Util::max(1, int(log2(_m)));
+        _level = Util::max(1, int(log2(_m) - 2));
     }
 
     void computeOrdering(const ordinal_type treecut = 0) {
@@ -217,6 +217,9 @@ namespace Tacho {
         }
       }
       _is_ordered = true;
+
+      if (_verbose) 
+        std::cout << "GraphTools_Scotch:: # of block partitions of rows/columns = " << _cblk << std::endl;
 
       //std::cout << "SCOTCH level = " << level << std::endl;
       //std::cout << "Range   Tree " << std::endl;
