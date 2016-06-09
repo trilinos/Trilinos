@@ -178,6 +178,58 @@ void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFil
   YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
 }
 
+bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs)
+{
+  typedef Teuchos::ParameterList::ConstIterator Iter;
+  Iter i = lhs.begin();
+  Iter j = rhs.begin();
+  if(lhs.name() != rhs.name())
+  {
+    return false;
+  }
+  for(; i != lhs.end(); i++)
+  {
+    const std::string& key = lhs.name(i);
+    const Teuchos::ParameterEntry& val1 = lhs.entry(i);
+    //check that rhs also contains this key
+    if(!rhs.isParameter(key))
+    {
+      return false;
+    }
+    const Teuchos::ParameterEntry& val2 = rhs.getEntry(key);
+    const Teuchos::any& any1 = val1.getAny(false);
+    const Teuchos::any& any2 = val2.getAny(false);
+    //check that types match
+    if(any1.type() != any2.type())
+    {
+      return false;
+    }
+    //check for parameter list special case (don't use operator==)
+    if(any1.type() == typeid(Teuchos::ParameterList))
+    {
+      if(!haveSameValuesUnordered(Teuchos::any_cast<Teuchos::ParameterList>(any1), Teuchos::any_cast<Teuchos::ParameterList>(any2)))
+      {
+        return false;
+      }
+    }
+    else
+    {
+      //otherwise, use == to compare the values
+      if(!(val1 == val2))
+      {
+        return false;
+      }
+    }
+    j++;
+  }
+  //lists must have same # of entries
+  if(j != rhs.end())
+  {
+    return false;
+  }
+  return true;
+}
+
 namespace YAMLParameterList
 {
 
@@ -344,7 +396,14 @@ void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterL
   std::ofstream yaml(yamlFile);
   yaml << "%YAML 1.1\n---\n";
   yaml << "ANONYMOUS:";         //original top-level list name is not stored by ParameterList
-  writeParameterList(*pl, yaml, 2);
+  if(pl->numParams() == 0)
+  {
+    yaml << " { }\n";
+  }
+  else
+  {
+    writeParameterList(*pl, yaml, 2);
+  }
   yaml << "...";
 }
 

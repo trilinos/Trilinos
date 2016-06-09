@@ -58,79 +58,6 @@
 #include <MueLu_ParameterListInterpreter.hpp>
 #include <MueLu_Exceptions.hpp>
 
-static bool paramListsEquivalent(const ParameterList& lhs, const ParameterList& rhs, bool verbose)
-{
-  typedef Teuchos::ParameterList::ConstIterator Iter;
-  Iter i = lhs.begin();
-  Iter j = rhs.begin();
-  if(lhs.name() != rhs.name())
-  {
-    if(verbose)
-    {
-      std::cout << "Param lists have different names: " << lhs.name() << " and " << rhs.name() << std::endl;
-    }
-    return false;
-  }
-  for(; i != lhs.end(); i++)
-  {
-    const std::string& key = lhs.name(i);
-    const Teuchos::ParameterEntry& val1 = lhs.entry(i);
-    //check that rhs also contains this key
-    if(!rhs.isParameter(key))
-    {
-      if(verbose)
-      {
-        std::cout << "One param list has a parameter called \"" << key << "\" but not the other." << std::endl;
-      }
-      return false;
-    }
-    const Teuchos::ParameterEntry& val2 = rhs.getEntry(key);
-    const Teuchos::any& any1 = val1.getAny(false);
-    const Teuchos::any& any2 = val2.getAny(false);
-    //check that types match
-    if(any1.type() != any2.type())
-    {
-      if(verbose)
-      {
-        std::cout << "Parameter \"" << key << "\" has type " << any1.typeName() << " in one list but type "
-                  << any2.typeName() << " in the other." << std::endl;
-      }
-      return false;
-    }
-    //check for parameter list special case (don't use operator==)
-    if(any1.type() == typeid(Teuchos::ParameterList))
-    {
-      if(!paramListsEquivalent(Teuchos::any_cast<Teuchos::ParameterList>(any1), Teuchos::any_cast<Teuchos::ParameterList>(any2), verbose))
-      {
-        return false;
-      }
-    }
-    else
-    {
-      //otherwise, use == to compare the values
-      if(!(val1 == val2))
-      {
-        if(verbose)
-        {
-          std::cout << "Parameter \"" << key << "\" values don't match." << std::endl;
-        }
-        return false;
-      }
-    }
-    j++;
-  }
-  //lists must have same # of entries
-  if(j != rhs.end())
-  {
-    if(verbose)
-    {
-      std::cout << "Parameter lists have different number of entries." << std::endl;
-    }
-    return false;
-  }
-  return true;
-}
-
 namespace MueLuTests
 {
   TEUCHOS_UNIT_TEST(YAML, XmlEquivalence)
@@ -142,7 +69,7 @@ namespace MueLuTests
       std::string yamlFile = std::string("yaml/") + matchStems[i] + ".yaml";
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
       RCP<ParameterList> yamlList = MueLu::getParametersFromYamlFile(yamlFile);
-      TEST_EQUALITY(paramListsEquivalent(*xmlList, *yamlList, true), true);
+      TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), true);
     }
   }
   TEUCHOS_UNIT_TEST(YAML, IntVsDouble)
@@ -151,7 +78,7 @@ namespace MueLuTests
     //YAML reader should recognize the double and the param lists should not be equivalent
     RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile("yaml/IntVsDouble.xml");
     RCP<ParameterList> yamlList = MueLu::getParametersFromYamlFile("yaml/IntVsDouble.yaml");
-    TEST_EQUALITY(paramListsEquivalent(*xmlList, *yamlList, false), false);
+    TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), false);
   }
   TEUCHOS_UNIT_TEST(YAML, IllegalKeyString)
   {
@@ -208,7 +135,7 @@ namespace MueLuTests
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     Teuchos::updateParametersFromXmlFileAndBroadcast("yaml/Match1.xml", xmlList.ptr(), *comm, true);
     MueLu::updateParametersFromYamlFileAndBroadcast("yaml/Match1.yaml", yamlList.ptr(), *comm, true);
-    TEST_EQUALITY(paramListsEquivalent(*xmlList, *yamlList, true), true);
+    TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), true);
   }
   TEUCHOS_UNIT_TEST(YAML, ConvertFromXML)
   {
@@ -224,7 +151,7 @@ namespace MueLuTests
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
       RCP<ParameterList> yamlList = MueLu::getParametersFromYamlFile(yamlFile);
       remove(yamlFile.c_str());
-      TEST_EQUALITY(paramListsEquivalent(*xmlList, *yamlList, true), true);
+      TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), true);
     }
   }
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(YAML, MueLuConfig, Scalar, LocalOrdinal, GlobalOrdinal, Node)
