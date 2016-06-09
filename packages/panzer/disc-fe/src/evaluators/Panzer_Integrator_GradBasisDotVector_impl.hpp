@@ -113,7 +113,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(residual.get_kokkos_view(),"tmp",flux.dimension(0), num_qp, num_dim); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",flux.dimension(0), num_qp, num_dim); 
 }
 
 //**********************************************************************
@@ -122,7 +122,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
   //for (int i=0; i < residual.size(); ++i)
   //  residual[i] = 0.0;
 
-  Kokkos::deep_copy(residual.get_kokkos_view(), ScalarT(0.0));
+  Kokkos::deep_copy(residual.get_static_view(), ScalarT(0.0));
 
 #if PANZER_USE_FAST_QUAD
   // do a scaled copy

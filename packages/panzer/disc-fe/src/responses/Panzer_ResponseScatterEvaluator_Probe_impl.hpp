@@ -288,7 +288,7 @@ evaluateFields(typename Traits::EvalData d)
   if (basis_->getElementSpace() == PureBasis::CONST ||
       basis_->getElementSpace() == PureBasis::HGRAD) {
     field_coeffs =
-      Kokkos::createDynRankView(scalarField_.get_kokkos_view(), "field_val",
+      Kokkos::createDynRankView(scalarField_.get_static_view(), "field_val",
                                 1, num_basis); // Cell, Basis
     for (size_t i=0; i<num_basis; ++i)
       field_coeffs(0,i) = scalarField_(cellIndex_,i);
@@ -296,7 +296,7 @@ evaluateFields(typename Traits::EvalData d)
   else if (basis_->getElementSpace() == PureBasis::HCURL ||
            basis_->getElementSpace() == PureBasis::HDIV) {
     field_coeffs =
-      Kokkos::createDynRankView(vectorField_.get_kokkos_view(), "field_val",
+      Kokkos::createDynRankView(vectorField_.get_static_view(), "field_val",
                                 1, num_basis); // Cell, Basis
     for (size_t i=0; i<num_basis; ++i)
       field_coeffs(0,i) = vectorField_(cellIndex_,i,fieldComponent_);

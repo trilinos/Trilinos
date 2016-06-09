@@ -119,7 +119,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Kokkos::createDynRankView(scalar.get_kokkos_view(),"tmp",scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
 }
 
 //**********************************************************************

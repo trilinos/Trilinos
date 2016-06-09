@@ -344,7 +344,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   this->utils.setFieldData(sum,fm);
   for (std::size_t i=0; i < values.size(); ++i) {
     this->utils.setFieldData(values[i],fm);
-    value_views[i] = values[i].get_kokkos_view();
+    value_views[i] = values[i].get_static_view();
   }
 }
 

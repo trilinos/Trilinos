@@ -51,6 +51,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Kokkos_View.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
@@ -68,26 +69,26 @@ namespace PHX {
            typename Tag0 = void, typename Tag1 = void, typename Tag2 = void,
            typename Tag3 = void, typename Tag4 = void, typename Tag5 = void,
            typename Tag6 = void, typename Tag7 = void>
-  struct KokkosDimentionType{
+  struct KokkosDimensionType{
     typedef DataT******** type;
  };
 
   template<typename DataT,
            typename Tag0> 
-  struct KokkosDimentionType<DataT, Tag0, void, void, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, void, void, void, void, void, void, void> {
     typedef DataT* type;
   };
   template<typename DataT,
            typename Tag0,
            typename Tag1> 
-  struct KokkosDimentionType<DataT, Tag0, Tag1, void, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, void, void, void, void, void, void> {
     typedef DataT** type;
   };
    template<typename DataT,
            typename Tag0,
            typename Tag1,
            typename Tag2>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, void, void, void, void, void> {
     typedef DataT*** type;
   };
   template<typename DataT,
@@ -95,7 +96,7 @@ namespace PHX {
            typename Tag1,
            typename Tag2,
            typename Tag3>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, void, void, void, void> {
     typedef DataT**** type;
   };
  template<typename DataT,
@@ -104,7 +105,7 @@ namespace PHX {
            typename Tag2,
            typename Tag3,
            typename Tag4>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, void, void, void> {
     typedef DataT***** type;
   };
   template<typename DataT,
@@ -114,7 +115,7 @@ namespace PHX {
            typename Tag3,
            typename Tag4,
            typename Tag5>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, void, void> {
     typedef DataT****** type;
  };
  template<typename DataT,
@@ -125,7 +126,7 @@ namespace PHX {
            typename Tag4,
            typename Tag5,
            typename Tag6>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, void> {
     typedef DataT******* type;
  };
 
@@ -144,7 +145,7 @@ namespace PHX {
     typedef DataT value_type;
     typedef DataT& reference_type;
 
-    typedef typename KokkosDimentionType<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::type kokkos_data_type;
+    typedef typename KokkosDimensionType<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::type kokkos_data_type;
     typedef typename Kokkos::View <kokkos_data_type, PHX::Device> array_type;
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
@@ -288,10 +289,18 @@ namespace PHX {
     void dimensions(std::vector<iType>& dims);
    
     KOKKOS_FORCEINLINE_FUNCTION 
-    array_type get_kokkos_view();
+    Kokkos::DynRankView<DataT,PHX::Device> get_view();
 
     KOKKOS_FORCEINLINE_FUNCTION
-    const array_type get_kokkos_view()const;
+    const Kokkos::DynRankView<DataT,PHX::Device> get_view() const;
+
+    //! Returns a static view of the underlying kokkos static view.
+    KOKKOS_FORCEINLINE_FUNCTION 
+    array_type get_static_view();
+
+    //! Returns a static view of the underlying kokkos static view.
+    KOKKOS_FORCEINLINE_FUNCTION
+    const array_type get_static_view() const;
 
     template<typename MDFieldType>
     void deep_copy(const MDFieldType& source);

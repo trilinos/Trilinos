@@ -271,8 +271,8 @@ int main(int argc, char *argv[])
       fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
 
       // Get host arrays to copy from device back to host
-      auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_kokkos_view());
-      auto host_source = Kokkos::create_mirror_view(source.get_kokkos_view());
+      auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_static_view());
+      auto host_source = Kokkos::create_mirror_view(source.get_static_view());
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time Residual");
 
@@ -297,8 +297,8 @@ int main(int argc, char *argv[])
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
 #endif	  
 	  // Use values: in this example, move values into local host arrays
-	  Kokkos::deep_copy(host_energy_flux,energy_flux.get_kokkos_view());
-	  Kokkos::deep_copy(host_source,source.get_kokkos_view());
+	  Kokkos::deep_copy(host_energy_flux,energy_flux.get_static_view());
+	  Kokkos::deep_copy(host_source,source.get_static_view());
 
 	  for (size_type cell = 0; cell < energy_flux.dimension(0); ++cell) {
 	    for (size_type ip = 0; ip < energy_flux.dimension(1); ++ip) {
@@ -346,8 +346,8 @@ int main(int argc, char *argv[])
       fm.getFieldData<JacScalarT,MyTraits::Jacobian,Cell,QuadPoint>(j_source);
       RCP<Time> eval_time2 = TimeMonitor::getNewTimer("Evaluation Time Jacobian");
 
-      auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_kokkos_view());
-      auto host_j_source = Kokkos::create_mirror_view(j_source.get_kokkos_view());
+      auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_static_view());
+      auto host_j_source = Kokkos::create_mirror_view(j_source.get_static_view());
 
       fm.preEvaluate<MyTraits::Jacobian>(NULL);
       {
@@ -359,8 +359,8 @@ int main(int argc, char *argv[])
 #else
           fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
 #endif
-	  Kokkos::deep_copy(host_j_energy_flux,j_energy_flux.get_kokkos_view());
-	  Kokkos::deep_copy(host_j_source,j_source.get_kokkos_view());
+	  Kokkos::deep_copy(host_j_energy_flux,j_energy_flux.get_static_view());
+	  Kokkos::deep_copy(host_j_source,j_source.get_static_view());
 
            for (size_type cell = 0; cell < j_energy_flux.dimension(0); ++cell) {
             for (size_type ip = 0; ip < j_energy_flux.dimension(1); ++ip) {

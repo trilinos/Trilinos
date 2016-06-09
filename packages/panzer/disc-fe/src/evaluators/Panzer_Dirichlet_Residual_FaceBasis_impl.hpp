@@ -116,7 +116,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,worksets,fm)
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
-  faceNormal = Kokkos::createDynRankView(residual.get_kokkos_view(),"faceNormal",dof.dimension(0),dof.dimension(1),dof.dimension(2));
+  faceNormal = Kokkos::createDynRankView(residual.get_static_view(),"faceNormal",dof.dimension(0),dof.dimension(1),dof.dimension(2));
 }
 
 //**********************************************************************
@@ -160,7 +160,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     int cellDim = parentCell.getDimension();
     int numFaces = dof.dimension(1);
 
-    refFaceNormal = Kokkos::createDynRankView(residual.get_kokkos_view(),"refFaceNormal",numFaces,cellDim);
+    refFaceNormal = Kokkos::createDynRankView(residual.get_static_view(),"refFaceNormal",numFaces,cellDim);
 
     for(int i=0;i<numFaces;i++) {
       Kokkos::DynRankView<double,PHX::Device> refFaceNormal_local(cellDim);

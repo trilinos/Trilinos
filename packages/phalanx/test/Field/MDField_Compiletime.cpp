@@ -353,17 +353,30 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // kokkos view accessors
+    // Kokkos static View accessors
     {
       // non-const view
-      auto kva = a.get_kokkos_view(); 
+      auto kva = a.get_static_view(); 
       kva(0,0) = 1.0;
-      auto kvc = c.get_kokkos_view(); 
+      auto kvc = c.get_static_view(); 
       kvc(0,0) = MyTraits::FadType(1.0);
       // const view (view const, not const data)
-      const auto const_kva = a.get_kokkos_view(); 
+      const auto const_kva = a.get_static_view(); 
       const_kva(0,0) = 1.0;
-      const auto const_kvc = c.get_kokkos_view(); 
+      const auto const_kvc = c.get_static_view(); 
+      const_kvc(0,0) = MyTraits::FadType(1.0);
+    }
+    // Kokkos DynRankView accessors
+    {
+      // non-const view
+      auto kva = a.get_view(); 
+      kva(0,0) = 1.0;
+      auto kvc = c.get_view(); 
+      kvc(0,0) = MyTraits::FadType(1.0);
+      // const view (view const, not const data)
+      const auto const_kva = a.get_view(); 
+      const_kva(0,0) = 1.0;
+      const auto const_kvc = c.get_view(); 
       const_kvc(0,0) = MyTraits::FadType(1.0);
     }
 

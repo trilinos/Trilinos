@@ -83,7 +83,7 @@ PHX_POST_REGISTRATION_SETUP(ScalarToVector,worksets,fm)
   internal_scalar_fields = Kokkos::View<KokkosScalarFields_t*>("ScalarToVector::internal_scalar_fields", scalar_fields.size());
   for (std::size_t i=0; i < scalar_fields.size(); ++i) {
     this->utils.setFieldData(scalar_fields[i],fm);
-    internal_scalar_fields(i) = scalar_fields[i].get_kokkos_view();
+    internal_scalar_fields(i) = scalar_fields[i].get_static_view();
   }
 
   this->utils.setFieldData(vector_field,fm);

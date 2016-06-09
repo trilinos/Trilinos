@@ -443,7 +443,7 @@ namespace panzer {
           num_dim = ip_coordinates.dimension(2);
         Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
           "old_ip_coordinates", num_cells, num_ip, num_dim);
-        Kokkos::deep_copy(old_ip_coordinates.get_kokkos_view(), ip_coordinates.get_kokkos_view());
+        Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
         for (size_type cell = 0; cell < num_cells; ++cell)
           for (size_type ip = 0; ip < num_ip; ++ip)
             if (ip != permutation[ip])
@@ -472,15 +472,15 @@ namespace panzer {
           num_dim = ip_coordinates.dimension(2);
         Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
           "old_ip_coordinates", num_cells, num_ip, num_dim);
-        Kokkos::deep_copy(old_ip_coordinates.get_kokkos_view(), ip_coordinates.get_kokkos_view());
+        Kokkos::deep_copy(old_ip_coordinates.get_static_view(), ip_coordinates.get_static_view());
         Array_CellIPDim old_weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
             "old_weighted_normals", num_cells, num_ip, num_dim);
         Array_CellIP old_weighted_measure = af.template buildStaticArray<Scalar,Cell,IP>(
             "old_weighted_measure", num_cells, num_ip);
         if (int_rule->cv_type == "side") 
-           Kokkos::deep_copy(old_weighted_normals.get_kokkos_view(), weighted_normals.get_kokkos_view());
+           Kokkos::deep_copy(old_weighted_normals.get_static_view(), weighted_normals.get_static_view());
         else 
-           Kokkos::deep_copy(old_weighted_measure.get_kokkos_view(), weighted_measure.get_kokkos_view());
+           Kokkos::deep_copy(old_weighted_measure.get_static_view(), weighted_measure.get_static_view());
         for (size_type cell = 0; cell < num_cells; ++cell)
         {
           for (size_type ip = 0; ip < num_ip; ++ip)

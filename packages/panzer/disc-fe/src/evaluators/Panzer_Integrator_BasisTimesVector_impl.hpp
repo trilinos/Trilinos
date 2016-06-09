@@ -111,7 +111,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
   
   for (int i=0; i<field_multipliers.size(); ++i) {
     this->utils.setFieldData(field_multipliers[i],fm);
-    kokkos_field_multipliers(i) = field_multipliers[i].get_kokkos_view();
+    kokkos_field_multipliers(i) = field_multipliers[i].get_static_view();
   }
 
   basis_card = residual.dimension(1); // basis cardinality

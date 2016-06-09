@@ -103,7 +103,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   num_qp = scalar.dimension(1);
 
-  tmp = Kokkos::createDynRankView(scalar.get_kokkos_view(),"tmp", scalar.dimension(0), num_qp);
+  tmp = Kokkos::createDynRankView(scalar.get_static_view(),"tmp", scalar.dimension(0), num_qp);
 
   quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
