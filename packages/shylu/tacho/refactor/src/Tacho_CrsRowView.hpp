@@ -60,11 +60,16 @@ namespace Tacho {
       const auto cols = A.BaseObject().ColsInRow(ii);
       const auto vals = A.BaseObject().ValuesInRow(ii);
       
-      ordinal_type begin = 0, end = cols.dimension_0();
+      const ordinal_type first = 0, last = cols.dimension_0();
 
-      begin = Util::getLowerBound(cols, begin, end, _offn);
-      end   = Util::getLowerBound(cols, begin, end, _offn+_n);
-      
+      // my util
+      const ordinal_type begin = Util::getLowerBound(cols, first, last, _offn);
+      const ordinal_type end   = Util::getLowerBound(cols, begin, last, _offn+_n);
+
+      // std version
+      //const ordinal_type begin = std::distance(&cols[first], std::lower_bound(&cols[first], &cols[last], _offn));
+      //const ordinal_type end   = std::distance(&cols[first], std::lower_bound(&cols[begin], &cols[last], _offn+_n));
+
       const auto range = range_type<ordinal_type>(begin, end);
 
       _aj = Kokkos::subview(cols, range);

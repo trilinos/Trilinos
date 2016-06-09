@@ -231,13 +231,17 @@ namespace Tacho {
         os << "-- Base object is null --;";
       } else {
         const size_type nnz = (_rows.dimension_0() == _m ? _nnz : -1);
+        const double density_1 = (nnz == -1 ? double(0) : double(nnz)/(_br-_tr+1)/(_rc-_lc+1));
+        const double density_2 = (nnz == -1 ? double(0) : double(nnz)/_m/_n);
         os << _base.Label() << "::View, "
            << " Offs ( " << std::setw(w) << _offm << ", " << std::setw(w) << _offn << " ); "
            << " Dims ( " << std::setw(w) << _m    << ", " << std::setw(w) << _n    << " ); "
            << " NumNonZeros = " << std::setw(w) << nnz << ";"
-           << " Density (nnz/data) = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/(_br-_tr+1)/(_rc-_lc+1)) << ";"
-           << " Density (nnz/view) = " << std::setw(w) << (nnz == -1 ? double(0) : double(nnz)/_m/_n) << ";";
-
+           << " Density (nnz/data) = " << std::setw(w) << density_1 << ";"
+           << " Density (nnz/view) = " << std::setw(w) << density_2 << ";";
+        
+        //if (density_1 > 1.0 || density_2 > 1.0) 
+        //  Kokkos::abort("density is greater than 1");
       }
       os.unsetf(std::ios::scientific);
       os.precision(prec);

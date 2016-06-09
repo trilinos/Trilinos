@@ -249,20 +249,20 @@ namespace Tacho {
 
       GraphToolsHostType::getGraph(rptr, cidx, AA_scotch);
 
-      // GraphToolsHostType_CAMD C;
-      // C.setGraph(AA_scotch.NumRows(),
-      //            rptr, cidx,
-      //            S.NumBlocks(),
-      //            S.RangeVector());
-      // C.computeOrdering();
+      GraphToolsHostType_CAMD C;
+      C.setGraph(AA_scotch.NumRows(),
+                 rptr, cidx,
+                 S.NumBlocks(),
+                 S.RangeVector());
+      C.computeOrdering();
 
-      // CrsMatrixBaseHostType AA_camd("AA_camd");
-      // AA_camd.createConfTo(AA_scotch);
+      CrsMatrixBaseHostType AA_camd("AA_camd");
+      AA_camd.createConfTo(AA_scotch);
 
-      // CrsMatrixTools::copy(AA_camd,
-      //                      C.PermVector(),
-      //                      C.InvPermVector(),
-      //                      AA_scotch);
+      CrsMatrixTools::copy(AA_camd,
+                           C.PermVector(),
+                           C.InvPermVector(),
+                           AA_scotch);
 
       {
         const auto m = _AA.NumRows();
@@ -274,22 +274,22 @@ namespace Tacho {
       
         const auto s_perm = S.PermVector();
         const auto s_peri = S.InvPermVector();
-        //const auto c_perm = C.PermVector();
-        //const auto c_peri = C.InvPermVector();
+        const auto c_perm = C.PermVector();
+        const auto c_peri = C.InvPermVector();
         const auto s_range = S.RangeVector();
         const auto s_tree = S.TreeVector();
 
         for (auto i=0;i<m;++i) {
-          //_perm(i)  = c_perm(s_perm(i));
-          //_peri(i)  = s_peri(c_peri(i));
-          _perm(i)  = s_perm(i);
-          _peri(i)  = s_peri(i);
+          _perm(i)  = c_perm(s_perm(i));
+          _peri(i)  = s_peri(c_peri(i));
+          //_perm(i)  = s_perm(i);
+          //_peri(i)  = s_peri(i);
           _range(i) = s_range(i);
           _tree(i)  = s_tree(i);
         }
-    
-        //_AA_reorder = AA_camd;
-        _AA_reorder = AA_scotch;
+
+        //_AA_reorder = AA_scotch;    
+        _AA_reorder = AA_camd;
       }
 
       return 0;
