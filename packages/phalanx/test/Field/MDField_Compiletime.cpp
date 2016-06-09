@@ -47,6 +47,7 @@
 #include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
+#include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
 #include "Teuchos_RCP.hpp"
@@ -270,22 +271,33 @@ TEUCHOS_UNIT_TEST(mdfield, CompileTimeChecked)
     RCP<DataLayout> d5 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4));
     RCP<DataLayout> d6 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5));
     RCP<DataLayout> d7 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5,6));
+
+    // Use Unmanaged allocator
+    MDField<double,Cell> f1 = PHX::allocateUnmanagedMDField<double,Cell>("Test1",d1);
+    MDField<double,Cell,Dim> f2 = PHX::allocateUnmanagedMDField<double,Cell,Dim>("Test2",d2);
+    MDField<double,Cell,Dim,Dim> f3 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim>("Test3",d3);
+    MDField<double,Cell,Dim,Dim,Dim> f4 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim>("Test4",d4);
+    MDField<double,Cell,Dim,Dim,Dim,Dim> f5 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim,Dim>("Test5",d5);
+    MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f6 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim,Dim,Dim>("Test6",d6);
+    MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f7 = PHX::allocateUnmanagedMDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim>("Test7",d7);
+
+    // Pre-Unmanaged allocator
+
+    // MDField<double,Cell> f1("Test1",d1);
+    // MDField<double,Cell,Dim> f2("Test2",d2);
+    // MDField<double,Cell,Dim,Dim> f3("Test3",d3);
+    // MDField<double,Cell,Dim,Dim,Dim> f4("Test4",d4);
+    // MDField<double,Cell,Dim,Dim,Dim,Dim> f5("Test5",d5);
+    // MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f6("Test6",d6);
+    // MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
     
-    MDField<double,Cell> f1("Test1",d1);
-    MDField<double,Cell,Dim> f2("Test2",d2);
-    MDField<double,Cell,Dim,Dim> f3("Test3",d3);
-    MDField<double,Cell,Dim,Dim,Dim> f4("Test4",d4);
-    MDField<double,Cell,Dim,Dim,Dim,Dim> f5("Test5",d5);
-    MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f6("Test6",d6);
-    MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
-    
-    f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f1.fieldTag()));
-    f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag()));
-    f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f3.fieldTag()));
-    f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f4.fieldTag()));
-    f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f5.fieldTag()));
-    f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f6.fieldTag()));
-    f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f7.fieldTag()));
+    // f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f1.fieldTag()));
+    // f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag()));
+    // f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f3.fieldTag()));
+    // f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f4.fieldTag()));
+    // f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f5.fieldTag()));
+    // f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f6.fieldTag()));
+    // f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f7.fieldTag()));
 
     // Access last entry in contiguous array
     f1(99) = 1.0;
