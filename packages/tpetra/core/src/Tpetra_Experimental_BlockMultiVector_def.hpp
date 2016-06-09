@@ -55,20 +55,18 @@ namespace { // anonymous
   ///   time.
   ///
   /// \note To Tpetra developers: This struct implements the function
-  ///   getRawPtrFromMultiVector(); see below.  Call that function
+  ///   getRawHostPtrFromMultiVector(); see below.  Call that function
   ///   instead.
   template<class MultiVectorType>
-  struct RawPtrFromMultiVector {
+  struct RawHostPtrFromMultiVector {
     typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
 
     static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      // We need a host pointer, so we need to sync to host.
-      X.template sync<Kokkos::HostSpace> ();
-      // We're getting a nonconst View, so mark the MultiVector as
-      // modified on the host.  This will throw an exception if the
-      // MultiVector is already modified on the host.
-      X.template modify<Kokkos::HostSpace> ();
-
+      // NOTE (mfh 09 Jun 2016) This does NOT sync to host, or mark
+      // host as modified.  This is on purpose, because we don't want
+      // the BlockMultiVector sync'd to host unnecessarily.
+      // Otherwise, all the MultiVector and BlockMultiVector kernels
+      // would run on host instead of device.  See Github Issue #428.
       auto X_view_host = X.template getLocalView<Kokkos::HostSpace> ();
       impl_scalar_type* X_raw = X_view_host.ptr_on_device ();
       return X_raw;
@@ -89,9 +87,9 @@ namespace { // anonymous
   ///   bit easier to read.
   template<class S, class LO, class GO, class N>
   typename Tpetra::MultiVector<S, LO, GO, N>::impl_scalar_type*
-  getRawPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {
+  getRawHostPtrFromMultiVector (Tpetra::MultiVector<S, LO, GO, N>& X) {
     typedef Tpetra::MultiVector<S, LO, GO, N> MV;
-    return RawPtrFromMultiVector<MV>::getRawPtr (X);
+    return RawHostPtrFromMultiVector<MV>::getRawPtr (X);
   }
 
 } // namespace (anonymous)
@@ -130,7 +128,7 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (makePointMap (meshMap, blockSize)),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
-  mvData_ (getRawPtrFromMultiVector (mv_)),
+  mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
 {
   // Make sure that mv_ has view semantics.
@@ -147,7 +145,7 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (pointMap),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
-  mvData_ (getRawPtrFromMultiVector (mv_)),
+  mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (blockSize)
 {
   // Make sure that mv_ has view semantics.
@@ -210,7 +208,7 @@ BlockMultiVector (const mv_type& X_mv,
   if (! pointMap.is_null ()) {
     pointMap_ = *pointMap; // Map::operator= also does a shallow copy
   }
-  mvData_ = getRawPtrFromMultiVector (mv_);
+  mvData_ = getRawHostPtrFromMultiVector (mv_);
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -223,7 +221,7 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   meshMap_ (newMeshMap),
   pointMap_ (newPointMap),
   mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
-  mvData_ (getRawPtrFromMultiVector (mv_)),
+  mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (X.getBlockSize ())
 {
   // Make sure that mv_ has view semantics.
@@ -239,7 +237,7 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   meshMap_ (newMeshMap),
   pointMap_ (makePointMap (newMeshMap, X.getBlockSize ())),
   mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
-  mvData_ (getRawPtrFromMultiVector (mv_)),
+  mvData_ (getRawHostPtrFromMultiVector (mv_)),
   blockSize_ (X.getBlockSize ())
 {
   // Make sure that mv_ has view semantics.
