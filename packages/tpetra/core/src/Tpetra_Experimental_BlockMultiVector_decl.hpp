@@ -551,18 +551,18 @@ public:
   ///   is invalid on the calling process.
   bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) const;
 
-  /// \brief Get a view of the degrees of freedom at the given mesh point.
+  /// \brief Get a host view of the degrees of freedom at the given
+  ///   mesh point.
   ///
   /// \warning This method's interface may change or disappear at any
   ///   time.  Please do not rely on it in your code yet.
   ///
-  /// The preferred way to refer to little_vec_type is to get it from
-  /// BlockMultiVector's typedef.  This is because different
-  /// specializations of BlockMultiVector reserve the right to use
-  /// different types to implement little_vec_type.  This gives us a
-  /// porting strategy to move from "classic" Tpetra to the Kokkos
-  /// refactor version.
-  little_vec_type
+  /// Prefer using \c auto to let the compiler compute the return
+  /// type.  This gives us the freedom to change this type in the
+  /// future.  If you insist not to use \c auto, then please use the
+  /// \c little_vec_type typedef to deduce the correct return type;
+  /// don't try to hard-code the return type yourself.
+  typename little_vec_type::HostMirror
   getLocalBlock (const LO localRowIndex, const LO colIndex) const;
   //@}
 

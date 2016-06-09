@@ -307,9 +307,9 @@ replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
                         const Scalar vals[]) const
 {
-  little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
-  const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
-                               getBlockSize ());
+  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+                                                                getBlockSize ());
   Kokkos::deep_copy (X_dst, X_src);
 }
 
@@ -352,9 +352,9 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
                         const Scalar vals[]) const
 {
-  little_vec_type X_dst = getLocalBlock (localRowIndex, colIndex);
-  const_little_vec_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
-                               getBlockSize ());
+  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
+                                                                getBlockSize ());
   AXPY (STS::one (), X_src, X_dst);
 }
 
@@ -397,7 +397,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
   } else {
-    little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
+    auto X_ij = getLocalBlock (localRowIndex, colIndex);
     vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
@@ -412,26 +412,26 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
     return false;
   } else {
-    little_vec_type X_ij = getLocalBlock (localRowIndex, colIndex);
+    auto X_ij = getLocalBlock (localRowIndex, colIndex);
     vals = reinterpret_cast<Scalar*> (X_ij.ptr_on_device ());
     return true;
   }
 }
 
 template<class Scalar, class LO, class GO, class Node>
-typename BlockMultiVector<Scalar, LO, GO, Node>::little_vec_type
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_vec_type::HostMirror
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex) const
 {
   if (! isValidLocalMeshIndex (localRowIndex)) {
-    return little_vec_type ();
+    return typename little_vec_type::HostMirror ();
   } else {
     const size_t blockSize = getBlockSize ();
     const size_t offset = colIndex * this->getStrideY () +
       localRowIndex * blockSize;
     impl_scalar_type* blockRaw = this->getRawPtr () + offset;
-    return little_vec_type (blockRaw, blockSize);
+    return typename little_vec_type::HostMirror (blockRaw, blockSize);
   }
 }
 
@@ -555,8 +555,8 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
       for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
         const LO meshLid = exportLIDs[meshLidIndex];
         impl_scalar_type* const curExportPtr = &exports[curExportPos];
-        little_vec_type X_dst (curExportPtr, blockSize);
-        little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
+        typename little_vec_type::HostMirror X_dst (curExportPtr, blockSize);
+        auto X_src = srcAsBmv.getLocalBlock (meshLid, j);
 
         Kokkos::deep_copy (X_dst, X_src);
       }
@@ -609,8 +609,8 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
       const LO meshLid = importLIDs[meshLidIndex];
       const impl_scalar_type* const curImportPtr = &imports[curImportPos];
 
-      const_little_vec_type X_src (curImportPtr, blockSize);
-      little_vec_type X_dst = getLocalBlock (meshLid, j);
+      typename const_little_vec_type::HostMirror::const_type X_src (curImportPtr, blockSize);
+      auto X_dst = getLocalBlock (meshLid, j);
 
       if (CM == INSERT || CM == REPLACE) {
         deep_copy (X_dst, X_src);

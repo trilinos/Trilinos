@@ -70,13 +70,6 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
     typedef Kokkos::Details::ArithTraits<IST> KAT;
-#ifdef KOKKOS_HAVE_SERIAL
-    typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> host_device_type;
-#else
-    typedef typename Tpetra::MultiVector<Scalar, LO, GO, Node>::dual_view_type DVT;
-    typedef Kokkos::Device<typename DVT::host_mirror_space::execution_space,
-                           typename DVT::host_mirror_space::memory_space> host_device_type;
-#endif // KOKKOS_HAVE_SERIAL
     typedef typename KAT::mag_type MT;
 
     out << "Test BlockMultiVector::blockWiseMultiply" << endl;
@@ -115,16 +108,15 @@ namespace {
     const IST four = two + two;
     const IST five = four + one;
 
-    Kokkos::View<IST**, host_device_type>
-      prototypeBlock ("prototypeBlock", blockSize, blockSize);
-    Kokkos::deep_copy (prototypeBlock, zero);
+    typename Kokkos::View<IST**, device_type>::HostMirror prototypeBlock_h ("prototypeBlock", blockSize, blockSize);
+    Kokkos::deep_copy (prototypeBlock_h, zero);
     for (LO i = 0; i < blockSize; ++i) {
-      prototypeBlock(i,i) = four; // diagonally dominant
+      prototypeBlock_h(i,i) = four; // diagonally dominant
       if (i >= 1) {
-        prototypeBlock(i, i-1) = one;
+        prototypeBlock_h(i, i-1) = one;
       }
       if (i + 1 < blockSize) {
-        prototypeBlock(i, i+1) = -one; // nonsymmetric
+        prototypeBlock_h(i, i+1) = -one; // nonsymmetric
       }
     }
 
@@ -135,16 +127,16 @@ namespace {
     Teuchos::SerialDenseMatrix<int, Scalar> teuchosBlock (blockSize, blockSize);
     for (LO j = 0; j < blockSize; ++j) {
       for (LO i = 0; i < blockSize; ++i) {
-        teuchosBlock(i,j) = prototypeBlock(i,j);
+        teuchosBlock(i,j) = prototypeBlock_h(i,j);
       }
     }
 
     // Use LAPACK (through the BLAS interface) to compute the inverse
     // (in place) of teuchosBlock.  We will use this to check our
     // implementation of the LU factorization and explicit inverse.
-    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
+    typename Kokkos::View<int*, device_type>::HostMirror ipiv ("ipiv", blockSize);
     Teuchos::LAPACK<int, Scalar> lapack;
-    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
+    typename Kokkos::View<IST*, device_type>::HostMirror work ("work", blockSize);
     int info = 0;
     {
       lapack.GETRF (blockSize, blockSize, teuchosBlock.values (),
@@ -168,7 +160,7 @@ namespace {
       }
       const int lwork = static_cast<int> (KAT::real (workQuery));
       if (work.dimension_0 () < static_cast<size_t> (lwork)) {
-        work = Kokkos::View<IST*, host_device_type> ("work", lwork);
+        work = decltype (work) ("work", lwork);
       }
       lapack.GETRI (blockSize, teuchosBlock.values (),
                     teuchosBlock.stride (), ipiv.ptr_on_device (),
@@ -182,14 +174,14 @@ namespace {
       }
     }
 
-    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
+    Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       out << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
-    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
+    Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       out << "Our GETF2 returned info = " << info << " != 0.  "
@@ -204,7 +196,7 @@ namespace {
     MT frobNorm = 0.0;
     for (LO i = 0; i < blockSize; ++i) {
       for (LO j = 0; j < blockSize; ++j) {
-        frobNorm += KAT::abs (prototypeBlock(i,j) - static_cast<IST> (teuchosBlock(i,j)));
+        frobNorm += KAT::abs (prototypeBlock_h(i,j) - static_cast<IST> (teuchosBlock(i,j)));
       }
     }
     out << "KAT::eps() = " << KAT::eps ()
@@ -221,9 +213,9 @@ namespace {
 
     // Compute the expected solution (little) vector in prototypeY,
     // when applying the explicit inverse to a vector of all ones.
-    Kokkos::View<IST*, host_device_type> prototypeX ("prototypeX", blockSize);
+    typename Kokkos::View<IST*, device_type>::HostMirror prototypeX ("prototypeX", blockSize);
     Kokkos::deep_copy (prototypeX, one);
-    Kokkos::View<IST*, host_device_type> prototypeY ("prototypeY", blockSize);
+    typename Kokkos::View<IST*, device_type>::HostMirror prototypeY ("prototypeY", blockSize);
     Teuchos::BLAS<int, Scalar> blas;
     blas.GEMV (Teuchos::NO_TRANS, blockSize, blockSize,
                static_cast<Scalar> (1.0),
@@ -245,7 +237,7 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
+      Tpetra::Experimental::COPY (prototypeBlock_h, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
@@ -362,13 +354,6 @@ namespace {
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
     typedef Kokkos::Details::ArithTraits<IST> KAT;
-#ifdef KOKKOS_HAVE_SERIAL
-    typedef Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace> host_device_type;
-#else
-    typedef typename Tpetra::MultiVector<Scalar, LO, GO, Node>::dual_view_type DVT;
-    typedef Kokkos::Device<typename DVT::host_mirror_space::execution_space,
-                           typename DVT::host_mirror_space::memory_space> host_device_type;
-#endif // KOKKOS_HAVE_SERIAL
     typedef typename KAT::mag_type MT;
 
     out << "Test BlockMultiVector::blockJacobiUpdate" << endl;
@@ -408,30 +393,29 @@ namespace {
     const IST four = two + two;
     const IST five = four + one;
 
-    Kokkos::View<IST**, host_device_type>
-      prototypeBlock ("prototypeBlock", blockSize, blockSize);
-    Kokkos::deep_copy (prototypeBlock, zero);
+    typename Kokkos::View<IST**, device_type>::HostMirror prototypeBlock_h ("prototypeBlock", blockSize, blockSize);
+    Kokkos::deep_copy (prototypeBlock_h, zero);
     for (LO i = 0; i < blockSize; ++i) {
-      prototypeBlock(i,i) = four; // diagonally dominant
+      prototypeBlock_h(i,i) = four; // diagonally dominant
       if (i >= 1) {
-        prototypeBlock(i, i-1) = one;
+        prototypeBlock_h(i, i-1) = one;
       }
       if (i + 1 < blockSize) {
-        prototypeBlock(i, i+1) = -one; // nonsymmetric
+        prototypeBlock_h(i, i+1) = -one; // nonsymmetric
       }
     }
 
-    Kokkos::View<int*, host_device_type> ipiv ("ipiv", blockSize);
+    typename Kokkos::View<int*, device_type>::HostMirror ipiv ("ipiv", blockSize);
     int info = 0;
-    Tpetra::Experimental::GETF2 (prototypeBlock, ipiv, info);
+    Tpetra::Experimental::GETF2 (prototypeBlock_h, ipiv, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       out << "Our GETF2 returned info = " << info << " != 0.  "
         "No point in continuing." << endl;
       return;
     }
-    Kokkos::View<IST*, host_device_type> work ("work", blockSize);
-    Tpetra::Experimental::GETRI (prototypeBlock, ipiv, work, info);
+    typename Kokkos::View<IST*, device_type>::HostMirror work ("work", blockSize);
+    Tpetra::Experimental::GETRI (prototypeBlock_h, ipiv, work, info);
     TEST_EQUALITY_CONST( info, 0 );
     if (info != 0) {
       out << "Our GETF2 returned info = " << info << " != 0.  "
@@ -453,7 +437,7 @@ namespace {
     IST curScalingFactor = one;
     for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
       auto D_cur = subview (D_host, whichBlk, ALL (), ALL ());
-      Tpetra::Experimental::COPY (prototypeBlock, D_cur); // copy into D_cur
+      Tpetra::Experimental::COPY (prototypeBlock_h, D_cur); // copy into D_cur
       Tpetra::Experimental::SCAL (curScalingFactor, D_cur);
       curScalingFactor += one;
     }
