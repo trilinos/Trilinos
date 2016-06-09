@@ -2548,6 +2548,7 @@ MDMap< Node >::getAxisMap(int axis) const
                              Teuchos::tuple(axisDim),
                              Teuchos::tuple(_commPadSizes[axis]),
                              Teuchos::tuple(_bndryPadSizes[axis]),
+                             Teuchos::tuple(_replicatedBoundary[axis]),
                              _layout));
   }
   return _axisMaps[axis];
