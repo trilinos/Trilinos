@@ -654,6 +654,7 @@ public:
     blockSize_ (static_cast<LO> (0)),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    pointImporter_ (new Teuchos::RCP<typename crs_graph_type::import_type> ()),
     offsetPerBlock_ (0),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
@@ -670,6 +671,7 @@ public:
     blockSize_ (blockSize),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    pointImporter_ (new Teuchos::RCP<typename crs_graph_type::import_type> ()),
     offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
@@ -731,6 +733,7 @@ public:
     blockSize_ (blockSize),
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    pointImporter_ (new Teuchos::RCP<typename crs_graph_type::import_type> ()),
     offsetPerBlock_ (blockSize * blockSize),
     localError_ (new bool (false)),
     errs_ (new Teuchos::RCP<std::ostringstream> ()) // ptr to a null ptr
@@ -1795,7 +1798,23 @@ public:
           *X_colMap_ = rcp (new BMV (* (graph_.getColMap ()), getBlockSize (),
                                      static_cast<LO> (X.getNumVectors ())));
         }
+#ifdef HAVE_TPETRA_BCRS_DO_POINT_IMPORT
+        if (pointImporter_->is_null ()) {
+          // The Import ctor needs RCPs. Map's copy ctor does a shallow copy, so
+          // these are small operations.
+          const auto domainPointMap = rcp (new typename BMV::map_type (domainPointMap_));
+          const auto colPointMap = rcp (new typename BMV::map_type (
+                                          BMV::makePointMap (*graph_.getColMap(),
+                                                             blockSize_)));
+          *pointImporter_ = rcp (new typename crs_graph_type::import_type (
+                                   domainPointMap, colPointMap));
+        }
+        (*X_colMap_)->getMultiVectorView().doImport (X.getMultiVectorView (),
+                                                     **pointImporter_,
+                                                     Tpetra::REPLACE);
+#else
         (**X_colMap_).doImport (X, *import, Tpetra::REPLACE);
+#endif
         try {
           X_colMap = &(**X_colMap_);
         } catch (std::exception& e) {

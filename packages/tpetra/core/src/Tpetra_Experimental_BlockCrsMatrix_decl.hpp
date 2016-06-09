@@ -825,6 +825,15 @@ private:
   /// See the documentation of X_colMap_ above.
   Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
 
+  /// \brief Use MV's importer instead of BMV's.
+  ///
+  /// Use MV's importer, which implements the "new" doTransfer interface,
+  /// instead of BMV's importer, which implements the old. This probably entails
+  /// inefficiency relative to a correct new-interface implementation in BMV;
+  /// this workaround is a first step to getting a reasonably fast
+  /// applyBlockNoTrans on the GPU.
+  Teuchos::RCP<Teuchos::RCP<typename crs_graph_type::import_type> > pointImporter_;
+
   /// \brief Offset between blocks in the matrix.
   LO offsetPerBlock_;
 
