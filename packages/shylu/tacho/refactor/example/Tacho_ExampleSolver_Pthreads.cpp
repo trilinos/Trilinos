@@ -8,7 +8,7 @@
 
 typedef double value_type;
 typedef int    ordinal_type;
-typedef int    size_type;
+typedef size_t size_type;
 
 typedef Kokkos::Threads exec_space;
 

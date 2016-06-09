@@ -48,6 +48,12 @@ namespace Tacho {
     throw x(msg);                                                       \
   }
 
+#define TACHO_TEST_FOR_WARNING(ierr, msg)                                 \
+  if ((ierr) != 0) {                                                    \
+    fprintf(stderr, ">> Warning in file %s, line %d, error %d \n",__FILE__,__LINE__,ierr); \
+    fprintf(stderr, "   %s\n", msg);                                    \
+  }
+
   /// \brief Control parameter decomposition.
   ///
 

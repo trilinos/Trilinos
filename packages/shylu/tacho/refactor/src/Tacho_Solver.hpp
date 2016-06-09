@@ -60,10 +60,10 @@ namespace Tacho {
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,HostSpaceType> CrsMatrixBaseHostType;
     typedef CrsMatrixViewExt<CrsMatrixBaseHostType> CrsMatrixViewHostType;
 
-    typedef GraphTools<ordinal_type,size_type,HostSpaceType> GraphToolsHostType;
+    typedef GraphTools<ordinal_type,ordinal_type,HostSpaceType> GraphToolsHostType;
 
-    typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
-    typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
+    typedef GraphTools_Scotch<ordinal_type,ordinal_type,HostSpaceType> GraphToolsHostType_Scotch;
+    typedef GraphTools_CAMD<ordinal_type,ordinal_type,HostSpaceType> GraphToolsHostType_CAMD;
 
     typedef SymbolicFactorization<CrsMatrixBaseHostType> SymbolicFactorizationType;
 
@@ -120,7 +120,7 @@ namespace Tacho {
 
     // extract permutation and blocking information
     CrsMatrixBaseHostType _AA_reorder;    
-    size_type _nblks;
+    ordinal_type _nblks;
     Kokkos::View<ordinal_type*,HostSpaceType> _perm, _peri, _range, _tree;
     
     // symbolic factorization pattern
@@ -219,7 +219,7 @@ namespace Tacho {
 
       // graph conversion
       Kokkos::View<ordinal_type*,HostSpaceType> rptr("Tacho::Solver::Graph::rptr", _AA.NumRows() + 1);
-      Kokkos::View<size_type*,   HostSpaceType> cidx("Tacho::Solver::Graph::cidx", _AA.NumNonZeros());
+      Kokkos::View<ordinal_type*,HostSpaceType> cidx("Tacho::Solver::Graph::cidx", _AA.NumNonZeros());
       
       GraphToolsHostType::getGraph(rptr, cidx, _AA);
 
@@ -315,7 +315,7 @@ namespace Tacho {
                                        _nblks,
                                        _range,
                                        _tree);
-      
+
       // ** sparse blocks construction
       {
         const auto nblocks = _HF.NumNonZeros();
@@ -358,9 +358,9 @@ namespace Tacho {
         ap(0) = 0;
         for (auto k=0;k<nblocks;++k) {
           const auto &block = _HF.Value(k);
-          ap(k+1) = ap(k) + block.NumRows()*block.NumCols();
+          const size_type dense_matrix_size = block.NumRows()*block.NumCols();
+          ap(k+1) = ap(k) + dense_matrix_size;
         }
-
         _mats = Kokkos::View<value_type*,HostSpaceType>("Tacho::Solver::mats", ap(nblocks));
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
                              [&](const ordinal_type k) {
@@ -372,6 +372,9 @@ namespace Tacho {
                                block.copyToFlat();
                              } );
       }
+
+      // ** nullify FF
+      //_FF = CrsMatrixBaseHostType();
       
       // ** dense nested blocks construction
       if (_mb) {
