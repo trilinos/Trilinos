@@ -38,6 +38,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Example_Poisson2D_p2_tpetra
+    SOURCES example_Poisson2D_p2_tpetra.cpp
+      TrilinosCouplings_Pamgen_Utils.cpp
+    NUM_MPI_PROCS 1
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Maxwell
     SOURCES example_Maxwell.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
@@ -56,6 +63,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     SOURCES example_Poisson2D_pn.cpp
     TrilinosCouplings_Pamgen_Utils.cpp
     COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    Example_Poisson2D_pn_tpetra
+    SOURCES example_Poisson2D_pn_tpetra.cpp
+    TrilinosCouplings_Pamgen_Utils.cpp
+    COMM mpi
     )
 
  TRIBITS_ADD_TEST(
