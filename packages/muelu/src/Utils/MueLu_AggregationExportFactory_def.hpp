@@ -395,7 +395,7 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
-    const double ALPHA_VAL = 2; //Make configurable?
+    //const double ALPHA_VAL = 2; //Make configurable?
     using namespace std;
     //CGAL setup
     typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
