@@ -435,10 +435,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  // FIXME (mfh 10 May 2016) See #338 (on Github).  This test fails
-  // for me with OMP_NUM_THREADS == 2 (not for 1).  I need to test my
-  // fix for #243, so I'm commenting out this test for now.
-#if 0
   // Test BlockRelaxation with user-provided blocks with overlap 1.
   // Convergence of block Gauss-Seidel is compared against that of point Gauss-Seidel,
   // and the test passes if the block residual norm is smaller at each iteration.
@@ -506,7 +502,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
   pList.set("relaxation: type","Gauss-Seidel");
 
   RCP<multivector_type> B,X,Xact,Res;
-
+  
   B = rcp( new multivector_type(rowmap,1));
   X = rcp( new multivector_type(rowmap,1));
   Xact = rcp( new multivector_type(rowmap,1));
@@ -582,7 +578,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, OverlappingPartition, 
 #endif
   }
 
-#endif // 0
 } //OverlappingPartition test
 
 // Macro used inside the unit test below.  It tests for global error,
