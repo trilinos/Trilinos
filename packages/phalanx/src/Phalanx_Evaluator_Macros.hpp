@@ -147,7 +147,7 @@
 #define PHX_POST_EVALUATE_FIELDS(NAME,POST_EVAL_DATA)			\
   template<typename EvalT, typename Traits>				\
   void NAME<EvalT, Traits>::						\
-  postEvaluate(typename Traits::PostEvalData POSTEVAL_DATA)
+  postEvaluate(typename Traits::PostEvalData POST_EVAL_DATA)
 
 // **********************************************************************
 

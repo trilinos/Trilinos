@@ -689,12 +689,13 @@ DoJacobi (const MV& X, MV& Y) const
     // Non-overlapping Jacobi
     for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
       // may happen that a partition is empty
-      if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+      if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
         if(Containers_[i]->getNumRows () == 0 ) continue;
         Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
         ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
       }
-      else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+      else if( Partitioner_->numRowsInPart (i) == 1) {
+        // singleton, can't access Containers_[i] as it was never filled and may be null.
         local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
         getMatDiag();
         Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
@@ -714,8 +715,8 @@ DoJacobi (const MV& X, MV& Y) const
     // Overlapping Jacobi
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; i++) {
       // may happen that a partition is empty
-      if(Containers_[i]->getNumRows() == 0) continue;
-      if ( Partitioner_->numRowsInPart (i)  != 1 ) {
+      if (Containers_[i]->getNumRows() == 0) continue;
+      if ( Partitioner_->numRowsInPart (i)  > 1 ) {
         try {
           Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
         } catch (std::exception& e) {
@@ -802,7 +803,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+    if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) continue;
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
@@ -863,7 +864,8 @@ DoGaussSeidel (MV& X, MV& Y) const
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
     }
-    else {       // singleton, can't access Containers_[i] as it was never filled and may be null.
+    else if ( Partitioner_->numRowsInPart (i) == 1) {
+      // singleton, can't access Containers_[i] as it was never filled and may be null.
       // a singleton calculation is exact, all residuals should be zero.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       getMatDiag();
@@ -977,7 +979,7 @@ DoSGS (MV& X, MV& Y) const
 
   // Forward Sweep
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+    if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) {
         continue; // Skip empty partitions
       }
@@ -1032,7 +1034,8 @@ DoSGS (MV& X, MV& Y) const
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
 
     }
-    else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+    else if( Partitioner_->numRowsInPart (i) == 1) {
+      // singleton, can't access Containers_[i] as it was never filled and may be null.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       getMatDiag();
       Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
@@ -1056,7 +1059,8 @@ DoSGS (MV& X, MV& Y) const
   // i--" will loop forever if local_ordinal_type is unsigned, because
   // unsigned integers are (trivially) always nonnegative.
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
-    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i-1) != 1 ) {
+    //FIXME 7-June-2016 JJH should this have an "else" optimization, similar to the forward sweeps?
+    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i-1) > 1 ) {
       if (Containers_[i-1]->getNumRows () == 0) continue;
 
       // update from previous block

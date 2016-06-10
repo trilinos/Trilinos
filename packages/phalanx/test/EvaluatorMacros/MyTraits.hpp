@@ -41,24 +41,43 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-#ifndef PHX_EXAMPLE_VP_FOURIER_HPP
-#define PHX_EXAMPLE_VP_FOURIER_HPP
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
+#include "Sacado_mpl_vector.hpp"
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+namespace PHX {
 
-PHX_EVALUATOR_CLASS(Fourier)
+  /*! \brief Traits class for testing.
+    
+  */
+  struct MyTraits {
 
-  PHX::Field< MyVector<ScalarT> > flux;
-  PHX::Field< ScalarT > density;
-  PHX::Field< ScalarT > dc;
-  PHX::Field< MyVector<ScalarT> > grad_temp;
-  
-  std::size_t cell_data_size;
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
 
-PHX_EVALUATOR_CLASS_END
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
 
-#include "Evaluator_EnergyFlux_Fourier_Def.hpp"
+  };
+
+
+}
+
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
+}
 
 #endif
