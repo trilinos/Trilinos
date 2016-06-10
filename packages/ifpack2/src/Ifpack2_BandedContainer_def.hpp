@@ -971,6 +971,18 @@ extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
   // Constructor of stub implementation throws, so no need to throw here.
 }
 
+template<class MatrixType, class LocalScalarType>
+std::string BandedContainer<MatrixType, LocalScalarType, true>::getName()
+{
+  return "Banded";
+}
+
+template<class MatrixType, class LocalScalarType>
+std::string BandedContainer<MatrixType, LocalScalarType, false>::getName()
+{
+  return "Banded";
+}
+
 } // namespace Ifpack2
 
 #define IFPACK2_BANDEDCONTAINER_INSTANT(S,LO,GO,N) \

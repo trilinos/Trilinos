@@ -88,14 +88,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test0, Scalar, LocalOr
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
-  typedef Ifpack2::ILUT< Tpetra::RowMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap =
     tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS> crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
-  Ifpack2::BlockRelaxation<ROW, Ifpack2::SparseContainer<ROW, ILUTlo> > prec(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> prec(crsmatrix);
 
   Teuchos::ParameterList params;
+  params.set("relaxation: container", "SparseILUT");
   params.set("relaxation: type", "Jacobi");
   params.set("partitioner: type","linear");
   params.set("partitioner: local parts",(int)num_rows_per_proc);
@@ -150,13 +150,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test1, Scalar, LocalOr
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
-  typedef Ifpack2::ILUT<ROW> ILUTlo;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS> crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
-  Ifpack2::BlockRelaxation<ROW, Ifpack2::SparseContainer<ROW, ILUTlo> > prec(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> prec(crsmatrix);
 
   Teuchos::ParameterList params;
+  params.set("relaxation: container", "SparseILUT");
   params.set("relaxation: type", "Jacobi");
   params.set("partitioner: type","linear");
   params.set("partitioner: local parts",(int)num_rows_per_proc);
@@ -187,7 +187,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
   typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> ROW;
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
-  typedef Ifpack2::ILUT<ROW> ILUTlo;
   using Teuchos::RCP;
   using std::endl;
 
@@ -199,9 +198,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
   global_size_t num_rows_per_proc = 5;
   RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LO,GO,Node> (num_rows_per_proc);
   RCP<const CRS> crsmatrix = tif_utest::create_test_matrix<Scalar,LO,GO,Node> (rowmap);
-  Ifpack2::BlockRelaxation<ROW, Ifpack2::SparseContainer<ROW, ILUTlo> > prec (crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> prec (crsmatrix);
 
   Teuchos::ParameterList params;
+  params.set("relaxation: container", "SparseILUT");
   params.set("relaxation: type", "Jacobi");
   params.set("partitioner: type","linear");
   params.set("partitioner: local parts",(int)num_rows_per_proc);
@@ -260,7 +260,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOr
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef Ifpack2::TriDiContainer<ROW,Scalar> TriDi;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -279,10 +278,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOr
   ilist.set("partitioner: type","user");
   ilist.set("partitioner: map",PMrcp);
   ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: container", "TriDi");
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<ROW,TriDi> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();
@@ -302,7 +302,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, BandedContainer, Scala
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef Ifpack2::BandedContainer<ROW, Scalar> BandedContainer;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_banded<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -321,10 +320,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, BandedContainer, Scala
   ilist.set("partitioner: type","user");
   ilist.set("partitioner: map",PMrcp);
   ilist.set("partitioner: local parts",1);
+  ilist.set("relaxation: container", "Banded");
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<ROW, BandedContainer> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();
@@ -345,7 +345,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, BlockedBandedContainer
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef Ifpack2::BandedContainer<ROW, Scalar> BandedContainer;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_banded_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -364,10 +363,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, BlockedBandedContainer
   ilist.set("partitioner: type","user");
   ilist.set("partitioner: map",PMrcp);
   ilist.set("partitioner: local parts",2);
+  ilist.set("relaxation: container", "Banded");
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<ROW, BandedContainer> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();
@@ -389,7 +389,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
-  typedef Ifpack2::TriDiContainer<ROW,Scalar> TriDi;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -416,10 +415,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
   ilist.set("partitioner: type","line");
   ilist.set("partitioner: coordinates",coord);
   ilist.set("partitioner: line detection threshold",0.5);
+  ilist.set("relaxation: container", "TriDi");
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<ROW,TriDi> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();
@@ -864,9 +864,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
 //  bcrsmatrix->describe (*wrappedStream, Teuchos::VERB_EXTREME);
 //  bcrsmatrix->getGraph()->describe (*wrappedStream, Teuchos::VERB_EXTREME);
 
-  Ifpack2::BlockRelaxation<row_matrix_type, Ifpack2::DenseContainer<row_matrix_type,double> > prec (bcrsmatrix);
+  Ifpack2::BlockRelaxation<row_matrix_type> prec (bcrsmatrix);
 
   Teuchos::ParameterList params;
+  params.set("relaxation: container", "Dense");
   params.set("relaxation: type", "Symmetric Gauss-Seidel");
   params.set ("partitioner: local parts", (LocalOrdinal)bcrsmatrix->getNodeNumRows());
   prec.setParameters(params);
