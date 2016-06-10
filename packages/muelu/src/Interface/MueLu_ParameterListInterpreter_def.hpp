@@ -1455,8 +1455,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
-    HierarchyManager::SetupHierarchy(H);
     H.SetCycle(Cycle_);
+    HierarchyManager::SetupHierarchy(H);
   }
 
   static bool compare(const ParameterList& list1, const ParameterList& list2) {
