@@ -97,7 +97,7 @@ namespace Tpetra {
   Teuchos::RCP<const Teuchos::Comm<int> > getDefaultComm ()
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      tpetraIsInitialized_, std::runtime_error, "Tpetra::getDefaultComm: "
+      ! tpetraIsInitialized_, std::runtime_error, "Tpetra::getDefaultComm: "
       "You must call Tpetra::initialize before you may get a default "
       "communicator.");
     TEUCHOS_TEST_FOR_EXCEPTION(
