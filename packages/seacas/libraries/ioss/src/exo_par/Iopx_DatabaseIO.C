@@ -382,6 +382,14 @@ namespace Iopx {
 
     MPI_Info info        = MPI_INFO_NULL;
     int      app_opt_val = ex_opts(EX_VERBOSE);
+    if (myProcessor == 0) {
+      if (get_filename().length() > 255) {
+	IOSS_WARNING << "Potential corruption due to long length of filename\n\t'"
+		     << get_filename()
+		     << "'\n. There is a bug in certain openmpi versions which limit filename length to 255 characters\n";
+      }
+    }
+
     exodusFilePtr = ex_open_par(get_filename().c_str(), EX_READ | par_mode | mode, &cpu_word_size,
                                 &io_word_size, &version, util().communicator(), info);
 
