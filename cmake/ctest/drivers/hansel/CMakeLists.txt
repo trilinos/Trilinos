@@ -8,8 +8,8 @@ set(workingdir "${TrilinosDriver_BINARY_DIR}")
 # Get the day of the week
 execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 
-IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
-  MESSAGE("No testing defined for master branch yet!")
+IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "develop")
+  MESSAGE("No testing defined for develop branch yet!")
 ELSE()
   TRILINOS_DRIVER_ADD_DASHBOARD(
     MPI_RELEASE
