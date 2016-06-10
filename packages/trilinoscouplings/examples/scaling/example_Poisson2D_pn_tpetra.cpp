@@ -182,6 +182,7 @@ typedef Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,NO>   
 typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,NO> multivector_type;
 typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,NO>            driver_map_type;
 Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+Tpetra::global_size_t INVALID_LO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
 typedef Belos::LinearProblem<scalar_type, multivector_type, operator_type> linear_problem_type;
 
@@ -199,8 +200,7 @@ typedef MueLu::TpetraOperator<scalar_type,local_ordinal_type,global_ordinal_type
 
 // forward declarations
 void PromoteMesh_Pn_Kirby(const int degree,  const EPointType & pointType, const FieldContainer<int> & P1_elemToNode, const FieldContainer<double> & P1_nodeCoord, const FieldContainer<double> & P1_edgeCoord,  const FieldContainer<int> & P1_elemToEdge,  const FieldContainer<int> & P1_elemToEdgeOrient, const FieldContainer<int> & P1_nodeOnBoundary,
-                          FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary);
-
+                          FieldContainer<int> & Pn_elemToNode, FieldContainer<double> & Pn_nodeCoord,FieldContainer<int> & Pn_nodeOnBoundary, std::vector<int> &Pn_edgeNodes, std::vector<int> &Pn_cellNodes);
 
 void GenerateEdgeEnumeration(const FieldContainer<int> & elemToNode, const FieldContainer<double> & nodeCoord, FieldContainer<int> & elemToEdge, FieldContainer<int> & elemToEdgeOrient, FieldContainer<double> & edgeCoord);
 
@@ -367,16 +367,22 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > Comm = Teuchos::DefaultComm<int>::getComm();
   int MyPID = Comm->getRank();
 
+  Teuchos::CommandLineProcessor clp(false);
+
   RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Pamgen Setup")));
 
-  //Check number of arguments
-  if (argc > 3) {
-    std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
-    std::cout <<"Usage:\n\n";
-    std::cout <<"  ./TrilinosCouplings_examples_scaling_Example_Poisson.exe [meshfile.xml] [solver.xml]\n\n";
-    std::cout <<"   meshfile.xml(optional) - xml file with description of Pamgen mesh\n\n";
-    std::cout <<"   solver.xml(optional) - xml file with ML solver options\n\n";
-    exit(1);
+  std::string optMeshFile = "Poisson2D.xml";
+  clp.setOption("mesh",  &optMeshFile, "xml file with description of Pamgen mesh");
+  std::string optSolverFile  = "";
+  clp.setOption("solver",   &optSolverFile,  "xml file containing linear solver options");
+  bool optPrintTimings = false;
+  clp.setOption("timings", "notimings",  &optPrintTimings,      "print timer summary");
+
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
 
   if (MyPID == 0){
@@ -414,10 +420,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Command line for xml file, otherwise use default
-  std::string   xmlMeshInFileName, xmlSolverInFileName;
-  if(argc>=2) xmlMeshInFileName=string(argv[1]);
-  else xmlMeshInFileName="Poisson2D.xml";
-  if(argc>=3) xmlSolverInFileName=string(argv[2]);
+  std::string   xmlMeshInFileName(optMeshFile), xmlSolverInFileName(optSolverFile);
 
   // Read xml file into parameter list
   ParameterList inputMeshList;
@@ -692,11 +695,8 @@ int main(int argc, char *argv[]) {
 
   printf("Running p=%d Kirby\n",degree);
   PromoteMesh_Pn_Kirby(degree,POINTTYPE_EQUISPACED,P1_elemToNode,P1_nodeCoord,P1_edgeCoord,P1_elemToEdge,P1_elemToEdgeOrient,
-                       P1_nodeOnBoundary, elemToNode, nodeCoord, nodeOnBoundary /*FIXME ,Pn_edgeNodes, Pn_cellNodes*/);
-  // ---------------------------
+                       P1_nodeOnBoundary, elemToNode, nodeCoord, nodeOnBoundary, Pn_edgeNodes, Pn_cellNodes);
 
-  //FIXME JJH 8-June-2016
-  // This auxiliary mesh is hard-coded to P=2.  Need to update to support P=n.
   long long numElems_aux = numElems*degree*degree;  //degree^2 P1 elements per Pn element in auxiliary mesh
   FieldContainer<int> aux_P1_elemToNode(numElems_aux,P1_numNodesPerElem); //4 P1 elements per Pn element
   CreateP1MeshFromPnMesh(degree, elemToNode, aux_P1_elemToNode);
@@ -859,6 +859,30 @@ int main(int argc, char *argv[]) {
       oidx++;
     }
   //TODO JJH 8-June-2016 need to populate edge and elem seed nodes
+
+  //seed points for block relaxation
+  ArrayRCP<global_ordinal_type> nodeSeeds(Pn_numNodes,INVALID_LO);
+  //unknowns at mesh nodes
+  oidx=0;
+  for(int i=0;i<P1_numNodes;i++) {
+    if(P1_nodeIsOwned[i]){
+      nodeSeeds[(int)P1_globalNodeIds[i]] = oidx;
+      oidx++;
+    }
+  }
+  int numNodeSeeds = oidx;
+
+  //unknowns on edges
+  ArrayRCP<global_ordinal_type> edgeSeeds(Pn_numNodes,INVALID_LO);
+  for (size_t i=0; i<Pn_edgeNodes.size(); ++i)
+    edgeSeeds[Pn_edgeNodes[i]] = i;
+  int numEdgeSeeds = Pn_edgeNodes.size();
+
+  //unknowns in cell interiors
+  ArrayRCP<global_ordinal_type> cellSeeds(Pn_numNodes,INVALID_LO);
+  for (size_t i=0; i<Pn_cellNodes.size(); ++i)
+    cellSeeds[Pn_cellNodes[i]] = i;
+  int numCellSeeds = Pn_cellNodes.size();
        
   // Generate map for nodes
   RCP<driver_map_type> globalMapG = rcp(new driver_map_type(INVALID_GO,&Pn_ownedGIDs[0],Pn_ownedNodes,0,Comm));
@@ -1103,8 +1127,6 @@ int main(int argc, char *argv[]) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
     ParameterList &sl = MLList.sublist(lev0List);
     std::string smooType = sl.get<std::string>("smoother: type");
-    //FIXME
-    /*
     if (smooType == "BLOCK RELAXATION" && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
       std::cout << "found \"smoother: params\" for block relaxation" << std::endl;
@@ -1123,7 +1145,6 @@ int main(int argc, char *argv[]) {
       std::cout << "setting \"partitioner: local parts\" = " << numLocalParts << std::endl;
       ssl.set("partitioner: local parts", numLocalParts);
     }
-    */
   }
 
   // /////////////////////////////////////////////////////////////////////// //
@@ -1374,8 +1395,10 @@ int main(int argc, char *argv[]) {
   const bool writeZeroTimers  = false;
   const bool ignoreZeroTimers = true;
   const std::string filter    = "";
-  TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
-                         writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+  if (optPrintTimings) {
+    TimeMonitor::summarize(Comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                           writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+  }
 
   // Cleanup
   for(long long b = 0; b < numElemBlk; b++){
@@ -1859,7 +1882,9 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
                  const FieldContainer<int>    & P1_nodeOnBoundary,
                  FieldContainer<int>          & Pn_elemToNode,
                  FieldContainer<double>       & Pn_nodeCoord,
-                 FieldContainer<int>          & Pn_nodeOnBoundary) {
+                 FieldContainer<int>          & Pn_nodeOnBoundary,
+                 std::vector<int> & Pn_edgeNodes,
+                 std::vector<int> & Pn_cellNodes) {
 //#define DEBUG_PROMOTE_MESH
   int numElems           = P1_elemToNode.dimension(0);
   int P1_numNodesperElem = P1_elemToNode.dimension(1);
@@ -1928,14 +1953,20 @@ void PromoteMesh_Pn_Kirby(const int degree, const EPointType & pointType,
       int orient   = P1_elemToEdgeOrient(i,j);
       int base_id = (orient==1) ? p1_node_in_pn[edge_node0_id[j]] : p1_node_in_pn[edge_node1_id[j]];
       int skip     =  orient*edge_skip[j];
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,base_id+(k+1)*skip) = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+      for(int k=0; k<degree-1; k++) {
+        int node = P1_numNodes+P1_elemToEdge(i,j)*(degree-1)+k;
+        Pn_elemToNode(i,base_id+(k+1)*skip) = node;
+        Pn_edgeNodes.push_back(node);
+      }
     }
 
     // P1 cells
     for(int j=0; j<degree-1; j++) 
-      for(int k=0; k<degree-1; k++) 
-        Pn_elemToNode(i,center_root+j*(degree+1)+k) = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+      for(int k=0; k<degree-1; k++) {
+        int node = P1_numNodes+P1_numEdges*(degree-1)+i*(degree-1)*(degree-1) +  j*(degree-1)+k;
+        Pn_elemToNode(i,center_root+j*(degree+1)+k) = node;
+        Pn_cellNodes.push_back(node);
+      }
 
   }
 
