@@ -50,9 +50,6 @@
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DimTag.hpp"
 
-// Evaluators
-#include "evaluators/Evaluator_Constant.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
