@@ -60,20 +60,18 @@ namespace Tacho {
       const auto cols = A.BaseObject().ColsInRow(ii);
       const auto vals = A.BaseObject().ValuesInRow(ii);
       
-      const ordinal_type first = 0, last = cols.dimension_0();
-
-      // my util
-      const ordinal_type begin = Util::getLowerBound(cols, first, last, _offn);
-      const ordinal_type end   = Util::getLowerBound(cols, begin, last, _offn+_n);
-
-      // std version
-      //const ordinal_type begin = std::distance(&cols[first], std::lower_bound(&cols[first], &cols[last], _offn));
-      //const ordinal_type end   = std::distance(&cols[first], std::lower_bound(&cols[begin], &cols[last], _offn+_n));
-
-      const auto range = range_type<ordinal_type>(begin, end);
-
-      _aj = Kokkos::subview(cols, range);
-      _ax = Kokkos::subview(vals, range);
+      const ordinal_type range_begin = 0, range_end = cols.dimension_0();
+      const ordinal_type begin = Util::getUpperBound(cols, range_begin, range_end, _offn - 1);
+      if (!A.validColInBaseObject(cols(begin))) {
+        _aj = ordinal_type_array();
+        _ax = value_type_array();
+      } else {
+        const ordinal_type end = Util::getUpperBound(cols, begin, range_end, _offn + _n - 1);
+        const auto range = range_type<ordinal_type>(begin, end);
+        
+        _aj = Kokkos::subview(cols, range);
+        _ax = Kokkos::subview(vals, range);
+      }
     }
 
     KOKKOS_INLINE_FUNCTION

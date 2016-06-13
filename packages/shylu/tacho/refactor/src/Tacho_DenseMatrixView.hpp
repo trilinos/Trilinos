@@ -72,11 +72,17 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION
     value_type& Value(const ordinal_type i,
-                      const ordinal_type j) { return _base.Value(_offm+i, _offn+j); }
+                      const ordinal_type j) { 
+      if (i >= _m || j >= _n) std::cout << " Bound error \n";
+      return _base.Value(_offm+i, _offn+j); 
+    }
 
     KOKKOS_INLINE_FUNCTION
     value_type Value(const ordinal_type i,
-                     const ordinal_type j) const { return _base.Value(_offm+i, _offn+j); }
+                     const ordinal_type j) const { 
+      if (i >= _m || j >= _n) std::cout << " Bound error \n";
+      return _base.Value(_offm+i, _offn+j); 
+    }
 
     KOKKOS_INLINE_FUNCTION
     value_type* ValuePtr() { return &_base.Value(_offm, _offn); }

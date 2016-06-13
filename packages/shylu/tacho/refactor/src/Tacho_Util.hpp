@@ -142,12 +142,6 @@ namespace Tacho {
       return a;
     }
 
-    template<typename SpT>
-    KOKKOS_INLINE_FUNCTION
-    static size_t alignDimension(size_t dim, size_t value_type_size) {
-      return dim;
-    }
-
     template<typename T1, typename T2, typename T3>
     KOKKOS_FORCEINLINE_FUNCTION
     static void unrollIndex(Kokkos::pair<T1,T1> &idx,
@@ -185,45 +179,26 @@ namespace Tacho {
     }
 
 
-    // uses range [first, last)
-    template<typename ValueType, typename SpaceType, typename IterType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
-                                  IterType first,
-                                  IterType last,
-                                  const ValueType val) {
-      IterType it, count = last - first, step = 0;
-      while (count > 0) {
-        it = first; 
-        it += ( step = (count >> 1) );
-        if (data[it] < val) {
-          first = ++it;
-          count -= step+1;
-        } else {
-          count=step;
-        }
-      }
-      return first;
-    }
-
+    // // uses range [first, end)
+    // template<typename ValueType, typename SpaceType, typename IterType>
+    // KOKKOS_FORCEINLINE_FUNCTION
+    // static IterType getLowerBound(const Kokkos::View<ValueType*,SpaceType> &data,
+    //                               const IterType begin,
+    //                               const IterType end,
+    //                               const ValueType value) {
+    //   return end;
+    // }
+    
     template<typename ValueType, typename SpaceType, typename IterType>
     KOKKOS_FORCEINLINE_FUNCTION
     static IterType getUpperBound(const Kokkos::View<ValueType*,SpaceType> &data,
-                                  IterType first,
-                                  IterType last,
-                                  const ValueType val) {
-      IterType it, count = last - first, step;
-      while (count > 0) {
-        it = first; 
-        it += ( step = (count >> 1) );
-        if (!(val < data[it])) {
-          first = ++it; 
-          count -= step+1; 
-        } else { 
-          count = step;
-        }
-      }
-      return first;
+                                  IterType begin,
+                                  IterType end,
+                                  const ValueType value) {
+      const auto begin_ptr = &data[begin];
+      const auto end_ptr = &data[end];
+      const auto it = std::upper_bound(begin_ptr, end_ptr, value);
+      return begin + (it - begin_ptr);
     }
 
     template<typename T>

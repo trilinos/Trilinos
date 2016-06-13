@@ -82,21 +82,23 @@ namespace Tacho {
 
         // statistics
         const size_type tmp = row.NumNonZeros();
-        if (tmp) {
-          if (_nnz) {
-            // _tr is not necessary to be updated
-            _br = i;
-            _lc = Util::min(_lc, row.Col(0));
-            _rc = Util::max(_rc, row.Col(tmp-1));
-          } else { // first initialization
-            _tr = i;
-            _br = i;
-            _lc = row.Col(0);
-            _rc = row.Col(tmp-1);
-          }
-          _nnz += tmp;
-        }
+        _nnz += tmp;
+        // if (tmp) {
+        //   if (_nnz) {
+        //     // _tr is not necessary to be updated
+        //     _br = i;
+        //     _lc = Util::min(_lc, row.Col(0));
+        //     _rc = Util::max(_rc, row.Col(tmp-1));
+        //   } else { // first initialization
+        //     _tr = i;
+        //     _br = i;
+        //     _lc = row.Col(0);
+        //     _rc = row.Col(tmp-1);
+        //   }
+        //   _nnz += tmp;
+        // }
       }
+      _tr = 0; _br = _m - 1; _lc = 0; _rc = _n - 1; 
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -116,6 +118,29 @@ namespace Tacho {
 
     KOKKOS_INLINE_FUNCTION
     ordinal_type  NumCols() const { return _n; }
+
+    KOKKOS_INLINE_FUNCTION
+    bool validRowInBaseObject(ordinal_type i) const { 
+      const ordinal_type begin = _offm, end = _offm + _m;
+      return (i >= begin && i < end);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    bool validColInBaseObject(ordinal_type j) const { 
+      const ordinal_type begin = _offn, end = _offn + _n;
+      return (j >= begin && j < end);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    size_type countNumNonZeros() const { 
+      size_type nnz = 0;
+      for (ordinal_type i=0;i<_m;++i) {
+        const auto cols = _base.ColsInRow(i + _offm);
+        for (ordinal_type j=0;j<cols.dimension(0);++j) 
+          nnz += validColInBaseObject(cols(j));
+      }
+      return nnz;
+    }
 
     KOKKOS_INLINE_FUNCTION
     size_type NumNonZeros() const { 
