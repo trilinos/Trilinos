@@ -1045,9 +1045,9 @@ int main(int argc, char *argv[]) {
 
   ParameterList amgList;
   std::string seedType = inputSolverList.get("seed type","node");
+  inputSolverList.remove("seed type");
   if (inputSolverList.isSublist("MueLu"))
     amgList = inputSolverList.sublist("MueLu");
-    amgList.remove("seed type");
   else
     amgList = inputSolverList;
   std::string lev0List = "level 0";
