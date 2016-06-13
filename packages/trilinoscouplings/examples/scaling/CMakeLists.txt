@@ -96,6 +96,14 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    NUM_MPI_PROCS 1
    )
 
+ TRIBITS_ADD_TEST(
+   Example_Poisson2D_pn_tpetra
+   NAME "Poisson2D_pn=4_tpetra"
+   ARGS "Poisson2D_p4.xml"
+   COMM mpi
+   NUM_MPI_PROCS 1
+   )
+
 
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
