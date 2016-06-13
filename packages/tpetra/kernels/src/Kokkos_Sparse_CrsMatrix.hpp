@@ -186,7 +186,10 @@ private:
   /// \brief Stride between successive entries in the row.
   ///
   /// For compressed sparse row (CSR) storage, this is always one.
-  /// This might be greater than one for storage formats like ELLPACK.
+  /// This might be greater than one for storage formats like ELLPACK
+  /// or Jagged Diagonal.  Nevertheless, the stride can never be
+  /// greater than the number of rows or columns in the matrix.  Thus,
+  /// \c ordinal_type is the correct type.
   const ordinal_type stride_;
 
 public:
@@ -283,7 +286,10 @@ private:
   /// \brief Stride between successive entries in the row.
   ///
   /// For compressed sparse row (CSR) storage, this is always one.
-  /// This might be greater than one for storage formats like ELLPACK.
+  /// This might be greater than one for storage formats like ELLPACK
+  /// or Jagged Diagonal.  Nevertheless, the stride can never be
+  /// greater than the number of rows or columns in the matrix.  Thus,
+  /// \c ordinal_type is the correct type.
   const ordinal_type stride_;
 
 public:
@@ -719,7 +725,8 @@ public:
   /// Users should not rely on the return type of this method.  They
   /// should instead assign to 'auto'.  That allows compile-time
   /// polymorphism for different kinds of sparse matrix formats (e.g.,
-  /// ELLPACK) that we may wish to support in the future.
+  /// ELLPACK or Jagged Diagonal) that we may wish to support in the
+  /// future.
   KOKKOS_INLINE_FUNCTION
   SparseRowView<CrsMatrix> row (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
@@ -752,7 +759,8 @@ public:
   /// Users should not rely on the return type of this method.  They
   /// should instead assign to 'auto'.  That allows compile-time
   /// polymorphism for different kinds of sparse matrix formats (e.g.,
-  /// ELLPACK) that we may wish to support in the future.
+  /// ELLPACK or Jagged Diagonal) that we may wish to support in the
+  /// future.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst<CrsMatrix> rowConst (const ordinal_type i) const {
     const size_type start = graph.row_map(i);
