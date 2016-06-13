@@ -420,6 +420,7 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
                                      std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
                                      stk::ParallelMachine comm,
                                      std::vector<std::pair<DomainIdent, RangeIdent> >& output,
+                                     bool communicateDomainBoxInfo,
                                      bool communicateRangeBoxInfo
                                    )
 {
@@ -457,7 +458,9 @@ void coarse_search_boost_rtree_impl( std::vector< std::pair<DomainBox,DomainIden
         Output temp(domain_id, range_id);
         output.push_back(temp);
 
-        if ((p_size > 1) && ( get_proc<DomainIdent>()(domain_id) != p_rank || (communicateRangeBoxInfo &&  get_proc<RangeIdent>()(range_id) != p_rank )))
+        if ((p_size > 1) &&
+            ((communicateDomainBoxInfo && get_proc<DomainIdent>()(domain_id) != p_rank ) ||
+             (communicateRangeBoxInfo && get_proc<RangeIdent>()(range_id) != p_rank )))
         {
           int other_proc = get_proc<DomainIdent>()(domain_id) == p_rank ? get_proc<RangeIdent>()(range_id) : get_proc<DomainIdent>()(domain_id);
           send_matches[other_proc].push_back(temp);
@@ -516,16 +519,19 @@ void coarse_search_boost_rtree( std::vector< std::pair<DomainBox,DomainIdent> > 
 
   if(domain_has_more_boxes)
   {
-    coarse_search_boost_rtree_impl(local_domain, local_range, comm, output, communicateRangeBoxInfo);
+    coarse_search_boost_rtree_impl(local_domain, local_range, comm, output, true, communicateRangeBoxInfo);
   }
   else
   {
     std::vector<std::pair<RangeIdent, DomainIdent>> temp_output;
-    coarse_search_boost_rtree_impl(local_range, local_domain, comm, temp_output, communicateRangeBoxInfo);
+    coarse_search_boost_rtree_impl(local_range, local_domain, comm, temp_output, communicateRangeBoxInfo, true);
+
+    const int p_rank = stk::parallel_machine_rank(comm);
     output.reserve(temp_output.size());
     for(auto && pair : temp_output)
     {
-      output.emplace_back(pair.second, pair.first);
+      if(communicateRangeBoxInfo || get_proc<DomainIdent>()(pair.second) == p_rank)
+        output.emplace_back(pair.second, pair.first);
     }
   }
 
