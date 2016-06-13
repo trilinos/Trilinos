@@ -1118,6 +1118,7 @@ int main(int argc, char *argv[]) {
   std::string seedType = inputSolverList.get("seed type","node");
   if (inputSolverList.isSublist("MueLu"))
     MLList = inputSolverList.sublist("MueLu");
+    amgList.remove("seed type");
   else
     MLList = inputSolverList;
   std::string lev0List = "level 0";
