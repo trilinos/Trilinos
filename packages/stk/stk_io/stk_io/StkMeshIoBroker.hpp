@@ -628,6 +628,11 @@ namespace impl
       void use_nodeset_for_part_nodes_fields(size_t output_index,
 					     bool true_false);
 
+      void set_option_to_not_collapse_sequenced_fields()
+      {
+          property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ">:["));
+      }
+
       //-END
     protected:
       void set_sideset_face_creation_behavior_for_testing(SideSetFaceCreationBehavior behavior)
