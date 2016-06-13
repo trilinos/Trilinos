@@ -588,6 +588,14 @@ int main (int argc, char ** argv){
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
     Kokkos::Cuda::print_configuration(std::cout);
 
+    {
+      //just warm up gpu.
+    Kokkos::View<int *, Kokkos::Cuda> tmp_view("rowmap_view", 20000000);
+    Kokkos::deep_copy(tmp_view, 2);
+    }
+
+
+
     KokkosKernels::Experimental::Graph::Utils::read_graph_bin<idx, wt> (&m, &nnzA, &xadj, &adj, &ew, a_mtx_bin_file);
     idx nv = m;
     idx ne = nnzA;
@@ -677,7 +685,7 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
-        return;
+
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -770,7 +778,7 @@ int main (int argc, char ** argv){
         delete [] adj;
         delete [] ew;
         crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
-        return;
+
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -898,6 +906,10 @@ crsMat_t run_experiment(
   }
 
   for (int i = 0; i < repeat; ++i){
+    row_mapC = lno_view_t ("");
+    entriesC = lno_nnz_view_t ("");
+    valuesC = scalar_view_t ("");
+
     Kokkos::Impl::Timer timer1;
     KokkosKernels::Experimental::Graph::spgemm_symbolic (
         &kh,
@@ -973,15 +985,44 @@ crsMat_t run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-  if (0)
+  if (1)
   {
     typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
     Kokkos::deep_copy ( hr, row_mapC);
-    for (int i = 0; i < hr.dimension_0() - 1; ++i){
-      auto subentries = Kokkos::subview(entriesC, Kokkos::make_pair(hr(i), hr(i + 1)));
-      Kokkos::sort(subentries);
-      //KokkosKernels::Experimental::Util::print_1Dview(subentries);
+
+    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (entriesC);
+    Kokkos::deep_copy ( he, entriesC);
+
+    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (valuesC);
+    Kokkos::deep_copy ( hv, valuesC);
+
+    std::vector <KokkosKernels::Experimental::Graph::Utils::Edge<idx, wt>> edge_list (he.dimension_0());
+
+
+    for (idx i = 0; i < hr.dimension_0() - 1; ++i){
+      idx begin = hr(i);
+      idx end = hr(i + 1);
+      idx edge_ind = 0;
+      for (idx j = begin; j < end; ++j){
+        edge_list[edge_ind].src = i;
+        edge_list[edge_ind].dst = he(j);
+        edge_list[edge_ind].ew = hv(j);
+        edge_ind++;
+      }
+      std::sort (edge_list.begin(), edge_list.begin() + edge_ind);
+
+      edge_ind = 0;
+      for (int j = begin; j < end; ++j){
+        he(j) = edge_list[edge_ind].dst;
+        hv(j) = edge_list[edge_ind++].ew;
+      }
+
+      Kokkos::deep_copy ( entriesC, he);
+      Kokkos::deep_copy ( valuesC, hv);
     }
+
+    KokkosKernels::Experimental::Util::print_1Dview(entriesC);
+    KokkosKernels::Experimental::Util::print_1Dview(valuesC);
   }
 
   std::cout << "DONE" << std::endl;

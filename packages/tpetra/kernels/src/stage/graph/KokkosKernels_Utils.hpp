@@ -1323,10 +1323,10 @@ struct ReduceMaxFunctor{
 
   view_type view_to_reduce;
   typedef typename view_type::non_const_value_type value_type;
-  value_type min_val;
+  const value_type min_val;
   ReduceMaxFunctor(
       view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
-          min_val(-std::numeric_limits<value_type>::max()){
+          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, value_type &max_reduction) const {
@@ -1369,8 +1369,10 @@ struct IsEqualFunctor{
   KOKKOS_INLINE_FUNCTION
   void operator()(const size_t &i, int &is_equal) const {
     if (view1(i) != view2(i)) {
-      std::cout << "i:" << i << "view1:" << view1(i) << " view2:" <<  view2(i) << std::endl;
-      is_equal = 0;}
+      //std::cout << "i:" << i << "view1:" << view1(i) << " view2:" <<  view2(i) << std::endl;
+      //printf("i:%d v1:")
+      is_equal = 0;
+    }
   }
 
   KOKKOS_INLINE_FUNCTION

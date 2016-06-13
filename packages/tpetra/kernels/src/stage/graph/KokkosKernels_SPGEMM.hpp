@@ -167,9 +167,10 @@ namespace Graph{
           );
     }
 
-    //valuesC = typename KernelHandle::value_array_type("valC", entriesC.dimension_0());
+
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
+      valuesC = typename scalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
       std::cout << "SPGEMM_CUSPARSE" << std::endl;
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
