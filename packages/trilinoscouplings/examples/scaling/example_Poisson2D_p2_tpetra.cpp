@@ -972,8 +972,6 @@ int main(int argc, char *argv[]) {
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
   FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
-  HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
-  HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
   myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
@@ -1043,7 +1041,7 @@ int main(int argc, char *argv[]) {
   /**********************************************************************************/
 
   // Run the solver
-  std::string amgType = inputSolverList.get<std::string>("amgType","MueLu");
+  std::string amgType("MueLu");
 
   ParameterList amgList;
   std::string seedType = inputSolverList.get("seed type","node");
