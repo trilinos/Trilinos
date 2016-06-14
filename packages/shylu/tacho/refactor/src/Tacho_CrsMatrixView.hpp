@@ -82,23 +82,31 @@ namespace Tacho {
 
         // statistics
         const size_type tmp = row.NumNonZeros();
+
+#define USE_GRAFT
+#ifdef USE_GRAFT
+        if (tmp) {
+          if (_nnz) {
+            // _tr is not necessary to be updated
+            _br = i;
+            _lc = Util::min(_lc, row.Col(0));
+            _rc = Util::max(_rc, row.Col(tmp-1));
+          } else { // first initialization
+            _tr = i;
+            _br = i;
+            _lc = row.Col(0);
+            _rc = row.Col(tmp-1);
+          }
+          _nnz += tmp;
+        }
+#else
         _nnz += tmp;
-        // if (tmp) {
-        //   if (_nnz) {
-        //     // _tr is not necessary to be updated
-        //     _br = i;
-        //     _lc = Util::min(_lc, row.Col(0));
-        //     _rc = Util::max(_rc, row.Col(tmp-1));
-        //   } else { // first initialization
-        //     _tr = i;
-        //     _br = i;
-        //     _lc = row.Col(0);
-        //     _rc = row.Col(tmp-1);
-        //   }
-        //   _nnz += tmp;
-        // }
+#endif
       }
+#ifndef USE_GRAFT
       _tr = 0; _br = _m - 1; _lc = 0; _rc = _n - 1; 
+#endif
+#undef USE_GRAFT
     }
 
     KOKKOS_INLINE_FUNCTION

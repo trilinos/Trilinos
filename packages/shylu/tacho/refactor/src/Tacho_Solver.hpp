@@ -228,7 +228,7 @@ namespace Tacho {
       S.setSeed();
       S.setTreeLevel();
       S.setStrategy( /**/ SCOTCH_STRATSPEED
-                     |    SCOTCH_STRATLEVELMAX
+                     //|    SCOTCH_STRATLEVELMAX
                      //|    SCOTCH_STRATLEVELMIN
                      |    SCOTCH_STRATLEAFSIMPLE
                      |    SCOTCH_STRATSEPASIMPLE
@@ -249,6 +249,8 @@ namespace Tacho {
 
       GraphToolsHostType::getGraph(rptr, cidx, AA_scotch);
 
+#define USE_CAMD
+#ifdef USE_CAMD
       GraphToolsHostType_CAMD C;
       C.setGraph(AA_scotch.NumRows(),
                  rptr, cidx,
@@ -263,7 +265,7 @@ namespace Tacho {
                            C.PermVector(),
                            C.InvPermVector(),
                            AA_scotch);
-
+#endif
       {
         const auto m = _AA.NumRows();
         _nblks = S.NumBlocks();
@@ -274,22 +276,31 @@ namespace Tacho {
       
         const auto s_perm = S.PermVector();
         const auto s_peri = S.InvPermVector();
+#ifdef USE_CAMD
         const auto c_perm = C.PermVector();
         const auto c_peri = C.InvPermVector();
+#endif
         const auto s_range = S.RangeVector();
         const auto s_tree = S.TreeVector();
 
         for (auto i=0;i<m;++i) {
+#ifdef USE_CAMD
           _perm(i)  = c_perm(s_perm(i));
           _peri(i)  = s_peri(c_peri(i));
-          //_perm(i)  = s_perm(i);
-          //_peri(i)  = s_peri(i);
+#else
+          _perm(i)  = s_perm(i);
+          _peri(i)  = s_peri(i);
+#endif
           _range(i) = s_range(i);
           _tree(i)  = s_tree(i);
         }
 
-        //_AA_reorder = AA_scotch;    
+#ifdef USE_CAMD
         _AA_reorder = AA_camd;
+#else
+        _AA_reorder = AA_scotch;    
+#endif
+#undef USE_CAMD
       }
 
       return 0;
@@ -334,7 +345,8 @@ namespace Tacho {
                                auto &block = _HF.Value(k);
                                block.setRowViewArray(Kokkos::subview(_rows, range_type(ap(k), ap(k+1))));
                              } );
-        CrsMatrixTools::filterEmptyBlocks(_HF);
+        // this does not work
+        // CrsMatrixTools::filterEmptyBlocks(_HF);
       }
 
       // ** check hier nnz and flat nnz
@@ -371,6 +383,11 @@ namespace Tacho {
                                                               Kokkos::subview(_mats, range_type(ap(k), ap(k+1))));
                                block.copyToFlat();
                              } );
+        // HostSpaceType::execution_space::fence();        
+        // std::cout <<" file writing \n";
+        // std::ofstream file("from_tacho_sym.mtx");
+        // MatrixMarket::write(file, _FF);
+        // std::cout <<" file writing done \n";
       }
 
       // ** nullify FF
@@ -430,6 +447,23 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(future.get(), std::runtime_error, 
                                "Fail to perform CholeskySuperNodesByBlocks");
       
+
+
+      // // ** dense block to view
+      // {
+      //   const auto nblocks = _HF.NumNonZeros();
+      //   Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
+      //                        [&](const ordinal_type k) {
+      //                          auto &block = _HF.Value(k);
+      //                          block.copyToView();
+      //                        } );
+      //   // HostSpaceType::execution_space::fence();        
+      //   // std::cout <<" file writing \n";
+      //   // std::ofstream file("from_tacho_factors.mtx");
+      //   // MatrixMarket::write(file, _FF);
+      //   // std::cout <<" file writing done \n";
+      // }
+
       return 0;
     }
     
