@@ -14,6 +14,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// For memory proviling
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestForException.hpp>
 
@@ -448,4 +452,11 @@ void connect_vtune(const int p_rank) {
     std::cout << cmd.str() << std::endl;
   system(cmd.str().c_str());
   system("sleep 10");
+}
+
+// Get maximum memory usage
+size_t get_max_memory_usage() {
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  return usage.ru_maxrss;
 }

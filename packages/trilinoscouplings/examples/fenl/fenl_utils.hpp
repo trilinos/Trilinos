@@ -201,3 +201,6 @@ void print_perf_value( std::ostream & s ,
 
 // Connect executable to vtune for profiling
 void connect_vtune(const int p_rank);
+
+// Get maximum memory usage
+size_t get_max_memory_usage();
