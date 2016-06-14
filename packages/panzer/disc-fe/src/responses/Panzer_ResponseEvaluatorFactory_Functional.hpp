@@ -23,15 +23,11 @@ public:
 
    ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="",
                                        const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
-                                       const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
                                        bool applyDirichletToDerivative=false)
      : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral)
-     , quadPointField_(quadPointField), linearObjFactory_(linearObjFactory), globalIndexer_(globalIndexer)
+     , quadPointField_(quadPointField), linearObjFactory_(linearObjFactory)
      , applyDirichletToDerivative_(applyDirichletToDerivative)
-   {
-     TEUCHOS_ASSERT((linearObjFactory==Teuchos::null && globalIndexer==Teuchos::null) ||
-                    (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
-   }
+   { }
 
    virtual ~ResponseEvaluatorFactory_Functional() {}
  
@@ -85,7 +81,6 @@ private:
    bool requiresCellIntegral_;
    std::string quadPointField_;
    Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
-   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
    bool applyDirichletToDerivative_;
 };
 
@@ -102,26 +97,15 @@ struct FunctionalResponse_Builder : public ResponseMESupportBuilderBase {
 
   virtual ~FunctionalResponse_Builder() {}
 
-  void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
+  void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory)
   {
     linearObjFactory = in_linearObjFactory;
-    globalIndexer = in_globalIndexer;
-
-    TEUCHOS_ASSERT((linearObjFactory==Teuchos::null && globalIndexer==Teuchos::null) ||
-                   (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
-  }
-
-  virtual void setDerivativeInformationBase(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                    const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & in_globalIndexer)
-  {
-    setDerivativeInformation(in_linearObjFactory,Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_globalIndexer,true));
   }
 
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
   { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,LO,GO>(comm,cubatureDegree,requiresCellIntegral,quadPointField,
-                                                                         linearObjFactory,globalIndexer,applyDirichletToDerivative)); }
+                                                                         linearObjFactory,applyDirichletToDerivative)); }
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildValueFactory() const
   { return build<panzer::Traits::Residual>(); }
@@ -139,7 +123,6 @@ struct FunctionalResponse_Builder : public ResponseMESupportBuilderBase {
 
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;
 };
 
 

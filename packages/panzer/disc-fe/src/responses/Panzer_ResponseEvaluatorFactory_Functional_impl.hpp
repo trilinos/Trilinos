@@ -10,6 +10,8 @@
 #include "Panzer_Integrator_Scalar.hpp"
 #include "Panzer_ResponseScatterEvaluator_Functional.hpp"
 #include "Panzer_Response_Functional.hpp"
+#include "Panzer_BlockedDOFManager.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 
 namespace panzer {
 
@@ -55,8 +57,28 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
    // build scatter evaluator
    {
-     Teuchos::RCP<FunctionalScatterBase> scatterObj =
-         (globalIndexer_!=Teuchos::null) ?  Teuchos::rcp(new FunctionalScatter<LO,GO>(globalIndexer_)) : Teuchos::null;
+     Teuchos::RCP<FunctionalScatterBase> scatterObj;
+     if(linearObjFactory_!=Teuchos::null) {
+
+        TEUCHOS_ASSERT(linearObjFactory_->getDomainGlobalIndexer()!=Teuchos::null);
+
+        auto ugi = Teuchos::rcp_dynamic_cast<const UniqueGlobalIndexer<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
+        auto bugi = Teuchos::rcp_dynamic_cast<const BlockedDOFManager<LO,GO> >(linearObjFactory_->getDomainGlobalIndexer());
+
+        if(ugi!=Teuchos::null) {
+          std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > ugis; 
+          ugis.push_back(ugi);
+
+          scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(ugis));
+        }
+        else if(bugi!=Teuchos::null) {
+          scatterObj = Teuchos::rcp(new FunctionalScatter<LO,GO>(nc2c_vector(bugi->getFieldDOFManagers())));
+        }
+        else {
+          TEUCHOS_ASSERT(false); // no real global indexer to use
+        }
+     }
+
      std::string field = (quadPointField_=="" ? responseName : quadPointField_);
 
      // build useful evaluator

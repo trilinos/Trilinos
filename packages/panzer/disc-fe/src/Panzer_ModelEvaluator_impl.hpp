@@ -811,7 +811,7 @@ addFlexibleResponse(const std::string & responseName,
             const Teuchos::RCP<ResponseMESupportBuilderBase> & builder)
 {
    // add a basic response, use x global indexer to define it
-   builder->setDerivativeInformationBase(lof_,lof_->getRangeGlobalIndexer());
+   builder->setDerivativeInformation(lof_);
 
    int respIndex = addResponse(responseName,wkst_desc,*builder);
 
@@ -1828,7 +1828,8 @@ buildDistroParamDgDp_RL(
         continue;
 
       // set the current derivative information in the builder
-      responses_[r]->builder->setDerivativeInformationBase(param_lof,param_ugi);
+      // responses_[r]->builder->setDerivativeInformationBase(param_lof,param_ugi);
+      responses_[r]->builder->setDerivativeInformation(param_lof);
 
       // add the response
       rLibrary->addResponse(responses_[r]->name,
