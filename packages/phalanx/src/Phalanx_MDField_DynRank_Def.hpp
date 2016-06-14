@@ -488,7 +488,7 @@ void
 PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 deep_copy(const MDFieldType& source)
 {
-  Kokkos::deep_copy(m_field_data,source.m_field_data);
+  Kokkos::deep_copy(m_field_data,source.get_view());
 }
 //******************************************************************************
 

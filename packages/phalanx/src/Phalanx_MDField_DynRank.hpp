@@ -211,12 +211,18 @@ namespace PHX {
     void V_Multiply(const MDFieldType& source);
  
     KOKKOS_FORCEINLINE_FUNCTION
-    array_type get_kokkos_view()
+    array_type get_view()
     {return m_field_data;}
 
     KOKKOS_FORCEINLINE_FUNCTION
-    const array_type get_kokkos_view() const
+    const array_type get_view() const
     {return m_field_data;}
+
+    PHX::any& get_static_any_view()
+    {return m_any;}
+
+    const PHX::any& get_static_any_view() const
+    {return m_any;}
    
   private:
    

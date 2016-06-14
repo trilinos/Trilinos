@@ -161,7 +161,7 @@ namespace PHX {
     //! Returns the Topological sort ordering. Used for unit testing.
     const std::vector<int>& getEvaluatorInternalOrdering() const;
 
-    //! Returns the intrenally registered nodes. Used for unit testing.
+    //! Returns the internally registered nodes. Used for unit testing.
     const std::vector<PHX::DagNode<Traits>>& getDagNodes() const;
 
     /** \brief Returns the speedup and parallelizability of the graph.
@@ -171,6 +171,16 @@ namespace PHX {
 	execution times.
      */
     void analyzeGraph(double& speedup, double& parallelizability) const;
+
+    /** \brief Returns all evalautors that either evaluate or require
+        the given field. This is used to bind memory for unmanaged
+        views.
+
+        CAUTION: The returned vector is non-const to rebind memory for
+        fields in evalautors. Be careful not to corrupt the actual
+        vector.
+     */
+    std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& getEvaluatorsBindingField(const PHX::FieldTag& ft);
 
   protected:
 
@@ -187,6 +197,8 @@ namespace PHX {
     //! Helper function.
     void printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const;
 
+    void createEvalautorBindingFieldMap();
+    
   protected:
 
     //! Fields required by the user.
@@ -218,7 +230,7 @@ namespace PHX {
     //! Use this name for graphviz file output for DAG construction errors.
     std::string graphviz_filename_for_errors_;
 
-    //! IF set to true, will write graphviz file for DAG construction errors.
+    //! If set to true, will write graphviz file for DAG construction errors.
     bool write_graphviz_file_on_error_;
 
     std::string evaluation_type_name_;
@@ -232,6 +244,9 @@ namespace PHX {
 #ifdef PHX_ENABLE_KOKKOS_AMT
     //std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_;
 #endif
+
+    //! A map that returns all evalautors that bind the memory of a particular field. Key is unique field identifier.  
+    std::unordered_map<std::string,std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>> field_to_evaluators_binding_;
   };
   
   template<typename Traits>

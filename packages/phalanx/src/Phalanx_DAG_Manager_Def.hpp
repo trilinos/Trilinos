@@ -203,6 +203,8 @@ sortAndOrderEvaluators()
     fields_.insert(fields_.end(),fields.cbegin(),fields.cend());
   }
 
+  this->createEvalautorBindingFieldMap();
+
   sorting_called_ = true;
 }
 
@@ -659,6 +661,32 @@ analyzeGraph(double& speedup, double& parallelizability) const
   parallelizability = ( 1.0 - (1.0/speedup) )
     / ( 1.0 - (1.0 / static_cast<double>(topoSortEvalIndex.size())) );
 
+}
+
+//=======================================================================
+template<typename Traits>
+std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
+PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
+{
+  return field_to_evaluators_binding_[ft.identifier()];
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
+{
+  field_to_evaluators_binding_.clear();
+  
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();
+
+    for (const auto& f : e->evaluatedFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+
+    for (const auto& f : e->dependentFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+  }
 }
 
 //=======================================================================

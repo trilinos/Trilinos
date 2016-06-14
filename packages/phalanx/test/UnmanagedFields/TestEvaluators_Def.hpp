@@ -41,86 +41,80 @@
 // ************************************************************************
 // @HEADER
 
-#include "Phalanx_config.hpp"
-#include "Phalanx_KokkosDeviceTypes.hpp"
-#include "Phalanx_KokkosUtilities.hpp"
+
+//**********************************************************************
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
-#include "Phalanx_FieldManager.hpp"
-#include "Phalanx_TypeStrings.hpp"
-#include "Phalanx_DimTag.hpp"
 
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_Assert.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_TimeMonitor.hpp"
+struct CELL;
+struct BASIS;
 
-#include "MyTraits.hpp"
+namespace PHX {
 
-PHX_DIM_TAG_DECLARATION(CELL)
-PHX_DIM_TAG_IMPLEMENTATION(CELL)
+  PHX_EVALUATOR_CTOR(EvalUnmanaged,plist)
 
-PHX_DIM_TAG_DECLARATION(BASIS)
-PHX_DIM_TAG_IMPLEMENTATION(BASIS)
-
-#include "EvaluatorWithMacros.hpp"
-
-TEUCHOS_UNIT_TEST(evaluator_macros, basic)
-{
-  using namespace std;
-  using namespace Teuchos;
-  using namespace PHX;
-
-  FieldManager<MyTraits> fm;
-
-  // Mock evaluators for testing MACRO definitions
-  using Ev1 = EvaluatorWithMacros1<MyTraits::Residual,MyTraits>;
-  using Ev2 = EvaluatorWithMacros2<MyTraits::Residual,MyTraits>;
-  using plist = Teuchos::ParameterList;
-  
   {
-    auto plist_a = Teuchos::parameterList("A"); 
-    RCP<Ev1> a = rcp(new Ev1(*plist_a));
-    a->setName("Eval_A");
-    a->evaluates("A");
-    a->requires("B");
-    a->requires("C");
-    fm.registerEvaluator<MyTraits::Residual>(a);
-  }
-  {
-    auto plist_b = Teuchos::parameterList("B"); 
-    RCP<Ev2> b = rcp(new Ev2(*plist_b));
-    b->setName("Eval_B");
-    b->evaluates("B");
-    b->requires("D");
-    fm.registerEvaluator<MyTraits::Residual>(b);
-  }
-  {
-    auto plist_c = Teuchos::parameterList("C"); 
-    RCP<Ev2> c = rcp(new Ev2(*plist_c));
-    c->setName("Eval_C");
-    c->evaluates("C");
-    c->requires("D");
-    fm.registerEvaluator<MyTraits::Residual>(c);
-  }
-  {
-    auto plist_d = Teuchos::parameterList("D"); 
-    RCP<Ev1> d = rcp(new Ev1(*plist_d));
-    d->setName("Eval_D");
-    d->evaluates("D");
-    fm.registerEvaluator<MyTraits::Residual>(d);
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+
+    a = PHX::MDField<double,CELL,BASIS>("a",dl);
+    b = PHX::MDField<const double,CELL,BASIS>("b",dl);
+    c = PHX::MDField<double>("c",dl);
+    d = PHX::MDField<const double>("d",dl);
+
+    // static
+    this->addEvaluatedField(a);
+    this->addDependentField(b);
+
+    // dynamic
+    this->addEvaluatedField(c);
+    this->addDependentField(d);
   }
 
-  RCP<PHX::MDALayout<CELL,BASIS>> dl = 
-    rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
-  PHX::Tag<MyTraits::Residual::ScalarT> tag("A",dl);
-  fm.requireField<MyTraits::Residual>(tag);
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  {
+    this->utils.setFieldData(a,fm);
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(c,fm);
+    this->utils.setFieldData(d,fm);
+  }
 
-  fm.postRegistrationSetup(0);
-  fm.preEvaluate<MyTraits::Residual>(1);
-  fm.evaluateFields<MyTraits::Residual>(1);
-  fm.postEvaluate<MyTraits::Residual>(1);
-}
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  {
+    a.deep_copy(b);
+    c.deep_copy(d);
+  }
+
+  PHX_EVALUATOR_CTOR(EvalDummy,plist)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+
+    b = PHX::MDField<double,CELL,BASIS>("b",dl);
+    d = PHX::MDField<double>("d",dl);
+
+    // static
+    this->addEvaluatedField(b);
+
+    // dynamic
+    this->addEvaluatedField(d);
+  }
+
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  {
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(d,fm);
+  }
+
+  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  {
+    // do nothing - they are unmanaged - data values are set by user
+  }
+
+} 
