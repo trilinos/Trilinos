@@ -20,6 +20,31 @@ namespace Experimental{
 
 namespace Util{
 
+
+template <typename in_lno_view_t,
+          typename out_lno_view_t>
+struct Histogram{
+  in_lno_view_t inview;
+  out_lno_view_t outview;
+  Histogram (in_lno_view_t inview_, out_lno_view_t outview_): inview(inview_), outview(outview_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &ii) const {
+    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
+  }
+};
+
+template <typename in_lno_view_t,
+          typename out_lno_view_t,
+          typename MyExecSpace>
+void get_histogram(
+    typename in_lno_view_t::size_type in_elements,
+    in_lno_view_t in_view,
+    out_lno_view_t histogram /*must be initialized with 0s*/){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
+}
+
 template <typename idx, typename ExecutionSpace>
 void get_suggested_vector_team_size(
     int max_allowed_team_size,

@@ -93,7 +93,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      entriesC = in_nonzero_index_view_type("entriesC", nnzC);
+      entriesC = in_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
       std::cerr << "CUSPARSE requires integer values" << std::endl;
@@ -177,6 +177,7 @@ namespace Impl{
       value_type *c_ew = valuesC.ptr_on_device();
 
       if (Kokkos::Impl::is_same<value_type, float>::value){
+        std::cout << "float" << std::endl;
         cusparseScsrgemm(
             h->handle,
             h->transA,
@@ -200,6 +201,7 @@ namespace Impl{
             c_adj);
       }
       else if (Kokkos::Impl::is_same<value_type, double>::value){
+        std::cout << "double" << std::endl;
         cusparseDcsrgemm(
             h->handle,
             h->transA,

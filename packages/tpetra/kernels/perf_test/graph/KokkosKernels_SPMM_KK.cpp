@@ -4,7 +4,7 @@
 #include "KokkosKernels_SPGEMM.hpp"
 #include <Kokkos_Sparse_CrsMatrix.hpp>
 #include "KokkosKernels_Handle.hpp"
-
+#include "KokkosKernels_GraphColor.hpp"
 
 typedef int idx;
 typedef double wt;
@@ -985,7 +985,7 @@ crsMat_t run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
-  if (1)
+  if (0)
   {
     typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
     Kokkos::deep_copy ( hr, row_mapC);
@@ -1025,8 +1025,55 @@ crsMat_t run_experiment(
     KokkosKernels::Experimental::Util::print_1Dview(valuesC);
   }
 
-  std::cout << "DONE" << std::endl;
 
+  if (1)
+  {
+    std::cout << "Coloring Result Matrix" << std::endl;
+    kh.create_graph_coloring_handle();
+    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
+    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance2);
+
+    lno_view_t tmp_xadj;
+    lno_nnz_view_t tmp_adj;
+
+
+    Kokkos::Impl::Timer timer;
+    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
+    < lno_view_t, lno_nnz_view_t,
+    lno_view_t, lno_nnz_view_t,
+    ExecSpace>
+    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
+
+
+
+    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
+    timer.reset();
+
+    KokkosKernels::Experimental::Graph::graph_color_symbolic
+        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m /*not needed*/, tmp_xadj, tmp_adj);
+
+
+
+
+    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
+
+
+    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
+
+    lno_view_t histogram ("histogram", gch->get_num_colors());
+
+    ExecSpace::fence();
+
+    timer.reset();
+
+    KokkosKernels::Experimental::Util::get_histogram
+      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
+
+    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram, true);
+
+    kh.destroy_graph_coloring_handle();
+  }
 
 
   typename crsMat_t::StaticCrsGraphType static_graph (entriesC, row_mapC);

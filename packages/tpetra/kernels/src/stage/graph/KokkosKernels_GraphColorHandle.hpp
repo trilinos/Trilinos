@@ -16,6 +16,8 @@ enum ColoringAlgorithm{COLORING_DEFAULT, COLORING_SERIAL, COLORING_VB, COLORING_
 
 enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
+enum ColoringType {Distance1, Distance2};
+
 template <class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
       class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle{
@@ -119,8 +121,10 @@ public:
 
   typedef typename team_policy_t::member_type team_member_t ;
 private:
+
+  ColoringType GraphColoringType;
   //Parameters
-  ColoringAlgorithm coloring_type; //VB, VBBIT or EB.
+  ColoringAlgorithm coloring_algorithm_type; //VB, VBBIT or EB.
   ConflictList conflict_list_type;  // whether to use a conflict list or not, and
                                     // if using it wheter to create it with atomic or parallel prefix sum.
 
@@ -167,7 +171,8 @@ private:
    * \brief Default constructor.
    */
   GraphColoringHandle():
-    coloring_type(COLORING_DEFAULT),
+    GraphColoringType(Distance1),
+    coloring_algorithm_type(COLORING_DEFAULT),
     conflict_list_type(COLORING_ATOMIC),
     min_reduction_for_conflictlist(0.35),
     min_elements_for_conflictlist(1000 /*5000*/),
@@ -181,9 +186,24 @@ private:
     num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
     vertex_colors(), is_coloring_called_before(false), num_colors(0){
     this->choose_default_algorithm();
-    this->set_defaults(this->coloring_type);
+    this->set_defaults(this->coloring_algorithm_type);
   }
 
+  /** \brief Sets the graph coloring type. Whether it is distance-1 or distance-2 coloring.
+   *  \param col_type: Coloring Type: KokkosKernels::Experimental::Graph::ColoringType which can be
+   *        either KokkosKernels::Experimental::Graph::Distance1 or KokkosKernels::Experimental::Graph::Distance2
+   */
+  void set_coloring_type(const ColoringType &col_type){
+    this->GraphColoringType = col_type;
+  }
+
+  /** \brief Gets the graph coloring type. Whether it is distance-1 or distance-2 coloring.
+   *  returns Coloring Type: KokkosKernels::Experimental::Graph::ColoringType which can be
+   *        either KokkosKernels::Experimental::Graph::Distance1 or KokkosKernels::Experimental::Graph::Distance2
+   */
+  ColoringType get_coloring_type(){
+    return this->GraphColoringType;
+  }
 
   /** \brief Changes the graph coloring algorithm.
    *  \param col_algo: Coloring algorithm: one of COLORING_VB, COLORING_VBBIT, COLORING_VBCS, COLORING_EB
@@ -194,10 +214,10 @@ private:
       this->choose_default_algorithm();
     }
     else {
-      this->coloring_type = col_algo;
+      this->coloring_algorithm_type = col_algo;
     }
     if (set_default_parameters){
-      this->set_defaults(this->coloring_type);
+      this->set_defaults(this->coloring_algorithm_type);
     }
   }
 
@@ -207,7 +227,7 @@ private:
 
 #if defined( KOKKOS_HAVE_SERIAL )
     if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
-      this->coloring_type = COLORING_SERIAL;
+      this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
       std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
@@ -216,7 +236,7 @@ private:
 
 #if defined( KOKKOS_HAVE_PTHREAD )
     if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
-      this->coloring_type = COLORING_VB;
+      this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
@@ -225,7 +245,7 @@ private:
 
 #if defined( KOKKOS_HAVE_OPENMP )
     if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-      this->coloring_type = COLORING_VB;
+      this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
@@ -234,7 +254,7 @@ private:
 
 #if defined( KOKKOS_HAVE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
-      this->coloring_type = COLORING_EB;
+      this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
       std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
@@ -243,7 +263,7 @@ private:
 
 #if defined( KOKKOS_HAVE_QTHREAD)
     if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
-      this->coloring_type = COLORING_VB;
+      this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
       std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
 #endif
@@ -606,7 +626,7 @@ private:
   virtual ~GraphColoringHandle(){};
 
   //getters
-  ColoringAlgorithm get_coloring_type() const {return this->coloring_type;}
+  ColoringAlgorithm get_coloring_algo_type() const {return this->coloring_algorithm_type;}
   ConflictList get_conflict_list_type() const {return this->conflict_list_type;}
   double get_min_reduction_for_conflictlist() const{return this->min_reduction_for_conflictlist;}
   int get_min_elements_for_conflictlist() const{ return this->min_elements_for_conflictlist;}
@@ -623,7 +643,7 @@ private:
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
   bool is_coloring_called() const {return this->is_coloring_called_before;}
   //setters
-  void set_coloring_type(const ColoringAlgorithm &col_algo){this->coloring_type = col_algo;}
+  void set_coloring_algo_type(const ColoringAlgorithm &col_algo){this->coloring_algorithm_type = col_algo;}
   void set_conflict_list_type(const ConflictList &cl){this->conflict_list_type = cl;}
   void set_min_reduction_for_conflictlist(const double &min_reduction){this->min_reduction_for_conflictlist = min_reduction;}
   void set_min_elements_for_conflictlist(const int &min_elements){ this->min_elements_for_conflictlist = min_elements;}

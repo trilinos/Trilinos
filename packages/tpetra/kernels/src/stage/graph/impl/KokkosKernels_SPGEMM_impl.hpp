@@ -3758,7 +3758,7 @@ public:
 
 
     return;
-
+#if 0
     /*
     calculateC <const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
     const_b_lno_row_view_t, const_b_lno_nnz_view_t, const_b_scalar_nnz_view_t,
@@ -3946,7 +3946,7 @@ public:
 
       //std::cout << "row:" << row_index << " hash:" << hash_ops << " inserts:" << inserts << std::endl;
 #endif
-
+#endif
   }
 
   template <typename c_lno_row_view_t, typename c_lno_nnz_view_t>
