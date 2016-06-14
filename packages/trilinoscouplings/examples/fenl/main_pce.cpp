@@ -210,6 +210,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+    print_memory_usage(std::cout, *comm);
   }
 
   }
