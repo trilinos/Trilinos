@@ -118,6 +118,7 @@ lib stk_io
     /sierra/stk_util//stk_util_environment
     /sierra/stk_util//stk_util_util
     /sierra/stk_topology//stk_topology
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/seacas//ioss
     /sierra/seacas//ioinit
     /tpl/trilinos//shards
