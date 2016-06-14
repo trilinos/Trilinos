@@ -206,6 +206,9 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   ArrayFireCPU    "cmake/TPLs/"    EX
   SimMesh         "SCOREC/cmake/TPLs/"    EX
   SimModel        "SCOREC/cmake/TPLs/"    EX
+  SimParasolid    "SCOREC/cmake/TPLs/"    EX
+  SimAcis         "SCOREC/cmake/TPLs/"    EX
+  SimField        "SCOREC/cmake/TPLs/"    EX
   )
 
 # NOTES:
