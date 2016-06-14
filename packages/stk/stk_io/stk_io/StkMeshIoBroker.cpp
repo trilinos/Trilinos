@@ -1780,6 +1780,18 @@ namespace stk {
         m_output_files[output_file_index]->use_nodeset_for_part_nodes_fields(true_false);
       }
 
+      void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()
+      {
+          property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ">:["));
+      }
+
+      int StkMeshIoBroker::get_num_time_steps()
+      {
+          Ioss::Region *ioRegion = get_input_io_region().get();
+          Ioss::Property stateCount = ioRegion->get_implicit_property("state_count");
+          return stateCount.get_int();
+      }
+
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,
                                                    const Ioss::PropertyManager &properties)
       {
