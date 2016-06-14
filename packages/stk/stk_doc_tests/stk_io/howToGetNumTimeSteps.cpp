@@ -20,30 +20,36 @@ void create_mesh_with_single_time_step(const std::string & filename, MPI_Comm co
     stk::unit_test_util::create_mesh_with__field_1__field_2__field_3(filename, communicator);
 }
 
-class ExodusFileWithTransientData : public stk::unit_test_util::MeshFileFixture { };
+class ExodusFileWithVariables : public stk::unit_test_util::MeshFileFixture { };
 
 //-BEGIN
-TEST_F(ExodusFileWithTransientData, queryingFileWithSingleTimeStep_NumTimeStepsEqualsOne)
+TEST_F(ExodusFileWithVariables, queryingFileWithSingleTimeStep_NumTimeStepsEqualsOne)
 {
     create_mesh_with_single_time_step(filename, get_comm());
     read_mesh(filename);
     EXPECT_EQ(1, stkIo.get_num_time_steps());
 }
 
-TEST_F(ExodusFileWithTransientData, queryingFileWithoutTimeSteps_NumTimeStepsEqualsZero)
+TEST_F(ExodusFileWithVariables, queryingFileWithoutTimeSteps_NumTimeStepsEqualsZero)
 {
-    stk::mesh::MetaData meta;
-    stk::mesh::BulkData bulk(meta, get_comm());
-    stk::io::StkMeshIoBroker stkIoWriter(get_comm());
-    stk::unit_test_util::create_mesh_without_time_steps(filename, get_comm(), bulk, stkIoWriter);
+    stk::unit_test_util::create_mesh_without_time_steps(filename, get_comm());
     read_mesh(filename);
     EXPECT_EQ(0, stkIo.get_num_time_steps());
 }
-//-END
 
-//    if(numTimeSteps>0)
-//    {
-//        StkMeshIoBroker.read_defined_input_fields(1);    }
-//
+TEST_F(ExodusFileWithVariables, readDefinedInputFieldsFromInvalidTimeStep_throws)
+{
+    create_mesh_with_single_time_step(filename, get_comm());
+    read_mesh(filename);
+    EXPECT_THROW(stkIo.read_defined_input_fields(3), std::exception);
+}
+
+TEST_F(ExodusFileWithVariables, readDefinedInputFields_throws)
+{
+    stk::unit_test_util::create_mesh_without_time_steps(filename, get_comm());
+    read_mesh(filename);
+    EXPECT_THROW(stkIo.read_defined_input_fields(1), std::exception);
+}
+//-END
 
 }

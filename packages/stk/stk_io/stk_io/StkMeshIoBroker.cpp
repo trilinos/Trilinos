@@ -1787,9 +1787,14 @@ namespace stk {
 
       int StkMeshIoBroker::get_num_time_steps()
       {
+          int numTimeSteps = 0;
           Ioss::Region *ioRegion = get_input_io_region().get();
-          Ioss::Property stateCount = ioRegion->get_implicit_property("state_count");
-          return stateCount.get_int();
+          if(ioRegion != nullptr)
+          {
+              Ioss::Property stateCount = ioRegion->get_implicit_property("state_count");
+              numTimeSteps = stateCount.get_int();
+          }
+          return numTimeSteps;
       }
 
       size_t StkMeshIoBroker::add_heartbeat_output(const std::string &filename, HeartbeatType hb_type,

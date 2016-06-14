@@ -13,7 +13,7 @@ namespace stk
 namespace unit_test_util
 {
 
-size_t create_mesh_without_time_steps(const std::string & filename, MPI_Comm communicator, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker & stkIo)
+size_t write_mesh_data__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator, stk::mesh::BulkData & bulk, stk::io::StkMeshIoBroker & stkIo)
 {
     stkIo.set_bulk_data(bulk);
     size_t index = stkIo.add_mesh_database("generated:1x1x4", stk::io::READ_MESH);
@@ -38,12 +38,20 @@ size_t create_mesh_without_time_steps(const std::string & filename, MPI_Comm com
     return results_output_index;
 }
 
+void create_mesh_without_time_steps(const std::string & filename, MPI_Comm communicator)
+{
+    stk::mesh::MetaData meta;
+    stk::mesh::BulkData bulk(meta, communicator);
+    stk::io::StkMeshIoBroker stkIoWriter(communicator);
+    stk::unit_test_util::write_mesh_data__field_1__field_2__field_3(filename, communicator, bulk, stkIoWriter);
+}
+
 void create_mesh_with__field_1__field_2__field_3(const std::string & filename, MPI_Comm communicator)
 {
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, communicator);
     stk::io::StkMeshIoBroker stkIo(communicator);
-    size_t results_output_index = create_mesh_without_time_steps(filename, communicator, bulk, stkIo);
+    size_t results_output_index = write_mesh_data__field_1__field_2__field_3(filename, communicator, bulk, stkIo);
     double time = 0.0;
     stkIo.begin_output_step(results_output_index, time);
     stkIo.write_defined_output_fields(results_output_index);
