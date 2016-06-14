@@ -143,13 +143,9 @@ struct SharingInfoLess
 class BulkData {
 
 public:
-  enum GHOSTING_ID { SHARED = 0, AURA = 1 };
-  enum entitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
-
-  enum AutomaticAuraOption {
-      NO_AUTO_AURA,
-      AUTO_AURA
-  };
+  enum GhostingId { SHARED = 0, AURA = 1 };
+  enum EntitySharing : char { NOT_MARKED=0, POSSIBLY_SHARED=1, IS_SHARED=2, NOT_SHARED };
+  enum AutomaticAuraOption { NO_AUTO_AURA, AUTO_AURA };
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -170,9 +166,6 @@ public:
             );
 
   virtual ~BulkData();
-
-  inline static BulkData & get( const Bucket & bucket);
-  inline static BulkData & get( const Ghosting & ghost);
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -714,7 +707,7 @@ public:
   {
       return m_closure_count[entity.local_offset()] > static_cast<uint16_t>(0);
   }
-  void get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes);
+
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const { return m_bucket_repository.total_field_data_footprint(f, rank); }
   size_t total_field_data_footprint(EntityRank rank) const;
 
@@ -731,7 +724,7 @@ public:
   void get_buckets(EntityRank rank, Selector const& selector, BucketVector & output_buckets) const;
 
   //
-  //  Get entities of the specified rank that satisify the input selector.
+  //  Get entities of the specified rank that satisfy the input selector.
   //  Note entities are returned in bucket order, though no particular order should be relied on
   //
   void get_entities(EntityRank rank, Selector const& selector, EntityVector& output_entities) const;
@@ -774,11 +767,7 @@ public:
   size_t get_size_of_entity_index_space() const { return m_entity_keys.size(); }
 
   void destroy_elements_of_topology(stk::topology topologyToDelete);
-private:
-  void record_entity_deletion(Entity entity);
-  void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
-  void delete_buckets(const stk::mesh::BucketVector & buckets);
-  void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
+
 protected: //functions
 
   bool resolve_node_sharing()
@@ -834,7 +823,7 @@ protected: //functions
   PairIterEntityComm internal_entity_comm_map(const EntityKey & key, const Ghosting & sub ) const { return m_entity_comm_map.comm(key,sub); }
   int internal_entity_comm_map_owner(const EntityKey & key) const;
 
-  inline entitySharing internal_is_entity_marked(Entity entity) const;
+  inline EntitySharing internal_is_entity_marked(Entity entity) const;
   PairIterEntityComm internal_entity_comm_map_shared(const EntityKey & key) const { return m_entity_comm_map.shared_comm_info(key); }
 
   void markEntitiesForResolvingSharingInfoUsingNodes(stk::mesh::EntityRank entityRank, std::vector<shared_entity_type>& shared_entities);
@@ -1012,8 +1001,8 @@ protected: //functions
   impl::BucketRepository& bucket_repository() { return m_bucket_repository; }
 
   bool is_entity_in_sharing_comm_map(stk::mesh::Entity entity);
-  void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId);
-  void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc);
+  void erase_sharing_info_using_key(stk::mesh::EntityKey key, stk::mesh::BulkData::GhostingId ghostingId);
+  void add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GhostingId ghostingId, int sharingProc);
   void update_sharing_after_change_entity_owner(); // Mod Mark
   void get_entities_that_have_sharing(std::vector<stk::mesh::Entity> &entitiesThatHaveSharingInfo,
           stk::mesh::EntityToDependentProcessorsMap &entityKeySharing);
@@ -1075,7 +1064,7 @@ protected: //functions
   void change_entity_key_to_match_owner(const std::vector<shared_entity_type> & potentially_shared_sides);
   void insert_sharing_info_into_comm_map(const std::vector<shared_entity_type> & potentially_shared_sides);
 
-  inline void internal_mark_entity(Entity entity, entitySharing sharedType);
+  inline void internal_mark_entity(Entity entity, EntitySharing sharedType);
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
 
@@ -1111,6 +1100,10 @@ protected: //functions
   void add_comm_map_for_sharing(const std::vector<SideSharingData>& sidesSharingData, stk::mesh::EntityVector& shared_entities);
 
 private: //functions
+  void record_entity_deletion(Entity entity);
+  void break_boundary_relations_and_delete_buckets(const std::vector<impl::RelationEntityToNode> & relationsToDestroy, const stk::mesh::BucketVector & bucketsToDelete);
+  void delete_buckets(const stk::mesh::BucketVector & buckets);
+  void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 
   void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <EntityKey> &remove_receive,
     std::set<EntityKey> &entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs);
@@ -1398,7 +1391,7 @@ protected: //data
   EntityCommDatabase m_entity_comm_map;
   std::vector<Ghosting*> m_ghosting;
   MetaData &m_mesh_meta_data;
-  std::vector<entitySharing> m_mark_entity; //indexed by Entity
+  std::vector<EntitySharing> m_mark_entity; //indexed by Entity
   bool m_add_node_sharing_called;
   std::vector<uint16_t> m_closure_count; //indexed by Entity
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity

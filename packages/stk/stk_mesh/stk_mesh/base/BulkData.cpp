@@ -565,11 +565,6 @@ BulkData::~BulkData()
   delete m_elemElemGraphUpdater;
 }
 
-void BulkData::get_selected_nodes(stk::mesh::Selector selector, stk::mesh::EntityVector& nodes)
-{
-    get_selected_entities( selector, this->buckets(stk::topology::NODE_RANK), nodes );
-}
-
 void BulkData::update_deleted_entities_container()
 {
   //Question: should the m_deleted_entities container be sorted and uniqued?
@@ -2387,12 +2382,12 @@ bool BulkData::is_entity_in_sharing_comm_map(stk::mesh::Entity entity)
     return is_entity_in_shared_comm_map;
 }
 
-void BulkData::erase_sharing_info_using_key(EntityKey key, stk::mesh::BulkData::GHOSTING_ID ghostingId)
+void BulkData::erase_sharing_info_using_key(EntityKey key, stk::mesh::BulkData::GhostingId ghostingId)
 {
     this->entity_comm_map_erase(key, *this->ghostings()[ghostingId]);
 }
 
-void BulkData::add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GHOSTING_ID ghostingId, int sharingProc)
+void BulkData::add_sharing_info(stk::mesh::Entity entity, stk::mesh::BulkData::GhostingId ghostingId, int sharingProc)
 {
     this->entity_comm_map_insert(entity, stk::mesh::EntityCommInfo(ghostingId, sharingProc));
 }
@@ -3062,7 +3057,7 @@ bool BulkData::check_errors_and_determine_if_ghosting_needed_in_parallel(const s
                                         const std::vector<EntityProc> & add_send,
                                         const std::vector<EntityKey> & remove_receive)
 {
-    const bool ok_mesh  = &ghosts.bulk_data() == this;
+    const bool ok_mesh  = &ghosts.mesh() == this;
     const bool is_custom_ghost = BulkData::AURA < ghosts.ordinal();
     int ok = ok_mesh && is_custom_ghost && add_send_is_owned && remove_receive_are_part_of_this_ghosting;
     int statuses[2];

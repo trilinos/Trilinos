@@ -149,11 +149,11 @@ const MetaData & MetaData::get( const BulkData & bulk_data) {
 }
 
 const MetaData & MetaData::get( const Bucket & bucket) {
-  return MetaData::get(BulkData::get(bucket));
+  return MetaData::get(bucket.mesh());
 }
 
 const MetaData & MetaData::get( const Ghosting & ghost) {
-  return MetaData::get(BulkData::get(ghost));
+  return MetaData::get(ghost.mesh());
 }
 //----------------------------------------------------------------------
 
