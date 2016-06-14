@@ -93,6 +93,10 @@ typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif
 
+#ifdef XPETRA_BLOCKEDMULTIVECTOR_SHORT
+typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
+#endif
+
 #ifdef XPETRA_REORDEREDBLOCKEDCRSMATRIX_SHORT
 typedef Xpetra::ReorderedBlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> ReorderedBlockedCrsMatrix;
 #endif
