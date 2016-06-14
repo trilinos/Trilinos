@@ -635,13 +635,45 @@ public:
   sumIntoValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const OrdinalType ncol,
-                 ScalarType vals[],
+                 const ScalarType vals[],
                  const bool force_atomic = false) const
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const OrdinalType length = row_view.length;
     for (OrdinalType i = 0; i < ncol; ++i) {
       for (OrdinalType j = 0; j < length; ++j) {
+        if (row_view.colidx(j) == cols[i]) {
+          if (force_atomic) {
+            Kokkos::atomic_add(&row_view.value(j), vals[i]);
+          } else {
+            row_view.value(j) += vals[i];
+          }
+          break;
+        }
+      }
+    }
+  }
+  KOKKOS_INLINE_FUNCTION
+  void
+  sumIntoValuesSorted (const OrdinalType rowi,
+                       const OrdinalType cols[],
+                       const OrdinalType ncol,
+                       const ScalarType vals[],
+                       const bool force_atomic = false) const
+  {
+    SparseRowView<CrsMatrix> row_view = this->row (rowi);
+    const size_type length = row_view.length;
+
+    for (OrdinalType i = 0; i < ncol; ++i) {
+      size_type low=0, hi=length, mid=length/2;
+      while (hi-low > 10){
+        if ( row_view.colidx(mid) > cols[i] )
+          hi = mid;
+        else
+          low = mid;
+        mid = (low+hi)/2;
+      }
+      for (size_type j = low; j < hi; ++j) {
         if (row_view.colidx(j) == cols[i]) {
           if (force_atomic) {
             Kokkos::atomic_add(&row_view.value(j), vals[i]);
