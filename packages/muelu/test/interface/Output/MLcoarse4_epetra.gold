@@ -244,6 +244,7 @@ Level 4
 --------------------------------------------------------------------------------
 Number of levels    = 5
 Operator complexity = 1.49
+Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs
   0    9999  29995     3.00               1
