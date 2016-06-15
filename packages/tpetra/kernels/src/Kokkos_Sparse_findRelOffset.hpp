@@ -130,7 +130,6 @@ namespace KokkosSparse {
       return hint; // hint was correct
     }
 
-#if 0
     // Even if the array is sorted, use linear search if the number of
     // entries is small ("small" is a tuning parameter; feel free to
     // tune for your architecture).  'constexpr' promises the compiler
@@ -138,9 +137,6 @@ namespace KokkosSparse {
     constexpr OffsetType linearSearchThreshold = 16;
 
     if (! isSorted || numEnt < linearSearchThreshold) {
-#else
-    if (! isSorted) {
-#endif
       for (OffsetType k = 0; k < numEnt; ++k) {
         if (indsToSearch[k] == indToFind) {
           return k;
