@@ -63,7 +63,7 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
     stk::topology connectedElemTopology = mesh.bucket(hex).topology();
     stk::mesh::EntityVector element_side_nodes(mesh.num_nodes(face));
     connectedElemTopology.face_nodes(mesh.begin_nodes(hex), face_ordinal, &element_side_nodes[0]);
-    std::pair<bool, unsigned> permutation = faceTopology.equivalent(face_node_ids, element_side_nodes);
+    std::pair<bool, unsigned> permutation = faceTopology.equivalent(element_side_nodes, face_node_ids);
 
     bool is_a_valid_permutation = permutation.first;
     EXPECT_TRUE(is_a_valid_permutation);

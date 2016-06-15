@@ -78,7 +78,7 @@ stk::mesh::Permutation get_permutation_of_side_nodes(stk::topology sideTopology,
                                                      const stk::mesh::Entity *sideNodes,
                                                      const stk::mesh::Entity *elemSideNodes)
 {
-    std::pair<bool, unsigned> result = sideTopology.equivalent(sideNodes, elemSideNodes);
+    std::pair<bool, unsigned> result = sideTopology.equivalent(elemSideNodes, sideNodes);
     return static_cast<stk::mesh::Permutation>(result.second);
 }
 
