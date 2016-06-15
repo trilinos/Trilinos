@@ -95,8 +95,8 @@ namespace Xpetra {
      * \param mapExtractor MapExtractor object containing information about the block splitting
      * \param v MultiVector that is to be splitted into a blocked multi vector
      */
-    BlockedMultiVector(Teuchos::RCP<const MapExtractor>& mapExtractor,
-                     Teuchos::RCP<const MultiVector>& v)
+    BlockedMultiVector(Teuchos::RCP<const MapExtractor> mapExtractor,
+                     Teuchos::RCP<const MultiVector> v)
     : mapextractor_(mapExtractor)
     {
       bThyraMode_  = mapExtractor->getThyraMode();
@@ -121,8 +121,8 @@ namespace Xpetra {
      * \param mapExtractor MapExtractor object containing information about the block splitting
      * \param v MultiVector that is to be splitted into a blocked multi vector
      */
-    BlockedMultiVector(Teuchos::RCP<const MapExtractor>& mapExtractor,
-                     Teuchos::RCP<MultiVector>& v)
+    BlockedMultiVector(Teuchos::RCP<const MapExtractor> mapExtractor,
+                     Teuchos::RCP<MultiVector> v)
     : mapextractor_(mapExtractor)
     {
       bThyraMode_  = mapExtractor->getThyraMode();
@@ -490,7 +490,7 @@ namespace Xpetra {
     void setMultiVector(size_t r, Teuchos::RCP<const MultiVector> v) {
       XPETRA_MONITOR("BlockedMultiVector::setMultiVector");
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == true && v->getMap()->getMinAllGlobalIndex() > 0, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector is in Thyra mode but partial map starts with GIDs " << v->getMap()->getMinAllGlobalIndex() << " > 0!");
-      TEUCHOS_TEST_FOR_EXCEPTION(r > getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
+      TEUCHOS_TEST_FOR_EXCEPTION(r >= getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
       TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != v->getNumVectors(),Xpetra::Exceptions::RuntimeError,"The BlockedMultiVectors expects " << getNumVectors() << " vectors. The provided partial multivector has " << v->getNumVectors() << " vectors.");
       Teuchos::RCP<MultiVector> vv = Teuchos::rcp_const_cast<MultiVector>(v);
