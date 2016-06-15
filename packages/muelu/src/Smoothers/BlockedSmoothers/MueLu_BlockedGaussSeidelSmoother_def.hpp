@@ -232,7 +232,7 @@ namespace MueLu {
         // note: A_ is the full blocked operator
         residual->update(1.0,B,0.0); // r = B
 
-        A_->apply(X, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
+        A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
         size_t blockRowIndex = at(bgsOrderingIndex2blockRowIndex_, i); // == bgsOrderingIndex2blockRowIndex_.at(i) (only available since C++11)
 
