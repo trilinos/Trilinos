@@ -52,7 +52,7 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-
+#include "Kokkos_Sparse_findRelOffset.hpp"
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -131,7 +131,7 @@ namespace Tpetra {
           auto lclColInds =
             Kokkos::subview (ind_, Kokkos::make_pair (ptr_[lclRowInd],
                                                       ptr_[lclRowInd+1]));
-          using ::Tpetra::Details::findRelOffset;
+          using ::KokkosSparse::findRelOffset;
           const LO diagOffset =
             findRelOffset<LO, lcl_col_inds_type> (lclColInds, numEnt,
                                                   lclColInd, 0, isSorted_);
