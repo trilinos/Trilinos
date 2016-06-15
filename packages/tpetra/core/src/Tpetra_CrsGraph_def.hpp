@@ -4327,14 +4327,6 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::local_graph_type
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  getLocalGraph_Kokkos () const
-  {
-    return lclGraph_;
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   computeGlobalConstants ()

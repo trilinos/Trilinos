@@ -2850,9 +2850,6 @@ namespace Tpetra {
     local_graph_type getLocalGraph () const;
 
   protected:
-    //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
-    TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
-
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Whether it is correct to call getRowInfo().
