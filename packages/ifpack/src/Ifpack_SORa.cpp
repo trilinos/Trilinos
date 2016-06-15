@@ -277,8 +277,9 @@ int Ifpack_SORa::TCompute(){
       seed = List_.get("sora: eigen-analysis: random seed",seed);
       PowerMethod(PowerMethodIters_,LambdaMax_,&seed);
     }
-    else
+    else {
       PowerMethod(PowerMethodIters_,LambdaMax_);
+    }
 
     LambdaMax_*=LambdaMaxBoost_;
     if(!A_->Comm().MyPID()) printf("SORa: Global damping parameter = %6.4e (lmax=%6.4e)\n",GetOmega(),LambdaMax_);
