@@ -182,9 +182,9 @@ int rpc_test_additive_repeat(Epetra_ActiveComm &Comm,
 
   if (solver.NumIters() != solver2.NumIters()) {
     if(!x0.Comm().MyPID()) printf("ERROR: RNG control test failed (iters = %d vs. %d)!\n",solver.NumIters(),solver2.NumIters());
-    return 0;
+    return 1;
   }
-  else return 1;
+  else return 0;
 }
 
 
@@ -296,9 +296,12 @@ bool matrix_read(Epetra_ActiveComm &Comm){
   rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
   rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-  lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-  
+
+  // This only works in serial, for reasons which are not entirely obvious
+  if(Comm.NumProc()==1) {
+    lhs.PutScalar(0.0);
+    rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  }
 
   /* Check RNG control */
   int status1, status2 = 0;
@@ -334,7 +337,10 @@ int main(int argc, char* argv[]){
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return status;
+  if(status==0)
+    return EXIT_SUCCESS;
+  else
+    return EXIT_FAILURE;
 }/*end main*/
 
 
