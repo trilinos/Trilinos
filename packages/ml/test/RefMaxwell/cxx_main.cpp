@@ -144,13 +144,13 @@ int rpc_test_additive_repeat(Epetra_ActiveComm &Comm,
                        const Epetra_Vector &x0,
                        const Epetra_Vector &b,
 		       bool run_gmres){
-
   // Generate Fake Ms
   Epetra_CrsMatrix *Ms=0;
   EpetraExt::MatrixMatrix::Add(M1,false,1.0,M1,false,1.0,Ms);
   Ms->FillComplete();
 
   // First solve
+  ML_set_random_seed(24601);
   RefMaxwellPreconditioner PrecRF(SM,D0,*Ms,M0inv,M1,List);
   Epetra_Vector x0_(x0);
 
@@ -164,7 +164,8 @@ int rpc_test_additive_repeat(Epetra_ActiveComm &Comm,
   solver.SetAztecOption(AZ_output,1);
   solver.Iterate(100,1e-9);
 
-  // Secons solve
+  // Second solve
+  ML_set_random_seed(24601);
   RefMaxwellPreconditioner PrecRF2(SM,D0,*Ms,M0inv,M1,List);
   Epetra_Vector x0_2(x0);
 
