@@ -504,6 +504,47 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
   TEST_COMPARE_FLOATING_ARRAYS(bnorms1,bnorms2,Teuchos::ScalarTraits<Magnitude>::zero());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 5;
+
+  // create full vector
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  TEST_NOTHROW(bvv->putScalar(1.0*STS::one()));
+
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<Magnitude> bnorms(bvv->getNumVectors());
+  TEST_NOTHROW( bvv->norm1(bnorms) );
+  TEST_EQUALITY( bnorms[0], Teuchos::as<Magnitude>(bvv->getMapExtractor()->getFullMap()->getGlobalNumElements()));
+  TEST_EQUALITY( bnorms[1], Teuchos::as<Magnitude>(bvv->getMapExtractor()->getFullMap()->getGlobalNumElements()));
+
+  TEST_NOTHROW(bvv->putScalar(3.0*STS::one()));
+
+  for(size_t r = 0; r < bvv->getMapExtractor()->NumMaps(); ++r) {
+    Teuchos::RCP<const MultiVector> part = bvv->getMapExtractor()->ExtractVector(bvv,r);
+    Teuchos::ArrayRCP<const Scalar > partd1 = part->getData(0);
+    Teuchos::ArrayRCP<const Scalar > partd2 = part->getData(1);
+    for(LO l = 0; l < part->getLocalLength(); l++)
+      TEST_EQUALITY(partd1[l], 3.0 * STS::one());
+    TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
+  }
+}
 
 
 //
@@ -533,6 +574,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, UpdateVector1, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, UpdateVector1b, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, UpdateVector2, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, PutScalar, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_BLOCKEDMULTIVECTOR_INSTANT(S,LO,GO,N)

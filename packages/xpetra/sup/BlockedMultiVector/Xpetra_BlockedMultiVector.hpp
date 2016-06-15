@@ -178,7 +178,9 @@ namespace Xpetra {
 
     //! Set all values in the multivector with the given value.
     virtual void putScalar(const Scalar &value) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
+        getMultiVector(r)->putScalar(value);
+      }
     }
 
     //@}
