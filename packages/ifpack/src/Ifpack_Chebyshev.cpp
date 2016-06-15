@@ -320,8 +320,10 @@ int Ifpack_Chebyshev::Compute()
 
     // Automatically Compute Eigenvalues
     double lambda_max = 0;
-    PowerMethod(EigMaxIters_, lambda_max);
-    LambdaMax_ = lambda_max;
+    if (LambdaMax_ == -1) {
+      PowerMethod(EigMaxIters_, lambda_max);
+      LambdaMax_ = lambda_max;
+    }
 
     // Test for Exact Preconditioned case
     if (ABS(LambdaMax_-1) < 1e-6)

@@ -327,7 +327,6 @@ private:
   //! Power method for global damping
   int PowerMethod(const int MaximumIterations,  double& lambda_max,const unsigned int * RngSeed=0);
 
-
   //! Returns a reference to the matrix.
   /*  Epetra_RowMatrix& Matrix()
   {
@@ -377,6 +376,10 @@ private:
   bool UseGlobalDamping_;
   //! Maximum eigenvalue of iteration matrix for global damping
   double LambdaMax_;
+  //! Boost for maximum eigenvalue
+  double LambdaMaxBoost_;
+  //! Number of Iters for Power Method
+  double PowerMethodIters_;
 
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
