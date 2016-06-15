@@ -48,8 +48,25 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 #include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
+
+namespace PHX {
+  //! Functor to bind unmanaged memory to a field.
+  template <typename FieldType>
+  class UnmanagedMemoryBinder {
+    FieldType* ptr_;
+  public:
+    //UnmanagedMemoryBinder() : ptr_(nullptr) {}
+    UnmanagedMemoryBinder(FieldType* f) : ptr_(f) {}
+    UnmanagedMemoryBinder(const UnmanagedMemoryBinder& ) = default;
+    UnmanagedMemoryBinder& operator=(const UnmanagedMemoryBinder& ) = default;
+    UnmanagedMemoryBinder(UnmanagedMemoryBinder&& ) = default;
+    UnmanagedMemoryBinder& operator=(UnmanagedMemoryBinder&& ) = default;
+    void operator()(const PHX::any& f) { ptr_->setFieldData(f); }
+  };
+} // namespace PHX
 
 //**********************************************************************
 template<typename Traits>
@@ -89,6 +106,10 @@ void PHX::EvaluatorWithBaseImpl<Traits>::
 addEvaluatedField(const PHX::Field<DataT>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
@@ -101,6 +122,10 @@ addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
@@ -121,18 +146,26 @@ addDependentField(const PHX::FieldTag& ft)
 template<typename Traits>
 template<typename DataT>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<DataT>& v)
+addDependentField(const PHX::Field<DataT>& f)
 {
-  this->addDependentField(v.fieldTag());
+  this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
 template<typename Traits>
 template<typename DataT>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::Field<const DataT>& v)
+addDependentField(const PHX::Field<const DataT>& f)
 {
-  this->addDependentField(v.fieldTag());
+  this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<DataT>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
@@ -146,6 +179,10 @@ addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<typename std::remove_const<DataT>::type,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
@@ -158,6 +195,10 @@ addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());
+
+  using NCF = PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>;
+  (this->unmanaged_field_binders_)[f.fieldTag().identifier()] = 
+    PHX::UnmanagedMemoryBinder<NCF>(const_cast<NCF*>(&f));
 }
 
 //**********************************************************************
@@ -221,6 +262,14 @@ template<typename Traits>
 const std::string& PHX::EvaluatorWithBaseImpl<Traits>::
 getName() const
 {return name_;}
+
+//**********************************************************************
+template<typename Traits>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+bindUnmanagedField(const PHX::FieldTag& ft, const PHX::any& f)
+{
+  unmanaged_field_binders_[ft.identifier()](f);
+}
 
 //**********************************************************************
 

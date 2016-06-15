@@ -99,8 +99,6 @@ namespace phalanx_test {
   
   TEUCHOS_UNIT_TEST(kokkos, MemoryAssignment)
   {
-    PHX::InitializeKokkosDevice();
-
     // rho = k*P/T
     double k=2.0;
   
@@ -158,8 +156,6 @@ namespace phalanx_test {
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j),1.0,tol);
-
-    PHX::FinalizeKokkosDevice();
   } 
 
   template <typename Scalar,typename Device>
@@ -192,8 +188,6 @@ namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(kokkos, FadViewCtor)
   {
-    PHX::InitializeKokkosDevice();
-
     const int num_cells = 10;
     const int num_ip = 4;
 
@@ -268,15 +262,14 @@ namespace phalanx_test {
 
     Kokkos::deep_copy(host_rhoInAnotherEvaluator, rhoInAnotherEvaluator);
 
-    for (int i=0; i< num_cells; i++)
+    for (int i=0; i< num_cells; i++) {
       for (int j=0; j< num_ip; j++) {
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j).val(),1.0,tol);
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j).fastAccessDx(j),0.5,tol);  // drho/dP
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j).fastAccessDx(num_ip+j),-0.25,tol); // drhodT
 	TEST_FLOATING_EQUALITY(host_rhoInAnotherEvaluator(i,j).fastAccessDx(8),0.5,tol);  // drho/dk 
       }
-
-    PHX::FinalizeKokkosDevice();
+    }
   } 
 
   /*  Point of this test is to make sure we can recover the non-const
@@ -286,9 +279,7 @@ namespace phalanx_test {
       to cast the any object using the non-const array.
    */
   TEUCHOS_UNIT_TEST(kokkos, ConstNonConstTranslation)
-  {
-    PHX::InitializeKokkosDevice();
-    
+  {    
     Kokkos::View<double**,PHX::Device> a("a",10,4);
 
     Kokkos::View<const double**,PHX::Device> ca = a;
@@ -299,8 +290,6 @@ namespace phalanx_test {
     Kokkos::View<nonconst_array_type,PHX::Device> b;
 
     b = a;
-
-    PHX::FinalizeKokkosDevice();
   }
 
 
@@ -336,8 +325,6 @@ namespace phalanx_test {
     using execution_space = PHX::Device::execution_space;
     using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
 
-    PHX::InitializeKokkosDevice();
-
     static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
 		  "ERROR: Kokkos AMT only works for pthread execution space!");
 
@@ -358,8 +345,6 @@ namespace phalanx_test {
     Kokkos::Experimental::wait(policy);
     TEST_EQUALITY(f1.get(),5);
     TEST_EQUALITY(f2.get(),3);
-
-    PHX::FinalizeKokkosDevice();
   }
 
   template <typename Scalar,typename Device>
@@ -405,8 +390,6 @@ namespace phalanx_test {
   { 
     using execution_space = PHX::Device::execution_space;
     using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
-
-    PHX::InitializeKokkosDevice();
 
     static_assert(std::is_same<execution_space,Kokkos::Threads>::value,
 		  "ERROR: Kokkos AMT only works for pthread execution space!");
@@ -468,8 +451,6 @@ namespace phalanx_test {
     for (int i=0; i< num_cells; i++)
       for (int j=0; j< num_ip; j++)
 	TEST_FLOATING_EQUALITY(host_rho(i,j),1.5,tol);
-
-    PHX::FinalizeKokkosDevice();
   }
 
   // Tests pthreads functions
@@ -478,16 +459,12 @@ namespace phalanx_test {
     //using execution_space = PHX::Device::execution_space;
     //using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
 
-    PHX::InitializeKokkosDevice();
-
     out << "num threads total = " 
 	<< Kokkos::Threads::thread_pool_size(0) << std::endl;
     out << "num threads per numa core = " 
 	<< Kokkos::Threads::thread_pool_size(1) << std::endl;
     out << "num threads per core = " 
 	<< Kokkos::Threads::thread_pool_size(2) << std::endl;
-
-    PHX::FinalizeKokkosDevice();
   }
 
 #endif // PHX_ENABLE_KOKKOS_AMT
@@ -529,8 +506,6 @@ namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(kokkos, DynRankView)
   { 
-    PHX::InitializeKokkosDevice();
-
     using array_type = 
       Kokkos::Experimental::DynRankView<int, PHX::Device::execution_space>;
 
@@ -617,9 +592,7 @@ namespace phalanx_test {
       }
 
     }
-    
 
-    PHX::FinalizeKokkosDevice();
   }
 
   template <typename Array>
@@ -646,7 +619,6 @@ namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(kokkos, FadView)
   { 
-    PHX::InitializeKokkosDevice();
 
     {
       const int deriv_dim_plus_one = 2;
@@ -693,8 +665,6 @@ namespace phalanx_test {
       	TEST_FLOATING_EQUALITY(host_c[i].fastAccessDx(0),static_cast<double>(i+1),tol);      
       }
     }
-
-    PHX::FinalizeKokkosDevice();
   }
  
 }

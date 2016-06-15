@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
       single = true;
     else if (s == "double")
       single = false;
-#ifdef KOKKOS_HAVE_OPENMP
+#ifdef KOKKOS_HAVE_SERIAL
     else if (s == "serial")
       serial = true;
     else if (s == "no-serial")

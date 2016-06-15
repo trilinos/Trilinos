@@ -191,8 +191,8 @@ struct CrsMatrixGetDiagCopyFunctor {
       auto curRow = A_.rowConst (lclRowInd);
 
       // FIXME (mfh 12 May 2016) Use binary search when the row is
-      // long enough.  findRelOffset currently lives in TpetraCore (in
-      // Tpetra_Util.hpp).
+      // long enough.  findRelOffset currently lives in KokkosKernels
+      // (in tpetra/kernels/src/Kokkos_Sparse_findRelOffset.hpp).
       LO offset = 0;
       const LO numEnt = curRow.length;
       for ( ; offset < numEnt; ++offset) {

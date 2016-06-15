@@ -134,6 +134,7 @@ namespace Tacho {
               << std::endl;
 
     if (verbose) {
+      std::cout << "- Problem A, B, X - " << std::endl;
       tacho.getA().showMe(std::cout) << std::endl;
     }
 
@@ -186,6 +187,11 @@ namespace Tacho {
     tacho.setRightHandSide(BB);
 
     TACHO_SOLVER_RUN(tacho.solve(), t_solve);
+
+    if (verbose) {
+      std::cout << "- Solution X - " << std::endl;
+      tacho.getX().showMe(std::cout) << std::endl;
+    }
 
     double norm, error;
     tacho.check(norm, error);

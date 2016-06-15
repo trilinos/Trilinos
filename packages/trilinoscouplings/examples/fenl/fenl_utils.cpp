@@ -14,8 +14,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+// For memory proviling
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -448,4 +453,41 @@ void connect_vtune(const int p_rank) {
     std::cout << cmd.str() << std::endl;
   system(cmd.str().c_str());
   system("sleep 10");
+}
+
+// Get memory usage in MB
+MemUsage get_memory_usage(const Teuchos::Comm<int>& comm) {
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+  size_t mem = usage.ru_maxrss;
+#if defined(__APPLE__)
+  mem /= 1024; // Apple returns bytes instead of kilobytes
+#endif
+
+  size_t max_mem = 0;
+  size_t min_mem = 0;
+  size_t tot_mem = 0;
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, 1, &mem, &max_mem);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_MIN, 1, &mem, &min_mem);
+  Teuchos::reduceAll(comm, Teuchos::REDUCE_SUM, 1, &mem, &tot_mem);
+
+  MemUsage mem_usage;
+  mem_usage.max_mem = static_cast<double>(max_mem) / 1024.0;
+  mem_usage.min_mem = static_cast<double>(min_mem) / 1024.0;
+  mem_usage.tot_mem = static_cast<double>(tot_mem) / 1024.0;
+
+  return mem_usage;
+}
+
+// Print memory usage to stream
+void print_memory_usage(std::ostream& s, const Teuchos::Comm<int>& comm) {
+  MemUsage mem =  get_memory_usage(comm);
+  if ( 0 == comm.getRank() ) {
+    s << std::fixed;
+    s.precision(3);
+    s << "Memory usage across all processors (MB):" << std::endl
+      << "\t Max:  " << mem.max_mem << std::endl
+      << "\t Min:  " << mem.min_mem << std::endl
+      << "\t Tot:  " << mem.tot_mem << std::endl;
+  }
 }

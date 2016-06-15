@@ -3,29 +3,29 @@ Level 0
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother ->
+ smoother -> 
   schwarz: overlap level = 1   [unused]
   schwarz: combine mode = Zero   [unused]
   schwarz: use reordering = 0   [unused]
   subdomain solver name = RILUK   [unused]
-  subdomain solver parameters ->
+  subdomain solver parameters -> 
    fact: iluk level-of-fill = 0   [unused]
    fact: absolute threshold = 0   [unused]
    fact: relative threshold = 1   [unused]
    fact: relax value = 0   [unused]
-
+ 
 Level 1
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-
+    
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-
+   
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
   aggregation: max selected neighbors = 0   [default]
@@ -38,49 +38,49 @@ Level 1
   aggregation: allow user-specified singletons = 0   [default]
   OnePt aggregate map name =    [default]
   OnePt aggregate map factory =    [default]
-
+  
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-
+  
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-
+  
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
+ 
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- smoother ->
+ smoother -> 
   schwarz: overlap level = 1   [unused]
   schwarz: combine mode = Zero   [unused]
   schwarz: use reordering = 0   [unused]
   subdomain solver name = RILUK   [unused]
-  subdomain solver parameters ->
+  subdomain solver parameters -> 
    fact: iluk level-of-fill = 0   [unused]
    fact: absolute threshold = 0   [unused]
    fact: relative threshold = 1   [unused]
    fact: relax value = 0   [unused]
-
+ 
 Level 2
  Build (MueLu::TentativePFactory)
   Build (MueLu::UncoupledAggregationFactory)
    Build (MueLu::CoalesceDropFactory)
     Build (MueLu::AmalgamationFactory)
     [empty list]
-
+    
    aggregation: drop tol = 0   [default]
    aggregation: Dirichlet threshold = 0   [default]
    aggregation: drop scheme = classical   [default]
    lightweight wrap = 1
-
+   
   aggregation: max agg size = -1   [default]
   aggregation: min agg size = 2   [default]
   aggregation: max selected neighbors = 0   [default]
@@ -93,35 +93,36 @@ Level 2
   aggregation: allow user-specified singletons = 0   [default]
   OnePt aggregate map name =    [default]
   OnePt aggregate map factory =    [default]
-
+  
   Nullspace factory (MueLu::NullspaceFactory)
   Fine level nullspace = Nullspace
-
+  
   Build (MueLu::CoarseMapFactory)
   Striding info = {}   [default]
   Strided block id = -1   [default]
   Domain GID offsets = {0}   [default]
-
+  
  [empty list]
-
+ 
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
-
- Setup Smoother (MueLu::Amesos2Smoother{type = Superlu})
+ 
+ Setup Smoother (MueLu::Amesos2Smoother{type = Basker})
  keep smoother data = 0   [default]
  PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- presmoother ->
+ presmoother -> 
   [empty list]
-
+ 
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---
 --------------------------------------------------------------------------------
 Number of levels    = 3
 Operator complexity = 1.44
+Cycle type          = V
 
 level  rows    nnz  nnz/row  c ratio  procs
   0    9999  29995     3.00               4
@@ -132,6 +133,6 @@ Smoother (level 0) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Comput
 
 Smoother (level 1) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Iterations: 1, Overlap level: 1, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [3335, 3335], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [834, 834], Global nnz: 2500}}}
 
-Smoother (level 2) pre  : SuperLU solver interface, direct solve
+Smoother (level 2) pre  : Basker solver interface
 Smoother (level 2) post : no smoother
 

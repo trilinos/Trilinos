@@ -96,10 +96,18 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    NUM_MPI_PROCS 1
    )
 
+ TRIBITS_ADD_TEST(
+   Example_Poisson2D_pn_tpetra
+   NAME "Poisson2D_pn=4_tpetra"
+   ARGS "--mesh=Poisson2D_p4.xml --solver=muelu_ho.xml"
+   COMM mpi
+   NUM_MPI_PROCS 1
+   )
+
 
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 

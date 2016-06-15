@@ -51,6 +51,7 @@
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_KokkosViewFactoryFunctor.hpp"
 #include <sstream>
+#include <stdexcept>
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
@@ -194,13 +195,38 @@ PHX::any
 PHX::EvaluationContainer<EvalT, Traits>::getFieldData(const PHX::FieldTag& f)
 {
   //return fields_[f.identifier()];
-  std::unordered_map<std::string,PHX::any>::iterator a= fields_.find(f.identifier());
+  auto a = fields_.find(f.identifier());
    if (a==fields_.end()){
     std::cout << " PHX::EvaluationContainer<EvalT, Traits>::getFieldData can't find an f.identifier() "<<  f.identifier() << std::endl;
    }
   return a->second;
 }
 
+// *************************************************************************
+template <typename EvalT, typename Traits>
+void PHX::EvaluationContainer<EvalT, Traits>::
+setUnmanagedField(const PHX::FieldTag& f, const PHX::any& a)
+{
+  auto s = fields_.find(f.identifier());
+
+  if (s == fields_.end()) {
+    std::stringstream st;
+    st << "\n ERROR in PHX::EvaluationContainer<EvalT, Traits>::setUnmanagedField():\n" 
+       << " Failed to set Unmanaged field: \"" <<  f.identifier() << "\"\n" 
+       << " for evaluation type \"" << PHX::typeAsString<EvalT>() << "\".\n"
+       << " This field is not used in the Evaluation DAG.\n";
+    
+    throw std::runtime_error(st.str());
+  }
+
+  // Set the new memory
+  fields_[f.identifier()] = a;
+
+  // Loop through evalautors and rebind the field
+  auto& evaluators = this->dag_manager_.getEvaluatorsBindingField(f);
+  for (auto& e : evaluators)
+    e->bindUnmanagedField(f,a);
+}
 
 // *************************************************************************
 template <typename EvalT, typename Traits>

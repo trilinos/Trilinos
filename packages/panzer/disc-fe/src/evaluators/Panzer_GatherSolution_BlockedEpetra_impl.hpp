@@ -481,7 +481,7 @@ GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIn
 
   const std::vector<std::string> & names      = input.getDofNames();
   Teuchos::RCP<const panzer::PureBasis> basis = input.getBasis();
-  const vvstring & tangent_field_names        = input.getTangentNames();
+  //const vvstring & tangent_field_names        = input.getTangentNames();
 
   indexerNames_                    = input.getIndexerNames();
   useTimeDerivativeSolutionVector_ = input.useTimeDerivativeSolutionVector();

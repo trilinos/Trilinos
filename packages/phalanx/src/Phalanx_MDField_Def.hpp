@@ -625,12 +625,15 @@ get_static_view() const
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename MDFieldType>
+template<typename SrcDataT,
+         typename SrcTag0,typename SrcTag1, typename SrcTag2, typename SrcTag3,
+         typename SrcTag4,typename SrcTag5, typename SrcTag6, typename SrcTag7>
 void
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-deep_copy(const MDFieldType& source)      
+deep_copy(const PHX::MDField<SrcDataT,SrcTag0,SrcTag1,SrcTag2,SrcTag3,
+          SrcTag4,SrcTag5,SrcTag6,SrcTag7>& source)
 {
-  Kokkos::deep_copy(m_field_data, source);
+  Kokkos::deep_copy(m_field_data, source.get_static_view());
 }
 
 //*************************************************************************

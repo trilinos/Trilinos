@@ -1043,8 +1043,6 @@ int main(int argc, char *argv[]) {
   int numFieldsG_aux = myHGradBasis_aux.getCardinality();
   FieldContainer<double> HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
   FieldContainer<double> HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
-  HGBValues_aux(numFieldsG_aux, numCubPoints_aux);
-  HGBGrads_aux(numFieldsG_aux, numCubPoints_aux, spaceDim);
 
   // Evaluate basis values and gradients at cubature points
   myHGradBasis_aux.getValues(HGBValues_aux, cubPoints_aux, OPERATOR_VALUE);
@@ -1116,16 +1114,17 @@ int main(int argc, char *argv[]) {
   // Run the solver
   std::string amgType("MueLu");
 
-  ParameterList MLList;
+  ParameterList amgList;
   std::string seedType = inputSolverList.get("seed type","node");
+  inputSolverList.remove("seed type");
   if (inputSolverList.isSublist("MueLu"))
-    MLList = inputSolverList.sublist("MueLu");
+    amgList = inputSolverList.sublist("MueLu");
   else
-    MLList = inputSolverList;
+    amgList = inputSolverList;
   std::string lev0List = "level 0";
-  if (MLList.isSublist(lev0List)) {
+  if (amgList.isSublist(lev0List)) {
     std::cout << "found \"" << lev0List << "\" sublist" << std::endl;
-    ParameterList &sl = MLList.sublist(lev0List);
+    ParameterList &sl = amgList.sublist(lev0List);
     std::string smooType = sl.get<std::string>("smoother: type");
     if (smooType == "BLOCK RELAXATION" && sl.isParameter("smoother: params")) {
       ParameterList &ssl = sl.sublist("smoother: params");
@@ -1192,7 +1191,7 @@ int main(int argc, char *argv[]) {
 
   RCP<crs_matrix_type> interpolationMatrix, restrictionMatrix;
   if (P_identity != Teuchos::null) {
-    MLList.set("user coarse matrix",(crs_matrix_type*)&StiffMatrix_aux);
+    amgList.set("user coarse matrix",(crs_matrix_type*)&StiffMatrix_aux);
     interpolationMatrix = P_identity;
     //restrictionMatrix = R_identity;
     restrictionMatrix = P_identity;
@@ -1201,7 +1200,7 @@ int main(int argc, char *argv[]) {
     interpolationMatrix = P_linear;
   }
 
-  TestMultiLevelPreconditionerLaplace(probType, MLList,
+  TestMultiLevelPreconditionerLaplace(probType, amgList,
                                       rcpFromRef(StiffMatrix),
                                       interpolationMatrix, restrictionMatrix, exactNodalVals,
                                       rhsVector,            femCoefficients,

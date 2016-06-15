@@ -68,7 +68,7 @@ PHX_DIM_TAG_IMPLEMENTATION(BASIS)
 
 #include "EvaluatorWithMacros.hpp"
 
-TEUCHOS_UNIT_TEST(dag, basic_dag)
+TEUCHOS_UNIT_TEST(evaluator_macros, basic)
 {
   using namespace std;
   using namespace Teuchos;

@@ -56,8 +56,7 @@ namespace Tacho {
     void createInternalArrays(const ordinal_type m, 
                               const ordinal_type n,
                               const ordinal_type rs,
-                              const ordinal_type cs,
-                              const bool align = true) {
+                              const ordinal_type cs) {
       // compute necessary storage and adjust strides
       const size_type value_type_size = sizeof(value_type);
       size_type size = 0;
@@ -67,15 +66,15 @@ namespace Tacho {
         size = 0;
       } else if (rs == 1 || rs < cs) { // column major storage
         _rs = rs;
-        _cs = align ? Util::alignDimension<space_type>(cs, value_type_size) : cs;
+        _cs = cs;
         size = _cs*n;
       } else if (cs == 1 || rs > cs) { // row major storage
-        _rs = align ? Util::alignDimension<space_type>(rs, value_type_size) : rs;
+        _rs = rs;
         _cs = cs;
         size = m*_rs;
       } else {              // general storage
         _rs = rs;
-        _cs = align ? Util::alignDimension<space_type>(cs, value_type_size) : cs;
+        _cs = cs;
         size = m*n*cs;
       }
 
@@ -284,7 +283,7 @@ namespace Tacho {
     KOKKOS_INLINE_FUNCTION
     void 
     createConfTo(const DenseMatrixBase<value_type,ordinal_type,size_type,SpT> &b) {
-      createInternalArrays(b._m, b._n, b._rs, b._cs, false);
+      createInternalArrays(b._m, b._n, b._rs, b._cs);
     }
     
     /// \brief deep copy of matrix b
@@ -303,7 +302,7 @@ namespace Tacho {
         _a  = b._a;
       } else {
         // when the space is different, perform deep copy
-        createInternalArrays(b._m, b._n, b._rs, b._cs, false);
+        createInternalArrays(b._m, b._n, b._rs, b._cs);
         
         const auto range = range_type<ordinal_type>(0, Util::min(_a.dimension_0(), b._a.dimension_0())); 
         
