@@ -1974,24 +1974,6 @@ namespace Tpetra {
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  size_t
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (const RowInfo& rowinfo,
-                  const LocalOrdinal ind,
-                  const size_t hint) const
-  {
-    using KokkosSparse::findRelOffset;
-    auto colInds = this->getLocalKokkosRowView (rowinfo);
-    // NOTE (mfh 11 Oct 2015, 15 Jun 2016) By calling this method on
-    // this host, we assume UVM.
-    const size_t offset = findRelOffset (colInds, rowinfo.numEntries,
-                                         ind, hint, this->isSorted ());
-    return (offset == rowinfo.numEntries) ?
-      Teuchos::OrdinalTraits<size_t>::invalid () : offset;
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   clearGlobalConstants ()
@@ -5565,6 +5547,7 @@ namespace Tpetra {
     // setup, at least on the host.  For CUDA, we have to use LocalMap
     // (that comes from each of the two Maps).
 
+    const bool sorted = this->isSorted ();
     if (isFillComplete ()) {
       auto lclGraph = this->getLocalGraph ();
       // This actually invokes the parallel kernel to do the work.
@@ -5573,7 +5556,7 @@ namespace Tpetra {
                                                        lclColMap,
                                                        lclGraph.row_map,
                                                        lclGraph.entries,
-                                                       this->isSorted ());
+                                                       sorted);
     }
     else {
       for (LO lclRowInd = 0; lclRowInd < lclNumRows; ++lclRowInd) {
@@ -5591,7 +5574,12 @@ namespace Tpetra {
           const RowInfo rowInfo = this->getRowInfo (lclRowInd);
           if (static_cast<LO> (rowInfo.localRow) == lclRowInd &&
               rowInfo.numEntries > 0) {
-            const size_t offset = this->findLocalIndex (rowInfo, lclColInd);
+
+            auto colInds = this->getLocalKokkosRowView (rowInfo);
+            const size_t hint = 0; // not needed for this algorithm
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
             offsets(lclRowInd) = offset;
 
 #ifdef HAVE_TPETRA_DEBUG
