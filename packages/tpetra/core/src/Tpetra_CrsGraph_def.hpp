@@ -52,7 +52,6 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Kokkos_Sparse_findRelOffset.hpp"
 #include <algorithm>
 #include <string>
 #include <utility>
@@ -1981,61 +1980,14 @@ namespace Tpetra {
                   const LocalOrdinal ind,
                   const size_t hint) const
   {
+    using KokkosSparse::findRelOffset;
     auto colInds = this->getLocalKokkosRowView (rowinfo);
-    return this->findLocalIndex (rowinfo, ind, colInds, hint);
-  }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  size_t
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  findLocalIndex (const RowInfo& rowinfo,
-                  const LocalOrdinal ind,
-                  const Kokkos::View<const LocalOrdinal*, device_type,
-                    Kokkos::MemoryUnmanaged>& colInds,
-                  const size_t hint) const
-  {
-    typedef const LocalOrdinal* IT;
-
-    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  We could
-    // imagine templating this method on the memory space, but makes
-    // more sense to let UVM work.
-
-    // If the hint was correct, then the hint is the offset to return.
-    if (hint < rowinfo.numEntries && colInds(hint) == ind) {
-      return hint;
-    }
-
-    // The hint was wrong, so we must search for the given column
-    // index in the column indices for the given row.  How we do the
-    // search depends on whether the graph's column indices are
-    // sorted.
-    IT beg = colInds.ptr_on_device ();
-    IT end = beg + rowinfo.numEntries;
-    IT ptr = beg + rowinfo.numEntries; // "null"
-    bool found = true;
-
-    if (isSorted ()) {
-      std::pair<IT,IT> p = std::equal_range (beg, end, ind); // binary search
-      if (p.first == p.second) {
-        found = false;
-      } else {
-        ptr = p.first;
-      }
-    }
-    else {
-      ptr = std::find (beg, end, ind); // direct search
-      if (ptr == end) {
-        found = false;
-      }
-    }
-
-    if (found) {
-      return static_cast<size_t> (ptr - beg);
-    }
-    else {
-      return Teuchos::OrdinalTraits<size_t>::invalid ();
-    }
+    // NOTE (mfh 11 Oct 2015, 15 Jun 2016) By calling this method on
+    // this host, we assume UVM.
+    const size_t offset = findRelOffset (colInds, rowinfo.numEntries,
+                                         ind, hint, this->isSorted ());
+    return (offset == rowinfo.numEntries) ?
+      Teuchos::OrdinalTraits<size_t>::invalid () : offset;
   }
 
 

@@ -3124,6 +3124,7 @@ namespace Tpetra {
       // KOKKOS_LAMBDA, because the lambda's body calls methods that
       // aren't yet suitable for marking as CUDA device functions.
 
+      const bool sorted = staticGraph_->isSorted ();
       // Always keep a count of the local number of errors (hence
       // parallel_reduce).  In a release build, don't try to compute
       // those across MPI processes.
@@ -3135,8 +3136,14 @@ namespace Tpetra {
           if (lclColInd != Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
             const RowInfo rowinfo = staticGraph_->getRowInfo (r);
             if (rowinfo.numEntries > 0) {
-              const size_t j = staticGraph_->findLocalIndex (rowinfo, lclColInd);
-              if (j != Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
+              auto colInds = staticGraph_->getLocalKokkosRowView (rowinfo);
+              // The search hint is always zero, since we only call
+              // this once per line.
+              const size_t offset =
+                KokkosSparse::findRelOffset (colInds, rowinfo.numEntries,
+                                             lclColInd, static_cast<size_t> (0),
+                                             sorted);
+              if (offset != rowinfo.numEntries) {
                 // NOTE (mfh 03 Feb 2016) This may assume UVM.
                 const impl_scalar_type* curVals;
                 LO numEnt;
@@ -3144,7 +3151,7 @@ namespace Tpetra {
                 if (err == 0) {
                   // Even in a release build, if an error occurs, don't
                   // attempt to write to memory.
-                  D_lcl_1d(r) = curVals[j];
+                  D_lcl_1d(r) = curVals[offset];
                 }
                 else {
                   ++errCount;
