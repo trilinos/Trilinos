@@ -3842,7 +3842,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
             for(size_t i=0;i<localNodesOrderedByNeighbor.size();++i)
                 localNodesOrderedByNeighbor[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
 
-            std::pair<bool,unsigned> result = bucket(element).topology().side_topology(sideOrdinal).equivalent(sideNodes, localNodesOrderedByNeighbor);
+            std::pair<bool,unsigned> result = stk::mesh::side_equivalent(*this, element, sideOrdinal, localNodesOrderedByNeighbor.data());
             ThrowRequireWithSierraHelpMsg(result.first);
             stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(result.second);
 

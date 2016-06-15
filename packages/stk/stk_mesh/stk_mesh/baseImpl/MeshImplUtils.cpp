@@ -141,14 +141,13 @@ void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes)
 {
   stk::topology elemTopology = mesh.bucket(element).topology();
-  stk::topology edgeTopology = elemTopology.edge_topology();
   const Entity* elemNodes = mesh.begin_nodes(element);
   ThrowAssertMsg(mesh.num_nodes(element) == elemTopology.num_nodes(), "findElementEdgeOrdinalAndNodes ERROR, element (id="<<mesh.identifier(element)<<") has wrong number of connected nodes ("<<mesh.num_nodes(element)<<"), expected elemTopology.num_nodes()="<<elemTopology.num_nodes());
 
   unsigned numEdgesPerElem = elemTopology.num_edges();
   for(elemEdgeOrdinal=0; elemEdgeOrdinal<numEdgesPerElem; ++elemEdgeOrdinal) {
     elemTopology.edge_nodes(elemNodes, elemEdgeOrdinal, elemEdgeNodes);
-    if (edgeTopology.equivalent(edgeNodes, elemEdgeNodes).first) {
+    if (stk::mesh::is_edge_equivalent(mesh, element, elemEdgeOrdinal, edgeNodes)) {
       //found element edge equivalent to edgeNodes.
       //output arguments elemEdgeOrdinal and elemEdgeNodes are set, let's get out of here.
       return true;

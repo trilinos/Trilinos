@@ -397,25 +397,6 @@ private:
     bool m_filterForShell;
 };
 
-class ActivePermutationFilter
-{
-public:
-    ActivePermutationFilter() {}
-    ~ActivePermutationFilter() {}
-
-    bool set_ordinal_and_permutation(const stk::mesh::EntityVector &nodes_of_sub_rank,
-                                     stk::mesh::Entity nodes_of_sub_topology[],
-                                     stk::topology sub_topology,
-                                     unsigned ordinal,
-                                     ConnectivityAndOrdinal &ordinalAndPermutation) const
-    {
-        std::pair<bool, unsigned> result = sub_topology.equivalent(nodes_of_sub_rank, nodes_of_sub_topology);
-        mark_if_negative_permutation(result, sub_topology);
-        set_ordinal_and_permutation_if_equivalent(result, ordinal, ordinalAndPermutation);
-        return result.first;
-    }
-};
-
 template<typename PermutationFilter>
 OrdinalAndPermutation
 get_ordinal_and_permutation_with_filter(const stk::mesh::BulkData& mesh,
@@ -466,14 +447,46 @@ get_ordinal_and_permutation(const stk::mesh::BulkData& mesh,
     return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
 }
 
-OrdinalAndPermutation
-get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh,
-                                     stk::mesh::Entity parent_entity,
-                                     stk::mesh::EntityRank to_rank,
-                                     const stk::mesh::EntityVector &nodes_of_sub_rank)
+std::pair<bool, unsigned> sub_rank_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank,
+                                                            const stk::mesh::Entity* subRankNodes)
 {
-    ActivePermutationFilter pFilter;
-    return get_ordinal_and_permutation_with_filter(mesh, parent_entity, to_rank, nodes_of_sub_rank, pFilter);
+    const stk::mesh::Entity* elemNodes = mesh.begin_nodes(element);
+    stk::topology elemTopology = mesh.bucket(element).topology();
+    stk::topology subTopology = elemTopology.sub_topology(subRank, ordinal);
+    const unsigned maxNumSubNodes = 144;
+    stk::mesh::Entity elemSubRankNodes[maxNumSubNodes];
+    ThrowAssertMsg(subTopology.num_nodes() < maxNumSubNodes, "Error in sub_rank_equivalent, subTopology.num_nodes() needs to be less than hard-coded array-length "<<maxNumSubNodes);
+    elemTopology.sub_topology_nodes(elemNodes, subRank, ordinal, elemSubRankNodes);
+    return subTopology.equivalent(elemSubRankNodes, subRankNodes);
+}
+
+std::pair<bool, unsigned> side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes)
+{
+    return sub_rank_equivalent(mesh, element, sideOrdinal, mesh.mesh_meta_data().side_rank(), candidateSideNodes);
+}
+
+bool is_side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes)
+{
+    return sub_rank_equivalent(mesh, element, sideOrdinal, mesh.mesh_meta_data().side_rank(), candidateSideNodes).first;
+}
+
+bool is_edge_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned edgeOrdinal, const stk::mesh::Entity* candidateEdgeNodes)
+{
+    return sub_rank_equivalent(mesh, element, edgeOrdinal, stk::topology::EDGE_RANK, candidateEdgeNodes).first;
+}
+
+EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes)
+{
+    return is_equivalent_and_positive(mesh, element, sideOrdinal, mesh.mesh_meta_data().side_rank(), candidateSideNodes);
+}
+
+EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes)
+{
+    std::pair<bool,unsigned> result = sub_rank_equivalent(mesh, element, ordinal, subRank, candidateNodes);
+    stk::topology elemTopology = mesh.bucket(element).topology();
+    stk::topology subTopology = elemTopology.sub_topology(mesh.mesh_meta_data().side_rank(), ordinal);
+
+    return EquivAndPositive{result.first, subTopology.is_positive_polarity(result.second)};
 }
 
 stk::topology get_subcell_nodes(const BulkData& mesh, const Entity entity,
@@ -538,13 +551,9 @@ int get_entity_subcell_id(const BulkData& mesh,
     stk::topology entity_topology = mesh.bucket(entity).topology();
     ThrowAssert(entity_topology.num_nodes() == mesh.num_nodes(entity));
 
-    const Entity* entity_nodes = mesh.begin_nodes(entity);
-    std::vector<Entity> topology_sub_nodes(subcell_nodes.size());
-
     for(size_t i = 0; i < entity_topology.num_sub_topology(subcell_rank); ++i)
     {
-        entity_topology.sub_topology_nodes(entity_nodes, subcell_rank, i, topology_sub_nodes.begin());
-        if(subcell_topology.equivalent(topology_sub_nodes, subcell_nodes).first)
+        if(sub_rank_equivalent(mesh, entity, i, subcell_rank, subcell_nodes.data()).first)
         {
             return i;
         }
