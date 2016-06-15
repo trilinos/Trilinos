@@ -2878,34 +2878,6 @@ namespace Tpetra {
                     const LocalOrdinal ind,
                     const size_t hint = 0) const;
 
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const size_t hint = 0) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const Kokkos::View<const GlobalOrdinal*,
-                       device_type, Kokkos::MemoryUnmanaged>& colInds,
-                     const size_t hint = 0) const;
-
   public:
     /// \brief Get the local graph.
     ///
