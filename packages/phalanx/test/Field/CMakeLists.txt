@@ -41,7 +41,7 @@ IF(Phalanx_ENABLE_Intrepid2 AND NOT PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR)
     TESTONLYLIBS phalanx_test_utilities
     NUM_MPI_PROCS 1
     )
-ENDIF(Phalanx_ENABLE_Intrepid2)
+ENDIF(Phalanx_ENABLE_Intrepid2 AND NOT PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR)
 
 
 # Will add this test in a later commit
