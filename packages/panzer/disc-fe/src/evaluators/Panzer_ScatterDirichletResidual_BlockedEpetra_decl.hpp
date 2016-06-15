@@ -261,7 +261,7 @@ public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                          const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
-     : rowIndexers_(rIndexers) {}
+     : rowIndexers_(rIndexers), colIndexers_(cIndexers) {}
   
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                          const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,

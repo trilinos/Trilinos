@@ -152,6 +152,7 @@ public:
        return Teuchos::rcp(new ScatterResidual_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0],
                                                                                       colDOFManagerContainer_->getFieldDOFManagers()[0],
                                                                                       useDiscreteAdjoint_));
+
      return Teuchos::rcp(new ScatterResidual_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers(),
                                                                                            colDOFManagerContainer_->getFieldDOFManagers(),
                                                                                            useDiscreteAdjoint_)); 
@@ -161,7 +162,8 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGather() const
    { 
-     if(!rowDOFManagerContainer_->containsBlockedDOFManager())
+     if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
+        !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new GatherSolution_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
      return Teuchos::rcp(new GatherSolution_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
    }
@@ -170,7 +172,8 @@ public:
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherTangent() const
    { 
-     if(!rowDOFManagerContainer_->containsBlockedDOFManager())
+     if(!colDOFManagerContainer_->containsBlockedDOFManager() &&
+        !rowDOFManagerContainer_->containsBlockedDOFManager())
        return Teuchos::rcp(new GatherTangent_Epetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers()[0]));
      return Teuchos::rcp(new GatherTangent_BlockedEpetra<EvalT,Traits,LocalOrdinalT,int>(rowDOFManagerContainer_->getFieldDOFManagers())); 
    }

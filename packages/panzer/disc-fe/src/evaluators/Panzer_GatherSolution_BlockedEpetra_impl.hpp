@@ -172,6 +172,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(ro_ged->getGhostedVector());
 
+    // post condition
+    TEUCHOS_TEST_FOR_EXCEPTION(x_==Teuchos::null,std::logic_error,
+                               "Gather Residual: Can't find x vector in GEDC \"" << globalDataKey_ << "\" (" << post << "). "
+                               "A cast failed for " << ged << ". Type is " << Teuchos::typeName(*ged)); 
+
     return;
   }
   else {
@@ -192,10 +197,12 @@ preEvaluate(typename TRAITS::PreEvalData d)
       else
        x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockedContainer->get_x());
     }
-  }
 
-  // post condition
-  TEUCHOS_ASSERT(x_!=Teuchos::null); // someone has to find the x_ vector
+    // post condition
+    TEUCHOS_TEST_FOR_EXCEPTION(x_==Teuchos::null,std::logic_error,
+                               "Gather Residual: Can't find x vector in GEDC \"" << globalDataKey_ << "\" (" << post << "). "
+                               "A cast failed for " << ged << ". Type is " << Teuchos::typeName(*ged)); 
+  }
 }
 
 // **********************************************************************
@@ -568,7 +575,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(ro_ged->getGhostedVector());
 
-    return;
+    // post condition
+    TEUCHOS_TEST_FOR_EXCEPTION(x_==Teuchos::null,std::logic_error,
+                               "Gather Jacobian: Can't find x vector in GEDC \"" << globalDataKey_ << post << "\""
+                               "A cast failed for " << ged << ". Type is " << Teuchos::typeName(*ged) << std::endl); 
   }
   else {
     ged = d.gedc.getDataObject(globalDataKey_);
@@ -586,12 +596,14 @@ preEvaluate(typename TRAITS::PreEvalData d)
       if (useTimeDerivativeSolutionVector_)
         x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockedContainer->get_dxdt());
       else
-       x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockedContainer->get_x());
+        x_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockedContainer->get_x());
     }
-  }
 
-  // post condition
-  TEUCHOS_ASSERT(x_!=Teuchos::null); // someone has to find the x_ vector
+    // post condition
+    TEUCHOS_TEST_FOR_EXCEPTION(x_==Teuchos::null,std::logic_error,
+                               "Gather Jacobian: Can't find x vector in GEDC \"" << globalDataKey_ << "\" (" << post << "). "
+                               "A cast failed for " << ged << ". Type is " << Teuchos::typeName(*ged)); 
+  }
 }
 
 // **********************************************************************
