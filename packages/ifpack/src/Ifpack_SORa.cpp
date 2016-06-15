@@ -494,7 +494,7 @@ inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCR
 
 
 int Ifpack_SORa::
-PowerMethod(const int MaximumIterations,  double& lambda_max)
+PowerMethod(const int MaximumIterations,  double& lambda_max, const unsigned int * RngSeed)
 {
   // this is a simple power method
   lambda_max = 0.0;
@@ -502,6 +502,8 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
   Epetra_Vector x(A_->OperatorDomainMap());
   Epetra_Vector y(A_->OperatorRangeMap());
   Epetra_Vector z(A_->OperatorRangeMap());
+
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   x.Norm2(&norm);
   if (norm == 0.0) IFPACK_CHK_ERR(-1);

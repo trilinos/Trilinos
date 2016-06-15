@@ -325,7 +325,7 @@ private:
   int NumMyCols() const {return(A_->NumMyCols());};
 
   //! Power method for global damping
-  int PowerMethod(const int MaximumIterations,  double& lambda_max);
+  int PowerMethod(const int MaximumIterations,  double& lambda_max,const unsigned int * RngSeed=0);
 
 
   //! Returns a reference to the matrix.
