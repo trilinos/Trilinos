@@ -242,12 +242,46 @@ namespace Xpetra {
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     virtual void update(const Scalar &alpha, const MultiVector&A, const Scalar &beta) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      Teuchos::RCP<const MultiVector> rcpA = Teuchos::rcpFromRef(A);
+      Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
+      TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != rcpA->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector).");
+      if(bA != Teuchos::null) {
+        TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ != bA->getMapExtractor()->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different thyra mode).");
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->NumMaps() != bA->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors).");
+        for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
+          TEUCHOS_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
+          getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta);
+        }
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
+        for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
+          Teuchos::RCP<const MultiVector> part = getMapExtractor()->ExtractVector(rcpA, r, bThyraMode_);
+          getMultiVector(r)->update(alpha, *part, beta);
+        }
+      }
     }
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
     virtual void update(const Scalar &alpha, const MultiVector&A, const Scalar &beta, const MultiVector&B, const Scalar &gamma) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      Teuchos::RCP<const MultiVector> rcpA = Teuchos::rcpFromRef(A);
+      Teuchos::RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
+      Teuchos::RCP<const BlockedMultiVector> bA = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpA);
+      Teuchos::RCP<const BlockedMultiVector> bB = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(rcpB);
+      if(bA != Teuchos::null && bB != Teuchos::null) {
+        TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ != bA->getMapExtractor()->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different thyra mode in vector A).");
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->NumMaps() != bA->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors in vector A).");
+        TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != bA->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector in vector A).");
+        TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ != bB->getMapExtractor()->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different thyra mode in vector B).");
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->NumMaps() != bB->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors in vector B).");
+        TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != bB->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector in vector B).");
+
+        for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
+          TEUCHOS_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
+          getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta, *(bB->getMultiVector(r)), gamma);
+        }
+        return;
+      }
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::update: only supports update with other BlockedMultiVector.");
     }
 
     //! Compute 1-norm of each vector in multi-vector.
