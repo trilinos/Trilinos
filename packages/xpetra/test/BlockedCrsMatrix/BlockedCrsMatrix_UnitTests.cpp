@@ -81,12 +81,14 @@
 #include <Teuchos_as.hpp>
 
 #include <Xpetra_Map.hpp>
-
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapExtractorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
+#include <Xpetra_BlockedMultiVector.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_Exceptions.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -2368,6 +2370,75 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::MapExtractor<Scalar, LO, GO, Node> MapExtractor;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::BlockedCrsMatrix<Scalar,LO,GO,Node> BlockedCrsMatrix;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 3;
+  Teuchos::RCP<const BlockedCrsMatrix> bop = XpetraBlockMatrixTests::CreateBlockDiagonalExampleMatrix<Scalar,LO,GO,Node,M>(noBlocks, *comm);
+
+  TEST_EQUALITY(bop->Rows(),3);
+  TEST_EQUALITY(bop->Cols(),3);
+  TEST_EQUALITY(bop->getRangeMapExtractor()->getThyraMode(), false);
+  TEST_EQUALITY(bop->getDomainMapExtractor()->getThyraMode(), false);
+
+
+
+  // build gloabl vector with one entries
+  Teuchos::RCP<MultiVector> ones = MultiVectorFactory::Build(bop->getRangeMap(), 1, true);
+  Teuchos::RCP<MultiVector> res1  = MultiVectorFactory::Build(bop->getRangeMap(), 1, true);
+  ones->putScalar(STS::one());
+  res1->putScalar(STS::zero());
+
+  Teuchos::RCP<const MapExtractor> meRange  = bop->getRangeMapExtractor();
+  Teuchos::RCP<const MapExtractor> meDomain = bop->getDomainMapExtractor();
+
+  // create BlockedMultiVectors
+  Teuchos::RCP<BlockedMultiVector> bones =
+      Teuchos::rcp(new BlockedMultiVector(meDomain, ones));
+  Teuchos::RCP<BlockedMultiVector> res2 =
+      Teuchos::rcp(new BlockedMultiVector(meRange,  res1));
+  Teuchos::RCP<BlockedMultiVector> res3 =
+      Teuchos::rcp(new BlockedMultiVector(meRange,  res1));
+
+  // input blocked, output standard
+  TEST_NOTHROW(bop->apply(*bones, *res1));
+  // input blocked, output blocked
+  TEST_NOTHROW(bop->apply(*bones, *res2));
+  // input standard, output blocked
+  TEST_NOTHROW(bop->apply(* ones, *res3));
+
+  for(size_t r = 0; r < meRange->NumMaps(); r++) {
+    Teuchos::RCP<MultiVector> part2 = meRange->ExtractVector(res2,r);
+    Teuchos::RCP<MultiVector> part3 = meRange->ExtractVector(res3,r);
+
+    Teuchos::ArrayRCP<const Scalar > partd2 = part2->getData(0);
+    Teuchos::ArrayRCP<const Scalar > partd3 = part3->getData(0);
+    for(LO l = 0; l < part2->getLocalLength(); l++) {
+      TEST_EQUALITY(partd2[l], (r+1) * STS::one());
+      TEST_EQUALITY(partd3[l], (r+1) * STS::one());
+    }
+  }
+
+  Teuchos::RCP<MultiVector> merged_res2 = res2->Merge();
+  Teuchos::ArrayRCP<const Scalar > resd1 = res1->getData(0);
+  Teuchos::ArrayRCP<const Scalar > resd2 = merged_res2->getData(0);
+
+  for(LO l = 0; l < res1->getLocalLength(); l++) {
+    TEST_EQUALITY(resd1[l], resd2[l]);
+  }
+
+}
+
+
 /// simple test for matrix-matrix multiplication for a 2x2 blocked matrix with a 2x1 blocked matrix
 /*TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, Scalar, LO, GO, Node)
 {
@@ -2517,7 +2588,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, MatrixMatrixMult, M, MA, Sc
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, Merge, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixAdd, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMultDiag, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, MatrixMatrixMult, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedCrsMatrix, BlockedOperatorApply, M##LO##GO##N , MA##S##LO##GO##N, S, LO, GO, N )
 
 // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(S,LO,GO,N)
