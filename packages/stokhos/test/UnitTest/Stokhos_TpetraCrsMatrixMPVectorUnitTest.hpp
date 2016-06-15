@@ -1520,7 +1520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Tpetra_CrsMatrix_MP, BelosGMRES_RILUK, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
-  using Teuchos::RCP;
+/*  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
   using Teuchos::Array;
@@ -1666,7 +1666,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
     for (LocalOrdinal j=0; j<VectorSize; ++j)
       TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
-  }
+  }*/
 }
 
 #else

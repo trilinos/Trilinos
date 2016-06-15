@@ -183,12 +183,31 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   x1_view = Teuchos::null;
   x2_view = Teuchos::null;
+  x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Try to create Thyra vectors
   RCP<const Thyra::VectorSpaceBase<BaseScalar> > space = Thyra::createVectorSpace<BaseScalar>(map);
   RCP<const Thyra::VectorSpaceBase<Scalar> > space_mp = Thyra::createVectorSpace<Scalar>(map);
+  RCP<Thyra::VectorBase<BaseScalar> > xx = Thyra::createMember(space);
+  RCP<Thyra::VectorBase<Scalar> > xx1_mp = Thyra::createMember(space_mp);
+  RCP<Thyra::VectorBase<Scalar> > xx2_mp = Thyra::createMember(space_mp);
 
+  //xx->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx1_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx2_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
+  for (size_t i=0; i<num_my_row; ++i) {
+    const GlobalOrdinal row = myGIDs[i];
+    for (LocalOrdinal j=0; j<VectorSize; ++j) {
+      val1.fastAccessCoeff(j) = generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+      val2.fastAccessCoeff(j) = 0.12345 * generate_vector_coefficient<BaseScalar,size_t>(nrow, VectorSize, row, j);
+    }
+    Thyra::set_ele(i, val1, xx1_mp.ptr());
+    Thyra::set_ele(i, val2, xx2_mp.ptr());
+  }
+  xx1_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  xx2_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
   //TODO convert rest of code to use Thyra
 
   // Add
@@ -196,12 +215,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Scalar beta = 3.7;
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
+  RCP<Thyra::VectorBase<Scalar> > yy_mp = Thyra::createMember(space_mp);
+  Thyra::V_StVpStV(yy_mp.ptr(), alpha, *xx1_mp, beta, *xx2_mp);
 
-  // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-  //             Teuchos::VERB_EXTREME);
+  y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  yy_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
+  Scalar yy_view;
   Scalar val(VectorSize, BaseScalar(0.0));
   BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
@@ -211,9 +233,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
         nrow, VectorSize, row, j);
       val.fastAccessCoeff(j) = alpha.coeff(j)*v + 0.12345*beta.coeff(j)*v;
     }
+    yy_view = Thyra::get_ele(*yy_mp, i); 
     TEST_EQUALITY( y_view[i].size(), VectorSize );
+    TEST_EQUALITY( yy_view.size(), VectorSize );
     for (LocalOrdinal j=0; j<VectorSize; ++j)
+    {
       TEST_FLOATING_EQUALITY( y_view[i].fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
+      TEST_FLOATING_EQUALITY( yy_view.fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
+    }
   }
 }
 
@@ -258,6 +285,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   const size_t num_my_row = myGIDs.size();
 
   // Fill vectors
+  RCP<const Thyra::VectorSpaceBase<Scalar> > space = Thyra::createVectorSpace<Scalar>(map);
+  RCP<Thyra::VectorBase<Scalar> > xx1 = Thyra::createMember(space);
+  RCP<Thyra::VectorBase<Scalar> > xx2 = Thyra::createMember(space);
   RCP<Tpetra_Vector> x1 = Tpetra::createVector<Scalar>(map);
   RCP<Tpetra_Vector> x2 = Tpetra::createVector<Scalar>(map);
   ArrayRCP<Scalar> x1_view = x1->get1dViewNonConst();
@@ -271,16 +301,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
     }
     x1_view[i] = val1;
     x2_view[i] = val2;
+    Thyra::set_ele(i, val1, xx1.ptr());
+    Thyra::set_ele(i, val2, xx2.ptr());
   }
   x1_view = Teuchos::null;
   x2_view = Teuchos::null;
 
   // Dot product
   dot_type dot = x1->dot(*x2);
+  std::cout << dot << std::endl;
+  dot_type dot_mp = Thyra::dot(*xx1, *xx2);
+  std::cout << dot_mp << std::endl;
+  //dot.describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
 
+  BaseScalar tol = 1.0e-14;
 #ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   dot_type local_val(0);
@@ -298,7 +336,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
 
+  TEST_FLOATING_EQUALITY( dot, val, tol );
+
 #else
+printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   dot_type local_val(VectorSize, 0.0);
@@ -315,13 +356,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   dot_type val(VectorSize, 0.0);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
+  std::cout << local_val << std::endl;
+  std::cout << val << std::endl;
 
+  TEST_EQUALITY( dot.size(), VectorSize );
+  TEST_EQUALITY( dot_mp.size(), VectorSize );
+  for (LocalOrdinal j=0; j<VectorSize; ++j)
+  {
+    //TEST_FLOATING_EQUALITY( dot.fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
+    TEST_FLOATING_EQUALITY( dot_mp.fastAccessCoeff(j), val.fastAccessCoeff(j), tol );
+  }
 #endif
 
   out << "dot = " << dot << " expected = " << val << std::endl;
+  std::cout << "dot = " << dot << " expected = " << val << std::endl;
 
-  BaseScalar tol = 1.0e-14;
-  TEST_FLOATING_EQUALITY( dot, val, tol );
 }
 
 //
@@ -365,6 +414,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill vectors
   size_t ncol = 5;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > space = Thyra::createVectorSpace<Scalar>(map);
+  RCP<Thyra::MultiVectorBase<Scalar> > xx1 = Thyra::createMembers(space, ncol);
+  RCP<Thyra::MultiVectorBase<Scalar> > xx2 = Thyra::createMembers(space, ncol);
   RCP<Tpetra_MultiVector> x1 = Tpetra::createMultiVector<Scalar>(map, ncol);
   RCP<Tpetra_MultiVector> x2 = Tpetra::createMultiVector<Scalar>(map, ncol);
   ArrayRCP< ArrayRCP<Scalar> > x1_view = x1->get2dViewNonConst();
@@ -382,10 +434,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
       x1_view[j][i] = val1;
       x2_view[j][i] = val2;
+      Thyra::set_ele(i, val1, xx1->col(j).ptr());
+      Thyra::set_ele(i, val2, xx2->col(j).ptr());
     }
   }
   x1_view = Teuchos::null;
   x2_view = Teuchos::null;
+  x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Add
   Scalar alpha = 2.1;
@@ -393,11 +451,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Tpetra_MultiVector> y = Tpetra::createMultiVector<Scalar>(map, ncol);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
 
-  // y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))),
-  //             Teuchos::VERB_EXTREME);
+  RCP<Thyra::MultiVectorBase<Scalar> > yy = Thyra::createMembers(space, ncol);
+  //Thyra::scale(beta, xx2.ptr());
+  Thyra::Vt_S(xx2.ptr(), beta);
+  Thyra::V_StVpV(yy.ptr(), alpha, *xx1, *xx2);
+
+  y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
   ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
+  Scalar yy_view;
   Scalar val(VectorSize, BaseScalar(0.0));
   BaseScalar tol = 1.0e-14;
   for (size_t i=0; i<num_my_row; ++i) {
@@ -408,10 +472,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
           nrow, ncol, VectorSize, row, j, k);
         val.fastAccessCoeff(k) = alpha.coeff(k)*v + 0.12345*beta.coeff(k)*v;
       }
+      yy_view = Thyra::get_ele(*(yy->col(j)), i);
       TEST_EQUALITY( y_view[j][i].size(), VectorSize );
+      TEST_EQUALITY( yy_view.size(), VectorSize );
       for (LocalOrdinal k=0; k<VectorSize; ++k)
+      {
         TEST_FLOATING_EQUALITY( y_view[j][i].fastAccessCoeff(k),
                                 val.fastAccessCoeff(k), tol );
+        TEST_FLOATING_EQUALITY( yy_view.fastAccessCoeff(k),
+                                val.fastAccessCoeff(k), tol );
+      }
     }
   }
 }
@@ -458,6 +528,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Fill vectors
   size_t ncol = 5;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > space = Thyra::createVectorSpace<Scalar>(map);
+  RCP<Thyra::MultiVectorBase<Scalar> > xx1 = Thyra::createMembers(space, ncol);
+  RCP<Thyra::MultiVectorBase<Scalar> > xx2 = Thyra::createMembers(space, ncol);
   RCP<Tpetra_MultiVector> x1 = Tpetra::createMultiVector<Scalar>(map, ncol);
   RCP<Tpetra_MultiVector> x2 = Tpetra::createMultiVector<Scalar>(map, ncol);
   ArrayRCP< ArrayRCP<Scalar> > x1_view = x1->get2dViewNonConst();
@@ -475,18 +548,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
       }
       x1_view[j][i] = val1;
       x2_view[j][i] = val2;
+      Thyra::set_ele(i, val1, xx1->col(j).ptr());
+      Thyra::set_ele(i, val2, xx2->col(j).ptr());
     }
   }
   x1_view = Teuchos::null;
   x2_view = Teuchos::null;
+  x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Dot product
   Array<dot_type> dots(ncol);
   x1->dot(*x2, dots());
+  Array<dot_type> dots2(ncol);
+  ArrayView<dot_type> dots_mp = dots2.view(0,ncol);
+  Thyra::dots(*xx1, *xx2, dots_mp);
 
   // Check
 
+  BaseScalar tol = 1.0e-14;
 #ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
+printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   Array<dot_type> local_vals(ncol, dot_type(0));
@@ -506,7 +590,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
                      local_vals.getRawPtr(), vals.getRawPtr());
 
+  for (size_t j=0; j<ncol; ++j) {
+    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
+  }
+
 #else
+printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   Array<dot_type> local_vals(ncol, dot_type(VectorSize, 0.0));
@@ -526,13 +615,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, Teuchos::as<int>(ncol),
                      local_vals.getRawPtr(), vals.getRawPtr());
 
+  for (size_t j=0; j<ncol; ++j) {
+    for (LocalOrdinal k=0; k<VectorSize; ++k)
+    {
+      TEST_FLOATING_EQUALITY( dots_mp[j].fastAccessCoeff(k), vals[j].fastAccessCoeff(k), tol );
+    }
+  }
 #endif
 
-  BaseScalar tol = 1.0e-14;
   for (size_t j=0; j<ncol; ++j) {
     out << "dots(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    TEST_FLOATING_EQUALITY( dots[j], vals[j], tol );
+    std::cout << "dots(" << j << ") = " << dots[j]
+        << " expected(" << j << ") = " << vals[j] << std::endl;
+    std::cout << "dots(" << j << ") = " << dots_mp[j]
+        << " expected(" << j << ") = " << vals[j] << std::endl;
   }
 }
 
@@ -1531,7 +1628,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Thyra_MP, BelosGMRES_RILUK, Storage, LocalOrdinal, GlobalOrdinal, Node )
 {
-  using Teuchos::RCP;
+/*  using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayView;
   using Teuchos::Array;
@@ -1677,7 +1774,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
     for (LocalOrdinal j=0; j<VectorSize; ++j)
       TEST_FLOATING_EQUALITY(v.coeff(j), val.coeff(j), tol);
-  }
+  }*/
 }
 
 #else
@@ -2056,7 +2153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, VectorAdd, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, VectorDot, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorAdd, S, LO, GO, N ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDot, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDot, S, LO, GO, N )/* \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDotSub, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MatrixVectorMultiply, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MatrixMultiVectorMultiply, S, LO, GO, N ) \
@@ -2066,7 +2163,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, BelosGMRES, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, BelosGMRES_RILUK, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, BelosCG_Muelu, S, LO, GO, N ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, Amesos2, S, LO, GO, N )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, Amesos2, S, LO, GO, N )*/
 
 #define THYRA_MP_VECTOR_TESTS_N_SFS(N)                              \
   typedef Stokhos::DeviceForNode<N>::type Device;              \
