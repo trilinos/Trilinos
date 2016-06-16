@@ -1782,7 +1782,8 @@ namespace stk {
 
       void StkMeshIoBroker::set_option_to_not_collapse_sequenced_fields()
       {
-          property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", ">:["));
+          char tmp[2] = {'\1', '\0'};
+          property_add(Ioss::Property("FIELD_SUFFIX_SEPARATOR", tmp));
       }
 
       int StkMeshIoBroker::get_num_time_steps()
