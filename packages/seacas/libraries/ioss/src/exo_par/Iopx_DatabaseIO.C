@@ -388,7 +388,7 @@ namespace Iopx {
       if (get_filename().length() >= 255) {
 	IOSS_WARNING << "Potential corruption due to long length of filename\n\t'"
 		     << get_filename()
-		     << "'\n. There is a bug in certain openmpi versions (<1.8.5) which limit filename length to 255 characters.\n";
+		     << "'\nThere is a bug in certain openmpi versions (<1.8.5) which limit filename length to 255 characters.\n";
       }
     }
 #endif
