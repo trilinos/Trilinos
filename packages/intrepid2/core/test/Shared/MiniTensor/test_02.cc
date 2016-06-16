@@ -990,7 +990,17 @@ solveFN(FN & function, Intrepid2::Vector<T, N> const & x)
   line_search_ok = solveFNwithSTEP(line_search_step, function, y);
 
   all_ok = all_ok && line_search_ok;
+  
+  Intrepid2::NewtonWithLineSearchStep<FN, T, N>
+  newton_line_search_step;
 
+  y = x;
+
+  bool const
+  newton_line_search_ok = solveFNwithSTEP(newton_line_search_step, function, y);
+
+  all_ok = all_ok && newton_line_search_ok;
+  
   return all_ok;
 }
 
