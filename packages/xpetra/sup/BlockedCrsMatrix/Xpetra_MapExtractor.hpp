@@ -354,7 +354,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(NumMaps() != full->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError,
             "ExtractVector: Number of blocks in map extractor is " << NumMaps() << " but should be " << full->getMapExtractor()->NumMaps() << " (number of blocks in BlockedMultiVector)");
       Teuchos::RCP<MultiVector> vv = full->getMultiVector(block);
-      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block))) == false, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block,bThyraMode_))) == false, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: partial map of BlockedMultiVector and MapExtractor are incompatible");
       return vv;
     }
@@ -364,7 +364,7 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(NumMaps() != full->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError,
             "ExtractVector: Number of blocks in map extractor is " << NumMaps() << " but should be " << full->getMapExtractor()->NumMaps() << " (number of blocks in BlockedMultiVector)");
       Teuchos::RCP<MultiVector> vv = full->getMultiVector(block);
-      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block))) == false, Xpetra::Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block,bThyraMode_))) == false, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: partial map of BlockedMultiVector and MapExtractor are incompatible");
       return vv;
     }
