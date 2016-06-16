@@ -94,8 +94,8 @@ Teuchos::RCP<Teuchos::ParameterList> getParametersFromYamlFile(const std::string
 void updateParametersFromYamlFileAndBroadcast(const std::string &yamlFileName, const Teuchos::Ptr<Teuchos::ParameterList> &paramList, const Teuchos::Comm<int> &comm, bool overwrite = true);
 
 std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename of produced YAML file
-void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileNamee); //writes to given filename
-bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs);
+void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
+bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs, bool verbose = false);
 
 //Class modeled after Teuchos::XMLParameterListReader
 namespace YAMLParameterList
