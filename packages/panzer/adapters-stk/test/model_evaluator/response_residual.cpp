@@ -716,7 +716,6 @@ namespace panzer {
     me->evalModel(inArgs,outArgs);
 
     // test the jacobian for correctness
-    /*
     {
  
       // build vectors for each type of node
@@ -732,10 +731,23 @@ namespace panzer {
       volume[0] = 1./1152.; volume[1] = 1./1152.; volume[2] = 1./1152.;
       volume[3] = 1./1152.; volume[4] = 1./288.;  volume[5] = 1./288.;
       volume[6] = 1./288.;  volume[7] = 1./288.;  volume[8] = 1./72.;
-      
-      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp));
+     
+      auto DfDp_blocked = rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(DfDp);
+      TEST_ASSERT(DfDp_blocked!=Teuchos::null);
+      TEST_EQUALITY(DfDp_blocked->productRange()->numBlocks(),2);
+      TEST_EQUALITY(DfDp_blocked->productDomain()->numBlocks(),1);
 
-      TEUCHOS_ASSERT(jac!=Teuchos::null);
+      {
+        TEUCHOS_ASSERT(DfDp_blocked->getBlock(1,0)!=Teuchos::null);
+        auto J_10 = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp_blocked->getBlock(1,0)));
+        TEST_ASSERT(J_10!=Teuchos::null);
+
+        TEST_EQUALITY(J_10->NormInf(),0.0);
+      }
+      
+      RCP<const Epetra_CrsMatrix> jac = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*DfDp_blocked->getBlock(0,0)));
+
+      TEST_ASSERT(jac!=Teuchos::null);
 
       for(int i=0;i<jac->NumMyRows();i++) {
         int numEntries = -1;
@@ -799,7 +811,6 @@ namespace panzer {
                       
       }
     }
-    */
   }
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
