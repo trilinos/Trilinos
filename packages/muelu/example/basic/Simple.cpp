@@ -45,7 +45,17 @@
 // @HEADER
 //
 // To compile and run this example, Trilinos must be configured with
-// Tpetra, Amesos2, MueLu, Ifpack2, and Belos.  
+// Tpetra, Amesos2, MueLu, Ifpack2, and Belos.
+//
+// This example will only work with Tpetra, not Epetra.
+//
+// Commonly used options are
+//   --matrixType
+//   --nx
+//   --ny
+//   --xmlFile
+//
+// "./MueLu_Simple.exe --help" shows all supported command line options.
 //
 
 #include <iostream>
@@ -62,10 +72,15 @@
 #include <BelosBlockGmresSolMgr.hpp>
 #include <BelosTpetraAdapter.hpp>
 
+// Galeri
+#include <Galeri_XpetraParameters.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+
 // MueLu main header: include most common header files in one line
 #include <MueLu.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <MueLu_Utilities.hpp>
 
 int main(int argc, char *argv[]) {
 
@@ -83,6 +98,7 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>                     driver_map_type;
 
   typedef MueLu::TpetraOperator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> muelu_tpetra_operator_type;
+  typedef MueLu::Utilities<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MueLuUtilities;
 
   typedef Belos::LinearProblem<scalar_type, multivector_type, operator_type> linear_problem_type;
   typedef Belos::SolverManager<scalar_type, multivector_type, operator_type> belos_solver_manager_type;
@@ -95,6 +111,8 @@ int main(int argc, char *argv[]) {
   typedef global_ordinal_type GlobalOrdinal;
   typedef node_type           Node;
 # include <MueLu_UseShortNames.hpp>
+
+  typedef Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> GaleriXpetraProblem;
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; // reference count pointers
@@ -111,13 +129,15 @@ int main(int argc, char *argv[]) {
 
   // Parameters
 
-  global_ordinal_type numGlobalElements = 10000;
+  global_ordinal_type nx = 50;
+  Galeri::Xpetra::Parameters<GO> matrixParameters(clp, nx); // manage parameters of the test case
+  Xpetra::Parameters             xpetraParameters(clp);     // manage parameters of xpetra
+
   global_ordinal_type maxIts            = 25;
   scalar_type tol                       = 1e-8;
   std::string solverOptionsFile         = "amg.xml";
   std::string krylovSolverType          = "cg";
 
-  clp.setOption("nx",         &numGlobalElements, "number of matrix rows");
   clp.setOption("xmlFile",    &solverOptionsFile, "XML file containing MueLu solver parameters");
   clp.setOption("maxits",     &maxIts,            "maximum number of Krylov iterations");
   clp.setOption("tol",        &tol,               "tolerance for Krylov solver");
@@ -129,6 +149,11 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+  
+  if (xpetraParameters.GetLib() == Xpetra::UseEpetra) {
+    throw std::invalid_argument("This example only supports Tpetra.");
+  }
+
   ParameterList mueluParams;
   Teuchos::updateParametersFromXmlFile(solverOptionsFile, Teuchos::inoutArg(mueluParams));
 
@@ -136,39 +161,12 @@ int main(int argc, char *argv[]) {
   // Construct the problem
   //
 
-  // Construct a Map that puts approximately the same number of equations on each processor
   global_ordinal_type indexBase = 0;
-  RCP<const driver_map_type> map = rcp(new driver_map_type(numGlobalElements, indexBase, comm));
-  
-
-  // Get update list and number of local equations from newly created map.
-  const size_t numMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const global_ordinal_type> myGlobalElements = map->getNodeElementList();
-
-  // Create a CrsMatrix using the map, with a dynamic allocation of 3 entries per row
-  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(map, 3));
-
-  // Add rows one-at-a-time
-  for (size_t i = 0; i < numMyElements; i++) {
-    if (myGlobalElements[i] == 0) {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<global_ordinal_type>(myGlobalElements[i], myGlobalElements[i] +1),
-                            Teuchos::tuple<scalar_type> (2.0, -1.0));
-    }
-    else if (myGlobalElements[i] == numGlobalElements - 1) {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<global_ordinal_type>(myGlobalElements[i] -1, myGlobalElements[i]),
-                            Teuchos::tuple<scalar_type> (-1.0, 2.0));
-    }
-    else {
-      A->insertGlobalValues(myGlobalElements[i],
-                            Teuchos::tuple<global_ordinal_type>(myGlobalElements[i] -1, myGlobalElements[i], myGlobalElements[i] +1),
-                            Teuchos::tuple<scalar_type> (-1.0, 2.0, -1.0));
-    }
-  }
-
-  // Complete the fill, ask that storage be reallocated and optimized
-  A->fillComplete();
+  RCP<const Map> xpetraMap = MapFactory::Build(Xpetra::UseTpetra, matrixParameters.GetNumGlobalElements(), indexBase, comm);
+  RCP<GaleriXpetraProblem> Pr = Galeri::Xpetra::BuildProblem<scalar_type, local_ordinal_type, global_ordinal_type, Map, CrsMatrixWrap, MultiVector>(matrixParameters.GetMatrixType(), xpetraMap, matrixParameters.GetParameterList());
+  RCP<Matrix>  xpetraA = Pr->BuildMatrix();
+  RCP<crs_matrix_type> A = MueLuUtilities::Op2NonConstTpetraCrs(xpetraA);
+  RCP<const driver_map_type> map = MueLuUtilities::Map2TpetraMap(*xpetraMap);
 
   //
   // Construct a multigrid preconditioner
