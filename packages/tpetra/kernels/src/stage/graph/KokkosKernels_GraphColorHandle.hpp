@@ -397,7 +397,7 @@ private:
         if (ii < n && n < nv){
           row_lno_t position =
               Kokkos::atomic_fetch_add( &(lower_xadj_counts(ii)), 1);
-          lower_srcs(position) = i;
+          lower_srcs(position) = ii;
           lower_dsts(position) = n;
         }
       });
