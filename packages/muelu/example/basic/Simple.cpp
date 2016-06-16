@@ -98,7 +98,6 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp; // reference count pointers
-  Tpetra::global_size_t INVALID_GO = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
 
   //
   // MPI initialization using Teuchos
@@ -106,6 +105,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int mypid = comm->getRank();
 
   Teuchos::CommandLineProcessor clp(false);
 
@@ -137,7 +137,8 @@ int main(int argc, char *argv[]) {
   //
 
   // Construct a Map that puts approximately the same number of equations on each processor
-  RCP<const driver_map_type> map = rcp(new driver_map_type(INVALID_GO, numGlobalElements, 0, comm));
+  global_ordinal_type indexBase = 0;
+  RCP<const driver_map_type> map = rcp(new driver_map_type(numGlobalElements, indexBase, comm));
   
 
   // Get update list and number of local equations from newly created map.
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]) {
   A->apply(*X, residual);
   residual.update(1.0, *B, -1.0);
   residual.norm2(normVec);
-  if (comm->getRank() == 0) {
+  if (mypid == 0) {
     std::cout << "number of iterations = " << numIterations << std::endl;
     std::cout << "||Residual|| = " << normVec[0] << std::endl;
   }
