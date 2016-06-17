@@ -202,17 +202,31 @@ struct InputTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
+// This combination of macros is used to define a single line STATIC_ASSERT_TYPES for each InputTraits with custom template types
+#define isSame(s,type) std::is_same< s, type >::value
+#define sTypes(s) ( isSame(s,float) || isSame(s,double) || isSame(s,int) )
+#define lgTypes(lg) ( isSame(lg,int) || isSame(lg,long) || isSame(lg,unsigned int) || isSame(lg,unsigned long) || isSame(lg,long long) )
+#define sError "Invalid scalar type. It must be float, double, or int."
+#define lgError "Invalid ordinal type. It must be int, long, unsigned int, unsigned long or long long."
+#ifdef INVERT_STATIC_ASSERT_FOR_UNIT_TESTING
+  #define STATIC_ASSERT_TYPES static_assert( !sTypes(scalar_t) || !lgTypes(lno_t) || !lgTypes(gno_t), "Inverted unit test for InputTraits was supposed to fail but did not." );
+#else
+  #define STATIC_ASSERT_TYPES static_assert( sTypes(scalar_t), sError ); static_assert( lgTypes(lno_t), lgError ); static_assert( lgTypes(gno_t), lgError );
+#endif
+
 template <typename Scalar,
-          typename LNO,
-          typename GNO>
-struct InputTraits<BasicUserTypes<Scalar, LNO, GNO> >
+          typename LocalOrdinal,
+          typename GlobalOrdinal>
+struct InputTraits<BasicUserTypes<Scalar, LocalOrdinal, GlobalOrdinal> >
 {
   typedef Scalar        scalar_t;
-  typedef LNO lno_t;
-  typedef GNO gno_t;
+  typedef LocalOrdinal  lno_t;
+  typedef GlobalOrdinal gno_t;
   typedef Zoltan2::default_part_t  part_t;
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "BasicUserTypes";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -227,6 +241,8 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsMatrix";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -241,6 +257,8 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsMatrix";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -268,6 +286,8 @@ struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::RowMatrix";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -282,6 +302,8 @@ struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::RowMatrix";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename LocalOrdinal,
@@ -308,6 +330,8 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsGraph";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename LocalOrdinal,
@@ -321,6 +345,8 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsGraph";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -348,6 +374,8 @@ struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::Vector";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
  /*! \todo A Tpetra::Vector is a Tpetra::MultiVector - can we just
@@ -365,6 +393,8 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::Vector";}
+
+  STATIC_ASSERT_TYPES  // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -392,6 +422,8 @@ struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::MultiVector";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -406,6 +438,8 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Zoltan2::default_part_t  part_t;
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::MultiVector";}
+
+  STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
