@@ -281,7 +281,11 @@ namespace Intrepid2 {
       void operator()(const size_type cell, value_type &dst) const {
         const bool hasNegativeDet = (_inputDet(cell) < 0.0);
         dst |= hasNegativeDet;
-        _outputVals(cell) *= (hasNegativeDet ? -1.0 : 1.0);
+        
+        const auto sign = (hasNegativeDet ? -1.0 : 1.0);
+        const auto pend = _outputVals.dimension(1);
+        for (auto p=0;p<pend;++p) 
+          _outputVals(cell, p) *= sign;
       }
     };
   }
