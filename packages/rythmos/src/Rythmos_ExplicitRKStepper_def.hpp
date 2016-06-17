@@ -315,6 +315,7 @@ Scalar ExplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
      dt_to_return = current_dt;
 
      } else {
+        std::cout << "(SIDAFA-RejectingStep )" << std::endl;
         rkNewtonConvergenceStatus_ = -1;
         status = stepControl_-> rejectStep(*this); // reject the stage value
         (void) status; // avoid "set but not used" build warning
