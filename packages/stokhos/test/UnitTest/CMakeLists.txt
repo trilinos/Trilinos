@@ -714,6 +714,7 @@ IF(Stokhos_ENABLE_Sacado)
             ThyraMPVectorUnitTest_Serial
             SOURCES Stokhos_ThyraMPVectorUnitTest.hpp
                     Stokhos_ThyraMPVectorUnitTest_Serial.cpp
+            TESTONLYLIBS thyra_nonlinear_test_models
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4

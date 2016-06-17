@@ -86,6 +86,9 @@
 // Thyra
 #include "Thyra_TpetraThyraWrappers.hpp"
 
+#include "Thyra_ScaledModelEvaluator.hpp"
+#include "Thyra_Simple2DModelEvaluator.hpp"
+
 
 template <typename scalar, typename ordinal>
 inline
@@ -200,11 +203,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
   RCP<Thyra::VectorBase<Scalar> > yy = Thyra::createVector(y);
   //y->update(alpha, *x1, beta, *x2, Scalar(0.0));
-  yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
   Thyra::V_StVpStV(yy.ptr(), alpha, *xx1, beta, *xx2);
 
-  y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
   ArrayRCP<Scalar> y_view = y->get1dViewNonConst();
@@ -295,16 +298,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   // Dot product
   dot_type dot = x1->dot(*x2);
-  std::cout << dot << std::endl;
+  //std::cout << dot << std::endl;
   dot_type dot_mp = Thyra::dot(*xx1, *xx2);
-  std::cout << dot_mp << std::endl;
+  //std::cout << dot_mp << std::endl;
   //dot.describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
 
   BaseScalar tol = 1.0e-14;
 #ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
-printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   dot_type local_val(0);
@@ -325,7 +327,6 @@ printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
   TEST_FLOATING_EQUALITY( dot, val, tol );
 
 #else
-printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   dot_type local_val(VectorSize, 0.0);
@@ -342,8 +343,8 @@ printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
   dot_type val(VectorSize, 0.0);
   Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, local_val,
                      Teuchos::outArg(val));
-  std::cout << local_val << std::endl;
-  std::cout << val << std::endl;
+  //std::cout << local_val << std::endl;
+  //std::cout << val << std::endl;
 
   TEST_EQUALITY( dot.size(), VectorSize );
   TEST_EQUALITY( dot_mp.size(), VectorSize );
@@ -356,8 +357,8 @@ printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   out << "dot = " << dot << " expected = " << val << std::endl;
   out << "dot_mp = " << dot_mp << " expected = " << val << std::endl;
-  std::cout << "dot = " << dot << " expected = " << val << std::endl;
-  std::cout << "dot_mp = " << dot_mp << " expected = " << val << std::endl;
+  //std::cout << "dot = " << dot << " expected = " << val << std::endl;
+  //std::cout << "dot_mp = " << dot_mp << " expected = " << val << std::endl;
 
 }
 
@@ -425,10 +426,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
   RCP<Thyra::MultiVectorBase<Scalar> > xx1 = Thyra::createMultiVector(x1);
   RCP<Thyra::MultiVectorBase<Scalar> > xx2 = Thyra::createMultiVector(x2);
-  x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Add
   Scalar alpha = 2.1;
@@ -441,8 +442,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   Thyra::Vt_S(xx2.ptr(), beta);
   Thyra::V_StVpV(yy.ptr(), alpha, *xx1, *xx2);
 
-  y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //y->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //yy->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Check
   ArrayRCP< ArrayRCP<Scalar> > y_view = y->get2dViewNonConst();
@@ -539,10 +540,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   }
   x1_view = Teuchos::null;
   x2_view = Teuchos::null;
-  x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
-  xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //x1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //x2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx1->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //xx2->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
 
   // Dot product
   Array<dot_type> dots(ncol);
@@ -555,7 +556,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
   BaseScalar tol = 1.0e-14;
 #ifdef HAVE_STOKHOS_ENSEMBLE_REDUCT
-printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   Array<dot_type> local_vals(ncol, dot_type(0));
@@ -580,7 +580,6 @@ printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
   }
 
 #else
-printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
 
   // Local contribution
   Array<dot_type> local_vals(ncol, dot_type(VectorSize, 0.0));
@@ -613,10 +612,10 @@ printf("JFDEBUG:  : %s %d\n",__FILE__,__LINE__);
         << " expected(" << j << ") = " << vals[j] << std::endl;
     out << "dots_mp(" << j << ") = " << dots[j]
         << " expected(" << j << ") = " << vals[j] << std::endl;
-    std::cout << "dots(" << j << ") = " << dots[j]
-        << " expected(" << j << ") = " << vals[j] << std::endl;
-    std::cout << "dots_mp(" << j << ") = " << dots_mp[j]
-        << " expected(" << j << ") = " << vals[j] << std::endl;
+    //std::cout << "dots(" << j << ") = " << dots[j]
+    //    << " expected(" << j << ") = " << vals[j] << std::endl;
+    //std::cout << "dots_mp(" << j << ") = " << dots_mp[j]
+    //    << " expected(" << j << ") = " << vals[j] << std::endl;
   }
 }
 
@@ -2136,11 +2135,264 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
 
 #endif
 
+//
+// Test Model Evaluator
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Thyra_MP, ModelEvaluator, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::execution_space Device;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+
+  // Ensure device is initialized
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  Scalar val1(VectorSize, BaseScalar(0.0)), val2(VectorSize, BaseScalar(0.0));
+  for (LocalOrdinal j=0; j<VectorSize; ++j)
+  {
+      val1.fastAccessCoeff(j) = 3.1415*j;
+      val2.fastAccessCoeff(j) = 0.1234+j;
+  }
+  //std::cout << "val1 = " << val1 << std::endl;
+  //std::cout << "val2 = " << val2 << std::endl;
+
+  // Set up and run Model Evaluator using multipoint type
+  RCP<Thyra::ModelEvaluator<Scalar> > model_mp = Thyra::simple2DModelEvaluator<Scalar>();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> in_args_mp = model_mp->getNominalValues();
+  RCP<Thyra::VectorBase<Scalar> > x_mp = Thyra::createMember(model_mp->get_x_space());
+  Thyra::set_ele(0, val1, x_mp.ptr());
+  Thyra::set_ele(1, val2, x_mp.ptr());
+  in_args_mp.set_x(x_mp);
+  //x_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> out_args_mp = model_mp->createOutArgs();
+  RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_mp = model_mp->get_f_space();
+  RCP<Thyra::VectorBase<Scalar> > f_mp = Thyra::createMember(f_space_mp);
+  RCP<Thyra::LinearOpBase<Scalar> > W_op_mp = model_mp->create_W_op() ;
+  out_args_mp.set_f(f_mp);
+  out_args_mp.set_W_op(W_op_mp);
+
+  model_mp->evalModel(in_args_mp, out_args_mp);
+
+  //f_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //W_op_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  const RCP<Thyra::SimpleDenseLinearOp<Scalar> > W_sdlo_mp = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<Scalar> >(W_op_mp, true);
+  const RCP<Thyra::MultiVectorBase<Scalar> > W_mv_mp = W_sdlo_mp->getNonconstMultiVector();
+  const Thyra::ConstDetachedVectorView<Scalar> f_dv_mp(f_mp);
+  const Thyra::ConstDetachedMultiVectorView<Scalar> W_dv_mp(*W_mv_mp);
+
+
+  // Set up Model Evaluator using BaseScalar type
+  RCP<Thyra::ModelEvaluator<BaseScalar> > model = Thyra::simple2DModelEvaluator<BaseScalar>();
+  Thyra::ModelEvaluatorBase::InArgs<BaseScalar> in_args = model->getNominalValues();
+  RCP<Thyra::VectorBase<BaseScalar> > x = Thyra::createMember(model->get_x_space());
+  in_args.set_x(x);
+
+  Thyra::ModelEvaluatorBase::OutArgs<BaseScalar> out_args = model->createOutArgs();
+  RCP<const Thyra::VectorSpaceBase<BaseScalar> > f_space = model->get_f_space();
+  RCP<Thyra::VectorBase<BaseScalar> > f = Thyra::createMember(f_space);
+  RCP<Thyra::LinearOpBase<BaseScalar> > W_op = model->create_W_op() ;
+  out_args.set_f(f);
+  out_args.set_W_op(W_op);
+
+  const RCP<Thyra::SimpleDenseLinearOp<BaseScalar> > W_sdlo = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<BaseScalar> >(W_op, true);
+  const RCP<Thyra::MultiVectorBase<BaseScalar> > W_mv = W_sdlo->getNonconstMultiVector();
+  const Thyra::ConstDetachedVectorView<BaseScalar> f_dv(f);
+  const Thyra::ConstDetachedMultiVectorView<BaseScalar> W_dv(*W_mv);
+
+  // Evaluate ModelEvaluator<BaseScalar> at multiple points and compare with
+  // results of ModelEvaluator<Scalar> run
+  ScalarMag tol = Teuchos::as<ScalarMag>(10.0) * ST::eps();
+  for (LocalOrdinal j=0; j<VectorSize; ++j)
+  {
+    Thyra::set_ele(0, val1.fastAccessCoeff(j), x.ptr());
+    Thyra::set_ele(1, val2.fastAccessCoeff(j), x.ptr());
+
+    model->evalModel(in_args, out_args);
+
+    //x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+    //f->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+    //W_op->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+    TEST_FLOATING_EQUALITY( f_dv_mp(0).fastAccessCoeff(j), f_dv(0), tol );
+    TEST_FLOATING_EQUALITY( f_dv_mp(1).fastAccessCoeff(j), f_dv(1), tol );
+    TEST_FLOATING_EQUALITY(W_dv_mp(0,0).fastAccessCoeff(j), W_dv(0,0), tol);
+    TEST_FLOATING_EQUALITY(W_dv_mp(0,1).fastAccessCoeff(j), W_dv(0,1), tol);
+    TEST_FLOATING_EQUALITY(W_dv_mp(1,0).fastAccessCoeff(j), W_dv(1,0), tol);
+    TEST_FLOATING_EQUALITY(W_dv_mp(1,1).fastAccessCoeff(j), W_dv(1,1), tol);
+  }
+
+}
+
+//
+// Test Scaled Model Evaluator
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
+  Thyra_MP, ScaledModelEvaluator, Storage, LocalOrdinal, GlobalOrdinal, Node )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef typename Storage::value_type BaseScalar;
+  typedef typename Storage::execution_space Device;
+  typedef Sacado::MP::Vector<Storage> Scalar;
+
+  typedef Teuchos::ScalarTraits<BaseScalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+
+  // Ensure device is initialized
+  if (!Kokkos::HostSpace::execution_space::is_initialized())
+    Kokkos::HostSpace::execution_space::initialize();
+  if (!Device::is_initialized())
+    Device::initialize();
+
+  RCP<Thyra::ModelEvaluator<BaseScalar> > model = Thyra::simple2DModelEvaluator<BaseScalar>();
+  RCP<Thyra::ModelEvaluator<Scalar> > model_mp = Thyra::simple2DModelEvaluator<Scalar>();
+
+  RCP<Thyra::ScaledModelEvaluator<BaseScalar> > scaled_model = Thyra::createNonconstScaledModelEvaluator<BaseScalar>(model);
+  RCP<Thyra::ScaledModelEvaluator<Scalar> > scaled_model_mp = Thyra::createNonconstScaledModelEvaluator<Scalar>(model_mp);
+
+  Thyra::ModelEvaluatorBase::InArgs<BaseScalar> in_args = model->getNominalValues();
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> in_args_mp = model_mp->getNominalValues();
+
+  RCP<Thyra::VectorBase<BaseScalar> > x = Thyra::createMember(model->get_x_space());
+  RCP<Thyra::VectorBase<Scalar> > x_mp = Thyra::createMember(model_mp->get_x_space());
+  Thyra::V_S(x.ptr(), Teuchos::as<BaseScalar>(2.0));
+  Thyra::V_S(x_mp.ptr(), Teuchos::as<Scalar>(2.0));
+  in_args.set_x(x);
+  in_args_mp.set_x(x_mp);
+  //x->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //x_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  Thyra::ModelEvaluatorBase::OutArgs<BaseScalar> out_args = model->createOutArgs();
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> out_args_mp = model_mp->createOutArgs();
+
+  RCP<const Thyra::VectorSpaceBase<BaseScalar> > f_space = model->get_f_space();
+  RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_mp = model_mp->get_f_space();
+
+  RCP<Thyra::VectorBase<BaseScalar> > f = Thyra::createMember(f_space);
+  RCP<Thyra::VectorBase<Scalar> > f_mp = Thyra::createMember(f_space_mp);
+  RCP<Thyra::VectorBase<BaseScalar> > f_scaled = Thyra::createMember(f_space);
+  RCP<Thyra::VectorBase<Scalar> > f_scaled_mp = Thyra::createMember(f_space_mp);
+
+  RCP<Thyra::LinearOpBase<BaseScalar> > W_op = model->create_W_op() ;
+  RCP<Thyra::LinearOpBase<Scalar> > W_op_mp = model_mp->create_W_op() ;
+  RCP<Thyra::LinearOpBase<BaseScalar> > W_scaled_op = model->create_W_op() ;
+  RCP<Thyra::LinearOpBase<Scalar> > W_scaled_op_mp = model_mp->create_W_op() ;
+
+  RCP<Thyra::VectorBase<BaseScalar> > scaling_diagonal = Thyra::createMember(f_space);
+  RCP<Thyra::VectorBase<Scalar> > scaling_diagonal_mp = Thyra::createMember(f_space_mp);
+  const BaseScalar val = Teuchos::as<BaseScalar>(2.0);
+  const Scalar val_mp = Teuchos::as<Scalar>(2.0);
+  Thyra::V_S(scaling_diagonal.ptr(), val);
+  Thyra::V_S(scaling_diagonal_mp.ptr(), val_mp);
+  //scaling_diagonal->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //scaling_diagonal_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  scaled_model->set_f_scaling(scaling_diagonal);
+  scaled_model_mp->set_f_scaling(scaling_diagonal_mp);
+
+  out_args.set_f(f);
+  out_args_mp.set_f(f_mp);
+  out_args.set_W_op(W_op);
+  out_args_mp.set_W_op(W_op_mp);
+
+  model->evalModel(in_args, out_args);
+  model_mp->evalModel(in_args_mp, out_args_mp);
+  //f->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //f_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //W_op->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //W_op_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  out_args.set_f(f_scaled);
+  out_args_mp.set_f(f_scaled_mp);
+  out_args.set_W_op(W_scaled_op);
+  out_args_mp.set_W_op(W_scaled_op_mp);
+
+  scaled_model->evalModel(in_args, out_args);
+  scaled_model_mp->evalModel(in_args_mp, out_args_mp);
+  //f_scaled->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //f_scaled_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //W_scaled_op->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+  //W_scaled_op_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  ScalarMag tol = Teuchos::as<ScalarMag>(10.0) * ST::eps();
+  const BaseScalar two = Teuchos::as<BaseScalar>(2.0);
+
+  {
+    const Thyra::ConstDetachedVectorView<BaseScalar> f_dv(f);
+    const Thyra::ConstDetachedVectorView<BaseScalar> f_scaled_dv(f_scaled);
+    TEST_FLOATING_EQUALITY(two * f_dv(0), f_scaled_dv(0), tol);
+    TEST_FLOATING_EQUALITY(two * f_dv(1), f_scaled_dv(1), tol);
+  }
+
+  {
+    const Thyra::ConstDetachedVectorView<Scalar> f_dv(f_mp);
+    const Thyra::ConstDetachedVectorView<Scalar> f_scaled_dv(f_scaled_mp);
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+    {
+      TEST_FLOATING_EQUALITY( two * f_dv(0).fastAccessCoeff(j), f_scaled_dv(0).fastAccessCoeff(j), tol );
+      TEST_FLOATING_EQUALITY( two * f_dv(1).fastAccessCoeff(j), f_scaled_dv(1).fastAccessCoeff(j), tol );
+    }
+  }
+
+  const RCP<Thyra::SimpleDenseLinearOp<BaseScalar> > W_sdlo = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<BaseScalar> >(W_op, true);
+  const RCP<Thyra::MultiVectorBase<BaseScalar> > W_mv = W_sdlo->getNonconstMultiVector();
+  //W_mv->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  const RCP<Thyra::SimpleDenseLinearOp<Scalar> > W_sdlo_mp = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<Scalar> >(W_op_mp, true);
+  const RCP<Thyra::MultiVectorBase<Scalar> > W_mv_mp = W_sdlo_mp->getNonconstMultiVector();
+  //W_mv_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  const RCP<Thyra::SimpleDenseLinearOp<BaseScalar> > W_scaled_sdlo = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<BaseScalar> >(W_scaled_op, true);
+  const RCP<Thyra::MultiVectorBase<BaseScalar> > W_scaled_mv = W_scaled_sdlo->getNonconstMultiVector();
+  //W_scaled_mv->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  const RCP<Thyra::SimpleDenseLinearOp<Scalar> > W_scaled_sdlo_mp = Teuchos::rcp_dynamic_cast<Thyra::SimpleDenseLinearOp<Scalar> >(W_scaled_op_mp, true);
+  const RCP<Thyra::MultiVectorBase<Scalar> > W_scaled_mv_mp = W_scaled_sdlo_mp->getNonconstMultiVector();
+  //W_scaled_mv_mp->describe(*(Teuchos::fancyOStream(rcp(&std::cout,false))), Teuchos::VERB_EXTREME);
+
+  {
+    const Thyra::ConstDetachedMultiVectorView<BaseScalar> W_dv(*W_mv);
+    const Thyra::ConstDetachedMultiVectorView<BaseScalar> W_scaled_dv(*W_scaled_mv);
+    TEST_FLOATING_EQUALITY(two * W_dv(0,0), W_scaled_dv(0,0), tol);
+    TEST_FLOATING_EQUALITY(two * W_dv(0,1), W_scaled_dv(0,1), tol);
+    TEST_FLOATING_EQUALITY(two * W_dv(1,0), W_scaled_dv(1,0), tol);
+    TEST_FLOATING_EQUALITY(two * W_dv(1,1), W_scaled_dv(1,1), tol);
+  }
+
+  {
+    const Thyra::ConstDetachedMultiVectorView<Scalar> W_dv(*W_mv_mp);
+    const Thyra::ConstDetachedMultiVectorView<Scalar> W_scaled_dv(*W_scaled_mv_mp);
+    for (LocalOrdinal j=0; j<VectorSize; ++j)
+    {
+      TEST_FLOATING_EQUALITY(two * W_dv(0,0).fastAccessCoeff(j), W_scaled_dv(0,0).fastAccessCoeff(j), tol);
+      TEST_FLOATING_EQUALITY(two * W_dv(0,1).fastAccessCoeff(j), W_scaled_dv(0,1).fastAccessCoeff(j), tol);
+      TEST_FLOATING_EQUALITY(two * W_dv(1,0).fastAccessCoeff(j), W_scaled_dv(1,0).fastAccessCoeff(j), tol);
+      TEST_FLOATING_EQUALITY(two * W_dv(1,1).fastAccessCoeff(j), W_scaled_dv(1,1).fastAccessCoeff(j), tol);
+    }
+  }
+
+}
+
 #define THYRA_MP_VECTOR_TESTS_SLGN(S, LO, GO, N)                    \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, VectorAdd, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, VectorDot, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorAdd, S, LO, GO, N ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDot, S, LO, GO, N )/* \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDot, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, ModelEvaluator, S, LO, GO, N ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, ScaledModelEvaluator, S, LO, GO, N )/* \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MultiVectorDotSub, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MatrixVectorMultiply, S, LO, GO, N ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Thyra_MP, MatrixMultiVectorMultiply, S, LO, GO, N ) \
