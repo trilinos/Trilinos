@@ -616,7 +616,7 @@ std::string SparseContainer<MatrixType, InverseType>::getName()
     throw std::logic_error("InverseType for SparseContainer must be Ifpack2::ILUT or Details::Amesos2Wrapper");
   }
 #else
-  TEUCHOS_TEST_FOR_EXCEPTION(!std:is_same<InverseType, ILUTInverse>, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(!std:is_same<InverseType, ILUTInverse>::value, std::logic_error,
     "InverseType for SparseContainer must be Ifpack2::ILUT<ROW>");
   return "SparseILUT";    //the only supported sparse container specialization if no Amesos2
 #endif
