@@ -49,6 +49,7 @@
 #include "Rythmos_ForwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
+#include "Rythmos_ThetaStepper.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_RampingIntegrationControlStrategy.hpp"
 #include "Rythmos_ForwardSensitivityStepper.hpp"
@@ -217,6 +218,11 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateStepper = Teuchos::rcp( new Rythmos::ImplicitBDFStepper<Scalar>(model,fwdTimeStepSolver,BDFparams) );
     fwdStateStepper->setInitialCondition(model->getNominalValues());
 
+  } else if (stepperType == "Theta Stepper") {
+    
+    Teuchos::RCP<Teuchos::ParameterList> CrankNicholsonPL = 
+      Teuchos::sublist(rythmosPL, "Rythmos Stepper", true);
+    fwdStateStepper = Rythmos::thetaStepper<Scalar>(model, fwdTimeStepSolver, CrankNicholsonPL);    
   }
   else {
     // first (before failing) check to see if the user has added stepper factory
