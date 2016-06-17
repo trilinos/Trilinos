@@ -27,11 +27,11 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /** \brief Constructor with ParameterList, model and optional solvers. */
+  /** \brief Constructor with ParameterList, model and optional observer. */
   IntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>                     pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver);
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<IntegratorObserver<Scalar> >&    observer=Teuchos::null);
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -53,25 +53,25 @@ public:
   /// \name Accessor methods
   //@{
     /// Get current time
-    Scalar getTime() const {return solutionHistory->getCurrentTime();}
+    Scalar getTime() const {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    Scalar getIndex() const {return solutionHistory->getCurrentIndex();}
+    Scalar getIndex() const {return solutionHistory_->getCurrentIndex();}
     /// Get current the solution, x
     Teuchos::RCP<Thyra::VectorBase<double> > getX() const
-      {return solutionHistory->getCurrentState()->getX();}
+      {return solutionHistory_->getCurrentState()->getX();}
     /// Get current the time derivative of the solution, xdot
     Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
-      {return solutionHistory->getCurrentState()->getXdot();}
+      {return solutionHistory_->getCurrentState()->getXdot();}
     /// Get current the second time derivative of the solution, xdotdot
     Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
-      {return solutionHistory->getCurrentState()->getXdotdot();}
+      {return solutionHistory_->getCurrentState()->getXdotdot();}
 
     /// Get SolutionHistory
     Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
-    { return solutionHistory; }
+    { return solutionHistory_; }
     /// Get current state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
-    { return solutionHistory->getCurrentState(); }
+    { return solutionHistory_->getCurrentState(); }
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -91,11 +91,11 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>      pList;
-  Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory;
-  Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl;
-  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver;
-  Teuchos::RCP<Stepper<Scalar> >            stepper;
+  Teuchos::RCP<Teuchos::ParameterList>      pList_;
+  Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory_;
+  Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl_;
+  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
+  Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
   Teuchos::RCP<Teuchos::Time>  integratorTimer;
   Teuchos::RCP<Teuchos::Time>  stepperTimer;
@@ -115,12 +115,12 @@ protected:
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver=Teuchos::null)
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
+  const Teuchos::RCP<Tempus::IntegratorObserver<Scalar> >& ob=Teuchos::null)
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, solver));
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model, ob));
   return(integrator);
 }
 

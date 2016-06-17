@@ -25,10 +25,7 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    virtual void setStepperState(
-      const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
-
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState();
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
   //@}
 
   /// \name ParameterList methods
@@ -46,15 +43,18 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+private:
+
+  /// Default Constructor -- not allowed
+  StepperForwardEuler();
+
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>               pList;
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Teuchos::ParameterList>               pList_;
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs;
-
-  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
 };
 } // namespace Tempus
 

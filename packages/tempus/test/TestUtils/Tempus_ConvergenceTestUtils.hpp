@@ -120,7 +120,7 @@ void LinearRegression<Scalar>::compute_()
 
 // Nonmember helper functions:
 template<class Scalar>
-Scalar computeLinearRegressionSlope(
+Scalar computeLinearRegression(
   Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
 {
   LinearRegression<Scalar> lr;
@@ -138,6 +138,25 @@ void computeLinearRegression(
   slope = lr.getSlope();
   yIntercept = lr.getYIntercept();
   return;
+}
+
+template<class Scalar>
+Scalar computeLinearRegressionLogLog(
+  Teuchos::Array<Scalar>& x, Teuchos::Array<Scalar>& y)
+{
+  TEUCHOS_TEST_FOR_EXCEPT(x.size() != y.size());
+  int N = Teuchos::as<int>(x.size());
+  Teuchos::Array<Scalar> xlog;
+  Teuchos::Array<Scalar> ylog;
+
+  for (int i=0 ; i<N ; ++i) {
+    xlog.push_back(log(x[i]));
+    ylog.push_back(log(y[i]));
+  }
+
+  LinearRegression<Scalar> lr;
+  lr.setData(xlog,ylog);
+  return(lr.getSlope());
 }
 
 template<class Scalar>

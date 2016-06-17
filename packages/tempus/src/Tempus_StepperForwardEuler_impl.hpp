@@ -13,15 +13,13 @@ namespace Tempus {
 // StepperForwardEuler definitions:
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
-  RCP<ParameterList>                         pList_,
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model_ )
- : model(model_)
+  RCP<ParameterList>                         pList,
+  const RCP<Thyra::ModelEvaluator<Scalar> >& model )
+ : model_(model)
 {
-  inArgs  = model->createInArgs();
-  outArgs = model->createOutArgs();
-  inArgs  = model->getNominalValues();
-
-  stepperState = rcp(new StepperState<Scalar>(description()));
+  inArgs_  = model_->createInArgs();
+  outArgs_ = model_->createOutArgs();
+  inArgs_  = model_->getNominalValues();
 }
 
 template<class Scalar>
@@ -37,18 +35,18 @@ void StepperForwardEuler<Scalar>::takeStep(
   const Scalar time = workingState->getTime();
   const Scalar dt   = workingState->getTimeStep();
 
-  inArgs.set_x(workingState->getX());
-  if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(time);
+  inArgs_.set_x(workingState->getX());
+  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
 
   // For model evaluators whose state function f(x, x_dot, t) describes
   // an implicit ODE, and which accept an optional x_dot input argument,
   // make sure the latter is set to null in order to request the evaluation
   // of a state function corresponding to the explicit ODE formulation
   // x_dot = f(x, t)
-  if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
-  outArgs.set_f(workingState->getXDot());
+  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
+  outArgs_.set_f(workingState->getXDot());
 
-  model->evalModel(inArgs,outArgs);
+  model_->evalModel(inArgs_,outArgs_);
 
   // Forward Euler update, x = x + dt*xdot
   Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
@@ -58,24 +56,18 @@ void StepperForwardEuler<Scalar>::takeStep(
 }
 
 
+/** \brief Provide a StepperState to the SolutionState.
+ *  Forward Euler does not have any special state data,
+ *  so just provide the base class StepperState with the
+ *  ForwardEuler dsecription.  This can be checked to ensure
+ *  that the input StepperState can be used by Forward Euler.
+ */
 template<class Scalar>
-void StepperForwardEuler<Scalar>::setStepperState(
-  const RCP<Tempus::StepperState<Scalar> >& stepperState_)
+RCP<Tempus::StepperState<Scalar> > StepperForwardEuler<Scalar>::
+getDefaultStepperState()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(stepperState_->stepperName != description(),
-    std::logic_error,
-    "Error - StepperState does not match Stepper!\n"
-    "        stepperState = " << stepperState_->stepperName << "\n"
-    "        stepper      = " << description() << std::endl);
-
-  // ForwardEuler does not have any state information, but if it did we
-  // would set the internal stepperState to the input stepperState_ here.
-}
-
-
-template<class Scalar>
-RCP<Tempus::StepperState<Scalar> > StepperForwardEuler<Scalar>::getStepperState()
-{
+  RCP<Tempus::StepperState<Scalar> > stepperState =
+    rcp(new StepperState<Scalar>(description()));
   return stepperState;
 }
 
@@ -94,19 +86,19 @@ void StepperForwardEuler<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "model = " << model->description() << std::endl;
+      << "model_ = " << model_->description() << std::endl;
 }
 
 
 template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList_)
+  RCP<ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!is_null(pList_));
-  pList_->validateParameters(*this->getValidParameters());
-  pList = pList_;
+  TEUCHOS_TEST_FOR_EXCEPT(!is_null(pList));
+  pList->validateParameters(*this->getValidParameters());
+  pList_ = pList;
 
-  Teuchos::readVerboseObjectSublist(&*pList,this);
+  Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
 
 
@@ -122,15 +114,15 @@ template <class Scalar>
 RCP<ParameterList>
 StepperForwardEuler<Scalar>::getNonconstParameterList()
 {
-  return(pList);
+  return(pList_);
 }
 
 
 template <class Scalar>
 RCP<ParameterList> StepperForwardEuler<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_plist = pList;
-  pList = Teuchos::null;
+  RCP<ParameterList> temp_plist = pList_;
+  pList_ = Teuchos::null;
   return(temp_plist);
 }
 

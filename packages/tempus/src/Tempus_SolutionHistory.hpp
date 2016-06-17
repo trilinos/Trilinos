@@ -94,6 +94,16 @@ public:
     Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > >
       getHistory() const {return history;}
 
+    /// Subscript operator
+    Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        !((0 <= i) and (i < history->size())), std::out_of_range,
+        "Error - SolutionHistory index is out of range.\n"
+        << "    [Min, Max] = [ 0, " << history->size()<< "]\n"
+        << "    index = " << i << "\n");
+      return (*history)[i];
+    }
+
     /// Get current state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
       {return currentState;}

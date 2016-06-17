@@ -18,19 +18,19 @@ namespace Tempus {
 /** \brief Thyra Base interface for time steppers.
  *
  * <b>Design Considerations</b>
- *   - Time steppers are designed to take a single "basic" time step, and
- *     thus everything refers to the current time step.
- *   - A "basic" time step can refer to
- *     - a single explicit time step
+ *   - Time steppers are designed to take a single time step.
  *     - a single implicit solve for a time step
  *     - a single solve for a IMEX time step
  *   - Multiple time steps should be managed by Integrators.
- *   - Steppers can be built from other Steppers.
+ *   - Steppers can be built from other Sub-Steppers.
  *     - An operator-split Stepper is possible with interoperable Steppers.
  *   - For explicit steppers, only one ModelEvaluator and one solution
  *     vector are required.
  *   - For implicit steppers, only one ModelEvaluator, one solution
  *     vector, and one solver are required.
+ *   - Steppers will PASS/FAIL the time step based on Solver, error and
+ *     order requirements, and not adjust the time step size.
+ *   - Steppers can provide a suggested time step size for the next time step.
  *   - For more complex steppers, multiple ModelEvaluators, solution
  *     vectors, and solvers are possible when a common single time-integration
  *     method is desired for all solutions. Examples:
@@ -57,10 +57,7 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
-    virtual void setStepperState(
-      const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState) = 0;
-
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState() = 0;
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() = 0;
   //@}
 
   /// \name Error estimation methods

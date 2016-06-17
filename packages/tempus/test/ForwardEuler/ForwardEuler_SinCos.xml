@@ -11,7 +11,7 @@
     <Parameter name="IC t_0"  type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
-    <ParameterList name="Integrator">
+    <ParameterList name="Integrator Basic">
       <Parameter name="Initial Time"       type="double" value="0.0"/>
       <Parameter name="Initial Time Index" type="int"    value="0"/>
       <Parameter name="Initial Time Step"  type="double" value="0.1"/>
@@ -36,7 +36,7 @@
         <Parameter name="Maximum Relative Error"  type="double" value="1.0e-8"/>
         <Parameter name="Minimum Time Integration Order" type="int" value="1"/>
         <Parameter name="Maximum Time Integration Order" type="int" value="1"/>
-        <Parameter name="Step Type"             type="string" value="Constant"/>
+        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
         <Parameter name="Output Time List"        type="string" value=""/>
         <Parameter name="Output Index List"       type="string" value=""/>
         <Parameter name="Output Time Interval"    type="double" value="10.0"/>
