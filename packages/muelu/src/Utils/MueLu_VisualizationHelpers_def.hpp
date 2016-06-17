@@ -60,6 +60,14 @@
 #include <algorithm>
 #include <string>
 
+#ifdef HAVE_MUELU_CGAL
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/convex_hull_2.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/convex_hull_3.h>
+#endif
+
+
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -208,6 +216,111 @@ namespace MueLu {
       geomSizes.push_back(hull.size());
     }
   }
+
+#ifdef HAVE_MUELU_CGAL
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    typedef K::Point_2 Point_2;
+
+    for(int agg = 0; agg < numLocalAggs; agg++) {
+      std::vector<int> aggNodes;
+      std::vector<Point_2> aggPoints;
+      for(int i = 0; i < numFineNodes; i++) {
+        if(vertex2AggId[i] == agg) {
+          Point_2 p(xCoords[i], yCoords[i]);
+          aggPoints.push_back(p);
+          aggNodes.push_back(i);
+        }
+      }
+      //have a list of nodes in the aggregate
+      TEUCHOS_TEST_FOR_EXCEPTION(aggNodes.size() == 0, Exceptions::RuntimeError,
+               "CoarseningVisualization::doCGALConvexHulls2D: aggregate contains zero nodes!");
+      if(aggNodes.size() == 1) {
+        vertices.push_back(aggNodes.front());
+        geomSizes.push_back(1);
+        continue;
+      }
+      if(aggNodes.size() == 2) {
+        vertices.push_back(aggNodes.front());
+        vertices.push_back(aggNodes.back());
+        geomSizes.push_back(2);
+        continue;
+      }
+      //check if all points are collinear, need to explicitly draw a line in that case.
+      bool collinear = true; //assume true at first, if a segment not parallel to others then clear
+      {
+        std::vector<int>::iterator it = aggNodes.begin();
+        myVec3 firstPoint(xCoords[*it], yCoords[*it], 0);
+        it++;
+        myVec3 secondPoint(xCoords[*it], yCoords[*it], 0);
+        it++;  //it now points to third node in the aggregate
+        myVec3 norm1(-(secondPoint.y - firstPoint.y), secondPoint.x - firstPoint.x, 0);
+        do {
+          myVec3 thisNorm(yCoords[*it] - firstPoint.y, firstPoint.x - xCoords[*it], 0);
+          //rotate one of the vectors by 90 degrees so that dot product is 0 if the two are parallel
+          double temp = thisNorm.x;
+          thisNorm.x = thisNorm.y;
+          thisNorm.y = temp;
+          double comp = dotProduct(norm1, thisNorm);
+          if(-1e-8 > comp || comp > 1e-8) {
+            collinear = false;
+            break;
+          }
+          it++;
+        }
+        while(it != aggNodes.end());
+      }
+      if(collinear)
+      {
+        //find the most distant two points in the plane and use as endpoints of line representing agg
+        std::vector<int>::iterator min = aggNodes.begin();    //min X then min Y where x is a tie
+        std::vector<int>::iterator max = aggNodes.begin(); //max X then max Y where x is a tie
+        for(std::vector<int>::iterator it = ++aggNodes.begin(); it != aggNodes.end(); it++) {
+          if(xCoords[*it] < xCoords[*min])
+            min = it;
+          else if(xCoords[*it] == xCoords[*min]) {
+            if(yCoords[*it] < yCoords[*min])
+              min = it;
+          }
+          if(xCoords[*it] > xCoords[*max])
+            max = it;
+          else if(xCoords[*it] == xCoords[*max]) {
+            if(yCoords[*it] > yCoords[*max])
+              max = it;
+          }
+        }
+        //Just set up a line between nodes *min and *max
+        vertices.push_back(*min);
+        vertices.push_back(*max);
+        geomSizes.push_back(2);
+        continue; //jump to next aggregate in loop
+      }
+      // aggregate has more than 2 points and is not collinear
+      {
+        std::vector<Point_2> result;
+        CGAL::convex_hull_2( aggPoints.begin(), aggPoints.end(), std::back_inserter(result) );
+        // loop over all result points and find the corresponding node id
+        for (size_t r = 0; r < result.size(); r++) {
+          // loop over all aggregate nodes and find corresponding node id
+          for(size_t l = 0; l < aggNodes.size(); l++)
+          {
+            if(fabs(result[r].x() - xCoords[aggNodes[l]]) < 1e-12 &&
+               fabs(result[r].y() - yCoords[aggNodes[l]]) < 1e-12)
+            {
+              vertices.push_back(aggNodes[l]);
+              break;
+            }
+          }
+
+        }
+        geomSizes.push_back(result.size());
+      }
+    }
+  }
+
+#endif
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
@@ -533,6 +646,120 @@ namespace MueLu {
       }
     }
   }
+
+#ifdef HAVE_MUELU_CGAL
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doCGALConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    typedef K::Point_3 Point_3;
+    typedef CGAL::Polyhedron_3<K> Polyhedron_3;
+    typedef std::vector<int>::iterator Iter;
+    for(int agg = 0; agg < numLocalAggs; agg++) {
+      std::vector<int> aggNodes;
+      std::vector<Point_3> aggPoints;
+      for(int i = 0; i < numFineNodes; i++) {
+        if(vertex2AggId[i] == agg) {
+          Point_3 p(xCoords[i], yCoords[i], zCoords[i]);
+          aggPoints.push_back(p);
+          aggNodes.push_back(i);
+        }
+      }
+      //First, check anomalous cases
+      TEUCHOS_TEST_FOR_EXCEPTION(aggNodes.size() == 0, Exceptions::RuntimeError,
+               "CoarseningVisualization::doCGALConvexHulls3D: aggregate contains zero nodes!");
+      if(aggNodes.size() == 1) {
+        vertices.push_back(aggNodes.front());
+        geomSizes.push_back(1);
+        continue;
+      } else if(aggNodes.size() == 2) {
+        vertices.push_back(aggNodes.front());
+        vertices.push_back(aggNodes.back());
+        geomSizes.push_back(2);
+        continue;
+      }
+      //check for collinearity
+      bool areCollinear = true;
+      {
+        Iter it = aggNodes.begin();
+        myVec3 firstVec(xCoords[*it], yCoords[*it], zCoords[*it]);
+        myVec3 comp;
+        {
+          it++;
+          myVec3 secondVec(xCoords[*it], yCoords[*it], zCoords[*it]); //cross this with other vectors to compare
+          comp = vecSubtract(secondVec, firstVec);
+          it++;
+        }
+        for(; it != aggNodes.end(); it++) {
+          myVec3 thisVec(xCoords[*it], yCoords[*it], zCoords[*it]);
+          myVec3 cross = crossProduct(vecSubtract(thisVec, firstVec), comp);
+          if(mymagnitude(cross) > 1e-8) {
+            areCollinear = false;
+            break;
+          }
+        }
+      }
+      if(areCollinear)
+      {
+        //find the endpoints of segment describing all the points
+        //compare x, if tie compare y, if tie compare z
+        Iter min = aggNodes.begin();
+        Iter max = aggNodes.begin();
+        Iter it = ++aggNodes.begin();
+        for(; it != aggNodes.end(); it++) {
+          if(xCoords[*it] < xCoords[*min]) min = it;
+          else if(xCoords[*it] == xCoords[*min]) {
+            if(yCoords[*it] < yCoords[*min]) min = it;
+            else if(yCoords[*it] == yCoords[*min]) {
+              if(zCoords[*it] < zCoords[*min]) min = it;
+            }
+          }
+          if(xCoords[*it] > xCoords[*max]) max = it;
+          else if(xCoords[*it] == xCoords[*max]) {
+            if(yCoords[*it] > yCoords[*max]) max = it;
+            else if(yCoords[*it] == yCoords[*max]) {
+              if(zCoords[*it] > zCoords[*max])
+                max = it;
+            }
+          }
+        }
+        vertices.push_back(*min);
+        vertices.push_back(*max);
+        geomSizes.push_back(2);
+        continue;
+      }
+      // do not handle coplanar or general case here. Just let's use CGAL
+      {
+        Polyhedron_3 result;
+        CGAL::convex_hull_3( aggPoints.begin(), aggPoints.end(), result);
+
+        // loop over all facets
+        Polyhedron_3::Facet_iterator fi;
+        for (fi = result.facets_begin(); fi != result.facets_end(); fi++) {
+          int cntVertInAgg = 0;
+          Polyhedron_3::Halfedge_around_facet_const_circulator hit = fi->facet_begin();
+          do {
+            const Point_3 & pp = hit->vertex()->point();
+            // loop over all aggregate nodes and find corresponding node id
+            for(size_t l = 0; l < aggNodes.size(); l++)
+            {
+              if(fabs(pp.x() - xCoords[aggNodes[l]]) < 1e-12 &&
+                 fabs(pp.y() - yCoords[aggNodes[l]]) < 1e-12 &&
+                 fabs(pp.z() - zCoords[aggNodes[l]]) < 1e-12)
+              {
+                vertices.push_back(aggNodes[l]);
+                cntVertInAgg++;
+                break;
+              }
+            }
+          } while (++hit != fi->facet_begin());
+          geomSizes.push_back(cntVertInAgg);
+        }
+      }
+    }
+
+  }
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz) {

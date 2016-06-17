@@ -93,7 +93,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     phx_ic_field_managers[blockId] = fm;
     
     if (write_graphviz_file)
-      fm->writeGraphvizFile(graphviz_file_prefix+"IC_"+blockId);
+      fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }
 }
 

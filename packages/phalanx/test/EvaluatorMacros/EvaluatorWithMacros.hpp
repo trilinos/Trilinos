@@ -41,43 +41,29 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_EVALUATOR_WITH_MACROS_HPP
+#define PHX_EVALUATOR_WITH_MACROS_HPP
 
-//**********************************************************************
-PHX_EVALUATOR_CTOR(Fourier,p) :
-  flux("Energy_Flux", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  dc("Diffusion Coefficient", 
-     p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  grad_temp("Temperature Gradient", 
-	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
-{ 
-  this->addEvaluatedField(flux);
-  this->addDependentField(density);
-  this->addDependentField(dc);
-  this->addDependentField(grad_temp);
+#include "Phalanx_Evaluator_Macros.hpp"
 
-  this->setName("Fourier");
+namespace PHX {
+
+  // Macro with no pre/post evaluate methods
+  PHX_EVALUATOR_CLASS(EvaluatorWithMacros1)
+  public:
+    void evaluates(const std::string& field_name);
+    void requires(const std::string& field_name);
+  PHX_EVALUATOR_CLASS_END
+  
+  // Macro with no pre/post evaluate methods
+  PHX_EVALUATOR_CLASS_PP(EvaluatorWithMacros2)
+  public:
+    void evaluates(const std::string& field_name);
+    void requires(const std::string& field_name);
+  PHX_EVALUATOR_CLASS_END
+
 }
 
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Fourier,data,fm)
-{
-  this->utils.setFieldData(flux,fm);
-  this->utils.setFieldData(density,fm);
-  this->utils.setFieldData(dc,fm);
-  this->utils.setFieldData(grad_temp,fm);
+#include "EvaluatorWithMacros_Def.hpp"
 
-  cell_data_size = flux.fieldTag().dataLayout().size() / 
-    flux.fieldTag().dataLayout().dimension(0);
-}
-
-//**********************************************************************
-PHX_EVALUATE_FIELDS(Fourier,d)
-{ 
-  std::size_t size = d.size() * cell_data_size;
-
-  for (std::size_t i = 0; i < size; ++i)
-    flux[i] = - density[i] * dc[i] * grad_temp[i];
-}
-
-//**********************************************************************
+#endif

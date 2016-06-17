@@ -50,9 +50,6 @@
 #include "Phalanx_TypeStrings.hpp"
 #include "Phalanx_DimTag.hpp"
 
-// Evaluators
-#include "evaluators/Evaluator_Constant.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -141,8 +138,8 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
 
   RCP<PHX::MDALayout<CELL,BASIS>> dl = 
     rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
-  PHX::Tag<MyTraits::Residual::ScalarT> tag("A",dl);
-  em.requireField(tag);
+  PHX::Tag<MyTraits::Residual::ScalarT> tag_a("A",dl);
+  em.requireField(tag_a);
 
   TEST_ASSERT(!em.sortingCalled());
   em.sortAndOrderEvaluators();
@@ -173,9 +170,30 @@ TEUCHOS_UNIT_TEST(dag, basic_dag)
   TEST_EQUALITY(tags.size(),5);
   em.writeGraphvizFile("basic_dag.dot",true,true,false);
   cout << "\n" << em << endl;   cout << "\n" << em << endl;  
- 
-  //Teuchos::TimeMonitor::summarize();
-  PHX::FinalizeKokkosDevice();
+
+  {
+    auto& evaluators = em.getEvaluatorsBindingField(tag_a);
+    TEST_EQUALITY(evaluators.size(),1);
+  }
+
+  {
+    PHX::Tag<MyTraits::Residual::ScalarT> tag("B",dl);
+    auto& evaluators = em.getEvaluatorsBindingField(tag);
+    TEST_EQUALITY(evaluators.size(),2);
+  }
+
+  {
+    PHX::Tag<MyTraits::Residual::ScalarT> tag("C",dl);
+    auto& evaluators = em.getEvaluatorsBindingField(tag);
+    TEST_EQUALITY(evaluators.size(),2);
+  }
+
+  {
+    PHX::Tag<MyTraits::Residual::ScalarT> tag("E",dl);
+    auto& evaluators = em.getEvaluatorsBindingField(tag);
+    TEST_EQUALITY(evaluators.size(),3);
+  }
+
 }
 
 // Catch cyclic dependencies (not a true DAG)
@@ -184,8 +202,6 @@ TEUCHOS_UNIT_TEST(dag, cyclic)
   using namespace std;
   using namespace Teuchos;
   using namespace PHX;
-  
-  PHX::InitializeKokkosDevice();
 
   DagManager<MyTraits> em("cyclic");
   em.setDefaultGraphvizFilenameForErrors("error_cyclic.dot");

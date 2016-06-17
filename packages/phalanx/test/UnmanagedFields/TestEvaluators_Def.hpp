@@ -42,23 +42,79 @@
 // @HEADER
 
 
-#ifndef PHX_EXAMPLE_VP_FOURIER_HPP
-#define PHX_EXAMPLE_VP_FOURIER_HPP
+//**********************************************************************
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_FieldTag_Tag.hpp"
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+struct CELL;
+struct BASIS;
 
-PHX_EVALUATOR_CLASS(Fourier)
+namespace PHX {
 
-  PHX::Field< MyVector<ScalarT> > flux;
-  PHX::Field< ScalarT > density;
-  PHX::Field< ScalarT > dc;
-  PHX::Field< MyVector<ScalarT> > grad_temp;
-  
-  std::size_t cell_data_size;
+  PHX_EVALUATOR_CTOR(EvalUnmanaged,plist)
 
-PHX_EVALUATOR_CLASS_END
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
 
-#include "Evaluator_EnergyFlux_Fourier_Def.hpp"
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
 
-#endif
+    a = PHX::MDField<double,CELL,BASIS>("a",dl);
+    b = PHX::MDField<const double,CELL,BASIS>("b",dl);
+    c = PHX::MDField<double>("c",dl);
+    d = PHX::MDField<const double>("d",dl);
+
+    // static
+    this->addEvaluatedField(a);
+    this->addDependentField(b);
+
+    // dynamic
+    this->addEvaluatedField(c);
+    this->addDependentField(d);
+  }
+
+  PHX_POST_REGISTRATION_SETUP(EvalUnmanaged,data,fm)
+  {
+    this->utils.setFieldData(a,fm);
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(c,fm);
+    this->utils.setFieldData(d,fm);
+  }
+
+  PHX_EVALUATE_FIELDS(EvalUnmanaged,data)
+  {
+    a.deep_copy(b);
+    c.deep_copy(d);
+  }
+
+  PHX_EVALUATOR_CTOR(EvalDummy,plist)
+  {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<PHX::MDALayout<CELL,BASIS>> dl = 
+      rcp(new PHX::MDALayout<CELL,BASIS>("H-Grad",100,4));
+
+    b = PHX::MDField<double,CELL,BASIS>("b",dl);
+    d = PHX::MDField<double>("d",dl);
+
+    // static
+    this->addEvaluatedField(b);
+
+    // dynamic
+    this->addEvaluatedField(d);
+  }
+
+  PHX_POST_REGISTRATION_SETUP(EvalDummy,data,fm)
+  {
+    this->utils.setFieldData(b,fm);
+    this->utils.setFieldData(d,fm);
+  }
+
+  PHX_EVALUATE_FIELDS(EvalDummy,data)
+  {
+    // do nothing - they are unmanaged - data values are set by user
+  }
+
+} 

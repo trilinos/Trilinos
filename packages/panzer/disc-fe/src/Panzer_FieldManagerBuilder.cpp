@@ -406,7 +406,7 @@ writeVolumeTextDependencyFiles(std::string filename_prefix,
     std::ofstream ofs;
     ofs.open(filename.c_str());
 
-    ofs << phx_volume_field_managers_[index] << std::endl;
+    ofs << *(phx_volume_field_managers_[index]) << std::endl;
 
     ofs.close();
   }

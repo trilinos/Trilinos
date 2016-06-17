@@ -348,7 +348,7 @@ ScatterResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & i
 
   // discrete adjoint does not work with non-square matrices
   if(useDiscreteAdjoint)
-  { TEUCHOS_ASSERT(colGlobalIndexer_==Teuchos::null); }
+  { TEUCHOS_ASSERT(colGlobalIndexer_==globalIndexer_); }
 
   this->setName(scatterName+" Scatter Residual Epetra (Jacobian)");
 }

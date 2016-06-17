@@ -456,7 +456,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
        r_ = Thyra::castOrCreateNonconstProductVectorBase<double>(epetraContainer->get_f_th());
 
      // convert it into a blocked operator
-     auto J = blockedContainer->get_A_th();
+     RCP<Thyra::LinearOpBase<double> > J = blockedContainer->get_A_th();
      Jac_ = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(Thyra::nonconstBlock1x1(J));
    }
 

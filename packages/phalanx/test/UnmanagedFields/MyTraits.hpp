@@ -41,34 +41,43 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-//**********************************************************************
-PHX_EVALUATOR_CTOR(Density,p) :
-  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
-  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
-{ 
-  this->addEvaluatedField(density);
-  this->addDependentField(temp);
-  this->setName("Density");
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
+#include "Sacado_mpl_vector.hpp"
+
+namespace PHX {
+
+  /*! \brief Traits class for testing.
+    
+  */
+  struct MyTraits {
+
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
+
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
+
+  };
+
+
 }
 
-//**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Density,data,fm)
-{
-  this->utils.setFieldData(density,fm);
-  this->utils.setFieldData(temp,fm);
-
-  cell_data_size = density.fieldTag().dataLayout().size() / 
-    density.fieldTag().dataLayout().dimension(0);
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
 }
 
-//**********************************************************************
-PHX_EVALUATE_FIELDS(Density,d)
-{ 
-  std::size_t size = d.size() * cell_data_size;
-  
-  for (std::size_t i = 0; i < size; ++i)
-    density[i] =  temp[i] * temp[i];
-}
-
-//**********************************************************************
+#endif

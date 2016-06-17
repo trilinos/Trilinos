@@ -253,7 +253,7 @@ public:
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                                 bool useDiscreteAdjoint=false)
-     : rowIndexers_(rIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
+     : rowIndexers_(rIndexers), colIndexers_(cIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
   
   ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,

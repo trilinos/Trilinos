@@ -68,19 +68,6 @@ namespace panzer {
 // ************************************************************
 
 template <typename Traits,typename LocalOrdinalT>
-EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Epetra_Comm> & comm,
-                                                                     const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
-                                                                     bool useDiscreteAdjoint)
-   : comm_(comm), gidProvider_(gidProvider), useDiscreteAdjoint_(useDiscreteAdjoint)
-{ 
-   hasColProvider_ = colGidProvider_!=Teuchos::null;
-
-   // build and register the gather/scatter evaluators with 
-   // the base class.
-   this->buildGatherScatterEvaluators(*this);
-}
-
-template <typename Traits,typename LocalOrdinalT>
 EpetraLinearObjFactory<Traits,LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                                                      const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider,
                                                                      bool useDiscreteAdjoint)
@@ -761,23 +748,20 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
    using Teuchos::rcp;
    using Teuchos::rcp_dynamic_cast;
 
-   // build the standard ghosted graph
-   RCP<Epetra_CrsGraph> graph = getGhostedGraph();
-
    // figure out if the domain is filtered
    RCP<const Filtered_UniqueGlobalIndexer<LocalOrdinalT,int> > filtered_ugi 
        = rcp_dynamic_cast<const Filtered_UniqueGlobalIndexer<LocalOrdinalT,int> >(getDomainGlobalIndexer());
 
-   // domain is unfiltered, a filtered graph is just the original graph
+   // domain is unfiltered, a filtered graph is just the original ghosted graph
    if(filtered_ugi==Teuchos::null)
-     return graph;
+     return getGhostedGraph();
 
    // get all local indices that are active (i.e. unfiltered)
    std::vector<int> ghostedActive;
    filtered_ugi->getOwnedAndSharedNotFilteredIndicator(ghostedActive);
 
-   // not sure how the deep copy works, so we will do this instead. This will build a new ghosted graph
-   // without optimized storage so entries can be removed.
+   // not sure how the deep copy works, so we will do this instead. 
+   // This will build a new ghosted graph // without optimized storage so entries can be removed.
    Teuchos::RCP<Epetra_CrsGraph> filteredGraph = buildGhostedGraph(false); 
        // false implies that storage is not optimzied 
 

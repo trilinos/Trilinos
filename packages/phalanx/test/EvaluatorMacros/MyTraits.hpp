@@ -41,46 +41,43 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_TESTING_MY_TRAITS_HPP
+#define PHX_TESTING_MY_TRAITS_HPP
 
-#ifndef EXAMPLE_FACTORY_TRAITS_HPP
-#define EXAMPLE_FACTORY_TRAITS_HPP
-
-// mpl (Meta Programming Library) templates
+#include "Phalanx_config.hpp" // for std::vector
+#include "Phalanx_Traits.hpp"
 #include "Sacado_mpl_vector.hpp"
 
-// User Defined Evaluator Types
-#include "Evaluator_Constant.hpp"
-#include "Evaluator_Density.hpp"
-#include "Evaluator_EnergyFlux_Fourier.hpp"
-#include "Evaluator_FEInterpolation.hpp"
-#include "Evaluator_NonlinearSource.hpp"
+namespace PHX {
 
-
-#include "Sacado_mpl_placeholders.hpp"
-using namespace Sacado::mpl::placeholders;
-
-/*! \brief Struct to define Evaluators objects for the EvaluatorFactory.
+  /*! \brief Traits class for testing.
     
-    Preconditions:
-    - You must provide a Sacado::mpl::vector named EvaluatorTypes that contain all Evaluator objects. 
+  */
+  struct MyTraits {
 
-*/
-template<typename Traits>
-struct MyFactoryTraits {
-  
-  static const int id_constant = 0;
-  static const int id_density = 1;
-  static const int id_fourier = 2;
-  static const int id_feinterpolation = 3;
-  static const int id_nonlinearsource = 4;
+    // ******************************************************************
+    // *** Evaluation Types
+    // ******************************************************************
+    struct Residual { typedef double ScalarT; };
+    typedef Sacado::mpl::vector<Residual> EvalTypes;
 
-  typedef Sacado::mpl::vector< Constant<_,Traits>,             // 0
-			       Density<_,Traits>,              // 1
-			       Fourier<_,Traits>,              // 2
-			       FEInterpolation<_,Traits>,      // 3
-			       NonlinearSource<_,Traits>       // 4
-  > EvaluatorTypes;
+    // ******************************************************************
+    // *** User Defined Object Passed in for Evaluation Method
+    // ******************************************************************
+    typedef int SetupData;
+    typedef int EvalData;
+    typedef int PreEvalData;
+    typedef int PostEvalData;
 
-};
+  };
+
+
+}
+
+namespace PHX {
+  template<>
+  struct eval_scalar_types<PHX::MyTraits::Residual> 
+  { typedef Sacado::mpl::vector<double> type; };
+}
 
 #endif

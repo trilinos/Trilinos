@@ -82,8 +82,6 @@ using Teuchos::rcp;
 
 #include <cstdio> // for get char
 
-#include "Epetra_MpiComm.h"
-
 // Piro solver objects
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -119,7 +117,7 @@ namespace panzer {
     RCP<panzer_stk_classic::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -202,7 +200,7 @@ namespace panzer {
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -299,9 +297,9 @@ namespace panzer {
     //std::cout << *gx << std::endl;
 
     // Export solution to ghosted vector for exodus output
-    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
-    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
-    RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap(0)), gx);
+    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap(0)));
+    RCP<Epetra_Import> importer = ep_lof->getGhostedImport(0);
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 
@@ -398,7 +396,7 @@ namespace panzer {
     RCP<panzer_stk_classic::STK_Interface> mesh = 
       mesh_factory.buildUncommitedMesh(MPI_COMM_WORLD);
 
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -482,7 +480,7 @@ namespace panzer {
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > rLibrary = 
       Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory)); 
@@ -578,9 +576,9 @@ namespace panzer {
     //std::cout << *gx << std::endl;
 
     // Export solution to ghosted vector for exodus output
-    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap()), gx);
-    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap()));
-    RCP<Epetra_Import> importer = ep_lof->getGhostedImport();
+    RCP<Epetra_Vector> solution = Thyra::get_Epetra_Vector(*(ep_lof->getMap(0)), gx);
+    Epetra_Vector ghosted_solution(*(ep_lof->getGhostedMap(0)));
+    RCP<Epetra_Import> importer = ep_lof->getGhostedImport(0);
     ghosted_solution.PutScalar(0.0);
     ghosted_solution.Import(*solution,*importer,Insert);
 

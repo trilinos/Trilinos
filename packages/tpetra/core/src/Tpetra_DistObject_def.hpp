@@ -249,10 +249,10 @@ namespace Tpetra {
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
             CombineMode CM)
   {
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(*getMap() != *importer.getTargetMap(),
       std::invalid_argument, "doImport: The target DistObject's Map is not "
       "identical to the Import's target Map.");
-#ifdef HAVE_TPETRA_DEBUG
     {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -280,11 +280,11 @@ namespace Tpetra {
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
             CombineMode CM)
   {
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       *getMap() != *exporter.getTargetMap(), std::invalid_argument,
       "doExport: The target DistObject's Map is not identical to the Export's "
       "target Map.");
-#ifdef HAVE_TPETRA_DEBUG
     {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -295,7 +295,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
-    typedef ArrayView<const LocalOrdinal> view_type;
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
     view_type exportLIDs      = exporter.getExportLIDs();
     view_type remoteLIDs      = exporter.getRemoteLIDs();
     view_type permuteToLIDs   = exporter.getPermuteToLIDs();
@@ -311,11 +311,11 @@ namespace Tpetra {
             const Export<LocalOrdinal, GlobalOrdinal, Node> & exporter,
             CombineMode CM)
   {
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       *getMap() != *exporter.getSourceMap(), std::invalid_argument,
       "doImport (reverse mode): The target DistObject's Map is not identical "
       "to the Export's source Map.");
-#ifdef HAVE_TPETRA_DEBUG
     {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -327,7 +327,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = exporter.getNumSameIDs();
 
-    typedef ArrayView<const LocalOrdinal> view_type;
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
     view_type exportLIDs      = exporter.getRemoteLIDs();
     view_type remoteLIDs      = exporter.getExportLIDs();
     view_type permuteToLIDs   = exporter.getPermuteFromLIDs();
@@ -343,11 +343,11 @@ namespace Tpetra {
             const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
             CombineMode CM)
   {
+#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       *getMap() != *importer.getSourceMap(), std::invalid_argument,
       "doExport (reverse mode): The target object's Map "
       "is not identical to the Import's source Map.");
-#ifdef HAVE_TPETRA_DEBUG
     {
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -359,7 +359,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     size_t numSameIDs = importer.getNumSameIDs();
 
-    typedef ArrayView<const LocalOrdinal> view_type;
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
     view_type exportLIDs      = importer.getRemoteLIDs();
     view_type remoteLIDs      = importer.getExportLIDs();
     view_type permuteToLIDs   = importer.getPermuteFromLIDs();

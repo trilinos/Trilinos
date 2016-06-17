@@ -76,7 +76,6 @@ IF (Kokkos_ENABLE_Pthread)
     )
 ENDIF ()
 
-
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_MKL)
 IF (${PACKAGE_NAME}_ENABLE_MKL)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -98,4 +97,12 @@ IF (${PACKAGE_NAME}_ENABLE_quadmath)
     NUM_MPI_PROCS 1
     )
 ENDIF ()
-  
+
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  findRelOffset
+  SOURCES findRelOffset.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

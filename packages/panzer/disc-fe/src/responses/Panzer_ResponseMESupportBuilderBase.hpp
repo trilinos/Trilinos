@@ -24,8 +24,7 @@ public:
     * scattered. The idea here is a Response can have different partial
     * derivatives and this provides the mechanism for supporting that.
     */
-  virtual void setDerivativeInformationBase(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory,
-                                            const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & globalIndexer) = 0;
+  virtual void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory) = 0;
 
   /** Using a panzer::Residual evaluation type build the REFB for this
     * response.

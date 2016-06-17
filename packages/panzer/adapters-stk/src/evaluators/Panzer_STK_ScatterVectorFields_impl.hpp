@@ -69,8 +69,10 @@ ScatterVectorFields<EvalT,TraitsT>::
 ScatterVectorFields(const std::string & scatterName,
               const Teuchos::RCP<STK_Interface> mesh,
               const Teuchos::RCP<const panzer::PointRule> & pointRule,
-              const std::vector<std::string> & names)
+              const std::vector<std::string> & names,
+              const std::vector<double> & scaling)
    : mesh_(mesh)
+   , scaling_(scaling)
 {
   using panzer::Cell;
   using panzer::IP;
@@ -135,11 +137,14 @@ evaluateFields(panzer::Traits::EvalData workset)
       PHX::MDField<double,panzer::Cell,panzer::NODE> cellValue 
           = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
 
+      // scaline field value only if the scaling parameter is specified, otherwise use 1.0
+      double scaling = (scaling_.size()>0) ? scaling_[fieldIndex] : 1.0;
+
       for(unsigned i=0; i<field.dimension(0);i++) 
         cellValue(i,0) = field(i,0,d);
 
       // add in vector value at d^th dimension
-      mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue);
+      mesh_->setCellFieldData(fieldName,blockId,localCellIds,cellValue,scaling);
     }
   }
 }

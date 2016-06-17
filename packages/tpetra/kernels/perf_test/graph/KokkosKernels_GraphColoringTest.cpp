@@ -354,9 +354,9 @@ int main (int argc, char ** argv){
             "Num Phases:" << kkh.get_graph_coloring_handle()->get_num_phases() << std::endl;
         std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kkh.get_graph_coloring_handle()->get_vertex_colors());
       }
-      typedef typename KernelHandle::row_index_temp_work_view_type row_view_type;
+      typedef typename KernelHandle::row_lno_temp_work_view_t row_view_type;
 
-      typedef typename KernelHandle::row_index_persistent_work_view_type edge_view_type;
+      typedef typename KernelHandle::row_lno_persistent_work_view_t edge_view_type;
 
 
       row_view_type sym_row_map;

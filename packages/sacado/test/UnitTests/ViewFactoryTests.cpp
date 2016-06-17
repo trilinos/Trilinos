@@ -123,6 +123,51 @@ TEUCHOS_UNIT_TEST(view_factory, dyn_rank_views)
     TEST_EQUALITY(dimension_scalar(d),derivative_dim_plus_one);
   }
 
+  // Test creation of a Fad DynRankView from a double DynRankView
+  {
+    DynRankView<double> a("a",10,4,13);
+    TEST_EQUALITY(dimension_scalar(a),0);
+    TEST_EQUALITY(a.rank(),3);
+
+    using b_type = Kokkos::DynRankView<FadType,Kokkos::LayoutRight>;
+    b_type b = createDynRankViewWithType<b_type>(a,"b",5,3,8);
+    TEST_EQUALITY(dimension_scalar(b),1);
+    TEST_EQUALITY(b.rank(),3);
+  }
+
+  // Test a double DynRankView from a double DynRankView
+  {
+    DynRankView<double> a("a",10,4,13);
+    TEST_EQUALITY(dimension_scalar(a),0);
+    TEST_EQUALITY(a.rank(),3);
+
+    auto b = createDynRankView(a,"b",5,3,8);
+    TEST_EQUALITY(dimension_scalar(b),0);
+    TEST_EQUALITY(b.rank(),3);
+  }
+
+  // Test double rank 0
+  {
+    DynRankView<double> a("a",10,4,13);
+    TEST_EQUALITY(dimension_scalar(a),0);
+    TEST_EQUALITY(a.rank(),3);
+
+    auto b = createDynRankView(a,"b");
+    TEST_EQUALITY(dimension_scalar(b),0);
+    TEST_EQUALITY(b.rank(),0);
+  }
+
+  // Test Fad rank 0
+  {
+    DynRankView<FadType> a("a",10,4,13,derivative_dim_plus_one);
+    TEST_EQUALITY(dimension_scalar(a),derivative_dim_plus_one);
+    TEST_EQUALITY(a.rank(),3);
+
+    auto b = createDynRankView(a,"b");
+    TEST_EQUALITY(dimension_scalar(b),derivative_dim_plus_one);
+    TEST_EQUALITY(b.rank(),0);
+  }
+
 }
 
 #endif

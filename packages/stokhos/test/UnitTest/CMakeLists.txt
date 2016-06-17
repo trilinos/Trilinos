@@ -744,7 +744,7 @@ IF(Stokhos_ENABLE_Sacado)
 ENDIF()
 
 # Need to fix these tests so they don't require Epetra
-IF (Stokhos_ENABLE_EpetraExt)
+IF (Stokhos_ENABLE_EpetraExt AND Stokhos_ENABLE_KokkosContainers)
 
   IF (Kokkos_ENABLE_Serial)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(

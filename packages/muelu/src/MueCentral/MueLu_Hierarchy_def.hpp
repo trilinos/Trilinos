@@ -903,6 +903,16 @@ namespace MueLu {
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
+        switch (Cycle_) {
+           case VCYCLE:
+             oss << "Cycle type          = V" << std::endl;
+             break;
+           case WCYCLE:
+             oss << "Cycle type          = W" << std::endl;
+             break;
+           default:
+             break;
+        };
         oss << std::endl;
 
         Xpetra::global_size_t tt = rowsPerLevel[0];

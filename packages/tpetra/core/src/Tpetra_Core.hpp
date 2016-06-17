@@ -76,10 +76,10 @@ namespace Tpetra {
   ///
   /// This initializes the following if they have not already been
   /// initialized:
-  ///
-  ///   - MPI (if Trilinos was built with MPI enabled)
-  ///   - The default communicator (returned by getDefaultComm())
-  ///   - Kokkos
+  /// <ul>
+  ///   <li> MPI (if Trilinos was built with MPI enabled) </li>
+  ///   <li> Kokkos </li>
+  /// </ul>
   ///
   /// If Trilinos was built with MPI enabled, this function sets the
   /// default communicator to MPI_COMM_WORLD (wrapped in a Teuchos
@@ -107,10 +107,10 @@ namespace Tpetra {
   ///
   /// This function initializes the following if they have not already
   /// been initialized:
-  ///
-  ///   - MPI (if Trilinos was built with MPI enabled)
-  ///   - The default communicator (returned by getDefaultComm())
-  ///   - Kokkos
+  /// <ul>
+  ///   <li> MPI (if Trilinos was built with MPI enabled) </li>
+  ///   <li> Kokkos </li>
+  /// </ul>
   ///
   /// \param argc [in/out] Same as first argument of MPI_Init()
   /// \param argv [in/out] Same as second argument of MPI_Init()
@@ -130,12 +130,17 @@ namespace Tpetra {
 
   /// \brief Initialize Tpetra.
   ///
+  /// \warning It is NOT legal to create a Teuchos::MpiComm until
+  ///   after MPI has been initialized.  Thus, you may <i>not</i> call
+  ///   this function with a Teuchos::MpiComm instance unless MPI has
+  ///   been initialized.
+  ///
   /// This initializes the following if they have not already been
   /// initialized:
-  ///
-  ///   - MPI (if Trilinos was built with MPI enabled)
-  ///   - The default communicator (returned by getDefaultComm())
-  ///   - Kokkos
+  /// <ul>
+  ///   <li> MPI (if Trilinos was built with MPI enabled) </li>
+  ///   <li> Kokkos </li>
+  /// </ul>
   ///
   /// \param argc [in/out] Same as first argument of MPI_Init()
   /// \param argv [in/out] Same as second argument of MPI_Init()
@@ -155,5 +160,17 @@ namespace Tpetra {
   void
   initialize (int* argc, char*** argv,
               const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
+  /// \brief Finalize Tpetra.
+  ///
+  /// If Tpetra::initialize initialized Kokkos, finalize Kokkos.  If
+  /// Tpetra::initialize initialized MPI, finalize MPI.  Don't call
+  /// this unless you first call Tpetra::initialize.
+  ///
+  /// If you (the user) initialized Kokkos resp. MPI before
+  /// Tpetra::initialize was called, then this function does NOT
+  /// finalize Kokkos resp. MPI.  In that case, you (the user) are
+  /// responsible for finalizing Kokkos resp. MPI.
+  void finalize ();
 
 } // namespace Tpetra

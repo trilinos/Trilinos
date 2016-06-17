@@ -52,6 +52,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
   // then trying to build a new one. Of course for many of these under implemented operation
   // this fails and an error is thrown.
  
+/*
   Ptr<const EpetraLOF> epetra_lof = ptr_dynamic_cast<const EpetraLOF>(ptrFromRef(lof));
   if(epetra_lof!=null) {
     RCP<const EpetraUGI> rangeUGI  = rcp_dynamic_cast<const EpetraUGI>(rUgi==null ? epetra_lof->getRangeGlobalIndexer() : rUgi,true);
@@ -59,6 +60,7 @@ Teuchos::RCP<const LinearObjFactory<panzer::Traits> > cloneWithNewRangeAndDomain
     RCP<Teuchos::MpiComm<int> > mpiComm = rcp(new Teuchos::MpiComm<int>(epetra_lof->getComm()));
     return rcp(new EpetraLOF(mpiComm,rangeUGI,domainUGI));
   }
+*/
 
   Ptr<const TpetraLOF> tpetra_lof = ptr_dynamic_cast<const TpetraLOF>(ptrFromRef(lof));
   if(tpetra_lof!=null) {

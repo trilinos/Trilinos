@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
    Filtered_UniqueGlobalIndexer<int,int> filtered_ugi;
    filtered_ugi.initialize(dofManager,my_filtered);
 
-   // check the GIDs
+   out << "check the GIDs" << std::endl;
    {
      std::vector<int> gids,gids_f;
 
@@ -276,7 +276,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // check the LIDs
+   out << "check the LIDs" << std::endl;
    {
      const std::vector<int> & lids = dofManager->getElementLIDs(0);
      const std::vector<int> & lids_f = filtered_ugi.getElementLIDs(0);
@@ -287,7 +287,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
    
-   // check owned and shared
+   out << "check owned and shared" << std::endl;
    {
      std::vector<int> indices, indices_f;
 
@@ -300,7 +300,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // check owned 
+   out << "check owned" << std::endl;
    {
      std::vector<int> indices, indices_f,diff;
 
@@ -334,7 +334,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // test getOwnedAndSharedNotFilteredIndicator
    out << "testing getOwnedAndSharedNotFilteredIndicator" << std::endl;
    {
      std::vector<int> indicator;
@@ -361,7 +360,6 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,filtering)
      }
    }
 
-   // test getFilteredOwnedAndSharedIndices
    out << "testing getFilteredOwnedAndSharedIndices" << std::endl;
    {
      std::vector<int> indices_f;
@@ -457,7 +455,7 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
    RCP<Filtered_UniqueGlobalIndexer<int,int> > filtered_ugi = rcp(new Filtered_UniqueGlobalIndexer<int,int>);
    filtered_ugi->initialize(dofManager,filtered);
 
-   // check out ownsership
+   out << "check out ownsership" << std::endl;
    {
      std::vector<bool> isOwned;
      dofManager->ownedIndices(filtered,isOwned);
@@ -472,18 +470,18 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      TEST_EQUALITY(isOwned[1],false);
    }
 
-   // test out sizes construction by LOF
+   out << "test out sizes construction by LOF" << std::endl;
    {
      std::vector<int> indices_f;
      filtered_ugi->getOwnedIndices(indices_f);
 
      EpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 
      RCP<Thyra::LinearOpBase<double> > A = lof.getThyraMatrix();
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
-     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain())->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->range(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
+     TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(A->domain(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 
      // next chunk of code tests to ensure parallel communication works as expected.
      // In particular that a filtered unique vector can be used with an unfiltered 
@@ -491,9 +489,13 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,epetra_lof)
      ////////////////////////////////////////////////////////////////////////////////////
 
      // check that parallel communication works as expected
-     RCP<Epetra_Import> importer = lof.getGhostedImport();
-     RCP<Epetra_Map> ghostedMap = lof.getGhostedMap();
-     RCP<Epetra_Map> uniqueMap  = lof.getMap();
+     RCP<Epetra_Import> importer = lof.getGhostedImport(0);
+     RCP<Epetra_Map> ghostedMap = lof.getGhostedMap(0);
+     RCP<Epetra_Map> uniqueMap  = lof.getMap(0);
+
+     TEST_ASSERT(importer!=Teuchos::null);
+     TEST_ASSERT(ghostedMap!=Teuchos::null);
+     TEST_ASSERT(uniqueMap!=Teuchos::null);
 
      Epetra_Vector ghosted_x(*ghostedMap);
      Epetra_Vector unique_x(*uniqueMap);

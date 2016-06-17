@@ -77,8 +77,6 @@ using Teuchos::rcp;
 
 #include "TestEvaluators.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include <vector>
 #include <map>
 #include <string>
@@ -104,9 +102,9 @@ namespace panzer {
 
 
   #ifdef HAVE_MPI
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
+     Teuchos::RCP<const Teuchos::MpiComm<int> > tcomm = Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD)));
   #else
-     Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
+     Teuchos::RCP<Teuchos::Comm<int> > tcomm = FAIL
   #endif
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
@@ -187,9 +185,8 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tcomm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
@@ -264,10 +261,10 @@ namespace panzer {
       out2->setOutputToRootOnly(-1);
       *out2 << "\nPrinting IP coordinates for block: eblock-0_0" << std::endl;
       for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-0_0"])->begin(); i != (coords["eblock-0_0"])->end(); ++i)
-	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+	*out2 << "pid = " << tcomm->getRank() << ", val = " << *i << std::endl;
       *out2 << "\nPrinting IP coordinates for block: eblock-1_0" << std::endl;
       for (std::vector<panzer::Traits::Residual::ScalarT>::const_iterator i = (coords["eblock-1_0"])->begin(); i != (coords["eblock-1_0"])->end(); ++i)
-	*out2 << "pid = " << comm->MyPID() << ", val = " << *i << std::endl;
+	*out2 << "pid = " << tcomm->getSize() << ", val = " << *i << std::endl;
     }
    
     
@@ -304,7 +301,7 @@ namespace panzer {
     }
     else if (tcomm->getSize() == 2) {
 
-      if (comm->MyPID() == 0) {
+      if (tcomm->getRank() == 0) {
 	// eblock 1
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 
@@ -322,7 +319,7 @@ namespace panzer {
 	  TEST_FLOATING_EQUALITY(values[3], 3.0, double_tol);  // y 
 	}
       }
-      else if (comm->MyPID() == 1) {
+      else if (tcomm->getRank() == 1) {
 	// eblock 1
 	{
 	  const std::vector<panzer::Traits::Residual::ScalarT>& values = *(coords["eblock-0_0"]); 

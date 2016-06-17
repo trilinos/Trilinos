@@ -11,6 +11,7 @@ namespace Experimental{
 
 namespace Graph{
 
+
 template <class KernelHandle,typename lno_row_view_t_, typename lno_nnz_view_t_>
 void graph_color_symbolic(
     KernelHandle *handle,
@@ -24,7 +25,7 @@ void graph_color_symbolic(
 
   typename KernelHandle::GraphColoringHandleType *gch = handle->get_graph_coloring_handle();
 
-  ColoringAlgorithm algorithm = gch->get_coloring_type();
+  ColoringAlgorithm algorithm = gch->get_coloring_algo_type();
 
   typedef typename KernelHandle::GraphColoringHandleType::color_view_t color_view_type;
 
@@ -66,7 +67,16 @@ void graph_color_symbolic(
   }
 
   int num_phases = 0;
-  gc->color_graph(colors_out, num_phases);
+  switch (gch->get_coloring_type()){
+    default:
+    case KokkosKernels::Experimental::Graph::Distance1:
+      gc->color_graph(colors_out, num_phases);
+      break;
+    case KokkosKernels::Experimental::Graph::Distance2:
+      gc->d2_color_graph(colors_out, num_phases);
+      break;
+  }
+
   delete gc;
   double coloring_time = timer.seconds();
   gch->add_to_overall_coloring_time(coloring_time);

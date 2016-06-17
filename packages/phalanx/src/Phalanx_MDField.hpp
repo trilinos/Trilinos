@@ -302,8 +302,11 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     const array_type get_static_view() const;
 
-    template<typename MDFieldType>
-    void deep_copy(const MDFieldType& source);
+    template<typename SrcDataT,
+             typename SrcTag0,typename SrcTag1, typename SrcTag2, typename SrcTag3,
+             typename SrcTag4,typename SrcTag5, typename SrcTag6, typename SrcTag7>
+    void deep_copy(const PHX::MDField<SrcDataT,SrcTag0,SrcTag1,SrcTag2,SrcTag3,
+                   SrcTag4,SrcTag5,SrcTag6,SrcTag7>& source);
 
     void deep_copy(const DataT source);
 

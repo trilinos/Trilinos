@@ -177,7 +177,6 @@ TEUCHOS_UNIT_TEST(tBlockedEpetraLinearObjFactory, epetra_factory_tests)
    TEST_ASSERT(container!=Teuchos::null);
    TEST_ASSERT(ghosted!=Teuchos::null);
 
-
    RCP<BLOC> bContainer = rcp_dynamic_cast<BLOC>(container);
    RCP<BLOC> b_ghosted = rcp_dynamic_cast<BLOC>(ghosted);
    TEST_ASSERT(bContainer!=Teuchos::null);

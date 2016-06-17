@@ -453,8 +453,8 @@ namespace panzer {
       Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > linObjFactory
           = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,ap.dofManager,dofManager));
 
-      Teuchos::RCP<Epetra_Map> uniqueMap = linObjFactory->getColMap();
-      Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap();
+      Teuchos::RCP<Epetra_Map> uniqueMap = linObjFactory->getColMap(0);
+      Teuchos::RCP<Epetra_Map> ghostedMap = linObjFactory->getGhostedColMap(0);
       Teuchos::RCP<Epetra_Import> importer = Teuchos::rcp(new Epetra_Import(*ghostedMap,*uniqueMap));
 
       ap.param_dofManager = dofManager;

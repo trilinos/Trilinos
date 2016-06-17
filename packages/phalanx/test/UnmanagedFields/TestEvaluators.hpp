@@ -41,26 +41,31 @@
 // ************************************************************************
 // @HEADER
 
-
-#ifndef PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
-#define PHX_EXAMPLE_VP_FE_INTERPOLATION_HPP
+#ifndef PHX_EVALUATOR_WITH_MACROS_HPP
+#define PHX_EVALUATOR_WITH_MACROS_HPP
 
 #include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_Field.hpp"
+#include "Phalanx_MDField.hpp"
 
-PHX_EVALUATOR_CLASS(FEInterpolation)
+namespace PHX {
 
-  //! Values at nodes
-  PHX::Field< ScalarT > val_node;
+  // Both required and dependent fields are all unmanaged.  Covers all
+  // combinations of data types (static/dynamic, const/nonconst).
+  PHX_EVALUATOR_CLASS(EvalUnmanaged)
+  PHX::MDField<double,CELL,BASIS> a; // static evaluated
+  PHX::MDField<const double,CELL,BASIS> b; // static dependent
+  PHX::MDField<double> c; // dynamic evalauted
+  PHX::MDField<const double> d; // dynamic dependent
+  PHX_EVALUATOR_CLASS_END
 
-  //! Values at quadrature points
-  PHX::Field< ScalarT > val_qp;
+  // Dummy to satisfy dependent unmanaged fields
+  PHX_EVALUATOR_CLASS(EvalDummy)
+  PHX::MDField<double,CELL,BASIS> b;
+  PHX::MDField<double> d;
+  PHX_EVALUATOR_CLASS_END
 
-  //! Gradient values at quadrature points
-  PHX::Field< MyVector<ScalarT> > val_grad_qp;
- 
-PHX_EVALUATOR_CLASS_END
- 
-#include "Evaluator_FEInterpolation_Def.hpp"
+}
+
+#include "TestEvaluators_Def.hpp"
 
 #endif

@@ -61,8 +61,6 @@
 #include "user_app_ClosureModel_Factory.hpp"
 #include "UnitTest_UniqueGlobalIndexer.hpp"
 
-#include "Epetra_MpiComm.h"
-
 namespace panzer_test_utils {
 
   Teuchos::RCP<panzer::PhysicsBlock> createPhysicsBlock()
@@ -214,7 +212,7 @@ namespace panzer {
 
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
@@ -253,7 +251,7 @@ namespace panzer {
 
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > ugi 
           = Teuchos::rcp(new panzer::unit_test::UniqueGlobalIndexer(0,1));
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > comm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm,ugi);
 
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 

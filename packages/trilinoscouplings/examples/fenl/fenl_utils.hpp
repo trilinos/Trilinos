@@ -201,3 +201,12 @@ void print_perf_value( std::ostream & s ,
 
 // Connect executable to vtune for profiling
 void connect_vtune(const int p_rank);
+
+// Get memory usage in MB
+struct MemUsage {
+  double max_mem, min_mem, tot_mem;
+};
+MemUsage get_memory_usage(const Teuchos::Comm<int>& comm);
+
+// Print memory usage to stream
+void print_memory_usage(std::ostream& os, const Teuchos::Comm<int>& comm);

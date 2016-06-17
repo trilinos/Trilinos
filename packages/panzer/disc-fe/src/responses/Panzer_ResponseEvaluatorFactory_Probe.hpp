@@ -119,13 +119,12 @@ struct ProbeResponse_Builder : public ResponseMESupportBuilderBase {
                    (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
   }
 
-  virtual void setDerivativeInformationBase(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
-                                            const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & in_globalIndexer)
+  virtual void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory)
   {
     using Teuchos::rcp_dynamic_cast;
 
     setDerivativeInformation(in_linearObjFactory,
-                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_globalIndexer,true));
+                             rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_linearObjFactory->getDomainGlobalIndexer(),true));
   }
 
   template <typename T>

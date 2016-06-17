@@ -61,6 +61,7 @@
 
 namespace PHX {
 
+  class any;
   template<typename Traits> class FieldManager;
 
   /*! Pure virtual base class that provides field evaluation
@@ -152,6 +153,17 @@ namespace PHX {
     //! Returns the name/identifier of this provider.
     virtual const std::string& getName() const = 0;
 
+    /*! \brief Binds unmanaged memory to a field.
+
+      WARNING: This is a power user function. It swaps out the field
+      memory for user defined and managed memory. All evaluators that
+      evaluate or depend on this field show be bound to the same
+      memory. Otherwise you will get undefined results. To use this
+      consistently, bind all Unmanaged memory from the
+      PHX::FieldManager class.
+     */
+    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
+                                    const PHX::any& f) = 0;
   };
 
 } 

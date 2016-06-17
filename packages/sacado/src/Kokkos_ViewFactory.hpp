@@ -71,15 +71,6 @@ unsigned dimension_scalar(const View& v, const ViewPack&... views) {
   return dim0 >= dim1 ? dim0 : dim1 ;
 }
 
-template<typename I, class ... DimPack>
-struct dim_count {
-  enum {count = dim_count<DimPack...>::count+1};
-};
-
-template<typename I>
-struct dim_count<I> {
-  enum {count=1};
-};
 // Traits class used to create a view for a given rank and dimension as a
 // function of one or more views.  The value_type for the view is determined
 // by value_type, and the view is created through the create_view() function.
@@ -96,53 +87,35 @@ struct ViewFactory {
               const CtorProp& prop,
               const Dims ... dims) {
 
+    using value_type = typename ResultView::non_const_value_type;
+    constexpr bool is_scalar = Sacado::IsScalarType<value_type>::value;
     constexpr bool is_dyn_rank = is_dyn_rank_view<ResultView>::value;
-    constexpr bool is_fad = Sacado::IsScalarType<typename ResultView::non_const_value_type>::value?false:true; 
- 
-    typename ResultView::array_layout layout_extern(dims...);
-    int rank_extern = dim_count<Dims...>::count;
 
-    if(is_fad)
-        layout_extern.dimension[rank_extern] = dimension_scalar(views...); 
- 
-   if(is_dyn_rank) {
-    
-      typename ResultView::array_layout layout = Experimental::Impl::reconstructLayout(layout_extern, rank_extern);
-    
-      const unsigned rank = computeRank(layout);
-      if(is_fad) 
-      layout.dimension[rank] = dimension_scalar(views...);
-      return ResultView(prop, layout);
-    } else {
-      return ResultView(prop, layout_extern);   
+    // rank == number of arguments
+    constexpr unsigned rank = sizeof...(Dims);
+
+    // Check rank is valid
+    static_assert( rank <= 7, "Invalid rank...too many dimension arguments" );
+
+    // Create layout from our dimension arguments
+    typename ResultView::array_layout layout(dims...);
+
+    // Set scalar dimension
+    layout.dimension[rank] = dimension_scalar(views...);
+
+    // Handle the case where all of the input view's are scalar's, but the
+    // result isn't (e.g., a Fad), in which case we have to specify a valid
+    // scalar dimension
+    if (!is_scalar && layout.dimension[rank] == 0)
+      layout.dimension[rank] = 1;
+
+    // Reconstruct layout for dynamic rank
+    if (is_dyn_rank) {
+      constexpr unsigned r = is_scalar ? rank : rank + 1;
+      layout = Experimental::Impl::reconstructLayout(layout, r);
     }
-  }
 
-  // Compute the view rank from the dimension arguments
-  // This allows the code to work for both static and dynamic-rank views
-  template <typename Layout>
-  static size_t
-  computeRank(const Layout& layout) {
-    return computeRank( layout.dimension[0], layout.dimension[1],
-                        layout.dimension[2], layout.dimension[3],
-                        layout.dimension[4], layout.dimension[5],
-                        layout.dimension[6], layout.dimension[7] );
-  }
-
-  // Compute the view rank from the dimension arguments
-  // This allows the code to work for both static and dynamic-rank views
-  static size_t
-  computeRank(
-    const size_t N0, const size_t N1, const size_t N2, const size_t N3,
-    const size_t N4, const size_t N5, const size_t N6, const size_t N7 ) {
-    return  ( (N7 == ~size_t(0)) ?
-            ( (N6 == ~size_t(0)) ?
-            ( (N5 == ~size_t(0)) ?
-            ( (N4 == ~size_t(0)) ?
-            ( (N3 == ~size_t(0)) ?
-            ( (N2 == ~size_t(0)) ?
-            ( (N1 == ~size_t(0)) ?
-            ( (N0 == ~size_t(0)) ? 0 : 1 ) : 2 ) : 3 ) : 4 ) : 5 ) : 6 ) : 7 ) : 8 );
+    return ResultView(prop, layout);
   }
 
 };

@@ -661,8 +661,9 @@ evaluateFields(typename TRAITS::EvalData workset)
 
       // grab local data for inputing
       Teuchos::ArrayRCP<double> local_r;
-      rcp_dynamic_cast<SpmdVectorBase<double> >(r_->getNonconstVectorBlock(rowIndexer))
-                                                  ->getNonconstLocalData(ptrFromRef(local_r));
+      if(r_!=Teuchos::null)
+        rcp_dynamic_cast<SpmdVectorBase<double> >(r_->getNonconstVectorBlock(rowIndexer))
+                                                    ->getNonconstLocalData(ptrFromRef(local_r));
 
       auto subRowIndexer = rowIndexers_[rowIndexer];
       auto subIndicePair = subRowIndexer->getGIDFieldOffsets_closure(blockId,subFieldNum, side_subcell_dim_, local_side_id_);
@@ -699,8 +700,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                // check hash table for jacobian sub block
                std::pair<int,int> blockIndex = std::make_pair(rowIndexer,colIndexer);
                Teuchos::RCP<Epetra_CrsMatrix> subJac = jacEpetraBlocks[blockIndex];
-
-               // if you didn't find one before, add it to the hash table
+// if you didn't find one before, add it to the hash table
                if(subJac==Teuchos::null) {
                   Teuchos::RCP<Thyra::LinearOpBase<double> > tOp = Jac_->getNonconstBlock(blockIndex.first,blockIndex.second); 
 
@@ -725,7 +725,8 @@ evaluateFields(typename TRAITS::EvalData workset)
  
             const ScalarT scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
-            local_r[lid] = scatterField.val();
+            if(r_!=Teuchos::null)
+              local_r[lid] = scatterField.val();
             local_dc[lid] = 1.0; // mark row as dirichlet
     
             // loop over the sensitivity indices: all DOFs on a cell

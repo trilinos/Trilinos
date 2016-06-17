@@ -96,9 +96,9 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra:
     Hierarchy_->Iterate(tX, tY, 1, true);
 
   } catch (std::exception& e) {
-    //FIXME add message and rethrow
-    std::cerr << "Caught an exception in MueLu::TpetraOperator::ApplyInverse():" << std::endl
+    std::cerr << "MueLu::TpetraOperator::apply : detected an exception" << std::endl
         << e.what() << std::endl;
+    throw;
   }
 }
 

@@ -79,8 +79,6 @@ using Teuchos::rcp;
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -115,7 +113,7 @@ namespace panzer {
 
     template <typename T>
     Teuchos::RCP<ResponseEvaluatorFactoryBase> build() const
-    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory,globalIndexer)); }
+    { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,int,int>(comm,1,true,"",linearObjFactory)); }
   };
 
   // store steady-state me for testing parameters
@@ -429,11 +427,11 @@ namespace panzer {
       me = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(ap.fmb,ap.rLibrary,ap.ep_lof,p_names,p_values,ap.gd,build_transient_support));
 
       // add a distributed parameter
-      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap()));
+      ghosted_distributed_parameter = Teuchos::rcp(new Epetra_Vector(*ap.ep_lof->getGhostedMap(0)));
 
       distributed_parameter_index = me->addDistributedParameter("Transient Predictor",
-								ap.ep_lof->getMap(),
-								ap.ep_lof->getGhostedImport(),
+								ap.ep_lof->getMap(0),
+								ap.ep_lof->getGhostedImport(0),
 								ghosted_distributed_parameter);
     }
 
@@ -594,7 +592,7 @@ namespace panzer {
     panzer_stk_classic::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
@@ -650,7 +648,7 @@ namespace panzer {
     ap.dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),ap.physicsBlocks,conn_manager);
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory;
-    ap.ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),ap.dofManager));
+    ap.ep_lof = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),ap.dofManager));
     linObjFactory = ap.ep_lof;
 
     ap.rLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,ap.dofManager,linObjFactory)); 

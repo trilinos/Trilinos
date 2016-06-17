@@ -254,20 +254,17 @@ namespace Intrepid2 {
 
   namespace FunctorFunctionSpaceTools {
     template<typename outputValViewType,
-             typename inputDetViewType,
-             typename inputWeightViewType>
+             typename inputDetViewType>
     struct F_computeCellMeasure {
       typedef int value_type;
 
       /**/  outputValViewType   _outputVals;
       const inputDetViewType    _inputDet;
-      const inputWeightViewType _inputWeights;
       
       KOKKOS_INLINE_FUNCTION
       F_computeCellMeasure( outputValViewType outputVals_,
-                            inputDetViewType inputDet_,
-                            inputWeightViewType inputWeights_ )
-        : _outputVals(outputVals_), _inputDet(inputDet_), _inputWeights(inputWeights_) {}
+                            inputDetViewType inputDet_ )
+        : _outputVals(outputVals_), _inputDet(inputDet_) {}
       
       KOKKOS_INLINE_FUNCTION
       void init( value_type &dst ) const {
@@ -282,8 +279,9 @@ namespace Intrepid2 {
       
       KOKKOS_INLINE_FUNCTION
       void operator()(const size_type cell, value_type &dst) const {
-        dst |= (_inputDet(cell) < 0.0);
-        _inputDet(cell) *= Util::sign(_inputDet(cell));
+        const bool hasNegativeDet = (_inputDet(cell) < 0.0);
+        dst |= hasNegativeDet;
+        _outputVals(cell) *= (hasNegativeDet ? -1.0 : 1.0);
       }
     };
   }
@@ -305,21 +303,16 @@ namespace Intrepid2 {
     typedef          Kokkos::DynRankView<inputDetValueType,   inputDetProperties...>          inputDetViewType;
     typedef          Kokkos::DynRankView<inputWeightValueType,inputWeightProperties...>       inputWeightViewType;
     typedef          FunctorFunctionSpaceTools::F_computeCellMeasure
-      /**/           <outputValViewType,inputDetViewType,inputWeightViewType>                 FunctorType;
+      /**/           <outputValViewType,inputDetViewType>                                     FunctorType;
     typedef typename ExecSpace<typename inputDetViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
     
+    ArrayTools<SpT>::scalarMultiplyDataData(outputVals, inputDet, inputWeights);
+
     const auto loopSize = inputDet.dimension(0);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
-    // instead flip the sign of negative input, it reports an error
+    
     typename FunctorType::value_type hasNegativeDet = false;
-    Kokkos::parallel_reduce( policy, FunctorType(outputVals, inputDet, inputWeights), hasNegativeDet );
-    
-    // do not throw error for negative jacobian
-    //INTREPID2_TEST_FOR_EXCEPTION( hasNegativeDet, std::runtime_error,
-    //                              ">>> ERROR (FunctionSpaceTools::computeCellMeasure): inputDet has negative values");
-    
-    ArrayTools<SpT>::scalarMultiplyDataData(outputVals, inputDet, inputWeights);
+    Kokkos::parallel_reduce( policy, FunctorType(outputVals, inputDet), hasNegativeDet );
     
     return hasNegativeDet;
   } 
