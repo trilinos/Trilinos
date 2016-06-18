@@ -382,6 +382,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVectorThyra, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename STS::magnitudeType Magnitude;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 5;
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create full vector
+  Teuchos::RCP<MultiVector>         vv = bvv->Merge();
+
+  // extract map extractor
+  Teuchos::RCP<const MapExtractor> me  = bvv->getMapExtractor();
+
+  for(size_t r = 0; r < me->NumMaps(); ++r) {
+    Teuchos::RCP<MultiVector> partB = me->ExtractVector(bvv,r,true);
+    Teuchos::RCP<MultiVector> partV = me->ExtractVector(vv,r,false);
+    TEST_EQUALITY(partB->getMap()->isSameAs(*(partV->getMap())) == false || r==0,true);
+    TEST_EQUALITY(partB->getMap()->getMinAllGlobalIndex(),0);
+    partV = me->ExtractVector(vv,r,true);
+    TEST_EQUALITY(partB->getMap()->isSameAs(*(partV->getMap())),true);
+    Teuchos::ArrayRCP<const Scalar > partBd = partB->getData(0);
+    Teuchos::ArrayRCP<const Scalar > partVd = partV->getData(0);
+    TEST_COMPARE_FLOATING_ARRAYS(partBd,partVd,Teuchos::ScalarTraits<Magnitude>::zero());
+  }
+
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scalar, LO, GO, Node )
 {
   typedef Xpetra::Map<LO, GO, Node> Map;
@@ -677,6 +717,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
 #define XP_BLOCKEDMULTIVECTOR_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, Constructor, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVectorThyra, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, InsertVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, InsertVectorThyra, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, UpdateVector1, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \

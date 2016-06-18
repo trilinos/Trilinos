@@ -2423,8 +2423,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
     Teuchos::ArrayRCP<const Scalar > partd2 = part2->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd3 = part3->getData(0);
     for(LO l = 0; l < part2->getLocalLength(); l++) {
-      TEST_EQUALITY(partd2[l], (r+1) * STS::one());
-      TEST_EQUALITY(partd3[l], (r+1) * STS::one());
+      TEST_EQUALITY(partd2[l], Teuchos::as<Scalar>(r+1) * STS::one());
+      TEST_EQUALITY(partd3[l], Teuchos::as<Scalar>(r+1) * STS::one());
     }
   }
 
