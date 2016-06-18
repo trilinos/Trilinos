@@ -506,7 +506,7 @@ namespace Xpetra {
       XPETRA_MONITOR("BlockedMultiVector::Merge");
       using Teuchos::RCP;
       using Teuchos::rcp_dynamic_cast;
-      Scalar one = ScalarTraits<SC>::one();
+      //Scalar one = ScalarTraits<SC>::one();
 
       RCP<MultiVector> v = MultiVectorFactory::Build(getMapExtractor()->getFullMap(), getNumVectors());
       for(size_t r = 0; r < getMapExtractor()->NumMaps(); ++r) {
