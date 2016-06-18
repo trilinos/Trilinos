@@ -158,22 +158,22 @@ namespace Xpetra {
 
     //! Replace value, using global (row) index.
     virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceGlobalValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Add value to existing value, using global (row) index.
     virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::sumIntoGlobalValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Replace value, using local (row) index.
     virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceLocalValue: Not supported by BlockedMultiVector.");
     }
 
     //! Add value to existing value, using local (row) index.
     virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::sumIntoLocalValue:Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Set all values in the multivector with the given value.
@@ -190,25 +190,25 @@ namespace Xpetra {
 
     //! Return a Vector which is a const view of column j.
     virtual Teuchos::RCP< const Vector > getVector(size_t j) const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getVector: Not (yet) supported by BlockedMultiVector.");
       return Teuchos::null;
     }
 
     //! Return a Vector which is a nonconst view of column j.
     virtual Teuchos::RCP< Vector> getVectorNonConst(size_t j) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getVectorNonConst: Not (yet) supported by BlockedMultiVector.");
       return Teuchos::null;
     }
 
     //! Const view of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< const Scalar > getData(size_t j) const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getData: Not (yet) supported by BlockedMultiVector.");
       return Teuchos::null;
     }
 
     //! View of the local values in a particular vector of this multivector.
     virtual Teuchos::ArrayRCP< Scalar > getDataNonConst(size_t j) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getDataNonConst: Not (yet) supported by BlockedMultiVector.");
       return Teuchos::null;
     }
 
@@ -219,27 +219,35 @@ namespace Xpetra {
 
     //! Compute dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i]).
     virtual void dot(const MultiVector&A, const Teuchos::ArrayView< Scalar > &dots) const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::dot: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Put element-wise absolute values of input Multi-vector in target: A = abs(this).
     virtual void abs(const MultiVector&A) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::abs: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Put element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     virtual void reciprocal(const MultiVector&A) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::reciprocal: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      for (size_t r = 0; r < getMapExtractor()->NumMaps(); ++r) {
+        if(getMultiVector(r)!=Teuchos::null) {
+          getMultiVector(r)->scale(alpha);
+        }
+      }
     }
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     virtual void scale (Teuchos::ArrayView< const Scalar > alpha) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      for (size_t r = 0; r < getMapExtractor()->NumMaps(); ++r) {
+        if(getMultiVector(r)!=Teuchos::null) {
+          getMultiVector(r)->scale(alpha);
+        }
+      }
     }
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
@@ -334,17 +342,17 @@ namespace Xpetra {
 
     //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
     virtual void meanValue(const Teuchos::ArrayView< Scalar > &means) const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::meanValue: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Matrix-matrix multiplication: this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector&A, const MultiVector&B, const Scalar &beta) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::multiply: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     virtual void elementWiseMultiply(Scalar scalarAB, const Vector&A, const MultiVector&B, Scalar scalarThis) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::elementWiseMultiply: Not (yet) supported by BlockedMultiVector.");
     }
 
     //@}
@@ -359,14 +367,13 @@ namespace Xpetra {
 
     //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
       return 0;
     }
 
     //! Global number of rows in the multivector.
     virtual global_size_t getGlobalLength() const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
-      return 0;
+      return getMapExtractor()->getFullMap()->getGlobalNumElements();
     }
 
     //@}
@@ -376,37 +383,38 @@ namespace Xpetra {
 
     //! A simple one-line description of this object.
     virtual std::string description() const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
-      return std::string("");
+      return std::string("BlockedMultiVector");
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      out << "BlockedMultiVector: " << std::endl;
+      for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++)
+        getMultiVector(r)->describe(out, verbLevel);
     }
 
     virtual void replaceMap(const RCP<const Map>& map) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceMap: Not supported by BlockedMultiVector.");
     }
 
     //! Import.
     virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Import&importer, CombineMode CM) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doImport: Not supported by BlockedMultiVector.");
     }
 
     //! Export.
     virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Import& importer, CombineMode CM) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doExport: Not supported by BlockedMultiVector.");
     }
 
     //! Import (using an Exporter).
     virtual void doImport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &source, const Export& exporter, CombineMode CM) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doImport: Not supported by BlockedMultiVector.");
     }
 
     //! Export (using an Importer).
     virtual void doExport(const DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> &dest, const Export& exporter, CombineMode CM) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::doExport: Not supported by BlockedMultiVector.");
     }
 
     //@}
@@ -416,12 +424,12 @@ namespace Xpetra {
 
     //! Set seed for Random function.
     virtual void setSeed(unsigned int seed) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::seed: Not (yet) supported by BlockedMultiVector.");
     }
 
 
     virtual void randomize(bool bUseXpetraImplementation = false) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::randomize: Not (yet) supported by BlockedMultiVector.");
     }
 
     //! Set multi-vector values to random numbers. XPetra implementation
@@ -524,7 +532,7 @@ namespace Xpetra {
     /// Each subclass must implement this.  This includes
     /// Xpetra::EpetraMultiVector and Xpetra::TpetraMultiVector.
     virtual void assign (const MultiVector& rhs) {
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::assign: Not (yet) supported by BlockedMultiVector.");
     }
 
   private:
