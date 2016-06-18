@@ -11,27 +11,32 @@
 //// Tempus
 #include "Tempus_Stepper.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
+#include "Tempus_StepperBackwardEuler.hpp"
 
 
 namespace Tempus {
 
 enum StepperType {
-  FORWARD_EULER
+  FORWARD_EULER,
+  BACKWARD_EULER
 };
 
 static std::string ForwardEuler_name  = "Forward Euler";
+static std::string BackwardEuler_name = "Backward Euler";
 static std::string Stepper_name       = "Stepper";
 static std::string Stepper_default    = ForwardEuler_name;
 
 Teuchos::Array<std::string> Stepper_names = Teuchos::tuple<std::string>(
-  ForwardEuler_name);
+  ForwardEuler_name,
+  BackwardEuler_name);
 
 const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<StepperType> >
 StepperValidator = Teuchos::rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<StepperType>(
     Stepper_names,
     Teuchos::tuple<Tempus::StepperType>(
-      FORWARD_EULER),
+      FORWARD_EULER,
+      BACKWARD_EULER),
     Stepper_name));
 
 
@@ -40,6 +45,8 @@ const std::string toString(const StepperType s)
   switch(s) {
     case FORWARD_EULER:
       return ForwardEuler_name;
+    case BACKWARD_EULER:
+      return BackwardEuler_name;
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid StepperType!");
   }
@@ -51,6 +58,8 @@ const StepperType fromString(const std::string ss)
 {
   if (ss == ForwardEuler_name)
     return FORWARD_EULER;
+  else if (ss == BackwardEuler_name)
+    return BACKWARD_EULER;
   else
     TEUCHOS_TEST_FOR_EXCEPT("Invalid String for StepperType!");
 
@@ -85,6 +94,9 @@ public:
       case FORWARD_EULER:
         return Teuchos::rcp(
           new StepperForwardEuler<Scalar>(stepper_pList, model));
+      case BACKWARD_EULER:
+        return Teuchos::rcp(
+          new StepperBackwardEuler<Scalar>(stepper_pList, model));
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "Unknown StepperType = " << stepperName);
