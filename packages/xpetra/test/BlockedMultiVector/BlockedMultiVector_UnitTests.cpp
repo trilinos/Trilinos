@@ -322,6 +322,124 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Constructor, M, MA, Scala
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm1, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 2;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<Magnitude> bnorms(bvv->getNumVectors());
+  Teuchos::Array<Magnitude> fnorms(vv->getNumVectors());
+
+  TEST_NOTHROW( vv->norm1(fnorms) );
+  TEST_NOTHROW( bvv->norm1(bnorms) );
+  TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
+  Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
+  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+    result += Teuchos::as<Magnitude>(gg);
+  TEST_EQUALITY( bnorms[0], result);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv2 = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  Teuchos::Array<Magnitude> bnorms2(bvv2->getNumVectors());
+  TEST_NOTHROW( bvv2->norm1(bnorms2) );
+  TEST_EQUALITY( bnorms2[0], result);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm2, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 2;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<Magnitude> bnorms(bvv->getNumVectors());
+  Teuchos::Array<Magnitude> fnorms(vv->getNumVectors());
+
+  TEST_NOTHROW( vv->norm2(fnorms) );
+  TEST_NOTHROW( bvv->norm2(bnorms) );
+  TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
+  Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
+  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+    result += Teuchos::as<Magnitude>(gg) * Teuchos::as<Magnitude>(gg);
+  result = Teuchos::ScalarTraits<Magnitude>::squareroot(result);
+  TEST_EQUALITY( bnorms[0], result);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv2 = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  Teuchos::Array<Magnitude> bnorms2(bvv2->getNumVectors());
+  TEST_NOTHROW( bvv2->norm2(bnorms2) );
+  TEST_COMPARE( bnorms2[0] - result, <, 1e-10);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, NormInf, M, MA, Scalar, LO, GO, Node )
+{
+  typedef Xpetra::Map<LO, GO, Node> Map;
+  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
+  typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
+  typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
+  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
+  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getDefaultComm();
+
+  int noBlocks = 2;
+
+  Teuchos::RCP<MultiVector>         vv = CreateMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv = CreateBlockedMultiVector<Scalar, LO, GO, Node, M>(noBlocks, comm);
+
+  typedef typename STS::magnitudeType Magnitude;
+  Teuchos::Array<Magnitude> bnorms(bvv->getNumVectors());
+  Teuchos::Array<Magnitude> fnorms(vv->getNumVectors());
+
+  TEST_NOTHROW( vv->normInf(fnorms) );
+  TEST_NOTHROW( bvv->normInf(bnorms) );
+  TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
+  Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
+  for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
+    result = std::max(result, Teuchos::as<Magnitude>(gg));
+  TEST_EQUALITY( bnorms[0], result);
+
+  // create BlockedMultiVector
+  Teuchos::RCP<BlockedMultiVector> bvv2 = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
+  Teuchos::Array<Magnitude> bnorms2(bvv2->getNumVectors());
+  TEST_NOTHROW( bvv2->normInf(bnorms2) );
+  TEST_COMPARE( bnorms2[0] - result, <, 1e-10);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Scalar, LO, GO, Node )
 {
   typedef Xpetra::Map<LO, GO, Node> Map;
@@ -716,6 +834,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar,
 
 #define XP_BLOCKEDMULTIVECTOR_INSTANT(S,LO,GO,N) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, Constructor, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, Norm1, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, Norm2, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, NormInf, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, ExtractVectorThyra, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_6_INSTANT( BlockedMultiVector, InsertVector, M##LO##GO##N , MV##S##LO##GO##N, S, LO, GO, N ) \

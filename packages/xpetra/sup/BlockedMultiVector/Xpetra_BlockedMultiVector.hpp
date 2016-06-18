@@ -320,18 +320,16 @@ namespace Xpetra {
 
     //! Compute Inf-norm of each vector in multi-vector.
     virtual void normInf(const Teuchos::ArrayView< typename Teuchos::ScalarTraits< Scalar >::magnitudeType > &norms) const {
-      /*typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+      typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
       Array<Magnitude> temp_norms(getNumVectors());
       std::fill(temp_norms.begin(),temp_norms.end(),ScalarTraits<Magnitude>::zero());
       for (size_t r = 0; r < getMapExtractor()->NumMaps(); ++r) {
         if(getMultiVector(r)!=Teuchos::null) {
           getMultiVector(r)->normInf(temp_norms);
           for (size_t c = 0; c < getNumVectors(); ++c)
-            if(temp_norms[c] > norms[c])
-              norms[c] = temp_norms[c];
+            norms[c] = std::max(norms[c],temp_norms[c]);
         }
-      }*/
-      throw Xpetra::Exceptions::RuntimeError("Not (yet) supported by BlockedMultiVector.");
+      }
     }
 
     //! Compute mean (average) value of each vector in multi-vector. The outcome of this routine is undefined for non-floating point scalar types (e.g., int).
