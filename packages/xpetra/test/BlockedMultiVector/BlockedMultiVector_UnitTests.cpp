@@ -136,12 +136,8 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateMultiVector(int noBlocks, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-  typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
   typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   GlobalOrdinal nOverallDOFGidsPerProc = Teuchos::as<GlobalOrdinal>(Teuchos::ScalarTraits<GlobalOrdinal>::pow(2,noBlocks-2)) * 10;
 
@@ -171,12 +167,10 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > CreateBlockedMultiVector(int noBlocks, Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
   typedef Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
   typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   GlobalOrdinal nOverallDOFGidsPerProc = Teuchos::as<GlobalOrdinal>(Teuchos::ScalarTraits<GlobalOrdinal>::pow(2,noBlocks-2)) * 10;
 
@@ -239,7 +233,6 @@ Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Nod
   typedef Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedMultiVector;
   typedef Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LocalOrdinal, GlobalOrdinal, Node> MapExtractor;
-  typedef Teuchos::ScalarTraits<Scalar> STS;
 
   MapType testMap(1,0,comm);
   Xpetra::UnderlyingLib lib = testMap.lib();
@@ -281,12 +274,8 @@ Teuchos::RCP<Xpetra::BlockedMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Constructor, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
@@ -324,12 +313,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Constructor, M, MA, Scala
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm1, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
@@ -363,12 +348,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm1, M, MA, Scalar, LO,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm2, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
@@ -403,12 +384,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Norm2, M, MA, Scalar, LO,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, NormInf, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
@@ -442,12 +419,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, NormInf, M, MA, Scalar, L
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Scale, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
   // get a comm and node
@@ -467,16 +440,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Scale, M, MA, Scalar, LO,
   TEST_NOTHROW( vv->normInf(fnorms) );
   TEST_NOTHROW( bvv->normInf(bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(fnorms,bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
-  Magnitude result = Teuchos::ScalarTraits<Magnitude>::zero();
+  Magnitude myresult = Teuchos::ScalarTraits<Magnitude>::zero();
   for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
-    result = std::max(result, Teuchos::as<Magnitude>(gg));
-  TEST_EQUALITY( bnorms[0], result);
+    myresult = std::max(myresult, Teuchos::as<Magnitude>(gg));
+  TEST_EQUALITY( bnorms[0], myresult);
 
   // create BlockedMultiVector
   Teuchos::RCP<BlockedMultiVector> bvv2 = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
   Teuchos::Array<Magnitude> bnorms2(bvv2->getNumVectors());
   TEST_NOTHROW( bvv2->normInf(bnorms2) );
-  TEST_COMPARE( bnorms2[0] - result, <, 1e-10);
+  TEST_COMPARE( bnorms2[0] - myresult, <, 1e-10);
 
   bvv->scale(Teuchos::as<Scalar>(2.0));
   vv->scale(Teuchos::as<Scalar>(2.0));
@@ -485,26 +458,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, Scale, M, MA, Scalar, LO,
   TEST_NOTHROW( vv->normInf(scaled_fnorms) );
   TEST_NOTHROW( bvv->normInf(scaled_bnorms) );
   TEST_COMPARE_FLOATING_ARRAYS(scaled_fnorms,scaled_bnorms,Teuchos::ScalarTraits<Magnitude>::zero());
-  result = Teuchos::ScalarTraits<Magnitude>::zero();
+  myresult = Teuchos::ScalarTraits<Magnitude>::zero();
   for(GO gg = 0; gg < vv->getMap()->getGlobalNumElements(); gg++)
-    result = std::max(result, Teuchos::as<Magnitude>(gg));
-  TEST_EQUALITY( scaled_bnorms[0], Teuchos::as<Magnitude>(2.0) * result);
+    myresult = std::max(myresult, Teuchos::as<Magnitude>(gg));
+  TEST_EQUALITY( scaled_bnorms[0], Teuchos::as<Magnitude>(2.0) * myresult);
 
   // create BlockedMultiVector
   bvv2 = CreateBlockedMultiVectorThyra<Scalar, LO, GO, Node, M>(noBlocks, comm);
   bvv2->scale(Teuchos::as<Scalar>(2.0));
   Teuchos::Array<Magnitude> scaled_bnorms2(bvv2->getNumVectors());
   TEST_NOTHROW( bvv2->normInf(scaled_bnorms2) );
-  TEST_COMPARE( scaled_bnorms2[0] - Teuchos::as<Magnitude>(2.0) * result, <, 1e-10);
+  TEST_COMPARE( scaled_bnorms2[0] - Teuchos::as<Magnitude>(2.0) * myresult, <, 1e-10);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Scalar, LO, GO, Node )
 {
   typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
@@ -567,11 +538,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVectorThyra, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
@@ -607,11 +575,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVectorThyra, M, MA
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
@@ -659,11 +624,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scal
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
   typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
@@ -715,12 +677,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 
@@ -755,12 +713,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
   typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 
@@ -795,12 +750,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 
@@ -836,12 +787,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Sca
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, PutScalar, M, MA, Scalar, LO, GO, Node )
 {
-  typedef Xpetra::Map<LO, GO, Node> Map;
-  typedef Xpetra::MapFactory<LO, GO, Node> MapFactory;
   typedef Xpetra::MultiVector<Scalar, LO, GO, Node> MultiVector;
   typedef Xpetra::BlockedMultiVector<Scalar, LO, GO, Node> BlockedMultiVector;
-  typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> MultiVectorFactory;
-  typedef Xpetra::MapExtractor<Scalar,LO,GO,Node> MapExtractor;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename STS::magnitudeType Magnitude;
 
