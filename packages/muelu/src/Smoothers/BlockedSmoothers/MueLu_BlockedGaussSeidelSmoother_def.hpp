@@ -145,7 +145,6 @@ namespace MueLu {
 
     // extract blocked operator A from current level
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A"); // A needed for extracting map extractors
-    //A_ = currentLevel.Get< RCP<Matrix> >("A",this->GetFactory("A").get());
     RCP<BlockedCrsMatrix> bA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(A_);
     TEUCHOS_TEST_FOR_EXCEPTION(bA==Teuchos::null, Exceptions::BadCast, "MueLu::BlockedPFactory::Build: input matrix A is not of type BlockedCrsMatrix! error.");
 
@@ -160,11 +159,9 @@ namespace MueLu {
     Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
 
     // loop over all factory managers for the subblocks of blocked operator A
-    size_t bgsOrderingIndex = 0;
-    //std::map<size_t,size_t> bgsOrderingIndex2blockRowIndex;
     std::vector<Teuchos::RCP<const FactoryManagerBase> >::const_iterator it;
     for(it = FactManager_.begin(); it!=FactManager_.end(); ++it) {
-      SetFactoryManager currentSFM  (rcpFromRef(currentLevel),   *it);
+      SetFactoryManager currentSFM  (rcpFromRef(currentLevel), *it);
 
       // extract Smoother for current block row (BGS ordering)
       RCP<const SmootherBase> Smoo = currentLevel.Get< RCP<SmootherBase> >("PreSmoother",(*it)->GetFactory("Smoother").get());
@@ -173,22 +170,6 @@ namespace MueLu {
       // store whether subblock matrix is blocked or not!
       RCP<Matrix> Aii = currentLevel.Get< RCP<Matrix> >("A",(*it)->GetFactory("A").get());
       bIsBlockedOperator_.push_back(Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Aii)!=Teuchos::null);
-      // extract i-th diagonal block Aii -> determine block
-      /*currentLevel.print(*out, Teuchos::VERB_EXTREME);
-      std::cout << "BGS: need A from factory " << (*it)->GetFactory("A").get() << std::endl;
-      RCP<Matrix> Aii = currentLevel.Get< RCP<Matrix> >("A",(*it)->GetFactory("A").get());
-      currentLevel.print(*out, Teuchos::VERB_EXTREME);
-      for(size_t i = 0; i<rangeMapExtractor_->NumMaps(); i++) {
-        if(rangeMapExtractor_->getMap(i)->isSameAs(*(Aii->getRangeMap()))) {
-          // map found: i is the true block row index
-          // fill std::map with information bgsOrderingIndex -> i
-          bgsOrderingIndex2blockRowIndex_[bgsOrderingIndex] = i;
-          break;
-        }
-      }*/
-      bgsOrderingIndex2blockRowIndex_[bgsOrderingIndex] = bgsOrderingIndex; // TODO fix me
-
-      bgsOrderingIndex++;
     }
 
     SmootherPrototype::IsSetup(true);
@@ -211,6 +192,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A_->getRangeMap()->isSameAs(*(B.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of RHS vector B is not the same as range map of the blocked operator A. Please check the map of B and A.");
     TEUCHOS_TEST_FOR_EXCEPTION(A_->getDomainMap()->isSameAs(*(X.getMap())) == false, Exceptions::RuntimeError, "MueLu::BlockedGaussSeidelSmoother::Apply(): The map of the solution vector X is not the same as domain map of the blocked operator A. Please check the map of X and A.");
 
+#if 1
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > residual = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tempres = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
@@ -234,14 +216,12 @@ namespace MueLu {
 
         A_->apply(*rcpX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
 
-        size_t blockRowIndex = at(bgsOrderingIndex2blockRowIndex_, i); // == bgsOrderingIndex2blockRowIndex_.at(i) (only available since C++11)
-
         // extract corresponding subvectors from X and residual
         bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode()  && (bIsBlockedOperator_[i] == false);
         bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[i] == false);
-        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, blockRowIndex, bDomainThyraMode);
-        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, blockRowIndex, bRangeThyraMode);
-        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(blockRowIndex, X.getNumVectors(), bDomainThyraMode);
+        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(rcpX, i, bDomainThyraMode);
+        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode);
 
         // apply solver/smoother
         Inverse_.at(i)->Apply(*tXi, *ri, false);
@@ -250,10 +230,66 @@ namespace MueLu {
         Xi->update(omega,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
 
         // update corresponding part of rhs and lhs
-        domainMapExtractor_->InsertVector(Xi, blockRowIndex, rcpX, bDomainThyraMode); // TODO wrong! fix me
+        domainMapExtractor_->InsertVector(Xi, i, rcpX, bDomainThyraMode); // TODO wrong! fix me
+      }
+    }
+#else
+    // new implementation uses BlockedMultiVectors
+
+    // create a new vector for storing the current residual in a blocked multi vector
+    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
+    RCP<BlockedMultiVector> residual = Teuchos::rcp(new BlockedMultiVector(rangeMapExtractor_,res));
+
+    // create a new solution vector as a blocked multi vector
+    RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
+    RCP<BlockedMultiVector> bX = Teuchos::rcp(new BlockedMultiVector(domainMapExtractor_,rcpX));
+
+    // create a blocked rhs vector
+    RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
+    RCP<const BlockedMultiVector> bB = Teuchos::rcp(new const BlockedMultiVector(rangeMapExtractor_,rcpB));
+
+    // extract parameters from internal parameter list
+    const ParameterList & pL = Factory::GetParameterList();
+    LocalOrdinal nSweeps = pL.get<LocalOrdinal>("Sweeps");
+    Scalar omega = pL.get<Scalar>("Damping factor");
+
+    // outer Richardson loop
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
+      // one BGS sweep
+      // loop over all block rows
+      for(size_t i = 0; i<Inverse_.size(); i++) {
+
+        // calculate block residual r = B-A*X
+        // note: A_ is the full blocked operator
+        residual->update(1.0,*bB,0.0); // r = B
+
+        A_->apply(*bX, *residual, Teuchos::NO_TRANS, -1.0, 1.0);
+
+        // extract corresponding subvectors from X and residual
+        bool bRangeThyraMode =  rangeMapExtractor_->getThyraMode()  && (bIsBlockedOperator_[i] == false);
+        bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[i] == false);
+        Teuchos::RCP<MultiVector> Xi = domainMapExtractor_->ExtractVector(bX, i, bDomainThyraMode);
+        Teuchos::RCP<MultiVector> ri = rangeMapExtractor_->ExtractVector(residual, i, bRangeThyraMode);
+        Teuchos::RCP<MultiVector> tXi = domainMapExtractor_->getVector(i, X.getNumVectors(), bDomainThyraMode);
+
+        // apply solver/smoother
+        Inverse_.at(i)->Apply(*tXi, *ri, false);
+
+        // update vector
+        Xi->update(omega,*tXi,1.0);  // X_{i+1} = X_i + omega \Delta X_i
+
+        // update corresponding part of rhs and lhs
+
+        domainMapExtractor_->InsertVector(Xi, i, bX, bDomainThyraMode);
       }
     }
 
+    // write back solution
+    for(size_t r = 0; r < domainMapExtractor_->NumMaps(); ++r) {
+      bool bDomainThyraMode = domainMapExtractor_->getThyraMode() && (bIsBlockedOperator_[r] == false);
+      domainMapExtractor_->InsertVector(bX->getMultiVector(r),r,rcpX,bDomainThyraMode);
+    }
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -280,13 +316,6 @@ namespace MueLu {
 
     if (verbLevel & Parameters0) {
       out0 << "Prec. type: " << type_ << " Sweeps: " << nSweeps << " damping: " << omega << std::endl;
-    }
-
-    if (verbLevel & Debug) {
-      std::map<size_t,size_t>::const_iterator itOrdering;
-      for(itOrdering = bgsOrderingIndex2blockRowIndex_.begin(); itOrdering!=bgsOrderingIndex2blockRowIndex_.end(); itOrdering++) {
-        std::cout << "block GaussSeidel ordering index: " << (*itOrdering).first << " -> block row in blocked A: " << (*itOrdering).second << std::endl;
-      }
     }
 
     if (verbLevel & Debug) {
