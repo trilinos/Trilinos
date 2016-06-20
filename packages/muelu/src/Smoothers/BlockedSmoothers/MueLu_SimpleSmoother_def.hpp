@@ -330,6 +330,16 @@ namespace MueLu {
       RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
       xtilde1->putScalar(zero);
 
+#if 1
+      if(bFThyraSpecialTreatment == true) {
+        xtilde1->replaceMap(domainMapExtractor_->getMap(0,true));
+        r1->replaceMap(rangeMapExtractor_->getMap(0,true));
+        velPredictSmoo_->Apply(*xtilde1,*r1);
+        xtilde1->replaceMap(domainMapExtractor_->getMap(0,false));
+      } else {
+        velPredictSmoo_->Apply(*xtilde1,*r1);
+      }
+#else
       // Special handling in case that F block is a 1x1 blocked operator in Thyra mode
       // Then we have to feed the smoother with real Thyra-based vectors
       if(bFThyraSpecialTreatment == true) {
@@ -348,6 +358,7 @@ namespace MueLu {
       } else {
         velPredictSmoo_->Apply(*xtilde1,*r1);
       }
+#endif
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
@@ -362,6 +373,16 @@ namespace MueLu {
 
       // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
       // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
+#if 1
+      if(bZThyraSpecialTreatment == true) {
+        xtilde2->replaceMap(domainMapExtractor_->getMap(1,true));
+        schurCompRHS->replaceMap(rangeMapExtractor_->getMap(1,true));
+        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+        xtilde2->replaceMap(domainMapExtractor_->getMap(1,false));
+      } else {
+        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+      }
+#else
       if(bZThyraSpecialTreatment == true) {
         // create empty solution vector based on Thyra GIDs
         RCP<MultiVector> xtilde2_thyra = domainMapExtractor_->getVector(1, X.getNumVectors(), true);
@@ -388,6 +409,7 @@ namespace MueLu {
       } else {
         schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
       }
+#endif
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
