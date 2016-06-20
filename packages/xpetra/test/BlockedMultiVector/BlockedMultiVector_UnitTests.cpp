@@ -530,6 +530,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
     Teuchos::ArrayRCP<const Scalar > partBd = partB->getData(0);
     Teuchos::ArrayRCP<const Scalar > partVd = partV->getData(0);
     TEST_COMPARE_FLOATING_ARRAYS(partBd,partVd,Teuchos::ScalarTraits<Magnitude>::zero());
+    TEST_THROW(partB = me->ExtractVector(bvv,r,true),Xpetra::Exceptions::RuntimeError);
+    TEST_THROW(partV = me->ExtractVector(vv,r,true),Xpetra::Exceptions::RuntimeError);
   }
 
   // create a new faulty MapExtractor
@@ -544,7 +546,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
   // the ExtractVector call then succeeds
   for(size_t r = 0; r < me->NumMaps(); ++r) {
     TEST_NOTHROW(Teuchos::RCP<MultiVector> partV = meFaulty->ExtractVector(vv,r));
-    if(r!=2)      { TEST_THROW(Teuchos::RCP<MultiVector> partB = meFaulty->ExtractVector(bvv,r), Xpetra::Exceptions::RuntimeError); }
+    if(r!=2)      {
+      TEST_NOTHROW(Teuchos::RCP<MultiVector> partB = meFaulty->ExtractVector(bvv,r));
+      Teuchos::RCP<MultiVector> partV = meFaulty->ExtractVector(vv,r);
+      Teuchos::RCP<MultiVector> partB = meFaulty->ExtractVector(bvv,r);
+      TEST_EQUALITY(partB->getMap()->isSameAs(*(partV->getMap())),false);
+    }
     else if(r==2) {
       TEST_NOTHROW(Teuchos::RCP<MultiVector> partB = meFaulty->ExtractVector(bvv,r));
       Teuchos::RCP<MultiVector> partV = meFaulty->ExtractVector(vv,r);
@@ -682,7 +689,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
     Teuchos::RCP<MultiVector> part = me->getVector(r,bvv->getNumVectors(),true);
     TEST_EQUALITY(part->getMap()->getMinAllGlobalIndex(),0);
     TEST_NOTHROW(part->putScalar(STS::one()));
-    TEST_NOTHROW(me->InsertVector(part,r,bvv));
+    TEST_NOTHROW(me->InsertVector(part,r,bvv,me->getThyraMode()));
   }
 
   for(size_t r = 0; r < me->NumMaps(); ++r) {
@@ -700,10 +707,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
   // unfortunately, in Thyra mode there is no error thrown since the vectors in
   // block 0 and 1 have the same length (and the same GIDs)
   Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,true);
-  TEST_NOTHROW(me->InsertVector(part2,1,bvv));
+  TEST_NOTHROW(me->InsertVector(part2,1,bvv,me->getThyraMode()));
   // This should throw, thought
   Teuchos::RCP<MultiVector> part3 = me->getVector(0,2,true);
-  TEST_THROW(me->InsertVector(part2,2,bvv),Xpetra::Exceptions::RuntimeError);
+  TEST_THROW(me->InsertVector(part2,2,bvv,me->getThyraMode()),Xpetra::Exceptions::RuntimeError);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Scalar, LO, GO, Node )
