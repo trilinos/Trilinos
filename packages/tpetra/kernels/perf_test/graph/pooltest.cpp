@@ -55,14 +55,28 @@ struct MemoryPoolTest{
     }
 
 
-    for (int i = 0; i < 1000; ++i);
+    for (int i = 0; i < 100; ++i){
+
+      Kokkos::parallel_for(
+          Kokkos::ThreadVectorRange(teamMember, 32),
+          [&] (int j) {
+        myData[j] = i;
+      });
+    }
+
+
+    Kokkos::parallel_for(
+        Kokkos::ThreadVectorRange(teamMember, 32),
+        [&] (int j) {
+      myData[j] = -1;
+    });
 
 
 
     Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
-      printf("me:%ld lr:%d ts:%d tr:%d, Had Memory location:%ld with chunk_index:%ld in this many tries:%d\n",
+      /*printf("me:%ld lr:%d ts:%d tr:%d, Had Memory location:%ld with chunk_index:%ld in this many tries:%d\n",
           tid, (int) teamMember.league_rank(), (int) teamMember.team_size(),   (int)  teamMember.team_rank(),
-          myData,my_memory_pool.get_chunk_index((idx *) myData), trial );
+          myData,my_memory_pool.get_chunk_index((idx *) myData), trial );*/
       this->my_memory_pool.release_chunk((idx *) myData);
     });
 
@@ -71,7 +85,8 @@ struct MemoryPoolTest{
 };
 
 template <typename MyExecSpace1>
-void run_test(int TEAMSIZE, int VECTORSIZE){
+void run_test(int TEAMSIZE, int VECTORSIZE, int numpools){
+
 
 
 
@@ -83,7 +98,7 @@ void run_test(int TEAMSIZE, int VECTORSIZE){
   int space_1_concurrency  = MyExecSpace1::concurrency() / VECTORSIZE;
 
   simple_pool1 space1_one2one_mp (space_1_concurrency, chunk_size, -1, KokkosKernels::Experimental::Util::OneThread2OneChunk);
-  simple_pool1 space1_many2one_mp (4, chunk_size, -1, KokkosKernels::Experimental::Util::ManyThread2OneChunk);
+  simple_pool1 space1_many2one_mp (numpools, chunk_size, -1, KokkosKernels::Experimental::Util::ManyThread2OneChunk);
 
   MemoryPoolTest<simple_pool1, MyExecSpace1> t1 (space1_one2one_mp);
   MemoryPoolTest<simple_pool1, MyExecSpace1> t2 (space1_many2one_mp);
@@ -93,16 +108,19 @@ void run_test(int TEAMSIZE, int VECTORSIZE){
   printf("Memory Pool\n");
   space1_one2one_mp.print_memory_pool();
 
-
-  Kokkos::parallel_for( team_policy_t1(16 , TEAMSIZE, VECTORSIZE), t1);
+  Kokkos::Impl::Timer timer1;
+  Kokkos::parallel_for( team_policy_t1(1000000 , TEAMSIZE, VECTORSIZE), t1);
   MyExecSpace1::fence();
+  std::cout << "One to One Time:" << timer1.seconds() << std::endl;
+
 
   printf("\n\nRunning Many2One\n");
   printf("Memory Pool\n");
   space1_many2one_mp.print_memory_pool();
-
-  Kokkos::parallel_for( team_policy_t1(16, TEAMSIZE, VECTORSIZE), t2);
+  timer1.reset();
+  Kokkos::parallel_for( team_policy_t1(1000000, TEAMSIZE, VECTORSIZE), t2);
   MyExecSpace1::fence();
+  std::cout << "Many to One Time:" << timer1.seconds() << std::endl;
 
 
 }
@@ -114,12 +132,36 @@ int  main (int  argc, char ** argv){
   if (argc > 1){
     threads = atoi(argv[1]);
   }
+  int numpools = 1;
+  if (argc > 2){
+    numpools = atoi(argv[2]);
+  }
+
+#if defined( KOKKOS_HAVE_CUDA )
+  printf("\n\n\nCuda RUN\n");
+  Kokkos::HostSpace::execution_space::initialize();
+  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
+  Kokkos::Cuda::print_configuration(std::cout);
+  run_test<Kokkos::Cuda>(8,32,numpools);
+  Kokkos::Cuda::finalize();
+  Kokkos::HostSpace::execution_space::finalize();
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  printf("\n\n\nOpenMP RUN\n");
+  Kokkos::OpenMP::initialize(threads);
+  Kokkos::OpenMP::print_configuration(std::cout);
+  run_test<Kokkos::OpenMP>(1,1,numpools);
+  Kokkos::OpenMP::finalize();
+#endif
+
+
 
 #if defined( KOKKOS_HAVE_SERIAL )
   printf("\n\n\nSERIAL RUN\n");
   Kokkos::Serial::initialize();
   Kokkos::Serial::print_configuration(std::cout);
-  run_test<Kokkos::Serial>(1,1);
+  run_test<Kokkos::Serial>(1,1,numpools);
   Kokkos::Serial::finalize();
 #endif
 
@@ -127,28 +169,12 @@ int  main (int  argc, char ** argv){
   printf("\n\n\nTHREADS RUN\n");
   Kokkos::Threads::initialize(threads);
   Kokkos::Threads::print_configuration(std::cout);
-  run_test<Kokkos::Threads>(1,1);
+  run_test<Kokkos::Threads>(1,1,numpools);
   Kokkos::Threads::finalize();
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
-  printf("\n\n\nOpenMP RUN\n");
-  Kokkos::OpenMP::initialize(threads);
-  Kokkos::OpenMP::print_configuration(std::cout);
-  run_test<Kokkos::OpenMP>(1,1);
-  Kokkos::OpenMP::finalize();
-#endif
 
-#if defined( KOKKOS_HAVE_CUDA )
-  printf("\n\n\nCuda RUN\n");
 
-  Kokkos::HostSpace::execution_space::initialize();
-  Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
-  Kokkos::Cuda::print_configuration(std::cout);
-  run_test<Kokkos::Cuda>(8,32);
-  Kokkos::Cuda::finalize();
-  Kokkos::HostSpace::execution_space::finalize();
-#endif
 
 
 

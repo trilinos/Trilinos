@@ -1026,7 +1026,7 @@ crsMat_t run_experiment(
   }
 
 
-  if (1)
+  if (0)
   {
     std::cout << "Coloring Result Matrix" << std::endl;
     kh.create_graph_coloring_handle();
@@ -1066,11 +1066,13 @@ crsMat_t run_experiment(
 
     timer.reset();
 
+
     KokkosKernels::Experimental::Util::get_histogram
       <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
 
+
     std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
-    KokkosKernels::Experimental::Util::print_1Dview(histogram, true);
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
 
     kh.destroy_graph_coloring_handle();
   }
