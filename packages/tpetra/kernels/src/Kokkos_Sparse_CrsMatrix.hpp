@@ -635,13 +635,13 @@ public:
 
     for (ordinal_type i = 0; i < ncol; ++i) {
       const ordinal_type offset =
-        findRelOffset (row_view.colidx, length, cols[i], hint, false);
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, false);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_add(&row_view.value[offset], vals[i]);
+          Kokkos::atomic_add (&(row_view.value(offset)), vals[i]);
         }
         else {
-          row_view.value[offset] += vals[i];
+          row_view.value(offset) += vals[i];
         }
       }
       hint = offset + 1;
@@ -666,13 +666,13 @@ public:
 
     for (ordinal_type i = 0; i < ncol; ++i) {
       const ordinal_type offset =
-        findRelOffset (row_view.colidx, length, cols[i], hint, true);
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, true);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_add(&row_view.value[offset], vals[i]);
+          Kokkos::atomic_add (&(row_view.value(offset)), vals[i]);
         }
         else {
-          row_view.value[offset] += vals[i];
+          row_view.value(offset) += vals[i];
         }
       }
       hint = offset + 1;
@@ -682,7 +682,7 @@ public:
   }
 
   KOKKOS_INLINE_FUNCTION
-  void
+  OrdinalType
   replaceValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const OrdinalType ncol,
@@ -697,13 +697,13 @@ public:
 
     for (ordinal_type i = 0; i < ncol; ++i) {
       const ordinal_type offset =
-        findRelOffset (row_view.colidx, length, cols[i], hint, false);
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, false);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_assign(&row_view.value[offset], vals[i]);
+          Kokkos::atomic_assign (&(row_view.value(offset)), vals[i]);
         }
         else {
-          row_view.value[offset] = vals[i];
+          row_view.value(offset) = vals[i];
         }
       }
       hint = offset + 1;
@@ -728,13 +728,13 @@ public:
 
     for (ordinal_type i = 0; i < ncol; ++i) {
       const ordinal_type offset =
-        findRelOffset (row_view.colidx, length, cols[i], hint, true);
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, true);
       if (offset != length) {
         if (force_atomic) {
-          Kokkos::atomic_assign(&row_view.value[offset], vals[i]);
+          Kokkos::atomic_assign (&(row_view.value(offset)), vals[i]);
         }
         else {
-          row_view.value[offset] = vals[i];
+          row_view.value(offset) = vals[i];
         }
       }
       hint = offset + 1;
