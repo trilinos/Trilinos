@@ -54,7 +54,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     BlockedPFactory.cpp
     SchurComplementFactory.cpp
     SubBlockAFactory.cpp
-    Smoothers/BlockedSmoother.cpp
   )
 ENDIF()
 
@@ -79,6 +78,9 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
+  IF (${PACKAGE_NAME}_ENABLE_Experimental)
+    APPEND_SET(SOURCES Smoothers/BlockedSmoother.cpp)
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
