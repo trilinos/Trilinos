@@ -50,6 +50,7 @@
 #else
 #include "Teuchos_DefaultSerialComm.hpp"
 #endif
+#include "Teuchos_TestForException.hpp"
 
 namespace Ifpack2 {
 
@@ -616,7 +617,10 @@ std::string SparseContainer<MatrixType, InverseType>::getName()
     throw std::logic_error("InverseType for SparseContainer must be Ifpack2::ILUT or Details::Amesos2Wrapper");
   }
 #else
-  TEUCHOS_TEST_FOR_EXCEPTION(!std:is_same<InverseType, ILUTInverse>::value, std::logic_error,
+  // Macros can't have commas in their arguments, so we have to
+  // compute the bool first argument separately.
+  constexpr bool inverseTypeIsILUT = std::is_same<InverseType, ILUTInverse>::value;
+  TEUCHOS_TEST_FOR_EXCEPTION(! inverseTypeIsILUT, std::logic_error,
     "InverseType for SparseContainer must be Ifpack2::ILUT<ROW>");
   return "SparseILUT";    //the only supported sparse container specialization if no Amesos2
 #endif
