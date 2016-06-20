@@ -361,9 +361,15 @@ main (int argc, char *argv[])
   // entries... I think we'll all be ok.
 
   // Compare data
-  bool successFlag=false;
+  bool successFlag=true;
   for (size_t ii = 0; ii < numNodeRowsTotal; ++ii){
     TEUCHOS_TEST_EQUALITY(Answer[ii] - ComputedSol[ii] < 1e-14, true, *fos, successFlag);
   }
 
+  if (successFlag) {
+    *fos << "End Result: TEST PASSED" << std::endl;
+  }
+  else {
+    *fos << "End Result: TEST FAILED" << std::endl;
+  }
 }
