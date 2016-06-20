@@ -258,12 +258,14 @@ namespace Xpetra {
     /** \name Extract subblocks from full map */
     //@{
     void ExtractVector(const Vector& full, size_t block, Vector& partial) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
 
       partial.doImport(full, *importers_[block], Xpetra::INSERT);
     }
     void ExtractVector(const MultiVector& full, size_t block, MultiVector& partial) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       partial.doImport(full, *importers_[block], Xpetra::INSERT);
@@ -274,6 +276,7 @@ namespace Xpetra {
     void ExtractVector(RCP<      MultiVector>& full, size_t block, RCP<MultiVector>& partial) const { ExtractVector(*full, block, *partial); }
 
     RCP<     Vector> ExtractVector(RCP<const      Vector>& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       // extract sub vector
@@ -293,6 +296,7 @@ namespace Xpetra {
       return thyraVec;
     }
     RCP<     Vector> ExtractVector(RCP<           Vector>& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       const RCP<Vector> xpetraVec = VectorFactory::Build(getMap(block,false), true);
@@ -311,6 +315,7 @@ namespace Xpetra {
       return thyraVec;
     }
     RCP<MultiVector> ExtractVector(RCP<const MultiVector>& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
@@ -330,6 +335,7 @@ namespace Xpetra {
       return thyraVec;
     }
     RCP<MultiVector> ExtractVector(RCP<      MultiVector>& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
@@ -349,23 +355,21 @@ namespace Xpetra {
       return thyraVec;
     }
     RCP<MultiVector> ExtractVector(RCP<const BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       TEUCHOS_TEST_FOR_EXCEPTION(NumMaps() != full->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError,
             "ExtractVector: Number of blocks in map extractor is " << NumMaps() << " but should be " << full->getMapExtractor()->NumMaps() << " (number of blocks in BlockedMultiVector)");
-      Teuchos::RCP<MultiVector> vv = full->getMultiVector(block);
-      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block,bThyraMode_))) == false, Xpetra::Exceptions::RuntimeError,
-            "ExtractVector: partial map of BlockedMultiVector and MapExtractor are incompatible");
+      Teuchos::RCP<MultiVector> vv = full->getMultiVector(block,bThyraMode);
       return vv;
     }
     RCP<MultiVector> ExtractVector(RCP<      Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode = false) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
       TEUCHOS_TEST_FOR_EXCEPTION(NumMaps() != full->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError,
             "ExtractVector: Number of blocks in map extractor is " << NumMaps() << " but should be " << full->getMapExtractor()->NumMaps() << " (number of blocks in BlockedMultiVector)");
-      Teuchos::RCP<MultiVector> vv = full->getMultiVector(block);
-      TEUCHOS_TEST_FOR_EXCEPTION(vv->getMap()->isSameAs(*(getMap(block,bThyraMode_))) == false, Xpetra::Exceptions::RuntimeError,
-            "ExtractVector: partial map of BlockedMultiVector and MapExtractor are incompatible");
+      Teuchos::RCP<MultiVector> vv = full->getMultiVector(block,bThyraMode);
       return vv;
     }
     //@}
@@ -421,16 +425,16 @@ namespace Xpetra {
     void InsertVector(RCP<const MultiVector> partial, size_t block, RCP<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > full, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "InsertVector: maps_[" << block << "] is null");
-      TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
-                 "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-      full->setMultiVector(block, partial);
+      /*TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
+                 "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");*/
+      full->setMultiVector(block, partial, bThyraMode);
     }
     void InsertVector(RCP<      MultiVector> partial, size_t block, RCP<Xpetra::BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > full, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "InsertVector: maps_[" << block << "] is null");
-      TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
-                 "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-      full->setMultiVector(block, partial);
+      /*TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
+                 "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");*/
+      full->setMultiVector(block, partial, bThyraMode);
     }
 
     //@}

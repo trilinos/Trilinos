@@ -487,21 +487,57 @@ namespace Xpetra {
 
     /// return partial multivector associated with block row r
     Teuchos::RCP<MultiVector> getMultiVector(size_t r) const {
-      XPETRA_MONITOR("BlockedMultiVector::getMultiVector");
+      XPETRA_MONITOR("BlockedMultiVector::getMultiVector(r)");
       TEUCHOS_TEST_FOR_EXCEPTION(r > getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
       return vv_[r];
     }
 
+    /// return partial multivector associated with block row r
+    Teuchos::RCP<MultiVector> getMultiVector(size_t r, bool bThyraMode) const {
+      XPETRA_MONITOR("BlockedMultiVector::getMultiVector(r,bThyraMode)");
+      TEUCHOS_TEST_FOR_EXCEPTION(r > getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
+      Teuchos::RCP<MultiVector> ret = vv_[r];
+      if(bThyraMode_ != bThyraMode) {
+        // standard case: bThyraMode_ == true but bThyraMode == false
+        ret = getMapExtractor()->getVector(r,vv_[r]->getNumVectors(),bThyraMode);
+        for(size_t k=0; k < vv_[r]->getNumVectors(); k++) {
+          Teuchos::ArrayRCP<const Scalar> srcVecData  = vv_[r]->getData(k);
+          Teuchos::ArrayRCP<Scalar> targetVecData = ret->getDataNonConst(k);
+          for(size_t i=0; i < ret->getLocalLength(); i++) {
+             targetVecData[i] = srcVecData[i];
+          }
+        }
+      }
+      return ret;
+    }
+
     /// set partial multivector associated with block row r
-    void setMultiVector(size_t r, Teuchos::RCP<const MultiVector> v) {
+    void setMultiVector(size_t r, Teuchos::RCP<const MultiVector> v, bool bThyraMode) {
       XPETRA_MONITOR("BlockedMultiVector::setMultiVector");
-      TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == true && v->getMap()->getMinAllGlobalIndex() > 0, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector is in Thyra mode but partial map starts with GIDs " << v->getMap()->getMinAllGlobalIndex() << " > 0!");
       TEUCHOS_TEST_FOR_EXCEPTION(r >= getMapExtractor()->NumMaps(), std::out_of_range, "Error, r = " << r << " is too big. The BlockedMultiVector only contains " << getMapExtractor()->NumMaps() << " partial blocks.");
-      TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+      //TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
       TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != v->getNumVectors(),Xpetra::Exceptions::RuntimeError,"The BlockedMultiVectors expects " << getNumVectors() << " vectors. The provided partial multivector has " << v->getNumVectors() << " vectors.");
       Teuchos::RCP<MultiVector> vv = Teuchos::rcp_const_cast<MultiVector>(v);
       TEUCHOS_TEST_FOR_EXCEPTION(vv==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Partial vector must not be Teuchos::null");
-      vv_[r] = vv;
+      if(bThyraMode_ == bThyraMode) {
+        TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == true && v->getMap()->getMinAllGlobalIndex() > 0, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector is in Thyra mode but partial map starts with GIDs " << v->getMap()->getMinAllGlobalIndex() << " > 0!");
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+        vv_[r] = vv;
+      }
+      else {
+        // standard case: bThyraMode_ == true but bThyraMode == false
+        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+
+        Teuchos::RCP<MultiVector> target = getMapExtractor()->getVector(r,v->getNumVectors(),bThyraMode_);
+        for(size_t k=0; k < v->getNumVectors(); k++) {
+          Teuchos::ArrayRCP<const Scalar> srcVecData  = v->getData(k);
+          Teuchos::ArrayRCP<Scalar> targetVecData = target->getDataNonConst(k);
+          for(size_t i=0; i < target->getLocalLength(); i++) {
+             targetVecData[i] = srcVecData[i];
+          }
+        }
+        vv_[r] = target;
+      }
     }
 
     /// access to underlying MapExtractor object
