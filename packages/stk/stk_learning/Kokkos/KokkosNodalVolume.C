@@ -53,6 +53,8 @@
 #include <stk_util/stk_config.h>
 #include "../../stk_mesh/stk_mesh/base/FieldParallel.hpp"
 
+#include <limits>
+
 #ifdef KOKKOS_HAVE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
 #elif KOKKOS_HAVE_CUDA
@@ -69,28 +71,44 @@
    typedef Kokkos::HostSpace    MemSpace;
 #endif
 
-double calculate_element_volume()
+double calculate_element_volume(const stk::mesh::BulkData& mesh, const stk::mesh::Entity* elemNodes, unsigned numElemNodes, const stk::mesh::FieldBase& coords)
 {
-    return 1.0;
+    double min[3] = {std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max()};
+    double max[3] = {std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest()};
+
+    for(unsigned i=0; i<numElemNodes; ++i) {
+        const double* nodeCoords = static_cast<const double*>(stk::mesh::field_data(coords, elemNodes[i]));
+        for(int j : {0, 1, 2}) {
+            max[j] = std::max(nodeCoords[j], max[j]);
+            min[j] = std::min(nodeCoords[j], min[j]);
+        }
+    }
+    return (max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]);
 }
+
+typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
+typedef Kokkos::TeamPolicy<ExecSpace, ScheduleType> TeamPolicyType;
+typedef TeamPolicyType::member_type TeamHandleType;
 
 void calculate_nodal_volume(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField)
 {
-//    const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
+    const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
-    for(const stk::mesh::Bucket* bucket : elemBuckets) {
+
+    Kokkos::parallel_for(Kokkos::TeamPolicy< ExecSpace >(elemBuckets.size(), 2), [&] (const TeamHandleType& team) {
+        const int elementBucketIndex = team.league_rank();
+        const stk::mesh::Bucket* bucket = elemBuckets[elementBucketIndex];
         const unsigned numNodesPerElem = bucket->topology().num_nodes();
-        for(size_t i=0; i<bucket->size(); ++i) {
-//            stk::mesh::Entity elem = (*bucket)[i];
+        unsigned numElements = bucket->size();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i) {
             const stk::mesh::Entity* elemNodes = bucket->begin_nodes(i);
-//            double* nodalCoords = static_cast<double*>(stk::mesh::field_data(coords, elemNodes[j]));
-            double elemVolumePerNode = calculate_element_volume()/numNodesPerElem;
+            double elemVolumePerNode = calculate_element_volume(mesh, elemNodes, numNodesPerElem, coords)/numNodesPerElem;
             for(unsigned j=0; j<numNodesPerElem; ++j) {
                 double* nodalVolume = stk::mesh::field_data(nodalVolumeField, elemNodes[j]);
-                *nodalVolume += elemVolumePerNode;
+                Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
             }
-        }
-    }
+        });
+    });
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
 
@@ -154,7 +172,7 @@ protected:
         stk::mesh::put_field(nodalVolumeField, get_meta().universal_part());
         auto& numElemsPerNodeField = get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
         stk::mesh::put_field(numElemsPerNodeField, get_meta().universal_part());
-        setup_mesh("generated:2x2x2", auraOption);
+        setup_mesh("generated:20x20x20", auraOption);
         count_num_elems_per_node(get_bulk(), numElemsPerNodeField);
 
         calculate_nodal_volume(get_bulk(), nodalVolumeField);
