@@ -573,6 +573,7 @@ public:
                  const OrdinalType cols[],
                  const OrdinalType ncol,
                  ScalarType vals[],
+                 const bool sorted_ = false,
                  const bool force_atomic = false) const
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);
@@ -598,6 +599,7 @@ public:
                  const OrdinalType cols[],
                  const OrdinalType ncol,
                  ScalarType vals[],
+                 const bool sorted_ = false,
                  const bool force_atomic = false) const
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);

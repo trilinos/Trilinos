@@ -76,20 +76,10 @@ namespace { // (anonymous)
         vals[0] = replace_ ? THREE : ONE;
 
         if (replace_) {
-          if (sorted_) {
-            A_.replaceValuesSorted (lclRow, cols, ncol, vals, atomic_);
-          }
-          else {
-            A_.replaceValues (lclRow, cols, ncol, vals, atomic_);
-          }
+          A_.replaceValues (lclRow, cols, ncol, vals, sorted_, atomic_);
         }
         else { // sumInto
-          if (sorted_) {
-            A_.sumIntoValuesSorted (lclRow, cols, ncol, vals, atomic_);
-          }
-          else {
-            A_.sumIntoValues (lclRow, cols, ncol, vals, atomic_);
-          }
+          A_.sumIntoValues (lclRow, cols, ncol, vals, sorted_, atomic_);
         }
       }
     }
