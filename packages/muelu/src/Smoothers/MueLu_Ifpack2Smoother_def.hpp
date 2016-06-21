@@ -402,6 +402,10 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
 
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
+
     RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
 
     bool reusePreconditioner = false;
