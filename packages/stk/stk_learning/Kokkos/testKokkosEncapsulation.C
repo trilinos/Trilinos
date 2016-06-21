@@ -45,6 +45,9 @@
 namespace stk
 {
 
+#define STK_LAMBDA KOKKOS_LAMBDA
+#define STK_INLINE KOKKOS_INLINE_FUNCTION
+
 class NgpVector
 {
 public:
@@ -59,7 +62,7 @@ public:
         Kokkos::deep_copy(vector, initialValue);
     }
 
-    double & device_get(size_t i) const
+    STK_INLINE double & device_get(size_t i) const
     {
         return vector(i);
     }
@@ -91,7 +94,7 @@ public:
         Kokkos::deep_copy(matrix, initialValue);
     }
 
-    double & device_get(size_t row, size_t col) const
+    STK_INLINE double & device_get(size_t row, size_t col) const
     {
         return matrix(row, col);
     }
@@ -100,11 +103,11 @@ public:
         return hostMatrix(row, col);
     }
 
-    size_t num_rows() const
+    STK_INLINE size_t num_rows() const
     {
         return matrix.extent(0);
     }
-    size_t num_cols() const
+    STK_INLINE size_t num_cols() const
     {
         return matrix.extent(1);
     }
@@ -131,9 +134,6 @@ void parallel_reduce(size_t n, const FUNCTOR &functor, VAL_TYPE &sum)
 }
 
 } //namespace stk
-
-#define STK_LAMBDA KOKKOS_LAMBDA
-#define STK_INLINE KOKKOS_INLINE_FUNCTION
 
 
 namespace NgpMatrixComputations
