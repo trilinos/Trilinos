@@ -60,7 +60,6 @@
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_MapUtils.hpp>
 #include <Xpetra_MultiVector.hpp>
-//#include <Xpetra_BlockedMultiVector.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -279,12 +278,16 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
-      // extract sub vector
-      const RCP<Vector> xpetraVec = VectorFactory::Build(getMap(block,false), true);
-      ExtractVector(*full, block, *xpetraVec);
-      if(bThyraMode == false) return xpetraVec;
+      // first extract partial vector from full vector (using xpetra style GIDs)
+      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), true);
+      ExtractVector(*full, block, *vv);
+      if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+#if 0
+      vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+      return vv;
+#else
       const RCP<Vector> thyraVec = VectorFactory::Build(getMap(block,true), true);
       // TODO introduce Kokkos version of this.
       Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(0);
@@ -294,16 +297,22 @@ namespace Xpetra {
         thyraVecData[i] = xpetraVecData[i];
       }
       return thyraVec;
+#endif
     }
     RCP<     Vector> ExtractVector(RCP<           Vector>& full, size_t block, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
-      const RCP<Vector> xpetraVec = VectorFactory::Build(getMap(block,false), true);
-      ExtractVector(*full, block, *xpetraVec);
-      if(bThyraMode == false) return xpetraVec;
+      // first extract partial vector from full vector (using xpetra style GIDs)
+      const RCP<Vector> vv = VectorFactory::Build(getMap(block,false), true);
+      ExtractVector(*full, block, *vv);
+      if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+#if 0
+      vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+      return vv;
+#else
       const RCP<Vector> thyraVec = VectorFactory::Build(getMap(block,true), true);
       // TODO introduce Kokkos version of this.
       Teuchos::ArrayRCP<Scalar> thyraVecData  = thyraVec->getDataNonConst(0);
@@ -313,16 +322,22 @@ namespace Xpetra {
         thyraVecData[i] = xpetraVecData[i];
       }
       return thyraVec;
+#endif
     }
     RCP<MultiVector> ExtractVector(RCP<const MultiVector>& full, size_t block, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
-      const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
-      ExtractVector(*full, block, *xpetraVec);
-      if(bThyraMode == false) return xpetraVec;
+      // first extract partial vector from full vector (using xpetra style GIDs)
+      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
+      ExtractVector(*full, block, *vv);
+      if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+#if 0
+      vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+      return vv;
+#else
       const RCP<MultiVector> thyraVec = MultiVectorFactory::Build(getMap(block,true), xpetraVec->getNumVectors(), true);
       // TODO introduce Kokkos version of this.
       for(size_t k=0; k < xpetraVec->getNumVectors(); k++) {
@@ -333,16 +348,22 @@ namespace Xpetra {
         }
       }
       return thyraVec;
+#endif
     }
     RCP<MultiVector> ExtractVector(RCP<      MultiVector>& full, size_t block, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
       TEUCHOS_TEST_FOR_EXCEPTION(maps_[block] == null, Xpetra::Exceptions::RuntimeError,
             "ExtractVector: maps_[" << block << "] is null");
-      const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
-      ExtractVector(*full, block, *xpetraVec);
-      if(bThyraMode == false) return xpetraVec;
+      // first extract partial vector from full vector (using xpetra style GIDs)
+      const RCP<MultiVector> vv = MultiVectorFactory::Build(getMap(block,false), full->getNumVectors(), true);
+      ExtractVector(*full, block, *vv);
+      if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
+#if 0
+      vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
+      return vv;
+#else
       const RCP<MultiVector> thyraVec = MultiVectorFactory::Build(getMap(block,true), xpetraVec->getNumVectors(), true);
       // TODO introduce Kokkos version of this.
       for(size_t k=0; k < xpetraVec->getNumVectors(); k++) {
@@ -353,6 +374,7 @@ namespace Xpetra {
         }
       }
       return thyraVec;
+#endif
     }
     RCP<MultiVector> ExtractVector(RCP<const BlockedMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& full, size_t block, bool bThyraMode = false) const {
       TEUCHOS_TEST_FOR_EXCEPTION(block >= maps_.size(), std::out_of_range, "ExtractVector: Error, block = " << block << " is too big. The MapExtractor only contains " << maps_.size() << " partial blocks.");
@@ -382,6 +404,16 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
+#if 0
+        // Temporarily replace underlying map.
+        // Since the partial vector is given by reference we have to switch back to the original map
+        RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
+        RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
+        RCP<const Map> oldMap = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        rcpNonConstPartial->replaceMap(getMap(block,false)); // temporarely switch to xpetra-style map
+        full.doExport(*rcpNonConstPartial, *importers_[block], Xpetra::INSERT);
+        rcpNonConstPartial->replaceMap(oldMap); // change map back to original map
+#else
         const RCP<Vector> xpetraVec = VectorFactory::Build(getMap(block,false), true); // get sub vector in xpetra-style numbering
         // TODO introduce Kokkos version of this.
         Teuchos::ArrayRCP<const Scalar> thyraVecData  = partial.getData(0);
@@ -390,6 +422,7 @@ namespace Xpetra {
           xpetraVecData[i] = thyraVecData[i];
         }
         full.doExport(*xpetraVec, *importers_[block], Xpetra::INSERT);
+#endif
       } else {
         // Xpetra style numbering
         full.doExport(partial, *importers_[block], Xpetra::INSERT);
@@ -401,6 +434,16 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
+#if 0
+        // Temporarily replace underlying map.
+        // Since the partial vector is given by reference we have to switch back to the original map
+        RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
+        RCP<MultiVector> rcpNonConstPartial = Teuchos::rcp_const_cast<MultiVector>(rcpPartial);
+        RCP<const Map> oldMap = rcpNonConstPartial->getMap(); // temporarely store map of partial
+        rcpNonConstPartial->replaceMap(getMap(block,false)); // temporarely switch to xpetra-style map
+        full.doExport(*rcpNonConstPartial, *importers_[block], Xpetra::INSERT);
+        rcpNonConstPartial->replaceMap(oldMap); // change map back to original map
+#else
         const RCP<MultiVector> xpetraVec = MultiVectorFactory::Build(getMap(block,false), partial.getNumVectors(), true); // get sub vector in xpetra-style numbering
         // TODO introduce Kokkos version of this.
         for(size_t k=0; k < partial.getNumVectors(); k++) {
@@ -411,6 +454,7 @@ namespace Xpetra {
           }
         }
         full.doExport(*xpetraVec, *importers_[block], Xpetra::INSERT);
+#endif
       } else {
         // Xpetra style numbering
         full.doExport(partial, *importers_[block], Xpetra::INSERT);
