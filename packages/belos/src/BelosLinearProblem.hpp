@@ -144,6 +144,22 @@ namespace Belos {
       B_ = B; 
       isSet_=false; 
     }
+
+    /// \brief Set the user-defined residual of linear problem \f$AX = B\f$.
+    ///
+    /// The multivector is set by pointer; no copy of the object is made.
+    void setInitResVec(const Teuchos::RCP<const MV> &R0) {
+      R0_user_ = R0;
+      isSet_=false;
+    }
+
+    /// \brief Set the user-defined preconditioned residual of linear problem \f$AX = B\f$.
+    ///
+    /// The multivector is set by pointer; no copy of the object is made.
+    void setInitPrecResVec(const Teuchos::RCP<const MV> &PR0) {
+      PR0_user_ = PR0;
+      isSet_=false;
+    }
     
     /// \brief Set left preconditioner (\c LP) of linear problem \f$AX = B\f$.
     ///
@@ -307,13 +323,13 @@ namespace Belos {
     Teuchos::RCP<const MV> getRHS() const { return(B_); }
     
     //! A pointer to the initial unpreconditioned residual vector.
-    Teuchos::RCP<const MV> getInitResVec() const { return(R0_); }
+    Teuchos::RCP<const MV> getInitResVec() const;
     
     /// \brief A pointer to the preconditioned initial residual vector.
     ///
     /// \note This is the preconditioned residual if the linear system
     ///   is left preconditioned.
-    Teuchos::RCP<const MV> getInitPrecResVec() const { return(PR0_); }
+    Teuchos::RCP<const MV> getInitPrecResVec() const;
     
     /// \brief Get a pointer to the current left-hand side (solution) of the linear system.
     ///
@@ -503,6 +519,12 @@ namespace Belos {
    
     //! Preconditioned initial residual of the linear system.
     Teuchos::RCP<MV> PR0_;
+
+    //! User-defined initial residual of the linear system
+    Teuchos::RCP<const MV> R0_user_;
+
+    //! User-defined preconditioned initial residual of the linear system
+    Teuchos::RCP<const MV> PR0_user_;
  
     //! Left preconditioning operator of linear system
     Teuchos::RCP<const OP> LP_;  
@@ -602,6 +624,8 @@ namespace Belos {
     curB_(Problem.curB_),
     R0_(Problem.R0_),
     PR0_(Problem.PR0_),
+    R0_user_(Problem.R0_user_),
+    PR0_user_(Problem.PR0_user_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
     timerOp_(Problem.timerOp_),
@@ -861,31 +885,64 @@ namespace Belos {
     solutionUpdated_ = false;
     
     // Compute the initial residuals.
-    if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
-      R0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
-    }
-    computeCurrResVec( &*R0_, &*X_, &*B_ );
+    if(Teuchos::is_null(R0_user_)) {
+      if (R0_==Teuchos::null || MVT::GetNumberVecs( *R0_ )!=MVT::GetNumberVecs( *B_ )) {
+        R0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
+      }
+      computeCurrResVec( &*R0_, &*X_, &*B_ );
 
-    if (LP_!=Teuchos::null) {
-      if (PR0_==Teuchos::null || (PR0_==R0_) || (MVT::GetNumberVecs(*PR0_)!=MVT::GetNumberVecs(*B_))) {
-        PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
-      }
-      {
+      if (LP_!=Teuchos::null) {
+        if (PR0_==Teuchos::null || (PR0_==R0_) || (MVT::GetNumberVecs(*PR0_)!=MVT::GetNumberVecs(*B_))) {
+          PR0_ = MVT::Clone( *B_, MVT::GetNumberVecs( *B_ ) );
+        }
+        {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-        Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
 #endif
-        OPT::Apply( *LP_, *R0_, *PR0_ );
+          OPT::Apply( *LP_, *R0_, *PR0_ );
+        }
+      } 
+      else {
+        PR0_ = R0_;
       }
-    } 
+    }
     else {
-      PR0_ = R0_;
-    }    
+      // If the left preconditioner has been set and the user-defined 
+      // preconditioned residual has not, then we didn't set the problem
+      if(LP_!=Teuchos::null && PR0_user_==Teuchos::null) {
+        isSet_ = false;
+        return isSet_;
+      }
+      // If there is no left preconditioner, then the user-defined
+      // preconditioned residual must point to the user-defined residual
+      else {
+        PR0_user_ = R0_user_;
+      }
+    }
 
     // The problem has been set and is ready for use.
     isSet_ = true;
     
     // Return isSet.
     return isSet_;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<const MV> LinearProblem<ScalarType,MV,OP>::getInitResVec() const 
+  {
+    if(Teuchos::nonnull(R0_user_)) {
+      return R0_user_;
+    }
+    return(R0_); 
+  }
+
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RCP<const MV> LinearProblem<ScalarType,MV,OP>::getInitPrecResVec() const 
+  { 
+    if(Teuchos::nonnull(PR0_user_)) {
+      return PR0_user_;
+    }
+    return(PR0_); 
   }
   
   template <class ScalarType, class MV, class OP>
