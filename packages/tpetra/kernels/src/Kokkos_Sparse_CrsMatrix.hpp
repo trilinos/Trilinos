@@ -657,7 +657,7 @@ public:
   replaceValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const OrdinalType ncol,
-                 ScalarType vals[],
+                 const ScalarType vals[],
                  const bool is_sorted = false,
                  const bool force_atomic = false) const
   {
