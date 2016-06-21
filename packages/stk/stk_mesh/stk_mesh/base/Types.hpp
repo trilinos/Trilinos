@@ -245,6 +245,11 @@ typedef std::vector<EntityProc>     EntityProcVec ;
 
 typedef std::pair<EntityKey, int> EntityKeyProc;
 
+typedef std::pair<EntityId, int> EntityIdProc;
+typedef std::vector<EntityIdProc> EntityIdProcVec;
+
+typedef std::map<EntityId, int> EntityIdProcMap;
+
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *
  */

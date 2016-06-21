@@ -1073,6 +1073,17 @@ void move_unowned_entities_for_owner_to_ghost(
     }
 }
 
+void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
+                                    const OrdinalVector& input_ordinals,
+                                    stk::mesh::PartVector& output_parts)
+{
+    output_parts.clear();
+    output_parts.reserve(input_ordinals.size());
+    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
+    {
+        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
+    }
+}
 
 
 } // namespace impl

@@ -3798,18 +3798,6 @@ void BulkData::change_connectivity_for_edge_or_face(stk::mesh::Entity side, cons
     }
 }
 
-void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
-                                    const OrdinalVector& input_ordinals,
-                                    stk::mesh::PartVector& output_parts)
-{
-    output_parts.clear();
-    output_parts.reserve(input_ordinals.size());
-    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
-    {
-        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
-    }
-}
-
 void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& sideSharingDataToSend,
                                                  std::vector<SideSharingData>& sideSharingDataReceived)
 {
@@ -3828,7 +3816,7 @@ void BulkData::resolve_parallel_side_connections(std::vector<SideSharingData>& s
         stk::mesh::Entity element = get_entity(stk::topology::ELEM_RANK, sideSharingData.elementAndSide.id);
         int sideOrdinal = sideSharingData.elementAndSide.side;
         stk::mesh::PartVector addParts;
-        convert_part_ordinals_to_parts(mesh_meta_data(), sideSharingData.partOrdinals, addParts);
+        stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), sideSharingData.partOrdinals, addParts);
         stk::mesh::EntityVector sideNodeEntities(sideSharingData.sideNodes.size());
         for(size_t i=0; i<sideNodeEntities.size(); ++i)
             sideNodeEntities[i] = get_entity(stk::topology::NODE_RANK, sideSharingData.sideNodes[i]);
@@ -5100,7 +5088,7 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
     induced_part_membership(*this, entity, part_storage.empty, part_storage.induced_part_ordinals);
     unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
-    convert_part_ordinals_to_parts(mesh_meta_data(), part_storage.induced_part_ordinals, part_storage.inducedParts);
+    stk::mesh::impl::convert_part_ordinals_to_parts(mesh_meta_data(), part_storage.induced_part_ordinals, part_storage.inducedParts);
     internal_change_entity_parts(entity, part_storage.inducedParts, part_storage.removeParts);
 }
 

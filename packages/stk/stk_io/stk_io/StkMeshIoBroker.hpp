@@ -402,7 +402,7 @@ namespace impl
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      void populate_mesh(bool delay_field_data_allocation = true);
+      virtual void populate_mesh(bool delay_field_data_allocation = true);
 
       // Read/generate the field-data for the mesh, including
       // coordinates, attributes and distribution factors.
@@ -638,9 +638,12 @@ namespace impl
           m_sideset_face_creation_behavior = behavior;
       }
 
-    private:
+    protected:
       void create_bulk_data();
       void validate_input_file_index(size_t input_file_index) const;
+      void stk_mesh_resolve_node_sharing() { bulk_data().resolve_node_sharing(); }
+      void stk_mesh_modification_end_after_node_sharing_resolution() { bulk_data().modification_end_after_node_sharing_resolution(); }
+    private:
       void create_ioss_region();
       void validate_output_file_index(size_t output_file_index) const;
 
@@ -678,14 +681,14 @@ namespace impl
 
       std::vector<Teuchos::RCP<impl::OutputFile> > m_output_files;
       std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
+    protected:
       std::vector<Teuchos::RCP<InputFile> > m_input_files;
-
+    private:
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
+    protected:
       size_t m_active_mesh_index;
-
       SideSetFaceCreationBehavior m_sideset_face_creation_behavior;
-
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {
