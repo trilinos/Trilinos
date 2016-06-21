@@ -309,6 +309,97 @@ namespace MueLu {
       if(bZ->Rows() == 1 && bZ->Cols() == 1 && rangeMapExtractor_->getThyraMode() == true) bZThyraSpecialTreatment = true;
     }
 
+#if 0 // new implementation
+
+    // create a new vector for storing the current residual in a blocked multi vector
+    RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
+    RCP<BlockedMultiVector> residual = Teuchos::rcp(new BlockedMultiVector(rangeMapExtractor_,res));
+
+    // create a new solution vector as a blocked multi vector
+    RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
+    RCP<BlockedMultiVector> bX = Teuchos::rcp(new BlockedMultiVector(domainMapExtractor_,rcpX));
+
+    // create a blocked rhs vector
+    RCP<const MultiVector> rcpB = Teuchos::rcpFromRef(B);
+    RCP<const BlockedMultiVector> bB = Teuchos::rcp(new const BlockedMultiVector(rangeMapExtractor_,rcpB));
+
+
+    // incrementally improve solution vector X
+    for (LocalOrdinal run = 0; run < nSweeps; ++run) {
+      // 1) calculate current residual
+      residual->update(one,*bB,zero); // r = B
+      A_->apply(*bX, *residual, Teuchos::NO_TRANS, -one, one);
+
+      // split residual vector
+      Teuchos::RCP<MultiVector> r1 = rangeMapExtractor_->ExtractVector(residual, 0, bRangeThyraModePredict);
+      Teuchos::RCP<MultiVector> r2 = rangeMapExtractor_->ExtractVector(residual, 1, bRangeThyraModeSchur);
+
+      // 2) solve F * \Delta \tilde{x}_1 = r_1
+      //    start with zero guess \Delta \tilde{x}_1
+      RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
+      xtilde1->putScalar(zero);
+
+      if(bFThyraSpecialTreatment == true) {
+        xtilde1->replaceMap(domainMapExtractor_->getMap(0,true));
+        r1->replaceMap(rangeMapExtractor_->getMap(0,true));
+        velPredictSmoo_->Apply(*xtilde1,*r1);
+        xtilde1->replaceMap(domainMapExtractor_->getMap(0,false));
+      } else {
+        velPredictSmoo_->Apply(*xtilde1,*r1);
+      }
+
+      // 3) calculate rhs for SchurComp equation
+      //    r_2 - D \Delta \tilde{x}_1
+      RCP<MultiVector> schurCompRHS = rangeMapExtractor_->getVector(1, B.getNumVectors(), bRangeThyraModeSchur);
+      D_->apply(*xtilde1,*schurCompRHS);
+      schurCompRHS->update(one,*r2,-one);
+
+      // 4) solve SchurComp equation
+      //    start with zero guess \Delta \tilde{x}_2
+      RCP<MultiVector> xtilde2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
+      xtilde2->putScalar(zero);
+
+      // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
+      // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
+      if(bZThyraSpecialTreatment == true) {
+        xtilde2->replaceMap(domainMapExtractor_->getMap(1,true));
+        schurCompRHS->replaceMap(rangeMapExtractor_->getMap(1,true));
+        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+        xtilde2->replaceMap(domainMapExtractor_->getMap(1,false));
+      } else {
+        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
+      }
+
+      // 5) scale xtilde2 with omega
+      //    store this in xhat2
+      RCP<MultiVector> xhat2 = domainMapExtractor_->getVector(1, X.getNumVectors(), bDomainThyraModeSchur);
+      xhat2->update(omega,*xtilde2,zero);
+
+      // 6) calculate xhat1
+      RCP<MultiVector> xhat1      = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
+      RCP<MultiVector> xhat1_temp = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
+      G_->apply(*xhat2,*xhat1_temp); // store result temporarely in xtilde1_temp
+      xhat1->elementWiseMultiply(one/*/omega*/,*diagFinv_,*xhat1_temp,zero);
+      xhat1->update(one,*xtilde1,-one);
+
+      // 7) extract parts of solution vector X
+      Teuchos::RCP<MultiVector> x1 = domainMapExtractor_->ExtractVector(bX, 0, bDomainThyraModePredict);
+      Teuchos::RCP<MultiVector> x2 = domainMapExtractor_->ExtractVector(bX, 1, bDomainThyraModeSchur);
+
+      // 8) update solution vector with increments xhat1 and xhat2
+      //    rescale increment for x2 with omega_
+      x1->update(one,*xhat1,one);    // x1 = x1_old + xhat1
+      x2->update(/*omega*/ one,*xhat2,one); // x2 = x2_old + omega xhat2
+      // write back solution in global vector X
+      domainMapExtractor_->InsertVector(x1, 0, bX, bDomainThyraModePredict);
+      domainMapExtractor_->InsertVector(x2, 1, bX, bDomainThyraModeSchur);
+    }
+
+    // write back solution
+    domainMapExtractor_->InsertVector(bX->getMultiVector(0), 0, rcpX, bDomainThyraModePredict);
+    domainMapExtractor_->InsertVector(bX->getMultiVector(1), 1, rcpX, bDomainThyraModeSchur);
+#else
+
     // wrap current solution vector in RCP
     RCP<MultiVector> rcpX = Teuchos::rcpFromRef(X);
 
@@ -330,16 +421,6 @@ namespace MueLu {
       RCP<MultiVector> xtilde1 = domainMapExtractor_->getVector(0, X.getNumVectors(), bDomainThyraModePredict);
       xtilde1->putScalar(zero);
 
-#if 1
-      if(bFThyraSpecialTreatment == true) {
-        xtilde1->replaceMap(domainMapExtractor_->getMap(0,true));
-        r1->replaceMap(rangeMapExtractor_->getMap(0,true));
-        velPredictSmoo_->Apply(*xtilde1,*r1);
-        xtilde1->replaceMap(domainMapExtractor_->getMap(0,false));
-      } else {
-        velPredictSmoo_->Apply(*xtilde1,*r1);
-      }
-#else
       // Special handling in case that F block is a 1x1 blocked operator in Thyra mode
       // Then we have to feed the smoother with real Thyra-based vectors
       if(bFThyraSpecialTreatment == true) {
@@ -358,7 +439,6 @@ namespace MueLu {
       } else {
         velPredictSmoo_->Apply(*xtilde1,*r1);
       }
-#endif
 
       // 3) calculate rhs for SchurComp equation
       //    r_2 - D \Delta \tilde{x}_1
@@ -373,16 +453,6 @@ namespace MueLu {
 
       // Special handling if SchurComplement operator was a 1x1 blocked operator in Thyra mode
       // Then, we have to translate the Xpetra offset GIDs to plain Thyra GIDs and vice versa
-#if 1
-      if(bZThyraSpecialTreatment == true) {
-        xtilde2->replaceMap(domainMapExtractor_->getMap(1,true));
-        schurCompRHS->replaceMap(rangeMapExtractor_->getMap(1,true));
-        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
-        xtilde2->replaceMap(domainMapExtractor_->getMap(1,false));
-      } else {
-        schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
-      }
-#else
       if(bZThyraSpecialTreatment == true) {
         // create empty solution vector based on Thyra GIDs
         RCP<MultiVector> xtilde2_thyra = domainMapExtractor_->getVector(1, X.getNumVectors(), true);
@@ -409,7 +479,6 @@ namespace MueLu {
       } else {
         schurCompSmoo_->Apply(*xtilde2,*schurCompRHS);
       }
-#endif
 
       // 5) scale xtilde2 with omega
       //    store this in xhat2
@@ -435,6 +504,7 @@ namespace MueLu {
       domainMapExtractor_->InsertVector(x1, 0, rcpX, bDomainThyraModePredict);
       domainMapExtractor_->InsertVector(x2, 1, rcpX, bDomainThyraModeSchur);
     }
+#endif
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
