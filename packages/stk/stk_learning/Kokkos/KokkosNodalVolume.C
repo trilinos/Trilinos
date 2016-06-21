@@ -71,6 +71,7 @@
    typedef Kokkos::HostSpace    MemSpace;
 #endif
 
+#ifndef KOKKOS_HAVE_CUDA
 double calculate_element_volume(const stk::mesh::BulkData& mesh, const stk::mesh::Entity* elemNodes, unsigned numElemNodes, const stk::mesh::FieldBase& coords)
 {
     double min[3] = {std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max()};
@@ -95,7 +96,7 @@ void calculate_nodal_volume(stk::mesh::BulkData& mesh, stk::mesh::Field<double>&
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
 
-    Kokkos::parallel_for(Kokkos::TeamPolicy< ExecSpace >(elemBuckets.size(), 2), [&] (const TeamHandleType& team) {
+    Kokkos::parallel_for(Kokkos::TeamPolicy< ExecSpace >(elemBuckets.size(), 2), [&]STK_FUNCTION (const TeamHandleType& team) {
         const int elementBucketIndex = team.league_rank();
         const stk::mesh::Bucket* bucket = elemBuckets[elementBucketIndex];
         const unsigned numNodesPerElem = bucket->topology().num_nodes();
@@ -186,3 +187,4 @@ TEST_F(NodalVolumeCalculator, nodalVolumeWithAura) {
 TEST_F(NodalVolumeCalculator, nodalVolumeWithoutAura) {
     test_nodal_volume(stk::mesh::BulkData::NO_AUTO_AURA);
 }
+#endif
