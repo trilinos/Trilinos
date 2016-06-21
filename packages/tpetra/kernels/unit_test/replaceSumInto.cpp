@@ -45,9 +45,10 @@
 #include "Kokkos_Sparse_CrsMatrix.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
-namespace { // (anonymous)
-  using std::endl;
-
+// mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
+// errors if I put this functor in an anonymous namespace.  If I name
+// the namespace, it builds just fine.
+namespace KokkosSparseTest {
   template<class CrsMatrixType>
   class ModifyEvenNumberedRows {
   public:
@@ -90,6 +91,10 @@ namespace { // (anonymous)
     bool sorted_;
     bool atomic_;
   };
+} // namespace KokkosSparseTest
+
+namespace { // (anonymous)
+  using std::endl;
 
   template<class CrsMatrixType>
   void
@@ -101,7 +106,7 @@ namespace { // (anonymous)
     typedef typename CrsMatrixType::device_type::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, typename CrsMatrixType::ordinal_type> policy_type;
 
-    ModifyEvenNumberedRows<CrsMatrixType> functor (A, replace, sorted, atomic);
+    ::KokkosSparseTest::ModifyEvenNumberedRows<CrsMatrixType> functor (A, replace, sorted, atomic);
     Kokkos::parallel_for (policy_type (0, A.numRows ()), functor);
   }
 

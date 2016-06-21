@@ -46,9 +46,10 @@
 #include "Kokkos_ArithTraits.hpp"
 #include <sstream>
 
-namespace { // (anonymous)
-  using std::endl;
-
+// mfh 21 Jun 2016: CUDA 7.5 with GCC 4.8.4 gives me funny build
+// errors if I put this functor in an anonymous namespace.  If I name
+// the namespace, it builds just fine.
+namespace KokkosSparseTest {
   template<class CrsMatrixType, const int numEntToModify>
   class ModifyEntries {
   public:
@@ -122,6 +123,10 @@ namespace { // (anonymous)
     bool sorted_;
     bool atomic_;
   };
+} // namespace KokkosSparseTest
+
+namespace { // (anonymous)
+  using std::endl;
 
   template<class CrsMatrixType, const int numEntToModify>
   void
@@ -137,7 +142,7 @@ namespace { // (anonymous)
     typedef typename CrsMatrixType::device_type::execution_space execution_space;
     typedef typename CrsMatrixType::ordinal_type ordinal_type;
     typedef Kokkos::RangePolicy<execution_space, ordinal_type> policy_type;
-    typedef ModifyEntries<CrsMatrixType, numEntToModify> functor_type;
+    typedef ::KokkosSparseTest::ModifyEntries<CrsMatrixType, numEntToModify> functor_type;
 
     // If debug is false, we capture all output in an
     // std::ostringstream, and don't print it unless the test fails
@@ -239,7 +244,6 @@ namespace { // (anonymous)
 
     value_type curVal = ONE;
     for (ordinal_type k = 0; k < A.numCols (); ++k, curVal += ONE) {
-      ordinal_type curCol;
       value_type expectedVal;
 
       // Cast integers to mag_type first before assigning to
