@@ -315,7 +315,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, CreateBlockedDiagonalOp, M,
   TEST_EQUALITY(bop->getRangeMapExtractor()->getThyraMode(),false);
   TEST_EQUALITY(bop->getDomainMapExtractor()->getThyraMode(),false);
 
+#ifdef HAVE_XPETRA_DEBUG
   TEST_THROW(bop->getRangeMap(0,true), Xpetra::Exceptions::RuntimeError);
+#endif
 
   TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(2)->getMinAllGlobalIndex(),10);
   TEST_EQUALITY(bop->getRangeMapExtractor()->getMap(2)->getMaxAllGlobalIndex(),(comm->getSize() - 1) * 40 + 19);
