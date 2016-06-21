@@ -51,16 +51,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
-#ifdef HAVE_MPI
-#  include "Epetra_MpiComm.h"
-#  include "mpi.h"
-#endif
-#  include "Epetra_SerialComm.h"
-
 #include <Xpetra_ConfigDefs.hpp>
-// Epetra routines to split matrix and maps
-//#include "BlockedMatrixTestHelpers.hpp"
-
 #include <Xpetra_DefaultPlatform.hpp>
 #include <Teuchos_as.hpp>
 
