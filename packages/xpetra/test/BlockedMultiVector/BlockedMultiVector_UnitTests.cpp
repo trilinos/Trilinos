@@ -492,7 +492,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, ExtractVector, M, MA, Sca
     Teuchos::ArrayRCP<const Scalar > partBd = partB->getData(0);
     Teuchos::ArrayRCP<const Scalar > partVd = partV->getData(0);
     TEST_COMPARE_FLOATING_ARRAYS(partBd,partVd,Teuchos::ScalarTraits<Magnitude>::zero());
+#ifdef HAVE_XPETRA_DEBUG
     TEST_THROW(partB = me->ExtractVector(bvv,r,true),Xpetra::Exceptions::RuntimeError);
+#endif
     TEST_THROW(partV = me->ExtractVector(vv,r,true),Xpetra::Exceptions::RuntimeError);
   }
 
@@ -604,13 +606,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVector, M, MA, Scal
     TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
   }
 
+#ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
   Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,false);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
   Teuchos::RCP<MultiVector> part2 = me->getVector(0,2,false);
   TEST_THROW(me->InsertVector(part2,1,bvv),Xpetra::Exceptions::RuntimeError);
   TEST_THROW(Teuchos::RCP<MultiVector> part3 = me->getVector(1,2,true),Xpetra::Exceptions::RuntimeError);
-
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA, Scalar, LO, GO, Node )
@@ -654,6 +657,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
     TEST_COMPARE_FLOATING_ARRAYS(partd1,partd2,Teuchos::ScalarTraits<Magnitude>::zero());
   }
 
+#ifdef HAVE_XPETRA_DEBUG
   // create malicious multivector
   Teuchos::RCP<MultiVector> part1 = me->getVector(0,23,true);
   TEST_THROW(me->InsertVector(part1,0,bvv),Xpetra::Exceptions::RuntimeError);
@@ -664,6 +668,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, InsertVectorThyra, M, MA,
   // This should throw, thought
   Teuchos::RCP<MultiVector> part3 = me->getVector(0,2,true);
   TEST_THROW(me->InsertVector(part2,2,bvv,me->getThyraMode()),Xpetra::Exceptions::RuntimeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Scalar, LO, GO, Node )
@@ -732,11 +737,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1b, M, MA, Sc
   TEST_EQUALITY( bnorms1[0], 0.5 * bnorms2[0]);
   TEST_EQUALITY( bnorms1[1], 0.5 * bnorms2[1]);
 
+#ifdef HAVE_XPETRA_DEBUG
   // create faulty multivector
   Teuchos::RCP<MultiVector> vvx = MultiVectorFactory::Build(bvv1->getMapExtractor()->getMap(0),2,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
   vvx = MultiVectorFactory::Build(bvv1->getMap(),1,true);
   TEST_THROW(bvv1->update(STS::one(), *vvx, STS::one()), Xpetra::Exceptions::RuntimeError);
+#endif
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector2, M, MA, Scalar, LO, GO, Node )

@@ -259,11 +259,11 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ != bA->getMapExtractor()->getThyraMode(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different thyra mode).");
         TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->NumMaps() != bA->getMapExtractor()->NumMaps(), Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different number of partial vectors).");
         for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
-          TEUCHOS_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
+          XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
           getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta);
         }
       } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
+        XPETRA_TEST_FOR_EXCEPTION(getMapExtractor()->getFullMap()->isSameAs(*(rcpA->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (maps of full vector do not match with map in MapExtractor).");
         for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
           Teuchos::RCP<const MultiVector> part = getMapExtractor()->ExtractVector(rcpA, r, bThyraMode_);
           getMultiVector(r)->update(alpha, *part, beta);
@@ -286,7 +286,7 @@ namespace Xpetra {
         TEUCHOS_TEST_FOR_EXCEPTION(numVectors_ != bB->getNumVectors(),Xpetra::Exceptions::RuntimeError,"BlockedMultiVector::update: update with incompatible vector (different number of vectors in multivector in vector B).");
 
         for(size_t r = 0; r < getMapExtractor()->NumMaps(); r++) {
-          TEUCHOS_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
+          XPETRA_TEST_FOR_EXCEPTION(getMultiVector(r)->getMap()->isSameAs(*(bA->getMultiVector(r)->getMap()))==false, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::update: update with incompatible vector (different maps in partial vector " << r << ").");
           getMultiVector(r)->update(alpha, *(bA->getMultiVector(r)), beta, *(bB->getMultiVector(r)), gamma);
         }
         return;
@@ -521,12 +521,12 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(vv==Teuchos::null, Xpetra::Exceptions::RuntimeError, "Partial vector must not be Teuchos::null");
       if(bThyraMode_ == bThyraMode) {
         TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == true && v->getMap()->getMinAllGlobalIndex() > 0, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector is in Thyra mode but partial map starts with GIDs " << v->getMap()->getMinAllGlobalIndex() << " > 0!");
-        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+        XPETRA_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode_)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
         vv_[r] = vv;
       }
       else {
         // standard case: bThyraMode_ == true but bThyraMode == false
-        TEUCHOS_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
+        XPETRA_TEST_FOR_EXCEPTION(getMapExtractor()->getMap(r,bThyraMode)->isSameAs(*(v->getMap()))==false, Xpetra::Exceptions::RuntimeError, "Map of provided partial map and map extractor are not compatible. The size of the provided map is " << v->getMap()->getGlobalNumElements() << " and the expected size is " << getMapExtractor()->getMap(r,bThyraMode_)->getGlobalNumElements() << " or the GIDs are not correct (Thyra versus non-Thyra?)");
 
         Teuchos::RCP<MultiVector> target = getMapExtractor()->getVector(r,v->getNumVectors(),bThyraMode_);
         for(size_t k=0; k < v->getNumVectors(); k++) {
