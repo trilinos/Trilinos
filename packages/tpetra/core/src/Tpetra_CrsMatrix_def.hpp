@@ -53,6 +53,7 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_copyOffsets.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
@@ -291,16 +292,20 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, size_t, "
+      "ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new crs_graph_type (rowMap, maxNumEntriesPerRow,
-                                          pftype, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, maxNumEntriesPerRow,
+                                                pftype, params));
     }
     catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "size_t, ProfileType[, RCP<ParameterList>]) threw an exception: "
+         << e.what ());
     }
+    myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
     checkInternalState ();
@@ -319,16 +324,20 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, NumEntriesPerRowToAlloc, pftype, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc, pftype, params));
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
+         "an exception: " << e.what ());
     }
-    staticGraph_ = myGraph_;
+    myGraph_ = graph;
+    staticGraph_ = graph;
     resumeFill (params);
     checkInternalState ();
   }
@@ -347,24 +356,34 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
-    TEUCHOS_TEST_FOR_EXCEPTION(! staticGraph_.is_null(), std::logic_error,
-      "Tpetra::CrsMatrix ctor (row Map, col Map, maxNumEntriesPerRow, ...): "
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]): ";
+
+#ifdef HAVE_TPETRA_DEBUG
+    // An artifact of debugging something a while back.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! staticGraph_.is_null (), std::logic_error,
       "staticGraph_ is not null at the beginning of the constructor.  "
       "Please report this bug to the Tpetra developers.");
-    TEUCHOS_TEST_FOR_EXCEPTION(! myGraph_.is_null(), std::logic_error,
-      "Tpetra::CrsMatrix ctor (row Map, col Map, maxNumEntriesPerRow, ...): "
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! myGraph_.is_null (), std::logic_error,
       "myGraph_ is not null at the beginning of the constructor.  "
       "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+    Teuchos::RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, maxNumEntriesPerRow,
-                                 pftype, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                maxNumEntriesPerRow,
+                                                pftype, params));
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]) threw an "
+         "exception: " << e.what ());
     }
+    myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
     checkInternalState ();
@@ -384,16 +403,22 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
+      "RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, numEntPerRow, pftype, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, numEntPerRow,
+                                                pftype, params));
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
-    staticGraph_ = myGraph_;
+    myGraph_ = graph;
+    staticGraph_ = graph;
     resumeFill (params);
     checkInternalState ();
   }
@@ -401,28 +426,45 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+             const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (graph->getRowMap ()),
     staticGraph_ (graph),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    const char tfecfFuncName[] = "CrsMatrix(graph[,params])";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(staticGraph_.is_null (),
-      std::runtime_error, ": When calling the CrsMatrix constructor that "
-      "accepts a static graph, the pointer to the graph must not be null.");
-    // We prohibit the case where the graph is not yet filled.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! staticGraph_->isFillComplete (),
-      std::runtime_error, ": The specified graph is not fill-complete. You "
-      "must invoke fillComplete() on the graph before using it to construct a "
-      "CrsMatrix.  Note that calling resumeFill() makes the graph not fill-"
-      "complete, even if you had previously called fillComplete().  In that "
-      "case, you must call fillComplete() on the graph again.");
-    // the graph has entries, and the matrix should have entries as well, set to zero. no need or point in lazy allocating in this case.
-    // first argument LocalIndices is ignored; the graph is already allocated (local or global, we don't care here)
-    allocateValues (LocalIndices, GraphAlreadyAllocated);
-    resumeFill (params);
+    typedef typename local_matrix_type::values_type values_type;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const CrsGraph>[, "
+      "RCP<ParameterList>]): ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.is_null (), std::runtime_error, "Input graph is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! graph->isFillComplete (), std::runtime_error, "Input graph is not "
+       "fill complete. You must call fillComplete on the graph before using "
+       "it to construct a CrsMatrix.  Note that calling resumeFill on the "
+       "graph makes it not fill complete, even if you had previously called "
+       "fillComplete.  In that case, you must call fillComplete on the graph "
+       "again.");
+
+    // The graph is fill complete, so it is locally indexed and has a
+    // fixed structure.  This means we can allocate the (1-D) array of
+    // values and build the local matrix right now.  Note that the
+    // local matrix's number of columns comes from the column Map, not
+    // the domain Map.
+
+    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
+    auto lclGraph = graph->getLocalGraph ();
+    const size_t numEnt = lclGraph.entries.dimension_0 ();
+    values_type val ("Tpetra::CrsMatrix::val", numEnt);
+
+    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                          numCols, val, lclGraph);
+    // FIXME (22 Jun 2016) I would very much like to get rid of
+    // k_values1D_ at some point.  I find it confusing to have all
+    // these extra references lying around.
+    this->k_values1D_ = this->lclMatrix_.values;
+
     checkInternalState ();
   }
 
@@ -439,19 +481,53 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
+    typedef typename local_matrix_type::values_type values_type;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, ptr, ind, val[, params]): ";
+    RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,
-                                 columnIndices, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, rowPointers,
+                                                columnIndices, params));
     }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, ptr, ind[, params]) threw an exception: "
+         << e.what ());
     }
-    staticGraph_ = myGraph_;
-    k_values1D_  = values;
-    resumeFill (params);
+    myGraph_ = graph;
+    staticGraph_ = graph;
+
+    // The graph may not be fill complete yet.  However, it is locally
+    // indexed (since we have a column Map) and has a fixed structure
+    // (due to the input arrays).  This means we can allocate the
+    // (1-D) array of values and build the local matrix right now.
+    // Note that the local matrix's number of columns comes from the
+    // column Map, not the domain Map.
+
+    // The graph _must_ have a local graph at this point.  We don't
+    // really care whether CrsGraph's constructor deep-copies or
+    // shallow-copies the input, but the dimensions have to be right.
+    // That's how we tell whether the CrsGraph has a local graph.
+    auto lclGraph = staticGraph_->getLocalGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclGraph.row_map.dimension_0 () != rowPointers.dimension_0 () ||
+       lclGraph.entries.dimension_0 () != columnIndices.dimension_0 (),
+       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
+       "ind[, params]) did not set the local graph correctly.  Please "
+       "report this bug to the Tpetra developers.");
+
+    const size_t numCols = staticGraph_->getColMap ()->getNodeNumElements ();
+    const size_t numEnt = lclGraph.entries.dimension_0 ();
+    values_type val ("Tpetra::CrsMatrix::val", numEnt);
+
+    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                          numCols, val, lclGraph);
+    // FIXME (22 Jun 2016) I would very much like to get rid of
+    // k_values1D_ at some point.  I find it confusing to have all
+    // these extra references lying around.
+    this->k_values1D_ = this->lclMatrix_.values;
+
     checkInternalState ();
   }
 
@@ -459,33 +535,64 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const Teuchos::ArrayRCP<size_t> & rowPointers,
-             const Teuchos::ArrayRCP<LocalOrdinal> & columnIndices,
-             const Teuchos::ArrayRCP<Scalar> & values,
+             const Teuchos::ArrayRCP<size_t>& ptr,
+             const Teuchos::ArrayRCP<LocalOrdinal>& ind,
+             const Teuchos::ArrayRCP<Scalar>& val,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::rcp;
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Teuchos::av_reinterpret_cast;
+    typedef typename local_matrix_type::values_type values_type;
+    typedef impl_scalar_type IST;
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, ptr, ind, val[, params]): ";
+
+    RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, rowPointers,
-                                 columnIndices, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, ptr,
+                                                ind, params));
     }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::runtime_error, "Tpetra::CrsMatrix constructor: Caught "
-        "exception while allocating CrsGraph: " << e.what ());
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, ArrayRCP<size_t>, ArrayRCP<LocalOrdinal>[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
-    staticGraph_ = myGraph_;
-    // FIXME (mfh 05 Aug 2014) It should be possible to convince the
-    // ArrayRCP to relinquish its allocation, but that might require
-    // passing the ArrayRCP in by nonconst reference.
-    Teuchos::ArrayRCP<impl_scalar_type> vals =
-      Teuchos::arcp_reinterpret_cast<impl_scalar_type> (values);
-    k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<device_type> (vals ());
-    resumeFill (params);
+    myGraph_ = graph;
+    staticGraph_ = graph;
+
+    // The graph may not be fill complete yet.  However, it is locally
+    // indexed (since we have a column Map) and has a fixed structure
+    // (due to the input arrays).  This means we can allocate the
+    // (1-D) array of values and build the local matrix right now.
+    // Note that the local matrix's number of columns comes from the
+    // column Map, not the domain Map.
+
+    // The graph _must_ have a local graph at this point.  We don't
+    // really care whether CrsGraph's constructor deep-copies or
+    // shallow-copies the input, but the dimensions have to be right.
+    // That's how we tell whether the CrsGraph has a local graph.
+    auto lclGraph = staticGraph_->getLocalGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (lclGraph.row_map.dimension_0 ()) != static_cast<size_t> (ptr.size ()) ||
+       static_cast<size_t> (lclGraph.entries.dimension_0 ()) != static_cast<size_t> (ind.size ()),
+       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
+       "ind[, params]) did not set the local graph correctly.  Please "
+       "report this bug to the Tpetra developers.");
+
+    const size_t numCols = staticGraph_->getColMap ()->getNodeNumElements ();
+    values_type valIn = getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
+    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                          numCols, valIn, lclGraph);
+    // FIXME (22 Jun 2016) I would very much like to get rid of
+    // k_values1D_ at some point.  I find it confusing to have all
+    // these extra references lying around.
+    this->k_values1D_ = this->lclMatrix_.values;
+
     checkInternalState ();
   }
 
@@ -497,33 +604,33 @@ namespace Tpetra {
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     lclMatrix_ (lclMatrix),
+    k_values1D_ (lclMatrix.values),
     storageStatus_ (Details::STORAGE_1D_PACKED),
-    fillComplete_ (false),
+    fillComplete_ (true),
     frobNorm_ (-STM::one ())
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::arcp;
-    using Teuchos::rcp;
-    using Teuchos::RCP;
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(rowMap,colMap,lclMatrix,params): ";
-
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap,
+                                                lclMatrix.graph, params));
     }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, "Caught exception while allocating "
-        "CrsGraph: " << e.what ());
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, local_graph_type[, RCP<ParameterList>]) threw an "
+         "exception: " << e.what ());
     }
-    staticGraph_ = myGraph_;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
+       "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
+       "did not produce a fill-complete graph.  Please report this bug to the "
+       "Tpetra developers.");
+
+    myGraph_ = graph;
+    staticGraph_ = graph;
     computeGlobalConstants ();
-
-    k_values1D_ = lclMatrix_.values;
-
-    // FIXME (mfh 28 Aug 2014) "Preserve Local Graph" bool parameter no longer used.
-
-    // Now we're fill complete!
-    fillComplete_ = true;
 
     // Sanity checks at the end.
 #ifdef HAVE_TPETRA_DEBUG
@@ -2953,53 +3060,82 @@ namespace Tpetra {
                 const typename local_graph_type::entries_type::non_const_type& columnIndices,
                 const typename local_matrix_type::values_type& values)
   {
-    const char tfecfFuncName[] = "setAllValues";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      columnIndices.size () != values.size (), std::runtime_error,
-      ": columnIndices and values must have the same size.  columnIndices.size() = "
-      << columnIndices.size () << " != values.size() = " << values.size () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+    const char tfecfFuncName[] = "setAllValues: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (columnIndices.size () != values.size (), std::invalid_argument,
+       "columnIndices.size() = " << columnIndices.size () << " != values.size()"
+       " = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (myGraph_.is_null (), std::runtime_error, "myGraph_ must not be null.");
 
     try {
       myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, ": Caught exception while calling myGraph_->"
-        "setAllIndices(): " << e.what ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "myGraph_->setAllIndices() threw an "
+         "exception: " << e.what ());
     }
-    k_values1D_ = values;
+    // Make sure that myGraph_ now has a local graph.  It may not be
+    // fillComplete yet, so it's important to check.  We don't care
+    // whether setAllIndices() did a shallow copy or a deep copy, so a
+    // good way to check is to compare dimensions.
+    auto lclGraph = myGraph_->getLocalGraph ();
+    const size_t numEnt = lclGraph.entries.dimension_0 ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclGraph.row_map.dimension_0 () != rowPointers.dimension_0 () ||
+       numEnt != static_cast<size_t> (columnIndices.dimension_0 ()),
+       std::logic_error, "myGraph_->setAllIndices() did not correctly create "
+       "local graph.  Please report this bug to the Tpetra developers.");
+
+    const size_t numCols = myGraph_->getColMap ()->getNodeNumElements ();
+    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                          numCols, values, lclGraph);
+    // FIXME (22 Jun 2016) I would very much like to get rid of
+    // k_values1D_ at some point.  I find it confusing to have all
+    // these extra references lying around.
+    this->k_values1D_ = this->lclMatrix_.values;
+
     checkInternalState ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  setAllValues (const Teuchos::ArrayRCP<size_t>& rowPointers,
-                const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
-                const Teuchos::ArrayRCP<Scalar>& values)
+  setAllValues (const Teuchos::ArrayRCP<size_t>& ptr,
+                const Teuchos::ArrayRCP<LocalOrdinal>& ind,
+                const Teuchos::ArrayRCP<Scalar>& val)
   {
-    const char tfecfFuncName[] = "setAllValues: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      columnIndices.size () != values.size (), std::runtime_error,
-      "columnIndices.size() = " << columnIndices.size () << " != "
-      "values.size() = " << values.size () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      myGraph_.is_null (), std::runtime_error, "myGraph_ must not be null.");
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Teuchos::ArrayRCP;
+    using Teuchos::av_reinterpret_cast;
+    typedef device_type DT;
+    typedef impl_scalar_type IST;
+    typedef typename local_matrix_type::row_map_type row_map_type;
+    //typedef typename row_map_type::non_const_value_type row_offset_type;
+    const char tfecfFuncName[] = "setAllValues(ArrayRCP<size_t>, ArrayRCP<LO>, ArrayRCP<Scalar>): ";
 
-    try {
-      myGraph_->setAllIndices (rowPointers, columnIndices);
-    }
-    catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::runtime_error, "Caught exception while calling myGraph_->"
-        "setAllIndices(): " << e.what ());
-    }
-    Teuchos::ArrayRCP<impl_scalar_type> vals =
-      Teuchos::arcp_reinterpret_cast<impl_scalar_type> (values);
-    k_values1D_ = Kokkos::Compat::getKokkosViewDeepCopy<device_type> (vals ());
-    checkInternalState ();
+    // The row offset type may depend on the execution space.  It may
+    // not necessarily be size_t.  If it's not, we need to make a deep
+    // copy.  We need to make a deep copy anyway so that Kokkos can
+    // own the memory.  Regardless, ptrIn gets the copy.
+    typename row_map_type::non_const_type ptrNative ("ptr", ptr.size ());
+    Kokkos::View<const size_t*,
+      typename row_map_type::array_layout,
+      Kokkos::HostSpace,
+      Kokkos::MemoryUnmanaged> ptrSizeT (ptr.getRawPtr (), ptr.size ());
+    ::Tpetra::Details::copyOffsets (ptrNative, ptrSizeT);
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (ptrNative.dimension_0 () != ptrSizeT.dimension_0 (),
+       std::logic_error, "ptrNative.dimension_0() = " <<
+       ptrNative.dimension_0 () << " != ptrSizeT.dimension_0() = "
+       << ptrSizeT.dimension_0 () << ".  Please report this bug to the "
+       "Tpetra developers.");
+
+    auto indIn = getKokkosViewDeepCopy<DT> (ind ());
+    auto valIn = getKokkosViewDeepCopy<DT> (av_reinterpret_cast<IST> (val ()));
+    this->setAllValues (ptrNative, indIn, valIn);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

@@ -1572,35 +1572,61 @@ namespace Tpetra {
     //! Scale the matrix's values: <tt>this := alpha*this</tt>.
     void scale (const Scalar& alpha);
 
-    //! Sets the 1D pointer arrays of the graph.
-    /**
-       \pre <tt>hasColMap() == true</tt>
-       \pre <tt>getGraph() != Teuchos::null</tt>
-       \pre No insert/sum routines have been called
-
-       \warning This method is intended for expert developer use only, and should never be called by user code.
-    */
+    /// \brief Set the local matrix using three (compressed sparse row) arrays.
+    ///
+    /// \pre <tt>hasColMap() == true</tt>
+    /// \pre <tt>getGraph() != Teuchos::null</tt>
+    /// \pre No insert/sum routines have been called
+    ///
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    ///
+    /// This method behaves like the CrsMatrix constructor that takes
+    /// a const CrsGraph.  It fixes the matrix's graph, but does not
+    /// call fillComplete on the matrix.  The graph might not
+    /// necessarily be fill complete, but it must have a local graph.
+    ///
+    /// The input arguments might be used directly (shallow copy), or
+    /// they might be (deep) copied.
+    ///
+    /// \param ptr [in] Array of row offsets.
+    /// \param ind [in] Array of (local) column indices.
+    /// \param val [in/out] Array of values.  This is in/out because
+    ///   the matrix reserves the right to take this argument by
+    ///   shallow copy.  Any method that changes the matrix's values
+    ///   may then change this.
     void
-    setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
-                  const typename local_graph_type::entries_type::non_const_type& columnIndices,
-                  const typename local_matrix_type::values_type& values);
+    setAllValues (const typename local_matrix_type::row_map_type& ptr,
+                  const typename local_graph_type::entries_type::non_const_type& ind,
+                  const typename local_matrix_type::values_type& val);
 
-    //! Sets the 1D pointer arrays of the graph.
-    /**
-       \pre <tt>hasColMap() == true</tt>
-       \pre <tt>getGraph() != Teuchos::null</tt>
-       \pre No insert/sum routines have been called
-
-       FIXME (mfh 24 Feb 2014) Why is the third prerequisites above
-       different than the third prerequisite from the original class?
-       The original is that fillComplete() must have been called.
-
-       \warning This method is intended for expert developer use only, and should never be called by user code.
-    */
+    /// \brief Set the local matrix using three (compressed sparse row) arrays.
+    ///
+    /// \pre <tt>hasColMap() == true</tt>
+    /// \pre <tt>getGraph() != Teuchos::null</tt>
+    /// \pre No insert/sum routines have been called
+    ///
+    /// \warning This is for EXPERT USE ONLY.  We make NO PROMISES of
+    ///   backwards compatibility.
+    ///
+    /// This method behaves like the CrsMatrix constructor that takes
+    /// a const CrsGraph.  It fixes the matrix's graph, but does not
+    /// call fillComplete on the matrix.  The graph might not
+    /// necessarily be fill complete, but it must have a local graph.
+    ///
+    /// The input arguments might be used directly (shallow copy), or
+    /// they might be (deep) copied.
+    ///
+    /// \param ptr [in] Array of row offsets.
+    /// \param ind [in] Array of (local) column indices.
+    /// \param val [in/out] Array of values.  This is in/out because
+    ///   the matrix reserves the right to take this argument by
+    ///   shallow copy.  Any method that changes the matrix's values
+    ///   may then change this.
     void
-    setAllValues (const Teuchos::ArrayRCP<size_t>& rowPointers,
-                  const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices,
-                  const Teuchos::ArrayRCP<Scalar>& values);
+    setAllValues (const Teuchos::ArrayRCP<size_t>& ptr,
+                  const Teuchos::ArrayRCP<LocalOrdinal>& ind,
+                  const Teuchos::ArrayRCP<Scalar>& val);
 
     void
     getAllValues (Teuchos::ArrayRCP<const size_t>& rowPointers,

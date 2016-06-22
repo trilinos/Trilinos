@@ -2883,6 +2883,9 @@ namespace Tpetra {
     nodeNumAllocated_    = localNumEntries;
     nodeNumEntries_      = localNumEntries;
 
+    // Build the local graph.
+    lclGraph_ = local_graph_type (k_lclInds1D_, k_rowPtrs_);
+
     // These normally get cleared out at the end of allocateIndices.
     // It makes sense to clear them out here, because at the end of
     // this method, the graph is allocated on the calling process.
