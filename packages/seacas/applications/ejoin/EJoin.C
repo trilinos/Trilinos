@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
         dbi[p]->set_int_byte_size_api(Ioss::USE_INT64_API);
 
       if (interface.disable_field_recognition())
-        dbi[p]->set_field_separator(0);
+        dbi[p]->set_field_separator(1);
 
       if (!omissions[p].empty()) {
         dbi[p]->set_block_omissions(omissions[p]);

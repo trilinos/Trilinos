@@ -39,7 +39,6 @@
 #include "rf_allo.h"        // for array_alloc, safe_free
 #include "rf_format.h"
 #include "rf_io_const.h" // for Exo_Res_File, ExoFile, etc
-#include "rf_util.h"     // for break_message_up
 #include <cassert>       // for assert
 #include <climits>       // for INT_MAX
 #include <cstddef>       // for size_t

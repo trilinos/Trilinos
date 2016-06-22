@@ -171,7 +171,7 @@ namespace Iopx {
                                     const Ioss::Field &field, void *data, size_t data_size) const;
 
     int get_file_pointer() const override; // Open file and set exodusFilePtr.
-    int free_file_pointer() const override; 
+    int free_file_pointer() const override;
 
     int64_t read_nodal_coordinates();
     void read_elements(const Ioss::ElementBlock &block);

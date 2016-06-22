@@ -37,10 +37,6 @@
 #include <string>
 #include <vector>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
 #define OUTPUT std::cerr
 
 #include <Ioss_ConcreteVariableType.h>
@@ -58,17 +54,10 @@ static bool test_element(const std::string &type);
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-#endif
-
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer        initialize_topologies;
 
   int err_count = test_all_elements();
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
   OUTPUT << "\n" << argv[0];
   ;
   if (err_count == 0) {

@@ -42,7 +42,7 @@ public:
   explicit vector3d(double location[3]);
   vector3d(const vector3d &from);
 
-  double x, y, z;
+  double x{}, y{}, z{};
 
   vector3d &operator=(const vector3d &from);
   bool operator==(const vector3d &from) const;
@@ -65,12 +65,12 @@ public:
   vector3d cross(const vector3d &from) const;
 };
 
-vector3d operator*(double scalar, const vector3d &vec);
-vector3d operator*(const vector3d &vec, double scalar);
-vector3d operator/(const vector3d &vec, double scalar);
+vector3d operator*(double scalar, const vector3d &from);
+vector3d operator*(const vector3d &lhs, double scalar);
+vector3d operator/(const vector3d &lhs, double scalar);
 
-vector3d operator+(const vector3d &vec1, const vector3d &vec2);
-vector3d operator-(const vector3d &vec1, const vector3d &vec2);
+vector3d operator+(const vector3d &lhs, const vector3d &rhs);
+vector3d operator-(const vector3d &lhs, const vector3d &rhs);
 
 //----------------------------------------------------------------------------
 inline vector3d vector3d::cross(const vector3d &from) const

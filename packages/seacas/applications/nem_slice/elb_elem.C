@@ -71,19 +71,11 @@ namespace {
 const char *elem_name_from_enum(const E_Type elem_type)
 {
   static const char *elem_names[NULL_EL] = {
-    "SPHERE",
-    "BAR2",      "BAR3",
-    "QUAD4",     "QUAD8",   "QUAD9",
-    "SHELL4",    "SHELL8",  "SHELL9",
-    "TRI3",      "TRI4",    "TRI6",    "TRI7",
-    "TSHELL3",   "TSHELL4", "TSHELL6", "TSHELL7",
-    "HEX8",      "HEX20",   "HEX27",   "HEXSHELL",
-    "TET4",      "TET10",   "TET8",    "TET14",   "TET15",
-    "WEDGE6",    "WEDGE15", "WEDGE16", "WEDGE20", "WEDGE21",
-    "PYRAMID5",
-    "PYRAMID13",
-    "SHELL2",    "SHELL3"
-  };
+      "SPHERE",  "BAR2",    "BAR3",    "QUAD4",    "QUAD8",     "QUAD9",  "SHELL4",
+      "SHELL8",  "SHELL9",  "TRI3",    "TRI4",     "TRI6",      "TRI7",   "TSHELL3",
+      "TSHELL4", "TSHELL6", "TSHELL7", "HEX8",     "HEX20",     "HEX27",  "HEXSHELL",
+      "TET4",    "TET10",   "TET8",    "TET14",    "TET15",     "WEDGE6", "WEDGE15",
+      "WEDGE16", "WEDGE20", "WEDGE21", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
   return elem_names[elem_type];
 }
 
@@ -635,7 +627,7 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET14:   
+  case TET14:
     switch (req) /* select type of information required */
     {
     case NNODES: /* number of nodes */ answer             = 14; break;
@@ -649,7 +641,7 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET15:   
+  case TET15:
     switch (req) /* select type of information required */
     {
     case NNODES: /* number of nodes */ answer             = 15; break;
@@ -1482,103 +1474,103 @@ int ss_to_node_list(const E_Type etype,          /* The element type */
 
   /* triangle */
   static int tri_table[3][3] = {
-    {1, 2, 4}, // side 1
-    {2, 3, 5}, // side 2
-    {3, 1, 6}  // side 3
+      {1, 2, 4}, // side 1
+      {2, 3, 5}, // side 2
+      {3, 1, 6}  // side 3
   };
 
   /* tshell */
   static int tshell_table[2][7] = {
-    {1, 2, 3, 4, 5, 6, 7}, // side 1
-    {1, 3, 2, 6, 5, 4, 7}  // side 2
+      {1, 2, 3, 4, 5, 6, 7}, // side 1
+      {1, 3, 2, 6, 5, 4, 7}  // side 2
   };
 
   /* quad */
   static int quad_table[4][3] = {
-    {1, 2, 5}, // side 1
-    {2, 3, 6}, // side 2
-    {3, 4, 7}, // side 3
-    {4, 1, 8}  // side 4
+      {1, 2, 5}, // side 1
+      {2, 3, 6}, // side 2
+      {3, 4, 7}, // side 3
+      {4, 1, 8}  // side 4
   };
 
   /* shell */
   static int shell_table[2][9] = {
-    {1, 2, 3, 4, 5, 6, 7, 8, 9}, // side 1
-    {1, 4, 3, 2, 8, 7, 6, 5, 9}  // side 2
+      {1, 2, 3, 4, 5, 6, 7, 8, 9}, // side 1
+      {1, 4, 3, 2, 8, 7, 6, 5, 9}  // side 2
   };
 
   /* tetra */
   static int tetra_table[4][7] = {
-    {1, 2, 4, 5, 9, 8, 14},  /* Side 1 nodes */
-    {2, 3, 4, 6, 10, 9, 12}, /* Side 2 nodes */
-    {1, 4, 3, 8, 10, 7, 13}, /* Side 3 nodes */
-    {1, 3, 2, 7, 6, 5, 11}   /* Side 4 nodes */
+      {1, 2, 4, 5, 9, 8, 14},  /* Side 1 nodes */
+      {2, 3, 4, 6, 10, 9, 12}, /* Side 2 nodes */
+      {1, 4, 3, 8, 10, 7, 13}, /* Side 3 nodes */
+      {1, 3, 2, 7, 6, 5, 11}   /* Side 4 nodes */
   };
 
   /* wedge */
   /* wedge 6 or 7 */
   static int wedge6_table[5][4] = {
-    {1, 2, 5, 4}, /* Side 1 nodes -- quad     */
-    {2, 3, 6, 5}, /* Side 2 nodes -- quad     */
-    {1, 4, 6, 3}, /* Side 3 nodes -- quad     */
-    {1, 3, 2, 0}, /* Side 4 nodes -- triangle */
-    {4, 5, 6, 0}  /* Side 5 nodes -- triangle */
+      {1, 2, 5, 4}, /* Side 1 nodes -- quad     */
+      {2, 3, 6, 5}, /* Side 2 nodes -- quad     */
+      {1, 4, 6, 3}, /* Side 3 nodes -- quad     */
+      {1, 3, 2, 0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 0}  /* Side 5 nodes -- triangle */
   };
 
   /* wedge 15 or 16 */
   static int wedge15_table[5][8] = {
-      {1, 2, 5,  4,  7, 11, 13, 10}, /* Side 1 nodes -- quad     */
-      {2, 3, 6,  5,  8, 12, 14, 11}, /* Side 2 nodes -- quad     */
-      {1, 4, 6,  3, 10, 15, 12,  9}, /* Side 3 nodes -- quad     */
-      {1, 3, 2,  9,  8,  7,  0,  0}, /* Side 4 nodes -- triangle */
-      {4, 5, 6, 13, 14, 15,  0,  0}  /* Side 5 nodes -- triangle */
+      {1, 2, 5, 4, 7, 11, 13, 10}, /* Side 1 nodes -- quad     */
+      {2, 3, 6, 5, 8, 12, 14, 11}, /* Side 2 nodes -- quad     */
+      {1, 4, 6, 3, 10, 15, 12, 9}, /* Side 3 nodes -- quad     */
+      {1, 3, 2, 9, 8, 7, 0, 0},    /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 0, 0}  /* Side 5 nodes -- triangle */
   };
 
   /* wedge 20 */
   static int wedge20_table[5][9] = {
-      {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
-      {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
-      {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
-      {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
-      {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+      {1, 2, 5, 4, 7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
+      {2, 3, 6, 5, 8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
+      {1, 4, 6, 3, 10, 15, 12, 9, 19}, /* Side 3 nodes -- quad     */
+      {1, 3, 2, 9, 8, 7, 16, 0, 0},    /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 17, 0, 0}  /* Side 5 nodes -- triangle */
   };
 
   /* wedge 21 */
   static int wedge21_table[5][9] = {
-      {1, 2, 5,  4,  7, 11, 13, 10, 21}, /* Side 1 nodes -- quad     */
-      {2, 3, 6,  5,  8, 12, 14, 11, 19}, /* Side 2 nodes -- quad     */
-      {1, 4, 6,  3, 10, 15, 12,  9, 20}, /* Side 3 nodes -- quad     */
-      {1, 3, 2,  9,  8,  7, 17,  0,  0}, /* Side 4 nodes -- triangle */
-      {4, 5, 6, 13, 14, 15, 18,  0,  0}  /* Side 5 nodes -- triangle */
+      {1, 2, 5, 4, 7, 11, 13, 10, 21}, /* Side 1 nodes -- quad     */
+      {2, 3, 6, 5, 8, 12, 14, 11, 19}, /* Side 2 nodes -- quad     */
+      {1, 4, 6, 3, 10, 15, 12, 9, 20}, /* Side 3 nodes -- quad     */
+      {1, 3, 2, 9, 8, 7, 17, 0, 0},    /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 18, 0, 0}  /* Side 5 nodes -- triangle */
   };
-  
+
   /* hex */
   static int hex_table[6][9] = {
-    {1, 2, 6, 5,  9, 14, 17, 13, 26}, /* side 1 */
-    {2, 3, 7, 6, 10, 15, 18, 14, 25}, /* side 2 */
-    {3, 4, 8, 7, 11, 16, 19, 15, 27}, /* side 3 */
-    {1, 5, 8, 4, 13, 20, 16, 12, 24}, /* side 4 */
-    {1, 4, 3, 2, 12, 11, 10,  9, 22}, /* side 5 */
-    {5, 6, 7, 8, 17, 18, 19, 20, 23}  /* side 6 */
+      {1, 2, 6, 5, 9, 14, 17, 13, 26},  /* side 1 */
+      {2, 3, 7, 6, 10, 15, 18, 14, 25}, /* side 2 */
+      {3, 4, 8, 7, 11, 16, 19, 15, 27}, /* side 3 */
+      {1, 5, 8, 4, 13, 20, 16, 12, 24}, /* side 4 */
+      {1, 4, 3, 2, 12, 11, 10, 9, 22},  /* side 5 */
+      {5, 6, 7, 8, 17, 18, 19, 20, 23}  /* side 6 */
   };
 
   /* hexshell */
   static int hexshell_table[6][6] = {
-    {1, 2, 6, 5, 10, 9},   // side 1
-    {2, 3, 7, 6, 11, 10},  // side 2
-    {3, 4, 8, 7, 12, 11},  // side 3
-    {4, 1, 5, 8, 9, 12},   // side 4
-    {1, 4, 3, 2, 0, 0},    // side 5
-    {5, 6, 7, 8, 0, 0}     // side 6
+      {1, 2, 6, 5, 10, 9},  // side 1
+      {2, 3, 7, 6, 11, 10}, // side 2
+      {3, 4, 8, 7, 12, 11}, // side 3
+      {4, 1, 5, 8, 9, 12},  // side 4
+      {1, 4, 3, 2, 0, 0},   // side 5
+      {5, 6, 7, 8, 0, 0}    // side 6
   };
 
   /* pyramid */
   static int pyramid_table[5][8] = {
-    {1, 2, 5, 6, 11, 10, 0, 0}, // side 1 (tri)
-    {2, 3, 5, 7, 12, 11, 0, 0}, // side 2 (tri)
-    {3, 4, 5, 8, 13, 12, 0, 0}, // side 3 (tri)
-    {1, 5, 4, 10, 13, 9, 0, 0}, // side 4 (tri)
-    {1, 4, 3, 2, 9, 8, 7, 6}    // side 5 (quad)
+      {1, 2, 5, 6, 11, 10, 0, 0}, // side 1 (tri)
+      {2, 3, 5, 7, 12, 11, 0, 0}, // side 2 (tri)
+      {3, 4, 5, 8, 13, 12, 0, 0}, // side 3 (tri)
+      {1, 5, 4, 10, 13, 9, 0, 0}, // side 4 (tri)
+      {1, 4, 3, 2, 9, 8, 7, 6}    // side 5 (quad)
   };
 
   static int bar_table[1][3] = {{1, 2, 3}};

@@ -85,7 +85,7 @@ namespace {
   void exodus_error(int lineno)
   {
     std::ostringstream errmsg;
-    errmsg << "Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
+    errmsg << "Exodus error (" << exerrval << ")" << ex_strerror(exerrval) << " at line " << lineno
            << " in file epu.C. Please report to gdsjaar@sandia.gov if you need help.";
 
     ex_err(nullptr, nullptr, EX_PRTLASTMSG);

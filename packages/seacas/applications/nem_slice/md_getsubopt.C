@@ -39,40 +39,46 @@ int md_getsubopt(char **optionp, const char **tokens, char **valuep)
   char *endp, *vstart;
   int   cnt;
 
-  if (**optionp == '\0')
+  if (**optionp == '\0') {
     return -1;
+  }
 
   /* Find end of next token.  */
   endp = strchr(*optionp, ',');
-  if (endp == nullptr)
+  if (endp == nullptr) {
     endp = strchr(*optionp, '\0');
+  }
 
   /* Find start of value.  */
-  vstart = (char *)memchr(*optionp, '=', endp - *optionp);
-  if (vstart == nullptr)
+  vstart = reinterpret_cast<char *>(memchr(*optionp, '=', endp - *optionp));
+  if (vstart == nullptr) {
     vstart = endp;
+  }
 
   /* Try to match the characters between *OPTIONP and VSTART against
      one of the TOKENS.  */
-  for (cnt = 0; tokens[cnt] != nullptr; ++cnt)
+  for (cnt = 0; tokens[cnt] != nullptr; ++cnt) {
     if (memcmp(*optionp, tokens[cnt], vstart - *optionp) == 0 &&
         tokens[cnt][vstart - *optionp] == '\0') {
       /* We found the current option in TOKENS.  */
       *valuep = vstart != endp ? vstart + 1 : nullptr;
 
-      if (*endp != '\0')
+      if (*endp != '\0') {
         *endp++ = '\0';
-      *optionp  = endp;
+      }
+      *optionp = endp;
 
       return cnt;
     }
+  }
 
   /* The current suboption does not match any option.  */
   *valuep = *optionp;
 
-  if (*endp != '\0')
+  if (*endp != '\0') {
     *endp++ = '\0';
-  *optionp  = endp;
+  }
+  *optionp = endp;
 
   return -1;
 }

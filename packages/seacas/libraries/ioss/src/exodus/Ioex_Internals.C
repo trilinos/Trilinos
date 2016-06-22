@@ -617,34 +617,34 @@ void Internals::get_global_counts(Mesh &mesh)
   std::vector<int64_t> global_counts;
 
   counts.push_back(mesh.nodeblocks[0].localOwnedCount);
-  for (size_t i = 0; i < mesh.edgeblocks.size(); i++) {
-    counts.push_back(mesh.edgeblocks[i].entityCount);
+  for (auto & edgeblock : mesh.edgeblocks) {
+    counts.push_back(edgeblock.entityCount);
   }
-  for (size_t i = 0; i < mesh.faceblocks.size(); i++) {
-    counts.push_back(mesh.faceblocks[i].entityCount);
+  for (auto & faceblock : mesh.faceblocks) {
+    counts.push_back(faceblock.entityCount);
   }
-  for (size_t i = 0; i < mesh.elemblocks.size(); i++) {
-    counts.push_back(mesh.elemblocks[i].entityCount);
+  for (auto & elemblock : mesh.elemblocks) {
+    counts.push_back(elemblock.entityCount);
   }
-  for (size_t i = 0; i < mesh.nodesets.size(); i++) {
-    counts.push_back(mesh.nodesets[i].localOwnedCount);
-    counts.push_back(mesh.nodesets[i].dfCount);
+  for (auto & nodeset : mesh.nodesets) {
+    counts.push_back(nodeset.localOwnedCount);
+    counts.push_back(nodeset.dfCount);
   }
-  for (size_t i = 0; i < mesh.edgesets.size(); i++) {
-    counts.push_back(mesh.edgesets[i].entityCount);
-    counts.push_back(mesh.edgesets[i].dfCount);
+  for (auto & edgeset : mesh.edgesets) {
+    counts.push_back(edgeset.entityCount);
+    counts.push_back(edgeset.dfCount);
   }
-  for (size_t i = 0; i < mesh.facesets.size(); i++) {
-    counts.push_back(mesh.facesets[i].entityCount);
-    counts.push_back(mesh.facesets[i].dfCount);
+  for (auto & faceset : mesh.facesets) {
+    counts.push_back(faceset.entityCount);
+    counts.push_back(faceset.dfCount);
   }
-  for (size_t i = 0; i < mesh.elemsets.size(); i++) {
-    counts.push_back(mesh.elemsets[i].entityCount);
-    counts.push_back(mesh.elemsets[i].dfCount);
+  for (auto & elemset : mesh.elemsets) {
+    counts.push_back(elemset.entityCount);
+    counts.push_back(elemset.dfCount);
   }
-  for (size_t i = 0; i < mesh.sidesets.size(); i++) {
-    counts.push_back(mesh.sidesets[i].entityCount);
-    counts.push_back(mesh.sidesets[i].dfCount);
+  for (auto & sideset : mesh.sidesets) {
+    counts.push_back(sideset.entityCount);
+    counts.push_back(sideset.dfCount);
   }
 
   // Now gather this information on each processor so
@@ -677,47 +677,47 @@ void Internals::get_global_counts(Mesh &mesh)
   mesh.nodeblocks[0].procOffset  = offsets[j];
   mesh.nodeblocks[0].entityCount = global_counts[j++];
 
-  for (size_t i = 0; i < mesh.edgeblocks.size(); i++) {
-    mesh.edgeblocks[i].procOffset  = offsets[j];
-    mesh.edgeblocks[i].entityCount = global_counts[j++];
+  for (auto & edgeblock : mesh.edgeblocks) {
+    edgeblock.procOffset  = offsets[j];
+    edgeblock.entityCount = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.faceblocks.size(); i++) {
-    mesh.faceblocks[i].procOffset  = offsets[j];
-    mesh.faceblocks[i].entityCount = global_counts[j++];
+  for (auto & faceblock : mesh.faceblocks) {
+    faceblock.procOffset  = offsets[j];
+    faceblock.entityCount = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.elemblocks.size(); i++) {
-    mesh.elemblocks[i].procOffset  = offsets[j];
-    mesh.elemblocks[i].entityCount = global_counts[j++];
+  for (auto & elemblock : mesh.elemblocks) {
+    elemblock.procOffset  = offsets[j];
+    elemblock.entityCount = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.nodesets.size(); i++) {
-    mesh.nodesets[i].procOffset  = offsets[j];
-    mesh.nodesets[i].entityCount = global_counts[j++];
-    mesh.nodesets[i].dfCount     = global_counts[j++];
-    if (mesh.nodesets[i].dfCount != 0) {
+  for (auto & nodeset : mesh.nodesets) {
+    nodeset.procOffset  = offsets[j];
+    nodeset.entityCount = global_counts[j++];
+    nodeset.dfCount     = global_counts[j++];
+    if (nodeset.dfCount != 0) {
       // Need to adjust for locally-owned only in the auto-join output.
-      mesh.nodesets[i].dfCount = mesh.nodesets[i].entityCount;
+      nodeset.dfCount = nodeset.entityCount;
     }
   }
-  for (size_t i = 0; i < mesh.edgesets.size(); i++) {
-    mesh.edgesets[i].procOffset  = offsets[j];
-    mesh.edgesets[i].entityCount = global_counts[j++];
-    mesh.edgesets[i].dfCount     = global_counts[j++];
+  for (auto & edgeset : mesh.edgesets) {
+    edgeset.procOffset  = offsets[j];
+    edgeset.entityCount = global_counts[j++];
+    edgeset.dfCount     = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.facesets.size(); i++) {
-    mesh.facesets[i].procOffset  = offsets[j];
-    mesh.facesets[i].entityCount = global_counts[j++];
-    mesh.facesets[i].dfCount     = global_counts[j++];
+  for (auto & faceset : mesh.facesets) {
+    faceset.procOffset  = offsets[j];
+    faceset.entityCount = global_counts[j++];
+    faceset.dfCount     = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.elemsets.size(); i++) {
-    mesh.elemsets[i].procOffset  = offsets[j];
-    mesh.elemsets[i].entityCount = global_counts[j++];
-    mesh.elemsets[i].dfCount     = global_counts[j++];
+  for (auto & elemset : mesh.elemsets) {
+    elemset.procOffset  = offsets[j];
+    elemset.entityCount = global_counts[j++];
+    elemset.dfCount     = global_counts[j++];
   }
-  for (size_t i = 0; i < mesh.sidesets.size(); i++) {
-    mesh.sidesets[i].procOffset   = offsets[j];
-    mesh.sidesets[i].entityCount  = global_counts[j++];
-    mesh.sidesets[i].dfProcOffset = offsets[j];
-    mesh.sidesets[i].dfCount      = global_counts[j++];
+  for (auto & sideset : mesh.sidesets) {
+    sideset.procOffset   = offsets[j];
+    sideset.entityCount  = global_counts[j++];
+    sideset.dfProcOffset = offsets[j];
+    sideset.dfCount      = global_counts[j++];
   }
 #endif
 }

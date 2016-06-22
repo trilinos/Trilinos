@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_CodeTypes.h>
-#include <Ioss_CodeTypes.h> // for Int64Vector, IntVector
 #include <Ioss_ElementTopology.h>
 #include <Ioss_FileInfo.h>
 #include <Ioss_ParallelUtils.h>

@@ -59,13 +59,9 @@ ${PREFIX} ${BINDIR}/f32_testwt${SUFFIX} >> test.output
 echo "end testwt" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 
-# testrd - single precision read test
-echo "testrd ..."
-${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v "word size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
-
-# testrdd - double precision read of single precision file
-echo "testrdd ..."
-${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+# testrdd - double precision read test with 64-bit integers
+echo "testrddi64 ..."
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
 
 # testwtd - double precision write test
 echo "testwtd ..."
@@ -73,6 +69,21 @@ echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtd${SUFFIX} >> test.output
 echo "end testwtd" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+
+# testrdd - double precision read test with 64-bit integers
+echo "testrddi64 ..."
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
+
+# testwtdi64 - double precision write test with 64-bit integers
+echo "testwtdi64 ..."
+echo "begin testwtdi64" >> test.output
+${PREFIX} ${BINDIR}/f32_testwtdi64${SUFFIX} >> test.output
+echo "end testwtdi64" >> test.output
+${NCDUMP} -d5,5 test.exo | grep -v version | ${DIFF} - ${SRCDIR}/testdi64.dmp | tee testwtd.res
+
+# testrdd - double precision read test with 64-bit integers
+echo "testrddi64 ..."
+${PREFIX} ${BINDIR}/f32_testrddi64${SUFFIX} | grep -v version | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrddi64.dmp | tee testrddi64.res
 
 # testrdd - double precision read test
 echo "testrdd ..."

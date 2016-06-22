@@ -99,7 +99,7 @@ void *array_alloc(int numdim, ...)
     va_end(va);
     return nullptr;
   }
-  else if (numdim > 3) {
+  if (numdim > 3) {
     fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is > 3\n", numdim);
     va_end(va);
     return nullptr;
@@ -135,12 +135,12 @@ void *array_alloc(int numdim, ...)
 
   total = dim[numdim - 1].off + dim[numdim - 1].total * dim[numdim - 1].size;
 
-  dfield = (void *)smalloc(total);
-  field  = (char *)dfield;
+  dfield = smalloc(total);
+  field  = reinterpret_cast<char *>(dfield);
 
   for (int i = 0; i < numdim - 1; i++) {
-    ptr  = (char **)(field + dim[i].off);
-    data = (char *)(field + dim[i + 1].off);
+    ptr  = reinterpret_cast<char **>(field + dim[i].off);
+    data = (field + dim[i + 1].off);
     for (size_t j = 0; j < dim[i].total; j++) {
       ptr[j] = data + j * dim[i + 1].size * dim[i + 1].index;
     }
@@ -157,10 +157,12 @@ static void *smalloc(size_t n)
 {
   void *pntr = nullptr; /* return value */
 
-  if (n == 0)
+  if (n == 0) {
     pntr = nullptr;
-  else
+  }
+  else {
     pntr = malloc(n);
+  }
 
   if (pntr == nullptr && n != 0) {
     fprintf(stderr, "smalloc: Out of space - number of bytes "

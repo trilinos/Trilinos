@@ -115,9 +115,8 @@ vector3d operator/(const vector3d &lhs, double scalar)
     vector3d tmp(lhs);
     return tmp /= scalar;
   }
-  else {
-    return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
-  }
+
+  return vector3d(HUGE_VAL, HUGE_VAL, HUGE_VAL);
 }
 
 vector3d &vector3d::operator/=(double scalar)

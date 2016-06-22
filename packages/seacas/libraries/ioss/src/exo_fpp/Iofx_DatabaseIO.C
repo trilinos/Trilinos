@@ -1353,8 +1353,7 @@ namespace Iofx {
         procs[proc]++;
         send[offset++] = glob_id;
         int64_t loc_id = nodeMap.global_to_local(glob_id, true) - 1;
-        for (size_t j = 0; j < inv_con[loc_id].size(); j++) {
-          int    jblk    = inv_con[loc_id][j];
+        for (int jblk : inv_con[loc_id]) {
           size_t wrd_off = jblk / word_size;
           size_t bit     = jblk % word_size;
           send[offset + wrd_off] |= (1 << bit);

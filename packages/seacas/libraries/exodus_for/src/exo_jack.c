@@ -2367,6 +2367,16 @@ void F2C(exopts, EXOPTS)(int *option_val, int *ierr)
   }
 }
 
+void F2C(exsi64, EXSI64)(int *idexo, int *mode, int *ierr)
+{
+  *ierr = ex_set_int64_status(*idexo, *mode);
+}
+
+int64_t F2C(exgi64, EXGI64)(int *idexo)
+{
+  return ex_int64_status(*idexo);
+}
+
 void F2C(exmxnm, EXMXNM)(int *idexo, int *length, int *ierr)
 {
   *ierr = ex_set_max_name_length(*idexo, *length);

@@ -185,12 +185,12 @@ double *array_alloc(const char *file, int lineno, int numdim, ...)
 
   total = dim[numdim - 1].off + dim[numdim - 1].total * dim[numdim - 1].size;
 
-  dfield = (double *)smalloc(total, (char *)file, lineno);
-  field  = (char *)dfield;
+  dfield = smalloc(total, const_cast<char *>(file), lineno);
+  field  = reinterpret_cast<char *>(dfield);
 
   for (int i = 0; i < numdim - 1; i++) {
-    ptr  = (char **)(field + dim[i].off);
-    data = (char *)(field + dim[i + 1].off);
+    ptr  = reinterpret_cast<char **>(field + dim[i].off);
+    data = (field + dim[i + 1].off);
     for (size_t j = 0; j < dim[i].total; j++) {
       ptr[j] = data + j * dim[i + 1].size * dim[i + 1].index;
     }
@@ -213,10 +213,12 @@ static double *smalloc(size_t n, char *filename, int lineno)
   const char *yo = "smalloc";
   double *    pntr; /* return value */
 
-  if (n == 0)
+  if (n == 0) {
     pntr = nullptr;
-  else
-    pntr = (double *)malloc(n);
+  }
+  else {
+    pntr = reinterpret_cast<double *>(malloc(n));
+  }
 
   if (pntr == nullptr && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "

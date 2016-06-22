@@ -622,7 +622,7 @@ double do_cols(const array *arr)
   --------------------------STRING FUNCTIONS------------------------
  */
 
-const char *do_get_date(void)
+const char *do_get_date()
 {
   char *tmp;
   const size_t bufsize = 32;
@@ -637,7 +637,7 @@ const char *do_get_date(void)
   return(tmp);
 }
 
-const char *do_get_iso_date(void)
+const char *do_get_iso_date()
 {
   char *tmp;
   const size_t bufsize = 32;
@@ -652,7 +652,7 @@ const char *do_get_iso_date(void)
   return(tmp);
 }
 
-const char *do_get_time(void)
+const char *do_get_time()
 {
   char *tmp;
   const size_t bufsize = 32;
@@ -831,21 +831,21 @@ double do_strtod(char *string)
 }
 
 const char *
-do_dumpsym(void)
+do_dumpsym()
 {
   aprepro->dumpsym(SEAMS::Parser::token::VAR, 0);
   return(nullptr);
 }
 
 const char *
-do_dumpfunc(void)
+do_dumpfunc()
 {
   aprepro->dumpsym(SEAMS::Parser::token::FNCT, 1);
   return(nullptr);
 }
 
 const char *
-do_dumpvar(void)
+do_dumpvar()
 {
   aprepro->dumpsym(SEAMS::Parser::token::VAR, 1);
   return(nullptr);

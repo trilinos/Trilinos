@@ -72,12 +72,15 @@ namespace {
     size_t center;
     center = (left + right) / 2;
 
-    if (v[iv[left]] > v[iv[center]])
+    if (v[iv[left]] > v[iv[center]]) {
       GDS_SWAP(iv, left, center);
-    if (v[iv[left]] > v[iv[right]])
+    }
+    if (v[iv[left]] > v[iv[right]]) {
       GDS_SWAP(iv, left, right);
-    if (v[iv[center]] > v[iv[right]])
+    }
+    if (v[iv[center]] > v[iv[right]]) {
       GDS_SWAP(iv, center, right);
+    }
 
     GDS_SWAP(iv, center, right - 1);
     return iv[right - 1];
@@ -94,10 +97,12 @@ namespace {
       j     = right - 1;
 
       for (;;) {
-        while (v[iv[++i]] < v[pivot])
+        while (v[iv[++i]] < v[pivot]) {
           ;
-        while (v[iv[--j]] > v[pivot])
+        }
+        while (v[iv[--j]] > v[pivot]) {
           ;
+        }
         if (i < j) {
           GDS_SWAP(iv, i, j);
         }
@@ -119,8 +124,9 @@ namespace {
     INT    small;
     INT    tmp;
 
-    if (N == 0)
+    if (N == 0) {
       return;
+    }
     small = v[iv[0]];
     for (i = 1; i < N; i++) {
       if (v[iv[i]] < small) {
@@ -153,12 +159,15 @@ namespace {
     size_t center;
     center = (left + right) / 2;
 
-    if (v[left] > v[center])
+    if (v[left] > v[center]) {
       GDS_SWAP(v, left, center);
-    if (v[left] > v[right])
+    }
+    if (v[left] > v[right]) {
       GDS_SWAP(v, left, right);
-    if (v[center] > v[right])
+    }
+    if (v[center] > v[right]) {
       GDS_SWAP(v, center, right);
+    }
 
     GDS_SWAP(v, center, right - 1);
     return right - 1;
@@ -175,10 +184,12 @@ namespace {
       j     = right - 1;
 
       for (;;) {
-        while (v[++i] < v[pivot])
+        while (v[++i] < v[pivot]) {
           ;
-        while (v[--j] > v[pivot])
+        }
+        while (v[--j] > v[pivot]) {
           ;
+        }
         if (i < j) {
           GDS_SWAP(v, i, j);
         }
@@ -200,8 +211,9 @@ namespace {
     INT    small;
     INT    tmp;
 
-    if (N <= 1)
+    if (N <= 1) {
       return;
+    }
     small = v[0];
     for (i = 1; i < N; i++) {
       if (v[i] < small) {
@@ -234,11 +246,12 @@ namespace {
         GDS_SWAP(iv, child, root);
         root = child;
       }
-      else
+      else {
         return;
+      }
     }
   }
-}
+} // namespace
 
 /*
  * Sort the values in 'v'
@@ -249,8 +262,9 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
   int64_t start, end;
   int64_t count = N;
 
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
 
   /* heapify */
   for (start = (count - 2) / 2; start >= 0; start--) {
@@ -263,7 +277,7 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
   }
 
 #if DEBUG_SORT
-  fprintf(stderr, "Checking sort of " ST_ZU " values\n", (size_t)count + 1);
+  fprintf(stderr, "Checking sort of " ST_ZU " values\n", static_cast<size_t>(count) + 1);
   for (size_t i = 1; i < N; i++) {
     assert(v[iv[i - 1]] <= v[iv[i]]);
   }
@@ -272,8 +286,9 @@ template <typename INT> void indexed_sort(INT v[], INT iv[], size_t N)
 
 template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   gds_iqsort(v, iv, 0, N - 1);
   gds_iisort(v, iv, N);
 
@@ -288,8 +303,9 @@ template <typename INT> void gds_iqsort(INT v[], INT iv[], size_t N)
 
 template <typename INT> void gds_qsort(INT v[], size_t N)
 {
-  if (N <= 1)
+  if (N <= 1) {
     return;
+  }
   gds_qsort(v, 0, N - 1);
   gds_isort(v, N);
 

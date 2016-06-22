@@ -202,9 +202,9 @@ int elem_info(int info, int ielem_type, int supp)
   case BAR2:
   case SHELL2:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 2; break;
-    case NDIM:  answer       = 1; break;
-    case NN_SIDE:  answer   = 1; break;
+    case NNODES: answer  = 2; break;
+    case NDIM: answer    = 1; break;
+    case NN_SIDE: answer = 1; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
@@ -212,144 +212,144 @@ int elem_info(int info, int ielem_type, int supp)
   case BAR3:
   case SHELL3:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 3; break;
-    case NDIM:  answer       = 1; break;
-    case NN_SIDE:  answer   = 1; break;
+    case NNODES: answer  = 3; break;
+    case NDIM: answer    = 1; break;
+    case NN_SIDE: answer = 1; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD4:       /* bilinear quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 4; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 2; break;
+    case NNODES: answer  = 4; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 2; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD8:       /* biquadratic serendipity quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 8; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 3; break;
+    case NNODES: answer  = 8; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case QUAD9:       /* biquadratic quadrilateral */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 9; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 3; break;
+    case NNODES: answer  = 9; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI3:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 3; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 2; break;
+    case NNODES: answer  = 3; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 2; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI4:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 4; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 2; break;
+    case NNODES: answer  = 4; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 2; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI6:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 6; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 3; break;
+    case NNODES: answer  = 6; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TRI7:
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 7; break;
-    case NDIM:  answer       = 2; break;
-    case NN_SIDE:  answer   = 3; break;
+    case NNODES: answer  = 7; break;
+    case NDIM: answer    = 2; break;
+    case NN_SIDE: answer = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX8:        /* trilinear hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 8; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 4; break;
+    case NNODES: answer  = 8; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 4; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX20:       /* serendipity triquadratic hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 20; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 8; break;
+    case NNODES: answer  = 20; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 8; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case HEX27:       /* triquadratic hexahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 27; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 9; break;
+    case NNODES: answer  = 27; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 9; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET4:        /* trilinear tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 4; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 3; break;
+    case NNODES: answer  = 4; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 3; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity\n", yo); exit(1);
     }
     break;
 
   case TET10:       /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 10; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 6; break;
+    case NNODES: answer  = 10; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 6; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET14:       /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 14; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 7; break;
+    case NNODES: answer  = 14; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 7; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET15:       /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 15; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 7; break;
+    case NNODES: answer  = 15; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 7; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
 
   case TET8:        /* triquadradic tetrahedron */
     switch (info) { /* select type of information required */
-    case NNODES:  answer                   = 8; break;
-    case NDIM:  answer       = 3; break;
-    case NN_SIDE:  answer   = 4; break;
+    case NNODES: answer  = 8; break;
+    case NDIM: answer    = 3; break;
+    case NN_SIDE: answer = 4; break;
     default: fprintf(stderr, "%sERROR: Unknown quantity.\n", yo); exit(1);
     }
     break;
@@ -539,8 +539,9 @@ int get_type(char string[], int nodes, int num_dim)
     else if (strncmp(string, "shell", 5) == 0) {
       switch (nodes) {
       case 2:
-        if (num_dim == 2)
+        if (num_dim == 2) {
           answer = SHELL2;
+        }
         else {
           fprintf(stderr, "%sERROR: Shell element with %d nodes "
                           "only valid in 2D.\n",
@@ -549,8 +550,9 @@ int get_type(char string[], int nodes, int num_dim)
         }
         break;
       case 3:
-        if (num_dim == 2)
+        if (num_dim == 2) {
           answer = SHELL3;
+        }
         else {
           fprintf(stderr, "%sERROR: Shell element with %d nodes "
                           "only valid in 2D.\n",
@@ -590,34 +592,44 @@ int get_type(char string[], int nodes, int num_dim)
     else if (strncmp(string, "tri", 3) == 0) { /* select element shape */
       switch (nodes) {                         /* select number of nodes in this element */
       case 3:                                  /* bilinear triangle */
-        if (num_dim == 2)
+        if (num_dim == 2) {
           answer = TRI3;
-        else
+        }
+        else {
           answer = TSHELL3;
+        }
         break;
-      case 4:                                  /* bilinear triangle */
-        if (num_dim == 2)
+      case 4: /* bilinear triangle */
+        if (num_dim == 2) {
           answer = TRI4;
-        else
+        }
+        else {
           answer = TSHELL4;
+        }
         break;
       case 6: /* biquadratic triangle */
-        if (num_dim == 2)
+        if (num_dim == 2) {
           answer = TRI6;
-        else
+        }
+        else {
           answer = TSHELL6;
+        }
         break;
       case 7: /* biquadratic triangle */
-        if (num_dim == 2)
+        if (num_dim == 2) {
           answer = TRI7;
-        else
+        }
+        else {
           answer = TSHELL7;
+        }
         break;
       default:
-        if (num_dim == 2)
+        if (num_dim == 2) {
           fprintf(stderr, "%sERROR: triangle element with %d nodes not valid.\n", yo, nodes);
-        else
+        }
+        else {
           fprintf(stderr, "%sERROR: triangle shell element with %d nodes not valid.\n", yo, nodes);
+        }
         exit(1);
       }
     }

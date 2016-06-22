@@ -90,8 +90,9 @@ int main(int argc, char *argv[])
   /* Determine if filename was given */
   progname = argv[0];
 
-  if (argc <= 1)
+  if (argc <= 1) {
     exit(EXIT_FAILURE);
+  }
 
   /* examine file */
 
@@ -157,10 +158,12 @@ int main(int argc, char *argv[])
   max_name_length = ex_inquire_int(exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   fprintf(stderr, "\n\t\tMaximum name length is %d\n\n", max_name_length);
 
-  if (file_size == 0)
+  if (file_size == 0) {
     fprintf(stderr, "\t\tFile size attribute is 'normal model'\n");
-  else
+  }
+  else {
     fprintf(stderr, "\t\tFile size attribute is 'large model'\n");
+  }
 
   /* Determine netcdf file version... */
   nc_inq_format(exoid, &nc_format);
@@ -189,17 +192,19 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "\n");
 
-  if (ex_close(exoid) == -1)
+  if (ex_close(exoid) == -1) {
     printf("ex_close failed");
+  }
 
   version = version + 0.00005;
   sprintf(cversion, "%4.2f", version);
 
   k = strlen(cversion);
-  for (j = 0; j < k; j++)
-    if (cversion[j] == '.')
+  for (j = 0; j < k; j++) {
+    if (cversion[j] == '.') {
       break;
-
+    }
+  }
   if (j == k) {
     (void)fprintf(stderr, "         %s is not an EXODUS file\n", filename);
     exit(NOT_EXODUSII);
