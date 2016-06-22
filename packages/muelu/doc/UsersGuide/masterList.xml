@@ -522,7 +522,15 @@
     <parameter>
       <name>export data</name>
       <type>\parameterlist</type>
-      <description>Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.</description>
+      <description>Exporting a subset of the hierarchy data in a
+      file. Currently, the list can contain any of four parameter
+      names ("A", ``P'', ``R'', ``Nullspace'') of type \texttt{string}
+      and value ``\{levels separated by commas\}''. A
+      matrix/multivector with a name ``X'' is saved in two or three
+      three MatrixMarket files: a) data is saved in
+      \textit{X\_level.mm}; b) its row map is saved in
+      \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
+      \textit{colmap\_X\_level.mm}.</description> 
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
