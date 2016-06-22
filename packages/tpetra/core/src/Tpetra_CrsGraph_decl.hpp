@@ -1801,7 +1801,6 @@ namespace Tpetra {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
       const bool sorted = this->isSorted ();
 
