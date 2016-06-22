@@ -311,7 +311,7 @@ namespace MueLu {
       if(bZ->Rows() == 1 && bZ->Cols() == 1 && rangeMapExtractor_->getThyraMode() == true) bZThyraSpecialTreatment = true;
     }
 
-#if 0 // new implementation
+#if 1// new implementation
 
     // create a new vector for storing the current residual in a blocked multi vector
     RCP<MultiVector> res = MultiVectorFactory::Build(B.getMap(), B.getNumVectors());
@@ -398,8 +398,8 @@ namespace MueLu {
     }
 
     // write back solution
-    domainMapExtractor_->InsertVector(bX->getMultiVector(0), 0, rcpX, bDomainThyraModePredict);
-    domainMapExtractor_->InsertVector(bX->getMultiVector(1), 1, rcpX, bDomainThyraModeSchur);
+    domainMapExtractor_->InsertVector(bX->getMultiVector(0,bDomainThyraModePredict), 0, rcpX, bDomainThyraModePredict);
+    domainMapExtractor_->InsertVector(bX->getMultiVector(1,bDomainThyraModeSchur), 1, rcpX, bDomainThyraModeSchur);
 #else
 
     // wrap current solution vector in RCP

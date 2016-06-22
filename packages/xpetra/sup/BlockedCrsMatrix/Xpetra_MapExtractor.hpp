@@ -284,7 +284,7 @@ namespace Xpetra {
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-#if 0
+#if 1
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
 #else
@@ -309,7 +309,7 @@ namespace Xpetra {
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-#if 0
+#if 1
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
 #else
@@ -334,7 +334,7 @@ namespace Xpetra {
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-#if 0
+#if 1
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
 #else
@@ -360,7 +360,7 @@ namespace Xpetra {
       if(bThyraMode == false) return vv;
       TEUCHOS_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::ExtractVector: ExtractVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
-#if 0
+#if 1
       vv->replaceMap(getMap(block,true)); // switch to Thyra-style map
       return vv;
 #else
@@ -404,7 +404,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
-#if 0
+#if 1
         // Temporarily replace underlying map.
         // Since the partial vector is given by reference we have to switch back to the original map
         RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
@@ -434,7 +434,7 @@ namespace Xpetra {
       XPETRA_TEST_FOR_EXCEPTION(bThyraMode_ == false && bThyraMode == true, Xpetra::Exceptions::RuntimeError,
                  "MapExtractor::InsertVector: InsertVector in Thyra-style numbering only possible if MapExtractor has been created using Thyra-style numbered submaps.");
       if(bThyraMode) {
-#if 0
+#if 1
         // Temporarily replace underlying map.
         // Since the partial vector is given by reference we have to switch back to the original map
         RCP<const MultiVector> rcpPartial = Teuchos::rcpFromRef(partial);
