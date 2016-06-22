@@ -202,15 +202,17 @@ struct InputTraits {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 // This combination of macros is used to define a single line STATIC_ASSERT_TYPES for each InputTraits with custom template types
-#define isSame(s,type) std::is_same< s, type >::value
-#define sTypes(s) ( isSame(s,float) || isSame(s,double) || isSame(s,int) )
-#define lgTypes(lg) ( isSame(lg,int) || isSame(lg,long) || isSame(lg,unsigned int) || isSame(lg,unsigned long) || isSame(lg,long long) )
-#define sError "Invalid scalar type. It must be float, double, or int."
-#define lgError "Invalid ordinal type. It must be int, long, unsigned int, unsigned long or long long."
+#define ISSAME(s,type) std::is_same< s, type >::value
+#define STYPES(s) ( ISSAME(s,float) || ISSAME(s,double) || ISSAME(s,int) )
+#define LTYPES(l) ( ISSAME(l,int) || ISSAME(l,long) || ISSAME(l,long long) || ISSAME(l,ssize_t) )
+#define GTYPES(g) ( ISSAME(g,int) || ISSAME(g,long) || ISSAME(g,long long) || ISSAME(g,ssize_t) || ISSAME(g,unsigned int) || ISSAME(g,unsigned long) || ISSAME(g,unsigned long long) || ISSAME(g,size_t) )
+#define SERROR "Invalid scalar type. It must be float, double, or int."
+#define LERROR "Invalid local ordinal type. It must be int, long, long long, or ssize_t."
+#define GERROR "Invalid global ordinal type. It must be int, long, long long, ssize_t, unsigned int, unsigned long long, size_t."
 #ifdef INVERT_STATIC_ASSERT_FOR_UNIT_TESTING
-  #define STATIC_ASSERT_TYPES static_assert( !sTypes(scalar_t) || !lgTypes(lno_t) || !lgTypes(gno_t), "Inverted unit test for InputTraits was supposed to fail but did not." );
+  #define STATIC_ASSERT_TYPES static_assert( ( !STYPES(scalar_t) || !LTYPES(lno_t) || !GTYPES(gno_t) ), "Inverted unit test for InputTraits was supposed to fail but did not." );
 #else
-  #define STATIC_ASSERT_TYPES static_assert( sTypes(scalar_t), sError ); static_assert( lgTypes(lno_t), lgError ); static_assert( lgTypes(gno_t), lgError );
+  #define STATIC_ASSERT_TYPES static_assert( STYPES(scalar_t), SERROR ); static_assert( LTYPES(lno_t), LERROR ); static_assert( GTYPES(gno_t), GERROR );
 #endif
 
 template <typename Scalar,
