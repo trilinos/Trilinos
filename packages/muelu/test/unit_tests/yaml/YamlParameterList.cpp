@@ -144,7 +144,7 @@ namespace MueLuTests
     using std::string;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     //This list can contain any valid XML param lists in the unit_tests/yaml/
-    std::vector<string> xmlFiles = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml", "input_restingHydrostatic_RK4.xml"};
+    std::vector<string> xmlFiles = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml", "input_restingHydrostatic_RK4.xml", "plasma_oscillation_rtc.xml"};
     for(size_t i = 0; i < xmlFiles.size(); i++)
     {
       std::string xmlFile = std::string("yaml/") + xmlFiles[i];

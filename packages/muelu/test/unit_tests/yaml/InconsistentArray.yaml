@@ -4,6 +4,6 @@ Muelu:
   'relaxation: type': Jacobi
   'relaxation: sweeps': 5
   'relaxation: damping factor': 0.9
-  stringArray: !!seq [2, 3, 5, 7, imastring]
-  doubleArray: !!seq [2, 3, 1.618, 1.23456789, 42.1337]
+  stringArray: [2, 3, 5, 7, imastring]
+  doubleArray: [2, 3, 1.618, 1.23456789, 42.1337]
 ...
