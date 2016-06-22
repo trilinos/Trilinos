@@ -215,6 +215,12 @@ const SideTestUtil::TestCaseData createExposedBoundaryForOneBlockCoincidentEleme
     {"eff.e",       3,      2,      {{1, 0}, {1, 1}, {2, 0}, {2, 1}, {3,0}, {3,1}}},
 };
 
+const SideTestUtil::TestCaseData createExposedBoundaryForDegenerateElementTestCases =
+{
+     {"quadDegenTriSandwich.g",  3,  7, {}},
+     {"hexDegenWedgeSandwich.g", 3,  13, {}}
+};
+
 class SkinnedMesh : public SideTestUtil::SideCreationTester
 {
 public:
@@ -250,6 +256,16 @@ TEST(ExposedBlockBoundaryTest, run_all_test_cases_aura)
 TEST(ExposedBlockBoundaryTest, run_all_test_cases_no_aura)
 {
     SkinnedMesh().run_all_test_cases(exposedBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(ExposedBlockBoundaryTest, run_some_degenerate_cases_aura)
+{
+    SkinnedMesh().run_all_test_cases(createExposedBoundaryForDegenerateElementTestCases, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ExposedBlockBoundaryTest, run_some_degenerate_cases_no_aura)
+{
+    SkinnedMesh().run_all_test_cases(createExposedBoundaryForDegenerateElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST(CreateExposedBoundaryForSingleBlockTest, run_all_test_cases_aura)
