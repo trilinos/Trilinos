@@ -219,6 +219,7 @@ namespace MueLu {
       WriteData<Matrix>(H, prolongatorsToPrint_, "P");
       WriteData<Matrix>(H, restrictorsToPrint_,  "R");
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
+      WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
 
     } //SetupHierarchy
 
@@ -266,6 +267,7 @@ namespace MueLu {
     Teuchos::Array<int>   prolongatorsToPrint_;
     Teuchos::Array<int>   restrictorsToPrint_;
     Teuchos::Array<int>   nullspaceToPrint_;
+    Teuchos::Array<int>   coordinatesToPrint_;
 
     std::map<int, std::vector<keep_pair> > keep_;
 

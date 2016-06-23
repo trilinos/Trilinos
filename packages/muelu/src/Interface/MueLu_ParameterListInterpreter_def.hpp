@@ -255,6 +255,8 @@ namespace MueLu {
         this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
       if (printList.isParameter("Nullspace"))
         this->nullspaceToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
+      if (printList.isParameter("Coordinates"))
+        this->coordinatesToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Coordinates");
     }
 
     // Set verbosity parameter
