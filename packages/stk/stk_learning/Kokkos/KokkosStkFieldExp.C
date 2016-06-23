@@ -49,6 +49,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_util/stk_config.h>
+#include <stk_util/parallel/Parallel.hpp>
  
 #ifdef KOKKOS_HAVE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
@@ -227,6 +228,8 @@ void test_field() {
 }
 
 TEST_F(MTK_Kokkos, field_exp) {
-  test_field();
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1) {
+      test_field();
+  }
 }
 
