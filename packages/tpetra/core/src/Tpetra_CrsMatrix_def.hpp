@@ -1536,7 +1536,9 @@ namespace Tpetra {
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_matrix_type::values_type values_type;
-    const char tfecfFuncName[] = "fillLocalMatrix: ";
+#ifdef HAVE_TPETRA_DEBUG
+    const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
+#endif // HAVE_TPETRA_DEBUG
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -1634,6 +1636,7 @@ namespace Tpetra {
         k_ptrs = packedRowOffsets;
       }
 
+#ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
          std::logic_error, "In DynamicProfile branch, after packing k_ptrs, "
@@ -1644,12 +1647,21 @@ namespace Tpetra {
          std::logic_error, "In DynamicProfile branch, after packing h_ptrs, "
          "h_ptrs.dimension_0() = " << h_ptrs.dimension_0 () << " != "
          "(lclNumRows+1) = " << (lclNumRows+1) << ".");
-      // FIXME (mfh 08 Aug 2014) This assumes UVM.
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (k_ptrs(lclNumRows) != lclTotalNumEntries, std::logic_error,
-        "In DynamicProfile branch, after packing k_ptrs, k_ptrs(lclNumRows = "
-        << lclNumRows << ") = " << k_ptrs(lclNumRows) << " != total number of "
-         "entries on the calling process = " << lclTotalNumEntries << ".");
+      {
+        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
+        // k_ptrs(lclNumRows), then copy that entry to host first.  We
+        // can do this with "0-D" subviews.
+        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
+        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
+        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (k_ptrs_ent_h ()) != lclTotalNumEntries,
+           std::logic_error, "(DynamicProfile branch) After packing k_ptrs, "
+           "k_ptrs(lclNumRows = " << lclNumRows << ") = " << k_ptrs_ent_h ()
+           << " != total number of entries on the calling process = "
+           << lclTotalNumEntries << ".");
+      }
+#endif // HAVE_TPETRA_DEBUG
 
       // Allocate the array of packed values.
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
@@ -1665,15 +1677,24 @@ namespace Tpetra {
       // Copy the packed values to the device.
       Kokkos::deep_copy (k_vals, h_vals);
 
+#ifdef HAVE_TPETRA_DEBUG
       // Sanity check of packed row offsets.
       if (k_ptrs.dimension_0 () != 0) {
         const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+
+        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
+        // k_ptrs(numOffsets-1), then copy that entry to host first.
+        // We can do this with "0-D" subviews.
+        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, numOffsets - 1);
+        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
+        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_ptrs(numOffsets-1)) != k_vals.dimension_0 (),
-           std::logic_error, "In DynamicProfile branch, after packing, k_ptrs("
-           << (numOffsets-1) << ") = " << k_ptrs(numOffsets-1) << " != "
+          (static_cast<size_t> (k_ptrs_ent_h ()) != k_vals.dimension_0 (),
+           std::logic_error, "(DynamicProfile branch) After packing, k_ptrs("
+           << (numOffsets-1) << ") = " << k_ptrs_ent_h () << " != "
            "k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
       }
+#endif // HAVE_TPETRA_DEBUG
     }
     else if (getProfileType () == StaticProfile) {
       // StaticProfile means that the matrix's values are currently
