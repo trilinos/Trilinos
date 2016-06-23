@@ -21,23 +21,23 @@ enum StepperType {
   BACKWARD_EULER
 };
 
-static std::string ForwardEuler_name  = "Forward Euler";
-static std::string BackwardEuler_name = "Backward Euler";
-static std::string Stepper_name       = "Stepper";
-static std::string Stepper_default    = ForwardEuler_name;
+static std::string ForwardEuler_name   = "Forward Euler";
+static std::string BackwardEuler_name  = "Backward Euler";
+static std::string StepperType_name    = "Stepper Type";
+static std::string StepperType_default = ForwardEuler_name;
 
-Teuchos::Array<std::string> Stepper_names = Teuchos::tuple<std::string>(
+Teuchos::Array<std::string> StepperType_names = Teuchos::tuple<std::string>(
   ForwardEuler_name,
   BackwardEuler_name);
 
 const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<StepperType> >
 StepperValidator = Teuchos::rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<StepperType>(
-    Stepper_names,
+    StepperType_names,
     Teuchos::tuple<Tempus::StepperType>(
       FORWARD_EULER,
       BACKWARD_EULER),
-    Stepper_name));
+    StepperType_name));
 
 
 const std::string toString(const StepperType s)
@@ -85,33 +85,26 @@ public:
 
   /// Factory Method
   Teuchos::RCP<Stepper<Scalar> > createStepper(
-    std::string                                         stepperName,
-    Teuchos::RCP<Teuchos::ParameterList>                stepper_pList,
+    Teuchos::RCP<Teuchos::ParameterList>                stepperPL,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model         )
   {
-    StepperType stepperType = fromString(stepperName);
+    StepperType stepperType =
+      fromString(stepperPL->get<std::string>(StepperType_name));
     switch(stepperType) {
       case FORWARD_EULER:
         return Teuchos::rcp(
-          new StepperForwardEuler<Scalar>(stepper_pList, model));
+          new StepperForwardEuler<Scalar>(stepperPL, model));
       case BACKWARD_EULER:
         return Teuchos::rcp(
-          new StepperBackwardEuler<Scalar>(stepper_pList, model));
+          new StepperBackwardEuler<Scalar>(stepperPL, model));
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-          "Unknown StepperType = " << stepperName);
+          "Unknown StepperType = " << stepperType);
     }
     return Teuchos::null; // Should never get here!
   }
 
 };
-
-
-/// Return Stepper_name used for selecting the Stepper from the ParameterList
-const std::string getStepperName() {return Stepper_name; }
-
-/// Return the default Stepper
-const std::string getStepperDefault() {return ForwardEuler_name; }
 
 
 } // namespace Tempus

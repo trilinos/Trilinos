@@ -2,7 +2,6 @@
 #define TEMPUS_RESIDUALMODELEVALUATOR_HPP
 
 #include <functional>
-
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
 namespace Tempus {
@@ -38,11 +37,15 @@ public:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getTransientModel() const
   { return transientModel_; }
 
-  /// Set the alpha, beta and lambda function used to compute x dot
-  void setEvaluationValues(
+  /// Set values to compute x dot and evaluate transient model.
+  void initialize(
     std::function<void (const Vector &,Vector &)> computeXDot,
-    double t, double alpha, double beta)
-  { computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta; }
+    double t, double alpha, double beta,
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint)
+  {
+    computeXDot_ = computeXDot; t_ = t; alpha_ = alpha; beta_ = beta;
+    basePoint_ = basePoint;
+  }
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
@@ -81,6 +84,7 @@ private:
   Scalar t_;
   Scalar alpha_;
   Scalar beta_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
 };
 
 } // namespace Tempus

@@ -19,6 +19,7 @@ createInArgs() const
   return inArgs;
 }
 
+
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::OutArgs<Scalar>
 ResidualModelEvaluator<Scalar>::
@@ -35,6 +36,7 @@ createOutArgsImpl() const
   return outArgs;
 }
 
+
 template <typename Scalar>
 void
 ResidualModelEvaluator<Scalar>::
@@ -45,31 +47,34 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   using Teuchos::RCP;
 
-  RCP<const Thyra::VectorBase<Scalar> > x     = inArgs.get_x();
-  RCP<Thyra::VectorBase<Scalar> >       x_dot = Thyra::createMember(get_x_space());
+  RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x();
+  RCP<Thyra::VectorBase<Scalar> >   x_dot = Thyra::createMember(get_x_space());
 
   // call functor to compute x dot
   computeXDot_(*x,*x_dot);
 
   // setup input condition for nonlinear solve
-  MEB::InArgs<Scalar> me_inArgs = transientModel_->createInArgs();
-  me_inArgs.set_x(x);
-  me_inArgs.set_x_dot(x_dot);
-  me_inArgs.set_alpha(alpha_);
-  me_inArgs.set_beta(beta_);
+  MEB::InArgs<Scalar> transientInArgs = transientModel_->createInArgs();
+  transientInArgs.setArgs(basePoint_);
+  transientInArgs.set_x(x);
+  transientInArgs.set_x_dot(x_dot);
+  transientInArgs.set_t(t_);
+  transientInArgs.set_alpha(alpha_);
+  transientInArgs.set_beta(beta_);
   for (int i=0; i<transientModel_->Np(); ++i) {
     if (inArgs.get_p(i) != Teuchos::null)
-      me_inArgs.set_p(i, inArgs.get_p(i));
+      transientInArgs.set_p(i, inArgs.get_p(i));
   }
 
   // setup output condition
-  MEB::OutArgs<Scalar> me_outArgs = transientModel_->createOutArgs();
-  me_outArgs.set_f(outArgs.get_f());
-  me_outArgs.set_W_op(outArgs.get_W_op());
+  MEB::OutArgs<Scalar> transientOutArgs = transientModel_->createOutArgs();
+  transientOutArgs.set_f(outArgs.get_f());
+  transientOutArgs.set_W_op(outArgs.get_W_op());
 
   // build residual and jacobian
-  transientModel_->evalModel(me_inArgs,me_outArgs);
+  transientModel_->evalModel(transientInArgs,transientOutArgs);
 }
+
 
 } // namespace Tempus
 

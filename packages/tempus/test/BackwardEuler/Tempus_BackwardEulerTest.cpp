@@ -18,7 +18,7 @@ using Tempus::SolutionState;
 
 namespace Tempus_Test {
 
-TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
+TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
 {
   Array<double> StepSize;
   Array<double> ErrorNorm;
@@ -28,7 +28,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
     // Read params from .xml file
     RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_ForwardEuler_SinCos.xml");
+      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos.xml");
 
     //std::ofstream ftmp("PL.txt");
     //pList->print(ftmp);
@@ -63,7 +63,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
 
     // Plot sample solution and exact solution
     if (n == 0) {
-      std::ofstream ftmp("Tempus_ForwardEuler_SinCos.dat");
+      std::ofstream ftmp("Tempus_BackwardEuler_SinCos.dat");
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
@@ -92,9 +92,9 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
   TEST_FLOATING_EQUALITY( slope, 1.0, 0.01 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.051123, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
 
-  std::ofstream ftmp("Tempus_ForwardEuler_SinCos-Error.dat");
+  std::ofstream ftmp("Tempus_BackwardEuler_SinCos-Error.dat");
   double error0 = 0.8*ErrorNorm[0];
   for (int n=0; n<nTimeStepSizes; n++) {
     ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "

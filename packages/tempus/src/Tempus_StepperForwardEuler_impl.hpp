@@ -17,6 +17,8 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   const RCP<Thyra::ModelEvaluator<Scalar> >& model )
  : model_(model)
 {
+  this->setParameterList(pList);
+
   inArgs_  = model_->createInArgs();
   outArgs_ = model_->createOutArgs();
   inArgs_  = model_->getNominalValues();
@@ -92,11 +94,17 @@ void StepperForwardEuler<Scalar>::describe(
 
 template <class Scalar>
 void StepperForwardEuler<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList)
+  const RCP<ParameterList> & pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!is_null(pList));
-  pList->validateParameters(*this->getValidParameters());
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
+  //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
+
+  std::string stepperType = pList_->get<std::string>("Stepper Type");
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Forward Euler",
+    std::logic_error,
+       "Error - Stepper sublist is not 'Forward Euler'!\n"
+    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
@@ -106,6 +114,18 @@ template<class Scalar>
 RCP<const ParameterList> StepperForwardEuler<Scalar>::getValidParameters() const
 {
   static RCP<ParameterList> validPL;
+
+  if (is_null(validPL)) {
+
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+
+    std::ostringstream tmp;
+    tmp << "'Stepper Type' must be 'Forward Euler'.";
+    pl->set("Stepper Type", "Forward Euler", tmp.str());
+
+    validPL = pl;
+  }
   return validPL;
 }
 

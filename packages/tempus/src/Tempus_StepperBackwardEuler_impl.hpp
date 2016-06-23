@@ -32,13 +32,16 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
   RCP<ParameterList>                         pList,
   const RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
+  this->setParameterList(pList);
+
   residualModel_ = rcp(new ResidualModelEvaluator<Scalar>(transientModel));
 
-  inArgs_  = residualModel_->createInArgs();
-  outArgs_ = residualModel_->createOutArgs();
   inArgs_  = residualModel_->getNominalValues();
+  outArgs_ = residualModel_->createOutArgs();
 
-  RCP<ParameterList> noxPL = Teuchos::sublist(pList,"NOX",true);
+  std::string solverName = pList_->get<std::string>("Solver Name");
+  RCP<ParameterList> solverPL = Teuchos::sublist(pList_,solverName,true);
+  RCP<ParameterList> noxPL    = Teuchos::sublist(solverPL,"NOX",true);
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
   solver_->setParameterList(noxPL);
 }
@@ -49,31 +52,37 @@ void StepperBackwardEuler<Scalar>::takeStep(
   const RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
+  RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(is_null(workingState), std::logic_error,
-    "Error - SolutionState, workingState, is invalid!\n");
+  RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
+  RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
+  RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
 
   typedef Thyra::ModelEvaluatorBase MEB;
   const Scalar time = workingState->getTime();
   const Scalar dt   = workingState->getTimeStep();
 
-  inArgs_.set_x(workingState->getX());
-  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
+  // constant variable capture of xOld pointer
+  auto computeXDot = xDotFunction(dt, xOld);
 
-  // For model evaluators whose state function f(x, x_dot, t) describes
-  // an implicit ODE, and which accept an optional x_dot input argument,
-  // make sure the latter is set to null in order to request the evaluation
-  // of a state function corresponding to the explicit ODE formulation
-  // x_dot = f(x, t)
-  if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-  outArgs_.set_f(workingState->getXDot());
+  Scalar alpha = 1.0/dt;
+  Scalar beta = 1.0;
+  Scalar t = time+dt;
 
-  residualModel_->evalModel(inArgs_,outArgs_);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> base_point =
+    residualModel_->getNominalValues();
+  residualModel_->initialize(computeXDot, t, alpha, beta, base_point);
 
-  // Backward Euler update, x = x + dt*xdot
-  Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
+  const Thyra::SolveStatus<double> solve_status =
+    this->solveNonLinear(residualModel_, *solver_, x, inArgs_);
 
-  workingState->stepperState->stepperStatus = Status::PASSED;
+  computeXDot(*x, *xDot);
+
+  if (solve_status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
+    workingState->stepperState->stepperStatus = Status::PASSED;
+  else
+    workingState->stepperState->stepperStatus = Status::FAILED;
+
   return;
 }
 
@@ -115,9 +124,17 @@ template <class Scalar>
 void StepperBackwardEuler<Scalar>::setParameterList(
   RCP<ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(!is_null(pList));
-  pList->validateParameters(*this->getValidParameters());
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
+  //pList->validateParameters(*this->getValidParameters());
   pList_ = pList;
+
+  std::string stepperType = pList_->get<std::string>("Stepper Type");
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperType != "Backward Euler",
+    std::logic_error,
+       "Error - Stepper sublist is not 'Backward Euler'!\n"
+    << "  Stepper Type = "<< pList->get<std::string>("Stepper Type") << "\n");
+
+  std::string solverName = pList_->get<std::string>("Solver Name");
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
 }
@@ -127,6 +144,17 @@ template<class Scalar>
 RCP<const ParameterList> StepperBackwardEuler<Scalar>::getValidParameters() const
 {
   static RCP<ParameterList> validPL;
+  if (is_null(validPL)) {
+
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+
+    std::ostringstream tmp;
+    tmp << "'Stepper Type' must be 'Backward Euler'.";
+    pl->set("Stepper Type", "Backward Euler", tmp.str());
+
+    validPL = pl;
+  }
   return validPL;
 }
 

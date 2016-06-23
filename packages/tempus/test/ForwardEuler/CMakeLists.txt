@@ -9,6 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ForwardEuler_CopyFiles
-  DEST_FILES ForwardEuler_SinCos.xml
+  DEST_FILES Tempus_ForwardEuler_SinCos.xml
   EXEDEPS ForwardEuler
   )

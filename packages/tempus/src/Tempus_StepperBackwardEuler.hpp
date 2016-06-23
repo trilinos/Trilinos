@@ -1,7 +1,7 @@
 #ifndef TEMPUS_STEPPERBACKWARDEULER_HPP
 #define TEMPUS_STEPPERBACKWARDEULER_HPP
 
-#include "Tempus_Stepper.hpp"
+#include "Tempus_StepperImplicit.hpp"
 #include "Tempus_ResidualModelEvaluator.hpp"
 #include "NOX_Thyra.H"
 
@@ -12,7 +12,7 @@ namespace Tempus {
  *  Backward Euler is an implicit time stepper (i.e., with solver).
  */
 template<class Scalar>
-class StepperBackwardEuler : virtual public Tempus::Stepper<Scalar>
+class StepperBackwardEuler : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
@@ -54,8 +54,7 @@ private:
 
   Teuchos::RCP<Teuchos::ParameterList>              pList_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
-  //Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  Teuchos::RCP<Thyra::NOXNonlinearSolver>  solver_;
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;

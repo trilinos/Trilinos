@@ -91,6 +91,8 @@ public:
 
 protected:
 
+  std::string                               integratorName_;
+
   Teuchos::RCP<Teuchos::ParameterList>      pList_;
   Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory_;
   Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl_;

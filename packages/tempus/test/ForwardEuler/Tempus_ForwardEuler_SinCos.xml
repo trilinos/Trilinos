@@ -11,7 +11,10 @@
     <Parameter name="IC t_0"  type="double" value="0.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
-    <ParameterList name="Integrator Basic">
+    <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
+
+    <ParameterList name="Demo Integrator">
+      <Parameter name="Integrator Type" type="string" value="Integrator Basic"/>
       <Parameter name="Initial Time"       type="double" value="0.0"/>
       <Parameter name="Initial Time Index" type="int"    value="0"/>
       <Parameter name="Initial Time Step"  type="double" value="0.1"/>
@@ -20,7 +23,7 @@
       <Parameter name="Final Time Index"   type="int"    value="10000"/>
       <Parameter name="Screen Output Index List"    type="string" value="1"/>
       <Parameter name="Screen Output Index Interval" type="int"   value="100"/>
-      <Parameter name="Stepper"            type="string" value="Forward Euler"/>
+      <Parameter name="Stepper Name"       type="string" value="Demo Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Unlimited"/>
         <Parameter name="Storage Limit" type="int"    value="20"/>
@@ -45,10 +48,15 @@
         <Parameter name="Maximum Number of Consecutive Stepper Failures" type="int" value="5"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Stepper">
+
+    <ParameterList name="Demo Stepper">
+      <Parameter name="Stepper Type" type="string" value="Forward Euler"/>
     </ParameterList>
+
   </ParameterList>
+
   <ParameterList name="VerboseObject">
     <Parameter name="Verbosity Level" type="string" value="high"/>
   </ParameterList>
+
 </ParameterList>

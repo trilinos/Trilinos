@@ -15,8 +15,11 @@ using Teuchos::ParameterList;
 
 namespace {
 
-  static std::string SolutionHistory_name     = "Solution History";
-  static std::string TimeStepControl_name     = "Time Step Control";
+  static std::string integratorName_name    = "Integrator Name";
+  static std::string StepperName_name       = "Stepper Name";
+
+  static std::string integratorType_name    = "Integrator Type";
+  static std::string integratorType_default = "Integrator Basic";
 
   static std::string initTime_name          = "Initial Time";
   static double      initTime_default       = 0.0;
@@ -42,6 +45,9 @@ namespace {
     "Screen Output Index Interval";
   static int         outputScreenIndexInterval_default = 100;
 
+  static std::string SolutionHistory_name     = "Solution History";
+  static std::string TimeStepControl_name     = "Time Step Control";
+
 } // namespace
 
 
@@ -49,14 +55,16 @@ namespace Tempus {
 
 template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
-  RCP<ParameterList>                         pList,
+  RCP<ParameterList>                         tempusPL,
   const RCP<Thyra::ModelEvaluator<Scalar> >& model,
   const RCP<IntegratorObserver<Scalar> >&    integratorObserver)
      : integratorStatus (WORKING)
 {
+  // Get the name of the integrator to build.
+  integratorName_ = tempusPL->get<std::string>(integratorName_name);
 
   // Create classes from nested blocks prior to setParameters call.
-  RCP<ParameterList> tmpiPL = Teuchos::sublist(pList,"Integrator Basic",true);
+  RCP<ParameterList> tmpiPL = Teuchos::sublist(tempusPL, integratorName_, true);
 
   //    Create solution history
   RCP<ParameterList> shPL = Teuchos::sublist(tmpiPL, SolutionHistory_name,true);
@@ -67,13 +75,13 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   Scalar dtTmp = tmpiPL->get<double>(initTimeStep_name, initTimeStep_default);
   timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL, dtTmp));
 
-  this->setParameterList(pList);
+  this->setParameterList(tempusPL);
 
   // Create Stepper
   RCP<StepperFactory<Scalar> > sf = rcp(new StepperFactory<Scalar>());
-  std::string s = pList_->get<std::string>(getStepperName(),getStepperDefault());
-  RCP<ParameterList> s_pl = Teuchos::sublist(pList_, s);
-  stepper_ = sf->createStepper(s, s_pl, model);
+  std::string stepperName = pList_->get<std::string>(StepperName_name);
+  RCP<ParameterList> s_pl = Teuchos::sublist(tempusPL, stepperName, true);
+  stepper_ = sf->createStepper(s_pl, model);
 
   // Create meta data
   RCP<SolutionStateMetaData<Scalar> > md =
@@ -325,16 +333,22 @@ void IntegratorBasic<Scalar>::endIntegrator()
 
 template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
-  const RCP<ParameterList> & pList)
+  const RCP<ParameterList> & tempusPL)
 {
-  if (pList == Teuchos::null)
+  if (tempusPL == Teuchos::null)
     pList_->validateParametersAndSetDefaults(*this->getValidParameters());
   else {
-    pList_ = Teuchos::sublist(pList,"Integrator Basic",true);
+    pList_ = Teuchos::sublist(tempusPL, integratorName_, true);
     pList_->validateParameters(*this->getValidParameters());
   }
 
   Teuchos::readVerboseObjectSublist(&*pList_,this);
+
+  std::string integratorType = pList_->get<std::string>(integratorType_name);
+  TEUCHOS_TEST_FOR_EXCEPTION( integratorType != integratorType_default,
+    std::logic_error,
+    "Error - Inconsistent Integrator Type for IntegratorBasic\n"
+    << "    " << integratorType_name << " = " << integratorType << "\n");
 
   Scalar initTime = pList_->get<double>(initTime_name, initTime_default);
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -438,11 +452,14 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
+    tmp << "'" << integratorType_name << "' must be '" << integratorType_default << "'.";
+    pl->set(integratorType_name, integratorType_default, tmp.str());
+
+    tmp.clear();
     tmp << "Initial time.  Required to be in range ["
         << timeStepControl_->timeMin << ", "<< timeStepControl_->timeMax << "].";
     pl->set(initTime_name, initTime_default, tmp.str());
 
-    tmp.clear();
     tmp << "Initial time index.  Required to be range ["
         << timeStepControl_->iStepMin << ", "<< timeStepControl_->iStepMax <<"].";
     pl->set(initTimeIndex_name, initTimeIndex_default, tmp.str());
@@ -474,10 +491,8 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
     pl->set(outputScreenIndexInterval_name, outputScreenIndexInterval_default,
       "Screen Output Index Interval (e.g., every 100 time steps");
 
-    pl->set( getStepperName(), getStepperDefault(),
-      "'Stepper' sets the Stepper.\n"
-      "'Forward Euler' - performs classic first-order Forward Euler\n",
-      StepperValidator);
+    pl->set( StepperName_name, "",
+      "'Stepper Name' selects the Stepper block to construct (Required input).\n");
 
     // Solution History
     ParameterList& solutionHistoryPL =
