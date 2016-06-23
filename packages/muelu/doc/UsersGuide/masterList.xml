@@ -523,8 +523,8 @@
       <name>export data</name>
       <type>\parameterlist</type>
       <description>Exporting a subset of the hierarchy data in a
-      file. Currently, the list can contain any of four parameter
-      names ("A", ``P'', ``R'', ``Nullspace'') of type \texttt{string}
+      file. Currently, the list can contain any of the following parameter
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in

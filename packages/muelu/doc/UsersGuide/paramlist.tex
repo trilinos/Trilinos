@@ -80,7 +80,15 @@
           
 \cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
           
-\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
+\cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
+      file. Currently, the list can contain any of the following parameter
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      and value ``\{levels separated by commas\}''. A
+      matrix/multivector with a name ``X'' is saved in two or three
+      three MatrixMarket files: a) data is saved in
+      \textit{X\_level.mm}; b) its row map is saved in
+      \textit{rowmap\_X\_level.mm}; c) its column map (for matrices) is saved in
+      \textit{colmap\_X\_level.mm}.}
           
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
           
