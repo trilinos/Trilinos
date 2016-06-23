@@ -5,48 +5,13 @@
 struct GpuGatherBucketScratchData
 {
     GpuGatherBucketScratchData(const stk::mesh::BulkData &bulk)
-    : combineAllBuckets(false), ngpMesh(bulk)
+    : ngpMesh(bulk)
     {
     }
 
     unsigned getNumParallelItems() const
     {
         return ngpMesh.num_buckets(stk::topology::ELEM_RANK);
-    }
-
-    void setup_mesh_indices(const stk::mesh::BulkData& bulk, const stk::mesh::Selector& selector)
-    {
-        const stk::mesh::BucketVector& nodeBuckets = bulk.buckets(stk::topology::NODE_RANK);
-
-        meshIndices = DeviceViewMeshIndicesType("DMeshIndices", bulk.get_size_of_entity_index_space());
-        constMeshIndices = meshIndices;
-        hostMeshIndices = Kokkos::create_mirror_view(meshIndices);
-
-        for(unsigned bktIndex = 0; bktIndex < nodeBuckets.size(); ++bktIndex)
-        {
-            const stk::mesh::Bucket& bucket = *nodeBuckets[bktIndex];
-            for(unsigned nodeIndex = 0; nodeIndex < bucket.size(); ++nodeIndex)
-            {
-                stk::mesh::Entity node = bucket[nodeIndex];
-                stk::mesh::FastMeshIndex meshIndex(bucket.bucket_id(), nodeIndex);
-                hostMeshIndices(node.local_offset()) = meshIndex;
-            }
-        }
-
-        const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
-
-        for(unsigned bktIndex = 0; bktIndex < elemBuckets.size(); ++bktIndex)
-        {
-            const stk::mesh::Bucket& bucket = *elemBuckets[bktIndex];
-            for(unsigned elemIndex = 0; elemIndex < bucket.size(); ++elemIndex)
-            {
-                stk::mesh::Entity elem = bucket[elemIndex];
-                stk::mesh::FastMeshIndex meshIndex(bucket.bucket_id(), elemIndex);
-                hostMeshIndices(elem.local_offset()) = meshIndex;
-            }
-        }
-
-        Kokkos::deep_copy(meshIndices, hostMeshIndices);
     }
 
     void setup_node_coords(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, const stk::mesh::Selector& selector)
@@ -89,20 +54,19 @@ struct GpuGatherBucketScratchData
 
     void initialize(const stk::mesh::BulkData& bulk, const CoordFieldType& coords, CoordFieldType& centroid, const stk::mesh::Selector& selector)
     {
-        setup_mesh_indices(bulk, selector);
         setup_node_coords(bulk, coords, selector);
         setup_element_centroids(bulk, selector);
     }
 
     unsigned host_get_index(stk::mesh::Entity entity) const
     {
-        const stk::mesh::FastMeshIndex& meshIndex = hostMeshIndices(entity.local_offset());
+        const stk::mesh::FastMeshIndex& meshIndex = ngpMesh.host_mesh_index(entity);
         return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;
     }
 
     STK_FUNCTION unsigned get_index(stk::mesh::Entity entity) const
     {
-        const stk::mesh::FastMeshIndex& meshIndex = constMeshIndices(entity.local_offset());
+        const stk::mesh::FastMeshIndex& meshIndex = ngpMesh.device_mesh_index(entity);
         return meshIndex.bucket_id * bucketCapacity + meshIndex.bucket_ord;
     }
 
@@ -221,19 +185,15 @@ struct GpuGatherBucketScratchData
     }
 
     unsigned bucketCapacity;
-    bool combineAllBuckets;
 
     ngp::StaticMesh ngpMesh;
 
     DeviceViewMatrixType nodeCoords;
     ConstDeviceViewMatrixType constNodeCoords;
     DeviceViewMatrixType elementCentroids;
-    DeviceViewMeshIndicesType meshIndices;
-    ConstDeviceViewMeshIndicesType constMeshIndices;
 
     DeviceViewMatrixType::HostMirror hostNodeCoords;
     DeviceViewMatrixType::HostMirror hostElementCentroids;
-    DeviceViewMeshIndicesType::HostMirror hostMeshIndices;
 };
 
 void run_bucket_test()

@@ -140,8 +140,8 @@ public:
     unsigned get_index(stk::mesh::Entity entity) const
     {
         const StaticMesh& localRef = ngpBulk;
-        unsigned bkt_id = localRef.mesh_index(entity).bucket_id;
-        unsigned bkt_ord = localRef.mesh_index(entity).bucket_ord;
+        unsigned bkt_id = localRef.device_mesh_index(entity).bucket_id;
+        unsigned bkt_ord = localRef.device_mesh_index(entity).bucket_ord;
         unsigned idx = bkt_id*512*numPerEntity + bkt_ord*numPerEntity;
         return idx;
     }

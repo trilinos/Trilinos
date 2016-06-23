@@ -112,7 +112,9 @@ class StaticMesh
 public:
     StaticMesh(const stk::mesh::BulkData& bulk)
     {
+        hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror("host_mesh_indices", bulk.get_size_of_entity_index_space());
         fill_mesh_indices(stk::topology::NODE_RANK, bulk);
+        fill_mesh_indices(stk::topology::ELEM_RANK, bulk);
         fill_buckets(bulk, bulk.mesh_meta_data().locally_owned_part());
         copy_mesh_indices_to_device();
     }
@@ -122,9 +124,14 @@ public:
     }
 
     STK_FUNCTION
-    const stk::mesh::FastMeshIndex& mesh_index(stk::mesh::Entity entity) const
+    const stk::mesh::FastMeshIndex& device_mesh_index(stk::mesh::Entity entity) const
     {
-        return device_mesh_indices(entity.local_offset());
+        return deviceMeshIndices(entity.local_offset());
+    }
+
+    const stk::mesh::FastMeshIndex& host_mesh_index(stk::mesh::Entity entity) const
+    {
+        return hostMeshIndices(entity.local_offset());
     }
 
     STK_FUNCTION
@@ -179,7 +186,6 @@ private:
 
     void fill_mesh_indices(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk)
     {
-        mesh_indices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror("host_mesh_indices", bulk.get_size_of_entity_index_space());
         const stk::mesh::BucketVector& bkts = bulk.buckets(rank);
 
         for(const stk::mesh::Bucket* bktptr : bkts)
@@ -187,22 +193,22 @@ private:
             const stk::mesh::Bucket& bkt = *bktptr;
             for(size_t i = 0; i < bkt.size(); ++i)
             {
-                mesh_indices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex(bkt.bucket_id(), i);
+                hostMeshIndices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex(bkt.bucket_id(), i);
             }
         }
     }
 
     void copy_mesh_indices_to_device()
     {
-        unsigned length = mesh_indices.size();
+        unsigned length = hostMeshIndices.size();
         Kokkos::View<stk::mesh::FastMeshIndex*, MemSpace> tmp_device_mesh_indices("tmp_dev_mesh_indices", length);
-        Kokkos::deep_copy(tmp_device_mesh_indices, mesh_indices);
-        device_mesh_indices = tmp_device_mesh_indices;
+        Kokkos::deep_copy(tmp_device_mesh_indices, hostMeshIndices);
+        deviceMeshIndices = tmp_device_mesh_indices;
     }
 
     BucketsType buckets;
-    Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror mesh_indices;
-    Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > device_mesh_indices;
+    Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
+    Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
     //    Kokkos::View<const stk::mesh::FastMeshIndex*> device_mesh_indices;
 };
 }
