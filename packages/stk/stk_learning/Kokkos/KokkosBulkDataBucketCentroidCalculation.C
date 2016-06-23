@@ -297,43 +297,12 @@ struct GpuGatherBucketScratchData
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, compact), const int elementIndex) const
     {
-        ngp::Bucket& bucket = elementBuckets(0);
-        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
-        const unsigned dim = elementCentroids.extent(1);
-        stk::mesh::Entity elem = bucket[elementIndex];
-        const unsigned elemFieldIndex = get_index(elem);
-        double temp[3] = {0, 0, 0};
-        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
-        for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
-        {
-            unsigned idx = get_index(nodesView(nodeIndex));
-            for(unsigned k=0; k<dim; ++k) {
-                temp[k] += nodeCoords(idx, k);
-            }
-        }
-        for(unsigned k=0; k<dim; ++k) {
-            elementCentroids(elemFieldIndex, k) = temp[k] * 0.125;
-        }
+        printf("element-solo-compact not implemented!\n");
     }
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(element, solo, unroll), const int elementIndex) const
     {
-        ngp::Bucket& bucket = elementBuckets(0);
-        const unsigned nodesPerElem = bucket.get_num_nodes_per_entity();
-        stk::mesh::Entity elem = bucket[elementIndex];
-        const unsigned elemFieldIndex = get_index(elem);
-        double tempx = 0, tempy = 0, tempz = 0;
-        ngp::ConnectedNodesType nodesView = bucket.get_nodes(elementIndex);
-        for(unsigned nodeIndex=0;nodeIndex<nodesPerElem;++nodeIndex) // loop over every node of this element
-        {
-            unsigned idx = get_index(nodesView(nodeIndex));
-            tempx += nodeCoords(idx, 0);
-            tempy += nodeCoords(idx, 1);
-            tempz += nodeCoords(idx, 2);
-        }
-        elementCentroids(elemFieldIndex, 0) = tempx * 0.125;
-        elementCentroids(elemFieldIndex, 1) = tempy * 0.125;
-        elementCentroids(elemFieldIndex, 2) = tempz * 0.125;
+        printf("element-solo-unroll not implemented!\n");
     }
 
     KOKKOS_INLINE_FUNCTION void operator()(TYPE_OPERATOR(bucket, team, unroll), const TeamHandleType& team) const
@@ -424,10 +393,7 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_with_gather_on_device_bucket)
 
     GpuGatherBucketScratchData scratch;
     bool combineBuckets = false;
-    if (app.choice == 2 || app.choice == 4 || app.choice == 5) {
-        combineBuckets = true;
-    }
-    
+ 
     scratch.initialize(*app.bulk, *app.coords, app.centroid, app.meta.locally_owned_part(), combineBuckets);
 
     CentroidCalculator<GpuGatherBucketScratchData> calculator(scratch);
