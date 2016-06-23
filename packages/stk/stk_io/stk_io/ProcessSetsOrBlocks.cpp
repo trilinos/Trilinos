@@ -241,13 +241,15 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDE_CREATION_USING_GRAPH_TEST) {
-                            if(bulk.bucket(elem).owned())
+                            if(bulk.bucket(elem).owned()) {
                                 stk::mesh::declare_element_side(bulk, elem, side_ordinal, add_parts);
+                            }
                             else
                             {
                                 stk::mesh::OrdinalVector ords(add_parts.size());
-                                for(size_t i=0;i<add_parts.size();++i)
-                                    ords[i] = add_parts[i]->mesh_meta_data_ordinal();
+                                for(size_t n=0; n<add_parts.size(); ++n) {
+                                    ords[n] = add_parts[n]->mesh_meta_data_ordinal();
+                                }
                                 sidesToMove.push_back({bulk.identifier(elem), side_ordinal, ords});
                             }
                         }
