@@ -960,11 +960,20 @@ namespace Tpetra {
         "Tpetra::CrsMatrix::allocateValues: With StaticProfile, row offsets "
         "array has length " << k_ptrs.dimension_0 () << " != (lclNumRows+1) = "
         << (lclNumRows+1) << ".");
-      // FIXME (mfh 08 Aug 2014) This assumes UVM.  We could fix this
-      // either by storing the row offsets in the graph as a DualView,
-      // or by making a device View of that entry, and copying it back
-      // to host.
-      const size_t lclTotalNumEntries = k_ptrs(lclNumRows);
+
+      // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
+      // k_ptrs(lclNumRows), then copy that entry of k_ptrs to host
+      // first.  We can do this with "0-D" subviews.
+      auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
+      auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
+      Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+      const size_t lclTotalNumEntries = static_cast<size_t> (k_ptrs_ent_h ());
+
+      // // FIXME (mfh 08 Aug 2014) This assumes UVM.  We could fix this
+      // // either by storing the row offsets in the graph as a DualView,
+      // // or by making a device View of that entry, and copying it back
+      // // to host.
+      // const size_t lclTotalNumEntries = k_ptrs(lclNumRows);
 
       // Allocate array of (packed???) matrix values.
       typedef typename local_matrix_type::values_type values_type;
