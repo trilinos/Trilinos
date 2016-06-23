@@ -53,7 +53,7 @@ void StepperForwardEuler<Scalar>::takeStep(
   // Forward Euler update, x = x + dt*xdot
   Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
 
-  workingState->stepperState->stepperStatus = Status::PASSED;
+  workingState->stepperState_->stepperStatus_ = Status::PASSED;
   return;
 }
 

@@ -79,9 +79,9 @@ void StepperBackwardEuler<Scalar>::takeStep(
   computeXDot(*x, *xDot);
 
   if (solve_status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
-    workingState->stepperState->stepperStatus = Status::PASSED;
+    workingState->stepperState_->stepperStatus_ = Status::PASSED;
   else
-    workingState->stepperState->stepperStatus = Status::FAILED;
+    workingState->stepperState_->stepperStatus_ = Status::FAILED;
 
   return;
 }

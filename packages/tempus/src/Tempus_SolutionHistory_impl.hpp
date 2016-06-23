@@ -52,18 +52,18 @@ namespace {
 namespace Tempus {
 
 template<class Scalar>
-SolutionHistory<Scalar>::SolutionHistory(RCP<ParameterList> pList_)
+SolutionHistory<Scalar>::SolutionHistory(RCP<ParameterList> pList)
 {
   // Create history, an array of solution states.
-  history = rcp(new Teuchos::Array<RCP<SolutionState<Scalar> > >);
+  history_ = rcp(new Teuchos::Array<RCP<SolutionState<Scalar> > >);
 
-  if (pList_ == Teuchos::null) {
-    pList     = Teuchos::null;
+  if (pList == Teuchos::null) {
+    pList_       = Teuchos::null;
     //interpolator  = Teuchos::null;
     storageLimit = StorageLimit_default;
-    storageType = STORAGE_TYPE_KEEP_NEWEST;
+    storageType  = STORAGE_TYPE_KEEP_NEWEST;
   } else {
-    this->setParameterList(pList_);
+    this->setParameterList(pList);
   }
 
   if (Teuchos::as<int>(this->getVerbLevel()) >=
@@ -80,7 +80,7 @@ void SolutionHistory<Scalar>::addState(
   const RCP<SolutionState<Scalar> >& state_)
 {
   // Check that we're not going to exceed our storage limit:
-  if (Teuchos::as<int>(history->size()+1) > storageLimit) {
+  if (Teuchos::as<int>(history_->size()+1) > storageLimit) {
     switch (storageType) {
     case STORAGE_TYPE_INVALID: {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -90,10 +90,10 @@ void SolutionHistory<Scalar>::addState(
     case STORAGE_TYPE_STATIC:
     case STORAGE_TYPE_KEEP_NEWEST:
     case STORAGE_TYPE_UNDO: {
-      if (state_->getTime() > history->front()->getTime()) {
+      if (state_->getTime() > history_->front()->getTime()) {
         // Case:  State is older than the youngest state in history.
         // Remove state from the beginning of history, then add new state.
-        history->erase(history->begin());
+        history_->erase(history_->begin());
       } else {
         // Case:  State is younger than the youngest state in history.
         RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -113,17 +113,17 @@ void SolutionHistory<Scalar>::addState(
   }
 
   // Add new state in chronological order.
-  if (history->size() == 0) {
-    history->push_back(state_);
+  if (history_->size() == 0) {
+    history_->push_back(state_);
   } else {
     typename Teuchos::Array<RCP<SolutionState<Scalar> > >::iterator
-      state_it = history->begin();
-    for (; state_it < history->end(); state_it++) {
+      state_it = history_->begin();
+    for (; state_it < history_->end(); state_it++) {
       if (state_->getTime() < (*state_it)->getTime()) break;
     }
-    history->insert(state_it, state_);
+    history_->insert(state_it, state_);
   }
-  currentState = history->back();
+  currentState = history_->back();
 
   return;
 }
@@ -132,19 +132,19 @@ template<class Scalar>
 void SolutionHistory<Scalar>::removeState(
   const RCP<SolutionState<Scalar> >& state_)
 {
-  if (history->size() != 0) {
+  if (history_->size() != 0) {
     typename Teuchos::Array<SolutionState<Scalar> >::reverse_iterator
-      state_it = history->rbegin();
-    for (state_it; state_it < history->rend(); state_it++) {
+      state_it = history_->rbegin();
+    for (state_it; state_it < history_->rend(); state_it++) {
       if (state_->getTime() == (*state_it)->getTime()) break;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->rend(), std::logic_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(state_it == history_->rend(), std::logic_error,
       "Error - removeState() Could not remove state = "
       // << state_it->describe()
       );
 
-    history->erase(state_it);
+    history_->erase(state_it);
   }
   return;
 }
@@ -170,17 +170,17 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
 
   const Scalar relTol = 1.0e-14;
   typename Teuchos::Array<SolutionState<Scalar> >::iterator
-    state_it = history->begin();
+    state_it = history_->begin();
   // Linear search
-  for (state_it; state_it < history->end(); ++state_it) {
+  for (state_it; state_it < history_->end(); ++state_it) {
     if (abs((state_it.getTime()-time)/state_it.getTime()) < relTol) break;
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(state_it == history->end(), std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(state_it == history_->end(), std::logic_error,
     "Error - SolutionHistory::findState()!\n"
     "        Did not find a SolutionState with time = " <<time<< std::endl);
 
-  return history[state_it];
+  return history_[state_it];
 }
 
 
@@ -198,7 +198,7 @@ SolutionHistory<Scalar>::interpolateState(const Scalar time) const
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
     "Error - Implement interpolation.\n");
   //SolutionState<Scalar> state_out;
-  //interpolate<Scalar>(*interpolator, history, time_vec, &state_out);
+  //interpolate<Scalar>(*interpolator, history_, time_vec, &state_out);
 }
 
 
@@ -229,11 +229,11 @@ void SolutionHistory<Scalar>::initWorkingState()
 
   if (storageLimit == 1) {
     workingState = currentState;
-    workingState->metaData->solutionStatus = Status::WORKING;
+    workingState->metaData_->solutionStatus_ = Status::WORKING;
     currentState = Teuchos::null;
   } else {
     workingState = currentState->clone();
-    workingState->metaData->solutionStatus = Status::WORKING;
+    workingState->metaData_->solutionStatus_ = Status::WORKING;
     addState(workingState);
   }
 
@@ -244,14 +244,14 @@ void SolutionHistory<Scalar>::initWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData;
-  md->time += md->dt;
-  md->iStep++;
-  md->nFailures = std::max(0,md->nFailures-1);
-  md->nConsecutiveFailures = 0;
-  md->solutionStatus = Status::PASSED;
-  md->isRestartable = true;
-  md->isInterpolated = false;
+  RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData_;
+  md->time_ += md->dt_;
+  md->iStep_++;
+  md->nFailures_ = std::max(0,md->nFailures_-1);
+  md->nConsecutiveFailures_ = 0;
+  md->solutionStatus_ = Status::PASSED;
+  md->isRestartable_ = true;
+  md->isInterpolated_ = false;
   currentState = workingState;
   workingState = Teuchos::null;
 }
@@ -263,10 +263,10 @@ void SolutionHistory<Scalar>::setStorageLimit(int storage_limit)
   storageLimit = std::max(1,storage_limit);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (Teuchos::as<int>(history->size()) > storageLimit), std::logic_error,
+    (Teuchos::as<int>(history_->size()) > storageLimit), std::logic_error,
     "Error - requested storage limit = " << storageLimit
     << " is smaller than the current number of states stored = "
-    << history->size() << "!\n");
+    << history_->size() << "!\n");
 }
 
 
@@ -289,16 +289,16 @@ void SolutionHistory<Scalar>::describe(
     //out << "interpolator     = " << interpolator->description() << std::endl;
     out << "storageLimit     = " << storageLimit << std::endl;
     out << "storageType      = " << storageType << std::endl;
-    out << "number of states = " << history->size() << std::endl;
-    out << "time range       = (" << history->front()->getTime() << ", "
-                                  << history->back()->getTime() << ")"
+    out << "number of states = " << history_->size() << std::endl;
+    out << "time range       = (" << history_->front()->getTime() << ", "
+                                  << history_->back()->getTime() << ")"
                                   << std::endl;
   } else if (Teuchos::as<int>(verbLevel) >=
              Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     out << "SolutionStates: " << std::endl;
-    for (Teuchos::Ordinal i=0; i<history->size() ; ++i) {
+    for (Teuchos::Ordinal i=0; i<history_->size() ; ++i) {
       out << "SolutionState[" << i << "] = " << std::endl;
-      (*history)[i]->describe(out,this->getVerbLevel());
+      (*history_)[i]->describe(out,this->getVerbLevel());
     }
   }
 }
@@ -306,20 +306,20 @@ void SolutionHistory<Scalar>::describe(
 
 template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList_)
+  RCP<ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList_));
-  pList_->validateParameters(*this->getValidParameters());
-  pList = pList_;
+  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
+  pList->validateParameters(*this->getValidParameters());
+  pList_ = pList;
 
-  Teuchos::readVerboseObjectSublist(&*pList,this);
+  Teuchos::readVerboseObjectSublist(&*pList_,this);
 
   //setInterpolator(interpolator);
 
   storageType = StorageTypeValidator->getIntegralValue(
-    *pList, Storage_name, Storage_default);
+    *pList_, Storage_name, Storage_default);
 
-  int storage_limit = pList->get(StorageLimit_name, StorageLimit_default);
+  int storage_limit = pList_->get(StorageLimit_name, StorageLimit_default);
 
   switch (storageType) {
   case STORAGE_TYPE_INVALID:
@@ -392,15 +392,15 @@ template <class Scalar>
 RCP<ParameterList>
 SolutionHistory<Scalar>::getNonconstParameterList()
 {
-  return(pList);
+  return(pList_);
 }
 
 
 template <class Scalar>
 RCP<ParameterList> SolutionHistory<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_plist = pList;
-  pList = Teuchos::null;
+  RCP<ParameterList> temp_plist = pList_;
+  pList_ = Teuchos::null;
   return(temp_plist);
 }
 

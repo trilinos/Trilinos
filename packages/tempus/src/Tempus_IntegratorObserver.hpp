@@ -33,9 +33,9 @@ public:
 
   /// Constructor
   IntegratorObserver(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory_,
-    const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl_)
-    : solutionHistory(solutionHistory_), timeStepControl(timeStepControl_)
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
+    const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl)
+    : solutionHistory_(solutionHistory), timeStepControl_(timeStepControl)
   {}
 
   /// Destructor
@@ -67,8 +67,8 @@ public:
 
 protected:
 
-  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory;
-  Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl;
+  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl_;
 
 };
 } // namespace Tempus

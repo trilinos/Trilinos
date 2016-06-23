@@ -37,11 +37,11 @@ public:
   TimeStepControl();
 
   /** \brief Construct from ParameterList */
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList_,
-                  const Scalar dtConstant_ = 0.0);
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList,
+                  const Scalar dtConstant = 0.0);
 
   /// This is a copy constructor
-  TimeStepControl(const TimeStepControl<Scalar>& tsc_);
+  TimeStepControl(const TimeStepControl<Scalar>& tsc);
 
   /// Destructor
   virtual ~TimeStepControl() {};
@@ -72,27 +72,27 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  Scalar timeMin;         ///< Minimum simulation time
-  Scalar timeMax;         ///< Maximum simulation time
-  Scalar dtMin;           ///< Minimum time step
-  Scalar dtMax;           ///< Maximum time step
-  int    iStepMin;        ///< Minimum time step index
-  int    iStepMax;        ///< Maximum time step index
-  Scalar errorMaxAbs;     ///< Maximum absolute error
-  Scalar errorMaxRel;     ///< Maximum relative error
-  int orderMin;           ///< Minimum time integration order
-  int orderMax;           ///< Maximum time integration order
+  Scalar timeMin_;        ///< Minimum simulation time
+  Scalar timeMax_;        ///< Maximum simulation time
+  Scalar dtMin_;          ///< Minimum time step
+  Scalar dtMax_;          ///< Maximum time step
+  int    iStepMin_;       ///< Minimum time step index
+  int    iStepMax_;       ///< Maximum time step index
+  Scalar errorMaxAbs_;    ///< Maximum absolute error
+  Scalar errorMaxRel_;    ///< Maximum relative error
+  int orderMin_;          ///< Minimum time integration order
+  int orderMax_;          ///< Maximum time integration order
 
-  StepType stepType;      ///< Integrator step type for step control
-  Scalar dtConstant;      ///< Constant time step if stepType=CONSTANT_STEP_SIZE
+  StepType stepType_;     ///< Integrator step type for step control
+  Scalar dtConstant_;     ///< Constant time step if stepType=CONSTANT_STEP_SIZE
 
-  std::vector<int>    outputIndices;  ///< Vector of output indices.
-  std::vector<Scalar> outputTimes;    ///< Vector of output times.
+  std::vector<int>    outputIndices_;  ///< Vector of output indices.
+  std::vector<Scalar> outputTimes_;    ///< Vector of output times.
 
-  int nFailuresMax;            ///< Maximum number of stepper failures
-  int nConsecutiveFailuresMax; ///< Maximum number of consecutive stepper failures
+  int nFailuresMax_;            ///< Maximum number of stepper failures
+  int nConsecutiveFailuresMax_; ///< Maximum number of consecutive stepper failures
 
-  Teuchos::RCP<Teuchos::ParameterList> pList;
+  Teuchos::RCP<Teuchos::ParameterList> pList_;
 };
 } // namespace Tempus
 

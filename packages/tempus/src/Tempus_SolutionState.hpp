@@ -81,31 +81,31 @@ public:
   /// \name Accessor methods
   //@{
     /// Get time
-    virtual Scalar getTime() const {return metaData->time;}
+    virtual Scalar getTime() const {return metaData_->time_;}
 
     /// Get index
-    virtual Scalar getIndex() const {return metaData->iStep;}
+    virtual Scalar getIndex() const {return metaData_->iStep_;}
 
     /// Get time step
-    virtual Scalar getTimeStep() const {return metaData->dt;}
+    virtual Scalar getTimeStep() const {return metaData_->dt_;}
 
     /// Return the Solution status
     virtual Status getSolutionStatus() const
-      {return metaData->solutionStatus;};
+      {return metaData_->solutionStatus_;};
 
     /// Return the Stepper status
     virtual Status getStepperStatus() const
-      {return stepperState->stepperStatus;};
+      {return stepperState_->stepperStatus_;};
 
     /// Get the current solution, x.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x_;}
 
     /// Get the current time derivative of the solution, xdot.
-    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot;}
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot_;}
 
     /// Get the current time second derivative of the solution, xdotdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot()
-      {return xdotdot;}
+      {return xdotdot_;}
   //@}
 
 
@@ -152,19 +152,19 @@ public:
   // Member Data
 
   /// Meta Data for the solution state
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData;
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData_;
 
   /// Solution
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_;
 
   /// Time derivative of the solution
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot_;
 
   /// Second time derivative of the solution
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot;
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot_;
 
   /// StepperState for this SolutionState
-  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState;
+  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState_;
 
 };
 } // namespace Tempus

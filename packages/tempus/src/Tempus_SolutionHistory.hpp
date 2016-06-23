@@ -92,16 +92,16 @@ public:
   //@{
     /// Get underlining history
     Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > >
-      getHistory() const {return history;}
+      getHistory() const {return history_;}
 
     /// Subscript operator
     Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        !((0 <= i) and (i < history->size())), std::out_of_range,
+        !((0 <= i) and (i < history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
-        << "    [Min, Max] = [ 0, " << history->size()<< "]\n"
+        << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
         << "    index = " << i << "\n");
-      return (*history)[i];
+      return (*history_)[i];
     }
 
     /// Get current state
@@ -109,7 +109,7 @@ public:
       {return currentState;}
 
     /// Get the current number of states
-    int getSize() const {return history->size();}
+    int getSize() const {return history_->size();}
 
     /// Get the current time
     Scalar getCurrentTime() const {return currentState->getTime();}
@@ -126,10 +126,10 @@ public:
     StorageType getStorageType() {return storageType;}
 
     /// Return the current minimum time of the SolutionStates
-    Scalar minTime() const {return (history->front())->getTime();}
+    Scalar minTime() const {return (history_->front())->getTime();}
 
     /// Return the current maximum time of the SolutionStates
-    Scalar maxTime() const {return (history->back())->getTime();}
+    Scalar maxTime() const {return (history_->back())->getTime();}
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -159,11 +159,11 @@ public:
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>                  pList;
-  Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > > history;
-//  Teuchos::RCP<InterpolatorBase<Scalar> >      interpolator;
-  StorageType                         storageType;
-  int                                 storageLimit;
+  Teuchos::RCP<Teuchos::ParameterList>      pList_;
+  Teuchos::RCP<Teuchos::Array<Teuchos::RCP<SolutionState<Scalar> > > > history_;
+  //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
+  StorageType                               storageType;
+  int                                       storageLimit;
 
   Teuchos::RCP<SolutionState<Scalar> > currentState;   ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> > workingState;   ///< The state being worked on
@@ -176,9 +176,9 @@ protected:
  */
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
-  Teuchos::RCP<Teuchos::ParameterList> pList_ = Teuchos::null )
+  Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null )
 {
-  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList_));
+  Teuchos::RCP<SolutionHistory<Scalar> > sh=rcp(new SolutionHistory<Scalar>(pList));
   return sh;
 }
 

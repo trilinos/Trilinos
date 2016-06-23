@@ -35,15 +35,15 @@ class StepperState :
 {
 public:
   /// Constructor
-  StepperState(std::string name_, Status stepperStatus_ = WORKING)
-    : stepperName(name_), stepperStatus(stepperStatus_){}
+  StepperState(std::string name, Status stepperStatus = WORKING)
+    : stepperName_(name), stepperStatus_(stepperStatus){}
 
   /// This is a deep copy
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
      Teuchos::RCP<StepperState<Scalar> > ss_out =
-       Teuchos::rcp(new StepperState<Scalar> (this->stepperName,
-                                              this->stepperStatus));
+       Teuchos::rcp(new StepperState<Scalar> (this->stepperName_,
+                                              this->stepperStatus_));
      return ss_out;
   }
 
@@ -58,17 +58,17 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const
     {
       out << description() << "::describe" << std::endl
-          << "  stepperName   = " << stepperName << std::endl
-          << "  stepperStatus = " << toString(stepperStatus) << std::endl;
+          << "  stepperName   = " << stepperName_ << std::endl
+          << "  stepperStatus = " << toString(stepperStatus_) << std::endl;
     }
   //@}
 
-  std::string stepperName;    ///< Name of the creating Stepper.
+  std::string stepperName_;    ///< Name of the creating Stepper.
 
   /** The stepperStatus is used to indicate whether the Stepper has PASSED or
    FAILED.  WORKING is used for prior and during the Stepper.
    */
-  Status      stepperStatus;
+  Status      stepperStatus_;
 
 };
 } // namespace Tempus

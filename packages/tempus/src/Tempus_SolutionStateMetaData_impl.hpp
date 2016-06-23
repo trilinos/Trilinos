@@ -7,66 +7,66 @@ namespace Tempus {
 // SolutionStateMetaData definitions:
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData()
-  :time          (0.0),
-   iStep         (0),
-   dt            (0.0),
-   errorAbs      (0.0),
-   errorRel      (0.0),
-   order         (1),
-   nFailures     (0),
-   nConsecutiveFailures(0),
-   solutionStatus(WORKING),
-   output        (false),
-   isRestartable (true),
-   isInterpolated(false),
-   accuracy      (0.0)
+  :time_          (0.0),
+   iStep_         (0),
+   dt_            (0.0),
+   errorAbs_      (0.0),
+   errorRel_      (0.0),
+   order_         (1),
+   nFailures_     (0),
+   nConsecutiveFailures_(0),
+   solutionStatus_(WORKING),
+   output_        (false),
+   isRestartable_ (true),
+   isInterpolated_(false),
+   accuracy_      (0.0)
 {}
 
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(
-  const Scalar time_,
-  const int    iStep_,
-  const Scalar dt_,
-  const Scalar errorAbs_,
-  const Scalar errorRel_,
-  const int    order_,
-  const int    nFailures_,
-  const int    nConsecutiveFailures_,
-  const Status solutionStatus_,
-  const bool   output_,
-  const bool   isRestartable_,
-  const bool   isInterpolated_,
-  const Scalar accuracy_)
-  :time          (time_),
-   iStep         (iStep_),
-   dt            (dt_),
-   errorAbs      (errorAbs_),
-   errorRel      (errorRel_),
-   order         (order_),
-   nFailures     (nFailures_),
-   nConsecutiveFailures(nConsecutiveFailures_),
-   solutionStatus(solutionStatus_),
-   output        (output_),
-   isRestartable (isRestartable_),
-   isInterpolated(isInterpolated_),
-   accuracy      (accuracy_)
+  const Scalar time,
+  const int    iStep,
+  const Scalar dt,
+  const Scalar errorAbs,
+  const Scalar errorRel,
+  const int    order,
+  const int    nFailures,
+  const int    nConsecutiveFailures,
+  const Status solutionStatus,
+  const bool   output,
+  const bool   isRestartable,
+  const bool   isInterpolated,
+  const Scalar accuracy)
+  :time_          (time),
+   iStep_         (iStep),
+   dt_            (dt),
+   errorAbs_      (errorAbs),
+   errorRel_      (errorRel),
+   order_         (order),
+   nFailures_     (nFailures),
+   nConsecutiveFailures_(nConsecutiveFailures),
+   solutionStatus_(solutionStatus),
+   output_        (output),
+   isRestartable_ (isRestartable),
+   isInterpolated_(isInterpolated),
+   accuracy_      (accuracy)
 {}
 
 template<class Scalar>
 SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_)
-  :time          (ssmd_.time),
-   iStep         (ssmd_.iStep),
-   dt            (ssmd_.dt),
-   errorAbs      (ssmd_.errorAbs),
-   errorRel      (ssmd_.errorRel),
-   order         (ssmd_.order),
-   nFailures     (ssmd_.nFailures),
-   nConsecutiveFailures(ssmd_.nConsecutiveFailures),
-   solutionStatus(ssmd_.solutionStatus),
-   output        (ssmd_.output),
-   isRestartable (ssmd_.isRestartable),
-   isInterpolated(ssmd_.isInterpolated),
-   accuracy      (ssmd_.accuracy)
+  :time_          (ssmd_.time_),
+   iStep_         (ssmd_.iStep_),
+   dt_            (ssmd_.dt_),
+   errorAbs_      (ssmd_.errorAbs_),
+   errorRel_      (ssmd_.errorRel_),
+   order_         (ssmd_.order_),
+   nFailures_     (ssmd_.nFailures_),
+   nConsecutiveFailures_(ssmd_.nConsecutiveFailures_),
+   solutionStatus_(ssmd_.solutionStatus_),
+   output_        (ssmd_.output_),
+   isRestartable_ (ssmd_.isRestartable_),
+   isInterpolated_(ssmd_.isInterpolated_),
+   accuracy_      (ssmd_.accuracy_)
 {}
 
 
@@ -75,19 +75,19 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
     rcp(new SolutionStateMetaData<Scalar> (
-      time,
-      iStep,
-      dt,
-      errorAbs,
-      errorRel,
-      order,
-      nFailures,
-      nConsecutiveFailures,
-      solutionStatus,
-      output,
-      isRestartable,
-      isInterpolated,
-      accuracy));
+      time_,
+      iStep_,
+      dt_,
+      errorAbs_,
+      errorRel_,
+      order_,
+      nFailures_,
+      nConsecutiveFailures_,
+      solutionStatus_,
+      output_,
+      isRestartable_,
+      isInterpolated_,
+      accuracy_));
 
   return md;
 }
@@ -108,19 +108,19 @@ void SolutionStateMetaData<Scalar>::describe(
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
-        << "time           = " << time << std::endl
-        << "iStep          = " << iStep << std::endl
-        << "dt             = " << dt << std::endl
-        << "errorAbs       = " << errorAbs << std::endl
-        << "errorRel       = " << errorRel << std::endl
-        << "order          = " << order << std::endl
-        << "nFailures      = " << nFailures << std::endl
-        << "nConsecutiveFailures = " << nConsecutiveFailures << std::endl
-        << "solutionStatus = " << toString(solutionStatus) << std::endl
-        << "output         = " << output << std::endl
-        << "isRestartable  = " << isRestartable << std::endl
-        << "isInterpolated = " << isInterpolated << std::endl
-        << "accuracy       = " << accuracy << std::endl;
+        << "time           = " << time_ << std::endl
+        << "iStep          = " << iStep_ << std::endl
+        << "dt             = " << dt_ << std::endl
+        << "errorAbs       = " << errorAbs_ << std::endl
+        << "errorRel       = " << errorRel_ << std::endl
+        << "order          = " << order_ << std::endl
+        << "nFailures      = " << nFailures_ << std::endl
+        << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
+        << "solutionStatus = " << toString(solutionStatus_) << std::endl
+        << "output         = " << output_ << std::endl
+        << "isRestartable  = " << isRestartable_ << std::endl
+        << "isInterpolated = " << isInterpolated_ << std::endl
+        << "accuracy       = " << accuracy_ << std::endl;
   }
 }
 
