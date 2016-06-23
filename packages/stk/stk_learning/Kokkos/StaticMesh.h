@@ -110,7 +110,6 @@ typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketsType;
 class StaticMesh
 {
 public:
-    STK_FUNCTION
     StaticMesh(const stk::mesh::BulkData& bulk)
     {
         fill_mesh_indices(stk::topology::NODE_RANK, bulk);
@@ -118,7 +117,6 @@ public:
         copy_mesh_indices_to_device();
     }
 
-    STK_FUNCTION
     ~StaticMesh()
     {
     }

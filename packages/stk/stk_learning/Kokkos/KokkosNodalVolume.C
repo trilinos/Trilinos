@@ -65,7 +65,6 @@ class StaticField {
 public:
     typedef Kokkos::View<T*> FieldDataType;
 
-    STK_FUNCTION
     StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     : ngpBulk(bulk), deviceData(), numPerEntity(1)
     {
@@ -135,7 +134,6 @@ public:
         ngpBulk.clear();
     }
 
-    STK_FUNCTION
     ~StaticField(){}
 
     STK_FUNCTION
@@ -196,8 +194,8 @@ double calculate_element_volume(ngp::ConnectedNodesType elemNodes,
                                 unsigned numElemNodes,
                                 const ngp::StaticField<double> &staticCoords)
 {
-    double min[3] = {std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max()};
-    double max[3] = {std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest(), std::numeric_limits<double>::lowest()};
+    double min[3] = {DBL_MAX, DBL_MAX, DBL_MAX};
+    double max[3] = {DBL_MIN, DBL_MIN, DBL_MIN};
     for(unsigned i=0; i<numElemNodes; ++i) {
         for(int j=0; j<3; ++j) {
             double val = staticCoords.get(elemNodes(i),j);

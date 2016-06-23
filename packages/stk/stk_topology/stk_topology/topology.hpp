@@ -320,11 +320,13 @@ struct topology
     return m_value > SUPERELEMENT_START;
   }
 
+  STK_FUNCTION
   bool is_superface() const
   {
     return m_value > SUPERFACE_START && m_value < SUPERFACE_END;
   }
 
+  STK_FUNCTION
   bool is_superedge() const
   {
     return m_value > SUPEREDGE_START && m_value < SUPEREDGE_END;
