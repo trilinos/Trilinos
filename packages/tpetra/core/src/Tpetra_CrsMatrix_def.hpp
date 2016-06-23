@@ -292,7 +292,7 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, size_t, "
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, size_t, "
       "ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
@@ -305,6 +305,9 @@ namespace Tpetra {
          "size_t, ProfileType[, RCP<ParameterList>]) threw an exception: "
          << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
     myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
@@ -324,11 +327,12 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, "
       "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
-      graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc, pftype, params));
+      graph = Teuchos::rcp (new crs_graph_type (rowMap, NumEntriesPerRowToAlloc,
+                                                pftype, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -336,6 +340,9 @@ namespace Tpetra {
          "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]) threw "
          "an exception: " << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
     myGraph_ = graph;
     staticGraph_ = graph;
     resumeFill (params);
@@ -356,8 +363,8 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]): ";
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
+      "size_t, ProfileType[, RCP<ParameterList>]): ";
 
 #ifdef HAVE_TPETRA_DEBUG
     // An artifact of debugging something a while back.
@@ -383,6 +390,9 @@ namespace Tpetra {
          "RCP<const Map>, size_t, ProfileType[, RCP<ParameterList>]) threw an "
          "exception: " << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
     myGraph_ = graph;
     staticGraph_ = myGraph_;
     resumeFill (params);
@@ -403,9 +413,8 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
-      "RCP<ParameterList>]): ";
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const Map>, RCP<const Map>, "
+      "ArrayRCP<const size_t>, ProfileType[, RCP<ParameterList>]): ";
     Teuchos::RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, numEntPerRow,
@@ -417,6 +426,9 @@ namespace Tpetra {
          "RCP<const Map>, ArrayRCP<const size_t>, ProfileType[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  That's
+    // different than the const CrsGraph constructor, where the matrix
+    // does _not_ own the graph.
     myGraph_ = graph;
     staticGraph_ = graph;
     resumeFill (params);
@@ -434,9 +446,8 @@ namespace Tpetra {
     frobNorm_ (-STM::one ())
   {
     typedef typename local_matrix_type::values_type values_type;
-    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const CrsGraph>[, "
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
       "RCP<ParameterList>]): ";
-
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1451,6 +1462,7 @@ namespace Tpetra {
     typedef typename Graph::local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_matrix_type::values_type values_type;
+    const char tfecfFuncName[] = "fillLocalMatrix: ";
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -1489,7 +1501,7 @@ namespace Tpetra {
     // appropriate.
     if (! staticGraph_->isStorageOptimized () && requestOptimizedStorage) {
       TPETRA_ABUSE_WARNING(true, std::runtime_error,
-        "::fillLocalMatrix(): You requested optimized storage by setting the"
+        "You requested optimized storage by setting the"
         "\"Optimize Storage\" flag to \"true\" in the parameter list, or by virtue"
         "of default behavior. However, the associated CrsGraph was filled separately"
         "and requested not to optimize storage. Therefore, the CrsMatrix cannot"
@@ -1548,25 +1560,22 @@ namespace Tpetra {
         k_ptrs = packedRowOffsets;
       }
 
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
-        std::logic_error, "Tpetra::CrsMatrix::fillLocalMatrix: In "
-        "DynamicProfile branch, after packing k_ptrs, k_ptrs.dimension_0()"
-        " = " << k_ptrs.dimension_0 () << " != (lclNumRows+1) = "
-        << (lclNumRows+1) << ".");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (h_ptrs.dimension_0 ()) != lclNumRows + 1,
-        std::logic_error, "Tpetra::CrsMatrix::fillLocalMatrix: In "
-        "DynamicProfile branch, after packing h_ptrs, h_ptrs.dimension_0()"
-        " = " << h_ptrs.dimension_0 () << " != (lclNumRows+1) = "
-        << (lclNumRows+1) << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
+         std::logic_error, "In DynamicProfile branch, after packing k_ptrs, "
+         "k_ptrs.dimension_0() = " << k_ptrs.dimension_0 () << " != "
+         "(lclNumRows+1) = " << (lclNumRows+1) << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (h_ptrs.dimension_0 ()) != lclNumRows + 1,
+         std::logic_error, "In DynamicProfile branch, after packing h_ptrs, "
+         "h_ptrs.dimension_0() = " << h_ptrs.dimension_0 () << " != "
+         "(lclNumRows+1) = " << (lclNumRows+1) << ".");
       // FIXME (mfh 08 Aug 2014) This assumes UVM.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        k_ptrs(lclNumRows) != lclTotalNumEntries, std::logic_error,
-        "Tpetra::CrsMatrix::fillLocalMatrix: In DynamicProfile branch, "
-        "after packing k_ptrs, k_ptrs(lclNumRows = " << lclNumRows << ") = " <<
-        k_ptrs(lclNumRows) << " != total number of entries on the calling "
-        "process = " << lclTotalNumEntries << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (k_ptrs(lclNumRows) != lclTotalNumEntries, std::logic_error,
+        "In DynamicProfile branch, after packing k_ptrs, k_ptrs(lclNumRows = "
+        << lclNumRows << ") = " << k_ptrs(lclNumRows) << " != total number of "
+         "entries on the calling process = " << lclTotalNumEntries << ".");
 
       // Allocate the array of packed values.
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
@@ -1585,12 +1594,11 @@ namespace Tpetra {
       // Sanity check of packed row offsets.
       if (k_ptrs.dimension_0 () != 0) {
         const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          static_cast<size_t> (k_ptrs(numOffsets-1)) != k_vals.dimension_0 (),
-          std::logic_error, "Tpetra::CrsMatrix::fillLocalMatrix: "
-          "In DynamicProfile branch, after packing, k_ptrs(" << (numOffsets-1)
-          << ") = " << k_ptrs(numOffsets-1) << " != k_vals.dimension_0() = "
-          << k_vals.dimension_0 () << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (k_ptrs(numOffsets-1)) != k_vals.dimension_0 (),
+           std::logic_error, "In DynamicProfile branch, after packing, k_ptrs("
+           << (numOffsets-1) << ") = " << k_ptrs(numOffsets-1) << " != "
+           "k_vals.dimension_0() = " << k_vals.dimension_0 () << ".");
       }
     }
     else if (getProfileType () == StaticProfile) {
