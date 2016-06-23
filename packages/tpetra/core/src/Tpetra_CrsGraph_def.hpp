@@ -51,11 +51,11 @@
 /// "Tpetra_CrsGraph_decl.hpp".
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_copyOffsets.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include <algorithm>
 #include <string>
 #include <utility>
-
 
 namespace Tpetra {
 
@@ -2219,32 +2219,6 @@ namespace Tpetra {
   }
 
 
-  namespace { // (anonymous)
-    template<class OutputViewType, class InputViewType>
-    class CopyOffsets {
-    public:
-      typedef typename OutputViewType::execution_space execution_space;
-
-      CopyOffsets (const OutputViewType& ptr_out,
-                   const InputViewType& ptr_in) :
-        ptr_out_ (ptr_out),
-        ptr_in_ (ptr_in)
-      {}
-
-      KOKKOS_INLINE_FUNCTION void operator () (const ptrdiff_t& i) const {
-        typedef typename OutputViewType::non_const_value_type value_type;
-        // FIXME (mfh 22 Mar 2015) Change this into parallel_reduce
-        // and check for overflow.
-        ptr_out_(i) = static_cast<value_type> (ptr_in_(i));
-      }
-
-    private:
-      OutputViewType ptr_out_;
-      InputViewType ptr_in_;
-    };
-  } // namespace (anonymous)
-
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   Teuchos::ArrayRCP<const size_t>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -2295,8 +2269,7 @@ namespace Tpetra {
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, device_type> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
-      CopyOffsets<ret_view_type, row_map_type> functor (ptr_d, k_rowPtrs_);
-      Kokkos::parallel_for (size, functor);
+      ::Tpetra::Details::copyOffsets (ptr_d, k_rowPtrs_);
       typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h, ptr_d);
       ptr_st = Kokkos::Compat::persistingView (ptr_h);
@@ -2932,10 +2905,9 @@ namespace Tpetra {
         Kokkos::Impl::is_same<typename row_map_type::memory_space,
           Kokkos::HostSpace>::value;
       if (inHostMemory) {
-        // Copy (with cast from size_t to row_offset_type) to ptr_rot.
-        typedef CopyOffsets<nc_row_map_type, input_view_type> functor_type;
-        functor_type functor (ptr_rot, ptr_in);
-        Kokkos::parallel_for (size, functor);
+        // Copy (with cast from size_t to row_offset_type, with bounds
+        // checking if necessary) to ptr_rot.
+        ::Tpetra::Details::copyOffsets (ptr_rot, ptr_in);
       }
       else { // Copy input row offsets to device first.
         //
@@ -2944,13 +2916,11 @@ namespace Tpetra {
         //
         View<size_t*, layout_type ,execution_space > ptr_st ("Tpetra::CrsGraph::ptr", size);
         Kokkos::deep_copy (ptr_st, ptr_in);
-        // Copy on device (casting from size_t to row_offset_type) to
-        // ptr_rot.  This executes in the output View's execution
-        // space, which is the same as execution_space.
-        typedef CopyOffsets<nc_row_map_type,
-          View<size_t*, layout_type, execution_space> > functor_type;
-        functor_type functor (ptr_rot, ptr_st);
-        Kokkos::parallel_for (size, functor);
+        // Copy on device (casting from size_t to row_offset_type,
+        // with bounds checking if necessary) to ptr_rot.  This
+        // executes in the output View's execution space, which is the
+        // same as execution_space.
+        ::Tpetra::Details::copyOffsets (ptr_rot, ptr_st);
       }
     }
 
