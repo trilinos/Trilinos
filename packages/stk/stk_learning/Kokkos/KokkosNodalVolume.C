@@ -56,139 +56,6 @@
 
 #include <limits>
 
-namespace ngp {
-
-
-
-template<typename T>
-class StaticField {
-public:
-    typedef Kokkos::View<T*> FieldDataType;
-
-    StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : ngpBulk(bulk), deviceData(), numPerEntity(1)
-    {
-        unsigned alloc_size = compute_alloc_size(rank, bulk, selector);
-        create_device_field_data(alloc_size, initialValue);
-    }
-
-    StaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
-    : ngpBulk(bulk), deviceData(), numPerEntity(0)
-    {
-        stk::mesh::Selector selector = stk::mesh::selectField(field);
-        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-
-        if(!buckets.empty())
-        {
-            numPerEntity = field.max_size(field.entity_rank());
-            size_t allocationSize = buckets.size()*buckets[0]->capacity()*numPerEntity;
-            deviceData = FieldDataType("deviceData"+std::to_string(numPerEntity), allocationSize);
-
-            hostData = Kokkos::create_mirror_view(deviceData);
-
-            for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
-            {
-                const stk::mesh::Bucket &bucket = *buckets[iBucket];
-                const T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
-                for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
-                {
-                    for(unsigned j=0; j<numPerEntity; j++)
-                    {
-                        unsigned index = iBucket*bucket.capacity()*numPerEntity + iEntity*numPerEntity + j;
-                        hostData(index) = data[iEntity*numPerEntity + j];
-                    }
-                }
-            }
-
-            Kokkos::deep_copy(deviceData, hostData);
-        }
-    }
-
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
-    {
-        stk::mesh::Selector selector = stk::mesh::selectField(field);
-        const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
-
-        if(!buckets.empty())
-        {
-            Kokkos::deep_copy(hostData, deviceData);
-
-            for(size_t iBucket=0; iBucket<buckets.size(); iBucket++)
-            {
-                const stk::mesh::Bucket &bucket = *buckets[iBucket];
-                T* data = static_cast<T*>(stk::mesh::field_data(field, bucket));
-                for(size_t iEntity=0; iEntity<bucket.size(); iEntity++)
-                {
-                    for(unsigned j=0; j<numPerEntity; j++)
-                    {
-                        unsigned index = iBucket*bucket.capacity()*numPerEntity + iEntity*numPerEntity + j;
-                        data[iEntity*numPerEntity + j] = hostData(index);
-                    }
-                }
-            }
-        }
-    }
-
-    void clear()
-    {
-        ngpBulk.clear();
-    }
-
-    ~StaticField(){}
-
-    STK_FUNCTION
-    unsigned get_index(stk::mesh::Entity entity) const
-    {
-        const StaticMesh& localRef = ngpBulk;
-        unsigned bkt_id = localRef.device_mesh_index(entity).bucket_id;
-        unsigned bkt_ord = localRef.device_mesh_index(entity).bucket_ord;
-        unsigned idx = bkt_id*512*numPerEntity + bkt_ord*numPerEntity;
-        return idx;
-    }
-
-    STK_FUNCTION
-    T* operator[](stk::mesh::Entity entity) const
-    {
-        return &deviceData(get_index(entity));
-    }
-
-    STK_FUNCTION
-    T& get(stk::mesh::Entity entity, int component) const
-    {
-        unsigned idx = get_index(entity);
-        return deviceData(idx+component);
-    }
-
-private:
-    unsigned compute_alloc_size(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    {
-        const stk::mesh::BucketVector& bkts = bulk.get_buckets(rank, selector);
-        unsigned alloc_size = 0;
-        for(const stk::mesh::Bucket* bktptr : bkts) {
-            const stk::mesh::Bucket& bkt = *bktptr;
-            alloc_size += bkt.capacity();
-        }
-        return alloc_size*numPerEntity;
-    }
-
-    void create_device_field_data(unsigned allocSize, const T& initialValue)
-    {
-        deviceData = FieldDataType("deviceData", allocSize);
-        hostData = Kokkos::create_mirror_view(deviceData);
-
-        for(size_t i=0; i<allocSize; ++i)
-            hostData(i) = initialValue;
-        Kokkos::deep_copy(deviceData, hostData);
-    }
-
-    StaticMesh ngpBulk;
-    typename FieldDataType::HostMirror hostData;
-    FieldDataType deviceData;
-    unsigned numPerEntity;
-};
-
-}
-
 STK_FUNCTION
 double calculate_element_volume(ngp::ConnectedNodesType elemNodes,
                                 unsigned numElemNodes,
@@ -199,13 +66,10 @@ double calculate_element_volume(ngp::ConnectedNodesType elemNodes,
     for(unsigned i=0; i<numElemNodes; ++i) {
         for(int j=0; j<3; ++j) {
             double val = staticCoords.get(elemNodes(i),j);
-            if (val > max[j]) {
+            if (val > max[j])
                 max[j] = val;
-            }
-                
-            if (val < min[j]) {
+            if (val < min[j])
                 min[j] = val;
-            }
         }
     }
     return (max[0] - min[0]) * (max[1] - min[1]) * (max[2] - min[2]);

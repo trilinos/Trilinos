@@ -42,6 +42,7 @@
 */
 
 #include "mtk_kokkos.h"
+#include "StaticMesh.h"
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -51,128 +52,6 @@
 #include <stk_util/stk_config.h>
 #include <stk_util/parallel/Parallel.hpp>
  
-#ifdef KOKKOS_HAVE_OPENMP
-  typedef Kokkos::OpenMP   ExecSpace ;
-#elif KOKKOS_HAVE_CUDA
-  typedef Kokkos::Cuda     ExecSpace ;
-#else
-  typedef Kokkos::Serial   ExecSpace ;
-#endif
-
-#ifdef KOKKOS_HAVE_OPENMP
-   typedef Kokkos::OpenMP       MemSpace;
-#elif KOKKOS_HAVE_CUDA
-   typedef Kokkos::CudaSpace    MemSpace;
-#else
-   typedef Kokkos::HostSpace    MemSpace;
-#endif
-
-namespace ngp {
-
-class Bulk {
-public:
-    STK_FUNCTION
-    Bulk(const stk::mesh::BulkData& bulk)
-     : mesh_indices(bulk.get_size_of_entity_index_space())
-    {
-        fill_mesh_indices(stk::topology::NODE_RANK, bulk);
-        copy_mesh_indices_to_device();
-    }
-
-    STK_FUNCTION
-    ~Bulk(){}
-
-    STK_FUNCTION
-    const stk::mesh::FastMeshIndex& mesh_index(stk::mesh::Entity entity) const
-    {
-        return device_mesh_indices(entity.local_offset());
-    }
-
-private:
-    void fill_mesh_indices(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk)
-    {
-        const stk::mesh::BucketVector& bkts = bulk.buckets(rank);
-
-        for(const stk::mesh::Bucket* bktptr : bkts) {
-            const stk::mesh::Bucket& bkt = *bktptr;
-            for(size_t i=0; i<bkt.size(); ++i) {
-                mesh_indices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex(bkt.bucket_id(), i);
-            }
-        }
-    }
-
-    void copy_mesh_indices_to_device()
-    {
-        Kokkos::View<stk::mesh::FastMeshIndex*,Kokkos::HostSpace> host_mesh_indices("host_mesh_indices",mesh_indices.size());
-        for(size_t i=0; i<mesh_indices.size(); ++i) {
-            host_mesh_indices(i) = mesh_indices[i];
-        }
-        Kokkos::View<stk::mesh::FastMeshIndex*> tmp_device_mesh_indices("tmp_dev_mesh_indices", mesh_indices.size());
-        Kokkos::deep_copy(tmp_device_mesh_indices, host_mesh_indices);
-        device_mesh_indices = tmp_device_mesh_indices;
-    }
-
-    std::vector<stk::mesh::FastMeshIndex> mesh_indices;
-    Kokkos::View<const stk::mesh::FastMeshIndex*,Kokkos::MemoryTraits<Kokkos::RandomAccess> > device_mesh_indices;
-//    Kokkos::View<const stk::mesh::FastMeshIndex*> device_mesh_indices;
-};
-
-template<typename T>
-class Field {
-public:
-    STK_FUNCTION
-    Field(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : ngpBulk(bulk), ngpBulkRef(ngpBulk), device_data("device_data",0),
-      InvalidFieldValue(-999999.9)
-    {
-        unsigned num_entities = count_entities(rank, bulk, selector);
-        create_device_field_data(num_entities, initialValue);
-    }
-
-    STK_FUNCTION
-    ~Field(){}
-
-    STK_FUNCTION
-    T operator[](stk::mesh::Entity entity) const
-    {
-        const ngp::Bulk& localRef = ngpBulk;
-        unsigned bkt_id = localRef.mesh_index(entity).bucket_id;
-        unsigned bkt_ord = localRef.mesh_index(entity).bucket_ord;
-        unsigned idx = bkt_id*512 + bkt_ord;
-        return device_data(idx);
-    }
-
-private:
-    unsigned count_entities(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    {
-        const stk::mesh::BucketVector& bkts = bulk.get_buckets(rank, selector);
-        unsigned num_entities = 0;
-        for(const stk::mesh::Bucket* bktptr : bkts) {
-            const stk::mesh::Bucket& bkt = *bktptr;
-            num_entities += bkt.size();
-        }
-        return num_entities;
-    }
-
-    void create_device_field_data(unsigned num_entities, const T& initialValue)
-    {
-        Kokkos::View<T*,Kokkos::HostSpace> host_data("host_data", num_entities);
-        for(size_t i=0; i<num_entities; ++i) {
-            host_data(i) = initialValue;
-        }
-        Kokkos::View<T*> tmp("tmp", num_entities);
-        device_data = tmp;
-        Kokkos::deep_copy(device_data, host_data);
-    }
-
-    ngp::Bulk ngpBulk;
-    const ngp::Bulk& ngpBulkRef;
-    Kokkos::View<T*> device_data;
-    T InvalidFieldValue;
-};
-
-}
-
 void test_field() {
 
   unsigned spatialDim = 3;
@@ -186,7 +65,7 @@ void test_field() {
   stk::unit_test_util::fill_mesh_using_stk_io(mesh_spec.str(), bulk);
 
   double initialValue = 9.9;
-  ngp::Field<double> scalarField(stk::topology::NODE_RANK, initialValue, bulk, meta.locally_owned_part());
+  ngp::StaticField<double> scalarField(stk::topology::NODE_RANK, initialValue, bulk, meta.locally_owned_part());
 
   stk::mesh::EntityVector nodes;
   stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::NODE_RANK), nodes);
@@ -209,7 +88,7 @@ void test_field() {
 
       result = 0;
       Kokkos::parallel_reduce(nodes.size(), KOKKOS_LAMBDA(int i, double& update) {
-        update += scalarField[device_nodes(i)];
+        update += scalarField.get(device_nodes(i), 0);
       }, result);
 
   }
