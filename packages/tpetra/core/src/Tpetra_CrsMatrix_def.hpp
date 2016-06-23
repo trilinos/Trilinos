@@ -506,6 +506,9 @@ namespace Tpetra {
          "RCP<const Map>, ptr, ind[, params]) threw an exception: "
          << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst,
+    // implying shared ownership.
     myGraph_ = graph;
     staticGraph_ = graph;
 
@@ -573,6 +576,9 @@ namespace Tpetra {
          "RCP<const Map>, ArrayRCP<size_t>, ArrayRCP<LocalOrdinal>[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst,
+    // implying shared ownership.
     myGraph_ = graph;
     staticGraph_ = graph;
 
@@ -638,7 +644,9 @@ namespace Tpetra {
        "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
-
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst through
+    // the matrix, implying shared ownership.
     myGraph_ = graph;
     staticGraph_ = graph;
     computeGlobalConstants ();
