@@ -280,6 +280,7 @@ template<typename T>
 class StaticField {
 public:
     typedef Kokkos::View<T*> FieldDataType;
+    typedef Kokkos::View<const T*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > ConstFieldDataType;
 
     StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     : deviceData(), numPerEntity(1)
@@ -317,6 +318,7 @@ public:
             }
 
             Kokkos::deep_copy(deviceData, hostData);
+            constDeviceData = deviceData;
         }
     }
 
@@ -363,6 +365,13 @@ public:
         return deviceData(idx+component);
     }
 
+    STK_FUNCTION
+    const T& const_get(const StaticMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        unsigned idx = get_index(ngpMesh, entity);
+        return constDeviceData(idx+component);
+    }
+
 private:
     unsigned compute_alloc_size(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     {
@@ -383,10 +392,12 @@ private:
         for(size_t i=0; i<allocSize; ++i)
             hostData(i) = initialValue;
         Kokkos::deep_copy(deviceData, hostData);
+        constDeviceData = deviceData;
     }
 
     typename FieldDataType::HostMirror hostData;
     FieldDataType deviceData;
+    ConstFieldDataType constDeviceData;
     unsigned numPerEntity;
 };
 

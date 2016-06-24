@@ -67,7 +67,7 @@ double calculate_element_volume(const ngp::StaticMesh& ngpMesh, ngp::ConnectedNo
     double max[3] = {DBL_MIN, DBL_MIN, DBL_MIN};
     for(unsigned i=0; i<numElemNodes; ++i) {
         for(int j=0; j<3; ++j) {
-            double val = staticCoords.get(ngpMesh, elemNodes(i),j);
+            double val = staticCoords.const_get(ngpMesh, elemNodes(i),j);
             if (val > max[j])
                 max[j] = val;
             if (val < min[j])
