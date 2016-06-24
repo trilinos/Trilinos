@@ -640,7 +640,7 @@ namespace Tpetra {
          "exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
+      (!graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
        "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
