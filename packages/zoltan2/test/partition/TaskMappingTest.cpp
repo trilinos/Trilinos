@@ -61,7 +61,7 @@ int main(int argc, char *argv[]){
     if (rank < taskLeftOver ) ++myTasks;
 
     zgno_t myTaskBegin = (numGlobalTasks / numProcs) * rank;
-    myTaskBegin += min (taskLeftOver, rank);
+    myTaskBegin += (taskLeftOver < rank ? taskLeftOver : rank);
     zgno_t myTaskEnd = myTaskBegin + myTasks;
 
     zscalar_t **partCenters = NULL;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]){
 
     zgno_t *task_gnos = new zgno_t [myTasks];
     zlno_t *task_communication_xadj_ = new zlno_t [myTasks+1];
-    zlno_t *task_communication_adj_ = new zlno_t [myTasks * 6];
+    zgno_t *task_communication_adj_ = new zgno_t [myTasks * 6];
 
     zlno_t prevNCount = 0;
     task_communication_xadj_[0] = 0;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]){
     {
 
       zlno_t prevNCount_tmp = 0;
-      zlno_t *task_communication_adj_tmp = new zlno_t [numGlobalTasks * 6];
+      zgno_t *task_communication_adj_tmp = new zgno_t [numGlobalTasks * 6];
       zlno_t *task_communication_xadj_tmp = new zlno_t [numGlobalTasks+1];
       task_communication_xadj_tmp[0] = 0;
       for (zlno_t i = 0; i < numGlobalTasks; ++i) {
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]){
         copy[g] = parts[i];
       }
 
-      reduceAll<int, zgno_t>(
+      reduceAll<int, part_t>(
           *tcomm,
           Teuchos::REDUCE_SUM,
           numGlobalTasks,
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]){
         part_t procId1 = ctm.getAssignedProcForTask(all_parts[i]);
 
         for (zlno_t j = b; j < e; ++j){
-          zlno_t n = task_communication_adj_tmp[j];
+          zgno_t n = task_communication_adj_tmp[j];
           part_t procId2 = ctm.getAssignedProcForTask(all_parts[n]);
 
           double distance2 = 0;
