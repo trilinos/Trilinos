@@ -126,11 +126,11 @@ namespace MueLu {
 
   protected:
 
-    void writeFileVTKOpening(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<int> & geomSizesFine) const;
-    void writeFileVTKNodes(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::RCP<const Map> & nodeMap) const;
-    void writeFileVTKData(std::ofstream & fout, std::vector<int> & uniqueFine, LocalOrdinal myAggOffset, ArrayRCP<LocalOrdinal> & vertex2AggId, int myRank) const;
-    void writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const;
-    void writeFileVTKCells(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const;
+    void writeFileVTKOpening(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, std::vector<LocalOrdinal> & geomSizesFine) const;
+    void writeFileVTKNodes(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, Teuchos::RCP<const Map> & nodeMap) const;
+    void writeFileVTKData(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, LocalOrdinal myAggOffset, ArrayRCP<LocalOrdinal> & vertex2AggId, int myRank) const;
+    void writeFileVTKCoordinates(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const;
+    void writeFileVTKCells(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const;
     void writeFileVTKClosing(std::ofstream & fout) const;
     void writePVTU(std::ofstream& pvtu, std::string baseFname, int numProcs, bool bFineEdges = false, bool bCoarseEdges = false) const;
     void buildColormap() const;
@@ -140,12 +140,12 @@ namespace MueLu {
     std::string getPVTUFileName(int numProcs, int myRank, int level, const Teuchos::ParameterList& pL) const;
 
     // move these routines to a common base class for visualization factories?
-    static void doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes);
-    static void doJacks(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId);
-    static void doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
-    static void doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+    static void doPointCloud(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes);
+    static void doJacks(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId);
+    static void doConvexHulls2D(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+    static void doConvexHulls3D(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
 
-    static void doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz);
+    static void doGraphEdges(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz);
 
     static myVec3 crossProduct(myVec3 v1, myVec3 v2);
     static double dotProduct(myVec2 v1, myVec2 v2);
@@ -164,7 +164,7 @@ namespace MueLu {
     static std::vector<int> giftWrap(std::vector<myVec2>& points, std::vector<int>& nodes, const Teuchos::ArrayRCP<const double> & xCoords, const Teuchos::ArrayRCP<const double> & yCoords);
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-    std::vector<int> makeUnique(std::vector<int>& vertices) const; //!< replaces node indices in vertices with compressed unique indices, and returns list of unique points
+    std::vector<LocalOrdinal> makeUnique(std::vector<LocalOrdinal>& vertices) const; //!< replaces node indices in vertices with compressed unique indices, and returns list of unique points
   }; // class VisualizationHelpers
 } // namespace MueLu
 

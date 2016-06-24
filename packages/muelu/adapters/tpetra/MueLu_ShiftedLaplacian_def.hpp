@@ -511,7 +511,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(c
                                                                                RCP<MultiVector>& X)
 {
   // Set left and right hand sides for Belos
-  Hierarchy_ -> Iterate(*B, *X, 1, true, 0);
+  Hierarchy_ -> Iterate(*B, *X, Teuchos::ScalarTraits<LocalOrdinal>::one(), true, 0);
 }
 
 // Solve phase
@@ -524,7 +524,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(c
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraB
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(B) );
   // Set left and right hand sides for Belos
-  Hierarchy_ -> Iterate(*XpetraB, *XpetraX, 1, true, 0);
+  Hierarchy_ -> Iterate(*XpetraB, *XpetraX, Teuchos::ScalarTraits<LocalOrdinal>::one(), true, 0);
 }
 
 // Get most recent iteration count

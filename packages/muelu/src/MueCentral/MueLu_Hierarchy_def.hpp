@@ -700,12 +700,13 @@ namespace MueLu {
           coarseX  ->replaceMap(Ac->getDomainMap());
 
           {
+            const LocalOrdinal loOne = Teuchos::OrdinalTraits<LocalOrdinal>::one();
             iterateLevelTime = Teuchos::null; // stop timing this level
 
-            Iterate(*coarseRhs, *coarseX, 1, true, startLevel+1);
+            Iterate(*coarseRhs, *coarseX, loOne, true, startLevel+1);
             // ^^ zero initial guess
             if (Cycle_ == WCYCLE)
-              Iterate(*coarseRhs, *coarseX, 1, false, startLevel+1);
+              Iterate(*coarseRhs, *coarseX, loOne, false, startLevel+1);
             // ^^ nonzero initial guess
 
             iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level

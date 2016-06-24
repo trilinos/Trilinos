@@ -63,6 +63,12 @@ SET(${PACKAGE_NAME}_ETI_FIELDS "SIN|SOUT|S|LO|GO|N|CS|DS")
 # wants a CrsMatrix<int,...>?
 TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET_ORDINAL_SCALAR "S=int|unsigned|unsigned int|long|unsigned long|long long|unsigned long long" "LO=.*" "GO=.*" "N=.*")
 
+# Local ordinal types must not be smaller than global ordinal types so
+# exclude those cases
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET "S=.*" "LO=long" "GO=int" "N=.*")
+TRIBITS_ETI_TYPE_EXPANSION(${PACKAGE_NAME}_ETI_EXCLUDE_SET "P=.*" "LO=long" "GO=int" "N=.*")
+
+
 # TriBITS' ETI system expects a set of types to be a string, delimited
 # by |.  Each template parameter (e.g., Scalar, LocalOrdinal, ...) has
 # its own set.  The JOIN commands below set up those lists.  We use

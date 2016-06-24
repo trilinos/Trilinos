@@ -302,7 +302,7 @@ namespace MueLu {
       std::string fEdgeFile = fEdgeFineFile.insert(fEdgeFineFile.rfind(".vtu"), "-finegraph");
       std::ofstream edgeStream(fEdgeFile.c_str());
 
-      std::vector<int> uniqueFineEdges = this->makeUnique(fine_edges_vertices);
+      std::vector<LocalOrdinal> uniqueFineEdges = this->makeUnique(fine_edges_vertices);
       this->writeFileVTKOpening(edgeStream, uniqueFineEdges, fine_edges_geomSize);
       this->writeFileVTKNodes(edgeStream, uniqueFineEdges, nodeMap);
       this->writeFileVTKData(edgeStream, uniqueFineEdges, myAggOffset, vertex2AggId, comm->getRank());
@@ -357,7 +357,7 @@ namespace MueLu {
       std::string filenameToWrite = this->getFileName(comm->getSize(), comm->getRank(), fineLevel.GetLevelID(), pL);
       std::ofstream fout (filenameToWrite.c_str());
 
-      std::vector<int> uniqueFine = this->makeUnique(vertices);
+      std::vector<LocalOrdinal> uniqueFine = this->makeUnique(vertices);
       this->writeFileVTKOpening(fout, uniqueFine, geomSize);
       this->writeFileVTKNodes(fout, uniqueFine, nodeMap);
       this->writeFileVTKData(fout, uniqueFine, myAggOffset, vertex2AggId, comm->getRank());

@@ -132,6 +132,7 @@
 #cmakedefine HAVE_TPETRA_INST_INT_LONG_LONG
 #cmakedefine HAVE_TPETRA_INST_INT_UNSIGNED
 #cmakedefine HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+#cmakedefine HAVE_TPETRA_INST_LONG_LONG
 
 /* List of enabled Scalar types */
 #cmakedefine HAVE_TPETRA_INST_FLOAT
@@ -154,6 +155,7 @@
 #cmakedefine HAVE_TPETRA_INT_LONG_LONG
 #cmakedefine HAVE_TPETRA_INT_UNSIGNED
 #cmakedefine HAVE_TPETRA_INT_UNSIGNED_LONG
+#cmakedefine HAVE_TPETRA_LONG_LONG
 
 #cmakedefine HAVE_TPETRA_FLOAT
 #cmakedefine HAVE_TPETRA_DOUBLE

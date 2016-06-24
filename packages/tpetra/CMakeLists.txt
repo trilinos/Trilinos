@@ -291,6 +291,7 @@ ENDIF()
 # expand to include 64-bit signed integer types.
 
 LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
+LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "long")
 
 # ============================================================
 # GlobalOrdinal types
@@ -371,6 +372,8 @@ ENDIF ()
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
 # GO = unsigned long is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
+# LO = long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_LONG_LONG_DEFAULT OFF)
 
 #
 # Define options for enabling various GlobalOrdinal types
@@ -421,6 +424,13 @@ IF (Tpetra_INST_INT_UNSIGNED_LONG)
   MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED_LONG.  This means that you want to use GlobalOrdinal = unsigned long with Tpetra objects.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him.")
 ENDIF ()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_LONG_LONG
+  HAVE_TPETRA_INST_LONG_LONG
+  "Enable LocalOrdinal = long and GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_LONG_LONG_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_LONG_LONG_DEFAULT}
+  )
+
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
 GLOBAL_SET(HAVE_TPETRA_INT_LONG ${Tpetra_INST_INT_LONG})
@@ -457,7 +467,7 @@ IF(Tpetra_INST_INT_INT)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "int")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "int")
 ENDIF()
-IF(Tpetra_INST_INT_LONG) 
+IF(Tpetra_INST_INT_LONG OR Tpetra_INST_LONG_LONG)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long")
   LIST(APPEND ${PACKAGE_NAME}_ETI_GORDS "long")
 ENDIF()

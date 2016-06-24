@@ -304,8 +304,8 @@ namespace MueLu {
         aggStyle = pL.get<string>("aggregation: output file: agg style"); //Let "Point Cloud" be the default style
       }
       catch(exception& e) {}
-      vector<int> vertices;
-      vector<int> geomSizes;
+      vector<LocalOrdinal> vertices;
+      vector<LocalOrdinal> geomSizes;
       string indent = "";
       nodeMap_ = Amat->getMap();
       for(LocalOrdinal i = 0; i < numNodes_; i++)
@@ -367,13 +367,13 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     //TODO
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     if(dims_ == 2)
       this->doConvexHulls2D(vertices, geomSizes, numAggs_, numNodes_, isRoot_, vertex2AggId_, xCoords_, yCoords_, zCoords_);
@@ -383,7 +383,7 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_CGAL
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     using namespace std;
     if(dims_ == 2)
@@ -393,7 +393,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     const double ALPHA_VAL = 2; //Make configurable?
     using namespace std;
@@ -451,7 +451,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls3D_(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     typedef CGAL::Exact_predicates_inexact_constructions_kernel Gt;
     typedef CGAL::Alpha_shape_cell_base_3<Gt> Fb;
@@ -646,22 +646,22 @@ namespace MueLu {
     sort(vert2.begin(), vert2.end());
     newEnd = unique(vert2.begin(), vert2.end());
     vert2.erase(newEnd, vert2.end());
-    vector<int> points1;
+    vector<LocalOrdinal> points1;
     points1.reserve(2 * vert1.size());
     for(size_t i = 0; i < vert1.size(); i++)
     {
       points1.push_back(vert1[i].first);
       points1.push_back(vert1[i].second);
     }
-    vector<int> points2;
+    vector<LocalOrdinal> points2;
     points2.reserve(2 * vert2.size());
     for(size_t i = 0; i < vert2.size(); i++)
     {
       points2.push_back(vert2[i].first);
       points2.push_back(vert2[i].second);
     }
-    vector<int> unique1 = this->makeUnique(points1);
-    vector<int> unique2 = this->makeUnique(points2);
+    vector<LocalOrdinal> unique1 = this->makeUnique(points1);
+    vector<LocalOrdinal> unique2 = this->makeUnique(points2);
     fout << "<VTKFile type=\"UnstructuredGrid\" byte_order=\"LittleEndian\">" << endl;
     fout << "  <UnstructuredGrid>" << endl;
     fout << "    <Piece NumberOfPoints=\"" << unique1.size() + unique2.size() << "\" NumberOfCells=\"" << vert1.size() + vert2.size() << "\">" << endl;
@@ -808,10 +808,10 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes) const
   {
     using namespace std;
-    vector<int> uniqueFine = this->makeUnique(vertices);
+    vector<LocalOrdinal> uniqueFine = this->makeUnique(vertices);
     string indent = "      ";
     fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
     fout << "<VTKFile type=\"UnstructuredGrid\" byte_order=\"LittleEndian\">" << endl;

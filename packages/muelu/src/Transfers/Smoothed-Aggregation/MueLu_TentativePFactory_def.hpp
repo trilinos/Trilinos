@@ -222,7 +222,8 @@ namespace MueLu {
       // Extract the piece of the nullspace corresponding to the aggregate, and
       // put it in the flat array, "localQR" (in column major format) for the
       // QR routine.
-      Teuchos::SerialDenseMatrix<LO,SC> localQR(aggSize, NSDim);
+      // We can't use LO here as LAPACK only supports int...
+      Teuchos::SerialDenseMatrix<int,SC> localQR(aggSize, NSDim);
       if (goodMap) {
         for (size_t j = 0; j < NSDim; j++)
           for (LO k = 0; k < aggSize; k++)
@@ -264,7 +265,8 @@ namespace MueLu {
             localQR(i,0) /= norm;
 
         } else {
-          Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
+          // We can't use LO here as LAPACK only supports int...
+          Teuchos::SerialQRDenseSolver<int,SC> qrSolver;
           qrSolver.setMatrix(Teuchos::rcp(&localQR, false));
           qrSolver.factor();
 
@@ -276,7 +278,7 @@ namespace MueLu {
           // Calculate Q, the tentative prolongator.
           // The Lapack GEQRF call only works for myAggsize >= NSDim
           qrSolver.formQ();
-          Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,SC> > qFactor = qrSolver.getQ();
           for (size_t j = 0; j < NSDim; j++)
             for (size_t i = 0; i < Teuchos::as<size_t>(aggSize); i++)
               localQR(i,j) = (*qFactor)(i,j);
@@ -471,7 +473,7 @@ namespace MueLu {
     importer = ImportFactory::Build(ghostQMap, A->getRowMap());
 
     // Dense QR solver
-    Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
+    Teuchos::SerialQRDenseSolver<int,SC> qrSolver;
 
     //Allocate temporary storage for the tentative prolongator.
     Array<GO> globalColPtr(maxAggSize*NSDim,0);
@@ -515,7 +517,7 @@ namespace MueLu {
       LO myAggSize = aggStart[agg+1]-aggStart[agg];
       // For each aggregate, extract the corresponding piece of the nullspace and put it in the flat array,
       // "localQR" (in column major format) for the QR routine.
-      Teuchos::SerialDenseMatrix<LO,SC> localQR(myAggSize, NSDim);
+      Teuchos::SerialDenseMatrix<int,SC> localQR(myAggSize, NSDim);
       for (size_t j=0; j<NSDim; ++j) {
         bool bIsZeroNSColumn = true;
         for (LO k=0; k<myAggSize; ++k)
@@ -599,7 +601,7 @@ namespace MueLu {
            }
          } else {
            qrSolver.formQ();
-           Teuchos::RCP<Teuchos::SerialDenseMatrix<LO,SC> > qFactor = qrSolver.getQ();
+           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,SC> > qFactor = qrSolver.getQ();
            for (size_t j=0; j<NSDim; j++) {
              for (size_t i = 0; i < Teuchos::as<size_t>(myAggSize); i++) {
                localQR(i,j) = (*qFactor)(i,j);

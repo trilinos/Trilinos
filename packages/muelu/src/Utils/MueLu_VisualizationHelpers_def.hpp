@@ -77,7 +77,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes) {
     vertices.reserve(numFineNodes);
     geomSizes.reserve(numFineNodes);
     for(LocalOrdinal i = 0; i < numFineNodes; i++)
@@ -88,7 +88,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacks(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacks(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId) {
     //For each aggregate, find the root node then connect it with the other nodes in the aggregate
     //Doesn't matter the order, as long as all edges are found.
     vertices.reserve(vertices.size() + 3 * (numFineNodes - numLocalAggs));
@@ -124,7 +124,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
     for(int agg = 0; agg < numLocalAggs; agg++) {
       std::list<int> aggNodes;
       for(int i = 0; i < numFineNodes; i++) {
@@ -210,7 +210,7 @@ namespace MueLu {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const ArrayRCP<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords) {
     //Use 3D quickhull algo.
     //Vector of node indices representing triangle vertices
     //Note: Calculate the hulls first since will only include point data for points in the hulls
@@ -535,7 +535,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<int>& vertices, std::vector<int>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz) {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges(std::vector<LocalOrdinal>& vertices, std::vector<LocalOrdinal>& geomSizes, Teuchos::RCP<GraphBase>& G, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz) {
     ArrayView<const Scalar> values;
     ArrayView<const LocalOrdinal> neighbors;
 
@@ -942,12 +942,12 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::vector<int> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeUnique(std::vector<int>& vertices) const
+  std::vector<LocalOrdinal> VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::makeUnique(std::vector<LocalOrdinal>& vertices) const
   {
     using namespace std;
-    vector<int> uniqueNodes = vertices;
+    vector<LocalOrdinal> uniqueNodes = vertices;
     sort(uniqueNodes.begin(), uniqueNodes.end());
-    vector<int>::iterator newUniqueFineEnd = unique(uniqueNodes.begin(), uniqueNodes.end());
+    typename vector<LocalOrdinal>::iterator newUniqueFineEnd = unique(uniqueNodes.begin(), uniqueNodes.end());
     uniqueNodes.erase(newUniqueFineEnd, uniqueNodes.end());
     //uniqueNodes is now a sorted list of the nodes whose info actually goes in file
     //Now replace values in vertices with locations of the old values in uniqueFine
@@ -956,7 +956,7 @@ namespace MueLu {
       int lo = 0;
       int hi = uniqueNodes.size() - 1;
       int mid = 0;
-      int search = vertices[i];
+      LocalOrdinal search = vertices[i];
       while(lo <= hi)
       {
         mid = lo + (hi - lo) / 2;
@@ -1019,7 +1019,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKOpening(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<int> & geomSizesFine) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKOpening(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, std::vector<LocalOrdinal> & geomSizesFine) const {
     std::string styleName = "PointCloud"; // TODO adapt this
 
     std::string indent = "      ";
@@ -1031,7 +1031,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKNodes(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::RCP<const Map> & nodeMap) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKNodes(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, Teuchos::RCP<const Map> & nodeMap) const {
     std::string indent = "      ";
     fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << std::endl;
     indent = "          ";
@@ -1052,7 +1052,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKData(std::ofstream & fout, std::vector<int> & uniqueFine, LocalOrdinal myAggOffset, ArrayRCP<LocalOrdinal> & vertex2AggId, int myRank) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKData(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, LocalOrdinal myAggOffset, ArrayRCP<LocalOrdinal> & vertex2AggId, int myRank) const {
     std::string indent = "          ";
     fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << std::endl;
     fout << indent;
@@ -1078,7 +1078,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCoordinates(std::ofstream & fout, std::vector<int> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCoordinates(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, Teuchos::ArrayRCP<const double> & fx, Teuchos::ArrayRCP<const double> & fy, Teuchos::ArrayRCP<const double> & fz, int dim) const {
     std::string indent = "      ";
     fout << "      <Points>" << std::endl;
     fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
@@ -1099,7 +1099,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCells(std::ofstream & fout, std::vector<int> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const {
+  void VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFileVTKCells(std::ofstream & fout, std::vector<LocalOrdinal> & uniqueFine, std::vector<LocalOrdinal> & vertices, std::vector<LocalOrdinal> & geomSize) const {
     std::string indent = "      ";
     fout << "      <Cells>" << std::endl;
     fout << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << std::endl;
