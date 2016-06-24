@@ -1,9 +1,6 @@
 #ifndef TEMPUS_SOLUTIONSTATE_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATE_IMPL_HPP
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
 
 namespace Tempus {
 
@@ -16,11 +13,11 @@ SolutionState<Scalar>::SolutionState()
 
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
-  const RCP<SolutionStateMetaData<Scalar> > metaData,
-  const RCP<Thyra::VectorBase<Scalar> >& x,
-  const RCP<Thyra::VectorBase<Scalar> >& xdot,
-  const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const RCP<Tempus::StepperState<Scalar> >& stepperState)
+  const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState)
   : metaData_    (metaData),
     x_           (x),
     xdot_        (xdot),
@@ -43,10 +40,10 @@ SolutionState<Scalar>::SolutionState(
   const bool   isInterpolated,
   const bool   isRestartable,
   const Scalar accuracy,
-  const RCP<Thyra::VectorBase<Scalar> >& x,
-  const RCP<Thyra::VectorBase<Scalar> >& xdot,
-  const RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-  const RCP<Tempus::StepperState<Scalar> >& stepperState)
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
+  const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState)
   : x_           (x),
     xdot_        (xdot),
     xdotdot_     (xdotdot),
@@ -68,8 +65,10 @@ SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
 {}
 
 template<class Scalar>
-RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
+Teuchos::RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 {
+  using Teuchos::RCP;
+
   RCP<SolutionStateMetaData<Scalar> > metaData_out;
   if (!Teuchos::is_null(metaData_)) metaData_out = metaData_->clone();
 

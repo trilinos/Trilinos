@@ -160,9 +160,9 @@ Scalar computeLinearRegressionLogLog(
 }
 
 template<class Scalar>
-RCP<LinearRegression<Scalar> > linearRegression()
+Teuchos::RCP<LinearRegression<Scalar> > linearRegression()
 {
-  RCP<LinearRegression<Scalar> > lr =
+  Teuchos::RCP<LinearRegression<Scalar> > lr =
     Teuchos::rcp(new LinearRegression<Scalar>());
   return lr;
 }

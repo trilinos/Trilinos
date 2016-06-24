@@ -9,9 +9,6 @@
 
 #include <ctime>
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
 
 namespace {
 
@@ -55,11 +52,13 @@ namespace Tempus {
 
 template<class Scalar>
 IntegratorBasic<Scalar>::IntegratorBasic(
-  RCP<ParameterList>                         tempusPL,
-  const RCP<Thyra::ModelEvaluator<Scalar> >& model,
-  const RCP<IntegratorObserver<Scalar> >&    integratorObserver)
+  Teuchos::RCP<Teuchos::ParameterList>                tempusPL,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
+  const Teuchos::RCP<IntegratorObserver<Scalar> >&    integratorObserver)
      : integratorStatus (WORKING)
 {
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
   // Get the name of the integrator to build.
   integratorName_ = tempusPL->get<std::string>(integratorName_name);
 
@@ -78,7 +77,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   this->setParameterList(tempusPL);
 
   // Create Stepper
-  RCP<StepperFactory<Scalar> > sf = rcp(new StepperFactory<Scalar>());
+  RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
   std::string stepperName = pList_->get<std::string>(StepperName_name);
   RCP<ParameterList> s_pl = Teuchos::sublist(tempusPL, stepperName, true);
   stepper_ = sf->createStepper(s_pl, model);
@@ -107,8 +106,9 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 
   if (integratorObserver == Teuchos::null) {
     // Create default IntegratorObserver
-    integratorObserver_ = rcp(new IntegratorObserver<Scalar>(solutionHistory_,
-                                                             timeStepControl_));
+    integratorObserver_ =
+      Teuchos::rcp(new IntegratorObserver<Scalar>(solutionHistory_,
+                                                  timeStepControl_));
   } else {
     integratorObserver_ = integratorObserver;
   }
@@ -170,7 +170,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
 {
   std::time_t begin = std::time(nullptr);
   integratorTimer->start();
-  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "\nTempus - IntegratorBasic\n"
        << std::asctime(std::localtime(&begin)) << "\n"
@@ -229,6 +229,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
 template <class Scalar>
 void IntegratorBasic<Scalar>::acceptTimeStep()
 {
+  using Teuchos::RCP;
   RCP<SolutionStateMetaData<Scalar> > wsmd =
     solutionHistory_->getWorkingState()->metaData_;
 
@@ -320,7 +321,7 @@ void IntegratorBasic<Scalar>::endIntegrator()
   integratorTimer->stop();
   const double runtime = integratorTimer->totalElapsedTime();
   std::time_t end = std::time(nullptr);
-  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "============================================================================\n"
        << "  Total runtime = " << runtime << " sec = "
@@ -333,7 +334,7 @@ void IntegratorBasic<Scalar>::endIntegrator()
 
 template <class Scalar>
 void IntegratorBasic<Scalar>::setParameterList(
-  const RCP<ParameterList> & tempusPL)
+  const Teuchos::RCP<Teuchos::ParameterList> & tempusPL)
 {
   if (tempusPL == Teuchos::null)
     pList_->validateParametersAndSetDefaults(*this->getValidParameters());
@@ -442,13 +443,14 @@ void IntegratorBasic<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList>
+IntegratorBasic<Scalar>::getValidParameters() const
 {
-  static RCP<ParameterList> validPL;
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
 
   if (is_null(validPL)) {
 
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
@@ -495,13 +497,13 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
       "'Stepper Name' selects the Stepper block to construct (Required input).\n");
 
     // Solution History
-    ParameterList& solutionHistoryPL =
+    Teuchos::ParameterList& solutionHistoryPL =
       pl->sublist(SolutionHistory_name,false,"solutionHistory_docs")
          .disableRecursiveValidation();
     solutionHistoryPL.setParameters(*(solutionHistory_->getValidParameters()));
 
     // Time Step Control
-    ParameterList& timeStepControlPL =
+    Teuchos::ParameterList& timeStepControlPL =
       pl->sublist(TimeStepControl_name,false,"solutionHistory_docs")
          .disableRecursiveValidation();
     timeStepControlPL.setParameters(*(timeStepControl_->getValidParameters()));
@@ -514,7 +516,7 @@ RCP<const ParameterList> IntegratorBasic<Scalar>::getValidParameters() const
 
 
 template <class Scalar>
-RCP<ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 IntegratorBasic<Scalar>::getNonconstParameterList()
 {
   return(pList_);
@@ -522,9 +524,10 @@ IntegratorBasic<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<ParameterList> IntegratorBasic<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList>
+IntegratorBasic<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_param_list = pList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_param_list = pList_;
   pList_ = Teuchos::null;
   return(temp_param_list);
 }

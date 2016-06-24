@@ -6,9 +6,6 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
 
 namespace {
 
@@ -51,7 +48,7 @@ namespace {
       Constant_name,
       Variable_name);
 
-  const RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
+  const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType> >
     stepTypeValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<Tempus::StepType>(
           stepType_names,
@@ -91,7 +88,7 @@ TimeStepControl<Scalar>::TimeStepControl()
 
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(
-  RCP<ParameterList> pList, const Scalar dtConstant)
+  Teuchos::RCP<Teuchos::ParameterList> pList, const Scalar dtConstant)
   : dtConstant_(dtConstant)
 {
   if (pList == Teuchos::null)
@@ -136,9 +133,10 @@ TimeStepControl<Scalar>::TimeStepControl(const TimeStepControl<Scalar>& tsc_)
 
 template<class Scalar>
 void TimeStepControl<Scalar>::getNextTimeStep(
-  const RCP<SolutionHistory<Scalar> > & solutionHistory,
+  const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
   Status & integratorStatus) const
 {
+  using Teuchos::RCP;
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   RCP<SolutionStateMetaData<Scalar> > metaData_ = workingState->metaData_;
   const Scalar time = metaData_->time_;
@@ -365,7 +363,7 @@ void TimeStepControl<Scalar>::describe(
 
 template <class Scalar>
 void TimeStepControl<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList)
+  Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   pList->validateParameters(*this->getValidParameters());
@@ -494,13 +492,14 @@ void TimeStepControl<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const ParameterList> TimeStepControl<Scalar>::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList>
+TimeStepControl<Scalar>::getValidParameters() const
 {
-  static RCP<ParameterList> validPL;
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
 
   if (is_null(validPL)) {
 
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     pl->set(timeMin_name    , timeMin_default    , "Minimum simulation time");
@@ -547,7 +546,7 @@ RCP<const ParameterList> TimeStepControl<Scalar>::getValidParameters() const
 
 
 template <class Scalar>
-RCP<ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 TimeStepControl<Scalar>::getNonconstParameterList()
 {
   return(pList_);
@@ -555,9 +554,10 @@ TimeStepControl<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<ParameterList> TimeStepControl<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList>
+TimeStepControl<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_plist = pList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
   pList_ = Teuchos::null;
   return(temp_plist);
 }

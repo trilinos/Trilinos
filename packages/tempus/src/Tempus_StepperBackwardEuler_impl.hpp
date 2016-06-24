@@ -4,9 +4,6 @@
 // Teuchos
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-using Teuchos::RCP;
-using Teuchos::rcp;
-using Teuchos::ParameterList;
 
 namespace Tempus {
 
@@ -29,9 +26,11 @@ StepperBackwardEuler<Scalar>::xDotFunction(
 // StepperBackwardEuler definitions:
 template<class Scalar>
 StepperBackwardEuler<Scalar>::StepperBackwardEuler(
-  RCP<ParameterList>                         pList,
-  const RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
   this->setParameterList(pList);
 
   residualModel_ = rcp(new ResidualModelEvaluator<Scalar>(transientModel));
@@ -49,8 +48,9 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
 
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::takeStep(
-  const RCP<SolutionHistory<Scalar> >& solutionHistory)
+  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
+  using Teuchos::RCP;
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
@@ -93,10 +93,10 @@ void StepperBackwardEuler<Scalar>::takeStep(
  *  that the input StepperState can be used by Backward Euler.
  */
 template<class Scalar>
-RCP<Tempus::StepperState<Scalar> > StepperBackwardEuler<Scalar>::
+Teuchos::RCP<Tempus::StepperState<Scalar> > StepperBackwardEuler<Scalar>::
 getDefaultStepperState()
 {
-  RCP<Tempus::StepperState<Scalar> > stepperState =
+  Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
     rcp(new StepperState<Scalar>(description()));
   return stepperState;
 }
@@ -122,7 +122,7 @@ void StepperBackwardEuler<Scalar>::describe(
 
 template <class Scalar>
 void StepperBackwardEuler<Scalar>::setParameterList(
-  RCP<ParameterList> const& pList)
+  Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
   TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
   //pList->validateParameters(*this->getValidParameters());
@@ -141,12 +141,13 @@ void StepperBackwardEuler<Scalar>::setParameterList(
 
 
 template<class Scalar>
-RCP<const ParameterList> StepperBackwardEuler<Scalar>::getValidParameters() const
+Teuchos::RCP<const Teuchos::ParameterList>
+StepperBackwardEuler<Scalar>::getValidParameters() const
 {
-  static RCP<ParameterList> validPL;
+  static Teuchos::RCP<Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
 
-    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
     Teuchos::setupVerboseObjectSublist(&*pl);
 
     std::ostringstream tmp;
@@ -160,7 +161,7 @@ RCP<const ParameterList> StepperBackwardEuler<Scalar>::getValidParameters() cons
 
 
 template <class Scalar>
-RCP<ParameterList>
+Teuchos::RCP<Teuchos::ParameterList>
 StepperBackwardEuler<Scalar>::getNonconstParameterList()
 {
   return(pList_);
@@ -168,9 +169,10 @@ StepperBackwardEuler<Scalar>::getNonconstParameterList()
 
 
 template <class Scalar>
-RCP<ParameterList> StepperBackwardEuler<Scalar>::unsetParameterList()
+Teuchos::RCP<Teuchos::ParameterList>
+StepperBackwardEuler<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_plist = pList_;
+  Teuchos::RCP<Teuchos::ParameterList> temp_plist = pList_;
   pList_ = Teuchos::null;
   return(temp_plist);
 }

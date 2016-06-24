@@ -48,7 +48,7 @@ public:
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
-    const RCP<SolutionHistory<Scalar> > & solutionHistory,
+    const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
     Status & integratorStatus) const;
 
   /** \brief Check if time is within minimum and maximum time. */
