@@ -243,6 +243,8 @@ void AlgParMETIS<Adapter>::partition(
   // Create array for ParMETIS to return results in.
   pm_idx_t *pm_partList = NULL;
   if (nVtx) pm_partList = new pm_idx_t[nVtx];
+  for (size_t i = 0; i < nVtx; i++) pm_partList[i] = 0;
+  int pm_return = METIS_OK;
 
   if (mpicomm != MPI_COMM_NULL) {
     // If in ParMETIS' communicator (i.e., have vertices), call ParMETIS
@@ -308,10 +310,11 @@ void AlgParMETIS<Adapter>::partition(
     TPL_Traits<pm_idx_t,size_t>::ASSIGN(pm_nPart, numGlobalParts);
 
     if (parmetis_method == "PARTKWAY") {
-      ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts, pm_ewgts,
-                           &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                           pm_partsizes, pm_imbTols, pm_options,
-                           &pm_edgecut, pm_partList, &mpicomm);
+      pm_return = ParMETIS_V3_PartKway(pm_vtxdist, pm_offsets, pm_adjs, 
+                                       pm_vwgts, pm_ewgts, &pm_wgtflag,
+                                       &pm_numflag, &pm_nCon, &pm_nPart,
+                                       pm_partsizes, pm_imbTols, pm_options,
+                                       &pm_edgecut, pm_partList, &mpicomm);
     }
     else if (parmetis_method == "ADAPTIVE_REPART") {
       // Get object sizes:  pm_vsize
@@ -321,20 +324,21 @@ void AlgParMETIS<Adapter>::partition(
       for (size_t i = 0; i < nVtx; i++) pm_vsize[i] = 1;
 
       pm_real_t itr = 100.;  // Same default as in Zoltan
-      ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-                                 pm_vsize, pm_ewgts, &pm_wgtflag,
-                                 &pm_numflag, &pm_nCon, &pm_nPart,
-                                 pm_partsizes, pm_imbTols,
-                                 &itr, pm_options,
-                                 &pm_edgecut, pm_partList, &mpicomm);
+      pm_return = ParMETIS_V3_AdaptiveRepart(pm_vtxdist, pm_offsets, pm_adjs,
+                                             pm_vwgts,
+                                             pm_vsize, pm_ewgts, &pm_wgtflag,
+                                             &pm_numflag, &pm_nCon, &pm_nPart,
+                                             pm_partsizes, pm_imbTols,
+                                             &itr, pm_options, &pm_edgecut,
+                                             pm_partList, &mpicomm);
       delete [] pm_vsize;
     }
     else if (parmetis_method == "REFINE_KWAY") {
-      ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,
-                             pm_ewgts,
-                             &pm_wgtflag, &pm_numflag, &pm_nCon, &pm_nPart,
-                             pm_partsizes, pm_imbTols,
-                             pm_options, &pm_edgecut, pm_partList, &mpicomm);
+      pm_return = ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, 
+                                         pm_vwgts, pm_ewgts, &pm_wgtflag,
+                                         &pm_numflag, &pm_nCon, &pm_nPart,
+                                         pm_partsizes, pm_imbTols, pm_options,
+                                         &pm_edgecut, pm_partList, &mpicomm);
     }
 
     // Clean up 
@@ -361,6 +365,12 @@ void AlgParMETIS<Adapter>::partition(
 
   if (nVwgt) delete [] pm_vwgts;
   if (nEwgt) delete [] pm_ewgts;
+
+  if (pm_return != METIS_OK) {
+    throw std::runtime_error(
+          "\nParMETIS returned an error; no valid partition generated.\n"
+          "Look for 'PARMETIS ERROR' in your output for more details.\n");
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////
