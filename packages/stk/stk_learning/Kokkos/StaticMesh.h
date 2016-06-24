@@ -220,14 +220,14 @@ public:
     typedef Kokkos::View<T*> FieldDataType;
 
     StaticField(stk::mesh::EntityRank rank, const T& initialValue, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
-    : ngpBulk(bulk), deviceData(), numPerEntity(1)
+    : deviceData(), numPerEntity(1)
     {
         unsigned alloc_size = compute_alloc_size(rank, bulk, selector);
         create_device_field_data(alloc_size, initialValue);
     }
 
     StaticField(const stk::mesh::BulkData& bulk, const stk::mesh::FieldBase &field)
-    : ngpBulk(bulk), deviceData(), numPerEntity(0)
+    : deviceData(), numPerEntity(0)
     {
         stk::mesh::Selector selector = stk::mesh::selectField(field);
         const stk::mesh::BucketVector& buckets = bulk.get_buckets(field.entity_rank(), selector);
@@ -283,33 +283,21 @@ public:
         }
     }
 
-    void clear()
-    {
-        ngpBulk.clear();
-    }
-
     ~StaticField(){}
 
     STK_FUNCTION
-    unsigned get_index(stk::mesh::Entity entity) const
+    unsigned get_index(const StaticMesh& ngpMesh, stk::mesh::Entity entity) const
     {
-        const StaticMesh& localRef = ngpBulk;
-        unsigned bkt_id = localRef.device_mesh_index(entity).bucket_id;
-        unsigned bkt_ord = localRef.device_mesh_index(entity).bucket_ord;
+        unsigned bkt_id = ngpMesh.device_mesh_index(entity).bucket_id;
+        unsigned bkt_ord = ngpMesh.device_mesh_index(entity).bucket_ord;
         unsigned idx = bkt_id*512*numPerEntity + bkt_ord*numPerEntity;
         return idx;
     }
 
     STK_FUNCTION
-    T* operator[](stk::mesh::Entity entity) const
+    T& get(const StaticMesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
-        return &deviceData(get_index(entity));
-    }
-
-    STK_FUNCTION
-    T& get(stk::mesh::Entity entity, int component) const
-    {
-        unsigned idx = get_index(entity);
+        unsigned idx = get_index(ngpMesh, entity);
         return deviceData(idx+component);
     }
 
@@ -335,7 +323,6 @@ private:
         Kokkos::deep_copy(deviceData, hostData);
     }
 
-    StaticMesh ngpBulk;
     typename FieldDataType::HostMirror hostData;
     FieldDataType deviceData;
     unsigned numPerEntity;

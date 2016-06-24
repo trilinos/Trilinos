@@ -57,7 +57,7 @@
 #include <limits>
 
 STK_FUNCTION
-double calculate_element_volume(ngp::ConnectedNodesType elemNodes,
+double calculate_element_volume(const ngp::StaticMesh& ngpMesh, ngp::ConnectedNodesType elemNodes,
                                 unsigned numElemNodes,
                                 const ngp::StaticField<double> &staticCoords)
 {
@@ -65,7 +65,7 @@ double calculate_element_volume(ngp::ConnectedNodesType elemNodes,
     double max[3] = {DBL_MIN, DBL_MIN, DBL_MIN};
     for(unsigned i=0; i<numElemNodes; ++i) {
         for(int j=0; j<3; ++j) {
-            double val = staticCoords.get(elemNodes(i),j);
+            double val = staticCoords.get(ngpMesh, elemNodes(i),j);
             if (val > max[j])
                 max[j] = val;
             if (val < min[j])
@@ -95,9 +95,9 @@ void calculate_nodal_volume(stk::mesh::BulkData& mesh, stk::mesh::Field<double>&
 
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i) {
             ngp::ConnectedNodesType elemNodes = bucket.get_nodes(i);
-            double elemVolumePerNode = calculate_element_volume(elemNodes, numNodesPerElem, staticCoords)/numNodesPerElem;
+            double elemVolumePerNode = calculate_element_volume(staticMesh, elemNodes, numNodesPerElem, staticCoords)/numNodesPerElem;
             for(unsigned j=0; j<numNodesPerElem; ++j) {
-                double* nodalVolume = staticNodalVolume[elemNodes(j)];
+                double* nodalVolume = &staticNodalVolume.get(staticMesh,elemNodes(j),0);
                 Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
             }
         });
@@ -105,8 +105,6 @@ void calculate_nodal_volume(stk::mesh::BulkData& mesh, stk::mesh::Field<double>&
     Kokkos::fence();
     staticNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
     staticMesh.clear();
-    staticCoords.clear();
-    staticNodalVolume.clear();
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
 

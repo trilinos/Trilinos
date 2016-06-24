@@ -64,6 +64,7 @@ void test_field() {
   mesh_spec << "generated:"<<dimX<<"x"<<dimY<<"x"<<dimZ;
   stk::unit_test_util::fill_mesh_using_stk_io(mesh_spec.str(), bulk);
 
+  ngp::StaticMesh staticMesh(bulk);
   double initialValue = 9.9;
   ngp::StaticField<double> scalarField(stk::topology::NODE_RANK, initialValue, bulk, meta.locally_owned_part());
 
@@ -88,7 +89,7 @@ void test_field() {
 
       result = 0;
       Kokkos::parallel_reduce(nodes.size(), KOKKOS_LAMBDA(int i, double& update) {
-        update += scalarField.get(device_nodes(i), 0);
+        update += scalarField.get(staticMesh, device_nodes(i), 0);
       }, result);
 
   }
