@@ -278,7 +278,7 @@ bool run(const UserInputForTests &uinput,
     cout << problem_kind + " problem solved." << endl;
   }
  
-//#define KDDKDD
+#define KDDKDD
 #ifdef KDDKDD
   {
   const base_adapter_t::gno_t *kddIDs = NULL;
@@ -476,7 +476,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
         
     RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
-      if (!run(uinput, problems.front(), !comparisons.empty(), comparison_manager, comm)) {
+      if (!run(uinput, problems.front(), !comparisons.empty(),
+               comparison_manager, comm)) {
         std::cout << "Problem run returned false" << std::endl;
         bPass = false;
       }
@@ -490,7 +491,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
     while (!comparisons.empty()) {
       if (!comparison_manager->Compare(comparisons.front(),comm)) {
         if (rank == 0) {
-          std::cout << "Comparison manager returned false so the test should fail." << std::endl;
+          std::cout << "Comparison manager returned false so the "
+                    << "test should fail." << std::endl;
         }
         bPass = false;
       }
@@ -518,7 +520,7 @@ int main(int argc, char *argv[])
     result = mainExecute(argc, argv, comm) ? 0 : 1; // code 0 is ok,
                                                     // 1 is a failed test
   }
-  catch(std::logic_error e) { 
+  catch(std::logic_error &e) { 
     // logic_error exceptions can be thrown by EvaluatePartition or 
     // MetricAnalyzer if any problem is detected in the formatting of the 
     // input xml
@@ -528,12 +530,14 @@ int main(int argc, char *argv[])
     }
     result = 1; // fail for any exception
   }
-  catch(...) {
-    if (rank == 0) {
-      std::cout << "Test driver for rank " << rank 
-                << " caught an unknown exception and will return false." 
-                << std::endl;
-    }
+  catch(std::runtime_error &e) { 
+    std::cout << "Test driver for rank " << rank 
+              << " caught the following exception: " << e.what() << std::endl;
+    result = 1; // fail for any exception
+  }
+  catch(std::exception &e) { 
+    std::cout << "Test driver for rank " << rank 
+              << " caught the following exception: " << e.what() << std::endl;
     result = 1; // fail for any exception
   }
 
