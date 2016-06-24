@@ -129,6 +129,8 @@ struct StaticMeshIndex
 typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
 typedef Kokkos::TeamPolicy<ExecSpace, ScheduleType> TeamPolicyType;
 typedef TeamPolicyType::member_type TeamHandleType;
+typedef Kokkos::TeamPolicy<HostExecSpace, ScheduleType> HostTeamPolicyType;
+typedef HostTeamPolicyType::member_type HostTeamHandleType;
 
 template <typename MESH, typename ALGORITHM_PER_ENTITY>
 void for_each_entity_run(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
@@ -138,6 +140,23 @@ void for_each_entity_run(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM
     {
         const int bucketIndex = team.league_rank();
         const ngp::StaticBucket &bucket = mesh.get_bucket(rank, bucketIndex);
+        unsigned numElements = bucket.size();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
+        {
+            functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(i)});
+        });
+    });
+}
+
+template <typename MESH, typename ALGORITHM_PER_ENTITY>
+void for_each_entity_run_stkmesh(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+{
+    const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
+    unsigned numBuckets = elemBuckets.size();
+    Kokkos::parallel_for(Kokkos::TeamPolicy<HostExecSpace>(numBuckets, Kokkos::AUTO), [&](const HostTeamHandleType& team)
+    {
+        const int bucketIndex = team.league_rank();
+        const stk::mesh::Bucket &bucket = *elemBuckets[bucketIndex];
         unsigned numElements = bucket.size();
         Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
         {
