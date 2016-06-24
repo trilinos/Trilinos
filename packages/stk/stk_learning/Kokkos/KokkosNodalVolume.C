@@ -116,11 +116,11 @@ void calculate_nodal_volume_static_mesh_entity_loops(stk::mesh::BulkData& mesh, 
         {
             ngp::ConnectedNodesType elemNodes = staticMesh.get_nodes(elem);
             const unsigned numNodesPerElem = elemNodes.size();
-            double elemVolumePerNode = calculate_element_volume(elemNodes, numNodesPerElem, staticCoords) / numNodesPerElem;
+            double elemVolumePerNode = calculate_element_volume(staticMesh, elemNodes, numNodesPerElem, staticCoords) / numNodesPerElem;
             for(unsigned j=0; j<numNodesPerElem; ++j)
             {
-                double* nodalVolume = staticNodalVolume[elemNodes(j)];
-                Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
+                double nodalVolume = staticNodalVolume.get(staticMesh, elemNodes(j), 0);
+                Kokkos::atomic_add(&nodalVolume, elemVolumePerNode);
             }
         });
 
