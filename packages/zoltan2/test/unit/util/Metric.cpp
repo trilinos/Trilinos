@@ -141,8 +141,10 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   Teuchos::ParameterList pl("test list");
   pl.set("num_local_parts", double(numLocalParts));
   
+  Teuchos::ParameterList relicParameters;
+  Zoltan2::RELIC_getOldFormatParameterListAllTogether(relicParameters);
   RCP<const Zoltan2::Environment> env = 
-    rcp(new Zoltan2::Environment(pl, comm));
+    rcp(new Zoltan2::Environment(pl, relicParameters, comm));
 
   // A simple identifier map.  Usually created by the model.
 

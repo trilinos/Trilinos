@@ -110,19 +110,19 @@ public:
   /*! \brief Constructor that takes an MPI communicator
    */
   ColoringProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm) 
+                      : Problem<Adapter>(A, p, comm, false) // note we turn off construction of the lower lever parameters which we will handle here
   {
     HELLO;
-    createColoringProblem();
+    createColoringProblem(p);
   };
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
+  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p, false) 
   {
     HELLO;
-    createColoringProblem();
+    createColoringProblem(p);
   };
 
   //!  \brief Direct the problem to create a solution.
@@ -140,7 +140,7 @@ public:
   //  to false if he/she is computing a new solution using the same input data,
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
-  
+
   void solve(bool updateInputData=true); 
 
   //!  \brief Get the solution to the problem.
@@ -153,7 +153,7 @@ public:
   };
 
 private:
-  void createColoringProblem();
+  void createColoringProblem(ParameterList * p);
 
   RCP<ColoringSolution<Adapter> > solution_;
 };
@@ -212,10 +212,12 @@ void ColoringProblem<Adapter>::solve(bool newData)
 //  This method does everything that all constructors must do.
 
 template <typename Adapter>
-void ColoringProblem<Adapter>::createColoringProblem()
+void ColoringProblem<Adapter>::createColoringProblem(Teuchos::ParameterList * p)
 {
   HELLO;
   using Teuchos::ParameterList;
+
+  Problem<Adapter>::setupProblemEnvironment(p);
 
 //  std::cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 

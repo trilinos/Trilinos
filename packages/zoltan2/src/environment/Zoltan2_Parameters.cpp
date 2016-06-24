@@ -63,15 +63,9 @@
 
 namespace Zoltan2 {
 
-/*! \brief  Create a list of all Zoltan2 parameters and validators.
- *
- *  \param pList on return, pList is the parameter list that was created.
- *
- *  This is the validating parameter list that can be
- *  used to process the user's parameter list.
- */
-
-void createAllParameters(Teuchos::ParameterList &pList)
+/*! \brief  This is the old format which loaded everything from one large XML define string - now they are are hard coded into the Problems, Models, and Algorithms and this is going away.
+*/
+void RELIC_getOldFormatParameterListAllTogether(Teuchos::ParameterList &pList)
 {
   // An XML converter for IntegerRangeListValidator
   // needs to be added to the converter database.
@@ -140,10 +134,10 @@ void createAllParameters(Teuchos::ParameterList &pList)
  *  parameters that appear in the user's parameter list.
  *  
  */
-static void setValidatorsInList(
+void setValidatorsInList(
   const Teuchos::ParameterList &plSome,   // in: user's parameters
-  const Teuchos::ParameterList &plAll,    // in: validators for all params
-  Teuchos::ParameterList &plVal)          // out: validators for user's params
+  Teuchos::ParameterList &plVal,          // out: validators for user's params
+  const Teuchos::ParameterList &plSource) // source params
 {
   ParameterList::ConstIterator next = plSome.begin();
 
@@ -151,7 +145,7 @@ static void setValidatorsInList(
 
     const std::string &name = next->first;
     const ParameterEntry &entrySome = plSome.getEntry(name);
-    const ParameterEntry &entryAll = plAll.getEntry(name);
+    const ParameterEntry &entryAll = plSource.getEntry(name);
 
     if (entrySome.isList()){
       plVal.sublist(name);     // create & get
@@ -163,26 +157,6 @@ static void setValidatorsInList(
 
     ++next;
   }
-}
-
-/*! \brief Create a list by adding validators to the users parameter list.
- *  \param plIn  the user's parameter list
- *  \param plOut  a new parameter list which is the user's list with
- *                     our validators added.
- */
-
-void createValidatorList(
-   const Teuchos::ParameterList &plIn,
-   Teuchos::ParameterList &plOut)
-{
-  ParameterList allParameters;
-
-  try{
-    createAllParameters(allParameters);
-  }
-  Z2_FORWARD_EXCEPTIONS
-
-  setValidatorsInList(plIn, allParameters, plOut);
 }
 
 // Why isn't there a Teuchos method that does this?

@@ -116,20 +116,20 @@ public:
   /*! \brief Constructor where MPI communicator can be specified
    */
   PartitioningProblem(Adapter *A, ParameterList *p, MPI_Comm comm):
-      Problem<Adapter>(A,p,comm), solution_(),
+      Problem<Adapter>(A,p,comm,false), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(),
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
+    initializeProblem(p);
   }
 #endif
 
   //! \brief Constructor where communicator is the Teuchos default.
   PartitioningProblem(Adapter *A, ParameterList *p):
-      Problem<Adapter>(A,p), solution_(),
+      Problem<Adapter>(A,p,false), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
@@ -137,13 +137,13 @@ public:
       levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
+    initializeProblem(p);
   }
 
   //! \brief Constructor where Teuchos communicator is specified
   PartitioningProblem(Adapter *A, ParameterList *p,
                       const RCP<const Teuchos::Comm<int> > &comm):
-      Problem<Adapter>(A,p,comm), solution_(),
+      Problem<Adapter>(A,p,comm,false), solution_(),
       inputType_(InvalidAdapterType),
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(),
@@ -151,7 +151,7 @@ public:
       levelNumberParts_(), hierarchical_(false)
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
-    initializeProblem();
+    initializeProblem(p);
   }
 
   /*! \brief Destructor
@@ -268,24 +268,122 @@ public:
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
 */
-  /*! \brief Reset the list of parameters
-   */
-  void resetParameters(ParameterList *params)
-  {
-    Problem<Adapter>::resetParameters(params);  // creates new environment
-  }
 
-  /*! \brief Get the current Environment.
-   *   Useful for testing.
-   */
-
-  const RCP<const Environment> & getEnvironment() const
+  /*! \brief Set up validators specific to this Problem
+  */
+  virtual void generateSourceParameters(ParameterList & pl)
   {
-    return this->envConst_;
+    Problem<Adapter>::generateSourceParameters(pl);
+
+    // load the algorithm parameters which are handled in a spacial way
+    // we saved our initial passed in value and will use it now (without validation) to determine other dependent parameters
+    // then everything gets validated together
+    // this special case exists because algorithm is a parameter which determines the existence of other parameters
+    if (saveInitialAlgorithmName_ != "") {
+      if (saveInitialAlgorithmName_ == "multijagged") {
+        Zoltan2_AlgMJ<Adapter>::static_generateSourceParameters(pl);
+      }
+      else if (saveInitialAlgorithmName_ == "pulp") {
+        AlgPuLP<Adapter>::static_generateSourceParameters(pl);
+      }
+      else if (saveInitialAlgorithmName_ == "scotch") {
+        AlgPTScotch<Adapter>::static_generateSourceParameters(pl);
+      }
+      else if (saveInitialAlgorithmName_ == "forTestingOnly") {
+        AlgForTestingOnly<Adapter>::static_generateSourceParameters(pl);
+      }
+    }
+
+    // This set up does not use tuple because we didn't have constructors that took that many elements
+    // Tuple will need to be modified and didn't want to have low level changes with this at least for now
+    Array<std::string> algorithm_names(17);
+    algorithm_names[0] = "rcb";
+    algorithm_names[1] = "multijagged";
+    algorithm_names[2] = "rib";
+    algorithm_names[3] = "hsfc";
+    algorithm_names[4] = "patoh";
+    algorithm_names[5] = "phg";
+    algorithm_names[6] = "metis";
+    algorithm_names[7] = "parmetis";
+    algorithm_names[8] = "pulp";
+    algorithm_names[9] = "parma";
+    algorithm_names[10] = "scotch";
+    algorithm_names[11] = "ptscotch";
+    algorithm_names[12] = "block";
+    algorithm_names[13] = "cyclic";
+    algorithm_names[14] = "random";
+    algorithm_names[15] = "zoltan";
+    algorithm_names[16] = "forTestingOnly";
+    RCP<Teuchos::StringValidator> algorithm_Validator = Teuchos::rcp( new Teuchos::StringValidator( algorithm_names ));
+    pl.set("algorithm", "random", "  partitioning algorithm");
+
+    RCP<Teuchos::StringValidator> partitioning_objective_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+     Teuchos::tuple<std::string>( "balance_object_count", "balance_object_weight", "multicriteria_minimize_total_weight", "multicriteria_minimize_maximum_weight", "multicriteria_balance_total_maximum", "minimize_cut_edge_count", "minimize_cut_edge_weight", "minimize_neighboring_parts", "minimize_boundary_vertices" )));
+    pl.set("partitioning_objective", "balance_object_weight", "  objective of partitioning (default depends on algorithm)");
+    pl.getEntryRCP("partitioning_objective")->setValidator(partitioning_objective_Validator);
+
+    RCP<Teuchos::AnyNumberParameterEntryValidator> imbalance_tolerance_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );  // default is DOUBLE and accept Double, Int, String
+    pl.set("imbalance_tolerance", "1.1", "  imbalance tolerance, ratio of maximum load over average load (default 1.1)");
+    pl.getEntryRCP("imbalance_tolerance")->setValidator(imbalance_tolerance_Validator);
+
+    RCP<Teuchos::AnyNumberParameterEntryValidator> num_global_parts_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
+    pl.set("num_global_parts", "0", "  global number of parts to compute (default is number of processes)");
+    pl.getEntryRCP("num_global_parts")->setValidator(num_global_parts_Validator);
+
+    RCP<Teuchos::AnyNumberParameterEntryValidator> num_local_parts_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
+    pl.set("num_local_parts", "0", "  number of parts to compute for this process(default is one)");
+    pl.getEntryRCP("num_local_parts")->setValidator(num_local_parts_Validator);
+
+    RCP<Teuchos::StringValidator> partitioning_approach_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "partition", "repartition", "maximize_overlap" )));
+    pl.set("partitioning_approach", "partition", "  Partition from scratch, partition incrementally from current     partition, of partition from scratch but maximize overlap     with the current partition (default is \"partition\" from scratch)");
+    pl.getEntryRCP("partitioning_approach")->setValidator(partitioning_approach_Validator);
+
+    RCP<Teuchos::StringValidator> objects_to_partition_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "matrix_rows", "matrix_columns", "matrix_nonzeros", "mesh_elements", "mesh_nodes", "graph_edges", "graph_vertices", "coordinates", "identifiers" )));
+    pl.set("objects_to_partition", "graph_vertices", "  Objects to be partitioned (defaults are \"matrix_rows\" for     matrix input, \"mesh_nodes\" for mesh input, and \"graph_vertices\"     for graph input)");
+    pl.getEntryRCP("objects_to_partition")->setValidator(objects_to_partition_Validator);
+
+    RCP<Teuchos::StringValidator> model_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "hypergraph", "graph", "geometry", "ids" )));
+    pl.set("model", "graph", "  This is a low level parameter.  Normally the library will choose     a computational model based on the algorithm or objective specified     by the user.");
+    pl.getEntryRCP("model")->setValidator(model_Validator);
+
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > subset_graph_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
+      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
+      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
+      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+      "no") );
+    pl.set("subset_graph", "no", "  If \"yes\", the graph input is to be subsetted.  If a vertex neighbor     is not a valid vertex, it will be omitted from the pList.  Otherwise,     an invalid neighbor identifier is considered an error.");
+    pl.getEntryRCP("subset_graph")->setValidator(subset_graph_Validator);
+
+    RCP<Teuchos::StringValidator> symmetrize_input_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "no", "transpose", "bipartite" )));
+    pl.set("symmetrize_input", "no", "  Symmetrize input prior to pList.  If \"transpose\",     symmetrize A by computing A plus ATranspose.  If \"bipartite\",     A becomes [[0 A][ATranspose 0]].  ");
+    pl.getEntryRCP("symmetrize_input")->setValidator(symmetrize_input_Validator);
+
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > remap_parts_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
+      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
+      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
+      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+      "no") );
+    pl.set("remap_parts", "no", "  remap part numbers to minimize migration between old and new partitions");
+    pl.getEntryRCP("remap_parts")->setValidator(remap_parts_Validator);
+
+    Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypesNotDouble;
+    acceptedTypesNotDouble.allowDouble(false);
+    RCP<Teuchos::AnyNumberParameterEntryValidator> int_or_string_validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator( Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypesNotDouble) );
+
+    pl.set("mapping_type", -1, "Mapping of solution to the processors. -1 No Mapping, 0 coordinate mapping.");
+    pl.getEntryRCP("mapping_type")->setValidator(int_or_string_validator);
+
+    RCP<Teuchos::EnhancedNumberValidator<int>> ghost_layers_Validator = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 10, 1, 0) );
+    pl.set("ghost_layers", 2, "  number of layers for ghosting used in hypergraph ghost method");
+    pl.getEntryRCP("ghost_layers")->setValidator(ghost_layers_Validator);
   }
 
 private:
-  void initializeProblem();
+  void initializeProblem(ParameterList *p);
 
   void createPartitioningProblem(bool newData);
 
@@ -323,6 +421,8 @@ private:
 
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
+
+  std::string saveInitialAlgorithmName_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -335,9 +435,22 @@ void PartitioningProblem<Adapter>::setMachine(MachineRepresentation<typename Ada
 
 
 template <typename Adapter>
-  void PartitioningProblem<Adapter>::initializeProblem()
+  void PartitioningProblem<Adapter>::initializeProblem(ParameterList *p)
 {
   HELLO;
+
+  // this exists because of the special nature of the algorithm parameter
+  // it is a parameter but it also determined whether other parameters are loaded
+  // so we read the raw value (not validated) and use that to load all parameters
+  // then we just validate the full list naturally
+  // we must save this before calling setupProblemEnvironment
+  // this may likely change as this system is developed
+  const Teuchos::ParameterEntry * pe = p->getEntryPtr("algorithm");
+  if (pe) {
+    saveInitialAlgorithmName_ = pe->getValue<std::string>(&saveInitialAlgorithmName_);
+  }
+
+  Problem<Adapter>::setupProblemEnvironment(p);
 
   this->env_->debug(DETAILED_STATUS, "PartitioningProblem::initializeProblem");
 

@@ -104,10 +104,10 @@ public:
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
                  partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) : 
-    Problem<Adapter>(A_, p_, ucomm_) 
+    Problem<Adapter>(A_, p_, ucomm_, false)
   {
     HELLO;
-    createMappingProblem(partition_, machine_);
+    createMappingProblem(partition_, machine_, p_);
   };
 
 #ifdef HAVE_ZOLTAN2_MPI
@@ -119,7 +119,7 @@ public:
     Problem<Adapter>(A_, p_, ucomm_) 
   {
     HELLO;
-    createMappingProblem(partition_, machine_);
+    createMappingProblem(partition_, machine_, p_);
   };
 #endif
 
@@ -138,8 +138,20 @@ public:
   //  to false if he/she is computing a new solution using the same input data,
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
-  
+
   void solve(bool updateInputData=true); 
+
+  /*! \brief Set up validators specific to this Problem
+  */
+  virtual void generateSourceParameters(ParameterList & pl)
+  {
+    Problem<Adapter>::generateSourceParameters(pl);
+
+    RCP<Teuchos::StringValidator> mapping_algorithm_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "geometric", "default", "block" )));
+    pl.set("mapping_algorithm", "default", "  mapping algorithm");
+    pl.getEntryRCP("mapping_algorithm")->setValidator(mapping_algorithm_Validator);
+  }
 
   //!  \brief Get the solution to the problem.
   //
@@ -148,7 +160,7 @@ public:
   mapsoln_t *getSolution() { return soln.getRawPtr(); };
 
 private:
-  void createMappingProblem(partsoln_t *partition_, MachineRep *machine_);
+  void createMappingProblem(partsoln_t *partition_, MachineRep *machine_, Teuchos::ParameterList * p_);
 
   Teuchos::RCP<mapsoln_t> soln;
 
@@ -165,9 +177,12 @@ private:
 template <typename Adapter, typename MachineRep>
 void MappingProblem<Adapter, MachineRep>::createMappingProblem(
   partsoln_t *partition_,
-  MachineRep *machine_)
+  MachineRep *machine_,
+  Teuchos::ParameterList * p_)
 {
   HELLO;
+
+  Problem<Adapter>::setupProblemEnvironment(p_);
 
   // Save pointer to user's partitioning solution.  If not provided, create one.
 

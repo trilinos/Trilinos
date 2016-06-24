@@ -53,6 +53,8 @@
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_Algorithm.hpp>
+#include <Zoltan2_IntegerRangeList.hpp>
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 
 #include <Tpetra_Distributor.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -6364,6 +6366,40 @@ public:
         delete [] this->coordinate_ArrayRCP_holder;
         this->coordinate_ArrayRCP_holder = NULL;
       }
+    }
+
+    /*! \brief Set up validators specific to this algorithm
+     */
+    static void static_generateSourceParameters(ParameterList & pl)
+    {
+      // we may eventually make this a true class hierarchy but right now algorithms don't allocate until we solve them and we want each type to contain parameters with the class
+      // so the static method allows us to put the parameters here but we have to manually call each static type in the Zoltan2_PartitioningProblem
+      pl.set("mj_parts", "0", "  list of parts for multiJagged partitioning algorithm. As many as the dimension count.");
+      RCP<Zoltan2::IntegerRangeListValidator<int>> mj_parts_Validator = Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(true) ); // unsorted true
+      pl.getEntryRCP("mj_parts")->setValidator(mj_parts_Validator);
+
+      Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypesNotDouble;
+      acceptedTypesNotDouble.allowDouble(false);
+      RCP<Teuchos::AnyNumberParameterEntryValidator> int_or_string_validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator( Teuchos::AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypesNotDouble) );
+
+      pl.set("mj_concurrent_part_count", 1, "The number of parts whose cut coordinates will be calculated concurently.");
+      pl.getEntryRCP("mj_concurrent_part_count")->setValidator(int_or_string_validator);
+
+      RCP<Teuchos::AnyNumberParameterEntryValidator> mj_minimum_migration_imbalance_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
+      pl.set("mj_minimum_migration_imbalance", "1.1", "  mj_minimum_migration_imbalance, the minimum imbalance of the processors to avoid migration (default 1.1)");
+      pl.getEntryRCP("mj_minimum_migration_imbalance")->setValidator(mj_minimum_migration_imbalance_Validator);
+
+      pl.set("mj_migration_option", 1, "Migration option, 0 for decision depending on the imbalance, 1 for forcing migration, 2 for avoiding migration");
+      pl.getEntryRCP("mj_migration_option")->setValidator(int_or_string_validator);
+
+      pl.set("mj_keep_part_boxes", -1, "Keep the part boundaries of the geometric partitioning: Truth values - 0 False, Otherwise True.");
+      pl.getEntryRCP("mj_keep_part_boxes")->setValidator(int_or_string_validator);
+
+      pl.set("mj_enable_rcb", 0, "Use MJ as RCB: Truth values - 0 False, Otherwise True.");
+      pl.getEntryRCP("mj_enable_rcb")->setValidator(int_or_string_validator);
+
+      pl.set("mj_recursion_depth", -1, "Recursion depth for MJ: Must be greater than 0.");
+      pl.getEntryRCP("mj_recursion_depth")->setValidator(int_or_string_validator);
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.

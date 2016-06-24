@@ -106,7 +106,8 @@ public:
    *
    *   Note that the communicator is for the application, not the problem.
    */
-  Environment(Teuchos::ParameterList &problemParams,
+  Environment(const Teuchos::ParameterList &problemParams,
+    const Teuchos::ParameterList &sourceParams,
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
 
   /*! \brief Default Constructor
@@ -120,6 +121,10 @@ public:
   /*! \brief Destructor
    */
   ~Environment();
+
+  /*! \brief Collect all the relevant parameters
+   */
+  void getBaseParameters(ParameterList & pl);
 
   /*! \brief Provide the Timer object to the Environment.
    *
@@ -567,6 +572,12 @@ public:
   const Teuchos::ParameterList &getUnvalidatedParameters() const { 
     return unvalidatedParams_; }
 
+  /*! \brief Returns a const reference to the user's original source parameters supplied by the problem, model, algorithm, etc (everything not built into the environment base set).
+   */
+
+  const Teuchos::ParameterList &getSourceParameters() const {
+    return sourceParams_; }
+
   /*! \brief Convert parameters of type 
    *  Teuchos::StringToIntegralParameterEntryValidator<int> to integer.
    *
@@ -603,6 +614,10 @@ private:
    *  is this validated/converted list.
    */
   Teuchos::ParameterList params_;
+
+  /*! \brief The source parameters supplied by the problem, model, algorithm, etc (everything not built into the environment base set).
+   */
+  Teuchos::ParameterList sourceParams_;
 
   DebugManager_t debugOut_;    /*!< \brief output for status messages */
 

@@ -110,8 +110,10 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   // the parameter list, we would like to apply
   // the options specified by the user in their
   // input file
+
+  // this needs to be resolved - this is the old format but now we build this list from
   Teuchos::ParameterList zoltan2Parameters;
-  Zoltan2::createAllParameters(zoltan2Parameters);
+  Zoltan2::RELIC_getOldFormatParameterListAllTogether(zoltan2Parameters);
   
   if (plist.isSublist("Zoltan2Parameters")) {
     // Apply user specified zoltan2Parameters

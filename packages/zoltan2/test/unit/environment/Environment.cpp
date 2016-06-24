@@ -151,8 +151,10 @@ int main(int argc, char *argv[])
 
   Environment *env = NULL;
 
+  ParameterList relicParameters;
+  Zoltan2::RELIC_getOldFormatParameterListAllTogether(relicParameters);
   try{
-    env = new Environment(myParams, comm);
+    env = new Environment(myParams, relicParameters, comm);
   }
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;
@@ -250,7 +252,7 @@ int main(int argc, char *argv[])
   RCP<Environment> newEnv;
 
   try{
-    newEnv = Teuchos::rcp(new Environment(newParams, oldComm));
+    newEnv = Teuchos::rcp(new Environment(newParams, relicParameters, oldComm));
   }
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;

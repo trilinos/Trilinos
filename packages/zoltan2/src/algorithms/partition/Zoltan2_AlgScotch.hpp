@@ -57,9 +57,43 @@
 //! \brief interface to the Scotch third-party library
 
 ////////////////////////////////////////////////////////////////////////
+
+namespace Zoltan2 {
+
+// this is because we have the two scotch types below - something I will need to work on for the design
+static void getScotchParameters(Teuchos::ParameterList & pl)
+{
+  // we may eventually make this a true class hierarchy but right now algorithms don't allocate until we solve them and we want each type to contain parameters with the class
+  // so the static method allows us to put the parameters here but we have to manually call each static type in the Zoltan2_PartitioningProblem
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > general_on_off_validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
+    Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
+    Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+    "no") );
+
+  pl.set("scotch_verbose", "false", "  verbose output (default false)");
+  pl.getEntryRCP("scotch_verbose")->setValidator(general_on_off_validator);
+
+  RCP<Teuchos::EnhancedNumberValidator<int>> scotch_level_Validator = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+  pl.set("scotch_level", 0, "  scotch ordering - Level of the subgraph in the separators tree for the initial graph at the root of the tree  (default 0)");
+  pl.getEntryRCP("scotch_level")->setValidator(scotch_level_Validator);
+
+  RCP<Teuchos::AnyNumberParameterEntryValidator> scotch_imbalance_ratio_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
+  pl.set("scotch_imbalance_ratio", "0.2", "  scotch ordering - Dissection imbalance ratio  (default 0.2)");
+  pl.getEntryRCP("scotch_imbalance_ratio")->setValidator(scotch_imbalance_ratio_Validator);
+
+  pl.set("scotch_ordering_default", "true", "  use default scotch ordering strategy (default true)");
+  pl.getEntryRCP("scotch_ordering_default")->setValidator(general_on_off_validator);
+
+  pl.set("scotch_ordering_strategy", "", "  scotch ordering - Dissection imbalance ratio (default  )");
+}
+
+} // Zoltan2 namespace
+
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
 namespace Zoltan2 {
+
 // Error handling for when Scotch is requested
 // but Zoltan2 not built with Scotch.
 
@@ -80,6 +114,13 @@ public:
     throw std::runtime_error(
           "BUILD ERROR:  Scotch requested but not compiled into Zoltan2.\n"
           "Please set CMake flag Zoltan2_ENABLE_Scotch:BOOL=ON.");
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void static_generateSourceParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
   }
 };
 }
@@ -261,6 +302,13 @@ public:
       this->model_flags.set(VERTICES_ARE_MESH_NODES);
     else if (objectOfInterest == std::string("mesh_elements"))
       this->model_flags.set(VERTICES_ARE_MESH_ELEMENTS);
+  }
+
+  /*! \brief Set up validators specific to this algorithm
+  */
+  static void static_generateSourceParameters(ParameterList & pl)
+  {
+    getScotchParameters(pl);
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution);

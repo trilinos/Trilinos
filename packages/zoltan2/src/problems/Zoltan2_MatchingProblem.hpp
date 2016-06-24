@@ -110,11 +110,11 @@ public:
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor that takes an MPI communicator
    */
-  MatchingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm) 
+  MatchingProblem(Adapter *A, ParameterList *p, MPI_Comm comm)
+                      : Problem<Adapter>(A, p, comm, false)
   {
     HELLO;
-    createMatchingProblem();
+    createMatchingProblem(p);
   };
 #endif
 
@@ -123,7 +123,7 @@ public:
   MatchingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
   {
     HELLO;
-    createMatchingProblem();
+    createMatchingProblem(p);
   };
 
   //!  \brief Direct the problem to create a solution.
@@ -141,7 +141,7 @@ public:
   //  to false if he/she is computing a new solution using the same input data,
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
-  
+
   void solve(bool updateInputData=true); 
 
   //!  \brief Get the solution to the problem.
@@ -154,7 +154,7 @@ public:
   };
 
 private:
-  void createMatchingProblem();
+  void createMatchingProblem(Teuchos::ParameterList * p);
 
   RCP<MatchingSolution<Adapter> > solution_;
 
@@ -215,10 +215,12 @@ void MatchingProblem<Adapter>::solve(bool newData)
 //  This method does everything that all constructors must do.
 
 template <typename Adapter>
-void MatchingProblem<Adapter>::createMatchingProblem()
+void MatchingProblem<Adapter>::createMatchingProblem(Teuchos::ParameterList * p)
 {
   HELLO;
   using Teuchos::ParameterList;
+
+  setupProblemEnvironment(p);
 
 //  cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
