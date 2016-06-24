@@ -958,15 +958,6 @@ private:
   }
 
   template <typename tt>
-  std::string toString(tt obj){
-    std::stringstream ss (std::stringstream::in |std::stringstream::out);
-    ss << obj;
-    std::string tmp = "";
-    ss >> tmp;
-    return tmp;
-  }
-
-  template <typename tt>
   tt fromString(std::string obj){
     std::stringstream ss (std::stringstream::in | std::stringstream::out);
     ss << obj;
@@ -1043,7 +1034,7 @@ private:
           reqArg = 7;
         }
         if(i + reqArg > argCnt) {
-          std::string tmp = toString<int>(reqArg);
+          std::string tmp = Teuchos::toString<int>(reqArg);
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
         np_ = fromString<gno_t>(splittedStr[i++]);
@@ -1070,7 +1061,7 @@ private:
           reqArg = 7;
         }
         if(i + reqArg > argCnt) {
-          std::string tmp = toString<int>(reqArg);
+          std::string tmp = Teuchos::toString<int>(reqArg);
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
         np_ = fromString<gno_t>(splittedStr[i++]);
@@ -1093,7 +1084,7 @@ private:
           reqArg = 9;
         }
         if(i + reqArg > argCnt) {
-          std::string tmp = toString<int>(reqArg);
+          std::string tmp = Teuchos::toString<int>(reqArg);
           throw INVALID_SHAPE_ARG(distName, tmp);
         }
 
@@ -1128,7 +1119,7 @@ private:
 
       }
       else {
-        std::string tmp = toString<int>(this->coordinate_dimension);
+        std::string tmp = Teuchos::toString<int>(this->coordinate_dimension);
         throw INVALIDSHAPE(distName, tmp);
       }
       this->numGlobalCoords += (gno_t) np_;
@@ -1149,7 +1140,7 @@ private:
 
       int argCnt = this->countChar(proc_load_distributions, ',') + 1;
       if(argCnt != this->worldSize) {
-        throw "Invalid parameter count load distributions. Given " + toString<int>(argCnt) + " processor size is " + toString<int>(this->worldSize);
+        throw "Invalid parameter count load distributions. Given " + Teuchos::toString<int>(argCnt) + " processor size is " + Teuchos::toString<int>(this->worldSize);
       }
       std::string *splittedStr = new std::string[argCnt];
       splitString(proc_load_distributions, ',', splittedStr);
@@ -1246,7 +1237,7 @@ private:
         scalar_t r = fromString<scalar_t>(splittedStr[i++]);
         this->holes[this->holeCount++] = new SphereHole<scalar_t>(pp, r);
       }  else {
-        std::string tmp = toString<int>(this->coordinate_dimension);
+        std::string tmp = Teuchos::toString<int>(this->coordinate_dimension);
         throw INVALIDSHAPE(shapeName, tmp);
       }
     }
@@ -1261,7 +1252,7 @@ private:
       std::string weight_distribution = weight_distribution_arr[ii];
       if(weight_distribution == "") continue;
       if(wcount == wdimension) {
-        throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". More weight distribution is provided.";
+        throw "Weight Dimension is provided as " + Teuchos::toString<int>(wdimension) + ". More weight distribution is provided.";
       }
 
       int count = this->countChar(weight_distribution, ' ');
@@ -1296,7 +1287,7 @@ private:
             a2 = this->fromString<scalar_t>(value);
           }
           else {
-            throw  parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw  parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
 
         }
@@ -1305,7 +1296,7 @@ private:
             a3 = this->fromString<scalar_t>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "b1"){
@@ -1316,7 +1307,7 @@ private:
             b2 = this->fromString<scalar_t>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "b3"){
@@ -1325,7 +1316,7 @@ private:
             b3 = this->fromString<scalar_t>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "c"){
@@ -1339,7 +1330,7 @@ private:
             y1 = this->fromString<scalar_t>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "z1"){
@@ -1347,7 +1338,7 @@ private:
             z1 = this->fromString<scalar_t>(value);
           }
           else {
-            throw parameter+ " argument is not valid when dimension is " + toString<int>(this->coordinate_dimension);
+            throw parameter+ " argument is not valid when dimension is " + Teuchos::toString<int>(this->coordinate_dimension);
           }
         }
         else if (parameter == "steps"){
@@ -1377,7 +1368,7 @@ private:
 
       delete []splittedStr;
       if(stepCount + 1!= valueCount){
-        throw "Step count: " + this->toString<int>(stepCount) + " must be 1 less than value count: " + this->toString<int>(valueCount);
+        throw "Step count: " + Teuchos::toString<int>(stepCount) + " must be 1 less than value count: " + Teuchos::toString<int>(valueCount);
       }
 
 
@@ -1390,7 +1381,7 @@ private:
       }
     }
     if(wcount != this->numWeightsPerCoord){
-      throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". But " + toString<int>(wcount)+" weight distributions are provided.";
+      throw "Weight Dimension is provided as " + Teuchos::toString<int>(wdimension) + ". But " + Teuchos::toString<int>(wcount)+" weight distributions are provided.";
     }
   }
 
@@ -1435,7 +1426,7 @@ private:
           int distribution_index = fromString<int>(distribution_index_string);
 
           if(distribution_index >= MAX_WEIGHT_DIM){
-            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed number of weights:" + toString<int>(MAX_WEIGHT_DIM);
+            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed number of weights:" + Teuchos::toString<int>(MAX_WEIGHT_DIM);
           }
           numWeightsPerCoord_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
         }
@@ -1509,14 +1500,14 @@ private:
        */
       /*
 			if(maxx <= minx ){
-				throw "Error: maxx= "+ toString<scalar_t>(maxx)+ " and minx=" + toString<scalar_t>(minx);
+				throw "Error: maxx= "+ Teuchos::toString<scalar_t>(maxx)+ " and minx=" + Teuchos::toString<scalar_t>(minx);
 			}
 			if(maxy <= miny ){
-				throw "Error: maxy= "+ toString<scalar_t>(maxy)+ " and miny=" + toString<scalar_t>(miny);
+				throw "Error: maxy= "+ Teuchos::toString<scalar_t>(maxy)+ " and miny=" + Teuchos::toString<scalar_t>(miny);
 
 			}
 			if(this->dimension == 3 && maxz <= minz ){
-				throw "Error: maxz= "+ toString<scalar_t>(maxz)+ " and minz=" + toString<scalar_t>(minz);
+				throw "Error: maxz= "+ Teuchos::toString<scalar_t>(maxz)+ " and minz=" + Teuchos::toString<scalar_t>(minz);
 			}
        */
       if (this->loadDistSet && this->distinctCoordSet){
@@ -1773,7 +1764,7 @@ public:
     if(this->outfile != ""){
 
       std::ofstream myfile;
-      myfile.open ((this->outfile + toString<int>(myRank)).c_str());
+      myfile.open ((this->outfile + Teuchos::toString<int>(myRank)).c_str());
       for(lno_t i = 0; i < this->numLocalCoords; ++i){
 
         myfile << this->coords[0][i];
@@ -1797,7 +1788,7 @@ public:
     		  if (i > 0){
     			  s = "replot";
     		  }
-    		  gnuplotfile << s << " \"" << (this->outfile + toString<int>(i)) << "\"" << std::endl;
+    		  gnuplotfile << s << " \"" << (this->outfile + Teuchos::toString<int>(i)) << "\"" << std::endl;
     	  }
     	  gnuplotfile  << "pause -1" << std::endl;
     	  gnuplotfile.close();

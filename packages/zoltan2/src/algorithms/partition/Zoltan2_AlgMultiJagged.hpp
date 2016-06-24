@@ -175,17 +175,6 @@ void freeArray(T *&array){
     }
 }
 
-/*! \brief Converts the given object to string.
- *
- */
-template <typename tt>
-std::string toString(tt obj){
-    std::stringstream ss (std::stringstream::in |std::stringstream::out);
-    ss << obj;
-    std::string tmp = "";
-    ss >> tmp;
-    return tmp;
-}
 
 /*! \brief Class for sorting items with multiple values.
  * First sorting with respect to val[0], then val[1] then ... val[count-1].
@@ -1510,7 +1499,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::sequential_task_partitio
         }
 
         //convert i to string to be used for debugging purposes.
-        std::string istring = toString<int>(i);
+        std::string istring = Teuchos::toString<int>(i);
 
         //alloc Memory to point the indices
         //of the parts in the permutation array.
@@ -5927,7 +5916,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::multi_jagged_part(
         mj_scalar_t * mj_current_dim_coords = this->mj_coordinates[coordInd];
 
         //convert i to string to be used for debugging purposes.
-        std::string istring = toString<int>(i);
+        std::string istring = Teuchos::toString<int>(i);
         this->mj_env->timerStart(MACRO_TIMERS, "MultiJagged - Problem_Partitioning_" + istring);
 
         //alloc Memory to point the indices

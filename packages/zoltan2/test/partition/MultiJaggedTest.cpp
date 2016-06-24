@@ -942,7 +942,7 @@ int testFromSeparateDataFiles(
     int ierr = 0;
     int mR = comm->getRank();
     if (mR == 0) cout << "size of zscalar_t:" << sizeof(zscalar_t) << endl;
-    string tFile = fname +"_" + Zoltan2::toString<int>(mR) + ".mtx";
+    string tFile = fname +"_" + Teuchos::toString<int>(mR) + ".mtx";
     zscalar_t **double_coords;
     zlno_t numLocal = 0;
     int dim = 0;

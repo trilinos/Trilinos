@@ -85,6 +85,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_CommHelpers.hpp>
+#include <Teuchos_toString.hpp>
 
 namespace Zoltan2{
 
