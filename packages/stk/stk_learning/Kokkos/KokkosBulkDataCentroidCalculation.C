@@ -35,17 +35,10 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_host)
 {
     MyApp app;
 
-    struct timeval begin,end;
-    gettimeofday(&begin,NULL);
-
+    app.start_timer();
     calculate_centroids_on_host(*app.bulk, *app.coords, app.centroid, app.bulk->mesh_meta_data().locally_owned_part());
-
-    gettimeofday(&end,NULL);
-
-    double time = 1.0*(end.tv_sec-begin.tv_sec) +
-                  1.0e-6*(end.tv_usec-begin.tv_usec);
-
-    app.report_bandwidth(time);
+    app.stop_timer();
+    app.report_bandwidth();
 
     stk::mesh::Entity element1 = app.bulk->get_entity(stk::topology::ELEM_RANK, 1);
     double *centroid_values = stk::mesh::field_data(app.centroid, element1);
@@ -53,3 +46,4 @@ TEST_F(MTK_Kokkos, calculate_centroid_field_on_host)
     EXPECT_NEAR(0.5, centroid_values[1], 0.000001);
     EXPECT_NEAR(0.5, centroid_values[2], 0.000001);
 }
+

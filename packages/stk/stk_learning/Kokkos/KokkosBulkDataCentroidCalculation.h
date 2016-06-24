@@ -222,7 +222,7 @@ struct MyApp {
         double time = 1.0*(end.tv_sec-begin.tv_sec) +
                   1.0e-6*(end.tv_usec-begin.tv_usec);
 
-	report_bandwidth(time);
+        report_bandwidth(time);
     }
   
     void start_timer()
@@ -247,5 +247,5 @@ struct MyApp {
     struct timeval begin, end;
 };
 
-
 #endif
+

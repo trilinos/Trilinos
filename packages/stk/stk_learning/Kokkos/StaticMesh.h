@@ -27,6 +27,14 @@
 #endif
 
 #ifdef KOKKOS_HAVE_OPENMP
+  typedef Kokkos::OpenMP   HostExecSpace ;
+#elif KOKKOS_HAVE_CUDA
+  typedef Kokkos::Serial   HostExecSpace ;
+#else
+  typedef Kokkos::Serial   HostExecSpace ;
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
 #elif KOKKOS_HAVE_CUDA
    typedef Kokkos::CudaSpace    MemSpace;
