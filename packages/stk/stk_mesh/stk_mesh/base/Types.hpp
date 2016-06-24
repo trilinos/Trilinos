@@ -161,9 +161,9 @@ struct MeshIndex
 // remove hop.
 struct FastMeshIndex
 {
-  FastMeshIndex() : bucket_id(0), bucket_ord(0) {}
-  FastMeshIndex(unsigned id, unsigned ord) : bucket_id(id), bucket_ord(ord) {}
-  ~FastMeshIndex(){}
+  STK_FUNCTION FastMeshIndex() : bucket_id(0), bucket_ord(0) {}
+  STK_FUNCTION FastMeshIndex(unsigned id, unsigned ord) : bucket_id(id), bucket_ord(ord) {}
+  STK_FUNCTION ~FastMeshIndex(){}
 
   unsigned bucket_id;
   unsigned bucket_ord;

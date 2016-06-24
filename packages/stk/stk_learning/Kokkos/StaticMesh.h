@@ -59,6 +59,8 @@ struct StaticBucket {
      : bucketId(0), entityRank(stk::topology::NODE_RANK), entities(), connectivity() {}
 
     void initialize(unsigned bucket_id, stk::mesh::EntityRank rank, unsigned numEntities, unsigned numNodesPerEntity) {
+        bucketId = bucket_id;
+        entityRank = rank;
         entities = EntityViewType("BucketEntities"+std::to_string(bucket_id), numEntities);
         hostEntities = Kokkos::create_mirror_view(entities);
         connectivity = BucketConnectivityType("BucketConnectivity"+std::to_string(bucket_id), numEntities, numNodesPerEntity);
@@ -109,6 +111,33 @@ struct StaticBucket {
 
 typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketsType;
 
+struct StaticMeshIndex
+{
+    const ngp::StaticBucket &bucket;
+    int bucketOrd;
+    STK_FUNCTION StaticMeshIndex(const ngp::StaticBucket &bucketIn, int ordinal) : bucket(bucketIn), bucketOrd(ordinal) {}
+};
+
+typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
+typedef Kokkos::TeamPolicy<ExecSpace, ScheduleType> TeamPolicyType;
+typedef TeamPolicyType::member_type TeamHandleType;
+
+template <typename MESH, typename ALGORITHM_PER_ENTITY>
+void for_each_entity_run(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
+{
+    unsigned numBuckets = mesh.num_buckets(rank);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<ExecSpace>(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA(const TeamHandleType& team)
+    {
+        const int bucketIndex = team.league_rank();
+        const ngp::StaticBucket &bucket = mesh.get_bucket(rank, bucketIndex);
+        unsigned numElements = bucket.size();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
+        {
+            functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(i)});
+        });
+    });
+}
+
 class StaticMesh
 {
 public:
@@ -123,6 +152,12 @@ public:
 
     ~StaticMesh()
     {
+    }
+
+    STK_FUNCTION
+    ConnectedNodesType get_nodes(const stk::mesh::FastMeshIndex &meshIndex) const
+    {
+        return buckets(meshIndex.bucket_id).get_nodes(meshIndex.bucket_ord);
     }
 
     STK_FUNCTION
