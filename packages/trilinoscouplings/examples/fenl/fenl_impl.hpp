@@ -77,24 +77,6 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-inline
-double maximum( const Teuchos::RCP<const Teuchos::Comm<int> >& comm , double local )
-{
-  double global = 0 ;
-  Teuchos::reduceAll( *comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
-  return global ;
-}
-
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
-
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Example {
-namespace FENL {
-
 /* Builds a map from LIDs to GIDs suitable for Tpetra */
 template < class Map, class Fixture >
 class BuildLocalToGlobalMap {
@@ -274,7 +256,7 @@ public:
     , response()
     , perf()
     {
-      if ( maximum(comm, ( fixture.ok() ? 0 : 1 ) ) ) {
+      if ( maximum(*comm, ( fixture.ok() ? 0 : 1 ) ) ) {
         throw std::runtime_error(std::string("Problem fixture setup failed"));
       }
 
@@ -283,12 +265,12 @@ public:
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();
 
-      perf.map_ratio          = maximum(comm, graph_times.ratio);
-      perf.fill_node_set      = maximum(comm, graph_times.fill_node_set);
-      perf.scan_node_count    = maximum(comm, graph_times.scan_node_count);
-      perf.fill_graph_entries = maximum(comm, graph_times.fill_graph_entries);
-      perf.sort_graph_entries = maximum(comm, graph_times.sort_graph_entries);
-      perf.fill_element_graph = maximum(comm, graph_times.fill_element_graph);
+      perf.map_ratio          = graph_times.ratio;
+      perf.fill_node_set      = graph_times.fill_node_set;
+      perf.scan_node_count    = graph_times.scan_node_count;
+      perf.fill_graph_entries = graph_times.fill_graph_entries;
+      perf.sort_graph_entries = graph_times.sort_graph_entries;
+      perf.fill_element_graph = graph_times.fill_element_graph;
 
       if ( print_flag ) {
         std::cout << "ElemNode {" << std::endl ;
@@ -421,10 +403,11 @@ public:
 
         //--------------------------------
 
+        Device::fence();
         wall_clock.reset();
         g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
         Device::fence();
-        perf.import_time = maximum( comm , wall_clock.seconds() );
+        perf.import_time = wall_clock.seconds();
 
         // if (itrial == 0 && perf.newton_iter_count == 0)
         //   g_nodal_solution_no_overlap.describe(*out, Teuchos::VERB_EXTREME);
@@ -432,6 +415,7 @@ public:
         //--------------------------------
         // Element contributions to residual and jacobian
 
+        Device::fence();
         wall_clock.reset();
 
         Kokkos::deep_copy( nodal_residual , 0.0 );
@@ -440,17 +424,18 @@ public:
         elemcomp.apply();
 
         Device::fence();
-        perf.fill_time = maximum( comm , wall_clock.seconds() );
+        perf.fill_time = wall_clock.seconds();
 
         //--------------------------------
         // Apply boundary conditions
 
+        Device::fence();
         wall_clock.reset();
 
         dirichlet.apply();
 
         Device::fence();
-        perf.bc_time = maximum( comm , wall_clock.seconds() );
+        perf.bc_time = wall_clock.seconds();
 
         //--------------------------------
         // Evaluate convergence
@@ -631,39 +616,14 @@ Perf fenl(
                  , fenlParams
                  );
 
+    problem.perf.reduceMax(*problem.comm);
+
     if ( 0 == itrial ) {
       response   = problem.response ;
       perf_stats = problem.perf ;
     }
     else {
-      perf_stats.fill_node_set =
-        std::min( perf_stats.fill_node_set , problem.perf.fill_node_set );
-      perf_stats.scan_node_count =
-        std::min( perf_stats.scan_node_count , problem.perf.scan_node_count );
-      perf_stats.fill_graph_entries =
-        std::min( perf_stats.fill_graph_entries , problem.perf.fill_graph_entries );
-      perf_stats.sort_graph_entries =
-        std::min( perf_stats.sort_graph_entries , problem.perf.sort_graph_entries );
-      perf_stats.fill_element_graph =
-        std::min( perf_stats.fill_element_graph , problem.perf.fill_element_graph );
-      perf_stats.create_sparse_matrix =
-        std::min( perf_stats.create_sparse_matrix , problem.perf.create_sparse_matrix );
-       perf_stats.import_time =
-        std::min( perf_stats.import_time , problem.perf.import_time );
-      perf_stats.fill_time =
-        std::min( perf_stats.fill_time , problem.perf.fill_time );
-      perf_stats.bc_time =
-        std::min( perf_stats.bc_time , problem.perf.bc_time );
-      perf_stats.mat_vec_time =
-        std::min( perf_stats.mat_vec_time , problem.perf.mat_vec_time );
-      perf_stats.cg_iter_time =
-        std::min( perf_stats.cg_iter_time , problem.perf.cg_iter_time );
-      perf_stats.prec_setup_time =
-        std::min( perf_stats.prec_setup_time , problem.perf.prec_setup_time );
-      perf_stats.prec_apply_time =
-        std::min( perf_stats.prec_apply_time , problem.perf.prec_apply_time );
-      perf_stats.cg_total_time =
-        std::min( perf_stats.cg_total_time , problem.perf.cg_total_time );
+      perf_stats.min(problem.perf);
     }
   }
 
