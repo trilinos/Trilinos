@@ -312,7 +312,7 @@ public:
       return NULL;
   }
   
-  /*! \brief Get pointer to (local) serparator range.
+  /*! \brief Get pointer to (local) separator range.
    */
   inline lno_t *getSeparatorRangeView() const
   {
@@ -322,7 +322,7 @@ public:
     return separatorRange_.getRawPtr();
   }
 
-  /*! \brief Get pointer to (local) serparator tree.
+  /*! \brief Get pointer to (local) separator tree.
    */
   inline lno_t *getSeparatorTreeView() const
   {
