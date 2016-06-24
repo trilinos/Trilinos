@@ -91,7 +91,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(Lapack,std::complex<double>,int,unsigned int);
 #endif
 }
-#endif //END INST_INST_UNSIGNED
+#endif //END INST_INT_UNSIGNED
 
 
 #ifdef HAVE_TPETRA_INST_INT_LONG
@@ -125,6 +125,21 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Lapack,std::complex<double>,int,long long);
 #endif
+
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+namespace Amesos2 {
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Lapack,float,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Lapack,double,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(Lapack,std::complex<float>,long, long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(Lapack,std::complex<double>,long, long);
+#endif //END INST_LONG_LONG
 }
 #endif
 
@@ -141,7 +156,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #define NODETYPE Kokkos_Compat_KokkosSerialWrapperNode
 #ifdef HAVE_TPETRA_INST_FLOAT
   #ifdef HAVE_TPETRA_INST_INT_INT
-   AMESOS2_LAPACK_LOCAL_INSTANT(float, int, int, NODETYPE)
+    AMESOS2_LAPACK_LOCAL_INSTANT(float, int, int, NODETYPE)
   #endif
   #ifdef HAVE_TPETRA_INST_INT_LONG
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, long, NODETYPE)
@@ -151,6 +166,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #endif
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
+  #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(float, long, long, NODETYPE)
   #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
@@ -166,6 +184,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
     #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(double, long, long, NODETYPE)
+    #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
   #ifdef HAVE_TPETRA_INST_INT_INT
@@ -180,6 +201,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -193,6 +217,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -213,6 +240,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -226,6 +256,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -241,6 +274,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -254,6 +290,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -274,6 +313,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -287,6 +329,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -302,6 +347,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -315,6 +363,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE
@@ -335,6 +386,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(float, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(float, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -348,6 +402,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(double, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(double, long, long, NODETYPE)
     #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
@@ -363,6 +420,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
   #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
     AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, int, unsigned int, NODETYPE)
   #endif
+  #ifdef HAVE_TPETRA_INST_LONG_LONG
+    AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+  #endif
 #endif
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     #ifdef HAVE_TPETRA_INST_INT_INT
@@ -376,6 +436,9 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
     #endif
     #ifdef HAVE_TPETRA_INST_INT_UNSIGNED
       AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, int, unsigned int, NODETYPE)
+    #endif
+    #ifdef HAVE_TPETRA_INST_LONG_LONG
+      AMESOS2_LAPACK_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
     #endif
 #endif
 #undef NODETYPE

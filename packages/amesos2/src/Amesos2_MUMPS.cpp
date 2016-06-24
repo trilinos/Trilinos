@@ -76,6 +76,21 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(MUMPS, double, int, long long);
 #endif
 
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,float,long,long);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,long,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<float>,long,long);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,long,long);
+#endif
+#endif
+
 }
 
 //
@@ -105,8 +120,22 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
-#undef NODETYPE
 #endif
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(float, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
+#endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(HAVE_TPETRA_INST_PTHREAD) && !defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -124,8 +153,22 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
-#undef NODETYPE
 #endif
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
+#endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(HAVE_TPETRA_INST_OPENMP) && !defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -143,8 +186,22 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
-#undef NODETYPE
 #endif
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
+#endif
+#endif
+#undef NODETYPE
 #endif
 
 #if defined(HAVE_TPETRA_INST_CUDA) && !defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
@@ -162,8 +219,22 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
     AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, int, int, NODETYPE)
 #endif
-#undef NODETYPE
 #endif
+#ifdef HAVE_TPETRA_INST_LONG_LONG
+#ifdef HAVE_TPETRA_INST_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(float, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(double, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+  AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<float>, long, long, NODETYPE)
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+    AMESOS2_MUMPS_LOCAL_INSTANT(std::complex<double>, long, long, NODETYPE)
+#endif
+#endif
+#undef NODETYPE
 #endif
 
 
