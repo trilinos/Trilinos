@@ -490,7 +490,9 @@ void getCoarsenedPartGraph(
   //create the importer for gatherAll
   Teuchos::RCP<tcrsMatrix_t> A_gather =
       Teuchos::rcp (new tcrsMatrix_t (gatherRowMap, 0));
-  typedef Tpetra::Import<t_lno_t, t_gno_t, t_node_t> import_type;
+  typedef Tpetra::Import<typename map_t::local_ordinal_type,
+                         typename map_t::global_ordinal_type,
+                         typename map_t::node_type> import_type;
   import_type import (map, gatherRowMap);
   A_gather->doImport (*tMatrix, import, Tpetra::INSERT);
   A_gather->fillComplete ();
@@ -1523,7 +1525,7 @@ protected:
     std::string ss = "";
     for(part_t i = 0; i < this->nprocs; ++i){
 
-      std::string procFile = toString<int>(i) + "_mapping.txt";
+      std::string procFile = Teuchos::toString<int>(i) + "_mapping.txt";
       if (i == 0){
         gnuPlotCode << "plot \"" << procFile << "\"\n";
       }
@@ -1537,12 +1539,12 @@ protected:
       for(int j = 0; j <  mindim; ++j){
         if (j == mindim - 1){
           inpFile << proc_task_comm->proc_coords[j][i];
-          gnuPlotArrow += toString<float>(proc_task_comm->proc_coords[j][i]);
+          gnuPlotArrow += Teuchos::toString<float>(proc_task_comm->proc_coords[j][i]);
 
         }
         else {
           inpFile << proc_task_comm->proc_coords[j][i] << " ";
-          gnuPlotArrow += toString<float>(proc_task_comm->proc_coords[j][i]) +",";
+          gnuPlotArrow += Teuchos::toString<float>(proc_task_comm->proc_coords[j][i]) +",";
         }
       }
       gnuPlotArrow += " to ";
@@ -1559,11 +1561,11 @@ protected:
 
             //cout << "z:" << z << " j:" <<  j << " " << proc_task_comm->task_coords[z][j] << endl;
             inpFile << proc_task_comm->task_coords[z][j];
-            gnuPlotArrow2 += toString<float>(proc_task_comm->task_coords[z][j]);
+            gnuPlotArrow2 += Teuchos::toString<float>(proc_task_comm->task_coords[z][j]);
           }
           else{
             inpFile << proc_task_comm->task_coords[z][j] << " ";
-            gnuPlotArrow2 += toString<float>(proc_task_comm->task_coords[z][j]) +",";
+            gnuPlotArrow2 += Teuchos::toString<float>(proc_task_comm->task_coords[z][j]) +",";
           }
         }
         ss += gnuPlotArrow2 + "\n";
@@ -1582,7 +1584,7 @@ protected:
   //write mapping to gnuPlot code to visualize.
   void writeMapping2(int myRank){
 
-    std::string rankStr = toString<int>(myRank);
+    std::string rankStr = Teuchos::toString<int>(myRank);
     std::string gnuPlots = "gnuPlot", extentionS = ".plot";
     std::string outF = gnuPlots + rankStr+ extentionS;
     std::ofstream gnuPlotCode ( outF.c_str(), std::ofstream::out);
@@ -1606,14 +1608,14 @@ protected:
       for(int j = 0; j <  mindim; ++j){
         if (j == mindim - 1){
           //inpFile << proc_task_comm->proc_coords[j][i];
-          gnuPlotArrow += toString<float>(tmpproc_task_comm->proc_coords[j][i]);
-          procs += toString<float>(tmpproc_task_comm->proc_coords[j][i]);
+          gnuPlotArrow += Teuchos::toString<float>(tmpproc_task_comm->proc_coords[j][i]);
+          procs += Teuchos::toString<float>(tmpproc_task_comm->proc_coords[j][i]);
 
         }
         else {
           //inpFile << proc_task_comm->proc_coords[j][i] << " ";
-          gnuPlotArrow += toString<float>(tmpproc_task_comm->proc_coords[j][i]) +",";
-          procs += toString<float>(tmpproc_task_comm->proc_coords[j][i])+ " ";
+          gnuPlotArrow += Teuchos::toString<float>(tmpproc_task_comm->proc_coords[j][i]) +",";
+          procs += Teuchos::toString<float>(tmpproc_task_comm->proc_coords[j][i])+ " ";
         }
       }
       procs += "\n";
@@ -1630,13 +1632,13 @@ protected:
 
             //cout << "z:" << z << " j:" <<  j << " " << proc_task_comm->task_coords[z][j] << endl;
             //inpFile << proc_task_comm->task_coords[z][j];
-            gnuPlotArrow2 += toString<float>(tmpproc_task_comm->task_coords[z][j]);
-            parts += toString<float>(tmpproc_task_comm->task_coords[z][j]);
+            gnuPlotArrow2 += Teuchos::toString<float>(tmpproc_task_comm->task_coords[z][j]);
+            parts += Teuchos::toString<float>(tmpproc_task_comm->task_coords[z][j]);
           }
           else{
             //inpFile << proc_task_comm->task_coords[z][j] << " ";
-            gnuPlotArrow2 += toString<float>(tmpproc_task_comm->task_coords[z][j]) +",";
-            parts += toString<float>(tmpproc_task_comm->task_coords[z][j]) + " ";
+            gnuPlotArrow2 += Teuchos::toString<float>(tmpproc_task_comm->task_coords[z][j]) +",";
+            parts += Teuchos::toString<float>(tmpproc_task_comm->task_coords[z][j]) + " ";
           }
         }
         parts += "\n";
@@ -1692,7 +1694,7 @@ protected:
     std::string file = "gggnuPlot";
     std::string exten = ".plot";
     std::ofstream mm("2d.txt");
-    file += toString<int>(comm_->getRank()) + exten;
+    file += Teuchos::toString<int>(comm_->getRank()) + exten;
     std::ofstream ff(file.c_str());
     //ff.seekg (0, ff.end);
     std::vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
@@ -1720,15 +1722,15 @@ protected:
         //cout << "i:" << i << " n:" << n << endl;
         std::string arrowline = "set arrow from ";
         for (int j = 0; j < coordDim - 1; ++j){
-          arrowline += toString<tcoord_t>(partCenters[j][n]) + ",";
+          arrowline += Teuchos::toString<tcoord_t>(partCenters[j][n]) + ",";
         }
-        arrowline += toString<tcoord_t>(partCenters[coordDim -1][n]) + " to ";
+        arrowline += Teuchos::toString<tcoord_t>(partCenters[coordDim -1][n]) + " to ";
 
 
         for (int j = 0; j < coordDim - 1; ++j){
-          arrowline += toString<tcoord_t>(partCenters[j][i]) + ",";
+          arrowline += Teuchos::toString<tcoord_t>(partCenters[j][i]) + ",";
         }
-        arrowline += toString<tcoord_t>(partCenters[coordDim -1][i]) + " as 5\n";
+        arrowline += Teuchos::toString<tcoord_t>(partCenters[coordDim -1][i]) + " as 5\n";
 
         //cout << "arrow:" << arrowline << endl;
         ff << arrowline;
