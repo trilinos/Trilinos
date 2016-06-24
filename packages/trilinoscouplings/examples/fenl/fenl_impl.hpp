@@ -397,6 +397,7 @@ public:
       //   Teuchos::fancyOStream(rcp(&std::cout,false));
       // out->setShowProcRank(true);
 
+
       for ( perf.newton_iter_count = 0 ;
             perf.newton_iter_count < newton_iteration_limit ;
             ++perf.newton_iter_count ) {
@@ -406,8 +407,14 @@ public:
         Device::fence();
         wall_clock.reset();
         g_nodal_solution.doImport (g_nodal_solution_no_overlap, import, Tpetra::REPLACE);
+
+        // Take minimum import time across newton steps -- resolves strange
+        // timings on titan where time after first solve is much larger
         Device::fence();
-        perf.import_time = wall_clock.seconds();
+        if (perf.newton_iter_count == 0)
+          perf.import_time = wall_clock.seconds();
+        else
+          perf.import_time = std::min( perf.import_time, wall_clock.seconds() );
 
         // if (itrial == 0 && perf.newton_iter_count == 0)
         //   g_nodal_solution_no_overlap.describe(*out, Teuchos::VERB_EXTREME);
@@ -424,7 +431,10 @@ public:
         elemcomp.apply();
 
         Device::fence();
-        perf.fill_time = wall_clock.seconds();
+        if (perf.newton_iter_count == 0)
+          perf.fill_time = wall_clock.seconds();
+        else
+          perf.fill_time = std::min( perf.fill_time, wall_clock.seconds() );
 
         //--------------------------------
         // Apply boundary conditions
@@ -435,7 +445,10 @@ public:
         dirichlet.apply();
 
         Device::fence();
-        perf.bc_time = wall_clock.seconds();
+        if (perf.newton_iter_count == 0)
+          perf.bc_time = wall_clock.seconds();
+        else
+          perf.bc_time = std::min( perf.bc_time, wall_clock.seconds() );
 
         //--------------------------------
         // Evaluate convergence
@@ -541,6 +554,7 @@ public:
           }
           std::cout << "}" << std::endl ;
         }
+        //break;
       }
 
       // Evaluate response function -- currently 2-norm of solution vector
@@ -595,6 +609,9 @@ Perf fenl(
   problem.perf.prec_apply_time  = 0;
   problem.perf.cg_total_time = 0;
   problem.perf.cg_iter_count = 0;
+  problem.perf.import_time = 0;
+  problem.perf.fill_time = 0;
+  problem.perf.bc_time = 0;
 
   for ( int itrial = 0 ; itrial < use_trials ; ++itrial ) {
 
