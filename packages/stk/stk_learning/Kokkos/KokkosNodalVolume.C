@@ -246,47 +246,39 @@ void count_num_elems_per_node(const stk::mesh::BulkData& mesh, stk::mesh::Field<
 class NodalVolumeCalculator : public stk::unit_test_util::MeshFixture
 {
 protected:
+    void create_mesh_and_fields(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        nodalVolumeField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
+        stk::mesh::put_field(*nodalVolumeField, get_meta().universal_part());
+        numElemsPerNodeField = &get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
+        stk::mesh::put_field(*numElemsPerNodeField, get_meta().universal_part());
+        setup_mesh("generated:20x20x20", auraOption);
+        count_num_elems_per_node(get_bulk(), *numElemsPerNodeField);
+    }
+
     void test_nodal_volume_staticmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        auto& nodalVolumeField = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
-        stk::mesh::put_field(nodalVolumeField, get_meta().universal_part());
-        auto& numElemsPerNodeField = get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
-        stk::mesh::put_field(numElemsPerNodeField, get_meta().universal_part());
-        setup_mesh("generated:20x20x20", auraOption);
-        count_num_elems_per_node(get_bulk(), numElemsPerNodeField);
-
-        calculate_nodal_volume_staticmesh(get_bulk(), nodalVolumeField);
-
-        expect_nodal_volume(get_bulk(), nodalVolumeField, numElemsPerNodeField);
+        create_mesh_and_fields(auraOption);
+        calculate_nodal_volume_staticmesh(get_bulk(), *nodalVolumeField);
+        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField);
     }
 
     void test_nodal_volume_staticmesh_entity_loops(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        auto& nodalVolumeField = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
-        stk::mesh::put_field(nodalVolumeField, get_meta().universal_part());
-        auto& numElemsPerNodeField = get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
-        stk::mesh::put_field(numElemsPerNodeField, get_meta().universal_part());
-        setup_mesh("generated:20x20x20", auraOption);
-        count_num_elems_per_node(get_bulk(), numElemsPerNodeField);
-
-        calculate_nodal_volume_static_mesh_entity_loops(get_bulk(), nodalVolumeField);
-
-        expect_nodal_volume(get_bulk(), nodalVolumeField, numElemsPerNodeField);
+        create_mesh_and_fields(auraOption);
+        calculate_nodal_volume_static_mesh_entity_loops(get_bulk(), *nodalVolumeField);
+        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField);
     }
 
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        auto& nodalVolumeField = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
-        stk::mesh::put_field(nodalVolumeField, get_meta().universal_part());
-        auto& numElemsPerNodeField = get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
-        stk::mesh::put_field(numElemsPerNodeField, get_meta().universal_part());
-        setup_mesh("generated:20x20x20", auraOption);
-        count_num_elems_per_node(get_bulk(), numElemsPerNodeField);
-
-        calculate_nodal_volume_stkmesh(get_bulk(), nodalVolumeField);
-
-        expect_nodal_volume(get_bulk(), nodalVolumeField, numElemsPerNodeField);
+        create_mesh_and_fields(auraOption);
+        calculate_nodal_volume_stkmesh(get_bulk(), *nodalVolumeField);
+        expect_nodal_volume(get_bulk(), *nodalVolumeField, *numElemsPerNodeField);
     }
+
+    stk::mesh::Field<double> *nodalVolumeField;
+    stk::mesh::Field<int> *numElemsPerNodeField;
 };
 TEST_F(NodalVolumeCalculator, nodalVolumeWithAuraStaticMesh) {
     test_nodal_volume_staticmesh(stk::mesh::BulkData::AUTO_AURA);
