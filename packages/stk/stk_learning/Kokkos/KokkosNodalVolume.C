@@ -99,32 +99,56 @@ typedef Kokkos::TeamPolicy<HostExecSpace, ScheduleType> HostTeamPolicyType;
 typedef TeamPolicyType::member_type TeamHandleType;
 typedef HostTeamPolicyType::member_type HostTeamHandleType;
 
+STK_FUNCTION
+void calculate_nodal_volume_given_elem_nodes(const ngp::StaticMesh &staticMesh,
+                                             const ngp::ConnectedNodesType& elemNodes,
+                                             const ngp::StaticField<double>& staticCoords,
+                                             const ngp::StaticField<double>& staticNodalVolume)
+{
+    const unsigned numNodesPerElem = elemNodes.size();
+    double elemVolumePerNode = calculate_element_volume(staticMesh, elemNodes, numNodesPerElem, staticCoords) / numNodesPerElem;
+    for(unsigned j = 0; j < numNodesPerElem; ++j)
+    {
+        double* nodalVolume = &staticNodalVolume.get(staticMesh, elemNodes(j), 0);
+        Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
+    }
+}
+
+void calculate_nodal_volume_given_elem_nodes_stkmesh(const stk::mesh::Entity* elemNodes,
+                                                     const unsigned numNodesPerElem,
+                                                     const stk::mesh::FieldBase& coords,
+                                                     stk::mesh::Field<double>& nodalVolumeField)
+{
+    double elemVolumePerNode = calculate_element_volume(elemNodes, numNodesPerElem, coords) / numNodesPerElem;
+    for(unsigned j = 0; j < numNodesPerElem; ++j)
+    {
+        double* nodalVolume = stk::mesh::field_data(nodalVolumeField, elemNodes[j]);
+        Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
+    }
+}
+
 void calculate_nodal_volume_staticmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField)
 {
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
     ngp::StaticField<double> staticCoords(mesh, coords);
     ngp::StaticField<double> staticNodalVolume(mesh, nodalVolumeField);
     ngp::StaticMesh staticMesh(mesh);
-    unsigned numBuckets = staticMesh.num_buckets(stk::topology::ELEM_RANK);
 
-    Kokkos::parallel_for(Kokkos::TeamPolicy< ExecSpace >(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA (const ngp::TeamHandleType& team) {
+    unsigned numBuckets = staticMesh.num_buckets(stk::topology::ELEM_RANK);
+    Kokkos::parallel_for(Kokkos::TeamPolicy< ExecSpace >(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA (const ngp::TeamHandleType& team)
+    {
         const int elementBucketIndex = team.league_rank();
         const ngp::StaticBucket &bucket = staticMesh.get_bucket(stk::topology::ELEM_RANK, elementBucketIndex);
-        const unsigned numNodesPerElem = bucket.get_num_nodes_per_entity();
         unsigned numElements = bucket.size();
 
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
+        {
             ngp::ConnectedNodesType elemNodes = bucket.get_nodes(i);
-            double elemVolumePerNode = calculate_element_volume(staticMesh, elemNodes, numNodesPerElem, staticCoords)/numNodesPerElem;
-            for(unsigned j=0; j<numNodesPerElem; ++j) {
-                double* nodalVolume = &staticNodalVolume.get(staticMesh,elemNodes(j),0);
-                Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
-            }
+            calculate_nodal_volume_given_elem_nodes(staticMesh, elemNodes, staticCoords, staticNodalVolume);
         });
     });
-    Kokkos::fence();
+
     staticNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
-    staticMesh.clear();
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
 
@@ -135,18 +159,11 @@ void calculate_nodal_volume_static_mesh_entity_loops(stk::mesh::BulkData& mesh, 
     ngp::StaticField<double> staticNodalVolume(mesh, nodalVolumeField);
     ngp::StaticMesh staticMesh(mesh);
 
-    ngp::for_each_entity_run(staticMesh, stk::topology::ELEM_RANK,
-        KOKKOS_LAMBDA(stk::mesh::FastMeshIndex elem)
-        {
-            ngp::ConnectedNodesType elemNodes = staticMesh.get_nodes(elem);
-            const unsigned numNodesPerElem = elemNodes.size();
-            double elemVolumePerNode = calculate_element_volume(staticMesh, elemNodes, numNodesPerElem, staticCoords) / numNodesPerElem;
-            for(unsigned j=0; j<numNodesPerElem; ++j)
-            {
-                double nodalVolume = staticNodalVolume.get(staticMesh, elemNodes(j), 0);
-                Kokkos::atomic_add(&nodalVolume, elemVolumePerNode);
-            }
-        });
+    ngp::for_each_entity_run(staticMesh, stk::topology::ELEM_RANK, KOKKOS_LAMBDA(stk::mesh::FastMeshIndex elem)
+    {
+        ngp::ConnectedNodesType elemNodes = staticMesh.get_nodes(elem);
+        calculate_nodal_volume_given_elem_nodes(staticMesh, elemNodes, staticCoords, staticNodalVolume);
+    });
 
     staticNodalVolume.copy_device_to_host(mesh, nodalVolumeField);
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
@@ -155,25 +172,23 @@ void calculate_nodal_volume_static_mesh_entity_loops(stk::mesh::BulkData& mesh, 
 void calculate_nodal_volume_stkmesh(stk::mesh::BulkData& mesh, stk::mesh::Field<double>& nodalVolumeField)
 {
     const stk::mesh::FieldBase& coords = *mesh.mesh_meta_data().coordinate_field();
+
     const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
     unsigned numBuckets = elemBuckets.size();
-
-    Kokkos::parallel_for(Kokkos::TeamPolicy< HostExecSpace >(numBuckets, Kokkos::AUTO), [&] (const HostTeamHandleType& team) {
+    Kokkos::parallel_for(Kokkos::TeamPolicy< HostExecSpace >(numBuckets, Kokkos::AUTO), [&] (const HostTeamHandleType& team)
+    {
         const int elementBucketIndex = team.league_rank();
         const stk::mesh::Bucket &bucket = *elemBuckets[elementBucketIndex];
         const unsigned numNodesPerElem = bucket.topology().num_nodes();
         unsigned numElements = bucket.size();
 
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i) {
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
+        {
             const stk::mesh::Entity* elemNodes = bucket.begin_nodes(i);
-            double elemVolumePerNode = calculate_element_volume(elemNodes, numNodesPerElem, coords)/numNodesPerElem;
-            for(unsigned j=0; j<numNodesPerElem; ++j) {
-                double* nodalVolume = stk::mesh::field_data(nodalVolumeField, elemNodes[j]);
-                Kokkos::atomic_add(nodalVolume, elemVolumePerNode);
-            }
+            calculate_nodal_volume_given_elem_nodes_stkmesh(elemNodes, numNodesPerElem, coords, nodalVolumeField);
         });
     });
-    Kokkos::fence();
+
     stk::mesh::parallel_sum(mesh, {&nodalVolumeField});
 }
 
@@ -245,6 +260,20 @@ protected:
         expect_nodal_volume(get_bulk(), nodalVolumeField, numElemsPerNodeField);
     }
 
+    void test_nodal_volume_staticmesh_entity_loops(stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    {
+        auto& nodalVolumeField = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
+        stk::mesh::put_field(nodalVolumeField, get_meta().universal_part());
+        auto& numElemsPerNodeField = get_meta().declare_field<stk::mesh::Field<int> >(stk::topology::NODE_RANK, "numElemsPerNode");
+        stk::mesh::put_field(numElemsPerNodeField, get_meta().universal_part());
+        setup_mesh("generated:20x20x20", auraOption);
+        count_num_elems_per_node(get_bulk(), numElemsPerNodeField);
+
+        calculate_nodal_volume_static_mesh_entity_loops(get_bulk(), nodalVolumeField);
+
+        expect_nodal_volume(get_bulk(), nodalVolumeField, numElemsPerNodeField);
+    }
+
     void test_nodal_volume_stkmesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         auto& nodalVolumeField = get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "nodal_volume");
@@ -263,6 +292,9 @@ TEST_F(NodalVolumeCalculator, nodalVolumeWithAuraStaticMesh) {
     test_nodal_volume_staticmesh(stk::mesh::BulkData::AUTO_AURA);
 }
 TEST_F(NodalVolumeCalculator, nodalVolumeWithoutAuraStaticMesh) {
+    test_nodal_volume_staticmesh(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+TEST_F(NodalVolumeCalculator, nodalVolumeWithoutAuraStaticMeshForEachEntityLoops) {
     test_nodal_volume_staticmesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 TEST_F(NodalVolumeCalculator, nodalVolumeWithoutAuraStkMesh) {
