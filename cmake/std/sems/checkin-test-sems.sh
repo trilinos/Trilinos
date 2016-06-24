@@ -20,6 +20,7 @@ source $TRILINOS_DIR_ABS/cmake/load_ci_sems_dev_env.sh
 
 echo "
 -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+-DTrilinos_TRACE_ADD_TEST=ON
 " > COMMON.config
 
 #
