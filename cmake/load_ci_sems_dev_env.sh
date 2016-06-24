@@ -15,4 +15,4 @@ called=$_
 _SCRIPT_DIR=`echo $BASH_SOURCE | sed "s/\(.*\)\/.*\.sh/\1/g"`
 #echo "_SCRIPT_DIR = '$_SCRIPT_DIR'"
 
-source $_SCRIPT_DIR/load_sems_dev_env.sh sems-gcc/4.7.2 sems-openmpi/1.6.5 sems-cmake/2.8.11
+source $_SCRIPT_DIR/load_sems_dev_env.sh sems-gcc/4.7.2 sems-openmpi/1.6.5 sems-cmake/3.5.2
