@@ -48,5 +48,5 @@ echo "
 #
 
 $TRILINOS_DIR/checkin-test.py \
---st-extra-builds=MPI_RELEASE_DEBUG_ST,SERIAL_RELEASE_ST.config \
+--st-extra-builds=MPI_RELEASE_DEBUG_ST,SERIAL_RELEASE_ST \
 "$@"
