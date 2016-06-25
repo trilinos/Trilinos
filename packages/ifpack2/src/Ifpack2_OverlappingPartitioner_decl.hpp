@@ -189,6 +189,8 @@ protected:
 
   //! If \c true, information are reported to stdout.
   bool verbose_;
+
+  bool maintainSparsity_;
 }; // class Ifpack2::OverlappingPartitioner
 
 }// namespace Ifpack2

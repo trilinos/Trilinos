@@ -51,6 +51,12 @@
 
 namespace Ifpack2 {
 
+template <class local_ordinal_type>
+bool isSubset(Teuchos::Array<local_ordinal_type> const & Ci,
+              size_t const &lengCi,
+              Teuchos::Array<local_ordinal_type> const & Cj,
+              size_t const &lengCj);
+
 template<class GraphType>
 OverlappingPartitioner<GraphType>::
 OverlappingPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
@@ -58,7 +64,8 @@ OverlappingPartitioner (const Teuchos::RCP<const row_graph_type>& graph) :
   Graph_ (graph),
   OverlappingLevel_ (0),
   IsComputed_ (false),
-  verbose_ (false)
+  verbose_ (false),
+  maintainSparsity_(false)
 {}
 
 
@@ -160,6 +167,7 @@ setParameters (Teuchos::ParameterList& List)
   NumLocalParts_    = List.get("partitioner: local parts", NumLocalParts_);
   OverlappingLevel_ = List.get("partitioner: overlap", OverlappingLevel_);
   verbose_          = List.get("partitioner: print level", verbose_);
+  maintainSparsity_ = List.get("partitioner: maintain sparsity", false);
 
   if (NumLocalParts_ < 0) {
     NumLocalParts_ = Graph_->getNodeNumRows() / (-NumLocalParts_);
@@ -304,17 +312,35 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     // cycle over all rows in the local graph (that is the overlapping
     // graph). For each row, all columns will belong to the subgraph
     // of row `i'.
+    // TODO Optimization: don't check if already inserted, but instead
+    //                    sort and make unique afterwards
 
     int MaxNumEntries_tmp = Graph_->getNodeMaxNumRowEntries();
     Teuchos::Array<local_ordinal_type> Indices;
     Indices.resize (MaxNumEntries_tmp);
+    Teuchos::Array<local_ordinal_type> newIndices;
+    newIndices.resize(MaxNumEntries_tmp);
 
+//#   define IFPACK_DEBUG_PARTITIONING
+#   ifdef IFPACK_DEBUG_PARTITIONING
+    std::cout << "block = cell(" << NumLocalParts_ << ",1);" << std::endl;
+#   endif
     for (int part = 0; part < NumLocalParts_ ; ++part) {
-      for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {  
+#     ifdef IFPACK_DEBUG_PARTITIONING
+      std::cout << "block{" << part+1 << "} = [";
+#     endif
+      for (size_t i = 0; i < Teuchos::as<size_t> (Parts_[part].size ()); ++i) {
         const local_ordinal_type LRID = Parts_[part][i];
         
         size_t NumIndices;
         Graph_->getLocalRowCopy (LRID, Indices (), NumIndices);
+        if (maintainSparsity_) {
+          //JJH: the entries in Indices are already sorted.  However, the Tpetra documentation states
+          //     that we can't count on this always being true, hence we sort.  Also note that there are
+          //     unused entries at the end of Indices (it's sized to hold any row).  This means we can't
+          //     just use Indices.end() in sorting and Indices.size() in isSubset().
+          std::sort(Indices.begin(),Indices.begin()+NumIndices);
+        }
 
         for (size_t j = 0; j < NumIndices; ++j) {
           // use *local* indices only
@@ -327,8 +353,22 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
           std::vector<size_t>::iterator where = 
             std::find (tmp[part].begin (), tmp[part].end (), Teuchos::as<size_t> (col));
 
+
           if (where == tmp[part].end()) {
-            tmp[part].push_back (col);
+            // check if row associated with "col" increases connectivity already defined by row LRID's stencil.
+            bool flag=true;
+            if (maintainSparsity_) {
+              size_t numNewIndices;
+              Graph_->getLocalRowCopy(col, newIndices(), numNewIndices);
+              std::sort(newIndices.begin(),newIndices.begin()+numNewIndices);
+              flag = isSubset(Indices,NumIndices,newIndices,numNewIndices);
+            }
+            if (flag) {
+#             ifdef IFPACK_DEBUG_PARTITIONING
+              std::cout << col+1 << " ";
+#             endif
+              tmp[part].push_back (col);
+            }
           }
         }
 
@@ -340,8 +380,14 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
         // a zero pivot entry if this gets pushed back first. So... Last.
         if (where == tmp[part].end ()) {
           tmp[part].push_back (LRID);
+#         ifdef IFPACK_DEBUG_PARTITIONING
+          std::cout << LRID+1 << " ";
+#         endif
         }
       }
+#     ifdef IFPACK_DEBUG_PARTITIONING
+      std::cout << "];" << std::endl;
+#     endif
     }
 
     // now I convert the STL vectors into Teuchos Array RCP's
@@ -411,6 +457,25 @@ void  OverlappingPartitioner<GraphType>::describe(Teuchos::FancyOStream &os, con
   os << "================================================================================" << endl;
 }
 
+template <class local_ordinal_type>
+bool isSubset(Teuchos::Array<local_ordinal_type> const & Ci,
+              size_t const & ni,
+              Teuchos::Array<local_ordinal_type> const & Cj,
+              size_t const & nj)
+{
+  size_t jind=0;
+  bool subset=false;
+  for (size_t k=0; k<ni; ++k) {
+    if (Ci[k] != Cj[jind])
+      continue;
+    if (jind < nj-1)
+      //match for Cj(jind) has been found
+      ++jind;
+    else
+      subset=true;
+  }
+  return subset;
+}
 
 }// namespace Ifpack2
 
