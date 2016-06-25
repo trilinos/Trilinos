@@ -73,9 +73,9 @@ using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
+Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
    pl.set<int>("X Elements",xelmts);
@@ -83,11 +83,11 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk_classic::ParallelM
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk_classic::SquareQuadMeshFactory meshFact;
+   panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
-   return Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
+   return Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 }
 
 template <typename Intrepid2Type>
@@ -105,13 +105,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -211,13 +211,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, field_order)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -303,13 +303,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -381,13 +381,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, multiple_dof_managers)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -455,22 +455,22 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
    // build DOF manager
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,2,1);
-   RCP<const panzer_stk_classic::STKConnManager<int> > stkManager = rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(connManager);
-   RCP<panzer_stk_classic::STK_Interface> meshDB = stkManager->getSTKInterface();
+   RCP<const panzer_stk::STKConnManager<int> > stkManager = rcp_dynamic_cast<panzer_stk::STKConnManager<int> >(connManager);
+   RCP<panzer_stk::STK_Interface> meshDB = stkManager->getSTKInterface();
    meshDB->print(out);
 
    // grab elements from mesh
-   std::vector<stk_classic::mesh::Entity*> block00, block01;
+   std::vector<stk::mesh::Entity*> block00, block01;
    meshDB->getMyElements("eblock-0_0",block00);
    meshDB->getMyElements("eblock-1_0",block01);
   
@@ -500,7 +500,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager,getDofCoords)
       TEST_EQUALITY(localIds_01[i],meshDB->elementLocalId(block01[i]));
 
    // for(std::size_t c=0;c<block00.size();c++) {
-   //    stk_classic::mesh::Entity * element = block00[c];
+   //    stk::mesh::Entity * element = block00[c];
    //    for(int i=0;i<4;i++) {
    //    }
    // }
@@ -513,13 +513,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -642,13 +642,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations2)
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -720,12 +720,12 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad_edge_orientations_fa
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 

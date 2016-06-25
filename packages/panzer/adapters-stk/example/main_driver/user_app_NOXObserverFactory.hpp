@@ -61,7 +61,7 @@
 namespace user_app {
   
   class NOXObserverFactory :
-    public panzer_stk_classic::NOXObserverFactory,
+    public panzer_stk::NOXObserverFactory,
     public Teuchos::ParameterListAcceptorDefaultBase  {
     
     //! Store STK IO response library...be careful, it will be modified externally
@@ -75,7 +75,7 @@ namespace user_app {
        : stkIOResponseLibrary_(stkIOResponseLibrary) {}
     
     Teuchos::RCP<NOX::Abstract::PrePostOperator>
-    buildNOXObserver(const Teuchos::RCP<panzer_stk_classic::STK_Interface>& mesh,
+    buildNOXObserver(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 		     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase>& dof_manager,
 		     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof) const
     {

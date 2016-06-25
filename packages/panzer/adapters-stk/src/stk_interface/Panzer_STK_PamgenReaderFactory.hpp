@@ -50,9 +50,9 @@
 
 #ifdef PANZER_HAVE_IOSS
 
-#include <stk_io/MeshReadWriteUtils.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 class STK_Interface;
 
@@ -81,17 +81,17 @@ public:
      * \returns Pointer to <code>STK_Interface</code> object with 
      *          <code>isModifiable()==false</code>.
      */ 
-   virtual Teuchos::RCP<STK_Interface> buildMesh(stk_classic::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
    /** This builds all the meta data of the mesh. Does not call metaData->commit.
      * Allows user to add solution fields and other pieces. The mesh can be "completed"
      * by calling <code>completeMeshConstruction</code>.
      */
-   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk_classic::ParallelMachine parallelMach) const;
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
 
    /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
      */
-   virtual void completeMeshConstruction(STK_Interface & mesh,stk_classic::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
 
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
@@ -105,9 +105,9 @@ public:
 
 protected:
 
-   void registerElementBlocks(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
-   void registerSidesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
-   void registerNodesets(STK_Interface & mesh,stk_classic::io::MeshData & meshData) const;
+   void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
+   void registerSidesets(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
+   void registerNodesets(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
 
    std::string fileName_;
    int restartIndex_;

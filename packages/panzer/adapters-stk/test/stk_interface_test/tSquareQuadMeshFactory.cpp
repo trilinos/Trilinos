@@ -64,7 +64,7 @@
 #include "stk_mesh/base/Selector.hpp"
 #include <stk_rebalance/ZoltanPartition.hpp>
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 inline bool XOR(bool A,bool B)
 { return ! ( (A && B) || ( !A && !B)); }
@@ -72,7 +72,7 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk_classic::mesh::Entity * a,stk_classic::mesh::Entity * b) const 
+   bool operator()(stk::mesh::Entity * a,stk::mesh::Entity * b) const 
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
@@ -80,20 +80,20 @@ private:
 };
 
 /*
-static void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,std::vector<stk_classic::mesh::EntityId> & nodeIds)
+static void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
-   stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
+   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
-   stk_classic::mesh::PairIterRelation::iterator itr;
+   stk::mesh::PairIterRelation::iterator itr;
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr)
       nodeIds.push_back(itr->entity()->identifier());
 }
 */
 
 /*
-static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, const stk_classic::mesh::Entity * element,int id)
+static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, const stk::mesh::Entity * element,int id)
 {
-   std::vector<stk_classic::mesh::EntityId> nodeIds;
+   std::vector<stk::mesh::EntityId> nodeIds;
    getNodeIds(mesh->getNodeRank(),element,nodeIds);
 
    return mesh->getNodeCoordinates(nodeIds[id]); 
@@ -115,8 +115,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, periodic_input)
    pbcs.set<int>("Count",1);
    pbcs.set("Periodic Condition 1","x-coord left;right");
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    SquareQuadMeshFactory factory; 
@@ -142,8 +142,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    pl->set("X Elements",2);
    pl->set("Y Elements",3);
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    SquareQuadMeshFactory factory; 
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
 
    std::string strBlock0="eblock-0_0", strBlock1="eblock-1_0";
-   std::vector<stk_classic::mesh::Entity*> block0, block1;
+   std::vector<stk::mesh::Entity*> block0, block1;
 
    mesh->getMyElements(strBlock0,block0);
    mesh->getMyElements(strBlock1,block1);
@@ -264,13 +264,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),60);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),36);
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    
    if(numprocs==1) {
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
@@ -289,7 +289,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
    
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
@@ -300,7 +300,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
    
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
    
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
@@ -340,7 +340,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    else if(numprocs==2 && rank==0) {
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
 
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
@@ -378,7 +378,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
 
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
@@ -391,7 +391,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    else if(numprocs==2 && rank==1) {
       out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
@@ -410,7 +410,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       }
 
       {
-         std::vector<stk_classic::mesh::EntityId> elmt0, elmt1;
+         std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
          mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
          mesh->getSubcellIndices(mesh->getNodeRank(),9,elmt1);
@@ -435,7 +435,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
    using Teuchos::RCP;
    using Teuchos::rcp;
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",2);
@@ -454,7 +454,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),12*(12+1)+12*(12+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*12);
 
-   std::vector<stk_classic::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity*> myElements;
    mesh->getMyElements(myElements);
    
    TEST_EQUALITY(myElements.size(), (std::size_t) 12*12/numprocs);
@@ -466,8 +466,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    using Teuchos::RCP;
    using Teuchos::rcp;
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    if(numprocs>2)
       TEUCHOS_ASSERT(false);
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    TEST_EQUALITY(blockNames[0],"eblock-0_0");
 
    {
-      std::vector<stk_classic::mesh::Entity*> myElements;
+      std::vector<stk::mesh::Entity*> myElements;
       mesh->getMyElements(blockNames[0],myElements);
 
       TEST_EQUALITY((int) myElements.size(),24/numprocs);
@@ -509,7 +509,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
 
    {
       {
-         std::vector<stk_classic::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity*> mySides;
 
          mySides.clear();
          mesh->getMySides("left",mySides);
@@ -535,13 +535,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       sidesets[3] = "bottom";
       std::vector<std::string>::const_iterator sItr;
       for(sItr=sidesets.begin();sItr!=sidesets.end();++sItr) {
-         std::vector<stk_classic::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity*> mySides;
          mesh->getMySides(*sItr,mySides);
    
-         std::vector<stk_classic::mesh::Entity*>::iterator itr;
+         std::vector<stk::mesh::Entity*>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
-            stk_classic::mesh::Entity * side = *itr;
-            stk_classic::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
+            stk::mesh::Entity * side = *itr;
+            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
@@ -553,7 +553,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
 
    {
       {
-         std::vector<stk_classic::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity*> mySides;
 
          mySides.clear();
          mesh->getMySides("left","eblock-0_0",mySides);
@@ -579,13 +579,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       sidesets[2] = "top";    eblocks[2] = "eblock-0_2";
       sidesets[3] = "bottom"; eblocks[3] = "eblock-0_0";
       for(std::size_t i=0;i<sidesets.size();++i) {
-         std::vector<stk_classic::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity*> mySides;
          mesh->getMySides(sidesets[i],eblocks[i],mySides);
    
-         std::vector<stk_classic::mesh::Entity*>::iterator itr;
+         std::vector<stk::mesh::Entity*>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
-            stk_classic::mesh::Entity * side = *itr;
-            stk_classic::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
+            stk::mesh::Entity * side = *itr;
+            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
@@ -608,27 +608,27 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, check_ss)
    pl->set("X Elements",2);
    pl->set("Y Elements",1);
 
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    SquareQuadMeshFactory factory; 
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-   stk_classic::mesh::Selector ownedAndGhosted = mesh->getMetaData()->locally_owned_part() 
+   stk::mesh::Selector ownedAndGhosted = mesh->getMetaData()->locally_owned_part() 
                                        | mesh->getMetaData()->globally_shared_part();
-   stk_classic::mesh::Selector topPart = *mesh->getMetaData()->get_part("top","Big error!")    & ownedAndGhosted;
-   stk_classic::mesh::Selector btmPart = *mesh->getMetaData()->get_part("bottom","Big error!") & ownedAndGhosted;
-   stk_classic::mesh::Selector lftPart = *mesh->getMetaData()->get_part("left","Big error!")   & ownedAndGhosted;
-   stk_classic::mesh::Selector rhtPart = *mesh->getMetaData()->get_part("right","Big error!")  & ownedAndGhosted;
+   stk::mesh::Selector topPart = *mesh->getMetaData()->get_part("top","Big error!")    & ownedAndGhosted;
+   stk::mesh::Selector btmPart = *mesh->getMetaData()->get_part("bottom","Big error!") & ownedAndGhosted;
+   stk::mesh::Selector lftPart = *mesh->getMetaData()->get_part("left","Big error!")   & ownedAndGhosted;
+   stk::mesh::Selector rhtPart = *mesh->getMetaData()->get_part("right","Big error!")  & ownedAndGhosted;
 
-   const std::vector<stk_classic::mesh::Bucket*> & nodeBuckets = mesh->getBulkData()->buckets(mesh->getNodeRank());
+   const std::vector<stk::mesh::Bucket*> & nodeBuckets = mesh->getBulkData()->buckets(mesh->getNodeRank());
 
-   unsigned lftCnt = stk_classic::mesh::count_selected_entities(lftPart,nodeBuckets);
-   unsigned rhtCnt = stk_classic::mesh::count_selected_entities(rhtPart,nodeBuckets);
-   unsigned topCnt = stk_classic::mesh::count_selected_entities(topPart,nodeBuckets);
-   unsigned btmCnt = stk_classic::mesh::count_selected_entities(btmPart,nodeBuckets);
+   unsigned lftCnt = stk::mesh::count_selected_entities(lftPart,nodeBuckets);
+   unsigned rhtCnt = stk::mesh::count_selected_entities(rhtPart,nodeBuckets);
+   unsigned topCnt = stk::mesh::count_selected_entities(topPart,nodeBuckets);
+   unsigned btmCnt = stk::mesh::count_selected_entities(btmPart,nodeBuckets);
    
    if(numprocs==1) {
       TEST_EQUALITY(lftCnt,2);
@@ -658,8 +658,8 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
 
 using Teuchos::RCP;
 
-void entityVecToGIDVec(const std::vector<stk_classic::mesh::Entity*> & eVec,
-                             std::vector<stk_classic::mesh::EntityId> & gidVec)
+void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
+                             std::vector<stk::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
    for(std::size_t i=0;i<eVec.size();i++)
@@ -670,7 +670,7 @@ void entityVecToGIDVec(const std::vector<stk_classic::mesh::Entity*> & eVec,
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
 {
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
    pl->set("X Blocks",2);
@@ -690,14 +690,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
    TEST_EQUALITY(sidesets.size(),7);
    TEST_EQUALITY(nodesets.size(),2);
 
-   std::vector<stk_classic::mesh::Entity *> nodes;
-   std::vector<stk_classic::mesh::Entity *> nodes_o;
+   std::vector<stk::mesh::Entity *> nodes;
+   std::vector<stk::mesh::Entity *> nodes_o;
    mesh->getMyNodes("lower_left","eblock-0_0",nodes); 
    mesh->getMyNodes("origin","eblock-0_0",nodes_o); 
    if(rank==0) {
       { 
          std::vector<std::size_t> localNodeIds;
-         std::vector<stk_classic::mesh::Entity*> elements;
+         std::vector<stk::mesh::Entity*> elements;
 
          TEST_EQUALITY(nodes.size(),1);
          workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes,localNodeIds,elements);
@@ -709,7 +709,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
       }
       { 
          std::vector<std::size_t> localNodeIds;
-         std::vector<stk_classic::mesh::Entity*> elements;
+         std::vector<stk::mesh::Entity*> elements;
 
          TEST_EQUALITY(nodes.size(),1);
          workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes_o,localNodeIds,elements);
@@ -787,7 +787,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory,rebalance)
 
    // check the size for the repartitioned mesh
    if(size==2) {
-     std::vector<stk_classic::mesh::Entity*> elements;
+     std::vector<stk::mesh::Entity*> elements;
      mesh->getMyElements(elements);
      TEST_ASSERT(elements.size()==12 || elements.size()==13);
    }
@@ -847,8 +847,8 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*5+4*3);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1));
 
-   std::vector<stk_classic::mesh::Entity*> myElements;
-   std::vector<stk_classic::mesh::EntityId> myGids;
+   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
 
@@ -899,8 +899,8 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    // if(mesh->isWritable());
    //    mesh->writeToExodus("test.exo");
 
-   std::vector<stk_classic::mesh::Entity*> myElements;
-   std::vector<stk_classic::mesh::EntityId> myGids;
+   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
 

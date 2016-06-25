@@ -60,9 +60,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,
+Teuchos::RCP<panzer_stk::STK_Interface> buildQuadMesh(stk::ParallelMachine comm,int xelmts,int yelmts,
                                                                                     int xblocks,int yblocks)
 {
    Teuchos::ParameterList pl;
@@ -71,7 +71,7 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildQuadMesh(stk_classic::Paral
    pl.set<int>("X Blocks",xblocks);
    pl.set<int>("Y Blocks",yblocks);
 
-   panzer_stk_classic::SquareQuadMeshFactory meshFact;
+   panzer_stk::SquareQuadMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    return meshFact.buildMesh(comm);
@@ -91,13 +91,13 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManagerFactory, basic_test)
 {
 //    // build global (or serial communicator)
 //    #ifdef HAVE_MPI
-//       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+//       stk::ParallelMachine Comm = MPI_COMM_WORLD;
 //    #else
-//       stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+//       stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
 //    #endif
 // 
-   // int numProcs = stk_classic::parallel_machine_size(Comm);
-   // int myRank = stk_classic::parallel_machine_rank(Comm);
+   // int numProcs = stk::parallel_machine_size(Comm);
+   // int myRank = stk::parallel_machine_rank(Comm);
 
    typedef panzer::BlockedDOFManagerFactory<int,int> BDFii;
 

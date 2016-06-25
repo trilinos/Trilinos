@@ -54,12 +54,12 @@
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,std::vector<stk_classic::mesh::EntityId> & nodeIds);
+void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds);
 
 /*
-void getSideElements(const panzer_stk_classic::STK_Interface & mesh,
-                     const std::string & blockId, const std::vector<stk_classic::mesh::Entity*> & sides,
-                     std::vector<std::size_t> & localSideIds, std::vector<stk_classic::mesh::Entity*> & elements);
+void getSideElements(const panzer_stk::STK_Interface & mesh,
+                     const std::string & blockId, const std::vector<stk::mesh::Entity*> & sides,
+                     std::vector<std::size_t> & localSideIds, std::vector<stk::mesh::Entity*> & elements);
 */
 
 /** This example whows how to get vertex IDs for all the elements
@@ -81,9 +81,9 @@ int main( int argc, char **argv )
   pl->set("X Elements",6);
   pl->set("Y Elements",4);
 
-  panzer_stk_classic::SquareQuadMeshFactory factory;
+  panzer_stk::SquareQuadMeshFactory factory;
   factory.setParameterList(pl);
-  RCP<panzer_stk_classic::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+  RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   if(mesh->isWritable())
      mesh->writeToExodus("blocked_mesh.exo");
   unsigned dim = mesh->getDimension();
@@ -100,7 +100,7 @@ int main( int argc, char **argv )
      for(std::size_t side=0;side<sideSets.size();++side) {
         std::string sideName = sideSets[side];
    
-        std::vector<stk_classic::mesh::Entity*> sideEntities; 
+        std::vector<stk::mesh::Entity*> sideEntities; 
         mesh->getMySides(sideName,eBlockId,sideEntities);
    
         // don't try to build worksets for sides that don't have
@@ -110,9 +110,9 @@ int main( int argc, char **argv )
            continue;
         }
    
-        std::vector<stk_classic::mesh::Entity*> elements;
+        std::vector<stk::mesh::Entity*> elements;
         std::vector<std::size_t> localSideIds;
-        panzer_stk_classic::workset_utils::getSideElements(*mesh,eBlockId,sideEntities,localSideIds,elements);
+        panzer_stk::workset_utils::getSideElements(*mesh,eBlockId,sideEntities,localSideIds,elements);
         TEUCHOS_ASSERT(localSideIds.size()==elements.size());
    
         FieldContainer vertices("vertices",elements.size(),4,dim);  
@@ -120,8 +120,8 @@ int main( int argc, char **argv )
         // loop over elements of this block
         std::vector<std::size_t> localIds;
         for(std::size_t elm=0;elm<elements.size();++elm) {
-           std::vector<stk_classic::mesh::EntityId> nodes;
-           stk_classic::mesh::Entity * element = elements[elm];
+           std::vector<stk::mesh::EntityId> nodes;
+           stk::mesh::Entity * element = elements[elm];
    
            localIds.push_back(mesh->elementLocalId(element));
            getNodeIds(mesh->getNodeRank(),element,nodes);
@@ -159,11 +159,11 @@ int main( int argc, char **argv )
   return 0;
 }
 
-void getNodeIds(stk_classic::mesh::EntityRank nodeRank,const stk_classic::mesh::Entity * element,std::vector<stk_classic::mesh::EntityId> & nodeIds)
+void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
-   stk_classic::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
+   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
-   stk_classic::mesh::PairIterRelation::iterator itr;
+   stk::mesh::PairIterRelation::iterator itr;
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
       nodeIds.push_back(itr->entity()->identifier());
 }

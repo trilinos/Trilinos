@@ -92,7 +92,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
                           const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
                           const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
-                          const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                          const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
                           const Teuchos::ParameterList & user_data);
 
@@ -100,7 +100,7 @@ void writeToExodus(double time_stamp,
                    const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
                    const panzer::ModelEvaluator<double> & model,
                    panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
-                   panzer_stk_classic::STK_Interface & mesh);
+                   panzer_stk::STK_Interface & mesh);
 
 int main(int argc, char *argv[])
 {
@@ -173,10 +173,10 @@ int main(int argc, char *argv[])
 
     // read in mesh database, build un committed data
     ////////////////////////////////////////////////////////////////
-    RCP<panzer_stk_classic::STK_MeshFactory> mesh_factory = rcp(new panzer_stk_classic::SquareQuadMeshFactory);
+    RCP<panzer_stk::STK_MeshFactory> mesh_factory = rcp(new panzer_stk::SquareQuadMeshFactory);
     mesh_factory->setParameterList(mesh_pl);
 
-    RCP<panzer_stk_classic::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
+    RCP<panzer_stk::STK_Interface> mesh = mesh_factory->buildUncommitedMesh(MPI_COMM_WORLD);
 
     // read in physics blocks
     ////////////////////////////////////////////////////////////
@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
     //////////////////////////////////////////////////////////////
     
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer             // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
  
     // build the connection manager 
     const Teuchos::RCP<panzer::ConnManager<int,int> > 
-      conn_manager = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+      conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
 
     // build the state dof manager and LOF
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager;
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
     /////////////////////////////////////////////////////////////
     
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory
-        = panzer_stk_classic::buildLOWSFactory(false, dofManager, conn_manager, 
+        = panzer_stk::buildLOWSFactory(false, dofManager, conn_manager, 
                                                Teuchos::as<int>(mesh->getDimension()), 
                                                comm, lin_solver_pl,Teuchos::null);
   
@@ -363,7 +363,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
                           const Teuchos::RCP<panzer::WorksetContainer> & wkstContainer,
                           const Teuchos::RCP<panzer::UniqueGlobalIndexerBase> & globalIndexer,
                           const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
-                          const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
+                          const Teuchos::RCP<panzer_stk::STK_Interface> & mesh,
                           const Teuchos::ParameterList & closure_model_pl,
                           const Teuchos::ParameterList & user_data)
 {
@@ -377,7 +377,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   std::vector<std::string> eBlocks;
   mesh->getElementBlockNames(eBlocks);
 
-  panzer_stk_classic::RespFactorySolnWriter_Builder builder;
+  panzer_stk::RespFactorySolnWriter_Builder builder;
   builder.mesh = mesh;
 
   stkIOResponseLibrary->addResponse("Main Field Output",eBlocks,builder);
@@ -385,7 +385,7 @@ buildSTKIOResponseLibrary(const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >
   std::map<std::string,std::vector<std::string> > nodalFields,cellFields;
 
   // this automatically adds in the nodal fields
-  panzer_stk_classic::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(cm_factory,mesh,
+  panzer_stk::IOClosureModelFactory_TemplateBuilder<panzer::Traits> io_cm_builder(cm_factory,mesh,
                                                                                           nodalFields,
                                                                                           cellFields);
   panzer::ClosureModelFactory_TemplateManager<panzer::Traits> io_cm_factory;
@@ -403,7 +403,7 @@ void writeToExodus(double time_stamp,
                    const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
                    const panzer::ModelEvaluator<double> & model,
                    panzer::ResponseLibrary<panzer::Traits> & stkIOResponseLibrary,
-                   panzer_stk_classic::STK_Interface & mesh)
+                   panzer_stk::STK_Interface & mesh)
 {
   // fill STK mesh objects
   Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model.createInArgs();

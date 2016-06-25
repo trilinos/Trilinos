@@ -69,9 +69,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcpFromRef;
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
-Teuchos::RCP<panzer_stk_classic::STK_Interface> buildHexMesh(stk_classic::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
+Teuchos::RCP<panzer_stk::STK_Interface> buildHexMesh(stk::ParallelMachine comm,int xelmts,int yelmts,int zelmts,
                                                                                     int xblocks,int yblocks,int zblocks)
 {
    Teuchos::ParameterList pl;
@@ -82,10 +82,10 @@ Teuchos::RCP<panzer_stk_classic::STK_Interface> buildHexMesh(stk_classic::Parall
    pl.set<int>("Y Blocks",yblocks);
    pl.set<int>("Z Blocks",zblocks);
 
-   panzer_stk_classic::CubeHexMeshFactory meshFact;
+   panzer_stk::CubeHexMeshFactory meshFact;
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = meshFact.buildMesh(comm);
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
    mesh->writeToExodus("whatish.exo");
    return mesh;
 }
@@ -104,13 +104,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs<=2);
 
@@ -118,9 +118,9 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
    RCP<const panzer::FieldPattern> patternC1 
          = buildFieldPattern<Intrepid2::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer> >();
 
-   Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
+   Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildHexMesh(Comm,2,2,2,1,1,1);
    RCP<panzer::ConnManager<int,int> > connManager 
-         = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
+         = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getOrientationsRequired(),false);
@@ -227,13 +227,13 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
-      stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
    #else
-      stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
    #endif
 
-   int numProcs = stk_classic::parallel_machine_size(Comm);
-   int myRank = stk_classic::parallel_machine_rank(Comm);
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
 
    TEUCHOS_ASSERT(numProcs==2);
 
@@ -242,7 +242,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex_face_orientations)
          = buildFieldPattern<Intrepid2::Basis_HDIV_HEX_I1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = 
-       Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
+       Teuchos::rcp(new panzer_stk::STKConnManager<int>(buildHexMesh(Comm,2,2,2,1,1,1)));
    RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    dofManager->setOrientationsRequired(true);

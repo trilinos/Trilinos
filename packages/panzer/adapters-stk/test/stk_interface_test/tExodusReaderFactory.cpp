@@ -64,12 +64,12 @@
 
 #ifdef PANZER_HAVE_IOSS
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 {
-   int numprocs = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
-   int rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+   int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
+   int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
    out << "Running numprocs = " << numprocs << " rank = " << rank << std::endl;
 
    std::vector<Teuchos::RCP<STK_ExodusReaderFactory> > facts;
@@ -175,7 +175,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
 TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
 {
   {
-    typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> CoordField;
+    typedef stk::mesh::Field<double,stk::mesh::Cartesian> CoordField;
 
     // These should correspond to the node coordinates, in order, in the
     // mesh file "basic.gen" as read above.
@@ -209,10 +209,10 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
     // Make sure the node coordinates as they exist in the data
     // structure have been scaled by the 1/"Scale Factor" from above.
     double sf = 2.0;  // 1/(scale factor)
-    for (stk_classic::mesh::EntityId id=1; id <= 15; ++id)
+    for (stk::mesh::EntityId id=1; id <= 15; ++id)
     {
 
-      stk_classic::mesh::Entity* node = mesh->getBulkData()->get_entity(mesh->getNodeRank(), id);
+      stk::mesh::Entity* node = mesh->getBulkData()->get_entity(mesh->getNodeRank(), id);
       if (node) 
       {
         double const* coords = mesh->getNodeCoordinates(id);

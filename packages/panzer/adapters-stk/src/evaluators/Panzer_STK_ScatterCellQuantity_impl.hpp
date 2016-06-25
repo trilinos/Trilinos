@@ -57,7 +57,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
    mesh_(p.get<Teuchos::RCP<STK_Interface> >("Mesh"))

@@ -49,7 +49,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /** Pure virtual base class used to construct 
   * worksets on volumes and side sets.
@@ -65,7 +65,7 @@ public:
   /** Set mesh
      */
    virtual
-   void setMesh(const Teuchos::RCP<const panzer_stk_classic::STK_Interface> & mesh);
+   void setMesh(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh);
 
    /** Build sets of boundary condition worksets
      */

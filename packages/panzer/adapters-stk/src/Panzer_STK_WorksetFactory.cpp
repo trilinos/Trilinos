@@ -46,11 +46,11 @@
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STK_Interface.hpp"
 
-namespace panzer_stk_classic {
+namespace panzer_stk {
 
 /** Set mesh
   */
-void WorksetFactory::setMesh(const Teuchos::RCP<const panzer_stk_classic::STK_Interface> & mesh)
+void WorksetFactory::setMesh(const Teuchos::RCP<const panzer_stk::STK_Interface> & mesh)
 {
    mesh_ = mesh;
 }
@@ -84,7 +84,7 @@ Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
 getSideWorksets(const panzer::BC & bc,
               const panzer::WorksetNeeds & needs) const
 {
-  return panzer_stk_classic::buildBCWorksets(*mesh_,needs,bc.elementBlockID(),bc.sidesetID());
+  return panzer_stk::buildBCWorksets(*mesh_,needs,bc.elementBlockID(),bc.sidesetID());
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
@@ -93,7 +93,7 @@ getSideWorksets(const panzer::BC & bc,
                 const panzer::PhysicsBlock & pb_b) const
 {
   TEUCHOS_ASSERT(bc.bcType() == panzer::BCT_Interface);
-  return panzer_stk_classic::buildBCWorksets(*mesh_, pb_a, pb_b, bc.sidesetID());
+  return panzer_stk::buildBCWorksets(*mesh_, pb_a, pb_b, bc.sidesetID());
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::
@@ -124,11 +124,11 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
             const panzer::WorksetNeeds & needs) const
 {
   if(!worksetDesc.useSideset()) {
-    return panzer_stk_classic::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
+    return panzer_stk::buildWorksets(*mesh_,worksetDesc.getElementBlock(), needs);
   }
   else if(worksetDesc.useSideset() && worksetDesc.sideAssembly()) {
     // uses cascade by default, each subcell has its own workset
-    return panzer_stk_classic::buildWorksets(*mesh_,needs,worksetDesc.getSideset(),worksetDesc.getElementBlock(),true);
+    return panzer_stk::buildWorksets(*mesh_,needs,worksetDesc.getSideset(),worksetDesc.getElementBlock(),true);
   }
   else {
     TEUCHOS_ASSERT(false);
@@ -137,7 +137,7 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
     // to fix how the assembly process is handled for sidesets 
     /*
     Teuchos::RCP<std::map<unsigned,panzer::Workset> > workset_map =
-      panzer_stk_classic::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
+      panzer_stk::buildBCWorksets(*mesh_,pb,worksetDesc.getSideset());
 
     // loop over worksets, adding them to vector
     Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
