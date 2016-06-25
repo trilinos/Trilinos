@@ -44,6 +44,11 @@
 #ifndef TPETRA_DETAILS_COPYOFFSETS_HPP
 #define TPETRA_DETAILS_COPYOFFSETS_HPP
 
+/// \file Tpetra_Details_copyOffsets.hpp
+/// \brief Declare and define Tpetra::Details::copyOffsets, an
+///   implementation detail of Tpetra (in particular, of
+///   FixedHashTable, CrsGraph, and CrsMatrix).
+
 #include "TpetraCore_config.h"
 #include "Kokkos_Core.hpp"
 #include <limits>
