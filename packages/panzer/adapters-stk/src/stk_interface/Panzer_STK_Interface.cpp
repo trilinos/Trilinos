@@ -346,7 +346,7 @@ void STK_Interface::addNode(stk::mesh::EntityId gid, const std::vector<double> &
                       "STK_Interface::addNode: STK has STUPID restriction of no zero GIDs, pick something else");
    stk::mesh::EntityRank nodeRank = getNodeRank();
 
-   stk::mesh::Entity & node = bulkData_->declare_entity(nodeRank,gid,nodesPartVec_);
+   stk::mesh::Entity node = bulkData_->declare_entity(nodeRank,gid,nodesPartVec_);
 
    // set coordinate vector
    double * fieldCoords = stk::mesh::field_data(*coordinatesField_,node);
@@ -354,7 +354,7 @@ void STK_Interface::addNode(stk::mesh::EntityId gid, const std::vector<double> &
       fieldCoords[i] = coord[i];
 }
 
-void STK_Interface::addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Part * sideset)
+void STK_Interface::addEntityToSideset(stk::mesh::Entity entity,stk::mesh::Part * sideset)
 {
    std::vector<stk::mesh::Part*> sidesetV;
    sidesetV.push_back(sideset);
@@ -362,7 +362,7 @@ void STK_Interface::addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Par
    bulkData_->change_entity_parts(entity,sidesetV);
 }
 
-void STK_Interface::addEntityToNodeset(stk::mesh::Entity & entity,stk::mesh::Part * nodeset)
+void STK_Interface::addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part * nodeset)
 {
    std::vector<stk::mesh::Part*> nodesetV;
    nodesetV.push_back(nodeset);
@@ -377,13 +377,13 @@ void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::m
 
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
-   stk::mesh::Entity & element = bulkData_->declare_entity(elementRank,ed->getGID(),blockVec);
+   stk::mesh::Entity element = bulkData_->declare_entity(elementRank,ed->getGID(),blockVec);
 
    // build relations that give the mesh structure
    const std::vector<stk::mesh::EntityId> & nodes = ed->getNodes();
    for(std::size_t i=0;i<nodes.size();++i) {
       // add element->node relation
-      stk::mesh::Entity * node = bulkData_->get_entity(nodeRank,nodes[i]);
+      stk::mesh::Entity node = bulkData_->get_entity(nodeRank,nodes[i]);
       TEUCHOS_ASSERT(node!=0);
       bulkData_->declare_relation(element,*node,i);
    }
@@ -398,17 +398,17 @@ void STK_Interface::addEdges()
    // loop over elements
    stk::mesh::EntityRank edgeRank = getEdgeRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    getMyElements(localElmts);
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-     stk::mesh::Entity * element = (*itr);
+     stk::mesh::Entity element = (*itr);
      stk::mesh::EntityId gid = element->identifier();
      std::vector<stk::mesh::EntityId> subcellIds;
      getSubcellIndices(edgeRank,gid,subcellIds);
 
      for(std::size_t i=0;i<subcellIds.size();++i) {
-       stk::mesh::Entity * edge = bulkData_->get_entity(edgeRank,subcellIds[i]);
+       stk::mesh::Entity edge = bulkData_->get_entity(edgeRank,subcellIds[i]);
        stk::mesh::PairIterRelation relations = edge->relations(nodeRank);
 
        double * node_coord_1 = stk::mesh::field_data(*coordinatesField_,*(relations[0].entity()));
@@ -427,17 +427,17 @@ void STK_Interface::addFaces()
    // loop over elements
    stk::mesh::EntityRank faceRank = getFaceRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    getMyElements(localElmts);
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-     stk::mesh::Entity * element = (*itr);
+     stk::mesh::Entity element = (*itr);
      stk::mesh::EntityId gid = element->identifier();
      std::vector<stk::mesh::EntityId> subcellIds;
      getSubcellIndices(faceRank,gid,subcellIds);
 
      for(std::size_t i=0;i<subcellIds.size();++i) {
-       stk::mesh::Entity * face = bulkData_->get_entity(faceRank,subcellIds[i]);
+       stk::mesh::Entity face = bulkData_->get_entity(faceRank,subcellIds[i]);
        stk::mesh::PairIterRelation relations = face->relations(nodeRank);
 
        // set coordinate vector
@@ -516,13 +516,13 @@ bool STK_Interface::isWritable() const
    #endif
 }
 
-void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements) const
+void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements) const
 {
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
 
    // get all relations for node
-   stk::mesh::Entity * node = bulkData_->get_entity(nodeRank,nodeId);
+   stk::mesh::Entity node = bulkData_->get_entity(nodeRank,nodeId);
    stk::mesh::PairIterRelation relations = node->relations(elementRank);
 
    // extract elements sharing nodes
@@ -532,7 +532,7 @@ void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vecto
    }
 }
 
-void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity * node,std::vector<stk::mesh::Entity *> & elements,
+void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
                                                                          std::vector<int> & localNodeId) const
 {
    stk::mesh::EntityRank elementRank = getElementRank();
@@ -543,7 +543,7 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity * node,std::ve
    // extract elements sharing nodes
    stk::mesh::PairIterRelation::iterator itr;
    for(itr=relations.begin();itr!=relations.end();++itr) {
-      stk::mesh::Entity * element = itr->entity();
+      stk::mesh::Entity element = itr->entity();
       
       // if owned by this processor 
       if(element->owner_rank() == procRank_) {
@@ -554,7 +554,7 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity * node,std::ve
    }
 }
 
-void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements,
+void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements,
                                                                            std::vector<int> & localNodeId, unsigned int matchType) const
 {
    stk::mesh::EntityRank rank;
@@ -567,14 +567,14 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::
    else
      TEUCHOS_ASSERT(false);
 
-   stk::mesh::Entity * node = bulkData_->get_entity(rank,nodeId);
+   stk::mesh::Entity node = bulkData_->get_entity(rank,nodeId);
 
    getOwnedElementsSharingNode(node,elements,localNodeId);
 }
 
-void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeIds,std::vector<stk::mesh::Entity *> & elements) const
+void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeIds,std::vector<stk::mesh::Entity> & elements) const
 {
-   std::vector<stk::mesh::Entity*> current;
+   std::vector<stk::mesh::Entity> current;
 
    getElementsSharingNode(nodeIds[0],current); // fill it with elements touching first node
    std::sort(current.begin(),current.end());   // sort for intersection on the pointer 
@@ -582,13 +582,13 @@ void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityI
    // find intersection with remaining nodes
    for(std::size_t n=1;n<nodeIds.size();++n) {
       // get elements associated with next node
-      std::vector<stk::mesh::Entity*> nextNode;
+      std::vector<stk::mesh::Entity> nextNode;
       getElementsSharingNode(nodeIds[n],nextNode); // fill it with elements touching first node
       std::sort(nextNode.begin(),nextNode.end());   // sort for intersection on the pointer ID
 
       // intersect next node elements with current element list
-      std::vector<stk::mesh::Entity*> intersection(std::min(nextNode.size(),current.size())); 
-      std::vector<stk::mesh::Entity*>::const_iterator endItr
+      std::vector<stk::mesh::Entity> intersection(std::min(nextNode.size(),current.size())); 
+      std::vector<stk::mesh::Entity>::const_iterator endItr
             = std::set_intersection(current.begin(),current.end(),
                                     nextNode.begin(),nextNode.end(),
                                     intersection.begin());
@@ -627,12 +627,12 @@ void STK_Interface::buildMaxEntityIds()
    // determine maximum ID for this processor for each entity type
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
    for(unsigned i=0;i<entityRankCount;i++) {
-      std::vector<stk::mesh::Entity*> entities;
+      std::vector<stk::mesh::Entity> entities;
 
       stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(i),entities);
 
       // determine maximum ID for this processor
-      std::vector<stk::mesh::Entity*>::const_iterator itr;  
+      std::vector<stk::mesh::Entity>::const_iterator itr;  
       for(itr=entities.begin();itr!=entities.end();++itr) {
          stk::mesh::EntityId id = (*itr)->identifier();
          if(id>local[i])
@@ -675,11 +675,11 @@ void STK_Interface::buildSubcells()
 
 const double * STK_Interface::getNodeCoordinates(stk::mesh::EntityId nodeId) const
 {
-   stk::mesh::Entity * node = bulkData_->get_entity(getNodeRank(),nodeId);
+   stk::mesh::Entity node = bulkData_->get_entity(getNodeRank(),nodeId);
    return stk::mesh::field_data(*coordinatesField_,*node);
 }
 
-const double * STK_Interface::getNodeCoordinates(stk::mesh::Entity * node) const
+const double * STK_Interface::getNodeCoordinates(stk::mesh::Entity node) const
 {
    return stk::mesh::field_data(*coordinatesField_,*node);
 }
@@ -688,7 +688,7 @@ void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId el
                                       std::vector<stk::mesh::EntityId> & subcellIds) const                       
 {
    stk::mesh::EntityRank elementRank = getElementRank();
-   stk::mesh::Entity * cell = bulkData_->get_entity(elementRank,elementId);
+   stk::mesh::Entity cell = bulkData_->get_entity(elementRank,elementId);
    
    TEUCHOS_TEST_FOR_EXCEPTION(cell==0,std::logic_error,
                       "STK_Interface::getSubcellIndices: could not find element requested (GID = " << elementId << ")");
@@ -705,7 +705,7 @@ void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId el
    }
 }
 
-void STK_Interface::getMyElements(std::vector<stk::mesh::Entity*> & elements) const
+void STK_Interface::getMyElements(std::vector<stk::mesh::Entity> & elements) const
 {
    // setup local ownership
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
@@ -715,7 +715,7 @@ void STK_Interface::getMyElements(std::vector<stk::mesh::Entity*> & elements) co
    stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(elementRank),elements);
 }
 
-void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const
+void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const
 {
    stk::mesh::Part * elementBlock = getElementBlockPart(blockID);
 
@@ -730,7 +730,7 @@ void STK_Interface::getMyElements(const std::string & blockID,std::vector<stk::m
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(elementRank),elements);
 }
 
-void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const
+void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity> & elements) const
 {
    // setup local ownership
    stk::mesh::Selector neighborBlock = (!metaData_->locally_owned_part());
@@ -740,7 +740,7 @@ void STK_Interface::getNeighborElements(std::vector<stk::mesh::Entity*> & elemen
    stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
 }
 
-void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const
+void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const
 {
    stk::mesh::Part * elementBlock = getElementBlockPart(blockID);
 
@@ -754,7 +754,7 @@ void STK_Interface::getNeighborElements(const std::string & blockID,std::vector<
    stk::mesh::get_selected_entities(neighborBlock,bulkData_->buckets(elementRank),elements);
 }
 
-void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
+void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mesh::Entity> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
    TEUCHOS_TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
@@ -767,7 +767,7 @@ void STK_Interface::getMySides(const std::string & sideName,std::vector<stk::mes
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getSideRank()),sides);
 }
 
-void STK_Interface::getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const
+void STK_Interface::getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
    stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
@@ -784,7 +784,7 @@ void STK_Interface::getMySides(const std::string & sideName,const std::string & 
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getSideRank()),sides);
 }
 
-void STK_Interface::getAllSides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const
+void STK_Interface::getAllSides(const std::string & sideName,std::vector<stk::mesh::Entity> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
    TEUCHOS_TEST_FOR_EXCEPTION(sidePart==0,std::logic_error,
@@ -796,7 +796,7 @@ void STK_Interface::getAllSides(const std::string & sideName,std::vector<stk::me
    stk::mesh::get_selected_entities(side,bulkData_->buckets(getSideRank()),sides);
 }
 
-void STK_Interface::getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const
+void STK_Interface::getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & sides) const
 {
    stk::mesh::Part * sidePart = getSideset(sideName);
    stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
@@ -813,7 +813,7 @@ void STK_Interface::getAllSides(const std::string & sideName,const std::string &
    stk::mesh::get_selected_entities(sideBlock,bulkData_->buckets(getSideRank()),sides);
 }
 
-void STK_Interface::getMyNodes(const std::string & nodesetName,const std::string & blockName,std::vector<stk::mesh::Entity*> & nodes) const
+void STK_Interface::getMyNodes(const std::string & nodesetName,const std::string & blockName,std::vector<stk::mesh::Entity> & nodes) const
 {
    stk::mesh::Part * nodePart = getNodeset(nodesetName);
    stk::mesh::Part * elmtPart = getElementBlockPart(blockName);
@@ -864,7 +864,7 @@ void STK_Interface::getNodesetNames(std::vector<std::string> & names) const
       names.push_back(nodeItr->first);
 }
 
-std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
+std::size_t STK_Interface::elementLocalId(stk::mesh::Entity elmt) const
 {
    return elementLocalId(elmt->identifier());
    // const std::size_t * fieldCoords = stk::mesh::field_data(*localIdField_,*elmt);
@@ -874,7 +874,7 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
 std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
 {
    // stk::mesh::EntityRank elementRank = getElementRank();
-   // stk::mesh::Entity * elmt = bulkData_->get_entity(elementRank,gid);
+   // stk::mesh::Entity elmt = bulkData_->get_entity(elementRank,gid);
    // TEUCHOS_ASSERT(elmt->owner_rank()==procRank_);
    // return elementLocalId(elmt);
    std::unordered_map<stk::mesh::EntityId,std::size_t>::const_iterator itr = localIDHash_.find(gid);
@@ -883,7 +883,7 @@ std::size_t STK_Interface::elementLocalId(stk::mesh::EntityId gid) const
 }
 
 
-std::string STK_Interface::containingBlockId(stk::mesh::Entity * elmt)
+std::string STK_Interface::containingBlockId(stk::mesh::Entity elmt)
 {
    std::map<std::string,stk::mesh::Part*>::const_iterator itr;
    for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr)
@@ -920,7 +920,7 @@ stk::mesh::Field<double> * STK_Interface::getCellField(const std::string & field
    return iter->second;
 }
 
-Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsOrderedByLID() const
+Teuchos::RCP<const std::vector<stk::mesh::Entity> > STK_Interface::getElementsOrderedByLID() const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;
@@ -979,11 +979,11 @@ void STK_Interface::buildLocalElementIDs()
    orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
 
    // might be better (faster) to do this by buckets
-   std::vector<stk::mesh::Entity*> elements;
+   std::vector<stk::mesh::Entity> elements;
    getMyElements(elements);
  
    for(std::size_t index=0;index<elements.size();++index) {
-      stk::mesh::Entity & element = *(elements[index]);
+      stk::mesh::Entity element = *(elements[index]);
 
       // set processor rank
       ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
@@ -995,13 +995,13 @@ void STK_Interface::buildLocalElementIDs()
    }
 
    // copy elements into the ordered element vector
-   orderedElementVector_ = Teuchos::rcp(new std::vector<stk::mesh::Entity*>(elements));
+   orderedElementVector_ = Teuchos::rcp(new std::vector<stk::mesh::Entity>(elements));
 
    elements.clear();
    getNeighborElements(elements);
 
    for(std::size_t index=0;index<elements.size();++index) {
-      stk::mesh::Entity & element = *(elements[index]);
+      stk::mesh::Entity element = *(elements[index]);
 
       // set processor rank
       ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
@@ -1025,7 +1025,7 @@ void STK_Interface::applyElementLoadBalanceWeights()
     std::map<std::string,double>::const_iterator bw_itr = blockWeights_.find(names[b]);
     double blockWeight = (bw_itr!=blockWeights_.end()) ? bw_itr->second : 1.0;
 
-    std::vector<stk::mesh::Entity*> elements;
+    std::vector<stk::mesh::Entity> elements;
     getMyElements(names[b],elements);
 
     for(std::size_t index=0;index<elements.size();++index) {

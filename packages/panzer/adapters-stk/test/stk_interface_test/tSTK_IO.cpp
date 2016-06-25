@@ -293,10 +293,10 @@ void buildLocalIds(const STK_Interface & mesh,
       std::vector<std::size_t> & localBlockIds = *localIds[blockId];
 
       // grab elements on this block
-      std::vector<stk::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       mesh.getMyElements(blockId,blockElmts);
 
-      std::vector<stk::mesh::Entity*>::const_iterator itr;
+      std::vector<stk::mesh::Entity>::const_iterator itr;
       for(itr=blockElmts.begin();itr!=blockElmts.end();++itr)
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 

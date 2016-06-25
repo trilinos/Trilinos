@@ -212,9 +212,9 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
  */
 void getSubcellElements(const panzer_stk::STK_Interface & mesh,
 	 	        const std::string & blockId, 
-		        const std::vector<stk::mesh::Entity*> & entities,
+		        const std::vector<stk::mesh::Entity> & entities,
 		        std::vector<std::size_t> & localEntityIds, 
-		        std::vector<stk::mesh::Entity*> & elements);
+		        std::vector<stk::mesh::Entity> & elements);
 
 /** This function loops over the passed in set of entities and looks
  * at their related elements. It is then determined which elements
@@ -237,9 +237,9 @@ void getSubcellElements(const panzer_stk::STK_Interface & mesh,
  */
 void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
 				 const std::string & blockId, 
-				 const std::vector<stk::mesh::Entity*> & entities,
+				 const std::vector<stk::mesh::Entity> & entities,
 				 std::vector<std::size_t> & localEntityIds, 
-				 std::vector<stk::mesh::Entity*> & elements);
+				 std::vector<stk::mesh::Entity> & elements);
 
 /** This function loops over the passed in set of "Sides" and looks
  * at there related elements. It is then determined which elements
@@ -262,9 +262,9 @@ void getUniversalSubcellElements(const panzer_stk::STK_Interface & mesh,
  */
 void getSideElements(const panzer_stk::STK_Interface & mesh,
 		       const std::string & blockId, 
-		       const std::vector<stk::mesh::Entity*> & sides,
+		       const std::vector<stk::mesh::Entity> & sides,
 		       std::vector<std::size_t> & localSideIds, 
-		       std::vector<stk::mesh::Entity*> & elements);
+		       std::vector<stk::mesh::Entity> & elements);
 
 /** This function loops over the passed in set of "Sides" and looks
  * at there related elements. It is then determined which elements
@@ -298,11 +298,11 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 void getSideElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId_a, 
                      const std::string & blockId_b, 
-                     const std::vector<stk::mesh::Entity*> & sides,
+                     const std::vector<stk::mesh::Entity> & sides,
                      std::vector<std::size_t> & localSideIds_a, 
-                     std::vector<stk::mesh::Entity*> & elements_a,
+                     std::vector<stk::mesh::Entity> & elements_a,
                      std::vector<std::size_t> & localSideIds_b, 
-                     std::vector<stk::mesh::Entity*> & elements_b);
+                     std::vector<stk::mesh::Entity> & elements_b);
 
 /** This function loops over the passed in set of "Nodes" and looks
  * at there related elements. It is then determined which elements
@@ -325,9 +325,9 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
  */
 void getNodeElements(const panzer_stk::STK_Interface & mesh,
 		       const std::string & blockId, 
-		       const std::vector<stk::mesh::Entity*> & nodes,
+		       const std::vector<stk::mesh::Entity> & nodes,
 		       std::vector<std::size_t> & localNodeIds, 
-	 	       std::vector<stk::mesh::Entity*> & elements);
+	 	       std::vector<stk::mesh::Entity> & elements);
 
 /** This function builds the "element cascade" contained within a specfied
   * element block. That is given a set of "sides" extract all elements that
@@ -348,10 +348,10 @@ void getNodeElements(const panzer_stk::STK_Interface & mesh,
   */
 void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
                            const std::string & blockId, 
-                           const std::vector<stk::mesh::Entity*> & sides,
+                           const std::vector<stk::mesh::Entity> & sides,
                            std::vector<std::size_t> & localSubcellDim, 
                            std::vector<std::size_t> & subcellIds, 
-                           std::vector<stk::mesh::Entity*> & elements);
+                           std::vector<stk::mesh::Entity> & elements);
 
 /** Get all the subcells that are contained within the list of entities.
   * The resulting vector is organized by dimension and it is guranteed that
@@ -366,8 +366,8 @@ void getSideElementCascade(const panzer_stk::STK_Interface & mesh,
   *                      vector is <code>clear</code>ed at the beginning of this method.
   */
 void getSubcellEntities(const panzer_stk::STK_Interface & mesh,
-		        const std::vector<stk::mesh::Entity*> & entities,
-	 	        std::vector<std::vector<stk::mesh::Entity*> > & subcells);
+		        const std::vector<stk::mesh::Entity> & entities,
+	 	        std::vector<std::vector<stk::mesh::Entity> > & subcells);
 
 }
 }

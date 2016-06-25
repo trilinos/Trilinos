@@ -54,7 +54,7 @@
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-void getNodeIds(const stk::mesh::Entity * element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds);
+void getNodeIds(stk::mesh::Entity element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds);
 
 /** This example whows how to get vertex IDs for all the elements
   */
@@ -89,7 +89,7 @@ int main( int argc, char **argv )
   for(std::size_t blk=0;blk<eBlocks.size();++blk) {
      std::string blockName = eBlocks[blk];
 
-     std::vector<stk::mesh::Entity*> elements;
+     std::vector<stk::mesh::Entity> elements;
      std::vector<std::size_t> localIds;
      mesh->getMyElements(blockName,elements);
 
@@ -98,7 +98,7 @@ int main( int argc, char **argv )
      // loop over elements of this block
      for(std::size_t elm=0;elm<elements.size();++elm) {
         std::vector<stk::mesh::EntityId> nodes;
-        stk::mesh::Entity * element = elements[elm];
+        stk::mesh::Entity element = elements[elm];
 
         localIds.push_back(mesh->elementLocalId(element));
         getNodeIds(element,mesh->getNodeRank(),nodes);
@@ -119,7 +119,7 @@ int main( int argc, char **argv )
   return 0;
 }
 
-void getNodeIds(const stk::mesh::Entity * element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds)
+void getNodeIds(stk::mesh::Entity element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds)
 {
    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 

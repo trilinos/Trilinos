@@ -72,7 +72,7 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk::mesh::Entity * a,stk::mesh::Entity * b) const 
+   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const 
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
@@ -80,7 +80,7 @@ private:
 };
 
 /*
-static void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
+static void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
@@ -91,7 +91,7 @@ static void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * 
 */
 
 /*
-static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, const stk::mesh::Entity * element,int id)
+static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, stk::mesh::Entity element,int id)
 {
    std::vector<stk::mesh::EntityId> nodeIds;
    getNodeIds(mesh->getNodeRank(),element,nodeIds);
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    TEST_EQUALITY(mesh->getPeriodicBCVector().size(),0);
 
    std::string strBlock0="eblock-0_0", strBlock1="eblock-1_0";
-   std::vector<stk::mesh::Entity*> block0, block1;
+   std::vector<stk::mesh::Entity> block0, block1;
 
    mesh->getMyElements(strBlock0,block0);
    mesh->getMyElements(strBlock1,block1);
@@ -454,7 +454,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),12*(12+1)+12*(12+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*12);
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    mesh->getMyElements(myElements);
    
    TEST_EQUALITY(myElements.size(), (std::size_t) 12*12/numprocs);
@@ -493,7 +493,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    TEST_EQUALITY(blockNames[0],"eblock-0_0");
 
    {
-      std::vector<stk::mesh::Entity*> myElements;
+      std::vector<stk::mesh::Entity> myElements;
       mesh->getMyElements(blockNames[0],myElements);
 
       TEST_EQUALITY((int) myElements.size(),24/numprocs);
@@ -509,7 +509,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
 
    {
       {
-         std::vector<stk::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity> mySides;
 
          mySides.clear();
          mesh->getMySides("left",mySides);
@@ -535,12 +535,12 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       sidesets[3] = "bottom";
       std::vector<std::string>::const_iterator sItr;
       for(sItr=sidesets.begin();sItr!=sidesets.end();++sItr) {
-         std::vector<stk::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity> mySides;
          mesh->getMySides(*sItr,mySides);
    
-         std::vector<stk::mesh::Entity*>::iterator itr;
+         std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
-            stk::mesh::Entity * side = *itr;
+            stk::mesh::Entity side = *itr;
             stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
@@ -553,7 +553,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
 
    {
       {
-         std::vector<stk::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity> mySides;
 
          mySides.clear();
          mesh->getMySides("left","eblock-0_0",mySides);
@@ -579,12 +579,12 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
       sidesets[2] = "top";    eblocks[2] = "eblock-0_2";
       sidesets[3] = "bottom"; eblocks[3] = "eblock-0_0";
       for(std::size_t i=0;i<sidesets.size();++i) {
-         std::vector<stk::mesh::Entity*> mySides;
+         std::vector<stk::mesh::Entity> mySides;
          mesh->getMySides(sidesets[i],eblocks[i],mySides);
    
-         std::vector<stk::mesh::Entity*>::iterator itr;
+         std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
-            stk::mesh::Entity * side = *itr;
+            stk::mesh::Entity side = *itr;
             stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
    
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
@@ -658,7 +658,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
 
 using Teuchos::RCP;
 
-void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
+void entityVecToGIDVec(const std::vector<stk::mesh::Entity> & eVec,
                              std::vector<stk::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
@@ -690,14 +690,14 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
    TEST_EQUALITY(sidesets.size(),7);
    TEST_EQUALITY(nodesets.size(),2);
 
-   std::vector<stk::mesh::Entity *> nodes;
-   std::vector<stk::mesh::Entity *> nodes_o;
+   std::vector<stk::mesh::Entity> nodes;
+   std::vector<stk::mesh::Entity> nodes_o;
    mesh->getMyNodes("lower_left","eblock-0_0",nodes); 
    mesh->getMyNodes("origin","eblock-0_0",nodes_o); 
    if(rank==0) {
       { 
          std::vector<std::size_t> localNodeIds;
-         std::vector<stk::mesh::Entity*> elements;
+         std::vector<stk::mesh::Entity> elements;
 
          TEST_EQUALITY(nodes.size(),1);
          workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes,localNodeIds,elements);
@@ -709,7 +709,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
       }
       { 
          std::vector<std::size_t> localNodeIds;
-         std::vector<stk::mesh::Entity*> elements;
+         std::vector<stk::mesh::Entity> elements;
 
          TEST_EQUALITY(nodes.size(),1);
          workset_utils::getNodeElements(*mesh,"eblock-0_0",nodes_o,localNodeIds,elements);
@@ -787,7 +787,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory,rebalance)
 
    // check the size for the repartitioned mesh
    if(size==2) {
-     std::vector<stk::mesh::Entity*> elements;
+     std::vector<stk::mesh::Entity> elements;
      mesh->getMyElements(elements);
      TEST_ASSERT(elements.size()==12 || elements.size()==13);
    }
@@ -847,7 +847,7 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*5+4*3);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1));
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
@@ -899,7 +899,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    // if(mesh->isWritable());
    //    mesh->writeToExodus("test.exo");
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);

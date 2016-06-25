@@ -286,18 +286,18 @@ namespace panzer_stk {
 
     stk::mesh::Part *wall = mesh.getSideset("wall");
 
-    std::vector<stk::mesh::Entity*> elements;
+    std::vector<stk::mesh::Entity> elements;
     mesh.getMyElements(elements);
 
     // loop over elements adding sides to sidesets
-    for (std::vector<stk::mesh::Entity*>::const_iterator
+    for (std::vector<stk::mesh::Entity>::const_iterator
            itr=elements.begin();itr!=elements.end();++itr) {
-      stk::mesh::Entity *element = (*itr);
+      stk::mesh::Entityelement = (*itr);
       stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
       // loop over side id checking element neighbors
       for (std::size_t i=0;i<relations.size();++i) {
-        stk::mesh::Entity *side = relations[i].entity();
+        stk::mesh::Entityside = relations[i].entity();
         stk::mesh::PairIterRelation neighbors = side->relations(mesh.getElementRank());
 
         const std::size_t numNeighbors = neighbors.size();
@@ -329,7 +329,7 @@ namespace panzer_stk {
       block_id << "eblock-" << blk;
       
       // elements in this processor for this block
-      std::vector<stk::mesh::Entity*> elements;    
+      std::vector<stk::mesh::Entity> elements;    
       mesh.getMyElements(block_id.str(), elements);
 
       // size of elements in the current block
@@ -337,13 +337,13 @@ namespace panzer_stk {
       
       // build local element index
       std::vector<std::size_t> local_ids;
-      for (std::vector<stk::mesh::Entity*>::const_iterator
+      for (std::vector<stk::mesh::Entity>::const_iterator
              itr=elements.begin();itr!=elements.end();++itr) 
         local_ids.push_back(mesh.elementLocalId(*itr));
 
       // re-index solution fields in the same order of local_ids
       std::vector<double> charge_density_by_local_ids, electric_potential_by_local_ids;
-      for (std::vector<stk::mesh::Entity*>::const_iterator
+      for (std::vector<stk::mesh::Entity>::const_iterator
              itr=elements.begin();itr!=elements.end();++itr) {
         int q = (*itr)->identifier() - OffsetToGlobalElementIDs_;
         for (int k=0;k<8;++k) {

@@ -513,12 +513,12 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
           int sculpt_elem_id =  mss->global_element_numbers[ mss->side_set_elements[i][nct]-1 ]; 
           int sculpt_face_id = -1 ;
 
-          std::vector<stk::mesh::Entity*> localElmts;
+          std::vector<stk::mesh::Entity> localElmts;
           mesh.getMyElements(localElmts);
 
-          std::vector<stk::mesh::Entity*>::const_iterator itr;
+          std::vector<stk::mesh::Entity>::const_iterator itr;
           for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-            stk::mesh::Entity * element = (*itr);
+            stk::mesh::Entity element = (*itr);
 
             if( element->identifier() == sculpt_elem_id )
             { 
@@ -528,7 +528,7 @@ void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
  
               stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
-              stk::mesh::Entity * side = getRelationByID(sculpt_face_id-1,relations)->entity();
+              stk::mesh::Entity side = getRelationByID(sculpt_face_id-1,relations)->entity();
  
               if( side != NULL )
               {
@@ -590,7 +590,7 @@ void SculptMeshFactory::addNodeSets(STK_Interface & mesh) const
            Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
            if(machRank_==0)
            {  
-              stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),node_id);
+              stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),node_id);
               mesh.addEntityToNodeset(*node, nodeset);
            }
         }

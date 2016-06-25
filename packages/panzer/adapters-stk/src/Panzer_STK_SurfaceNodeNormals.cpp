@@ -88,11 +88,11 @@ namespace panzer_stk {
     stk::mesh::Selector sideSelector = *sidePart;
     stk::mesh::Selector blockSelector = *elmtPart;
     stk::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
-    std::vector<stk::mesh::Entity*> sides;
+    std::vector<stk::mesh::Entity> sides;
     stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
     std::vector<std::size_t> localSideTopoIDs;
-    std::vector<stk::mesh::Entity*> parentElements;
+    std::vector<stk::mesh::Entity> parentElements;
     panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
 
     if (pout != NULL) {
@@ -117,12 +117,12 @@ namespace panzer_stk {
     Intrepid2::DefaultCubatureFactory<double> cubFactory;
     int cubDegree = 1;
 
-    std::vector<stk::mesh::Entity*>::const_iterator side = sides.begin();
+    std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
-    std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
+    std::vector<stk::mesh::Entity>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
-      std::vector<stk::mesh::Entity*> elementEntities;
+      std::vector<stk::mesh::Entity> elementEntities;
       elementEntities.push_back(*parentElement); // notice this is size 1!
       PHX::MDField<double,panzer::Cell,panzer::NODE,panzer::Dim> vertices 
           = af.buildStaticArray<double,Cell,NODE,Dim>("",elementEntities.size(), parentTopology->getVertexCount(), mesh->getDimension());
@@ -239,18 +239,18 @@ namespace panzer_stk {
     stk::mesh::Selector sideSelector = *sidePart;
     stk::mesh::Selector blockSelector = *elmtPart;
     stk::mesh::Selector mySelector = metaData->universal_part() & blockSelector & sideSelector;
-    std::vector<stk::mesh::Entity*> sides;
+    std::vector<stk::mesh::Entity> sides;
     stk::mesh::get_selected_entities(mySelector,bulkData->buckets(metaData->side_rank()),sides);
 
     RCP<const shards::CellTopology> parentTopology = mesh->getCellTopology(elementBlockName);
 
     std::vector<std::size_t> localSideTopoIDs;
-    std::vector<stk::mesh::Entity*> parentElements;
+    std::vector<stk::mesh::Entity> parentElements;
     panzer_stk::workset_utils::getUniversalSubcellElements(*mesh,elementBlockName,sides,localSideTopoIDs,parentElements);
     
-    std::vector<stk::mesh::Entity*>::const_iterator side = sides.begin();
+    std::vector<stk::mesh::Entity>::const_iterator side = sides.begin();
     std::vector<std::size_t>::const_iterator sideID = localSideTopoIDs.begin();
-    std::vector<stk::mesh::Entity*>::const_iterator parentElement = parentElements.begin();
+    std::vector<stk::mesh::Entity>::const_iterator parentElement = parentElements.begin();
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
       // loop over nodes in nodes in side element

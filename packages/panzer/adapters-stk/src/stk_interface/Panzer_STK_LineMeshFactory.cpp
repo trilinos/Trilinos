@@ -272,13 +272,13 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
    stk::mesh::Part * left = mesh.getSideset("left");
    stk::mesh::Part * right = mesh.getSideset("right");
 
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    mesh.getMyElements(localElmts);
 
    // loop over elements adding edges to sidesets
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk::mesh::Entity * element = (*itr);
+      stk::mesh::Entity element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
       stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
@@ -288,7 +288,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_)
@@ -296,7 +296,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx==0) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_)

@@ -216,15 +216,15 @@ protected:
                                 GlobalOrdinal & nodeOffset, GlobalOrdinal & edgeOffset,
                                 GlobalOrdinal & faceOffset, GlobalOrdinal & cellOffset) const;
 
-   LocalOrdinal addSubcellConnectivities(stk::mesh::Entity * element,unsigned subcellRank,
+   LocalOrdinal addSubcellConnectivities(stk::mesh::Entity element,unsigned subcellRank,
                                          LocalOrdinal idCnt,GlobalOrdinal offset);
 
-   void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity * element,
+   void modifySubcellConnectivities(const panzer::FieldPattern & fp, stk::mesh::Entity element,
                                     unsigned subcellRank,unsigned subcellId,GlobalOrdinal newId,GlobalOrdinal offset);
 
    Teuchos::RCP<STK_Interface> stkMeshDB_;
 
-   Teuchos::RCP<std::vector<stk::mesh::Entity*> > elements_;
+   Teuchos::RCP<std::vector<stk::mesh::Entity> > elements_;
 
    // element block information
    std::map<std::string,Teuchos::RCP<std::vector<LocalOrdinal> > > elementBlocks_;

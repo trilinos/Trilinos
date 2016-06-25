@@ -387,13 +387,13 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
      horizontal.push_back(mesh.getSideset(ss.str()));
    }
 
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    mesh.getMyElements(localElmts);
 
    // loop over elements adding edges to sidesets
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk::mesh::Entity * element = (*itr);
+      stk::mesh::Entity element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
       stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
 
@@ -405,7 +405,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_)
@@ -413,7 +413,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx==0) {
-         stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(3,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_)
@@ -421,7 +421,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx+1!=totalXElems && ((nx+1) % nXElems_==0)) {
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
 
          // on the right
          if(edge->owner_rank()==machRank_) {
@@ -431,7 +431,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx!=0 && (nx % nXElems_==0)) {
-         stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(3,relations)->entity();
 
          // on the left
          if(edge->owner_rank()==machRank_) {
@@ -444,7 +444,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(ny==0) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
 
          // on the bottom
          if(edge->owner_rank()==machRank_)
@@ -452,7 +452,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(ny+1==totalYElems) {
-         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(2,relations)->entity();
 
          // on the top
          if(edge->owner_rank()==machRank_)
@@ -460,7 +460,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(ny!=0 && (ny % nYElems_==0)) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
 
          // on the bottom
          if(edge->owner_rank()==machRank_) {
@@ -470,7 +470,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(ny+1!=totalYElems && ((ny+1) % nYElems_==0)) {
-         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = getRelationByID(2,relations)->entity();
 
          // on the top
          if(edge->owner_rank()==machRank_) {
@@ -491,14 +491,14 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    stk::mesh::Part * lower_left = mesh.getNodeset("lower_left");
    stk::mesh::Part * origin = mesh.getNodeset("origin");
 
-   // std::vector<stk::mesh::Entity*> localElmts;
+   // std::vector<stk::mesh::Entity> localElmts;
    // mesh.getMyElements(localElmts);
 
    Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
    if(machRank_==0) 
    {
       // add zero node to lower_left node set
-      stk::mesh::Entity * node = bulkData->get_entity(mesh.getNodeRank(),1);
+      stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
       mesh.addEntityToNodeset(*node,lower_left);
 
       // add zero node to origin node set

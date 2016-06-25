@@ -86,13 +86,13 @@ template<typename EvalT, typename Traits>
 void panzer_stk::GatherRefCoords<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   const std::vector<stk::mesh::Entity*> & localElements = *mesh_->getElementsOrderedByLID();
+   const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
  
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    // convert to a vector of entity objects
-   std::vector<stk::mesh::Entity*> selected_elements;
+   std::vector<stk::mesh::Entity> selected_elements;
    for(std::size_t cell=0;cell<localCellIds.size();cell++)
      selected_elements.push_back(localElements[localCellIds[cell]]);
 

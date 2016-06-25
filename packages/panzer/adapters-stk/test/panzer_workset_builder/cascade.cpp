@@ -64,7 +64,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
 		  std::vector<stk::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -92,10 +92,10 @@ namespace panzer {
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities; 
       mesh->getMySides("left","eblock-0_0",sideEntities);
 
-      std::vector<std::vector<stk::mesh::Entity*> > subcells;
+      std::vector<std::vector<stk::mesh::Entity> > subcells;
       panzer_stk::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
 
       if(tcomm->getRank()==0) {
@@ -119,12 +119,12 @@ namespace panzer {
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities; 
       mesh->getMySides("left","eblock-0_0",sideEntities);
       TEST_ASSERT(sideEntities.size()==2);
 
       std::vector<std::size_t> localSubcellDim,localSubcellIds;
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
 
       panzer_stk::workset_utils::getSideElementCascade(*mesh,"eblock-0_0",sideEntities,
                                                        localSubcellDim,localSubcellIds,elements);
@@ -148,7 +148,7 @@ namespace panzer {
     }
   }
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
 		  std::vector<stk::mesh::EntityId> & nodeIds)
   {
     stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);

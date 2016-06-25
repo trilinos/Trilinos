@@ -54,12 +54,12 @@
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds);
+void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds);
 
 /*
 void getSideElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId, const std::vector<stk::mesh::Entity*> & sides,
-                     std::vector<std::size_t> & localSideIds, std::vector<stk::mesh::Entity*> & elements);
+                     const std::string & blockId, const std::vector<stk::mesh::Entity> & sides,
+                     std::vector<std::size_t> & localSideIds, std::vector<stk::mesh::Entity> & elements);
 */
 
 /** This example whows how to get vertex IDs for all the elements
@@ -100,7 +100,7 @@ int main( int argc, char **argv )
      for(std::size_t side=0;side<sideSets.size();++side) {
         std::string sideName = sideSets[side];
    
-        std::vector<stk::mesh::Entity*> sideEntities; 
+        std::vector<stk::mesh::Entity> sideEntities; 
         mesh->getMySides(sideName,eBlockId,sideEntities);
    
         // don't try to build worksets for sides that don't have
@@ -110,7 +110,7 @@ int main( int argc, char **argv )
            continue;
         }
    
-        std::vector<stk::mesh::Entity*> elements;
+        std::vector<stk::mesh::Entity> elements;
         std::vector<std::size_t> localSideIds;
         panzer_stk::workset_utils::getSideElements(*mesh,eBlockId,sideEntities,localSideIds,elements);
         TEUCHOS_ASSERT(localSideIds.size()==elements.size());
@@ -121,7 +121,7 @@ int main( int argc, char **argv )
         std::vector<std::size_t> localIds;
         for(std::size_t elm=0;elm<elements.size();++elm) {
            std::vector<stk::mesh::EntityId> nodes;
-           stk::mesh::Entity * element = elements[elm];
+           stk::mesh::Entity element = elements[elm];
    
            localIds.push_back(mesh->elementLocalId(element));
            getNodeIds(mesh->getNodeRank(),element,nodes);
@@ -159,7 +159,7 @@ int main( int argc, char **argv )
   return 0;
 }
 
-void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
+void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 

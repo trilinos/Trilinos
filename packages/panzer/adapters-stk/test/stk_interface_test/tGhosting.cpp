@@ -72,7 +72,7 @@ inline bool XOR(bool A,bool B)
 class LocalIdCompare {
 public:
    LocalIdCompare(const Teuchos::RCP<const STK_Interface> & mesh) : mesh_(mesh) {}
-   bool operator()(stk::mesh::Entity * a,stk::mesh::Entity * b) const 
+   bool operator()(stk::mesh::Entity a,stk::mesh::Entity b) const 
    { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b); }
 
 private:
@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    mesh->writeToExodus("TEST.exo");
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk::mesh::Entity> neighbors;
      mesh->getNeighborElements(neighbors);
 
      std::size_t vec[4];
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    }
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk::mesh::Entity> neighbors;
      mesh->getNeighborElements("eblock-0_0",neighbors);
 
      std::size_t vec[4];
@@ -135,7 +135,7 @@ TEUCHOS_UNIT_TEST(tGhosting, get_neighbor_elements)
    }
 
    {
-     std::vector<stk::mesh::Entity*> neighbors;
+     std::vector<stk::mesh::Entity> neighbors;
      mesh->getNeighborElements("eblock-1_0",neighbors);
 
      std::size_t vec[4];

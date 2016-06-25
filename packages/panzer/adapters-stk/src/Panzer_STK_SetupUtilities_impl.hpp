@@ -52,12 +52,12 @@ void getIdsAndVertices(const panzer_stk::STK_Interface& mesh,
 			 std::vector<std::size_t>& localIds,
 			 ArrayT & vertices) {
   
-  std::vector<stk::mesh::Entity*> elements;
+  std::vector<stk::mesh::Entity> elements;
   mesh.getMyElements(blockId,elements);
   
   // loop over elements of this block
   for(std::size_t elm=0;elm<elements.size();++elm) {
-    stk::mesh::Entity * element = elements[elm];
+    stk::mesh::Entity element = elements[elm];
     
     localIds.push_back(mesh.elementLocalId(element));
   }

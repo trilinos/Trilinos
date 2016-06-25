@@ -113,9 +113,9 @@ TEUCHOS_UNIT_TEST(tPointLocationSearch, basic)
 
      /*
 
-   std::vector<stk::mesh::Entity*> my_elements;
+   std::vector<stk::mesh::Entity> my_elements;
    mesh->getMyElements(my_elements);
-   for (std::vector<stk::mesh::Entity*>::const_iterator e=my_elements.begin(); e!=my_elements.end();++e) {
+   for (std::vector<stk::mesh::Entity>::const_iterator e=my_elements.begin(); e!=my_elements.end();++e) {
      os << "element id = " << (*e)->identifier() << std::endl;
    
 

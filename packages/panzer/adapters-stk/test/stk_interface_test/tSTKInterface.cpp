@@ -306,7 +306,7 @@ class CompareID {
 public:
    CompareID(stk::mesh::EntityId id) : id_(id) {}
 
-   bool operator()(stk::mesh::Entity * e)
+   bool operator()(stk::mesh::Entity e)
    { return e->identifier()==id_; }
    stk::mesh::EntityId id_;
 };
@@ -323,7 +323,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->writeToExodus("simplemesh.exo");
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(2,elements);
  
       TEST_EQUALITY(elements.size(),2); 
@@ -332,7 +332,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(4,elements);
  
       TEST_EQUALITY(elements.size(),2); 
@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
    }
  
    {
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNode(3,elements);
  
       TEST_EQUALITY(elements.size(),3); 
@@ -355,7 +355,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
      nodes.push_back(3);
      nodes.push_back(4);
 
-     std::vector<stk::mesh::Entity*> elements;
+     std::vector<stk::mesh::Entity> elements;
      mesh->getElementsSharingNodes(nodes,elements);
 
      TEST_EQUALITY(elements.size(),2); 
@@ -368,7 +368,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       nodes.push_back(1);
       nodes.push_back(5);
 
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh->getElementsSharingNodes(nodes,elements);
 
       TEST_EQUALITY(elements.size(),0); 
@@ -412,7 +412,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
 {
    using Teuchos::RCP;
 
-   std::vector<stk::mesh::Entity*> elements;
+   std::vector<stk::mesh::Entity> elements;
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
@@ -423,12 +423,12 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
 
    // loop over all elements of mesh
    for(std::size_t elmI=0;elmI<elements.size();++elmI) {
-      stk::mesh::Entity * elem = elements[elmI];
+      stk::mesh::Entity elem = elements[elmI];
       std::size_t localId = mesh->elementLocalId(elem);
 
       stk::mesh::PairIterRelation relations = elem->relations(nodeRank);
       stk::mesh::PairIterRelation::iterator itr;
-      stk::mesh::Entity * node = 0;
+      stk::mesh::Entity node = 0;
       for(itr=relations.begin();itr!=relations.end();++itr) {
          if(itr->identifier()==0) {
             node = itr->entity();

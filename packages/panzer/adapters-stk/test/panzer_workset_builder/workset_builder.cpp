@@ -70,7 +70,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
 		  std::vector<stk::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -478,11 +478,11 @@ namespace panzer {
     for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
 	 bc != bcs.end(); ++bc) {
       
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities; 
       mesh->getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
    
       
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       std::vector<std::size_t> local_cell_ids;
       std::vector<std::size_t> local_side_ids;
       panzer_stk::workset_utils::getSideElements(*mesh, bc->elementBlockID(),
@@ -494,7 +494,7 @@ namespace panzer {
       // loop over elements of this block
       for(std::size_t elm=0;elm<elements.size();++elm) {
 	std::vector<stk::mesh::EntityId> nodes;
-	stk::mesh::Entity * element = elements[elm];
+	stk::mesh::Entity element = elements[elm];
 	
 	local_cell_ids.push_back(mesh->elementLocalId(element));
 	getNodeIds(mesh->getNodeRank(),element,nodes);
@@ -594,10 +594,10 @@ namespace panzer {
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
   
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities; 
       mesh->getMySides("left","eblock-0_0_0",sideEntities);
 
-      std::vector<std::vector<stk::mesh::Entity*> > subcells;
+      std::vector<std::vector<stk::mesh::Entity> > subcells;
       panzer_stk::workset_utils::getSubcellEntities(*mesh,sideEntities,subcells);
 
       TEST_EQUALITY(subcells.size(),2);
@@ -618,11 +618,11 @@ namespace panzer {
       factory.setParameterList(pl);
       RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-      std::vector<stk::mesh::Entity*> sideEntities; 
+      std::vector<stk::mesh::Entity> sideEntities; 
       mesh->getMySides("left","eblock-0_0_0",sideEntities);
 
       std::vector<std::size_t> localSubcellDim,localSubcellIds;
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
 
       // TOUCHING TABLE:
       // the following elements touch the side
@@ -665,7 +665,7 @@ namespace panzer {
     }
   }
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
 		  std::vector<stk::mesh::EntityId> & nodeIds)
   {
     stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);

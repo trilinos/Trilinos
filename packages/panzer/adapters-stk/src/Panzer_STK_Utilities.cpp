@@ -78,7 +78,7 @@ void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> 
       const std::string & blockId = blocks[eb];
       panzer_stk::STK_Interface::SolutionFieldType * field = mesh.getCellField(fieldName,blockId);
 
-      std::vector<stk::mesh::Entity*> elements;
+      std::vector<stk::mesh::Entity> elements;
       mesh.getMyElements(blockId,elements);
 
       // loop over elements in this block
@@ -265,10 +265,10 @@ void build_local_ids(const panzer_stk::STK_Interface & mesh,
       std::vector<std::size_t> & localBlockIds = *localIds[blockId];
 
       // grab elements on this block
-      std::vector<stk::mesh::Entity*> blockElmts;
+      std::vector<stk::mesh::Entity> blockElmts;
       mesh.getMyElements(blockId,blockElmts);
 
-      std::vector<stk::mesh::Entity*>::const_iterator itr;
+      std::vector<stk::mesh::Entity>::const_iterator itr;
       for(itr=blockElmts.begin();itr!=blockElmts.end();++itr)
          localBlockIds.push_back(mesh.elementLocalId(*itr));
 

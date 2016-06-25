@@ -193,11 +193,11 @@ public:
 
    /** Addes an entity to a specified side set.
      */
-   void addEntityToSideset(stk::mesh::Entity & entity,stk::mesh::Part * sideset);
+   void addEntityToSideset(stk::mesh::Entity entity,stk::mesh::Part * sideset);
 
    /** Addes an entity to a specified node set.
      */
-   void addEntityToNodeset(stk::mesh::Entity & entity,stk::mesh::Part * nodeset);
+   void addEntityToNodeset(stk::mesh::Entity entity,stk::mesh::Part * nodeset);
 
    // Methods to interrogate the mesh topology and structure
    //////////////////////////////////////////
@@ -221,7 +221,7 @@ public:
 
    /** Look up a global node and get the coordinate.
      */
-   const double * getNodeCoordinates(stk::mesh::Entity * node) const;
+   const double * getNodeCoordinates(stk::mesh::Entity node) const;
 
    /** Get subcell global IDs
      */
@@ -230,20 +230,20 @@ public:
 
    /** Get a vector of elements owned by this processor
      */
-   void getMyElements(std::vector<stk::mesh::Entity*> & elements) const;
+   void getMyElements(std::vector<stk::mesh::Entity> & elements) const;
 
    /** Get a vector of elements owned by this processor on a particular block ID
      */
-   void getMyElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
+   void getMyElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const;
 
    /** Get a vector of elements that share an edge/face with an owned element. Note that these elements
      * are not owned.
      */
-   void getNeighborElements(std::vector<stk::mesh::Entity*> & elements) const;
+   void getNeighborElements(std::vector<stk::mesh::Entity> & elements) const;
 
    /** Get a vector of elements not owned by this processor but in a particular block
      */
-   void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity*> & elements) const;
+   void getNeighborElements(const std::string & blockID,std::vector<stk::mesh::Entity> & elements) const;
 
    /** Get Entities corresponding to the side set requested. 
      * The Entites in the vector should be a dimension
@@ -252,7 +252,7 @@ public:
      * \param[in] sideName Name of side set
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getMySides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const;
+   void getMySides(const std::string & sideName,std::vector<stk::mesh::Entity> & sides) const;
 
    /** Get Entities corresponding to the locally owned part of the side set requested. This also limits
      * the entities to be in a particular element block. The Entites in the vector should be a dimension
@@ -262,7 +262,7 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const;
+   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & sides) const;
 
    /** Get Entities corresponding to the locally owned part of the side set requested. 
      * The Entites in the vector should be a dimension
@@ -271,7 +271,7 @@ public:
      * \param[in] sideName Name of side set
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getAllSides(const std::string & sideName,std::vector<stk::mesh::Entity*> & sides) const;
+   void getAllSides(const std::string & sideName,std::vector<stk::mesh::Entity> & sides) const;
 
    /** Get Entities corresponding to the side set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be a dimension
@@ -282,7 +282,7 @@ public:
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
 
-   void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & sides) const;
+   void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & sides) const;
 
    /** Get Entities corresponding to the node set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be ofdimension
@@ -293,7 +293,7 @@ public:
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
 
-   void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity*> & nodes) const;
+   void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & nodes) const;
 
    // Utility functions
    //////////////////////////////////////////
@@ -398,28 +398,28 @@ public:
    //////////////////////////////////////////
 
    //! get a set of elements sharing a single node
-   void getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements) const;
+   void getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements) const;
 
    /** Get set of element sharing a single node and its local node id.
      */
-   void getOwnedElementsSharingNode(stk::mesh::Entity * node,std::vector<stk::mesh::Entity *> & elements,
+   void getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
                                                         std::vector<int> & localNodeId) const;
 
    /** Get set of element sharing a single node and its local node id.
      */
-   void getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity *> & elements,
+   void getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements,
                                                           std::vector<int> & localNodeId, unsigned int matchType) const;
 
 
    //! get a set of elements sharing multiple nodes
-   void getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeId,std::vector<stk::mesh::Entity *> & elements) const;
+   void getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeId,std::vector<stk::mesh::Entity> & elements) const;
 
    //! force the mesh to build subcells: edges and faces
    void buildSubcells();
 
    /** Get an elements local index
      */
-   std::size_t elementLocalId(stk::mesh::Entity * elmt) const;
+   std::size_t elementLocalId(stk::mesh::Entity elmt) const;
 
    /** Get an elements local index
      */
@@ -432,12 +432,12 @@ public:
 
    /** Get an elements global index
      */
-   inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity * elmt) const
+   inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity elmt) const
    { return elmt->identifier(); }
 
    /**  Get the containing block ID of this element.
      */ 
-   std::string containingBlockId(stk::mesh::Entity * elmt);
+   std::string containingBlockId(stk::mesh::Entity elmt);
 
    /** Get the stk mesh field pointer associated with a particular solution value
      * Assumes there is a field associated with "fieldName,blockId" pair. If none
@@ -461,7 +461,7 @@ public:
    /** Get Vector of element entities ordered by their LID, returns an RCP so that
      * it is easily stored by the caller.
      */
-   Teuchos::RCP<const std::vector<stk::mesh::Entity*> > getElementsOrderedByLID() const;
+   Teuchos::RCP<const std::vector<stk::mesh::Entity> > getElementsOrderedByLID() const;
 
    /** Writes a particular field to an array. Notice this is setup to work with
      * the worksets associated with Panzer.
@@ -537,7 +537,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const;
+   void getElementVertices(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
    /** Get vertices associated with a number of elements of the same geometry.
      *
@@ -561,7 +561,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+   void getElementVertices(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
    /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
      *
@@ -583,7 +583,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVerticesNoResize(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const;
+   void getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
    /** Get vertices associated with a number of elements of the same geometry. The vertex array will not be resized.
      *
@@ -607,7 +607,7 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVerticesNoResize(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+   void getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
    // const stk::mesh::FEMInterface & getFEMInterface() const 
    // { return *femPtr_; }
@@ -734,10 +734,10 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices_FromField(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+   void getElementVertices_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const;
 
    template <typename ArrayT>
-   void getElementVertices_FromFieldNoResize(const std::vector<stk::mesh::Entity*> & elements,
+   void getElementVertices_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
                                              const std::string & eBlock, ArrayT & vertices) const;
 
    /** Get vertices associated with a number of elements of the same geometry. This access the true mesh coordinates
@@ -750,10 +750,10 @@ public:
      *       If the size of <code>localIds</code> is 0, the function will silently return
      */
    template <typename ArrayT>
-   void getElementVertices_FromCoords(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const;
+   void getElementVertices_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
    template <typename ArrayT>
-   void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const;
+   void getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const;
 
 public: // static operations
    static const std::string coordsString;
@@ -866,7 +866,7 @@ protected:
 #endif
 
    // uses lazy evaluation
-   mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
+   mutable Teuchos::RCP<std::vector<stk::mesh::Entity> > orderedElementVector_;
 
    // for element block weights
    std::map<std::string,double> blockWeights_;
@@ -890,7 +890,7 @@ protected:
      LocalIdCompare(const STK_Interface * mesh) : mesh_(mesh) {}
    
      // Compares two stk mesh entities based on local ID
-     bool operator() (stk::mesh::Entity * a,stk::mesh::Entity * b) 
+     bool operator() (stk::mesh::Entity a,stk::mesh::Entity b) 
      { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b);}
    
    private:
@@ -902,7 +902,7 @@ template <typename ArrayT>
 void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    int field_axis = -1;
    if(isMeshCoordField(blockId,fieldName,field_axis)) {
@@ -914,12 +914,12 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
-      stk::mesh::Entity * element = elements[localId];
+      stk::mesh::Entity element = elements[localId];
 
       // loop over nodes set solution values
       stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
-         stk::mesh::Entity * node = relations[i].entity();
+         stk::mesh::Entity node = relations[i].entity();
 
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
@@ -934,19 +934,19 @@ void STK_Interface::setDispFieldData(const std::string & fieldName,const std::st
 {
    TEUCHOS_ASSERT(axis>=0); // sanity check
 
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
    const VectorFieldType & coord_field = this->getCoordinatesField();
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
-      stk::mesh::Entity * element = elements[localId];
+      stk::mesh::Entity element = elements[localId];
 
       // loop over nodes set solution values
       stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
-         stk::mesh::Entity * node = relations[i].entity();
+         stk::mesh::Entity node = relations[i].entity();
 
          double * solnData = stk::mesh::field_data(*field,*node);
          double * coordData = stk::mesh::field_data(coord_field,*node);
@@ -960,7 +960,7 @@ template <typename ArrayT>
 void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                                          const std::vector<std::size_t> & localElementIds,ArrayT & solutionValues) const
 {
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    solutionValues = Kokkos::createDynRankView(solutionValues,
 					      "solutionValues",
@@ -971,12 +971,12 @@ void STK_Interface::getSolutionFieldData(const std::string & fieldName,const std
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
-      stk::mesh::Entity * element = elements[localId];
+      stk::mesh::Entity element = elements[localId];
 
       // loop over nodes set solution values
       stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
-         stk::mesh::Entity * node = relations[i].entity();
+         stk::mesh::Entity node = relations[i].entity();
 
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
@@ -989,13 +989,13 @@ template <typename ArrayT>
 void STK_Interface::setCellFieldData(const std::string & fieldName,const std::string & blockId,
                                      const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues,double scaleValue)
 {
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    SolutionFieldType * field = this->getCellField(fieldName,blockId);
 
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
-      stk::mesh::Entity * element = elements[localId];
+      stk::mesh::Entity element = elements[localId];
 
       double * solnData = stk::mesh::field_data(*field,*element);
       TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
@@ -1011,10 +1011,10 @@ void STK_Interface::getElementVertices(const std::vector<std::size_t> & localEle
      // gather from the intrinsic mesh coordinates (non-lagrangian)
      //
 
-     const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+     const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
     
      // convert to a vector of entity objects
-     std::vector<stk::mesh::Entity*> selected_elements;
+     std::vector<stk::mesh::Entity> selected_elements;
      for(std::size_t cell=0;cell<localElementIds.size();cell++) 
        selected_elements.push_back(elements[localElementIds[cell]]);
 
@@ -1028,7 +1028,7 @@ void STK_Interface::getElementVertices(const std::vector<std::size_t> & localEle
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const
+void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const
 {
    if(!useFieldCoordinates_) {
      getElementVertices_FromCoords(elements,vertices);
@@ -1041,7 +1041,7 @@ void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity*> & e
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const
+void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const
 {
    if(!useFieldCoordinates_) {
      getElementVertices_FromCoords(elements,vertices);
@@ -1054,10 +1054,10 @@ void STK_Interface::getElementVertices(const std::vector<stk::mesh::Entity*> & e
 template <typename ArrayT>
 void STK_Interface::getElementVertices(const std::vector<std::size_t> & localElementIds,const std::string & eBlock, ArrayT & vertices) const
 {
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    // convert to a vector of entity objects
-   std::vector<stk::mesh::Entity*> selected_elements;
+   std::vector<stk::mesh::Entity> selected_elements;
    for(std::size_t cell=0;cell<localElementIds.size();cell++) 
      selected_elements.push_back(elements[localElementIds[cell]]);
 
@@ -1077,10 +1077,10 @@ void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & 
      // gather from the intrinsic mesh coordinates (non-lagrangian)
      //
 
-     const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+     const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
     
      // convert to a vector of entity objects
-     std::vector<stk::mesh::Entity*> selected_elements;
+     std::vector<stk::mesh::Entity> selected_elements;
      for(std::size_t cell=0;cell<localElementIds.size();cell++) 
        selected_elements.push_back(elements[localElementIds[cell]]);
 
@@ -1094,7 +1094,7 @@ void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & 
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const
+void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const
 {
    if(!useFieldCoordinates_) {
      getElementVertices_FromCoordsNoResize(elements,vertices);
@@ -1107,7 +1107,7 @@ void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Enti
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const
+void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const
 {
    if(!useFieldCoordinates_) {
      getElementVertices_FromCoordsNoResize(elements,vertices);
@@ -1120,10 +1120,10 @@ void STK_Interface::getElementVerticesNoResize(const std::vector<stk::mesh::Enti
 template <typename ArrayT>
 void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & localElementIds,const std::string & eBlock, ArrayT & vertices) const
 {
-   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+   const std::vector<stk::mesh::Entity> & elements = *(this->getElementsOrderedByLID());
 
    // convert to a vector of entity objects
-   std::vector<stk::mesh::Entity*> selected_elements;
+   std::vector<stk::mesh::Entity> selected_elements;
    for(std::size_t cell=0;cell<localElementIds.size();cell++) 
      selected_elements.push_back(elements[localElementIds[cell]]);
 
@@ -1136,7 +1136,7 @@ void STK_Interface::getElementVerticesNoResize(const std::vector<std::size_t> & 
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const
+void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const
 {
    // nothing to do! silently return
    if(elements.size()==0) {
@@ -1158,7 +1158,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
    // loop over each requested element
    unsigned dim = getDimension();
    for(std::size_t cell=0;cell<elements.size();cell++) {
-      stk::mesh::Entity * element = elements[cell];
+      stk::mesh::Entity element = elements[cell];
       TEUCHOS_ASSERT(element!=0);
  
       unsigned vertexCount 
@@ -1183,7 +1183,7 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk::mesh::E
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity*> & elements, ArrayT & vertices) const
+void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk::mesh::Entity> & elements, ArrayT & vertices) const
 {
    // nothing to do! silently return
    if(elements.size()==0) {
@@ -1201,7 +1201,7 @@ void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk:
    // loop over each requested element
    unsigned dim = getDimension();
    for(std::size_t cell=0;cell<elements.size();cell++) {
-      stk::mesh::Entity * element = elements[cell];
+      stk::mesh::Entity element = elements[cell];
       TEUCHOS_ASSERT(element!=0);
  
       unsigned vertexCount 
@@ -1226,7 +1226,7 @@ void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk:
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const
+void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::Entity> & elements,const std::string & eBlock, ArrayT & vertices) const
 {
    TEUCHOS_ASSERT(useFieldCoordinates_);
 
@@ -1256,12 +1256,12 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
    }
 
    for(std::size_t cell=0;cell<elements.size();cell++) {
-      stk::mesh::Entity * element = elements[cell];
+      stk::mesh::Entity element = elements[cell];
 
       // loop over nodes set solution values
       stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
-         stk::mesh::Entity * node = relations[i].entity();
+         stk::mesh::Entity node = relations[i].entity();
 
          const double * coord = getNodeCoordinates(node->identifier());
 
@@ -1277,7 +1277,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
 }
 
 template <typename ArrayT>
-void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::mesh::Entity*> & elements,
+void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::mesh::Entity> & elements,
                                                          const std::string & eBlock, ArrayT & vertices) const
 {
    TEUCHOS_ASSERT(useFieldCoordinates_);
@@ -1300,12 +1300,12 @@ void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::
    }
 
    for(std::size_t cell=0;cell<elements.size();cell++) {
-      stk::mesh::Entity * element = elements[cell];
+      stk::mesh::Entity element = elements[cell];
 
       // loop over nodes set solution values
       stk::mesh::PairIterRelation relations = element->relations(getNodeRank());
       for(std::size_t i=0;i<relations.size();++i) {
-         stk::mesh::Entity * node = relations[i].entity();
+         stk::mesh::Entity node = relations[i].entity();
 
          const double * coord = getNodeCoordinates(node->identifier());
 

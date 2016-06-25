@@ -67,7 +67,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
                 std::vector<stk::mesh::EntityId> & nodeIds);
 
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
@@ -219,7 +219,7 @@ TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   }    
 }
 
-void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
+void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
                 std::vector<stk::mesh::EntityId> & nodeIds)
 {
   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);

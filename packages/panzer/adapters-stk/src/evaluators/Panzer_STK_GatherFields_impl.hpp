@@ -111,7 +111,7 @@ template<typename EvalT, typename Traits>
 void panzer_stk::GatherFields<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
-   const std::vector<stk::mesh::Entity*> & localElements = *mesh_->getElementsOrderedByLID();
+   const std::vector<stk::mesh::Entity> & localElements = *mesh_->getElementsOrderedByLID();
  
    // for convenience pull out some objects from workset
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -135,7 +135,7 @@ evaluateFields(typename Traits::EvalData workset)
          else {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<basisCnt;basis++) {
-              stk::mesh::Entity * node = relations[basis].entity();
+              stk::mesh::Entity node = relations[basis].entity();
               stk::mesh::EntityArray<VariableField> fieldData(*field,*node);
               (gatherFields_[fieldIndex])(worksetCellIndex,basis) = fieldData(); // from STK
            }

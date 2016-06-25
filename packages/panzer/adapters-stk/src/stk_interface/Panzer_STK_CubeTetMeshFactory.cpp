@@ -472,15 +472,15 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
    stk::mesh::Part * front = mesh.getSideset("front");
    stk::mesh::Part * back = mesh.getSideset("back");
 
-   std::vector<stk::mesh::Entity*> localElmts;
+   std::vector<stk::mesh::Entity> localElmts;
    mesh.getMyElements(localElmts);
 
    // gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1
 
    // loop over elements adding sides to sidesets
-   std::vector<stk::mesh::Entity*>::const_iterator itr;
+   std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-      stk::mesh::Entity * element = (*itr);
+      stk::mesh::Entity element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
       stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
 
@@ -495,14 +495,14 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
       nx = h_gid-ny*totalXElems;
 
       if(nz==0 && (t_offset==0 || t_offset==1)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the back
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,back);
       }
       if(nz+1==totalZElems && (t_offset==10 || t_offset==11)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the front
          if(side->owner_rank()==machRank_)
@@ -510,14 +510,14 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(ny==0 && (t_offset==2 || t_offset==3)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the bottom 
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,bottom);
       }
       if(ny+1==totalYElems && (t_offset==8 || t_offset==9)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the top
          if(side->owner_rank()==machRank_)
@@ -525,14 +525,14 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
       }
 
       if(nx==0 && (t_offset==4 || t_offset==5)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the left
          if(side->owner_rank()==machRank_)
             mesh.addEntityToSideset(*side,left);
       }
       if(nx+1==totalXElems && (t_offset==6 || t_offset==7)) {
-         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
 
          // on the right
          if(side->owner_rank()==machRank_)

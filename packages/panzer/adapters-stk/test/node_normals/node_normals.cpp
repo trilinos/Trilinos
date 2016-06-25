@@ -88,7 +88,7 @@ namespace panzer {
       
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
-    std::vector<stk::mesh::Entity*> sides;
+    std::vector<stk::mesh::Entity> sides;
     
     // This is for local sides, no ghosted  
     //mesh->getMySides(sideName,blockName,sides);
@@ -108,14 +108,14 @@ namespace panzer {
     
     std::cout << std::endl;
     
-    for (std::vector<stk::mesh::Entity*>::const_iterator side=sides.begin(); side != sides.end(); ++side) {
+    for (std::vector<stk::mesh::Entity>::const_iterator side=sides.begin(); side != sides.end(); ++side) {
       *pout << "side element: rank(" << (*side)->entity_rank() << ")"
 	    << ", gid(" << (*side)->identifier() << ")"
 	    << ", owner_rank(" << (*side)->owner_rank()
 	    << ")" << std::endl;
       
       // get node relations
-      std::vector<stk::mesh::Entity*> nodes;
+      std::vector<stk::mesh::Entity> nodes;
       
       stk::mesh::PairIterRelation node_relations = (*side)->relations(mesh->getNodeRank());
       stk::mesh::PairIterRelation parent_element_relations = (*side)->relations(mesh->getElementRank());

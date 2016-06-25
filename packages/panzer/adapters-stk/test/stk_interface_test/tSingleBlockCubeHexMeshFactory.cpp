@@ -70,7 +70,7 @@ void test2(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test4(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test27(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 
-void entityVecToGIDVec(const std::vector<stk::mesh::Entity*> & eVec,
+void entityVecToGIDVec(const std::vector<stk::mesh::Entity> & eVec,
                              std::vector<stk::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
@@ -187,7 +187,7 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
@@ -242,7 +242,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getEdgeRank()),2*(4+1)*(5+1)+4*(2+1)*(5+1)+5*(2+1)*(4+1));
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(4+1)*(2+1)*(5+1));
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
@@ -312,7 +312,7 @@ void test27(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    TEST_EQUALITY(mesh->getNumSidesets(),6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),6*9*12);
 
-   std::vector<stk::mesh::Entity*> myElements;
+   std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
    entityVecToGIDVec(myElements,myGids);
