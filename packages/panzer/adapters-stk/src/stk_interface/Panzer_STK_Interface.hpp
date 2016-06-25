@@ -1271,7 +1271,7 @@ void STK_Interface::getElementVertices_FromField(const std::vector<stk::mesh::En
 
         const double * coord = getNodeCoordinates(node);
 
-        for(int d=0;d<getDimension();d++) {
+        for(unsigned d=0;d<getDimension();d++) {
           double * solnData = stk::mesh::field_data(*fields[d],node);
 
           // recall mesh field coordinates are stored as displacements
@@ -1316,7 +1316,7 @@ void STK_Interface::getElementVertices_FromFieldNoResize(const std::vector<stk::
 
         const double * coord = getNodeCoordinates(node);
 
-        for(int d=0;d<getDimension();d++) {
+        for(unsigned d=0;d<getDimension();d++) {
           double * solnData = stk::mesh::field_data(*fields[d],node);
 
           // recall mesh field coordinates are stored as displacements
