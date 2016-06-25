@@ -82,6 +82,10 @@ void coarse_search_nonIdentProc(
     std::abort();
     // coarse_search_octree(domain,range,comm,intersections);
     break;
+  default:
+    std::cerr << "coarse_search(..) interface used does not support std::search::coarse_search_nonIdentProc(..) yet" << method << std::endl;
+    abort();
+    break;
   }
 }
 
