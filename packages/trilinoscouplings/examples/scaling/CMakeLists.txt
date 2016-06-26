@@ -42,6 +42,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     SOURCES example_Poisson2D_p2_tpetra.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
     NUM_MPI_PROCS 1
+    COMM mpi # Fails to build in serial (see Trilinos #465)
     )
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
