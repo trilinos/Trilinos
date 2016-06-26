@@ -65,6 +65,7 @@ echo "
 -DCMAKE_BUILD_TYPE=RELEASE
 -DTrilinos_ENABLE_DEBUG=ON
 -DTPL_ENABLE_MPI=ON
+-DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
 " > MPI_RELEASE_DEBUG_ST.config
 
 echo "
