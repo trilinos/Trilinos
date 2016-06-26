@@ -45,6 +45,7 @@
 #define TPETRA_DETAILS_FIXEDHASHTABLE_DEF_HPP
 
 #include "Tpetra_Details_FixedHashTable_decl.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
 #ifdef TPETRA_USE_MURMUR_HASH
 #  include "Kokkos_Functional.hpp" // hash function used by Kokkos::UnorderedMap
 #endif // TPETRA_USE_MURMUR_HASH
@@ -250,73 +251,6 @@ private:
   size_type size_;
 };
 
-/// \brief Parallel scan functor for computing "row" offsets.
-///
-/// Kokkos::parallel_scan functor for computing the row offsets array
-/// from the array of counts (which the above functor CountBuckets
-/// computes).
-///
-/// \tparam OffsetsViewType Type of the Kokkos::View specialization
-///   used to store the "row" offsets; the output of this functor.
-/// \tparam SizeType The parallel loop index type; a built-in integer
-///   type.  Defaults to the type of the input View's dimension.  You
-///   may use a shorter type to improve performance.
-template<class OffsetsViewType,
-         class SizeType = typename OffsetsViewType::size_type>
-class ComputeRowOffsets {
-public:
-  typedef OffsetsViewType offsets_view_type;
-  typedef typename OffsetsViewType::const_type counts_view_type;
-  typedef typename OffsetsViewType::execution_space execution_space;
-  typedef typename OffsetsViewType::memory_space memory_space;
-  typedef SizeType size_type;
-  typedef typename OffsetsViewType::non_const_value_type value_type;
-
-  /// \brief Constructor
-  ///
-  /// \param offsets [out] (Preallocated) offsets; one entry longer
-  ///   than \c counts
-  /// \param counts [in] View of bucket counts
-  ComputeRowOffsets (const offsets_view_type& offsets,
-                     const counts_view_type& counts) :
-    offsets_ (offsets),
-    counts_ (counts),
-    size_ (counts.dimension_0 ())
-  {}
-
-  //! Set the initial value of the reduction result.
-  KOKKOS_INLINE_FUNCTION void init (value_type& dst) const
-  {
-    dst = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  join (volatile value_type& dst,
-        const volatile value_type& src) const
-  {
-    dst += src;
-  }
-
-  KOKKOS_INLINE_FUNCTION void
-  operator () (const size_type& i, value_type& update, const bool final) const
-  {
-    if (final) {
-      offsets_[i] = update;
-    }
-    if (i < size_) {
-      update += counts_[i];
-    }
-  }
-
-private:
-  //! Offsets (output argument)
-  offsets_view_type offsets_;
-  //! Bucket counts (input argument).
-  counts_view_type counts_;
-  //! Number of entries in counts_.
-  size_type size_;
-};
-
 /// \brief Reduction result for FillPairs functor below.
 ///
 /// The reduction result finds the min and max keys, and reports
@@ -374,7 +308,7 @@ struct FillPairsResult {
 ///
 /// This is also a parallel reduce functor in order to check for
 /// failure.  Failure should only happen on a bug (in CountBuckets or
-/// ComputeRowOffsets), but checking for it is cheap and easy.
+/// computeOffsetsFromCounts), but checking for it is cheap and easy.
 ///
 /// \tparam PairsViewType Type of the Kokkos::View specialization used
 ///   to store the (key,value) pairs in the FixedHashTable; output of
@@ -1248,9 +1182,7 @@ init (const keys_type& keys,
   // passes over the data.  Thus, it still makes sense to have a
   // sequential fall-back.
   if (buildInParallel) {
-    typedef FHT::ComputeRowOffsets<typename ptr_type::non_const_type> functor_type;
-    functor_type functor (ptr, counts);
-    Kokkos::parallel_scan (size+1, functor);
+    ::Tpetra::Details::computeOffsetsFromCounts (ptr, counts);
   }
   else {
     // mfh 28 Mar 2016: We could use UVM here, but it's pretty easy to
