@@ -97,9 +97,6 @@ protected:
                        const std::vector<stk::mesh::EntityId> & h_nodes, 
                        STK_Interface & mesh) const;
 
-   // search through relations for the one matching the ID: for use with addSideSets
-   const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation edges) const;
-
    double x0_, y0_, z0_;
    double xf_, yf_, zf_;
 

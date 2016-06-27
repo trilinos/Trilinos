@@ -446,19 +446,10 @@ std::pair<int,int> CubeTetMeshFactory::determineZElemSizeAndStart(int zBlock,uns
    return std::make_pair(start+nZElems_*zBlock,nume);
 }
 
-// for use with addSideSets
-const stk::mesh::Relation * CubeTetMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
-{
-   for(std::size_t i=0;i<relations.size();i++) 
-      if(relations[i].identifier()==ID)
-         return &relations[i];
-
-   return 0;
-}
-
 void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
+   const stk::mesh::EntityRank side_rank = mesh.getSideRank();
 
    std::size_t totalXElems = nXElems_*xBlocks_;
    std::size_t totalYElems = nYElems_*yBlocks_;
@@ -481,8 +472,7 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+      stk::mesh::EntityId gid = mesh.elementGlobalId(element);
 
       // get hex global id
       stk::mesh::EntityId h_gid = (gid-1)/12+1;
@@ -495,48 +485,48 @@ void CubeTetMeshFactory::addSideSets(STK_Interface & mesh) const
       nx = h_gid-ny*totalXElems;
 
       if(nz==0 && (t_offset==0 || t_offset==1)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the back
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,back);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,back);
       }
       if(nz+1==totalZElems && (t_offset==10 || t_offset==11)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the front
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,front);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,front);
       }
 
       if(ny==0 && (t_offset==2 || t_offset==3)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the bottom 
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,bottom);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,bottom);
       }
       if(ny+1==totalYElems && (t_offset==8 || t_offset==9)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the top
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,top);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,top);
       }
 
       if(nx==0 && (t_offset==4 || t_offset==5)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the left
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,left);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,left);
       }
       if(nx+1==totalXElems && (t_offset==6 || t_offset==7)) {
-         stk::mesh::Entity side = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity side = mesh.findConnectivityById(element, side_rank, 3);
 
          // on the right
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,right);
+         if(mesh.entityOwnerRank(side)==machRank_)
+            mesh.addEntityToSideset(side,right);
       }
    }
 
