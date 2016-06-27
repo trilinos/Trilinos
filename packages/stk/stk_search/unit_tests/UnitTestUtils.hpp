@@ -40,7 +40,7 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-#include <Geom_AxisAlignedBB.h>
+#include <temp_move_to_stk_search/Geom_AxisAlignedBB.h>
 #include <Geom_Search.h>
 #include <search/ContactRangeSearch.h>
 #include <search/ContactCommunication.h>
