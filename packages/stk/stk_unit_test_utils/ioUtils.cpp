@@ -38,10 +38,7 @@ void write_mesh_using_stk_io(const std::string &filename,
     stkIo.set_bulk_data(bulkData);
     size_t outputFileIndex = stkIo.create_output_mesh(filename, databasePurpose);
     stkIo.write_output_mesh(outputFileIndex);
-    double time = 0.0;
-    stkIo.begin_output_step(outputFileIndex, time);
     stkIo.write_defined_output_fields(outputFileIndex);
-    stkIo.end_output_step(outputFileIndex);
 }
 
 
