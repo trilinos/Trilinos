@@ -42,34 +42,39 @@
 */
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include <cstdlib> // EXIT_SUCCESS, EXIT_FAILURE
 #include <iostream>
+#include <type_traits>
 
 namespace TpetraTest {
   // CUDA 7.5 doesn't always like functors in anonymous namespaces,
   // so we put this one in a named namespace.
-  template<class OffsetType, class CountType>
+  template<class OffsetType, class CountType, class DeviceType>
   class SumOfCounts {
   public:
-    SumOfCounts (const Kokkos::View<const CountType*>& counts) :
+    SumOfCounts (const Kokkos::View<const CountType*, DeviceType>& counts) :
       counts_ (counts) {}
     KOKKOS_INLINE_FUNCTION void
     operator () (const CountType& k, OffsetType& inout) const {
       inout += counts_(k);
     }
   private:
-    Kokkos::View<const CountType*> counts_;
+    Kokkos::View<const CountType*, DeviceType> counts_;
   };
 
   // Compute sum of counts.  We use this for error checking.
-  template<class OffsetType, class CountType>
-  OffsetType sumOfCounts (const Kokkos::View<const CountType*>& counts) {
+  template<class OffsetType, class CountType, class DeviceType>
+  OffsetType sumOfCounts (const Kokkos::View<const CountType*, DeviceType>& counts) {
+    typedef typename Kokkos::View<const CountType*, DeviceType>::size_type size_type;
+    typedef Kokkos::RangePolicy<typename DeviceType::execution_space, size_type> range_type;
+    typedef SumOfCounts<OffsetType, CountType, DeviceType> functor_type;
+
     OffsetType total = 0;
-    Kokkos::parallel_reduce (counts.dimension_0 (),
-                             SumOfCounts<OffsetType, CountType> (counts),
-                             total);
+    range_type range (0, counts.dimension_0 ());
+    Kokkos::parallel_reduce (range, functor_type (counts), total);
     return total;
   }
 } // namespace TpetraTest
@@ -79,7 +84,71 @@ namespace { // (anonymous)
 
   using std::endl;
 
-  template<class OffsetType, class CountType>
+
+  template<class ExecutionSpace>
+  struct ExecSpaceName {
+    static const char* name ();
+  };
+
+  template<class MemorySpace>
+  struct MemorySpaceName {
+    static const char* name ();
+  };
+
+  template<>
+  struct MemorySpaceName<Kokkos::HostSpace> {
+    static const char* name () { return "HostSpace"; }
+  };
+
+#ifdef KOKKOS_HAVE_SERIAL
+  template<>
+  struct ExecSpaceName<Kokkos::Serial> {
+    static const char* name () { return "Serial"; }
+  };
+#endif // KOKKOS_HAVE_SERIAL
+
+#ifdef KOKKOS_HAVE_PTHREAD
+  template<>
+  struct ExecSpaceName<Kokkos::Threads> {
+    static const char* name () { return "Threads"; }
+  };
+#endif // KOKKOS_HAVE_PTHREAD
+
+#ifdef KOKKOS_HAVE_OPENMP
+  template<>
+  struct ExecSpaceName<Kokkos::OpenMP> {
+    static const char* name () { return "OpenMP"; }
+  };
+#endif // KOKKOS_HAVE_OPENMP
+
+#ifdef KOKKOS_HAVE_CUDA
+  template<>
+  struct ExecSpaceName<Kokkos::Cuda> {
+    static const char* name () { return "Cuda"; }
+  };
+
+  template<>
+  struct MemorySpaceName<Kokkos::CudaSpace> {
+    static const char* name () { return "CudaSpace"; }
+  };
+
+  template<>
+  struct MemorySpaceName<Kokkos::CudaUVMSpace> {
+    static const char* name () { return "CudaUVMSpace"; }
+  };
+#endif // KOKKOS_HAVE_CUDA
+
+  template<class DeviceType>
+  std::string deviceName ()
+  {
+    return std::string ("Kokkos::Device<") +
+      ExecSpaceName<typename DeviceType::execution_space>::name () +
+      std::string (", ") +
+      MemorySpaceName<typename DeviceType::memory_space>::name () +
+      std::string (" >");
+  }
+
+  template<class OffsetType, class CountType, class DeviceType>
   void
   testComputeOffsetsTmpl (bool& success,
                           Teuchos::FancyOStream& originalOutputStream,
@@ -115,7 +184,7 @@ namespace { // (anonymous)
 
     // Set up counts array.  Fill it with entries, all of which are
     // different, but whose running sums we can easily calculate.
-    Kokkos::View<CountType*> counts ("counts", numCounts);
+    Kokkos::View<CountType*, DeviceType> counts ("counts", numCounts);
     auto counts_h = Kokkos::create_mirror_view (counts);
     for (CountType k = 0; k < numCounts; ++k) {
       counts_h(k) = k + 1;
@@ -127,36 +196,88 @@ namespace { // (anonymous)
     const OffsetType TWO = 2;
 
     // Make sure that our sum formula is correct.
-    {
-      const OffsetType total = TpetraTest::sumOfCounts<OffsetType, CountType> (counts);
-      TEST_EQUALITY( total, (numCounts*(numCounts+ONE)) / TWO );
-    }
+    const OffsetType expectedTotal = TpetraTest::sumOfCounts<OffsetType, CountType, DeviceType> (counts);
+    TEST_EQUALITY( expectedTotal, (numCounts*(numCounts+ONE)) / TWO );
 
-    Kokkos::View<OffsetType*> offsets ("offsets", numCounts+1);
+    Kokkos::View<OffsetType*, DeviceType> offsets ("offsets", numCounts+1);
     // The initial contents shouldn't matter, so fill offsets with
     // an "invalid" flag value (-1 for signed types).
     Kokkos::deep_copy (offsets, Tpetra::Details::OrdinalTraits<OffsetType>::invalid ());
 
     using ::Tpetra::Details::computeOffsetsFromCounts;
-    TEST_NOTHROW( computeOffsetsFromCounts (offsets, counts) );
 
-    // Make sure that computeOffsetsFromCounts didn't change counts.
+    out << "Test the case where counts and offsets live "
+      "in the same memory space" << endl;
     {
-      const OffsetType total = TpetraTest::sumOfCounts<OffsetType, CountType> (counts);
-      TEST_EQUALITY( total, (numCounts*(numCounts+ONE)) / TWO );
+      OffsetType computedTotal = 0;
+      TEST_NOTHROW( computedTotal = computeOffsetsFromCounts (offsets, counts) );
+      TEST_EQUALITY( expectedTotal, computedTotal );
+
+      // Make sure that computeOffsetsFromCounts didn't change counts.
+      {
+        const OffsetType total = TpetraTest::sumOfCounts<OffsetType, CountType, DeviceType> (counts);
+        TEST_EQUALITY( total, expectedTotal );
+      }
+
+      auto offsets_h = Kokkos::create_mirror_view (offsets);
+      Kokkos::deep_copy (offsets_h, offsets);
+
+      TEST_EQUALITY( offsets_h(0), ZERO );
+      for (CountType k = 0; k < numCounts; ++k) {
+        // Test result against sequential computation
+        TEST_EQUALITY( offsets_h(k+1), offsets_h(k) + counts_h(k) );
+        // Test against closed-form formula for partial sums
+        TEST_EQUALITY( offsets_h(k+1), ((k + ONE)*(k + TWO)) / TWO );
+        // Another sanity check
+        TEST_EQUALITY( static_cast<CountType> (offsets_h(k+1) - offsets_h(k)), counts_h(k) );
+      }
     }
 
-    auto offsets_h = Kokkos::create_mirror_view (offsets);
-    Kokkos::deep_copy (offsets_h, offsets);
+    // Now test the case where counts lives in host memory, and
+    // offsets in device memory.  We only need to test this if device
+    // != host.
+    if (! std::is_same<typename DeviceType::memory_space, Kokkos::HostSpace>::value) {
+      out << "Test the case where counts lives in host memory and "
+        "offsets in device memory" << endl;
+      Teuchos::OSTab tab2 (out);
 
-    TEST_EQUALITY( offsets_h(0), ZERO );
-    for (CountType k = 0; k < numCounts; ++k) {
-      // Test result against sequential computation
-      TEST_EQUALITY( offsets_h(k+1), offsets_h(k) + counts_h(k) );
-      // Test against closed-form formula for partial sums
-      TEST_EQUALITY( offsets_h(k+1), ((k + ONE)*(k + TWO)) / TWO );
-      // Another sanity check
-      TEST_EQUALITY( static_cast<CountType> (offsets_h(k+1) - offsets_h(k)), counts_h(k) );
+      // Kokkos guarantees that if an execution space is initialized,
+      // its HostMirror's execution space is also initialized.
+      typedef typename Kokkos::View<CountType*, DeviceType>::HostMirror::execution_space host_execution_space;
+      // If DeviceType::memory_space is CudaUVMSpace, HostMirror's
+      // memory space may also be CudaUVMSpace (since this is
+      // accessible from host).  We really want the count array to
+      // live in host memory for this test.
+      typedef Kokkos::HostSpace host_memory_space;
+      typedef Kokkos::Device<host_execution_space, host_memory_space> host_device_type;
+
+      Kokkos::View<CountType*, host_device_type> counts_host ("counts", numCounts);
+      for (CountType k = 0; k < numCounts; ++k) {
+        counts_host(k) = k + 1;
+      }
+
+      OffsetType computedTotal = 0;
+      TEST_NOTHROW( computedTotal = computeOffsetsFromCounts (offsets, counts_host) );
+      TEST_EQUALITY( expectedTotal, computedTotal );
+
+      // Make sure that computeOffsetsFromCounts didn't change counts_host.
+      {
+        const OffsetType total = TpetraTest::sumOfCounts<OffsetType, CountType, host_device_type> (counts_host);
+        TEST_EQUALITY( total, expectedTotal );
+      }
+
+      auto offsets_h = Kokkos::create_mirror_view (offsets);
+      Kokkos::deep_copy (offsets_h, offsets);
+
+      TEST_EQUALITY( offsets_h(0), ZERO );
+      for (CountType k = 0; k < numCounts; ++k) {
+        // Test result against sequential computation
+        TEST_EQUALITY( offsets_h(k+1), offsets_h(k) + counts_host(k) );
+        // Test against closed-form formula for partial sums
+        TEST_EQUALITY( offsets_h(k+1), ((k + ONE)*(k + TWO)) / TWO );
+        // Another sanity check
+        TEST_EQUALITY( static_cast<CountType> (offsets_h(k+1) - offsets_h(k)), counts_host(k) );
+      }
     }
 
     // In release mode, only print at the end of this function if
@@ -166,11 +287,16 @@ namespace { // (anonymous)
     }
   }
 
+
+  template<class DeviceType>
   void
   testComputeOffsets (bool& success,
                       Teuchos::FancyOStream& out,
                       const bool debug)
   {
+    Teuchos::OSTab tab0 (out);
+    out << "Test DeviceType = " << deviceName<DeviceType> () << endl;
+
     // OffsetType must be able to hold sums of CountType values.
     // Thus, OffsetType can't be smaller than CountType, and
     // OffsetType can't be signed if CountType is unsigned.
@@ -185,141 +311,202 @@ namespace { // (anonymous)
 
     {
       const char countTypeName[] = "int";
-      testComputeOffsetsTmpl<int, int> (success, out,
-                                        "int",
-                                        countTypeName, debug);
+      testComputeOffsetsTmpl<int, int, DeviceType> (success, out,
+                                                    "int",
+                                                    countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<long, int> (success, out,
-                                         "long",
-                                         countTypeName, debug);
+      testComputeOffsetsTmpl<long, int, DeviceType> (success, out,
+                                                     "long",
+                                                     countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<long long, int> (success, out,
-                                              "long long",
-                                              countTypeName, debug);
+      testComputeOffsetsTmpl<long long, int, DeviceType> (success, out,
+                                                          "long long",
+                                                          countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned int, int> (success, out,
-                                                 "unsigned int",
-                                                 countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned int, int, DeviceType> (success, out,
+                                                             "unsigned int",
+                                                             countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long, int> (success, out,
-                                                  "unsigned long",
-                                                  countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long, int, DeviceType> (success, out,
+                                                              "unsigned long",
+                                                              countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long long, int> (success, out,
-                                                       "unsigned long long",
-                                                       countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, int, DeviceType> (success, out,
+                                                                   "unsigned long long",
+                                                                   countTypeName, debug);
       if (! success) {
         return;
       }
     }
     {
       const char countTypeName[] = "unsigned int";
-      testComputeOffsetsTmpl<unsigned int, unsigned int> (success, out,
-                                                          "unsigned int",
-                                                          countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned int, unsigned int, DeviceType> (success, out,
+                                                                      "unsigned int",
+                                                                      countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long, unsigned int> (success, out,
-                                                           "unsigned long",
-                                                           countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long, unsigned int, DeviceType> (success, out,
+                                                                       "unsigned long",
+                                                                       countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long long, unsigned int> (success, out,
-                                                                "unsigned long long",
-                                                                countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, unsigned int, DeviceType> (success, out,
+                                                                            "unsigned long long",
+                                                                            countTypeName, debug);
       if (! success) {
         return;
       }
     }
     {
       const char countTypeName[] = "long";
-      testComputeOffsetsTmpl<long, long> (success, out,
-                                          "long",
-                                          countTypeName, debug);
+      testComputeOffsetsTmpl<long, long, DeviceType> (success, out,
+                                                      "long",
+                                                      countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<long long, long> (success, out,
-                                               "long long",
-                                               countTypeName, debug);
+      testComputeOffsetsTmpl<long long, long, DeviceType> (success, out,
+                                                           "long long",
+                                                           countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long, long> (success, out,
-                                                   "unsigned long",
-                                                   countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long, long, DeviceType> (success, out,
+                                                               "unsigned long",
+                                                               countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long long, long> (success, out,
-                                                        "unsigned long long",
-                                                        countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, long, DeviceType> (success, out,
+                                                                    "unsigned long long",
+                                                                    countTypeName, debug);
     }
     {
       const char countTypeName[] = "unsigned long";
-      testComputeOffsetsTmpl<unsigned long, unsigned long> (success, out,
-                                                            "unsigned long",
-                                                            countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long, unsigned long, DeviceType> (success, out,
+                                                                        "unsigned long",
+                                                                        countTypeName, debug);
       if (! success) {
         return;
       }
       // We can't test OffsetType = long long here, in case
       // sizeof(long) == sizeof(long long).
-      testComputeOffsetsTmpl<unsigned long long, unsigned long> (success, out,
-                                                                 "unsigned long long",
-                                                                 countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, unsigned long, DeviceType> (success, out,
+                                                                             "unsigned long long",
+                                                                             countTypeName, debug);
       if (! success) {
         return;
       }
     }
     {
       const char countTypeName[] = "long long";
-      testComputeOffsetsTmpl<long long, long long> (success, out,
-                                                    "long long",
-                                                    countTypeName, debug);
+      testComputeOffsetsTmpl<long long, long long, DeviceType> (success, out,
+                                                                "long long",
+                                                                countTypeName, debug);
       if (! success) {
         return;
       }
-      testComputeOffsetsTmpl<unsigned long long, long long> (success, out,
-                                                             "unsigned long long",
-                                                             countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, long long, DeviceType> (success, out,
+                                                                         "unsigned long long",
+                                                                         countTypeName, debug);
       if (! success) {
         return;
       }
     }
     {
       const char countTypeName[] = "unsigned long long";
-      testComputeOffsetsTmpl<unsigned long long, unsigned long long> (success, out,
-                                                                      "unsigned long long",
-                                                                      countTypeName, debug);
+      testComputeOffsetsTmpl<unsigned long long, unsigned long long, DeviceType> (success, out,
+                                                                                  "unsigned long long",
+                                                                                  countTypeName, debug);
     }
   }
 
+  void
+  runTests (bool& success,
+            Teuchos::FancyOStream& out,
+            const bool debug)
+  {
+    // There is no DefaultMemorySpace typedef in Kokkos.
+    typedef Kokkos::Device<Kokkos::DefaultExecutionSpace,
+      Kokkos::DefaultExecutionSpace::memory_space> device_type;
+
+    // Test the default execution space, and the execution space of
+    // its host mirror.  Kokkos::initialize always initializes both.
+    testComputeOffsets<device_type> (success, out, debug);
+    typedef Kokkos::View<int*, device_type>::HostMirror::device_type host_device_type;
+    // The host mirror may be the same; don't run the test again in
+    // that case.  It's still correct to compile the test again in
+    // that case.
+    if (! std::is_same<device_type, host_device_type>::value) {
+      testComputeOffsets<host_device_type> (success, out, debug);
+
+      // Host mirror execution space of Cuda may be Serial (or OpenMP
+      // or Threads), but host mirror memory space of CudaUVMSpace
+      // (which may or may not be the default memory space of Cuda) is
+      // CudaUVMSpace, not HostSpace.  Thus, we need to test HostSpace
+      // too.
+      if (! std::is_same<host_device_type::memory_space, Kokkos::HostSpace>::value) {
+        typedef Kokkos::Device<host_device_type::execution_space, Kokkos::HostSpace> cur_device_type;
+        testComputeOffsets<cur_device_type> (success, out, debug);
+      }
+    }
+
+#ifdef KOKKOS_HAVE_CUDA
+    if (Kokkos::Cuda::is_initialized ()) {
+      // Make sure that we test both without and with UVM.
+      // We only have to test once for each case.
+      if (! std::is_same<typename device_type::memory_space, Kokkos::CudaSpace>::value) {
+        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaSpace> cur_device_type;
+        testComputeOffsets<cur_device_type> (success, out, debug);
+      }
+      if (! std::is_same<typename device_type::memory_space, Kokkos::CudaUVMSpace>::value) {
+        typedef Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace> cur_device_type;
+        testComputeOffsets<cur_device_type> (success, out, debug);
+      }
+    }
+#endif // KOKKOS_HAVE_CUDA
+  }
 } // namespace (anonymous)
 
 
 int
 main (int argc, char* argv[])
 {
+  const bool throwExceptionsOnParseError = true;
+  // Teuchos doesn't know about Kokkos' command-line options, so tell
+  // it to ignore options it doesn't recognize.
+  const bool reportErrorOnUnrecognizedOption = false;
+  Teuchos::CommandLineProcessor clp (throwExceptionsOnParseError,
+                                     reportErrorOnUnrecognizedOption);
+  bool debug = false;
+  clp.setOption ("debug", "release", &debug, "Set debug mode.  In debug mode, "
+                 "print all output.  In release mode, most output only prints "
+                 "if the test fails.  Debug mode is useful if the test crashes "
+                 "before it detects failure.");
+  const auto clpResult = clp.parse (argc, argv);
+  if (clpResult == Teuchos::CommandLineProcessor::PARSE_ERROR) {
+    std::cout << "Failed to parse command-line arguments!" << endl
+              << "End Result: TEST FAILED" << endl;
+  }
+
   Kokkos::initialize (argc, argv);
 
-  const bool debug = true;
   Teuchos::RCP<Teuchos::FancyOStream> outPtr =
     Teuchos::getFancyOStream (Teuchos::rcpFromRef (debug ? std::cerr : std::cout));
   bool success = true;
-  testComputeOffsets (success, *outPtr, debug);
+  runTests (success, *outPtr, debug);
 
   Kokkos::finalize ();
 

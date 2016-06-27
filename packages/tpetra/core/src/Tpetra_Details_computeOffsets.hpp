@@ -296,6 +296,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
+  typedef typename CountsViewType::non_const_value_type count_type;
   typedef typename OffsetsViewType::non_const_value_type offset_type;
   typedef typename OffsetsViewType::device_type device_type;
   typedef typename device_type::execution_space execution_space;
@@ -309,11 +310,40 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
        "computeOffsetsFromCounts: counts.dimension_0() = " << numCounts
        << " >= ptr.dimension_0() = " << numOffsets << ".");
 
-    ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
-      SizeType> functor (ptr, counts);
     Kokkos::RangePolicy<execution_space, SizeType> range (0, numCounts+1);
     try {
-      Kokkos::parallel_scan (range, functor);
+      // We always want to run in the offsets' execution space, since
+      // that is the output argument.  (This gives us first touch, if
+      // applicable, and in general improves locality.)  However, we
+      // need to make sure that we can access counts from this
+      // execution space.  If we can't, we need to make a temporary
+      // "device" copy of counts in offsets' memory space.
+
+      // The first template parameter needs to be a memory space.
+      constexpr bool countsAccessibleFromOffsets =
+        Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<memory_space,
+        typename CountsViewType::memory_space>::value;
+      if (countsAccessibleFromOffsets) {
+        typedef ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
+          SizeType> functor_type;
+        // offsets' execution space can access counts
+        functor_type functor (ptr, counts);
+        Kokkos::parallel_scan (range, functor);
+      }
+      else {
+        // Make a temporary copy of counts in offsets' execution
+        // space.  Use the same array layout as the original, so we
+        // can deep copy.
+        typedef Kokkos::View<count_type*, typename CountsViewType::array_layout,
+          device_type> dev_counts_type;
+        dev_counts_type counts_d ("counts_d", numCounts);
+        Kokkos::deep_copy (counts_d, counts);
+
+        typedef ComputeOffsetsFromCounts<OffsetsViewType, dev_counts_type,
+          SizeType> functor_type;
+        functor_type functor (ptr, counts_d);
+        Kokkos::parallel_scan (range, functor);
+      }
     }
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION
