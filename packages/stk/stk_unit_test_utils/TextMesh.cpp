@@ -262,7 +262,8 @@ void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData
 void fill_mesh(MeshData &meshData, const std::string &meshDesc, stk::mesh::BulkData &bulkData)
 {
     meshData = parse_input(meshDesc);
-    declare_parts_and_coordinates(meshData, bulkData.mesh_meta_data());
+    if(!bulkData.mesh_meta_data().is_commit())
+        declare_parts_and_coordinates(meshData, bulkData.mesh_meta_data());
     setup_mesh(meshData, bulkData);
 }
 
