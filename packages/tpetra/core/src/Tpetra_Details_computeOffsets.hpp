@@ -195,7 +195,7 @@ public:
   typedef OffsetsViewType offsets_view_type;
   typedef CountType count_type;
   typedef SizeType size_type;
-  typedef typename OffsetsViewType::non_const_value_type value_type;
+  typedef typename offsets_view_type::non_const_value_type value_type;
 
   /// \brief Constructor
   ///
@@ -258,6 +258,8 @@ private:
 /// counts[i].  If we stored counts[i] in ptr[i+1] on input, then the
 /// formula is ptr[i+1] += ptr[i].
 ///
+/// \return Sum of all counts; last entry of \c ptr.
+///
 /// \tparam OffsetsViewType Type of the Kokkos::View specialization
 ///   used to store the offsets; the output array of this function.
 /// \tparam CountsViewType Type of the Kokkos::View specialization
@@ -272,7 +274,7 @@ private:
 template<class OffsetsViewType,
          class CountsViewType,
          class SizeType = typename OffsetsViewType::size_type>
-void
+typename OffsetsViewType::non_const_value_type
 computeOffsetsFromCounts (const OffsetsViewType& ptr,
                           const CountsViewType& counts)
 {
@@ -294,16 +296,37 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
+  typedef typename OffsetsViewType::non_const_value_type offset_type;
+  typedef typename OffsetsViewType::device_type::memory_space dev_memory_space;
+
   const auto numOffsets = ptr.size ();
   const auto numCounts = counts.size ();
-  if (ptr.size () != 0) {
+  if (numOffsets != 0) {
     TEUCHOS_TEST_FOR_EXCEPTION
       (numCounts >= numOffsets, std::invalid_argument,
        "computeOffsetsFromCounts: counts.dimension_0() = " << numCounts
        << " >= ptr.dimension_0() = " << numOffsets << ".");
+
     ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
       SizeType> functor (ptr, counts);
     Kokkos::parallel_scan (numCounts+1, functor);
+
+    // Get the sum of all the entries of counts from the last entry of
+    // ptr.  The second branch of this 'if' always works, but we save
+    // a little time by specializing for non-CUDA execution spaces.
+    if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
+          dev_memory_space>::value) {
+      return ptr[numCounts];
+    }
+    else {
+      auto ptr_last = Kokkos::subview (ptr, numCounts);
+      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last);
+      Kokkos::deep_copy (ptr_last_h, ptr_last);
+      return ptr_last_h ();
+    }
+  }
+  else {
+    return static_cast<offset_type> (0);
   }
 }
 
@@ -315,6 +338,8 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 ///
 /// Thus, ptr[i+1] - ptr[i] = count, so that ptr[i+1] = ptr[i] +
 /// count.
+///
+/// \return Sum of all counts; last entry of \c ptr.
 ///
 /// \tparam OffsetsViewType Type of the Kokkos::View specialization
 ///   used to store the offsets; the output array of this function.
@@ -330,7 +355,7 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 template<class OffsetsViewType,
          class CountType,
          class SizeType = typename OffsetsViewType::size_type>
-void
+typename OffsetsViewType::non_const_value_type
 computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
                                  const CountType& count)
 {
@@ -348,12 +373,32 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
   static_assert (std::is_integral<SizeType>::value,
                  "SizeType must be a built-in integer type.");
 
+  typedef typename std::decay<CountType>::type count_type;
+  typedef typename OffsetsViewType::non_const_value_type offset_type;
+  typedef typename OffsetsViewType::device_type::memory_space dev_memory_space;
+
   const auto numOffsets = ptr.size ();
   if (numOffsets != 0) {
-    ComputeOffsetsFromConstantCount<OffsetsViewType,
-      typename std::decay<CountType>::type,
+    ComputeOffsetsFromConstantCount<OffsetsViewType, count_type,
       SizeType> functor (ptr, count);
     Kokkos::parallel_scan (numOffsets, functor);
+
+    // Get the sum of all the entries of counts from the last entry of
+    // ptr.  The second branch of this 'if' always works, but we save
+    // a little time by specializing for non-CUDA execution spaces.
+    if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
+          dev_memory_space>::value) {
+      return ptr[numOffsets - 1];
+    }
+    else {
+      auto ptr_last = Kokkos::subview (ptr, numOffsets - 1);
+      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last);
+      Kokkos::deep_copy (ptr_last_h, ptr_last);
+      return ptr_last_h ();
+    }
+  }
+  else {
+    return static_cast<offset_type> (0);
   }
 }
 
