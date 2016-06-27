@@ -297,7 +297,9 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
                  "SizeType must be a built-in integer type.");
 
   typedef typename OffsetsViewType::non_const_value_type offset_type;
-  typedef typename OffsetsViewType::device_type::memory_space dev_memory_space;
+  typedef typename OffsetsViewType::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename device_type::memory_space memory_space;
 
   const auto numOffsets = ptr.size ();
   const auto numCounts = counts.size ();
@@ -309,13 +311,29 @@ computeOffsetsFromCounts (const OffsetsViewType& ptr,
 
     ComputeOffsetsFromCounts<OffsetsViewType, CountsViewType,
       SizeType> functor (ptr, counts);
-    Kokkos::parallel_scan (numCounts+1, functor);
+    Kokkos::RangePolicy<execution_space, SizeType> range (0, numCounts+1);
+    try {
+      Kokkos::parallel_scan (range, functor);
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "computeOffsetsFromCounts: parallel_scan "
+         "(with device_type Kokkos::Device<" <<
+         typeid (execution_space).name () << ", " <<
+         typeid (memory_space).name () << ">) threw an std::exception: "
+         << e.what ());
+    }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "Kokkos::parallel_scan threw an "
+         "exception not a subclass of std::exception");
+    }
 
     // Get the sum of all the entries of counts from the last entry of
     // ptr.  The second branch of this 'if' always works, but we save
     // a little time by specializing for non-CUDA execution spaces.
     if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
-          dev_memory_space>::value) {
+          memory_space>::value) {
       return ptr[numCounts];
     }
     else {
@@ -375,19 +393,50 @@ computeOffsetsFromConstantCount (const OffsetsViewType& ptr,
 
   typedef typename std::decay<CountType>::type count_type;
   typedef typename OffsetsViewType::non_const_value_type offset_type;
-  typedef typename OffsetsViewType::device_type::memory_space dev_memory_space;
+  typedef typename OffsetsViewType::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename device_type::memory_space memory_space;
 
   const auto numOffsets = ptr.size ();
   if (numOffsets != 0) {
     ComputeOffsetsFromConstantCount<OffsetsViewType, count_type,
       SizeType> functor (ptr, count);
-    Kokkos::parallel_scan (numOffsets, functor);
+    Kokkos::RangePolicy<execution_space, SizeType> range (0, numOffsets);
+    try {
+#ifdef KOKKOS_HAVE_CUDA
+      constexpr bool isCuda = std::is_same<execution_space, Kokkos::Cuda>::value;
+#else
+      constexpr bool isCuda = false;
+#endif // KOKKOS_HAVE_CUDA
+      // FIXME (mfh 26 Jun 2016) Kokkos::Cuda doesn't like explicit
+      // use of RangePolicy here; it reports a build error.  Not sure
+      // why.  Using an integer range works just fine.
+      if (isCuda) {
+        Kokkos::parallel_scan (numOffsets, functor);
+      }
+      else {
+        Kokkos::parallel_scan (range, functor);
+      }
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "computeOffsetsFromConstantCount: "
+         "parallel_scan (with device_type Kokkos::Device<" <<
+         typeid (execution_space).name () << ", " <<
+         typeid (memory_space).name () << ">) threw an std::exception: "
+         << e.what ());
+    }
+    catch (...) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::runtime_error, "Kokkos::parallel_scan threw an "
+         "exception not a subclass of std::exception");
+    }
 
     // Get the sum of all the entries of counts from the last entry of
     // ptr.  The second branch of this 'if' always works, but we save
     // a little time by specializing for non-CUDA execution spaces.
     if (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<Kokkos::HostSpace,
-          dev_memory_space>::value) {
+          memory_space>::value) {
       return ptr[numOffsets - 1];
     }
     else {
