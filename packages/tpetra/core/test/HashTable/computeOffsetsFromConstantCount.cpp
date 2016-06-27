@@ -85,11 +85,6 @@ namespace { // (anonymous)
 
     const CountType numCounts = 10;
     const CountType count = 3;
-    const CountType expectedSum = count * numCounts;
-
-    const OffsetType ZERO = 0;
-    const OffsetType ONE = 1;
-    const OffsetType TWO = 2;
 
     Kokkos::View<OffsetType*> offsets ("offsets", numCounts+1);
     // The initial contents shouldn't matter, so fill offsets with
@@ -102,7 +97,7 @@ namespace { // (anonymous)
     auto offsets_h = Kokkos::create_mirror_view (offsets);
     Kokkos::deep_copy (offsets_h, offsets);
 
-    TEST_EQUALITY( offsets_h(0), ZERO );
+    TEST_EQUALITY( offsets_h(0), static_cast<OffsetType> (0) );
     for (CountType k = 0; k < numCounts; ++k) {
       // Test result against sequential computation
       TEST_EQUALITY( offsets_h(k+1), offsets_h(k) + count );
