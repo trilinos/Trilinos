@@ -1110,28 +1110,17 @@ namespace Tpetra {
           "k_numAllocPerRow_ is allocated (has length != 0), but its length = "
           << k_numAllocPerRow_.dimension_0 () << " != numRows = " << numRows
           << ".");
-        // FIXME hack until we get parallel_scan in kokkos
-        //
-        // NOTE (mfh 07 Feb 2016) k_numAllocPerRow_ is a host View.
-        // If replacing the code below with a parallel_scan, take note
-        // of whether the execution space can access it.
-        bool anyInvalidAllocSizes = false;
-        for (size_t i = 0; i < numRows; ++i) {
-          size_t allocSize = k_numAllocPerRow_(i);
-          if (allocSize == Teuchos::OrdinalTraits<size_t>::invalid ()) {
-            anyInvalidAllocSizes = true;
-            allocSize = 0;
-          }
-          k_rowPtrs(i+1) = k_rowPtrs(i) + allocSize;
-        }
-        // It's OK to throw std::invalid_argument here, because we
-        // haven't incurred any side effects yet.  Throwing that
-        // exception (and not, say, std::logic_error) implies that the
-        // instance can recover.
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          anyInvalidAllocSizes, std::invalid_argument, "The input array of "
-          "allocation sizes per row had at least one invalid (== "
-          "Teuchos::OrdinalTraits<size_t>::invalid()) entry.");
+
+        // k_numAllocPerRow_ is a host View, but k_rowPtrs (the thing
+        // we want to compute here) lives on device.  That's OK;
+        // computeOffsetsFromCounts can handle this case.
+        using ::Tpetra::Details::computeOffsetsFromCounts;
+
+        // FIXME (mfh 27 Jun 2016) Currently, computeOffsetsFromCounts
+        // doesn't attempt to check its input for "invalid" flag
+        // values.  For now, we omit that feature of the sequential
+        // code disabled below.
+        computeOffsetsFromCounts (k_rowPtrs, k_numAllocPerRow_);
       }
       else {
         // It's OK to throw std::invalid_argument here, because we
@@ -3660,8 +3649,10 @@ namespace Tpetra {
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_graph_type::entries_type::non_const_type lclinds_1d_type;
     typedef typename device_type::memory_space DMS;
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalGraph (called from fillComplete or "
       "expertStaticFillComplete): ";
+#endif // HAVE_TPETRA_DEBUG
     const size_t lclNumRows = this->getNodeNumRows ();
 
     // This method's goal is to fill in the two arrays (compressed

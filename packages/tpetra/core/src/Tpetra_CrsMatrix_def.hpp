@@ -54,6 +54,7 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_computeOffsets.hpp"
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Kokkos_Sparse_getDiagCopy.hpp"
@@ -1033,13 +1034,13 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using ::Tpetra::Details::computeOffsetsFromCounts;
     using Kokkos::create_mirror_view;
     using Teuchos::arcp_const_cast;
     using Teuchos::ArrayRCP;
     using Teuchos::null;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef ArrayRCP<size_t>::size_type size_type;
     typedef typename local_matrix_type::row_map_type row_map_type;
     typedef typename Graph::local_graph_type::entries_type::non_const_type lclinds_1d_type;
     typedef typename local_matrix_type::values_type values_type;
@@ -1078,20 +1079,8 @@ namespace Tpetra {
     lclinds_1d_type k_lclInds1D_ = myGraph_->k_lclInds1D_;
 
     typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::t_dev::memory_space DMS;
     typedef typename row_entries_type::t_host::memory_space HMS;
-    typedef typename row_entries_type::t_host::const_type const_row_entries_type;
-
-    // The number of entries in each locally owned row.  This is a
-    // host View.  2-D storage lives on host and is currently not
-    // thread-safe for parallel kernels even on host, so we have to
-    // work sequentially with host storage in that case.
-    const_row_entries_type h_numRowEnt;
-    {
-      // The matrix owns the graph, so sync'ing its DualView is legit.
-      auto k_numRowEntries = myGraph_->k_numRowEntries_;
-      k_numRowEntries.template sync<HMS> ();
-      h_numRowEnt = k_numRowEntries.template view<HMS> ();
-    }
 
     if (getProfileType () == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -1103,68 +1092,55 @@ namespace Tpetra {
       // (k_inds resp. k_vals), and then copy from 2-D storage
       // (lclInds2D_ resp. values2D_) into 1-D storage (k_inds
       // resp. k_vals).
+
+      // We're be packing on host, so we'll need k_numRowEntries_
+      // sync'd to host.  computeOffsetsFromCounts accepts a host View
+      // for counts, even if offsets is a device View.  (Furthermore,
+      // the "host" View may very well live in CudaUVMSpace, so doing
+      // this has no penalty, other than requiring synchronization
+      // between Cuda and host.  UVM memory gets grumpy if both device
+      // and host attempt to access it at the same time without an
+      // intervening fence.)
+      myGraph_->k_numRowEntries_.template sync<HMS> ();
+      typename row_entries_type::t_host::const_type numRowEnt_h =
+        myGraph_->k_numRowEntries_.template view<HMS> ();
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
-         std::logic_error, "(DynamicProfile branch) h_numRowEnt has the wrong "
-         "length.  h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
-         << " != getNodeNumRows() = " << lclNumRows << ".");
+        (static_cast<size_t> (numRowEnt_h.dimension_0 ()) != lclNumRows,
+         std::logic_error, "(DynamicProfile branch) numRowEnt_h has the "
+         "wrong length.  numRowEnt_h.dimension_0() = "
+         << numRowEnt_h.dimension_0 () << " != getNodeNumRows() = "
+         << lclNumRows << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-      // Pack the row offsets into k_ptrs, by doing a sum-scan of
-      // the array of valid entry counts per row (h_numRowEnt).
-      //
-      // Total number of entries in the matrix on the calling
-      // process.  We will compute this in the loop below.  It's
-      // cheap to compute and useful as a sanity check.
-      size_t lclTotalNumEntries = 0;
-      // This will be a host view of packed row offsets.
-      typename row_map_type::non_const_type::HostMirror h_ptrs;
-      {
-        // Allocate the packed row offsets array.  We use a nonconst
-        // temporary (packedRowOffsets) here, because k_ptrs is const.
-        // We will assign packedRowOffsets to k_ptrs below.
-        typename row_map_type::non_const_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
-                                                                lclNumRows+1);
-        //
-        // FIXME hack until we get parallel_scan in kokkos
-        //
-        h_ptrs = create_mirror_view (packedRowOffsets);
-        h_ptrs(0) = 0;
-        for (size_type i = 0; i < static_cast<size_type> (lclNumRows); ++i) {
-          const size_t numEnt = h_numRowEnt(i);
-          lclTotalNumEntries += numEnt;
-          h_ptrs(i+1) = h_ptrs(i) + numEnt;
-        }
-        Kokkos::deep_copy (packedRowOffsets, h_ptrs);
-        // packedRowOffsets is modifiable; k_ptrs isn't, so we have to
-        // use packedRowOffsets in the loop above and assign here.
-        k_ptrs = packedRowOffsets;
-        k_ptrs_const = k_ptrs;
-      }
+      // We're packing on host (since we can't read Teuchos data
+      // structures on device), so let's fill the packed row offsets
+      // on host first.
+      k_ptrs = typename row_map_type::non_const_type ("Tpetra::CrsGraph::ptr",
+                                                      lclNumRows+1);
+      typename row_map_type::non_const_type::HostMirror h_ptrs =
+        create_mirror_view (k_ptrs);
 
+      // Pack the row offsets into k_ptrs, by doing a sum-scan of
+      // the array of valid entry counts per row.
+      //
+      // Return value is the total number of entries in the matrix on
+      // the calling process.  It's cheap to compute and useful as a
+      // sanity check.
+      const size_t lclTotalNumEntries =
+        computeOffsetsFromCounts (h_ptrs, numRowEnt_h);
 #ifdef HAVE_TPETRA_DEBUG
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (k_ptrs.dimension_0 ()) != lclNumRows + 1,
-         std::logic_error, "(DynamicProfile branch) After packing k_ptrs, "
-         "k_ptrs.dimension_0() = " << k_ptrs.dimension_0 () << " != "
-         "(lclNumRows+1) = " << (lclNumRows+1) << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (h_ptrs.dimension_0 ()) != lclNumRows + 1,
          std::logic_error, "(DynamicProfile branch) After packing h_ptrs, "
          "h_ptrs.dimension_0() = " << h_ptrs.dimension_0 () << " != "
          "(lclNumRows+1) = " << (lclNumRows+1) << ".");
       {
-        // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
-        // k_ptrs(lclNumRows), then copy that entry of k_ptrs to host
-        // first.  We can do this with "0-D" subviews.
-        auto k_ptrs_ent_d = Kokkos::subview (k_ptrs, lclNumRows);
-        auto k_ptrs_ent_h = create_mirror_view (k_ptrs_ent_d);
-        Kokkos::deep_copy (k_ptrs_ent_h, k_ptrs_ent_d);
+        const size_t h_ptrs_lastEnt = h_ptrs(lclNumRows); // it's a host View
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (k_ptrs_ent_h () != lclTotalNumEntries, std::logic_error,
-           "(DynamicProfile branch) After packing k_ptrs, k_ptrs(lclNumRows = "
-           << lclNumRows << ") = " << k_ptrs_ent_h () << " != total number "
+          (h_ptrs_lastEnt != lclTotalNumEntries, std::logic_error,
+           "(DynamicProfile branch) After packing h_ptrs, h_ptrs(lclNumRows="
+           << lclNumRows << ") = " << h_ptrs_lastEnt << " != total number "
            "of entries on the calling process = " << lclTotalNumEntries << ".");
       }
 #endif // HAVE_TPETRA_DEBUG
@@ -1180,7 +1156,7 @@ namespace Tpetra {
       // Pack the column indices and values on the host.
       ArrayRCP<Array<LocalOrdinal> > lclInds2D = myGraph_->lclInds2D_;
       for (size_t row = 0; row < lclNumRows; ++row) {
-        const size_t numEnt = h_numRowEnt(row);
+        const size_t numEnt = numRowEnt_h(row);
         std::copy (lclInds2D[row].begin(),
                    lclInds2D[row].begin() + numEnt,
                    h_inds.ptr_on_device() + h_ptrs(row));
@@ -1188,14 +1164,23 @@ namespace Tpetra {
                    values2D_[row].begin() + numEnt,
                    h_vals.ptr_on_device() + h_ptrs(row));
       }
+
       // Copy the packed column indices and values to the device.
       Kokkos::deep_copy (k_inds, h_inds);
       Kokkos::deep_copy (k_vals, h_vals);
+      // Copy the packed row offsets to the device too.
+      // We didn't actually need them on device before.
+      Kokkos::deep_copy (k_ptrs, h_ptrs);
+      k_ptrs_const = k_ptrs; // const version of k_ptrs
 
 #ifdef HAVE_TPETRA_DEBUG
       // Sanity check of packed row offsets.
       if (k_ptrs.dimension_0 () != 0) {
         const size_t numOffsets = static_cast<size_t> (k_ptrs.dimension_0 ());
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (numOffsets != lclNumRows + 1, std::logic_error, "(DynamicProfile "
+           "branch) After copying into k_ptrs, k_ptrs.dimension_0() = " <<
+           numOffsets << " != (lclNumRows+1) = " << (lclNumRows+1) << ".");
 
         // mfh 23 Jun 2016: Don't assume UVM.  If we want to look at
         // k_ptrs(numOffsets-1), then copy that entry to host first.
@@ -1262,12 +1247,6 @@ namespace Tpetra {
         // bound on the number of entries per row, but didn't fill all
         // those entries.
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (h_numRowEnt.dimension_0 ()) != lclNumRows,
-           std::logic_error, "(StaticProfile unpacked branch) "
-           "h_numRowEnt.dimension_0() = " << h_numRowEnt.dimension_0 ()
-           << " != getNodeNumRows() = " << lclNumRows << ".");
-
         if (curRowOffsets.dimension_0 () != 0) {
           const size_t numOffsets =
             static_cast<size_t> (curRowOffsets.dimension_0 ());
@@ -1296,7 +1275,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
         // Pack the row offsets into k_ptrs, by doing a sum-scan of
-        // the array of valid entry counts per row (h_numRowEnt).
+        // the array of valid entry counts per row.
 
         // Total number of entries in the matrix on the calling
         // process.  We will compute this in the loop below.  It's
@@ -1310,20 +1289,13 @@ namespace Tpetra {
           // const.  We will assign packedRowOffsets to k_ptrs below.
           typename row_map_type::non_const_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
                                                                   lclNumRows+1);
-          //
-          // FIXME hack until we get parallel_scan in Kokkos
-          //
-          // Unlike in the 2-D storage case above, we don't need the
-          // host view of the packed row offsets array after packing
-          // the row offsets.
-          h_ptrs = create_mirror_view (packedRowOffsets);
-          h_ptrs(0) = 0;
-          for (size_type i = 0; i < static_cast<size_type> (lclNumRows); ++i) {
-            const size_t numEnt = h_numRowEnt(i);
-            lclTotalNumEntries += numEnt;
-            h_ptrs(i+1) = h_ptrs(i) + numEnt;
-          }
-          Kokkos::deep_copy (packedRowOffsets, h_ptrs);
+          // We're computing on device, so get a device version of the counts.
+          myGraph_->k_numRowEntries_.template sync<DMS> ();
+          typename row_entries_type::t_dev::const_type numRowEnt_d =
+            myGraph_->k_numRowEntries_.template view<DMS> ();
+
+          lclTotalNumEntries = computeOffsetsFromCounts (packedRowOffsets, numRowEnt_d);
+
           // packedRowOffsets is modifiable; k_ptrs isn't, so we have
           // to use packedRowOffsets in the loop above and assign here.
           k_ptrs = packedRowOffsets;
@@ -1603,21 +1575,8 @@ namespace Tpetra {
     }
 
     typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::t_dev::memory_space DMS;
     typedef typename row_entries_type::t_host::memory_space HMS;
-    typedef typename row_entries_type::t_host::const_type const_row_entries_type;
-
-    // The number of entries in each locally owned row.  This is a
-    // host View.  2-D storage lives on host and is currently not
-    // thread-safe for parallel kernels even on host, so we have to
-    // work sequentially with host storage in that case.
-    const_row_entries_type h_numRowEnt;
-    {
-      // FIXME (mfh 26 Jun 2016) It's rude to sync a DualView in the
-      // graph, when the graph is supposed to be const.
-      auto k_numRowEntries = staticGraph_->k_numRowEntries_;
-      k_numRowEntries.template sync<HMS> ();
-      h_numRowEnt = k_numRowEntries.template view<HMS> ();
-    }
 
     if (getProfileType() == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -1637,7 +1596,7 @@ namespace Tpetra {
       // just use the graph's current row offsets array?
 
       // Pack the row offsets into k_ptrs, by doing a sum-scan of
-      // the array of valid entry counts per row (h_numRowEnt).
+      // the array of valid entry counts per row.
       //
       // Total number of entries in the matrix on the calling
       // process.  We will compute this in the loop below.  It's
@@ -1645,19 +1604,24 @@ namespace Tpetra {
       size_t lclTotalNumEntries = 0;
       // This will be a host view of packed row offsets.
       typename non_const_row_map_type::HostMirror h_ptrs;
+
+      typename row_entries_type::t_host::const_type numRowEnt_h;
+      // FIXME (mfh 26 Jun 2016) It's rude to sync a DualView in the
+      // graph, when the graph is supposed to be const.
+      {
+        auto numRowEntries = staticGraph_->k_numRowEntries_;
+        numRowEntries.template sync<HMS> ();
+        numRowEnt_h = numRowEntries.template view<HMS> ();
+      }
+
       {
         non_const_row_map_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
                                                  lclNumRows+1);
-        //
-        // FIXME hack until we get parallel_scan in Kokkos
-        //
+        // NOTE (mfh 27 Jun 2016) We need h_ptrs on host anyway, so
+        // let's just compute offsets on host.
         h_ptrs = create_mirror_view (packedRowOffsets);
-        h_ptrs(0) = 0;
-        for (size_t i = 0; i < lclNumRows; ++i) {
-          const size_t numEnt = h_numRowEnt(i);
-          lclTotalNumEntries += numEnt;
-          h_ptrs(i+1) = h_ptrs(i) + numEnt;
-        }
+        using ::Tpetra::Details::computeOffsetsFromCounts;
+        lclTotalNumEntries = computeOffsetsFromCounts (h_ptrs, numRowEnt_h);
         Kokkos::deep_copy (packedRowOffsets, h_ptrs);
         k_ptrs = packedRowOffsets;
       }
@@ -1695,7 +1659,7 @@ namespace Tpetra {
       typename values_type::HostMirror h_vals = create_mirror_view (k_vals);
       // Pack the values on the host.
       for (size_t lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        const size_t numEnt = h_numRowEnt(lclRow);
+        const size_t numEnt = numRowEnt_h(lclRow);
         std::copy (values2D_[lclRow].begin(),
                    values2D_[lclRow].begin() + numEnt,
                    h_vals.ptr_on_device() + h_ptrs(lclRow));
@@ -1751,18 +1715,14 @@ namespace Tpetra {
         size_t lclTotalNumEntries = 0;
         k_ptrs = tmpk_ptrs;
         {
-          //
-          // FIXME hack until we get parallel_scan in Kokkos
-          //
-          typename non_const_row_map_type::HostMirror h_ptrs =
-            create_mirror_view (tmpk_ptrs);
-          h_ptrs(0) = 0;
-          for (size_t i = 0; i < lclNumRows; ++i) {
-            const size_t numEnt = h_numRowEnt(i);
-            lclTotalNumEntries += numEnt;
-            h_ptrs(i+1) = h_ptrs(i) + numEnt;
-          }
-          Kokkos::deep_copy (tmpk_ptrs, h_ptrs);
+          // FIXME (mfh 27 Jun 2016) It's rude to sync a DualView in the
+          // graph, when the graph is supposed to be const.
+          auto numRowEntries = staticGraph_->k_numRowEntries_;
+          numRowEntries.template sync<DMS> ();
+          typename row_entries_type::t_dev::const_type numRowEnt_d =
+            numRowEntries.template view<DMS> ();
+          using ::Tpetra::Details::computeOffsetsFromCounts;
+          lclTotalNumEntries = computeOffsetsFromCounts (tmpk_ptrs, numRowEnt_d);
         }
 
         // Allocate the "packed" values array.
