@@ -1077,13 +1077,21 @@ namespace Tpetra {
     // the matrix owns the graph, which means myGraph_ is not null.
     lclinds_1d_type k_lclInds1D_ = myGraph_->k_lclInds1D_;
 
+    typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::t_host::memory_space HMS;
+    typedef typename row_entries_type::t_host::const_type const_row_entries_type;
+
     // The number of entries in each locally owned row.  This is a
     // host View.  2-D storage lives on host and is currently not
     // thread-safe for parallel kernels even on host, so we have to
     // work sequentially with host storage in that case.
-    typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::const_type const_row_entries_type;
-    const_row_entries_type h_numRowEnt = myGraph_->k_numRowEntries_;
+    const_row_entries_type h_numRowEnt;
+    {
+      // The matrix owns the graph, so sync'ing its DualView is legit.
+      auto k_numRowEntries = myGraph_->k_numRowEntries_;
+      k_numRowEntries.template sync<HMS> ();
+      h_numRowEnt = k_numRowEntries.template view<HMS> ();
+    }
 
     if (getProfileType () == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -1594,13 +1602,22 @@ namespace Tpetra {
       requestOptimizedStorage = false;
     }
 
+    typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
+    typedef typename row_entries_type::t_host::memory_space HMS;
+    typedef typename row_entries_type::t_host::const_type const_row_entries_type;
+
     // The number of entries in each locally owned row.  This is a
     // host View.  2-D storage lives on host and is currently not
     // thread-safe for parallel kernels even on host, so we have to
     // work sequentially with host storage in that case.
-    typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::const_type const_row_entries_type;
-    const_row_entries_type h_numRowEnt = staticGraph_->k_numRowEntries_;
+    const_row_entries_type h_numRowEnt;
+    {
+      // FIXME (mfh 26 Jun 2016) It's rude to sync a DualView in the
+      // graph, when the graph is supposed to be const.
+      auto k_numRowEntries = staticGraph_->k_numRowEntries_;
+      k_numRowEntries.template sync<HMS> ();
+      h_numRowEnt = k_numRowEntries.template view<HMS> ();
+    }
 
     if (getProfileType() == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.

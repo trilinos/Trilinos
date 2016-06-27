@@ -2710,8 +2710,7 @@ namespace Tpetra {
          << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-      // k_numRowEntries_ is a host View.
-      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
+      k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
       nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
     }
 
@@ -3027,12 +3026,8 @@ namespace Tpetra {
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
-    /// This is a host View because it is only ever read or modified
-    /// on the host.
-    ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, execution_space>::HostMirror
-    k_numRowEntries_;
+    Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> k_numRowEntries_;
 
     //@}
 
