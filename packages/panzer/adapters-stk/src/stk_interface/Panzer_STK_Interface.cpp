@@ -830,6 +830,20 @@ void STK_Interface::getMyNodes(const std::string & nodesetName,const std::string
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getNodeRank()),nodes);
 }
 
+stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk::mesh::EntityRank tgt_rank, unsigned rel_id) const
+{
+  const size_t num_rels = bulkData_->num_connectivity(src, tgt_rank);
+  stk::mesh::Entity const* relations = bulkData_->begin(src, tgt_rank);
+  stk::mesh::ConnectivityOrdinal const* ordinals = bulkData_->begin_ordinals(src, tgt_rank);
+  for (size_t i = 0; i < num_rels; ++i) {
+    if (ordinals[i] == static_cast<stk::mesh::ConnectivityOrdinal>(rel_id)) {
+      return relations[i];
+    }
+  }
+
+  return stk::mesh::Entity();
+}
+
 void STK_Interface::getElementBlockNames(std::vector<std::string> & names) const
 {
    // TEUCHOS_ASSERT(initialized_); // all blocks must have been added

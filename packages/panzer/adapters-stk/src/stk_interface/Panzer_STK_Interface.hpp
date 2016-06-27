@@ -295,6 +295,16 @@ public:
 
    void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk::mesh::Entity> & nodes) const;
 
+   /**
+    * Searches for connected entity by rank and relation id. Returns
+    * invalid entity on failure.
+    *
+    * \param[in] src The handle to the source entity (the 'from' part of the relation)
+    * \param[in] tgt_rank The entity rank of relations to search
+    * \param[in] rel_id The id of the relation to search for
+    */
+   stk::mesh::Entity findConnectivityById(stk::mesh::Entity src, stk::mesh::EntityRank tgt_rank, unsigned rel_id) const;
+
    // Utility functions
    //////////////////////////////////////////
 
@@ -434,6 +444,16 @@ public:
      */
    inline stk::mesh::EntityId elementGlobalId(stk::mesh::Entity elmt) const
    { return bulkData_->identifier(elmt); }
+
+  /** Get an Entity's parallel owner (process rank)
+   */
+  inline unsigned entityOwnerRank(stk::mesh::Entity entity) const
+  { return bulkData_->parallel_owner_rank(entity); }
+
+  /** Check if entity handle is valid
+   */
+  inline bool isValid(stk::mesh::Entity entity) const
+  { return bulkData_->is_valid(entity); }
 
    /**  Get the containing block ID of this element.
      */ 

@@ -84,7 +84,7 @@ void write_cell_data(panzer_stk::STK_Interface & mesh,const std::vector<double> 
       // loop over elements in this block
       for(std::size_t el=0;el<elements.size();el++) {
          std::size_t localId = mesh.elementLocalId(elements[el]);
-         double * solnData = stk::mesh::field_data(*field,*elements[el]);
+         double * solnData = stk::mesh::field_data(*field,elements[el]);
          TEUCHOS_ASSERT(solnData!=0); // sanity check
          solnData[0] = data[localId];
       }
