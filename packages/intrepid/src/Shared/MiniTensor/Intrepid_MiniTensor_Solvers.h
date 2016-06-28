@@ -229,6 +229,32 @@ struct NewtonLineSearch
 };
 
 ///
+/// Back-track line search
+///
+template<typename T, Index N>
+struct BacktrackingLineSearch
+{
+  template<typename FN>
+  Vector<T, N>
+  step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln);
+
+  Index
+  max_num_iter{100};
+
+  Index
+  max_line_iter{10};
+
+  T
+  search_parameter{0.5};
+
+  T
+  search_increment{0.1};
+
+  T
+  tolerance{1.0e-6};
+};
+
+///
 /// Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
 ///
 template<typename T, Index N>
@@ -282,7 +308,12 @@ struct StepBase
 ///
 enum class StepType
 {
-  UNDEFINED = 0, NEWTON = 1, TRUST_REGION = 2, CG = 3, LINE_SEARCH_REG = 4
+  UNDEFINED = 0,
+  NEWTON = 1,
+  NEWTON_LS = 2,
+  TRUST_REGION = 3,
+  CG = 4,
+  LINE_SEARCH_REG = 5
 };
 
 ///
@@ -319,6 +350,36 @@ struct NewtonStep final : public StepBase<FN, T, N>
 
   virtual
   ~NewtonStep() {}
+};
+
+
+///
+/// Newton Step with line search
+///
+template<typename FN, typename T, Index N>
+struct NewtonWithLineSearchStep final : public StepBase<FN, T, N>
+{
+  static constexpr
+  char const * const
+  NAME{"Newton with Line Search"};
+
+  virtual
+  char const * const
+  name()
+  {
+    return NAME;
+  }
+
+  virtual
+  void
+  initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
+
+  virtual
+  Vector<T, N>
+  step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
+
+  virtual
+  ~NewtonWithLineSearchStep() {}
 };
 
 ///

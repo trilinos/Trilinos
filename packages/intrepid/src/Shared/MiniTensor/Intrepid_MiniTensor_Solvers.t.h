@@ -413,6 +413,72 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
 }
 
 //
+// Back-tracking line search
+//
+template<typename T, Index N>
+template<typename FN>
+Vector<T, N>
+BacktrackingLineSearch<T, N>::
+step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
+{
+  Index const
+  dimension = soln.get_dimension();
+
+  Vector < T, N >
+  step = direction;
+
+  Vector < T, N >
+  step_next(dimension, ZEROS);
+
+  Index
+  line_iter{0};
+
+  T
+  alpha{1.0};
+
+  Vector<T, N> const
+  soln_next = soln + step;
+
+  Vector<T, N> const
+  gradient_next = fn.gradient(soln_next);
+
+  for (Index i{0}; i < max_num_iter; i++) {
+    if (line_iter == max_line_iter) {
+      alpha = 1.0;
+      line_iter = 0;
+      search_parameter += search_increment;
+    }
+
+    if (search_parameter >= 1.0) break;
+
+    step_next = alpha * step;
+
+    Vector<T, N> const
+    soln_line_search = soln + step_next;
+
+    Vector<T, N> const
+    gradient_line_search = fn.gradient(soln_next);
+
+    alpha = alpha * 0.5;
+
+    line_iter++;
+
+    T const
+    resid_line_norm = dot(gradient_line_search, gradient_line_search);
+
+    T const
+    resid_norm = dot(gradient_next, gradient_next);
+
+    if (resid_line_norm <= search_parameter * resid_norm) {
+      step = step_next;
+      break;
+    }
+  } //Index i
+
+  return step;
+}
+
+//
 //
 //
 template<typename FN, typename T, Index N>
@@ -438,6 +504,42 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   step = - Intrepid::solve(Hessian, resi);
 
   return step;
+}
+
+
+//
+//
+//
+template<typename FN, typename T, Index N>
+void
+NewtonWithLineSearchStep<FN, T, N>::
+initialize(FN &, Vector<T, N> const &, Vector<T, N> const &)
+{
+  return;
+}
+
+//
+// Plain Newton step with line search
+//
+template<typename FN, typename T, Index N>
+Vector<T, N>
+NewtonWithLineSearchStep<FN, T, N>::
+step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
+{
+  Tensor<T, N> const
+  Hessian = fn.hessian(soln);
+
+  Vector<T, N> const
+  step = - Intrepid::solve(Hessian, resi);
+
+  // Newton back-tracking line search.
+  BacktrackingLineSearch<T, N>
+  newton_backtrack_ls;
+
+  Vector<T, N> const
+  ls_step = newton_backtrack_ls.step(fn, step, soln);
+
+  return ls_step;
 }
 
 //
@@ -670,7 +772,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
 
   }
 
-  // Newton line search.
+
   NewtonLineSearch<T, N>
   newton_ls;
 
@@ -712,6 +814,10 @@ stepFactory(StepType step_type)
   case StepType::LINE_SEARCH_REG:
     return STUP(new LineSearchRegularizedStep<FN, T, N>());
     break;
+
+  case StepType::NEWTON_LS:
+    return STUP(new NewtonWithLineSearchStep<FN, T, N>());
+    break;    
   }
 
   return STUP(nullptr);
