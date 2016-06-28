@@ -43,124 +43,114 @@
 /** \file   Intrepid_CubatureControlVolume.hpp
     \brief  Header file for the Intrepid2::CubatureControlVolume class.
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_CONTROLVOLUMEDEF_HPP
-#define INTREPID2_CUBATURE_CONTROLVOLUMEDEF_HPP
+#ifndef __INTREPID2_CUBATURE_CONTROLVOLUME_DEF_HPP__
+#define __INTREPID2_CUBATURE_CONTROLVOLUME_DEF_HPP__
 
-namespace Intrepid2{
+namespace Intrepid2 {
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::CubatureControlVolume(const Teuchos::RCP<const shards::CellTopology> & cellTopology)
-{
-  // topology of primary cell
-  primaryCellTopo_ = cellTopology;
+  template <typename SpT, typename PT, typename WT>
+  CubatureControlVolume<SpT,PT,WT>::
+  CubatureControlVolume(const shards::CellTopology cellTopology) {
 
-  // get topology of sub-control volume (will be quad or hex depending on dimension)
-  const CellTopologyData &myCellData =
-         (primaryCellTopo_->getDimension() > 2) ? *shards::getCellTopologyData<shards::Hexahedron<8> >() :
-                                                  *shards::getCellTopologyData<shards::Quadrilateral<4> >();
-  subCVCellTopo_ = Teuchos::rcp(new shards::CellTopology(&myCellData));
+    // define primary cell topology with given one
+    primaryCellTopo_ = cellTopology;
 
-  degree_ = 1;
+    // subcell is defined either hex or quad according to dimension
+    switch (primaryCellTopo_.getDimension()) {
+    case 2:
+      subcvCellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+      break;
+    case 3:
+      subcvCellTopo_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >());
+      break;
+    }
 
-  // one control volume cubature point per primary cell node
-  numPoints_ = primaryCellTopo_->getNodeCount();
+    // computation order is always one;
+    degree_ = 1;
 
-  cubDimension_ = primaryCellTopo_->getDimension();
+    // create subcell cubature points and weights and cache them
+    const ordinal_type subcvDegree = 2;
+    auto subcvCubature = DefaultCubatureFactory::create<SpT,PT,WT>(subcvCellTopo_, subcvDegree);
 
-}
+    const auto numSubcvPoints = subcvCubature->getNumPoints();
+    const auto subcvDim       = subcvCubature->getDimension();
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
-		                                                       ArrayWeight& cubWeights) const
-{
-    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (CubatureControlVolume): Cubature defined in physical space calling method for reference space cubature.");
-}
-
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
-		                                                       ArrayWeight& cubWeights,
-                                                                       ArrayPoint& cellCoords) const
-{
-  // get array dimensions
-  index_type numCells         = static_cast<index_type>(cellCoords.dimension(0));
-  index_type numNodesPerCell  = static_cast<index_type>(cellCoords.dimension(1));
-  index_type spaceDim         = static_cast<index_type>(cellCoords.dimension(2));
-  int numNodesPerSubCV = subCVCellTopo_->getNodeCount();
-
-  // get sub-control volume coordinates (one sub-control volume per node of primary cell)
-  Intrepid2::FieldContainer<Scalar> subCVCoords(numCells,numNodesPerCell,numNodesPerSubCV,spaceDim);
-  Intrepid2::CellTools<Scalar>::getSubCVCoords(subCVCoords,cellCoords,*(primaryCellTopo_));
-
-  // Integration points and weights for calculating sub-control volumes
-  Intrepid2::DefaultCubatureFactory<double>  subCVCubFactory;
-  int subcvCubDegree = 2;
-  Teuchos::RCP<Intrepid2::Cubature<double,Intrepid2::FieldContainer<double>  > > subCVCubature;
-  subCVCubature = subCVCubFactory.create(*(subCVCellTopo_), subcvCubDegree);
-
-  int subcvCubDim       = subCVCubature -> getDimension();
-  int numSubcvCubPoints = subCVCubature -> getNumPoints();
-
-   // Get numerical integration points and weights
-  Intrepid2::FieldContainer<double> subcvCubPoints (numSubcvCubPoints, subcvCubDim);
-  Intrepid2::FieldContainer<double> subcvCubWeights(numSubcvCubPoints);
-
-  subCVCubature -> getCubature(subcvCubPoints, subcvCubWeights);
-
-  // Loop over cells
-  for (index_type icell = 0; icell < numCells; icell++){
-
-    // get sub-control volume centers (integration points)
-     Intrepid2::FieldContainer<Scalar> subCVCenter(numNodesPerCell,1,spaceDim);
-     Intrepid2::FieldContainer<Scalar> cellCVCoords(numNodesPerCell,numNodesPerSubCV,spaceDim);
-     for (index_type isubcv = 0; isubcv < numNodesPerCell; isubcv++){
-       for (index_type idim = 0; idim < spaceDim; idim++){
-          for (int inode = 0; inode < numNodesPerSubCV; inode++){
-              subCVCenter(isubcv,0,idim) += subCVCoords(icell,isubcv,inode,idim)/numNodesPerSubCV;
-              cellCVCoords(isubcv,inode,idim) = subCVCoords(icell,isubcv,inode,idim);
-          }
-          cubPoints(icell,isubcv,idim) = subCVCenter(isubcv,0,idim);
-        }
-     }
-
-   // calculate Jacobian and determinant for each subCV quadrature point
-     Intrepid2::FieldContainer<Scalar> subCVJacobian(numNodesPerCell, numSubcvCubPoints, spaceDim, spaceDim);
-     Intrepid2::FieldContainer<Scalar> subCVJacobDet(numNodesPerCell, numSubcvCubPoints);
-     Intrepid2::CellTools<Scalar>::setJacobian(subCVJacobian, subcvCubPoints, cellCVCoords, *(subCVCellTopo_));
-     Intrepid2::CellTools<Scalar>::setJacobianDet(subCVJacobDet, subCVJacobian );
-
-    // fill array with sub control volumes (the sub control volume cell measure)
-     for (index_type inode = 0; inode < numNodesPerCell; inode++){
-         Scalar vol = 0;
-         for (int ipt = 0; ipt < numSubcvCubPoints; ipt++){
-            vol += subcvCubWeights(ipt)*subCVJacobDet(inode,ipt);
-         }
-         cubWeights(icell,inode) = vol;
-     }
-
- } // end cell loop
-
-} // end getCubature
+    subcvCubaturePoints_  = Kokkos::DynRankView<PT,SpT>("CubatureControlVolume::subcvCubaturePoints_",
+                                                        numSubcvPoints, subcvDim);
+    subcvCubatureWeights_ = Kokkos::DynRankView<WT,SpT>("CubatureControlVolume::subcvCubatureWeights_",
+                                                        numSubcvPoints);
     
+    subcvCubature->getCubature(subcvCubaturePoints_,
+                               subcvCubatureWeights_);
+  }
+  
+  template <typename SpT, typename PT, typename WT>
+  void
+  CubatureControlVolume<SpT,PT,WT>::
+  getCubature( pointViewType  cubPoints,
+               weightViewType cubWeights,
+               pointViewType  cellCoords ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    // Coords are (C,P,D) rank 3
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cellCoords must have rank 3 of (C,P,D).");
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getNumPoints()const{
-  return numPoints_;
-} // end getNumPoints
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(2) != getDimension(), std::out_of_range,
+                                  ">>> ERROR (CubatureControlVolume): cellCoords dimension(2) does not match to cubature dimension.");
+#endif
+    typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-int CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getDimension()const{
-  return cubDimension_;
-} // end getNumPoints
+    // get array dimensions
+    const auto numCells = cellCoords.dimension(0);
+    const auto numNodesPerCell = cellCoords.dimension(1);
+    const auto spaceDim = cellCoords.dimension(2);
 
-template<class Scalar, class ArrayPoint, class ArrayWeight>
-void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getAccuracy(std::vector<int>& accuracy)const{
-  accuracy.assign(1,degree_);
-} // end getAccuracy
+    const auto numNodesPerSubcv = subcvCellTopo_.getNodeCount();
+    tempPointViewType subcvCoords("CubatureControlVolume::subcvCoords_",
+                                  numCells, numNodesPerCell, numNodesPerSubcv, spaceDim);
+    CellTools<SpT>::getSubcvCoords(subcvCoords,
+                                   cellCoords,
+                                   primaryCellTopo_);
 
-} // end namespace Intrepid2
+    const auto numSubcvPoints = subcvCubaturePoints_.dimension(0);    
+    tempPointViewType subcvJacobian("CubatureControlVolume::subcvJacobian_",
+                                    numCells, numNodesPerCell, numSubcvPoints, spaceDim, spaceDim);
+    
+    tempPointViewType subcvJacobianDet("CubatureControlVolume::subcvJacobDet_",
+                                       numCells, numNodesPerCell, numSubcvPoints);
+    
+    // numNodesPerCell is maximum 8; this repeated run is necessary because of cell tools input consideration
+    for (auto node=0;node<numNodesPerCell;++node) {
+      auto subcvJacobianNode    = Kokkos::subdynrankview(subcvJacobian,    Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+      auto subcvCoordsNode      = Kokkos::subdynrankview(subcvCoords,      Kokkos::ALL(), node, Kokkos::ALL(), Kokkos::ALL());
+      auto subcvJacobianDetNode = Kokkos::subdynrankview(subcvJacobianDet, Kokkos::ALL(), node, Kokkos::ALL());
+      
+      CellTools<SpT>::setJacobian(subcvJacobianNode,    // C, P, D, D
+                                  subcvCubaturePoints_, //    P, D
+                                  subcvCoordsNode,      // C, N, D
+                                  subcvCellTopo_);
+
+      CellTools<SpT>::setJacobianDet(subcvJacobianDetNode,  // C, P
+                                     subcvJacobianNode);    // C, P, D, D
+    }
+    
+    typedef typename ExecSpace<typename pointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    
+    const auto loopSize = numCells;
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    
+    typedef Functor<pointViewType,weightViewType,tempPointViewType,tempPointViewType,tempPointViewType> FunctorType;
+    Kokkos::parallel_for( policy, FunctorType(cubPoints, 
+                                              cubWeights, 
+                                              subcvCoords, 
+                                              subcvCubatureWeights_,
+                                              subcvJacobianDet) );
+  } 
+    
+} 
 
 #endif
 

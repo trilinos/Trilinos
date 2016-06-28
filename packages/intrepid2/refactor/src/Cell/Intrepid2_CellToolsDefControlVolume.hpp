@@ -117,7 +117,7 @@ namespace Intrepid2 {
         for (auto j=0;j<dim;++j) {
           midpts(i,j) = 0;
           for (auto k=1;k<=nvert_per_subcell;++k)
-            midpts(i,j) += verts(k,j);
+            midpts(i,j) += verts(map(i,k),j);
           midpts(i,j) /= nvert_per_subcell;
         }
       }
@@ -152,13 +152,13 @@ namespace Intrepid2 {
         // ** work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[2], buf_midpts[4*2];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(&buf_center, 2);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> midpts(&buf_midpts, 4, 2);
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 2);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> midpts(buf_midpts, 4, 2);
 
         getBaryCenter(center, verts);
         getMidPoints(midpts, _edgeMap, verts);
 
-        for (auto i=0;i<nvert;++i) 
+        for (auto i=0;i<nvert;++i) {
           for (auto j=0;j<dim;++j) {
             // control volume is always quad
             cvCoords(i, 0, j) = verts(i, j);
@@ -166,7 +166,7 @@ namespace Intrepid2 {
             cvCoords(i, 2, j) = center(j);
             cvCoords(i, 3, j) = midpts((i+nvert-1)%nvert, j);
           }
-        
+        }
       }
     };
 
@@ -190,7 +190,7 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        const auto nvert = verts.dimension(0);
+        //const auto nvert = verts.dimension(0);
         const auto dim   = verts.dimension(1);
 
         // ** control volume coords (N,P,D), here N corresponds to cell vertices
@@ -200,9 +200,9 @@ namespace Intrepid2 {
         // ** work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[12*3], buf_face_midpts[6*3];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(&buf_center, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(&buf_edge_midpts, 12, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(&buf_face_midpts,  6, 3);
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts, 12, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  6, 3);
 
         getBaryCenter(center, verts);
         getMidPoints(edge_midpts, _edgeMap, verts);
@@ -277,7 +277,7 @@ namespace Intrepid2 {
         // ** vertices of cell (P,D)
         const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
                                                    Kokkos::ALL(), Kokkos::ALL() );
-        const auto nvert = verts.dimension(0);
+        //const auto nvert = verts.dimension(0);
         const auto dim   = verts.dimension(1);
 
         // ** control volume coords (N,P,D), here N corresponds to cell vertices
@@ -287,9 +287,9 @@ namespace Intrepid2 {
         // ** work space for barycenter and midpoints on edges
         typedef typename subcvCoordViewType::value_type value_type;
         value_type buf_center[3], buf_edge_midpts[6*3], buf_face_midpts[4*3];
-        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(&buf_center, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(&buf_edge_midpts,  6, 3);
-        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(&buf_face_midpts,  4, 3);
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts,  6, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  4, 3);
 
         getBaryCenter(center, verts);
         getMidPoints(edge_midpts, _edgeMap, verts);
@@ -376,24 +376,24 @@ namespace Intrepid2 {
 
     // get array dimensions
     const auto numCells = cellCoords.dimension(0);
-    const auto numVerts = cellCoords.dimension(1);
+    //const auto numVerts = cellCoords.dimension(1);
     const auto spaceDim = cellCoords.dimension(2);
 
     // construct edge and face map for the cell type
     const auto numEdge = primaryCell.getSubcellCount(1);
-    Kokkos::View<ordinal_type**,Kokkos::HostSpace> edgeMapHost(numEdge, spaceDim);
+    Kokkos::View<ordinal_type**,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
     for (auto i=0;i<numEdge;++i) {
       edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
       for (auto j=0;j<edgeMapHost(i,0);++j)
-        edgeMapHost(i,j) = primaryCell.getNodeMap(1, i, j);
+        edgeMapHost(i,j+1) = primaryCell.getNodeMap(1, i, j);
     }
 
     const auto numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
-    Kokkos::View<ordinal_type**,Kokkos::HostSpace> faceMapHost(numFace, spaceDim);
+    Kokkos::View<ordinal_type**,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
     for (auto i=0;i<numFace;++i) {
       faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
       for (auto j=0;j<faceMapHost(i,0);++j)
-        faceMapHost(i,j) = primaryCell.getNodeMap(2, i, j);
+        faceMapHost(i,j+1) = primaryCell.getNodeMap(2, i, j);
     }
 
     // create mirror to device
@@ -403,7 +403,7 @@ namespace Intrepid2 {
     // parallel run
     typedef Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoordViewType;
     typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;
-    typedef Kokkos::View<ordinal_type**,typename SpT::memory_space()>                 mapViewType;
+    typedef Kokkos::View<ordinal_type**,SpT>                                 mapViewType;
 
     typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
@@ -424,7 +424,7 @@ namespace Intrepid2 {
       break;
     }
     case shards::Tetrahedron<4>::key: {
-      typedef FunctorCellTools::F_getSubcvCoords_Hexahedron<subcvCoordViewType,cellCoordViewType,mapViewType> FunctorType;
+      typedef FunctorCellTools::F_getSubcvCoords_Tetrahedron<subcvCoordViewType,cellCoordViewType,mapViewType> FunctorType;
       Kokkos::parallel_for( policy, FunctorType(subcvCoords, cellCoords, edgeMap, faceMap) );
       break;
     }
