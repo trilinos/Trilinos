@@ -90,9 +90,11 @@ int main (int argc, char **argv)
     HDF5.Open("matlab.h5");
 
     if (Comm.MyPID() == 0)
-      cout << endl;
-      cout << "*) Reading Epetra_CrsMatrix from HDF5 file matlab.h5..." << endl;
-      cout << endl;
+    {
+      std::cout << std::endl;
+      std::cout << "*) Reading Epetra_CrsMatrix from HDF5 file EpetraExt_HDF5-read-matlab.h5...";
+      std::cout << std::endl << std::endl;;
+    }
 
     // first query for matrix properties:
     int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
@@ -105,15 +107,15 @@ int main (int argc, char **argv)
 
     if (Comm.MyPID() == 0)
     {
-      cout << "Matrix information as given by ReadCrsMatrixProperties()";
-      cout << endl << endl;
-      cout << "NumGlobalRows = " << NumGlobalRows << endl;
-      cout << "NumGlobalCols = " << NumGlobalCols << endl;
-      cout << "NumGlobalNonzeros = " << NumGlobalNonzeros << endl;
-      cout << "NumGlobalDiagonals = " << NumGlobalDiagonals << endl;
-      cout << "MaxNumEntries = " << MaxNumEntries << endl;
-      cout << "NormOne = " << NormOne << endl;
-      cout << "NormInf = " << NormInf << endl;
+      std::cout << "Matrix information as given by ReadCrsMatrixProperties()";
+      std::cout << std::endl << std::endl;
+      std::cout << "NumGlobalRows = " << NumGlobalRows << std::endl;
+      std::cout << "NumGlobalCols = " << NumGlobalCols << std::endl;
+      std::cout << "NumGlobalNonzeros = " << NumGlobalNonzeros << std::endl;
+      std::cout << "NumGlobalDiagonals = " << NumGlobalDiagonals << std::endl;
+      std::cout << "MaxNumEntries = " << MaxNumEntries << std::endl;
+      std::cout << "NormOne = " << NormOne << std::endl;
+      std::cout << "NormInf = " << NormInf << std::endl;
     }
 
     // the reading the actual matrix, with a linear map, since no map 
@@ -121,31 +123,31 @@ int main (int argc, char **argv)
     Epetra_CrsMatrix* Matrix = 0;
     HDF5.Read("speye", Matrix);
 
-    cout << *Matrix;
+    std::cout << *Matrix;
 
     if (Comm.MyPID() == 0)
     {
-      cout << endl;
-      cout << "*) Reading Epetra_MultiVector from HDF5 file matlab.h5..." << endl;
-      cout << endl;
+      std::cout << std::endl;
+      std::cout << "*) Reading Epetra_MultiVector from HDF5 file EpetraExt_HDF5-read-matlab.h5...";
+      std::cout << std::endl << std::endl;
     }
 
     Epetra_MultiVector* x;
     HDF5.Read("x", x);
-    cout << *x;
+    std::cout << *x;
 
     if (Comm.NumProc() == 2)
     {
       if (Comm.MyPID() == 0)
       {
-        cout << endl;
-        cout << "*) Reading Epetra_Map from HDF5 file matlab.h5..." << endl;
-        cout << endl;
+        std::cout << std::endl;
+        std::cout << "*) Reading Epetra_Map from HDF5 file EpetraExt_HDF5-read-matlab.h5...";
+        std::cout << std::endl << std::endl;
       }
 
       Epetra_Map* Map;
       HDF5.Read("map-2", Map);
-      cout << *Map;
+      std::cout << *Map;
     }
 
     // We finally close the file. Better to close it before calling
@@ -162,7 +164,7 @@ int main (int argc, char **argv)
   }
   catch (...) 
   {
-    cerr << "Caught generic exception" << endl;
+    std::cerr << "Caught generic exception" << std::endl;
   }
 
 #ifdef HAVE_MPI
