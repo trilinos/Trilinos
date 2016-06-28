@@ -274,6 +274,8 @@ namespace panzer_stk {
   CustomMeshFactory::addSideSets(STK_Interface &mesh) const
   {
     mesh.beginModification();
+    stk::mesh::BulkData& bulkData = *mesh.getBulkData();
+    const stk::mesh::EntityRank sideRank = mesh.getSideRank();
 
     // get all part vectors
     stk::mesh::Part *box[6];
@@ -292,24 +294,25 @@ namespace panzer_stk {
     // loop over elements adding sides to sidesets
     for (std::vector<stk::mesh::Entity>::const_iterator
            itr=elements.begin();itr!=elements.end();++itr) {
-      stk::mesh::Entityelement = (*itr);
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+      stk::mesh::Entity element = (*itr);
+      const size_t numSides = bulkData.num_connectivity(element, sideRank);
+      stk::mesh::Entity const* relations = bulkData.begin(element, sideRank);
 
       // loop over side id checking element neighbors
-      for (std::size_t i=0;i<relations.size();++i) {
-        stk::mesh::Entityside = relations[i].entity();
-        stk::mesh::PairIterRelation neighbors = side->relations(mesh.getElementRank());
+      for (std::size_t i=0;i<numSides;++i) {
+        stk::mesh::Entity side = relations[i];
+        const size_t numNeighbors = bulkData.num_elements(side);
+        stk::mesh::Entity const* neighbors = bulkData.begin_elements(side);
 
-        const std::size_t numNeighbors = neighbors.size();
         if (numNeighbors == 1) {
-          if (side->owner_rank() == machRank_)
-            mesh.addEntityToSideset(*side, box[i]);
+          if (mesh.entityOwnerRank(side) == machRank_)
+            mesh.addEntityToSideset(side, box[i]);
         }
         else if (numNeighbors == 2) {
-          std::string neig_block_id_0 = mesh.containingBlockId(neighbors[0].entity());
-          std::string neig_block_id_1 = mesh.containingBlockId(neighbors[1].entity());
-          if ((neig_block_id_0 != neig_block_id_1) && (side->owner_rank() == machRank_))
-            mesh.addEntityToSideset(*side, wall);
+          std::string neig_block_id_0 = mesh.containingBlockId(neighbors[0]);
+          std::string neig_block_id_1 = mesh.containingBlockId(neighbors[1]);
+          if (neig_block_id_0 != neig_block_id_1 && mesh.entityOwnerRank(side) == machRank_)
+            mesh.addEntityToSideset(side, wall);
         }
         else {
           // runtime exception
@@ -345,7 +348,7 @@ namespace panzer_stk {
       std::vector<double> charge_density_by_local_ids, electric_potential_by_local_ids;
       for (std::vector<stk::mesh::Entity>::const_iterator
              itr=elements.begin();itr!=elements.end();++itr) {
-        int q = (*itr)->identifier() - OffsetToGlobalElementIDs_;
+        int q = mesh.elementGlobalId(*itr) - OffsetToGlobalElementIDs_;
         for (int k=0;k<8;++k) {
           int loc = q*8 + k;
           charge_density_by_local_ids.push_back(ChargeDensity_[loc]);
