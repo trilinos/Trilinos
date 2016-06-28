@@ -271,27 +271,35 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  virtual void generateSourceParameters(ParameterList & pl)
+  virtual void generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
   {
-    Problem<Adapter>::generateSourceParameters(pl);
+    Problem<Adapter>::generateSourceParameters(pl, inputParams);
 
-    // load the algorithm parameters which are handled in a spacial way
-    // we saved our initial passed in value and will use it now (without validation) to determine other dependent parameters
-    // then everything gets validated together
-    // this special case exists because algorithm is a parameter which determines the existence of other parameters
-    if (saveInitialAlgorithmName_ != "") {
-      if (saveInitialAlgorithmName_ == "multijagged") {
-        Zoltan2_AlgMJ<Adapter>::static_generateSourceParameters(pl);
-      }
-      else if (saveInitialAlgorithmName_ == "pulp") {
-        AlgPuLP<Adapter>::static_generateSourceParameters(pl);
-      }
-      else if (saveInitialAlgorithmName_ == "scotch") {
-        AlgPTScotch<Adapter>::static_generateSourceParameters(pl);
-      }
-      else if (saveInitialAlgorithmName_ == "forTestingOnly") {
-        AlgForTestingOnly<Adapter>::static_generateSourceParameters(pl);
-      }
+		// special case - read unvalidated algorithm parameter and check to see what we need
+		// algorithm is a parameter which we will validate but it also determines other parameters that may be included
+		const Teuchos::ParameterEntry * pe = inputParams.getEntryPtr("algorithm");
+		if (pe) {
+			std::string algorithmName;
+		  algorithmName = pe->getValue<std::string>(&algorithmName);
+
+      // load the algorithm parameters which are handled in a spacial way
+      // we saved our initial passed in value and will use it now (without validation) to determine other dependent parameters
+      // then everything gets validated together
+      // this special case exists because algorithm is a parameter which determines the existence of other parameters
+      if (algorithmName != "") {
+        if (algorithmName == "multijagged") {
+          Zoltan2_AlgMJ<Adapter>::static_generateSourceParameters(pl, inputParams);
+        }
+        else if (algorithmName == "pulp") {
+          AlgPuLP<Adapter>::static_generateSourceParameters(pl, inputParams);
+        }
+        else if (algorithmName == "scotch") {
+          AlgPTScotch<Adapter>::static_generateSourceParameters(pl, inputParams);
+        }
+        else if (algorithmName == "forTestingOnly") {
+          AlgForTestingOnly<Adapter>::static_generateSourceParameters(pl, inputParams);
+        }
+			}
     }
 
     // This set up does not use tuple because we didn't have constructors that took that many elements
@@ -421,8 +429,6 @@ private:
 
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  std::string saveInitialAlgorithmName_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -438,17 +444,6 @@ template <typename Adapter>
   void PartitioningProblem<Adapter>::initializeProblem(ParameterList *p)
 {
   HELLO;
-
-  // this exists because of the special nature of the algorithm parameter
-  // it is a parameter but it also determined whether other parameters are loaded
-  // so we read the raw value (not validated) and use that to load all parameters
-  // then we just validate the full list naturally
-  // we must save this before calling setupProblemEnvironment
-  // this may likely change as this system is developed
-  const Teuchos::ParameterEntry * pe = p->getEntryPtr("algorithm");
-  if (pe) {
-    saveInitialAlgorithmName_ = pe->getValue<std::string>(&saveInitialAlgorithmName_);
-  }
 
   Problem<Adapter>::setupProblemEnvironment(p);
 

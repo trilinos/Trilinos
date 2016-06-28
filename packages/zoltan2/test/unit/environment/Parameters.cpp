@@ -81,7 +81,7 @@ Teuchos::ParameterList runTest(Teuchos::ParameterList inputParams)
   std::vector<int> noStrides;
 
   inputAdapter_t ia(localCount, globalIds, noWeights, noStrides);
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &inputParams);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &inputParams, comm);
   return problem.getEnvironment()->getParameters();
 }
 

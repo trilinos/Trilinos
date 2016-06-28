@@ -143,9 +143,9 @@ public:
 
   /*! \brief Set up validators specific to this Problem
   */
-  virtual void generateSourceParameters(ParameterList & pl)
+  virtual void generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
   {
-    Problem<Adapter>::generateSourceParameters(pl);
+    Problem<Adapter>::generateSourceParameters(pl, inputParams);
 
     RCP<Teuchos::StringValidator> mapping_algorithm_Validator = Teuchos::rcp( new Teuchos::StringValidator(
       Teuchos::tuple<std::string>( "geometric", "default", "block" )));

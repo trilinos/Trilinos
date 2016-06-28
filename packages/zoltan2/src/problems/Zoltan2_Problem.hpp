@@ -82,7 +82,7 @@ public:
     RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
     comm_ = tmp->duplicate();
 
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we dont' allocate
+    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
       setupProblemEnvironment(params);
     }
   }
@@ -99,7 +99,7 @@ public:
         params_(), comm_(), env_(), envConst_(), timer_()
   {
     comm_ = comm->duplicate();
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we dont' allocate
+    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
       setupProblemEnvironment(params);
     }
   }
@@ -119,7 +119,7 @@ public:
     RCP<const Comm<int> > tmp = 
                   rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
     comm_ = tmp->duplicate();
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we dont' allocate
+    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
       setupProblemEnvironment(params);
     }
   }
@@ -168,18 +168,8 @@ public:
 #endif
 
   // Set up validators which are general to all probloems - if they are specific to a problem use the virtual inheritance of this function place it at a higher level - see PartitioningProblem for example
-  virtual void generateSourceParameters(ParameterList & pl)
+  virtual void generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
   {
-    RCP<Teuchos::StringValidator> speed_versus_quality_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "speed", "balance", "quality" )));
-    pl.set("speed_versus_quality", "balance", "  When algorithm choices exist, opt for speed or solution quality?     (Default is a balance of speed and quality)");
-    pl.getEntryRCP("speed_versus_quality")->setValidator(speed_versus_quality_Validator);
-
-    RCP<Teuchos::StringValidator> memory_versus_speed_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "memory", "balance", "speed" )));
-    pl.set("memory_versus_speed", "balance", "  When algorithm choices exist, opt for the use of less memory     at the expense of runtime     (Default is a balance of memory conservation and speed)");
-    pl.getEntryRCP("memory_versus_speed")->setValidator(memory_versus_speed_Validator);
-
     RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > compute_metrics_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
       Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
       Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
@@ -187,18 +177,6 @@ public:
       "no") );
     pl.set("compute_metrics", "no", "  Compute metrics after computing solution");
     pl.getEntryRCP("compute_metrics")->setValidator(compute_metrics_Validator);
-
-    RCP<Zoltan2::IntegerRangeListValidator<int>> topology_Validator = Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(true) ); // unsorted true
-    pl.set("topology", "", "Topology of node to be used in hierarchical partitioning     \"2,4\"  for dual-socket quad-core     \"2,2,6\"  for dual-socket, dual-die, six-core     \"2,2,3\"  for dual-socket, dualdie, six-core but                with only three partitions per die");
-    pl.getEntryRCP("topology")->setValidator(topology_Validator);
-
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > randomize_input_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
-      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "cout") );
-    pl.set("randomize_input", "no", "  randomize input prior to partitioning");
-    pl.getEntryRCP("randomize_input")->setValidator(randomize_input_Validator);
 
     RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > rectilinear_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
       Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
@@ -317,7 +295,7 @@ template <typename Adapter>
   // collect all Problem specific parameters (Problem + Model + Algorithms) and pass them to environoment
   // Environment will add in the base set common to all environments to generate the final full set
   ParameterList sourceParameters;
-  generateSourceParameters(sourceParameters);  // now collect everything from the problem, classes, etc
+  generateSourceParameters(sourceParameters, *params);  // now collect everything from the problem, classes, etc
 
   if (bConstructing && env_ != Teuchos::null) {
    // this awkward situation exists becuase the user must be able to call new Problem and when it's done the parameters should all be initalized

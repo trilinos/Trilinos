@@ -78,7 +78,7 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
     */
-  static void static_generateSourceParameters(ParameterList & pl)
+  static void static_generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
   {
     // we may eventually make this a true class hierarchy but right now algorithms don't allocate until we solve them and we want each type to contain parameters with the class
     // so the static method allows us to put the parameters here but we have to manually call each static type in the Zoltan2_PartitioningProblem

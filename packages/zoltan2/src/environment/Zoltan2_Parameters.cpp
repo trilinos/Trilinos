@@ -65,6 +65,9 @@ namespace Zoltan2 {
 
 /*! \brief  This is the old format which loaded everything from one large XML define string - now they are are hard coded into the Problems, Models, and Algorithms and this is going away.
 */
+
+
+// This can be deleted but I'm keeping this here for now because as we build the new parameter system it's convenient to have a way to load the original for error checking
 void RELIC_getOldFormatParameterListAllTogether(Teuchos::ParameterList &pList)
 {
   // An XML converter for IntegerRangeListValidator

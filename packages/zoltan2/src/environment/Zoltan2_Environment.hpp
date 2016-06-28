@@ -111,10 +111,7 @@ public:
     const Teuchos::RCP<const Teuchos::Comm<int> > &comm );
 
   /*! \brief Default Constructor
-   *
-   *    The default constructor uses the Teuchos default communicator,
-   *    BASIC_STATUS for debug_level, and does not timing or memory profiling.
-   *    It has error_check_level BASIC_ASSERTION. It has no other parameters.
+   *  Environment and ParameterList are being refactored so the core set of parameters is changing
    */
   Environment();
 

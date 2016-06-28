@@ -98,30 +98,6 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
-void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
-{
-  // This method composes a plist for the problem
-  Teuchos::XMLParameterListReader reader;
-  plist = reader.toParameterList(xml);
-  
-  //  Get list of valid Zoltan2 Parameters
-  // Zoltan 2 parameters appear in the input file
-  // Right now we have default values stored in
-  // the parameter list, we would like to apply
-  // the options specified by the user in their
-  // input file
-
-  // this needs to be resolved - this is the old format but now we build this list from
-  Teuchos::ParameterList zoltan2Parameters;
-  Zoltan2::RELIC_getOldFormatParameterListAllTogether(zoltan2Parameters);
-  
-  if (plist.isSublist("Zoltan2Parameters")) {
-    // Apply user specified zoltan2Parameters
-    ParameterList &sub = plist.sublist("Zoltan2Parameters");
-    zoltan2Parameters.setParameters(sub);
-  }
-}
-
 bool getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
                        queue<ParameterList> &comparisons,
@@ -150,9 +126,8 @@ bool getParameterLists(const string &inputFileName,
   // get the parameter lists for each model
   for(int i = 0; i < xmlInput.numChildren(); i++)
   {
-    ParameterList plist;
-    xmlToModelPList(xmlInput.getChild(i), plist);
-
+    Teuchos::XMLParameterListReader reader;
+    ParameterList plist = reader.toParameterList(xmlInput.getChild(i));
     if(plist.name() == "Comparison") {
       comparisons.emplace(plist);
     }
@@ -246,7 +221,6 @@ bool run(const UserInputForTests &uinput,
   // get Zoltan2 partition parameters
   ParameterList zoltan2_parameters = 
    const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-  
   if(rank == 0) {
     cout << endl;
   }
@@ -256,6 +230,11 @@ bool run(const UserInputForTests &uinput,
   if (rank == 0) {
     std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
   }
+
+  // get the sublist Zoltan2Parameters which are currently not validated
+  // they will be validated by the construction of the problem
+  ParameterList zoltan2Parameters = problem_parameters.sublist( "Zoltan2Parameters" );
+
 #ifdef HAVE_ZOLTAN2_MPI
   base_problem_t * problem = 
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,

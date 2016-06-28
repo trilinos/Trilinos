@@ -119,7 +119,7 @@ public:
 
   /*! \brief Constructor that uses a default communicator
    */
-  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p, false) 
+  ColoringProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p, false)
   {
     HELLO;
     createColoringProblem(p);

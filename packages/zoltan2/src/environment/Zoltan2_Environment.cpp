@@ -238,6 +238,32 @@ void Environment::getBaseParameters(ParameterList & pl)
   RCP<Teuchos::AnyNumberParameterEntryValidator> random_seed_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );  // default is DOUBLE and accept Double, Int, String
   pl.set("random_seed", "0.5", "  random seed");
   pl.getEntryRCP("random_seed")->setValidator(random_seed_Validator);
+
+  // speed versus quality
+  RCP<Teuchos::StringValidator> speed_versus_quality_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+    Teuchos::tuple<std::string>( "speed", "balance", "quality" )));
+  pl.set("speed_versus_quality", "balance", "  When algorithm choices exist, opt for speed or solution quality?     (Default is a balance of speed and quality)");
+  pl.getEntryRCP("speed_versus_quality")->setValidator(speed_versus_quality_Validator);
+
+  // memory_versus_speed
+  RCP<Teuchos::StringValidator> memory_versus_speed_Validator = Teuchos::rcp( new Teuchos::StringValidator(
+    Teuchos::tuple<std::string>( "memory", "balance", "speed" )));
+  pl.set("memory_versus_speed", "balance", "  When algorithm choices exist, opt for the use of less memory     at the expense of runtime     (Default is a balance of memory conservation and speed)");
+  pl.getEntryRCP("memory_versus_speed")->setValidator(memory_versus_speed_Validator);
+
+  // topology
+  RCP<Zoltan2::IntegerRangeListValidator<int>> topology_Validator = Teuchos::rcp( new Zoltan2::IntegerRangeListValidator<int>(true) ); // unsorted true
+  pl.set("topology", "", "Topology of node to be used in hierarchical partitioning     \"2,4\"  for dual-socket quad-core     \"2,2,6\"  for dual-socket, dual-die, six-core     \"2,2,3\"  for dual-socket, dualdie, six-core but                with only three partitions per die");
+  pl.getEntryRCP("topology")->setValidator(topology_Validator);
+
+  // randomize_input
+  RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > randomize_input_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
+    Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
+    Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+    "cout") );
+  pl.set("randomize_input", "no", "  randomize input prior to partitioning");
+  pl.getEntryRCP("randomize_input")->setValidator(randomize_input_Validator);
 }
 
 void Environment::commitParameters()
