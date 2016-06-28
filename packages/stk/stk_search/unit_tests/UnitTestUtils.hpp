@@ -41,7 +41,7 @@
 #include <stk_search/IdentProc.hpp>
 
 #include <temp_move_to_stk_search/Geom_AxisAlignedBB.h>
-#include <Geom_Search.h>
+#include <Geom_Specialized_Searches.h>
 #include <search/ContactRangeSearch.h>
 #include <search/ContactCommunication.h>
 
