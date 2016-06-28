@@ -2424,7 +2424,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
 
     Teuchos::ArrayRCP<const Scalar > partd2 = part2->getData(0);
     Teuchos::ArrayRCP<const Scalar > partd3 = part3->getData(0);
-    for(LO l = 0; l < part2->getLocalLength(); l++) {
+    for(LO l = 0; l < Teuchos::as<LO>(part2->getLocalLength()); l++) {
       TEST_EQUALITY(partd2[l], Teuchos::as<Scalar>(r+1) * STS::one());
       TEST_EQUALITY(partd3[l], Teuchos::as<Scalar>(r+1) * STS::one());
     }
@@ -2434,7 +2434,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedCrsMatrix, BlockedOperatorApply, M, MA
   Teuchos::ArrayRCP<const Scalar > resd1 = res1->getData(0);
   Teuchos::ArrayRCP<const Scalar > resd2 = merged_res2->getData(0);
 
-  for(LO l = 0; l < res1->getLocalLength(); l++) {
+  for(LO l = 0; l < Teuchos::as<LO>(res1->getLocalLength()); l++) {
     TEST_EQUALITY(resd1[l], resd2[l]);
   }
 
