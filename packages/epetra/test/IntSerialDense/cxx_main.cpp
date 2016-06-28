@@ -450,7 +450,6 @@ int matrixExceptions(bool verbose, bool debug) {
 	int returnierr = 0;
 	int ierr = 0;
 	bool caught = false;
-	Epetra_IntSerialDenseMatrix* matrix = NULL;
 
 	if(verbose) printHeading("Testing matrix error-reporting.\nExpect error messages if EPETRA_NO_ERROR_REPORTS is not defined.");
 
@@ -458,7 +457,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "Checking Epetra_IntSerialDenseMatrix(-1, 6) - invalid rows";
-		matrix = new Epetra_IntSerialDenseMatrix(-1, 6);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(-1, 6);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -470,7 +470,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(3, -5) - invalid cols";
-		matrix = new Epetra_IntSerialDenseMatrix(3, -5);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(3, -5);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -485,7 +486,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, -1, 2, 2) - invalid lda";
-		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -1, 2, 2);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -1, 2, 2);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -497,7 +499,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, 3, -2, 3) - invalid rows";
-		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, 3, -2, 3);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, 3, -2, 3);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -509,7 +512,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, int*, 4, 4, -4) - invalid cols";
-		matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -4, 4, -4);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(Copy, rand2, -4, 4, -4);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -524,7 +528,8 @@ int matrixExceptions(bool verbose, bool debug) {
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseMatrix(Copy, 0, 5, 5, 5) - null pointer";
-		matrix = new Epetra_IntSerialDenseMatrix(Copy, 0, 5, 5, 5);
+		Epetra_IntSerialDenseMatrix* matrix = new Epetra_IntSerialDenseMatrix(Copy, 0, 5, 5, 5);
+		delete matrix;
 	}
 	catch(int error) {
 		caught = true;
@@ -661,7 +666,6 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
-  if (matrix != NULL) delete matrix;
 	return(returnierr);
 }
 
@@ -1322,15 +1326,14 @@ int vectorExceptions(bool verbose, bool debug) {
 	int returnierr = 0;
 	int ierr = 0;
 	bool caught = false;
-	Epetra_IntSerialDenseVector* vector;
-	vector = NULL;
 
 	if(verbose) printHeading("Testing vector error-reporting.\nExpect error messages if EPETRA_NO_ERROR_REPORTS is not defined.");
 
 	try { // invalid dimension to sized ctr
 		caught = false;
 		if(verbose) cout << "Checking Epetra_IntSerialDenseVector(-1)";
-		vector = new Epetra_IntSerialDenseVector(-1);
+		Epetra_IntSerialDenseVector* vector = new Epetra_IntSerialDenseVector(-1);
+		delete vector;
 	}
 	catch(int error) {
 		caught = true;
@@ -1344,7 +1347,8 @@ int vectorExceptions(bool verbose, bool debug) {
 	try { // invalid dimension to user-data ctr
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseVector(Copy, int*, -3)";
-		vector = new Epetra_IntSerialDenseVector(Copy, rand2, -3);
+		Epetra_IntSerialDenseVector* vector = new Epetra_IntSerialDenseVector(Copy, rand2, -3);
+		delete vector;
 	}
 	catch(int error) {
 		caught = true;
@@ -1358,7 +1362,8 @@ int vectorExceptions(bool verbose, bool debug) {
 	try { // null pointer to user-data ctr
 		caught = false;
 		if(verbose) cout << "\nChecking Epetra_IntSerialDenseVector(Copy, 0, 5)";
-		vector = new Epetra_IntSerialDenseVector(Copy, 0, 5);
+		Epetra_IntSerialDenseVector* vector = new Epetra_IntSerialDenseVector(Copy, 0, 5);
+		delete vector;
 	}
 	catch(int error) {
 		caught = true;
@@ -1443,7 +1448,6 @@ int vectorExceptions(bool verbose, bool debug) {
 #endif // end of HAVE_EPETRA_ARRAY_BOUNDS_CHECK conditional
 
 	// we don't need to check for ISDV = ISDM, as that is a compile-time error
-  if (vector != NULL) delete vector;
 	return(returnierr);
 }
 
