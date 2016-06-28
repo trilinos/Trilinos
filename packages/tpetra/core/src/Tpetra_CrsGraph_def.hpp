@@ -3812,15 +3812,6 @@ namespace Tpetra {
         // all those entries.
 
 #ifdef HAVE_TPETRA_DEBUG
-        // FIXME (mfh 26 Jun 2016) May need to sync to host if user
-        // provided k_numRowEntries_ and last modified it on device.
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (k_numRowEntries_.h_view.dimension_0 ()) != lclNumRows,
-           std::logic_error, "(StaticProfile unpacked branch) "
-           "k_numRowEntries_.h_view.dimension_0() = "
-           << k_numRowEntries_.h_view.dimension_0 ()
-           << " != getNodeNumRows() = " << lclNumRows << "");
-
         if (k_rowPtrs_.dimension_0 () != 0) {
           const size_t numOffsets =
             static_cast<size_t> (k_rowPtrs_.dimension_0 ());
@@ -3853,31 +3844,38 @@ namespace Tpetra {
 
           k_numRowEntries_.template sync<DMS> ();
           auto numRowEnt_d = k_numRowEntries_.template view<DMS> ();
+#ifdef HAVE_TPETRA_DEBUG
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (static_cast<size_t> (numRowEnt_d.dimension_0 ()) != lclNumRows,
+             std::logic_error, "(StaticProfile unpacked branch) "
+             "numRowEnt_d.dimension_0() = " << numRowEnt_d.dimension_0 ()
+             << " != getNodeNumRows() = " << lclNumRows << "");
+#endif // HAVE_TPETRA_DEBUG
 
           lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_d);
-        }
 
 #ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (ptr_d.dimension_0 ()) != lclNumRows + 1,
-           std::logic_error, "(StaticProfile unpacked branch) After "
-           "allocating ptr_d, ptr_d.dimension_0() = " << ptr_d.dimension_0 ()
-           << " != lclNumRows+1 = " << (lclNumRows+1) << ".");
-        {
-          // mfh 26 Jun 2016: Don't assume UVM.  ptr_d lives in device
-          // memory, so if we want to check its last entry on host, copy
-          // it back to host explicitly.
-          auto ptr_d_ent_d = Kokkos::subview (ptr_d, lclNumRows);
-          auto ptr_d_ent_h = create_mirror_view (ptr_d_ent_d);
-          Kokkos::deep_copy (ptr_d_ent_h, ptr_d_ent_d);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (ptr_d_ent_h () != lclTotalNumEntries, std::logic_error,
-             "Tpetra::CrsGraph::fillLocalGraph: In StaticProfile unpacked "
-             "branch, after filling ptr_d, ptr_d(lclNumRows=" << lclNumRows
-             << ") = " << ptr_d_ent_h () << " != total number of entries on "
-             "the calling process = " << lclTotalNumEntries << ".");
-        }
+            (static_cast<size_t> (ptr_d.dimension_0 ()) != lclNumRows + 1,
+             std::logic_error, "(StaticProfile unpacked branch) After "
+             "allocating ptr_d, ptr_d.dimension_0() = " << ptr_d.dimension_0 ()
+             << " != lclNumRows+1 = " << (lclNumRows+1) << ".");
+          {
+            // mfh 26 Jun 2016: Don't assume UVM.  ptr_d lives in device
+            // memory, so if we want to check its last entry on host, copy
+            // it back to host explicitly.
+            auto ptr_d_ent_d = Kokkos::subview (ptr_d, lclNumRows);
+            auto ptr_d_ent_h = create_mirror_view (ptr_d_ent_d);
+            Kokkos::deep_copy (ptr_d_ent_h, ptr_d_ent_d);
+            TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+              (ptr_d_ent_h () != lclTotalNumEntries, std::logic_error,
+               "Tpetra::CrsGraph::fillLocalGraph: In StaticProfile unpacked "
+               "branch, after filling ptr_d, ptr_d(lclNumRows=" << lclNumRows
+               << ") = " << ptr_d_ent_h () << " != total number of entries on "
+               "the calling process = " << lclTotalNumEntries << ".");
+          }
 #endif // HAVE_TPETRA_DEBUG
+        }
 
         // Allocate the array of packed column indices.
         ind_d = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
