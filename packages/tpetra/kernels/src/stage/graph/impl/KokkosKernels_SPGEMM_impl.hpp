@@ -651,6 +651,7 @@ public:
 
   };
 
+#if 0
   template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t>
   struct zipMatrix{
     typedef typename row_view_t::non_const_value_type index_t;
@@ -790,7 +791,7 @@ public:
     }
   };
 
-
+#endif
 
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_row_view_t,typename c_row_view_t>
@@ -2060,7 +2061,7 @@ public:
   };
 #endif
 
-
+#if 0
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t, typename c_nnz_view_t>
@@ -2355,6 +2356,7 @@ public:
 
   };
 
+#endif
 
   template <
       typename out_row_view_t,
@@ -3487,6 +3489,7 @@ public:
     }
   };
 
+#if 0
   template <typename a_row_view_t, typename a_nnz_view_t, typename a_scalar_view_t,
             typename b_row_view_t, typename b_nnz_view_t, typename b_scalar_view_t,
             typename c_row_view_t, typename c_nnz_view_t, typename c_scalar_view_t,
@@ -3769,6 +3772,7 @@ public:
     }
   };
 
+#endif
 
 
 
@@ -5148,7 +5152,7 @@ public:
 
     }
   }
-
+#if 0
 
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_row_view_t, typename b_nnz_view_t,
@@ -5347,6 +5351,7 @@ public:
     std::cout << "\tUncompress TIME:" << timer1.seconds() << std::endl << std::endl << std::endl;
     */
   }
+#endif
 
 
   template <typename c_row_view_t, typename c_lno_nnz_view_t, typename c_scalar_nnz_view_t>
@@ -6114,28 +6119,6 @@ public:
     if (this->verbose){
       std::cout << "\tCompression Copy Compressed Matrix:" <<  timer1.seconds() << std::endl;
     }
-
-    /*
-    cmc.set_index_entries = out_nnz_indices;
-    cmc.set_entries = out_nnz_sets;
-    if (!(this->handle->get_spgemm_handle()->get_algorithm_type() == KokkosKernels::Experimental::Graph::SPGEMM_KK3 ||
-        this->handle->get_spgemm_handle()->get_algorithm_type() == KokkosKernels::Experimental::Graph::SPGEMM_KK4)){
-      MyExecSpace::fence();
-      Kokkos::parallel_for( my_fill_exec_space(0, n), cmc);
-      MyExecSpace::fence();
-    }
-    else {
-      out_column_set_begins = out_view_t (Kokkos::ViewAllocateWithoutInitializing("set index entries"), new_nnz_cnt + 1);
-      out_column_set_nexts = out_view_t (Kokkos::ViewAllocateWithoutInitializing("set entries"), in_entries.dimension_0());
-      cmc.set_entries_begin = out_column_set_begins;
-      cmc.set_entries_next = out_column_set_nexts;
-
-      MyExecSpace::fence();
-      Kokkos::parallel_for( my_fillextra_exec_space(0, n), cmc);
-      MyExecSpace::fence();
-
-    }
-    */
 
   }
 
