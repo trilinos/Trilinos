@@ -54,6 +54,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/util/StkVector.hpp>
 #include "../../stk_mesh/stk_mesh/base/FieldParallel.hpp"
 
 #include <limits>
@@ -385,4 +386,22 @@ TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
 //KOKKOS_INLINE_FUNCTION double my_max(double a, double b) { return std::max(a, b); }
 //void builds_ok() { Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int& i) { my_max(1, 2); }); }
 //TEST_F(NodalVolumeCalculator, builds) { builds_ok(); }
+
+void run_vector_gpu_test()
+{
+    size_t n = 10;
+    stk::Vector<double> vec("vec", n);
+    Kokkos::parallel_for(n, KOKKOS_LAMBDA(const int i)
+    {
+        vec.device_get(i) = i;
+    });
+    vec.copy_device_to_host();
+    for(size_t i=0; i<n; i++)
+        EXPECT_EQ(i, vec[i]);
+}
+TEST(StkVectorGpuTest, gpu_runs)
+{
+    run_vector_gpu_test();
+}
+
 

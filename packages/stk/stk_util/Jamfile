@@ -317,6 +317,7 @@ lib stk_util_util
     /mpi//mpi
     /tpl/boost-program-options//boost_program_options
     /tpl/boost-regex//boost_regex
+    /tpl/trilinos-kokkoscore//kokkoscore
   :
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
