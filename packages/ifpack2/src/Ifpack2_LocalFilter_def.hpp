@@ -585,6 +585,12 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     return;
   }
 
+  if (A_->getRowMap()->getComm()->getSize() == 1) {
+    A_->getLocalRowCopy (LocalRow, Indices (), Values (), NumEntries);
+    return;
+  }
+
+
   const size_t numEntInLclRow = NumEntries_[LocalRow];
   if (static_cast<size_t> (Indices.size ()) < numEntInLclRow ||
       static_cast<size_t> (Values.size ()) < numEntInLclRow) {
