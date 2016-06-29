@@ -1079,8 +1079,6 @@ namespace Tpetra {
     lclinds_1d_type k_lclInds1D_ = myGraph_->k_lclInds1D_;
 
     typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::t_dev::memory_space DMS;
-    typedef typename row_entries_type::t_host::memory_space HMS;
 
     if (getProfileType () == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -1093,17 +1091,16 @@ namespace Tpetra {
       // (lclInds2D_ resp. values2D_) into 1-D storage (k_inds
       // resp. k_vals).
 
-      // We're be packing on host, so we'll need k_numRowEntries_
-      // sync'd to host.  computeOffsetsFromCounts accepts a host View
-      // for counts, even if offsets is a device View.  (Furthermore,
-      // the "host" View may very well live in CudaUVMSpace, so doing
-      // this has no penalty, other than requiring synchronization
-      // between Cuda and host.  UVM memory gets grumpy if both device
-      // and host attempt to access it at the same time without an
-      // intervening fence.)
-      myGraph_->k_numRowEntries_.template sync<HMS> ();
-      typename row_entries_type::t_host::const_type numRowEnt_h =
-        myGraph_->k_numRowEntries_.template view<HMS> ();
+      // We're be packing on host.  k_numRowEntries_ lives on host,
+      // and computeOffsetsFromCounts accepts a host View for counts,
+      // even if offsets is a device View.  (Furthermore, the "host"
+      // View may very well live in CudaUVMSpace, so doing this has no
+      // penalty, other than requiring synchronization between Cuda
+      // and host.  UVM memory gets grumpy if both device and host
+      // attempt to access it at the same time without an intervening
+      // fence.)
+      typename row_entries_type::const_type numRowEnt_h =
+        myGraph_->k_numRowEntries_;
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (static_cast<size_t> (numRowEnt_h.dimension_0 ()) != lclNumRows,
@@ -1287,15 +1284,14 @@ namespace Tpetra {
           // Allocate the packed row offsets array.  We use a nonconst
           // temporary (packedRowOffsets) here, because k_ptrs is
           // const.  We will assign packedRowOffsets to k_ptrs below.
-          typename row_map_type::non_const_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
-                                                                  lclNumRows+1);
-          // We're computing on device, so get a device version of the counts.
-          myGraph_->k_numRowEntries_.template sync<DMS> ();
-          typename row_entries_type::t_dev::const_type numRowEnt_d =
-            myGraph_->k_numRowEntries_.template view<DMS> ();
-
-          lclTotalNumEntries = computeOffsetsFromCounts (packedRowOffsets, numRowEnt_d);
-
+          typename row_map_type::non_const_type
+            packedRowOffsets ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
+          typename row_entries_type::const_type numRowEnt_h =
+            myGraph_->k_numRowEntries_;
+          // We're computing offsets on device.  This function can
+          // handle numRowEnt_h being a host View.
+          lclTotalNumEntries =
+            computeOffsetsFromCounts (packedRowOffsets, numRowEnt_h);
           // packedRowOffsets is modifiable; k_ptrs isn't, so we have
           // to use packedRowOffsets in the loop above and assign here.
           k_ptrs = packedRowOffsets;
@@ -1575,8 +1571,6 @@ namespace Tpetra {
     }
 
     typedef decltype (staticGraph_->k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::t_dev::memory_space DMS;
-    typedef typename row_entries_type::t_host::memory_space HMS;
 
     if (getProfileType() == DynamicProfile) {
       // Pack 2-D storage (DynamicProfile) into 1-D packed storage.
@@ -1605,15 +1599,8 @@ namespace Tpetra {
       // This will be a host view of packed row offsets.
       typename non_const_row_map_type::HostMirror h_ptrs;
 
-      typename row_entries_type::t_host::const_type numRowEnt_h;
-      // FIXME (mfh 26 Jun 2016) It's rude to sync a DualView in the
-      // graph, when the graph is supposed to be const.
-      {
-        auto numRowEntries = staticGraph_->k_numRowEntries_;
-        numRowEntries.template sync<HMS> ();
-        numRowEnt_h = numRowEntries.template view<HMS> ();
-      }
-
+      typename row_entries_type::const_type numRowEnt_h =
+        staticGraph_->k_numRowEntries_;
       {
         non_const_row_map_type packedRowOffsets ("Tpetra::CrsGraph::ptr",
                                                  lclNumRows+1);
@@ -1715,13 +1702,10 @@ namespace Tpetra {
         size_t lclTotalNumEntries = 0;
         k_ptrs = tmpk_ptrs;
         {
-          // FIXME (mfh 27 Jun 2016) It's rude to sync a DualView in the
-          // graph, when the graph is supposed to be const.
-          auto numRowEntries = staticGraph_->k_numRowEntries_;
-          numRowEntries.template sync<DMS> ();
-          typename row_entries_type::t_dev::const_type numRowEnt_d =
-            numRowEntries.template view<DMS> ();
+          typename row_entries_type::const_type numRowEnt_d =
+            staticGraph_->k_numRowEntries_;
           using ::Tpetra::Details::computeOffsetsFromCounts;
+          // This function can handle the counts being a host View.
           lclTotalNumEntries = computeOffsetsFromCounts (tmpk_ptrs, numRowEnt_d);
         }
 

@@ -2710,7 +2710,7 @@ namespace Tpetra {
          << "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
 
-      k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
+      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
       nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
     }
 
@@ -3027,8 +3027,8 @@ namespace Tpetra {
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    Kokkos::DualView<size_t*, Kokkos::LayoutLeft, execution_space> k_numRowEntries_;
-
+    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror
+      k_numRowEntries_;
     //@}
 
     /// \brief Status of the graph's storage, when not in a

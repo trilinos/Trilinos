@@ -870,7 +870,7 @@ namespace Tpetra {
     // getNodeNumRows() is zero?
 
     const bool isOpt = indicesAreAllocated_ &&
-      k_numRowEntries_.h_view.dimension_0 () == 0 &&
+      k_numRowEntries_.dimension_0 () == 0 &&
       getNodeNumRows () > 0;
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -1190,23 +1190,12 @@ namespace Tpetra {
     indicesAreGlobal_ = (lg == GlobalIndices);
 
     if (numRows > 0) { // reallocate k_numRowEntries_ & fill w/ 0s
+      using Kokkos::ViewAllocateWithoutInitializing;
       typedef decltype (k_numRowEntries_) row_ent_type;
-      typedef typename row_ent_type::t_host::memory_space host_memory_space;
       const char label[] = "Tpetra::CrsGraph::numRowEntries";
 
-      typename row_ent_type::t_dev
-        numRowEnt_d (Kokkos::ViewAllocateWithoutInitializing (label), numRows);
-      // Use a mirror view, so that if device and host are the same,
-      // this is just a shallow copy.
-      typename row_ent_type::t_host numRowEnt_h =
-        Kokkos::create_mirror_view (numRowEnt_d);
-      Kokkos::deep_copy (numRowEnt_h, static_cast<size_t> (0)); // fill w/ 0s
-
-      // We've filled with zeros on host, not on device.
-      // No need to fill on device until first fillComplete.
-      row_ent_type numRowEnt (numRowEnt_d, numRowEnt_h);
-      numRowEnt.template modify<host_memory_space> ();
-
+      row_ent_type numRowEnt (ViewAllocateWithoutInitializing (label), numRows);
+      Kokkos::deep_copy (numRowEnt, static_cast<size_t> (0)); // fill w/ 0s
       k_numRowEntries_ = numRowEnt; // "commit" our allocation
     }
 
@@ -1569,10 +1558,10 @@ namespace Tpetra {
       if (getProfileType() == StaticProfile) {
         ret.offset1D  = k_rowPtrs_(myRow);
         ret.allocSize = k_rowPtrs_(myRow+1) - k_rowPtrs_(myRow);
-        if (k_numRowEntries_.h_view.dimension_0 () == 0) {
+        if (k_numRowEntries_.dimension_0 () == 0) {
           ret.numEntries = ret.allocSize;
         } else {
-          ret.numEntries = k_numRowEntries_.h_view(myRow);
+          ret.numEntries = k_numRowEntries_(myRow);
         }
       }
       else {
@@ -1583,7 +1572,7 @@ namespace Tpetra {
         else {
           ret.allocSize = gblInds2D_[myRow].size ();
         }
-        ret.numEntries = k_numRowEntries_.h_view(myRow);
+        ret.numEntries = k_numRowEntries_(myRow);
       }
     }
     else if (nodeNumAllocated_ == 0) {
@@ -1646,10 +1635,10 @@ namespace Tpetra {
       if (getProfileType() == StaticProfile) {
         ret.offset1D  = k_rowPtrs_(myRow);
         ret.allocSize = k_rowPtrs_(myRow+1) - k_rowPtrs_(myRow);
-        if (k_numRowEntries_.h_view.dimension_0 () == 0) {
+        if (k_numRowEntries_.dimension_0 () == 0) {
           ret.numEntries = ret.allocSize;
         } else {
-          ret.numEntries = k_numRowEntries_.h_view(myRow);
+          ret.numEntries = k_numRowEntries_(myRow);
         }
       }
       else {
@@ -1660,7 +1649,7 @@ namespace Tpetra {
         else {
           ret.allocSize = gblInds2D_[myRow].size ();
         }
-        ret.numEntries = k_numRowEntries_.h_view(myRow);
+        ret.numEntries = k_numRowEntries_(myRow);
       }
     }
     else if (nodeNumAllocated_ == 0) {
@@ -1787,7 +1776,7 @@ namespace Tpetra {
       }
     }
 
-    k_numRowEntries_.h_view(rowinfo.localRow) += numNewInds;
+    k_numRowEntries_(rowinfo.localRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
     return numNewInds;
@@ -1832,7 +1821,7 @@ namespace Tpetra {
                 gblInds2D_[myRow].begin()+rowInfo.numEntries);
     }
 
-    k_numRowEntries_.h_view(myRow) += numNewInds;
+    k_numRowEntries_(myRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 
@@ -1895,7 +1884,7 @@ namespace Tpetra {
                  lclInds2D_[myRow].begin () + rowInfo.numEntries);
     }
 
-    k_numRowEntries_.h_view(myRow) += numNewInds;
+    k_numRowEntries_(myRow) += numNewInds;
     nodeNumEntries_ += numNewInds;
     setLocallyModified ();
 #ifdef HAVE_TPETRA_DEBUG
@@ -1946,7 +1935,7 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPT( isStorageOptimized () && mergedEntries != rowinfo.numEntries );
 #endif // HAVE_TPETRA_DEBUG
 
-    k_numRowEntries_.h_view(rowinfo.localRow) = mergedEntries;
+    k_numRowEntries_(rowinfo.localRow) = mergedEntries;
     nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
   }
 
@@ -2057,7 +2046,7 @@ namespace Tpetra {
       pftype_ == DynamicProfile &&
       indicesAreAllocated () &&
       getNodeNumRows () > 0 &&
-      (k_numRowEntries_.h_view.dimension_0 () == 0 ||
+      (k_numRowEntries_.dimension_0 () == 0 ||
        (lclInds2D_.is_null () && gblInds2D_.is_null ())),
       std::logic_error, err );
 
@@ -2085,7 +2074,7 @@ namespace Tpetra {
     // if indices are not allocated, then none of the buffers should be.
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! indicesAreAllocated () &&
-      ((k_rowPtrs_.dimension_0 () != 0 || k_numRowEntries_.h_view.dimension_0 () != 0) ||
+      ((k_rowPtrs_.dimension_0 () != 0 || k_numRowEntries_.dimension_0 () != 0) ||
        k_lclInds1D_.dimension_0 () != 0 || lclInds2D_ != null ||
        k_gblInds1D_.dimension_0 () != 0 || gblInds2D_ != null),
       std::logic_error, err );
@@ -2799,10 +2788,10 @@ namespace Tpetra {
     // all processes?
     clearGlobalConstants ();
 
-    if (k_numRowEntries_.h_view.dimension_0 () != 0) {
-      const size_t oldNumEntries = k_numRowEntries_.h_view(lrow);
+    if (k_numRowEntries_.dimension_0 () != 0) {
+      const size_t oldNumEntries = k_numRowEntries_(lrow);
       nodeNumEntries_ -= oldNumEntries;
-      k_numRowEntries_.h_view(lrow) = 0;
+      k_numRowEntries_(lrow) = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2957,12 +2946,12 @@ namespace Tpetra {
         allRowsSame = true;
       }
     }
-    else if (k_numRowEntries_.h_view.dimension_0 () != 0) {
+    else if (k_numRowEntries_.dimension_0 () != 0) {
       // This is a shallow copy; the ArrayRCP wraps the View in a
       // custom destructor, which ensures correct deallocation if that
       // is the only reference to the View.  Furthermore, this View is
       // a host View, so this doesn't assume UVM.
-      numEntriesPerRow = Kokkos::Compat::persistingView (k_numRowEntries_.h_view);
+      numEntriesPerRow = Kokkos::Compat::persistingView (k_numRowEntries_);
       allRowsSame = false; // conservatively; we don't check the array
     }
     else if (this->nodeNumAllocated_ == 0) {
@@ -3648,7 +3637,6 @@ namespace Tpetra {
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
     typedef typename local_graph_type::entries_type::non_const_type lclinds_1d_type;
-    typedef typename device_type::memory_space DMS;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalGraph (called from fillComplete or "
       "expertStaticFillComplete): ";
@@ -3678,15 +3666,16 @@ namespace Tpetra {
       // storage (ind_d).
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (k_numRowEntries_.h_view.dimension_0 ()) != lclNumRows,
+        (static_cast<size_t> (k_numRowEntries_.dimension_0 ()) != lclNumRows,
          std::logic_error, "(DynamicProfile branch) "
-         "k_numRowEntries_.h_view.dimension_0() = "
-         << k_numRowEntries_.h_view.dimension_0 ()
+         "k_numRowEntries_.dimension_0() = "
+         << k_numRowEntries_.dimension_0 ()
          << " != getNodeNumRows() = " << lclNumRows << "");
 #endif // HAVE_TPETRA_DEBUG
 
-      // Pack the row offsets into ptr_d, by doing a sum-scan of
-      // the array of valid entry counts per row (k_numRowEntries_).
+      // Pack the row offsets into ptr_d, by doing a sum-scan of the
+      // array of valid entry counts per row (k_numRowEntries_).  The
+      // pack method can handle its counts input being a host View.
       //
       // Total number of entries in the matrix on the calling
       // process.  We will compute this in the loop below.  It's
@@ -3695,9 +3684,9 @@ namespace Tpetra {
       {
         // Allocate the packed row offsets array.
         ptr_d = non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows+1);
-        k_numRowEntries_.template sync<DMS> ();
-        auto numRowEnt_d = k_numRowEntries_.template view<DMS> ();
-        lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_d);
+        typename row_entries_type::const_type numRowEnt_h = k_numRowEntries_;
+        // This function can handle that numRowEnt_h lives on host.
+        lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_h);
         ptr_d_const = ptr_d;
       }
 
@@ -3733,12 +3722,8 @@ namespace Tpetra {
         Kokkos::deep_copy (ptr_h, ptr_d); // we need the entries on host
         auto ind_h = create_mirror_view (ind_d); // we'll fill this on host
 
-        // Sync to host first, in case k_numRowEntries_ comes from the
-        // user and the user last modified it on device.
-        typedef typename row_entries_type::t_host::memory_space host_memory_space;
-        k_numRowEntries_.template sync<host_memory_space> ();
-        auto numRowEnt_h = k_numRowEntries_.template view<host_memory_space> ();
-
+        // k_numRowEntries_ is a host View already, so we can use it here.
+        typename row_entries_type::const_type numRowEnt_h = k_numRowEntries_;
         for (size_t row = 0; row < lclNumRows; ++row) {
           const size_t numEnt = numRowEnt_h(row);
           std::copy (lclInds2D_[row].begin (),
@@ -3842,17 +3827,18 @@ namespace Tpetra {
           ptr_d = non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
           ptr_d_const = ptr_d;
 
-          k_numRowEntries_.template sync<DMS> ();
-          auto numRowEnt_d = k_numRowEntries_.template view<DMS> ();
+          // It's ok that k_numRowEntries_ is a host View; the
+          // function can handle this.
+          typename row_entries_type::const_type numRowEnt_h = k_numRowEntries_;
 #ifdef HAVE_TPETRA_DEBUG
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (static_cast<size_t> (numRowEnt_d.dimension_0 ()) != lclNumRows,
+            (static_cast<size_t> (numRowEnt_h.dimension_0 ()) != lclNumRows,
              std::logic_error, "(StaticProfile unpacked branch) "
-             "numRowEnt_d.dimension_0() = " << numRowEnt_d.dimension_0 ()
+             "numRowEnt_h.dimension_0() = " << numRowEnt_h.dimension_0 ()
              << " != getNodeNumRows() = " << lclNumRows << "");
 #endif // HAVE_TPETRA_DEBUG
 
-          lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_d);
+          lclTotalNumEntries = computeOffsetsFromCounts (ptr_d, numRowEnt_h);
 
 #ifdef HAVE_TPETRA_DEBUG
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4482,7 +4468,6 @@ namespace Tpetra {
     typedef Kokkos::View<GO*, typename lcl_col_inds_type::array_layout,
       device_type> gbl_col_inds_type;
     typedef decltype (k_numRowEntries_) row_entries_type;
-    typedef typename row_entries_type::t_host::memory_space HMS;
     const char tfecfFuncName[] = "makeIndicesLocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -4499,9 +4484,8 @@ namespace Tpetra {
     const map_type& colMap = * (this->getColMap ());
 
     if (isGloballyIndexed () && lclNumRows != 0) {
-      k_numRowEntries_.template sync<HMS> ();
-      typename row_entries_type::t_host::const_type h_numRowEnt =
-        k_numRowEntries_.template view<HMS> ();
+      // This is a host View.
+      typename row_entries_type::const_type h_numRowEnt = k_numRowEntries_;
 
       // allocate data for local indices
       if (getProfileType () == StaticProfile) {
