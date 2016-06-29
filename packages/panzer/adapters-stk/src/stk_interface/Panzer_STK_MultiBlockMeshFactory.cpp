@@ -247,15 +247,6 @@ std::pair<int,int> MultiBlockMeshFactory::determineYElemSizeAndStart(int yBlock,
    return std::make_pair(start,nYElems_);
 }
 
-const stk::mesh::Relation * MultiBlockMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
-{
-   for(std::size_t i=0;i<relations.size();i++) 
-      if(relations[i].identifier()==ID)
-         return &relations[i];
-
-   return 0;
-}
-
 void MultiBlockMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
@@ -276,8 +267,7 @@ void MultiBlockMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
+      stk::mesh::EntityId gid = mesh.elementGlobalId(element);
 
       std::size_t nx,ny;
       ny = (gid-1) / totalXElems;
@@ -287,38 +277,38 @@ void MultiBlockMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,right);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,right);
       }
 
       if(nx==0) {
-         stk::mesh::Entity edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 3);
 
          // on the left
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,left);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,left);
       }
 
       // horizontal boundaries
       ///////////////////////////////////////////
 
       if(ny==0) {
-         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 0);
 
          // on the bottom
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,bottom);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,bottom);
       }
 
       if(ny+1==totalYElems) {
-         stk::mesh::Entity edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 2);
 
          // on the top
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,top);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,top);
       }
    }
 

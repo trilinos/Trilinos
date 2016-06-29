@@ -114,6 +114,8 @@ public:
      */
    STK_Interface(unsigned dim);
 
+   STK_Interface(Teuchos::RCP<stk::mesh::MetaData> metaData);
+
    // functions called before initialize
    //////////////////////////////////////////
 
@@ -409,6 +411,9 @@ public:
 
    //! get a set of elements sharing a single node
    void getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements) const;
+
+   //! get a list of node ids for nodes connected to an element
+   void getNodeIdsForElement(stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds) const;
 
    /** Get set of element sharing a single node and its local node id.
      */
@@ -795,7 +800,7 @@ protected:
      * to a specific entity rank.
      */ 
    void initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
-                             stk::mesh::EntityRank rank,bool setupIO);
+                              bool setupIO);
 
    /** Build a safely handled Teuchos MPI communicator from a parallel machine.
      * This object asserts ownership of the communicator so that we can gurantee
@@ -883,6 +888,7 @@ protected:
 #ifdef PANZER_HAVE_IOSS
    // I/O support
    Teuchos::RCP<stk::io::StkMeshIoBroker> meshData_;
+   int meshIndex_;
 #endif
 
    // uses lazy evaluation

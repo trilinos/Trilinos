@@ -88,9 +88,6 @@ protected:
 
    void addSideSets(STK_Interface & mesh) const;
 
-   // search through relations for the one matching the ID
-   const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation edges) const;
-
    double x0_;
    double xf_;
 

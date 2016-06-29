@@ -54,10 +54,10 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/CreateAdjacentEntities.hpp>
 
-#include <stk_rebalance/Rebalance.hpp>
-#include <stk_rebalance/Partition.hpp>
-#include <stk_rebalance/ZoltanPartition.hpp>
-#include <stk_rebalance_utils/RebalanceUtils.hpp>
+// #include <stk_rebalance/Rebalance.hpp>
+// #include <stk_rebalance/Partition.hpp>
+// #include <stk_rebalance/ZoltanPartition.hpp>
+// #include <stk_rebalance_utils/RebalanceUtils.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -94,19 +94,24 @@ const std::string STK_Interface::edgesString = "edges";
 const std::string STK_Interface::facesString = "faces";
 
 STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false), useLowerCase_(false)
+   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
    metaData_ = rcp(new stk::mesh::MetaData());
 }
 
-STK_Interface::STK_Interface(unsigned dim)
-   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false), useLowerCase_(false)
+STK_Interface::STK_Interface(Teuchos::RCP<stk::mesh::MetaData> metaData)
+  : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
-   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names(dimension_);
+  metaData_ = metaData;
+}
+
+STK_Interface::STK_Interface(unsigned dim)
+   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false)
+{
+   std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
    entity_rank_names.push_back("FAMILY_TREE");
 
-   metaData_ = rcp(new stk::mesh::MetaData());
-   metaData_->FEM_initialize(dimension_,entity_rank_names);
+   metaData_ = rcp(new stk::mesh::MetaData(dimension_,entity_rank_names));
 
    initializeFromMetaData();
 }
@@ -118,7 +123,8 @@ void STK_Interface::addSideset(const std::string & name,const CellTopologyData *
 
    stk::mesh::Part * sideset = metaData_->get_part(name);
    if(sideset==NULL)
-      sideset = &metaData_->declare_part(name,stk::mesh::CellTopology(ctData)); 
+      sideset = &metaData_->declare_part_with_topology(name,
+         stk::mesh::get_topology(stk::mesh::CellTopology(ctData), dimension_));
    sidesets_.insert(std::make_pair(name,sideset));
 }
 
@@ -130,7 +136,8 @@ void STK_Interface::addNodeset(const std::string & name)
    stk::mesh::Part * nodeset = metaData_->get_part(name);
    if(nodeset==NULL) {
       const CellTopologyData * ctData = shards::getCellTopologyData<shards::Node>();
-      nodeset = &metaData_->declare_part(name,stk::mesh::CellTopology(ctData)); 
+      nodeset = &metaData_->declare_part_with_topology(name,
+         stk::mesh::get_topology(stk::mesh::CellTopology(ctData), dimension_));
    }
    nodesets_.insert(std::make_pair(name,nodeset));
 }
@@ -144,9 +151,9 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName);
+      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
       if(field==0)
-         field = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, fieldName);
       fieldNameToSolution_[key] = field;
    }
 }
@@ -160,9 +167,9 @@ void STK_Interface::addCellField(const std::string & fieldName,const std::string
 
    // add & declare field if not already added...currently assuming linears
    if(fieldNameToCellField_.find(key)==fieldNameToCellField_.end()) {
-      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName);
+      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
       if(field==0)
-         field = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+         field = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, fieldName);
       fieldNameToCellField_[key] = field;
    }
 }
@@ -202,9 +209,9 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
       // add & declare field if not already added...currently assuming linears
       if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
 
-         SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(dispName);
+         SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
          if(field==0) {
-            field = &metaData_->declare_field<SolutionFieldType>(dispName);     
+            field = &metaData_->declare_field<SolutionFieldType>(stk::topology::NODE_RANK, dispName);
          }
          fieldNameToSolution_[key] = field;
       }
@@ -219,22 +226,17 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
 
-   stk::mesh::EntityRank elementRank = getElementRank();
-   stk::mesh::EntityRank nodeRank = getNodeRank();
-   stk::mesh::EntityRank edgeRank = getEdgeRank();
-   stk::mesh::EntityRank faceRank = getFaceRank();
-
    procRank_ = stk::parallel_machine_rank(*mpiComm_->getRawMpiComm());
 
    // associating the field with a part: universal part!
-   stk::mesh::put_field( *coordinatesField_ , nodeRank, metaData_->universal_part(), getDimension());
-   stk::mesh::put_field( *edgesField_ , edgeRank, metaData_->universal_part(), getDimension());
-   stk::mesh::put_field( *facesField_ , faceRank, metaData_->universal_part(), getDimension());
-   stk::mesh::put_field( *processorIdField_ , elementRank, metaData_->universal_part());
-   stk::mesh::put_field( *loadBalField_ , elementRank, metaData_->universal_part());
+   stk::mesh::put_field( *coordinatesField_ , metaData_->universal_part(), getDimension());
+   stk::mesh::put_field( *edgesField_ , metaData_->universal_part(), getDimension());
+   stk::mesh::put_field( *facesField_ , metaData_->universal_part(), getDimension());
+   stk::mesh::put_field( *processorIdField_ , metaData_->universal_part());
+   stk::mesh::put_field( *loadBalField_ , metaData_->universal_part());
 
-   initializeFieldsInSTK(fieldNameToSolution_,nodeRank,setupIO);
-   initializeFieldsInSTK(fieldNameToCellField_,elementRank,setupIO);
+   initializeFieldsInSTK(fieldNameToSolution_, setupIO);
+   initializeFieldsInSTK(fieldNameToCellField_, setupIO);
 
 #ifdef PANZER_HAVE_IOSS
    if(setupIO) {
@@ -285,7 +287,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 }
 
 void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,std::string>,SolutionFieldType*> & nameToField,
-                                          stk::mesh::EntityRank rank,bool setupIO)
+                                          bool setupIO)
 {
    std::set<SolutionFieldType*> uniqueFields;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*>::const_iterator fieldIter;
@@ -295,7 +297,7 @@ void STK_Interface::initializeFieldsInSTK(const std::map<std::pair<std::string,s
    {
       std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
       for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-         stk::mesh::put_field(*(*uniqueFieldIter),rank,metaData_->universal_part());
+         stk::mesh::put_field(*(*uniqueFieldIter),metaData_->universal_part());
    }
 
 #ifdef PANZER_HAVE_IOSS
@@ -314,7 +316,7 @@ void STK_Interface::instantiateBulkData(stk::ParallelMachine parallelMach)
    if(mpiComm_==Teuchos::null)
       mpiComm_ = getSafeCommunicator(parallelMach);
 
-   bulkData_ = rcp(new stk::mesh::BulkData(stk::mesh::MetaData::get_meta_data(*metaData_),*mpiComm_->getRawMpiComm()));
+   bulkData_ = rcp(new stk::mesh::BulkData(*metaData_, *mpiComm_->getRawMpiComm()));
 }
 
 void STK_Interface::beginModification()
@@ -330,17 +332,62 @@ void STK_Interface::endModification()
    TEUCHOS_TEST_FOR_EXCEPTION(bulkData_==Teuchos::null,std::logic_error,
                       "STK_Interface: Must call \"initialized\" or \"instantiateBulkData\" before \"endModification\"");
 
-   bulkData_->modification_end();
+   // TODO: Resolving sharing this way comes at a cost in performance. The STK
+   // team has decided that users need to declare their own sharing. We should
+   // find where shared entities are being created in Panzer and declare it.
+   // Once this is done, the extra code below can be deleted.
 
-   buildEntityCounts();
-   buildMaxEntityIds();
+    stk::CommAll comm(bulkData_->parallel());
+
+    for (int phase=0;phase<2;++phase) {
+      for (int i=0;i<bulkData_->parallel_size();++i) {
+        if ( i != bulkData_->parallel_rank() ) {
+          const stk::mesh::BucketVector& buckets = bulkData_->buckets(stk::topology::NODE_RANK);
+          for (size_t j=0;j<buckets.size();++j) {
+            const stk::mesh::Bucket& bucket = *buckets[j];
+            if ( bucket.owned() ) {
+              for (size_t k=0;k<bucket.size();++k) {
+                stk::mesh::EntityKey key = bulkData_->entity_key(bucket[k]);
+                comm.send_buffer(i).pack<stk::mesh::EntityKey>(key);
+              }
+            }
+          }
+        }
+      }
+
+      if (phase == 0 ) {
+        comm.allocate_buffers( bulkData_->parallel_size()/4 );
+      }
+      else {
+        comm.communicate();
+      }
+    }
+
+    for (int i=0;i<bulkData_->parallel_size();++i) {
+      if ( i != bulkData_->parallel_rank() ) {
+        while(comm.recv_buffer(i).remaining()) {
+          stk::mesh::EntityKey key;
+          comm.recv_buffer(i).unpack<stk::mesh::EntityKey>(key);
+          stk::mesh::Entity node = bulkData_->get_entity(key);
+          if ( bulkData_->is_valid(node) ) {
+            bulkData_->add_node_sharing(node, i);
+          }
+        }
+      }
+    }
+
+
+    bulkData_->modification_end();
+
+    buildEntityCounts();
+    buildMaxEntityIds();
 }
 
 void STK_Interface::addNode(stk::mesh::EntityId gid, const std::vector<double> & coord)
 {
    TEUCHOS_TEST_FOR_EXCEPTION(not isModifiable(),std::logic_error,
                       "STK_Interface::addNode: STK_Interface must be modifiable to add a node");
-   TEUCHOS_TEST_FOR_EXCEPTION(not coord.size()==getDimension(),std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(coord.size()!=getDimension(),std::logic_error,
                       "STK_Interface::addNode: number of coordinates in vector must mation dimension");
    TEUCHOS_TEST_FOR_EXCEPTION(gid==0,std::logic_error,
                       "STK_Interface::addNode: STK has STUPID restriction of no zero GIDs, pick something else");
@@ -384,8 +431,8 @@ void STK_Interface::addElement(const Teuchos::RCP<ElementDescriptor> & ed,stk::m
    for(std::size_t i=0;i<nodes.size();++i) {
       // add element->node relation
       stk::mesh::Entity node = bulkData_->get_entity(nodeRank,nodes[i]);
-      TEUCHOS_ASSERT(node!=0);
-      bulkData_->declare_relation(element,*node,i);
+      TEUCHOS_ASSERT(bulkData_->is_valid(node));
+      bulkData_->declare_relation(element,node,i);
    }
 
    ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
@@ -397,25 +444,24 @@ void STK_Interface::addEdges()
 {
    // loop over elements
    stk::mesh::EntityRank edgeRank = getEdgeRank();
-   stk::mesh::EntityRank nodeRank = getNodeRank();
    std::vector<stk::mesh::Entity> localElmts;
    getMyElements(localElmts);
    std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
      stk::mesh::Entity element = (*itr);
-     stk::mesh::EntityId gid = element->identifier();
+     stk::mesh::EntityId gid = bulkData_->identifier(element);
      std::vector<stk::mesh::EntityId> subcellIds;
      getSubcellIndices(edgeRank,gid,subcellIds);
 
      for(std::size_t i=0;i<subcellIds.size();++i) {
        stk::mesh::Entity edge = bulkData_->get_entity(edgeRank,subcellIds[i]);
-       stk::mesh::PairIterRelation relations = edge->relations(nodeRank);
+       stk::mesh::Entity const* relations = bulkData_->begin_nodes(edge);
 
-       double * node_coord_1 = stk::mesh::field_data(*coordinatesField_,*(relations[0].entity()));
-       double * node_coord_2 = stk::mesh::field_data(*coordinatesField_,*(relations[1].entity()));
+       double * node_coord_1 = stk::mesh::field_data(*coordinatesField_,relations[0]);
+       double * node_coord_2 = stk::mesh::field_data(*coordinatesField_,relations[1]);
 
        // set coordinate vector
-       double * edgeCoords = stk::mesh::field_data(*edgesField_,*edge);
+       double * edgeCoords = stk::mesh::field_data(*edgesField_,edge);
        for(std::size_t i=0;i<getDimension();++i)
           edgeCoords[i] = (node_coord_1[i]+node_coord_2[i])/2.0;
      }
@@ -424,32 +470,32 @@ void STK_Interface::addEdges()
 
 void STK_Interface::addFaces()
 {
-   // loop over elements
-   stk::mesh::EntityRank faceRank = getFaceRank();
-   stk::mesh::EntityRank nodeRank = getNodeRank();
-   std::vector<stk::mesh::Entity> localElmts;
-   getMyElements(localElmts);
-   std::vector<stk::mesh::Entity>::const_iterator itr;
-   for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
-     stk::mesh::Entity element = (*itr);
-     stk::mesh::EntityId gid = element->identifier();
-     std::vector<stk::mesh::EntityId> subcellIds;
-     getSubcellIndices(faceRank,gid,subcellIds);
+  // loop over elements
+  stk::mesh::EntityRank faceRank = getFaceRank();
+  std::vector<stk::mesh::Entity> localElmts;
+  getMyElements(localElmts);
+  std::vector<stk::mesh::Entity>::const_iterator itr;
+  for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
+    stk::mesh::Entity element = (*itr);
+    stk::mesh::EntityId gid = elementGlobalId(element);
+    std::vector<stk::mesh::EntityId> subcellIds;
+    getSubcellIndices(faceRank,gid,subcellIds);
 
-     for(std::size_t i=0;i<subcellIds.size();++i) {
-       stk::mesh::Entity face = bulkData_->get_entity(faceRank,subcellIds[i]);
-       stk::mesh::PairIterRelation relations = face->relations(nodeRank);
+    for(std::size_t i=0;i<subcellIds.size();++i) {
+      stk::mesh::Entity face = bulkData_->get_entity(faceRank,subcellIds[i]);
+      stk::mesh::Entity const* relations = bulkData_->begin_nodes(face);
+      const size_t num_relations = bulkData_->num_nodes(face);
 
-       // set coordinate vector
-       double * faceCoords = stk::mesh::field_data(*facesField_,*face);
-       for(std::size_t i=0;i<getDimension();++i){
-          faceCoords[i] = 0.0;
-          for(std::size_t j=0;j<relations.size();++j)
-            faceCoords[i] += stk::mesh::field_data(*coordinatesField_,*(relations[j].entity()))[i];
-          faceCoords[i] /= double(relations.size());
-       }
-     }
-   }
+      // set coordinate vector
+      double * faceCoords = stk::mesh::field_data(*facesField_,face);
+      for(std::size_t i=0;i<getDimension();++i){
+        faceCoords[i] = 0.0;
+        for(std::size_t j=0;j<num_relations;++j)
+          faceCoords[i] += stk::mesh::field_data(*coordinatesField_,relations[j])[i];
+        faceCoords[i] /= double(num_relations);
+      }
+    }
+  }
 }
 
 void STK_Interface::writeToExodus(const std::string & filename)
@@ -460,15 +506,35 @@ void STK_Interface::writeToExodus(const std::string & filename)
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
-      Ioss::Init::Initializer io;
-      stk::io::StkMeshIoBroker meshData;
-      stk::io::create_output_mesh(filename, comm, *bulkData_, meshData,getUseLowerCaseForIO());
-      stk::io::define_output_fields(meshData,*metaData_);
+      stk::io::StkMeshIoBroker meshData(comm);
+      meshData.set_bulk_data(bulkData_);
+      const int meshIndex = meshData.create_output_mesh(filename, stk::io::WRITE_RESULTS);
+      const stk::mesh::FieldVector &fields = metaData_->get_fields();
+      for (size_t i=0; i < fields.size(); i++) {
+        try {
+          meshData.add_field(meshIndex, *fields[i]);
+        }
+        catch (std::runtime_error const&) { }
+      }
 
-      stk::io::process_output_request(meshData, *bulkData_, 0.0);
-   #else 
+      meshData.process_output_request(meshIndex, 0.0);
+   #else
       TEUCHOS_ASSERT(false);
    #endif
+}
+
+stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk::mesh::EntityRank tgt_rank, unsigned rel_id) const
+{
+  const size_t num_rels = bulkData_->num_connectivity(src, tgt_rank);
+  stk::mesh::Entity const* relations = bulkData_->begin(src, tgt_rank);
+  stk::mesh::ConnectivityOrdinal const* ordinals = bulkData_->begin_ordinals(src, tgt_rank);
+  for (size_t i = 0; i < num_rels; ++i) {
+    if (ordinals[i] == static_cast<stk::mesh::ConnectivityOrdinal>(rel_id)) {
+      return relations[i];
+    }
+  }
+
+  return stk::mesh::Entity();
 }
 
 void STK_Interface::setupTransientExodusFile(const std::string & filename)
@@ -479,11 +545,17 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
       TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
       stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
 
-      Ioss::Init::Initializer io;
-      meshData_ = Teuchos::rcp(new stk::io::StkMeshIoBroker);
-      stk::io::create_output_mesh(filename, comm, *bulkData_, *meshData_,getUseLowerCaseForIO());
-      stk::io::define_output_fields(*meshData_,*metaData_);
-   #else 
+      meshData_ = Teuchos::rcp(new stk::io::StkMeshIoBroker(comm));
+      meshData_->set_bulk_data(bulkData_);
+      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
+      const stk::mesh::FieldVector &fields = metaData_->get_fields();
+      for (size_t i=0; i < fields.size(); i++) {
+        try {
+          meshData_->add_field(meshIndex_, *fields[i]);
+        }
+        catch (std::runtime_error const&) { }
+      }
+   #else
       TEUCHOS_ASSERT(false);
    #endif
 }
@@ -495,7 +567,7 @@ void STK_Interface::writeToExodus(double timestep)
    #ifdef PANZER_HAVE_IOSS
       if(meshData_!=Teuchos::null) {
         currentStateTime_ = timestep;
-        stk::io::process_output_request(*meshData_, *bulkData_, timestep);
+        meshData_->process_output_request(meshIndex_, timestep);
       }
       else {
         Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
@@ -518,39 +590,33 @@ bool STK_Interface::isWritable() const
 
 void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements) const
 {
-   stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::EntityRank nodeRank = getNodeRank();
 
    // get all relations for node
    stk::mesh::Entity node = bulkData_->get_entity(nodeRank,nodeId);
-   stk::mesh::PairIterRelation relations = node->relations(elementRank);
+   const size_t numElements = bulkData_->num_elements(node);
+   stk::mesh::Entity const* relations = bulkData_->begin_elements(node);
 
    // extract elements sharing nodes
-   stk::mesh::PairIterRelation::iterator itr;
-   for(itr=relations.begin();itr!=relations.end();++itr) {
-      elements.push_back(itr->entity());
-   }
+   elements.insert(elements.end(), relations, relations + numElements);
 }
 
 void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
                                                                          std::vector<int> & localNodeId) const
 {
-   stk::mesh::EntityRank elementRank = getElementRank();
-
    // get all relations for node
-   stk::mesh::PairIterRelation relations = node->relations(elementRank);
+   const size_t numElements = bulkData_->num_elements(node);
+   stk::mesh::Entity const* relations = bulkData_->begin_elements(node);
 
    // extract elements sharing nodes
-   stk::mesh::PairIterRelation::iterator itr;
-   for(itr=relations.begin();itr!=relations.end();++itr) {
-      stk::mesh::Entity element = itr->entity();
-      
-      // if owned by this processor 
-      if(element->owner_rank() == procRank_) {
-         elements.push_back(element);
-         localNodeId.push_back(itr->identifier());
-      }
+   for (size_t i = 0; i < numElements; ++i) {
+      stk::mesh::Entity element = relations[i];
 
+     // if owned by this processor
+      if(bulkData_->parallel_owner_rank(element) == procRank_) {
+         elements.push_back(element);
+         localNodeId.push_back(bulkData_->identifier(element));
+      }
    }
 }
 
@@ -604,6 +670,17 @@ void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityI
    elements = current;
 }
 
+void STK_Interface::getNodeIdsForElement(stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds) const
+{
+  stk::mesh::Entity const* nodeRel = getBulkData()->begin_nodes(element);
+  const size_t numNodes = getBulkData()->num_nodes(element);
+
+  nodeIds.reserve(numNodes);
+  for(size_t i = 0; i < numNodes; ++i) {
+    nodeIds.push_back(elementGlobalId(nodeRel[i]));
+  }
+}
+
 void STK_Interface::buildEntityCounts()
 {
    entityCounts_.clear();
@@ -626,7 +703,7 @@ void STK_Interface::buildMaxEntityIds()
 
    // determine maximum ID for this processor for each entity type
    stk::mesh::Selector ownedPart = metaData_->locally_owned_part();
-   for(unsigned i=0;i<entityRankCount;i++) {
+   for(stk::mesh::EntityRank i=stk::topology::NODE_RANK; i<entityRankCount; ++i) {
       std::vector<stk::mesh::Entity> entities;
 
       stk::mesh::get_selected_entities(ownedPart,bulkData_->buckets(i),entities);
@@ -634,7 +711,7 @@ void STK_Interface::buildMaxEntityIds()
       // determine maximum ID for this processor
       std::vector<stk::mesh::Entity>::const_iterator itr;  
       for(itr=entities.begin();itr!=entities.end();++itr) {
-         stk::mesh::EntityId id = (*itr)->identifier();
+         stk::mesh::EntityId id = bulkData_->identifier(*itr);
          if(id>local[i])
             local[i] = id;
       }
@@ -676,12 +753,12 @@ void STK_Interface::buildSubcells()
 const double * STK_Interface::getNodeCoordinates(stk::mesh::EntityId nodeId) const
 {
    stk::mesh::Entity node = bulkData_->get_entity(getNodeRank(),nodeId);
-   return stk::mesh::field_data(*coordinatesField_,*node);
+   return stk::mesh::field_data(*coordinatesField_,node);
 }
 
 const double * STK_Interface::getNodeCoordinates(stk::mesh::Entity node) const
 {
-   return stk::mesh::field_data(*coordinatesField_,*node);
+   return stk::mesh::field_data(*coordinatesField_,node);
 }
 
 void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId elementId,
@@ -690,18 +767,18 @@ void STK_Interface::getSubcellIndices(unsigned entityRank,stk::mesh::EntityId el
    stk::mesh::EntityRank elementRank = getElementRank();
    stk::mesh::Entity cell = bulkData_->get_entity(elementRank,elementId);
    
-   TEUCHOS_TEST_FOR_EXCEPTION(cell==0,std::logic_error,
+   TEUCHOS_TEST_FOR_EXCEPTION(!bulkData_->is_valid(cell),std::logic_error,
                       "STK_Interface::getSubcellIndices: could not find element requested (GID = " << elementId << ")");
 
-   stk::mesh::PairIterRelation subcells = cell->relations(entityRank);
+   const size_t numSubcells = bulkData_->num_connectivity(cell, static_cast<stk::mesh::EntityRank>(entityRank));
+   stk::mesh::Entity const* subcells = bulkData_->begin(cell, static_cast<stk::mesh::EntityRank>(entityRank));
    subcellIds.clear();
-   subcellIds.resize(subcells.size(),0);
+   subcellIds.resize(numSubcells,0);
 
    // loop over relations and fill subcell vector
-   stk::mesh::PairIterRelation::iterator iter;
-   for(iter=subcells.begin();iter!=subcells.end();++iter) {
-      TEUCHOS_ASSERT(iter->identifier()<subcellIds.size());
-      subcellIds[iter->identifier()] = iter->entity()->identifier();
+   for(size_t i = 0; i < numSubcells; ++i) {
+      stk::mesh::Entity subcell = subcells[i];
+      subcellIds[i] = bulkData_->identifier(subcell);
    }
 }
 
@@ -830,20 +907,6 @@ void STK_Interface::getMyNodes(const std::string & nodesetName,const std::string
    stk::mesh::get_selected_entities(ownedBlock,bulkData_->buckets(getNodeRank()),nodes);
 }
 
-stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk::mesh::EntityRank tgt_rank, unsigned rel_id) const
-{
-  const size_t num_rels = bulkData_->num_connectivity(src, tgt_rank);
-  stk::mesh::Entity const* relations = bulkData_->begin(src, tgt_rank);
-  stk::mesh::ConnectivityOrdinal const* ordinals = bulkData_->begin_ordinals(src, tgt_rank);
-  for (size_t i = 0; i < num_rels; ++i) {
-    if (ordinals[i] == static_cast<stk::mesh::ConnectivityOrdinal>(rel_id)) {
-      return relations[i];
-    }
-  }
-
-  return stk::mesh::Entity();
-}
-
 void STK_Interface::getElementBlockNames(std::vector<std::string> & names) const
 {
    // TEUCHOS_ASSERT(initialized_); // all blocks must have been added
@@ -880,7 +943,7 @@ void STK_Interface::getNodesetNames(std::vector<std::string> & names) const
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::Entity elmt) const
 {
-   return elementLocalId(elmt->identifier());
+   return elementLocalId(bulkData_->identifier(elmt));
    // const std::size_t * fieldCoords = stk::mesh::field_data(*localIdField_,*elmt);
    // return fieldCoords[0];
 }
@@ -901,7 +964,7 @@ std::string STK_Interface::containingBlockId(stk::mesh::Entity elmt)
 {
    std::map<std::string,stk::mesh::Part*>::const_iterator itr;
    for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr)
-      if(elmt->bucket().member(*itr->second))
+      if(bulkData_->bucket(elmt).member(*itr->second))
          return itr->first;
    return "";
 }
@@ -953,7 +1016,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 
    stk::mesh::Part * block = metaData_->get_part(name);
    if(block==0) {
-      block = &metaData_->declare_part(name,stk::mesh::CellTopology(ctData));
+     block = &metaData_->declare_part_with_topology(name, stk::mesh::get_topology(stk::mesh::CellTopology(ctData)));
    }
 
    // construct cell topology object for this block
@@ -970,11 +1033,11 @@ void STK_Interface::initializeFromMetaData()
    dimension_ = metaData_->spatial_dimension();   
 
    // declare coordinates and node parts
-   coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
-   edgesField_       = &metaData_->declare_field<VectorFieldType>(edgesString);
-   facesField_       = &metaData_->declare_field<VectorFieldType>(facesString);
-   processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
-   loadBalField_     = &metaData_->declare_field<SolutionFieldType>("LOAD_BAL");
+   coordinatesField_ = &metaData_->declare_field<VectorFieldType>(stk::topology::NODE_RANK, coordsString);
+   edgesField_       = &metaData_->declare_field<VectorFieldType>(stk::topology::EDGE_RANK, edgesString);
+   facesField_       = &metaData_->declare_field<VectorFieldType>(stk::topology::FACE_RANK, facesString);
+   processorIdField_ = &metaData_->declare_field<ProcIdFieldType>(stk::topology::ELEMENT_RANK, "PROC_ID");
+   loadBalField_     = &metaData_->declare_field<SolutionFieldType>(stk::topology::ELEMENT_RANK, "LOAD_BAL");
 
    // stk::mesh::put_field( *coordinatesField_ , getNodeRank() , metaData_->universal_part() );
 
@@ -997,13 +1060,13 @@ void STK_Interface::buildLocalElementIDs()
    getMyElements(elements);
  
    for(std::size_t index=0;index<elements.size();++index) {
-      stk::mesh::Entity element = *(elements[index]);
+      stk::mesh::Entity element = elements[index];
 
       // set processor rank
       ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
       procId[0] = Teuchos::as<ProcIdData>(procRank_);
 
-      localIDHash_[element.identifier()] = currentLocalId_;
+      localIDHash_[bulkData_->identifier(element)] = currentLocalId_;
 
       currentLocalId_++;
    }
@@ -1015,13 +1078,13 @@ void STK_Interface::buildLocalElementIDs()
    getNeighborElements(elements);
 
    for(std::size_t index=0;index<elements.size();++index) {
-      stk::mesh::Entity element = *(elements[index]);
+      stk::mesh::Entity element = elements[index];
 
       // set processor rank
       ProcIdData * procId = stk::mesh::field_data(*processorIdField_,element);
       procId[0] = Teuchos::as<ProcIdData>(procRank_);
 
-      localIDHash_[element.identifier()] = currentLocalId_;
+      localIDHash_[bulkData_->identifier(element)] = currentLocalId_;
 
       currentLocalId_++;
    }
@@ -1044,7 +1107,7 @@ void STK_Interface::applyElementLoadBalanceWeights()
 
     for(std::size_t index=0;index<elements.size();++index) {
       // set local element ID
-      double * loadBal = stk::mesh::field_data(*loadBalField_,*elements[index]);
+      double * loadBal = stk::mesh::field_data(*loadBalField_,elements[index]);
       loadBal[0] = blockWeight;
     }
   }
@@ -1223,6 +1286,8 @@ Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::Par
 
 void STK_Interface::rebalance(const Teuchos::ParameterList & params)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Rebalance not currently supported");
+#if 0
   // make sure weights have been set (a local operation)
   applyElementLoadBalanceWeights();
 
@@ -1244,6 +1309,7 @@ void STK_Interface::rebalance(const Teuchos::ParameterList & params)
 
   currentLocalId_ = 0;
   orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
+#endif
 }
 
 } // end namespace panzer_stk

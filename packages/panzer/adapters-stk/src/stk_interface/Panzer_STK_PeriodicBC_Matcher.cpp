@@ -132,7 +132,7 @@ getLocalSideIds(const STK_Interface & mesh,
    stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
    stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
 
-   stk::mesh::EntityRank rank = 0;
+   stk::mesh::EntityRank rank;
    unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId 
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
@@ -144,10 +144,11 @@ getLocalSideIds(const STK_Interface & mesh,
      offset = mesh.getMaxEntityId(mesh.getNodeRank())+mesh.getMaxEntityId(mesh.getEdgeRank());
    } else {
      ss << "Can't do BCs of type " << type_  << std::endl;
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error, ss.str())
    }
- 
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(rank),nodeBuckets);
+
+   std::vector<stk::mesh::Bucket*> const& nodeBuckets =
+     bulkData->get_buckets(rank, mySides);
 
    // build id vector
    ////////////////////////////////////////////
@@ -160,10 +161,10 @@ getLocalSideIds(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
-         
+      stk::mesh::Bucket & bucket = *nodeBuckets[b];
+
       for(std::size_t n=0;n<bucket.size();n++,index++)
-         (*sideIds)[index] = bucket[n].identifier() + offset;
+        (*sideIds)[index] = bulkData->identifier(bucket[n]) + offset;
    }
 
    return sideIds;
@@ -186,7 +187,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
    stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
    stk::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
 
-   stk::mesh::EntityRank rank = 0;
+   stk::mesh::EntityRank rank;
    const STK_Interface::VectorFieldType * field = 0;
    unsigned int offset = 0;
    if(type_ == "coord"){
@@ -202,10 +203,11 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
      offset = mesh.getMaxEntityId(mesh.getNodeRank())+mesh.getMaxEntityId(mesh.getEdgeRank());
    } else {
      ss << "Can't do BCs of type " << type_  << std::endl;
+     TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error, ss.str())
    }
- 
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(rank),nodeBuckets);
+
+   std::vector<stk::mesh::Bucket*> const& nodeBuckets =
+     bulkData->get_buckets(rank, mySides);
 
    // build id vector
    ////////////////////////////////////////////
@@ -220,16 +222,16 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
-      stk::mesh::BucketArray<STK_Interface::VectorFieldType> array(*field,bucket);
-         
+      stk::mesh::Bucket & bucket = *nodeBuckets[b];
+      double const* array = stk::mesh::field_data(*field, bucket);
+
       for(std::size_t n=0;n<bucket.size();n++,index++) {
-         (*sideIds)[index] = bucket[n].identifier() + offset;
+         (*sideIds)[index] = bulkData->identifier(bucket[n]) + offset;
          Teuchos::Tuple<double,3> & coord = (*sideCoords)[index];
-         
+
          // copy coordinates into multi vector
          for(std::size_t d=0;d<physicalDim;d++)
-            coord[d] = array(d,n);
+            coord[d] = array[physicalDim*n + d];
       }
    }
 

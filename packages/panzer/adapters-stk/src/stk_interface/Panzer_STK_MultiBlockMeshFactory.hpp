@@ -78,7 +78,6 @@ protected:
    void buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const;
    std::pair<int,int> determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const;
    std::pair<int,int> determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const;
-   const stk::mesh::Relation * getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const;
    void addSideSets(STK_Interface & mesh) const;
 
    int nXElems_;

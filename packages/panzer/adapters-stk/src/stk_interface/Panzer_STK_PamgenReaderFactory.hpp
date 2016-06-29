@@ -106,12 +106,11 @@ public:
 protected:
 
    void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
-   void registerSidesets(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
-   void registerNodesets(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
+   void registerSidesets(STK_Interface & mesh) const;
+   void registerNodesets(STK_Interface & mesh) const;
 
    std::string fileName_;
    int restartIndex_;
-   bool useLowerCase_;
 };
 
 }

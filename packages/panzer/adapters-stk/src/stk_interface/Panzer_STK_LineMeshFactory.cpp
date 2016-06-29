@@ -253,18 +253,10 @@ std::pair<int,int> LineMeshFactory::determineXElemSizeAndStart(int xBlock,unsign
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-const stk::mesh::Relation * LineMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
-{
-   for(std::size_t i=0;i<relations.size();i++) 
-      if(relations[i].identifier()==ID)
-         return &relations[i];
-
-   return 0;
-}
-
 void LineMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
+   const stk::mesh::EntityRank sideRank = mesh.getSideRank();
 
    std::size_t totalXElems = nXElems_*xBlocks_;
 
@@ -279,8 +271,7 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
+      stk::mesh::EntityId gid = mesh.elementGlobalId(element);
 
       std::size_t nx = gid-1;
 
@@ -288,19 +279,19 @@ void LineMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, sideRank, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,right);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,right);
       }
 
       if(nx==0) {
-         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, sideRank, 0);
 
          // on the left
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,left);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,left);
       }
    }
 
