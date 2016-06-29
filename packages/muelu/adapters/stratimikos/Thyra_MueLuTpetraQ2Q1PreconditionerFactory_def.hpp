@@ -356,7 +356,7 @@ namespace Thyra {
     RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
 
     // FIXME: why do we need to perturb A_22?
-    Array<SC> smallVal(1, 1.0e-9);
+    Array<SC> smallVal(1, 1.0e-10);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
     // There was an attempt on doing it, but it did not do the proper thing
@@ -780,6 +780,12 @@ namespace Thyra {
       std::string ifpackType = "SCHWARZ";
 
       smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
+
+    } else if (type == "schwarz") {
+
+      std::string ifpackType = "SCHWARZ";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
