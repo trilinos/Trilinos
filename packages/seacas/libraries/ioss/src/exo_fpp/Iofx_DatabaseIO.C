@@ -733,9 +733,9 @@ namespace Iofx {
     // Get global data (over all processors)
     int64_t global_nodes    = nodeCount;
     int64_t global_elements = elementCount;
-    int     global_eblocks  = 0; // unused
-    int     global_nsets    = 0; // unused
-    int     global_ssets    = 0; // unused
+    int64_t global_eblocks  = 0; // unused
+    int64_t global_nsets    = 0; // unused
+    int64_t global_ssets    = 0; // unused
 
     int64_t num_external_nodes; // unused
     int64_t num_elem_cmaps     = 0;
