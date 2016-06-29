@@ -237,6 +237,13 @@ namespace MueLu {
 
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
+
+        } else {
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          if (!bA.is_null()) {
+            isBlockedMatrix = true;
+            merged2Mat = bA->Merge();
+          }
         }
       }
 
