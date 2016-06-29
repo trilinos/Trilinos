@@ -16,10 +16,8 @@
 #include <string>
 //#include <bitset>
 
-#define KOKKOSKERNELS_SPGEMM_BLOCKSIZE 256
-#define KOKKOSKERNELS_SPGEMM_HASHSIZE 16
-#define KOKKOSKERNELS_SPGEMM_ANDHASHFUNCTION 15
-#define KOKKOSKERNELS_SPGEMM_SHMEMSIZE 16128//12032//16128//16384
+
+//#define shmem_size 16128//12032//16128//16384
 
 namespace KokkosKernels{
 
@@ -30,8 +28,7 @@ namespace Impl{
 
 template <typename HandleType,
   typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t_,
-  typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_
-  >
+  typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
 class KokkosSPGEMM{
 public:
 
@@ -172,6 +169,8 @@ private:
   const_b_scalar_nnz_view_t valsB;
   bool transposeB;
 
+  const size_t shmem_size;
+  const int concurrency;
   const int verbose = 1;
 public:
   KokkosSPGEMM(
@@ -186,7 +185,8 @@ public:
       const_b_lno_nnz_view_t entriesB_,
       bool transposeB_):handle (handle_), m(m_), n(n_), k(k_),
           row_mapA(row_mapA_), entriesA(entriesA_), valsA(), transposeA(transposeA_),
-          row_mapB(row_mapB_), entriesB(entriesB_), valsB(), transposeB(transposeB_)
+          row_mapB(row_mapB_), entriesB(entriesB_), valsB(), transposeB(transposeB_),
+          shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency())
           //,row_mapC(), entriesC(), valsC()
           {}
 
@@ -204,7 +204,8 @@ public:
         const_b_scalar_nnz_view_t valsB_,
         bool transposeB_):handle (handle_), m(m_), n(n_), k(k_),
             row_mapA(row_mapA_), entriesA(entriesA_), valsA(valsA_), transposeA(transposeA_),
-            row_mapB(row_mapB_), entriesB(entriesB_), valsB(valsB_), transposeB(transposeB_)
+            row_mapB(row_mapB_), entriesB(entriesB_), valsB(valsB_), transposeB(transposeB_),
+            shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency())
             //,row_mapB(), entriesC(), valsC()
             {}
 
@@ -462,7 +463,8 @@ public:
         new_nnz_view_t set_index_begins_,
         new_nnz_view_t set_index_nexts_,
         new_nnz_view_t set_index_entries_,
-        new_nnz_view_t set_entries_
+        new_nnz_view_t set_entries_,
+        int shared_mem
         ):
       row_map(row_map_),
       entries(entries_),
@@ -482,7 +484,7 @@ public:
       pset_index_entries(set_index_entries_.ptr_on_device()),
       pset_entries(set_entries_.ptr_on_device()),
       numrows(row_map_.dimension_0() - 1),
-      shared_memory_size(KOKKOSKERNELS_SPGEMM_SHMEMSIZE)
+      shared_memory_size(shared_mem)
       {}
 
     KOKKOS_INLINE_FUNCTION
@@ -2861,8 +2863,8 @@ public:
       nnz_lno_t maxNumRoughNonzeros
       ){
 
-    size_t concurrency = MyExecSpace::concurrency();
-    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
+    //size_t concurrency = MyExecSpace::concurrency();
+    //nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
     //maxNumRoughNonzeros = maxNumRoughNonzerohans ;
     if (verbose){
       std::cout << "\tSymbolic Concurrency:" << concurrency << std::endl;
@@ -2875,7 +2877,7 @@ public:
     size_type bnnz =  entriesSetIndex.dimension_0();
     int teamSizeMax = 0;
     int vector_size = 0;
-    size_t shared_memory_size = KOKKOSKERNELS_SPGEMM_SHMEMSIZE;
+    size_t shared_memory_size = shmem_size;
 
     nnz_lno_t min_hash_size = 1;
     while (maxNumRoughNonzeros > min_hash_size){
@@ -3201,6 +3203,7 @@ public:
     nnz_lno_t brows = row_mapB.dimension_0() - 1;
     size_type bnnz =  valsB.dimension_0();
     int suggested_vector_size = get_suggested_vector__size(brows, bnnz, my_exec_space);
+    int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
 
     nnz_lno_t num_colors, num_multi_colors, num_used_colors;
     nnz_lno_persistent_work_host_view_t color_xadj;
@@ -3213,7 +3216,7 @@ public:
 
 
     //bool_temp_view_t denseAccumulatorFlags ("Accumulator flags", ((this->k* 1.5)  * num_multi_colors));
-    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
+
 
     NumericCCOLOR<
       const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
@@ -3235,7 +3238,7 @@ public:
 
         denseAccumulator,
         //denseAccumulatorFlags,
-        team_row_chunk_size);
+        -1);
 
 
 
@@ -3266,18 +3269,21 @@ public:
       sc.color_begin = color_begin;
       sc.color_end = color_end;
 
+      nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, color_end - color_begin);
+      sc.team_work_size = team_row_chunk_size;
+
       switch (spgemm_algorithm){
       case KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR:
         Kokkos::parallel_for( team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            Kokkos::AUTO_t(), suggested_vector_size), sc);
+            suggested_team_size, suggested_vector_size), sc);
         break;
       case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2:
         Kokkos::parallel_for( team_numeric2_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            Kokkos::AUTO_t(), suggested_vector_size), sc);
+            suggested_team_size, suggested_vector_size), sc);
         break;
       case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR:
         Kokkos::parallel_for( team_numeric3_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            Kokkos::AUTO_t(), suggested_vector_size), sc);
+            suggested_team_size, suggested_vector_size), sc);
         break;
       }
       MyExecSpace::fence();
@@ -3296,13 +3302,16 @@ public:
     nnz_lno_t brows = row_mapB.dimension_0() - 1;
     size_type bnnz =  valsB.dimension_0();
     int suggested_vector_size = get_suggested_vector__size(brows, bnnz, my_exec_space);
-    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
+    int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, m);
+
+    //nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
 
     if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
       c_lno_nnz_view_t beginsC (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.dimension_0());
       c_lno_nnz_view_t nextsC (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.dimension_0());
       Kokkos::deep_copy(beginsC, -1);
-      int shared_memory_size = KOKKOSKERNELS_SPGEMM_SHMEMSIZE;
+      int shared_memory_size = shmem_size;
       NumericCMEM<
       const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
       const_b_lno_row_view_t, const_b_lno_nnz_view_t, const_b_scalar_nnz_view_t,
@@ -3329,12 +3338,13 @@ public:
       sc.vector_size = suggested_vector_size;
       sc.team_work_size = team_row_chunk_size;
       if (verbose){
-        std::cout << "Running GPU NUMERIC MEM numeric with vs:" <<
-            suggested_vector_size << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
+        std::cout << "Running GPU NUMERIC MEM numeric with vs:" << suggested_vector_size
+                        << " team_row_chunk_size:" << team_row_chunk_size
+                        <<  " suggested_team_size:" << suggested_team_size << std::endl;
       }
 
       timer1.reset();
-      Kokkos::parallel_for( gpu_team_policy_t(m / team_row_chunk_size + 1 , 256 / suggested_vector_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( gpu_team_policy_t(m / team_row_chunk_size + 1 ,  suggested_team_size , suggested_vector_size), sc);
       MyExecSpace::fence();
 
       if (verbose){
@@ -3367,7 +3377,7 @@ public:
       MyExecSpace::fence();
 
       KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::OneThread2OneChunk;
-      int num_chunks = MyExecSpace::concurrency();
+      int num_chunks = concurrency;
       pool_memory_space m_space(num_chunks, this->k + (this->k) / sizeof(scalar_t) + 1, 0,  my_pool_type);
       MyExecSpace::fence();
 
@@ -3383,7 +3393,7 @@ public:
             suggested_vector_size << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
       }
       timer1.reset();
-      Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , Kokkos::AUTO_t(), suggested_vector_size), sc);
+      Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       MyExecSpace::fence();
 
       if (verbose){
@@ -3399,10 +3409,12 @@ public:
     nnz_lno_t brows = row_mapB.dimension_0() - 1;
     size_type bnnz =  valsB.dimension_0();
     int suggested_vector_size = get_suggested_vector__size(brows, bnnz, my_exec_space);
+    int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, m);
 
     typedef KokkosKernels::Experimental::Util::UniformMemoryPool< MyExecSpace, nnz_lno_t> pool_memory_space;
 
-    int shared_memory_size = KOKKOSKERNELS_SPGEMM_SHMEMSIZE;
+    int shared_memory_size = shmem_size;
     PortableNumericCHASH<
     const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
     const_b_lno_row_view_t, const_b_lno_nnz_view_t, const_b_scalar_nnz_view_t,
@@ -3423,7 +3435,7 @@ public:
         valuesC_,
         my_exec_space);
 
-    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
+
     Kokkos::Impl::Timer timer1;
 
     nnz_lno_t max_nnz = this->handle->get_spgemm_handle()->get_max_result_nnz();
@@ -3435,7 +3447,7 @@ public:
     size_t chunksize = min_hash_size; //this is for used hash indices
     chunksize += min_hash_size ; //this is for the hash begins
     chunksize += max_nnz; //this is for hash nexts
-    int num_chunks = MyExecSpace::concurrency() / suggested_vector_size;
+    int num_chunks = concurrency / suggested_vector_size;
 
     if (verbose){
       std::cout << "\tNUMERIC:maxNonzeros: " << max_nnz << " chunksize:" << chunksize << " numchunks:" << num_chunks << std::endl;
@@ -3469,12 +3481,12 @@ public:
     timer1.reset();
 
     if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
-      Kokkos::parallel_for( gpu_team_policy_t(m / team_row_chunk_size + 1 , Kokkos::AUTO_t(), suggested_vector_size), sc);
+      Kokkos::parallel_for( gpu_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       MyExecSpace::fence();
     }
     else {
 
-      Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , Kokkos::AUTO_t(), suggested_vector_size), sc);
+      Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       MyExecSpace::fence();
     }
 
@@ -3511,9 +3523,6 @@ public:
     }
     KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = KokkosKernels::Experimental::Util::get_exec_space_type<MyExecSpace>();
 
-    nnz_lno_t brows = row_mapB.dimension_0() - 1;
-    size_type bnnz =  valsB.dimension_0();
-    int suggested_vector_size = get_suggested_vector__size(brows, bnnz, my_exec_space);
 
     //SPGEMMAlgorithm spgemm_algorithm = this->handle->get_spgemm_handle()->get_algorithm_type();
     if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED)
@@ -3677,6 +3686,7 @@ public:
           compression_bit_mask_, compression_bit_divide_shift_, vector_size, //divisor, shifter, vector size.
           out_row_map, //output row map
           set_begins_, set_nexts_, set_indices_, set_entries_ //global hash memory space.
+          , shmem_size
       );
 
       int max_allowed_team_size = team_policy_t::team_size_max(sszm_compressMatrix);
@@ -3688,7 +3698,7 @@ public:
 
       if (this->verbose){
         std::cout << "\tRunning compression with VECTORSIZE:" << vector_size
-            << " teamSizeMax:" << teamSizeMax
+            << " teamSizeMax:" << teamSizeMax << " shmem_size:" << shmem_size
             << " max_allowed_team_size:" << max_allowed_team_size << std::endl;
       }
 
@@ -3784,7 +3794,7 @@ public:
     MyExecSpace::fence();
     int teamSizeMax = 0;
     int vector_size = 0;
-    size_t shared_memory_size = KOKKOSKERNELS_SPGEMM_SHMEMSIZE;
+    size_t shared_memory_size = shmem_size;
 
 
     unzipMatrix<out_row_view_t, out_nnz_view_t, in_row_view_t, in_nnz_view_t>
@@ -3838,14 +3848,19 @@ public:
     size_type c_nnz_size = entryIndicesC_.dimension_0();
     row_lno_temp_work_view_t transpose_col_xadj ("transpose_col_xadj", k + 1);
     nnz_lno_temp_work_view_t transpose_col_adj (Kokkos::ViewAllocateWithoutInitializing("tmp_row_view"), c_nnz_size);
-    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size();
+
+    KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = KokkosKernels::Experimental::Util::get_exec_space_type<MyExecSpace>();
+
+    int suggested_vector_size = get_suggested_vector__size(rowmapC.dimension_0() - 1, c_nnz_size, my_exec_space);
+    int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
+    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size, concurrency,m);
 
 
     Kokkos::Impl::Timer timer1;
     KokkosKernels::Experimental::Util::transpose_graph<
         c_row_view_t, c_nnz_view_t,
         row_lno_temp_work_view_t, nnz_lno_temp_work_view_t, row_lno_temp_work_view_t, MyExecSpace>
-            (m, k, rowmapC, entryIndicesC_, transpose_col_xadj,transpose_col_adj, team_row_chunk_size);
+            (m, k, rowmapC, entryIndicesC_, transpose_col_xadj,transpose_col_adj, suggested_vector_size, suggested_team_size, team_row_chunk_size);
     MyExecSpace::fence();
     if (verbose){
       std::cout << "\tTranspose Time:" << timer1.seconds() << std::endl;

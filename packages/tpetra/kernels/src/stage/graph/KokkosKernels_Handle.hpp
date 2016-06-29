@@ -4,6 +4,9 @@
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
+#define KOKKOSKERNELS_SPGEMM_SHMEMSIZE 16128//12032//16128//16384
+
+
 namespace KokkosKernels{
 
 namespace Experimental{
@@ -190,15 +193,20 @@ private:
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
   nnz_lno_t team_work_size;
+  size_t shared_memory_size;
+  int suggested_team_size;
   //idx_array_type row_map;
   //idx_edge_array_type entries;
   //value_array_type values;
-
+  KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
 public:
 
 
 
-  KokkosKernelsHandle():gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL), team_work_size (256){}
+  KokkosKernelsHandle():
+      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),
+      team_work_size (-1), shared_memory_size(KOKKOSKERNELS_SPGEMM_SHMEMSIZE),
+      suggested_team_size(-1), my_exec_space(KokkosKernels::Experimental::Util::get_exec_space_type<HandleExecSpace>()) {}
   ~KokkosKernelsHandle(){
 
     this->destroy_gs_handle();
@@ -206,12 +214,51 @@ public:
     this->destroy_spgemm_handle();
   }
 
-  nnz_lno_t get_team_work_size(){
-    return team_work_size;
+  nnz_lno_t get_team_work_size(int team_size, int concurrency, nnz_lno_t overall_work_size){
+    if (this->team_work_size != -1){
+      return this->team_work_size;
+    }
+    else {
+
+      if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
+        return team_size;
+      }
+      else {
+        return team_size; //overall_work_size / (concurrency * team_size) ;
+      }
+    }
+
   }
   void set_team_work_size(nnz_lno_t team_work_size_){
     this->team_work_size = team_work_size_;
   }
+
+  size_t get_shmem_size(){
+    return shared_memory_size;
+  }
+  void set_shmem_size(size_t shared_memory_size_){
+    //std::cout << "setting shmem:" << shared_memory_size_ << std::endl;
+    this->shared_memory_size = shared_memory_size_;
+  }
+
+  int get_suggested_team_size(int vector_size){
+    if (this->suggested_team_size != -1){
+      return this->suggested_team_size;
+    }
+    else {
+      if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
+        return 256 / vector_size;
+      }
+      else {
+        return 1;
+      }
+    }
+  }
+  void set_suggested_team_size(int suggested_team_size_){
+    this->suggested_team_size = suggested_team_size_;
+  }
+
+
 
   SPGEMMHandleType *get_spgemm_handle(){
     return this->spgemmHandle;
@@ -262,6 +309,7 @@ public:
       this->gsHandle = NULL;
     }
   }
+
 
 
   //idx_array_type get_row_map(){return this->row_map;}

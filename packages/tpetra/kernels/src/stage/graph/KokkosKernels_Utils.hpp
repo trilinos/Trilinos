@@ -1832,6 +1832,8 @@ void transpose_graph(
     in_nnz_view_t adj,
     out_row_view_t t_xadj, //pre-allocated -- initialized with 0
     out_nnz_view_t t_adj,  //pre-allocated -- no need for initialize
+    int vector_size = -1,
+    int suggested_team_size = -1,
     typename in_nnz_view_t::non_const_value_type team_row_chunk_size = 256
     ){
   //first count the number of entries in each column
@@ -1848,10 +1850,15 @@ void transpose_graph(
   typedef typename TransposeFunctor_t::team_fill_policy_t tfp_t;
 
   typename in_row_view_t::non_const_value_type nnz = adj.dimension_0();
-  int vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
+  if (vector_size == -1)
+    vector_size = get_suggested_vector__size(num_rows, nnz, get_exec_space_type<MyExecSpace>());
 
   Kokkos::Impl::Timer timer1;
-  Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  if (suggested_team_size == -1)
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  else
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+
   MyExecSpace::fence();
 
 
@@ -1861,7 +1868,11 @@ void transpose_graph(
   MyExecSpace::fence();
 
   timer1.reset();
-  Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  if (suggested_team_size == -1)
+    Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
+  else
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+
   MyExecSpace::fence();
 
 
