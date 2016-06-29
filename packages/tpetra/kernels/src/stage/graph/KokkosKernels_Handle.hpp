@@ -36,6 +36,7 @@ public:
   //typedef typename row_index_view_type::value_type idx;
   //typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
   typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
+  typedef typename in_lno_row_view_t::non_const_value_type size_type;
 
   //typedef typename row_index_view_type::array_layout idx_array_layout;
   typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
@@ -158,11 +159,11 @@ public:
 
   //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
   //typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_index_temp_work_view_type;
-  typedef typename Kokkos::View<row_lno_t *, HandleTempMemorySpace> row_lno_temp_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
 
   //typedef typename Kokkos::View<row_index_type *, HandlePersistentMemorySpace> idx_persistent_work_array_type;
   //typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_index_persistent_work_view_type;
-  typedef typename Kokkos::View<row_lno_t *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
+  typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
 
   //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
   //typedef typename lno_persistent_work_view_t::HostMirror row_index_persistent_host_view_type; //Host view type
@@ -180,10 +181,15 @@ public:
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
 
+
+  typedef typename Kokkos::View<bool *, HandlePersistentMemorySpace> bool_persistent_view_t;
+  typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
+
 private:
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
+  nnz_lno_t team_work_size;
   //idx_array_type row_map;
   //idx_edge_array_type entries;
   //value_array_type values;
@@ -192,12 +198,19 @@ public:
 
 
 
-  KokkosKernelsHandle():gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL){}
+  KokkosKernelsHandle():gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL), team_work_size (256){}
   ~KokkosKernelsHandle(){
 
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
     this->destroy_spgemm_handle();
+  }
+
+  nnz_lno_t get_team_work_size(){
+    return team_work_size;
+  }
+  void set_team_work_size(nnz_lno_t team_work_size_){
+    this->team_work_size = team_work_size_;
   }
 
   SPGEMMHandleType *get_spgemm_handle(){

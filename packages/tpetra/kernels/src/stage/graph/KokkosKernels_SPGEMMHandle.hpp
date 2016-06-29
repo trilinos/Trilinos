@@ -18,7 +18,9 @@ namespace Experimental{
 
 namespace Graph{
 
-enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL, SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4};
+enum SPGEMMAlgorithm{SPGEMM_DEFAULT, SPGEMM_CUSPARSE, SPGEMM_SERIAL, SPGEMM_CUSP, SPGEMM_MKL,
+                     SPGEMM_KK1, SPGEMM_KK2, SPGEMM_KK3, SPGEMM_KK4,
+                     SPGEMM_KK_SPEED, SPGEMM_KK_MEMORY, SPGEMM_KK_COLOR, SPGEMM_KK_MULTICOLOR, SPGEMM_KK_MULTICOLOR2};
 
 template <class lno_row_view_t_,
           class lno_nnz_view_t_,
@@ -166,16 +168,69 @@ private:
 
   int suggested_vector_size;
   int suggested_team_size;
-  row_lno_t max_nnz_inresult;
-  row_lno_t max_nnz_compressed_result;
+  nnz_lno_t max_nnz_inresult;
+  nnz_lno_t max_nnz_compressed_result;
 
-  row_lno_temp_work_view_t compressed_b_rowmap, compressed_b_set_indices, compressed_b_sets, compressed_b_set_begins, compressed_b_set_nexts;
+  row_lno_temp_work_view_t compressed_b_rowmap, compressed_b_set_begins, compressed_b_set_nexts;
+  nnz_lno_temp_work_view_t compressed_b_set_indices, compressed_b_sets;
   row_lno_temp_work_view_t compressed_c_rowmap;
+
+
+  row_lno_temp_work_view_t tranpose_a_xadj, tranpose_b_xadj, tranpose_c_xadj;
+  nnz_lno_temp_work_view_t tranpose_a_adj, tranpose_b_adj, tranpose_c_adj;
+
+  bool transpose_a,transpose_b, transpose_c_symbolic;
+
+
+  nnz_lno_t num_colors;
+  nnz_lno_persistent_work_host_view_t color_xadj;
+  nnz_lno_persistent_work_view_t color_adj, vertex_colors;
+  nnz_lno_t num_multi_colors, num_used_colors;
+
+  double multi_color_scale;
+
 
 #ifdef KERNELS_HAVE_CUSPARSE
   SPGEMMcuSparseHandleType *cuSPARSEHandle;
 #endif
   public:
+  void set_color_xadj(
+      nnz_lno_t num_colors_,
+      nnz_lno_persistent_work_host_view_t color_xadj_,
+      nnz_lno_persistent_work_view_t color_adj_,
+      nnz_lno_persistent_work_view_t vertex_colors_,
+      nnz_lno_t num_multi_colors_, nnz_lno_t num_used_colors_){
+
+    num_colors = num_colors_;
+    color_xadj = color_xadj_;
+    color_adj = color_adj_;
+    vertex_colors = vertex_colors_;
+
+    num_multi_colors = num_multi_colors_;
+    num_used_colors = num_used_colors_;
+  }
+
+  void set_multi_color_scale(double multi_color_scale_){
+    this->multi_color_scale = multi_color_scale_;
+  }
+
+  double get_multi_color_scale(){
+    return this->multi_color_scale;
+  }
+
+  void get_color_xadj(
+      nnz_lno_t &num_colors_,
+      nnz_lno_persistent_work_host_view_t &color_xadj_,
+      nnz_lno_persistent_work_view_t &color_adj_,
+      nnz_lno_persistent_work_view_t &vertex_colors_,
+      nnz_lno_t &num_multi_colors_, nnz_lno_t &num_used_colors_){
+    num_colors_ = num_colors;
+    color_xadj_ = color_xadj;
+    color_adj_ = color_adj ;
+    num_multi_colors_ = num_multi_colors;
+    num_used_colors_ = num_used_colors ;
+    vertex_colors_ = vertex_colors;
+  }
 
   void set_compressed_c(
       row_lno_temp_work_view_t compressed_c_rowmap_){
@@ -187,11 +242,15 @@ private:
     compressed_c_rowmap_ = compressed_c_rowmap;
   }
 
+  //TODO: store transpose here.
+  void get_c_transpose_symbolic(){}
+
+
 
   void set_compressed_b(
       row_lno_temp_work_view_t compressed_b_rowmap_,
-      row_lno_temp_work_view_t compressed_b_set_indices_,
-      row_lno_temp_work_view_t compressed_b_sets_,
+      nnz_lno_temp_work_view_t compressed_b_set_indices_,
+      nnz_lno_temp_work_view_t compressed_b_sets_,
       row_lno_temp_work_view_t compressed_b_set_begins_,
       row_lno_temp_work_view_t compressed_b_set_nexts_){
     compressed_b_rowmap = compressed_b_rowmap_;
@@ -203,8 +262,8 @@ private:
 
   void get_compressed_b(
       row_lno_temp_work_view_t &compressed_b_rowmap_,
-      row_lno_temp_work_view_t &compressed_b_set_indices_,
-      row_lno_temp_work_view_t &compressed_b_sets_,
+      nnz_lno_temp_work_view_t &compressed_b_set_indices_,
+      nnz_lno_temp_work_view_t &compressed_b_sets_,
       row_lno_temp_work_view_t &compressed_b_set_begins_,
       row_lno_temp_work_view_t &compressed_b_set_nexts_){
     compressed_b_rowmap_ = compressed_b_rowmap;
@@ -220,7 +279,12 @@ private:
   SPGEMMHandle(SPGEMMAlgorithm gs = SPGEMM_DEFAULT):
     algorithm_type(gs),
     called_symbolic(false), called_numeric(false),
-    suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0)
+    suggested_vector_size(0), suggested_team_size(0), max_nnz_inresult(0),
+    tranpose_a_xadj(), tranpose_b_xadj(), tranpose_c_xadj(),
+    tranpose_a_adj(), tranpose_b_adj(), tranpose_c_adj(),
+    transpose_a(false),transpose_b(false), transpose_c_symbolic(false),
+    num_colors(0),
+    color_xadj(), color_adj(), vertex_colors(), num_multi_colors(0),num_used_colors(0), multi_color_scale(1)
 #ifdef KERNELS_HAVE_CUSPARSE
   ,cuSPARSEHandle(NULL)
 #endif
@@ -233,7 +297,7 @@ private:
 
   virtual ~SPGEMMHandle(){
 
-#ifdef KERNELS_HAVE_CUSPARSE
+#ifdef KERNELS_HAVE_CUSgPARSE
     this->destroy_cuSPARSE_Handle();
 #endif
   };
@@ -306,6 +370,7 @@ private:
 
 
 
+
   //getters
   SPGEMMAlgorithm get_algorithm_type() const {return this->algorithm_type;}
 
@@ -313,11 +378,11 @@ private:
   bool is_numeric_called(){return this->called_numeric;}
 
 
-  row_lno_t get_max_result_nnz() const{
+  nnz_lno_t get_max_result_nnz() const{
     return this->max_nnz_inresult ;
   }
 
-  row_lno_t get_max_compresed_result_nnz() const{
+  nnz_lno_t get_max_compresed_result_nnz() const{
     return this->max_nnz_compressed_result ;
   }
 
@@ -327,11 +392,11 @@ private:
   void set_call_symbolic(bool call = true){this->called_symbolic = call;}
   void set_call_numeric(bool call = true){this->called_numeric = call;}
 
-  void set_max_result_nnz(row_lno_t num_result_nnz_){
+  void set_max_result_nnz(nnz_lno_t num_result_nnz_){
     this->max_nnz_inresult = num_result_nnz_;
   }
 
-  void set_max_compresed_result_nnz(row_lno_t num_result_nnz_){
+  void set_max_compresed_result_nnz(nnz_lno_t num_result_nnz_){
     this->max_nnz_compressed_result = num_result_nnz_;
   }
 

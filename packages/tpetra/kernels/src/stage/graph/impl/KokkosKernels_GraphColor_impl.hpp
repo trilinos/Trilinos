@@ -3,6 +3,7 @@
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <KokkosKernels_GraphColorHandle.hpp>
+#include <vector>
 
 #ifndef _KOKKOSCOLORINGIMP_HPP
 #define _KOKKOSCOLORINGIMP_HPP
@@ -175,7 +176,97 @@ public:
    *   algorithm to assume that the color is fixed for the corresponding vertex.
    * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
    */
-  virtual void d2_color_graph(
+  template <typename col_view_t_, typename lno_colnnz_view_t_>
+  void d2_color_graph(
+      color_view_t d_colors,
+      int &num_phases,
+      row_index_type num_cols,
+      col_view_t_ col_map, lno_colnnz_view_t_ col_entries){
+    std::cout << "Simple Sequential D2" << std::endl;
+    num_phases = 1;
+    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
+
+    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    Kokkos::deep_copy (h_xadj, this->xadj);
+    Kokkos::deep_copy (h_adj, this->adj);
+    MyExecSpace::fence();
+
+
+    typedef typename col_view_t_::HostMirror col_host_view_t; //Host view type
+    typedef typename lno_colnnz_view_t_::HostMirror col_nnz_view_t; //Host view type
+    col_host_view_t h_c_xadj = Kokkos::create_mirror_view (col_map);
+    col_nnz_view_t h_c_adj = Kokkos::create_mirror_view (col_entries);
+    Kokkos::deep_copy (h_c_xadj, col_map);
+    Kokkos::deep_copy (h_c_adj, col_entries);
+    MyExecSpace::fence();
+
+
+    Kokkos::Impl::Timer timer;
+    //create a ban color array to keep track of
+    //which colors have been taking by the neighbor vertices.
+    row_index_type *banned_colors = new row_index_type[this->nv];
+
+    //size_t howmany = 0;
+
+    for (row_index_type i = 0; i < this->nv; ++i) {
+      colors(i) = banned_colors[i] = 0;
+    }
+
+    color_type max_color = 0;
+    //traverse vertices greedily
+    for (row_index_type i = 0; i < this->nv; ++i){
+
+      row_index_type col_begin = h_xadj(i);
+      row_index_type col_end = h_xadj(i + 1);
+      //check the colors of neighbors
+      for (row_index_type j = col_begin; j < col_end; ++j){
+        row_index_type col = h_adj(j);
+        if (col >= num_cols) continue;
+        //set the banned_color of the color of the neighbor vertex to my vertex index.
+        //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
+        //banned_colors[colors(col)] = i;
+
+
+        row_index_type d2_rowbegin = h_c_xadj(col);
+        row_index_type d2_rowend = h_c_xadj(col + 1);
+
+        for (row_index_type j2 = d2_rowbegin; j2 < d2_rowend; ++j2){
+
+          //howmany++;
+          row_index_type d2row = h_c_adj(j2);
+
+
+          if (d2row >= nv || d2row == i) continue;
+          banned_colors[colors(d2row)] = i;
+        }
+      }
+      //check the prohibeted colors, and pick the first available one.
+      for (color_type j = 1; j <= max_color; ++j) {
+        if(banned_colors[j] != i){
+          colors(i) = j;
+          break;
+        }
+      }
+      //if no color is available, pick a new color.
+      if (colors(i) == 0) colors(i) = ++max_color;
+    }
+    //std::cout << "howmany:" << howmany << std::endl;
+    delete [] banned_colors;
+    std::cout << "D2 Seq Color time:" << timer.seconds()  << std::endl;
+    Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
+  }
+
+
+  /** \brief Function to distance-2 color the vertices of the graphs. This is the base class,
+   * therefore, it only performs sequential coloring on the host device, ignoring the execution space.
+   * \param colors is the output array corresponding the color of each vertex. Size is this->nv.
+   *   Attn: Color array must be nonnegative numbers. If there is no initial colors,
+   *   it should be all initialized with zeros. Any positive value in the given array, will make the
+   *   algorithm to assume that the color is fixed for the corresponding vertex.
+   * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
+   */
+  virtual void d2_color_graph2(
       color_view_t d_colors,
       int &num_phases){
 
@@ -189,54 +280,429 @@ public:
 
     //create a ban color array to keep track of
     //which colors have been taking by the neighbor vertices.
-    row_index_type *banned_colors = new row_index_type[this->nv];
+    //row_index_type *banned_colors = new row_index_type[this->nv];
+    //std::vector <nonzero_index_type> banned_colors(this->nv);
+
+    std::vector <nonzero_index_type> vertex_cs(this->nv);
+
+    std::vector <nonzero_index_type> col_d1_max_cs(this->nv);
+    std::vector <color_type> col_d1_forbid_colors(this->nv);
+    std::vector <nonzero_index_type> col_d1forbid_cs(this->nv);
 
 
-    for (row_index_type i = 0; i < this->nv; ++i) banned_colors[i] = 0;
+
+
+
+
+    for (nonzero_index_type i = 0; i < this->nv; ++i) {
+      col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
+      colors(i) = vertex_cs[i] = 0;
+    }
 
     std::cout << "coloring now" << std::endl;
     color_type max_color = 0;
     //traverse vertices greedily
-    for (row_index_type i = 0; i < this->nv; ++i){
+    for (nonzero_index_type i = 0; i < this->nv; ++i){
 
       row_index_type nbegin = h_xadj(i);
-      row_index_type nend = h_xadj(i + 1);
-      //std::cout << "nb:" << nbegin << " ne:" << nend << std::endl;
-      //check the colors of neighbors
-      for (row_index_type j = nbegin; j < nend; ++j){
-        row_index_type n = h_adj(j);
+      nonzero_index_type row_size = h_xadj(i + 1) - nbegin;
+
+      nonzero_index_type my_cs = vertex_cs[i];
+      nonzero_index_type my_max_ncs = col_d1_max_cs[i];
+
+
+      //now find maximum d1 cs
+      for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+        row_index_type j = jj +  nbegin;
+        nonzero_index_type n = h_adj(j);
         if (n >= nv || n == i) continue;
-        //set the banned_color of the color of the neighbor vertex to my vertex index.
-        //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
-        banned_colors[colors(n)] = i;
-
-
-        row_index_type d2nbegin = h_xadj(n);
-        row_index_type d2nend = h_xadj(n + 1);
-
-        for (row_index_type j2 = d2nbegin; j2 < d2nend; ++j2){
-          row_index_type n2 = h_adj(j2);
-          if (n2 >= nv || n2 == i) continue;
-          banned_colors[colors(n2)] = i;
-        }
+        if (col_d1forbid_cs[n] > my_cs) my_cs = col_d1forbid_cs[n];
+        if (vertex_cs[n] > my_max_ncs) my_max_ncs = vertex_cs[n];
       }
-      //check the prohibeted colors, and pick the first available one.
-      for (color_type j = 1; j <= max_color; ++j) {
-        if(banned_colors[j] != i){
-          colors(i) = j;
+      col_d1_max_cs[i] = my_max_ncs;
+
+
+
+      while (true){
+
+        color_type my_d2_forbidden = 0;
+        //color_type my_d1_forbidden = 0;
+
+        for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+          row_index_type j = jj +  nbegin;
+          nonzero_index_type n = h_adj(j);
+          if (n >= nv || n == i) continue;
+
+          if (my_cs == vertex_cs[n]){
+            my_d2_forbidden = my_d2_forbidden | colors(n);
+          }
+          if (my_cs == col_d1forbid_cs[n]){
+            my_d2_forbidden = my_d2_forbidden | col_d1_forbid_colors[n];
+          }
+          else if (my_cs > col_d1forbid_cs[n] && my_cs <= col_d1_max_cs[n]){
+            row_index_type nbegin2 = h_xadj(n);
+            nonzero_index_type row_size2 = h_xadj(n + 1) - nbegin2;
+            for (nonzero_index_type jj2 = 0; jj2 < row_size2; ++jj2){
+              row_index_type j2 = jj2 +  nbegin2;
+              nonzero_index_type n2 = h_adj(j2);
+              if (n2 >= nv || n2 == i) continue;
+              if (my_cs == vertex_cs[n2]){
+                my_d2_forbidden = my_d2_forbidden | colors(n2);
+              }
+            }
+          }
+          if (~my_d2_forbidden == 0) {
+            break;
+          }
+        }
+
+        color_type avaliable_colors = ~my_d2_forbidden;
+        if (avaliable_colors == 0) {
+          ++my_cs;
+        }
+        else {
+          colors(i) = avaliable_colors & (-avaliable_colors);
+          vertex_cs[i] = my_cs;
+
+
+          for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+            row_index_type j = jj +  nbegin;
+            nonzero_index_type n = h_adj(j);
+            if (n >= nv || n == i) continue;
+            if (my_cs == col_d1forbid_cs[n]){
+              col_d1_forbid_colors[n] = col_d1_forbid_colors[n] | colors(i);
+              if (~col_d1_forbid_colors[n] == 0){
+                nonzero_index_type my_d1_cs = my_cs + 1;
+                color_type my_d1_forbidden = 0;
+
+                row_index_type nbegin2 = h_xadj(n);
+                nonzero_index_type row_size2 = h_xadj(n + 1) - nbegin2;
+
+                while (true){
+                  for (nonzero_index_type jj = 0; jj < row_size2; ++jj){
+                    row_index_type j = jj +  nbegin2;
+                    nonzero_index_type n2 = h_adj(j);
+                    if (n2 >= nv || n2 == n) continue;
+                    if (vertex_cs[n2] == my_d1_cs) my_d1_forbidden = my_d1_forbidden | colors(n2);
+                    if (~my_d1_forbidden == 0){
+                      break;
+                    }
+                  }
+
+                  if (~my_d1_forbidden == 0){
+                    my_d1_cs++;
+                  }
+                  else {
+                    col_d1forbid_cs[n] = my_d1_cs;
+                    col_d1_forbid_colors[n] = my_d1_forbidden;
+                    break;
+                  }
+                }
+              }
+            }
+            if(my_cs > col_d1_max_cs[n]) col_d1_max_cs[n] = my_cs;
+          }
           break;
         }
       }
-      //if no color is available, pick a new color.
-      if (colors(i) == 0) colors(i) = ++max_color;
     }
-    delete [] banned_colors;
+
+    int color_size = sizeof (color_type) * 8;
+
+    for (nonzero_index_type ii = 0; ii < this->nv; ++ii){
+      color_type val = colors(ii);
+      if (val){
+        //find the position in the bit.
+        int i = 1;
+        while ((val & 1) == 0) {
+          ++i;
+          val = val >> 1;
+        }
+        colors(ii) = i + vertex_cs[ii] * color_size;
+      }
+    }
 
     Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
   }
 
 };
 
+
+template <typename HandleType, typename lno_row_view_t_, typename lno_nnz_view_t_>
+class GraphColor2: public GraphColor <HandleType,lno_row_view_t_,lno_nnz_view_t_> {
+public:
+
+  typedef lno_row_view_t_ in_lno_row_view_t;
+  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename HandleType::color_view_t color_view_t;
+
+  typedef typename in_lno_row_view_t::non_const_value_type row_index_type;
+  typedef typename in_lno_row_view_t::array_layout row_view_array_layout;
+  typedef typename in_lno_row_view_t::device_type row_view_device_type;
+  typedef typename in_lno_row_view_t::memory_traits row_view_memory_traits;
+  typedef typename in_lno_row_view_t::HostMirror row_host_view_type; //Host view type
+  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
+
+  typedef typename in_lno_nnz_view_t::non_const_value_type nonzero_index_type;
+  typedef typename in_lno_nnz_view_t::array_layout nonzero_index_view_array_layout;
+  typedef typename in_lno_nnz_view_t::device_type nonzero_index_view_device_type;
+  typedef typename in_lno_nnz_view_t::memory_traits nonzero_index_view_memory_traits;
+  typedef typename in_lno_nnz_view_t::HostMirror nonzero_index_host_view_type; //Host view type
+  //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
+
+  typedef typename HandleType::color_t color_type;
+  typedef typename HandleType::color_view_array_layout color_view_array_layout;
+  typedef typename HandleType::color_view_device_t color_view_device_type;
+  typedef typename HandleType::color_view_memory_traits color_view_memory_traits;
+  typedef typename HandleType::color_host_view_t color_host_view_type; //Host view type
+
+  typedef typename HandleType::HandleExecSpace MyExecSpace;
+  typedef typename HandleType::HandleTempMemorySpace MyTempMemorySpace;
+  typedef typename HandleType::HandlePersistentMemorySpace MyPersistentMemorySpace;
+
+
+
+  typedef typename in_lno_row_view_t::const_data_type const_row_data_type;
+  typedef typename in_lno_row_view_t::non_const_data_type non_const_row_data_type;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
+
+
+
+  typedef typename in_lno_nnz_view_t::const_data_type const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::non_const_data_type non_const_nonzero_index_data_type;
+  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
+  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
+
+
+public:
+  /**
+   * \brief GraphColor constructor.
+   * \param nv_: number of vertices in the graph
+   * \param ne_: number of edges in the graph
+   * \param row_map: the xadj array of the graph. Its size is nv_ +1
+   * \param entries: adjacency array of the graph. Its size is ne_
+   * \param coloring_handle: GraphColoringHandle object that holds the specification about the graph coloring,
+   *    including parameters.
+   */
+  GraphColor2(
+      row_index_type nv_,
+      row_index_type ne_,
+      const_lno_row_view_t row_map,
+      const_lno_nnz_view_t entries,
+      HandleType *coloring_handle):
+        GraphColor<HandleType,lno_row_view_t_,lno_nnz_view_t_>(nv_, ne_, row_map, entries, coloring_handle)
+        {}
+
+  /** \brief GraphColor destructor.
+   */
+  virtual ~GraphColor2(){}
+
+  /** \brief Function to distance-2 color the vertices of the graphs. This is the base class,
+   * therefore, it only performs sequential coloring on the host device, ignoring the execution space.
+   * \param colors is the output array corresponding the color of each vertex. Size is this->nv.
+   *   Attn: Color array must be nonnegative numbers. If there is no initial colors,
+   *   it should be all initialized with zeros. Any positive value in the given array, will make the
+   *   algorithm to assume that the color is fixed for the corresponding vertex.
+   * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
+   */
+  template <typename col_view_t_, typename lno_colnnz_view_t_>
+  void d2_color_graph(
+      color_view_t d_colors,
+      int &num_phases,
+      row_index_type num_cols,
+      col_view_t_ col_map, lno_colnnz_view_t_ col_entries){
+
+    std::cout << "Optimized Sequential D2" << std::endl;
+    num_phases = 1;
+    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
+    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    Kokkos::deep_copy (h_xadj, this->xadj);
+    Kokkos::deep_copy (h_adj, this->adj);
+    MyExecSpace::fence();
+
+    typedef typename col_view_t_::HostMirror col_host_view_t; //Host view type
+    typedef typename lno_colnnz_view_t_::HostMirror col_nnz_view_t; //Host view type
+    col_host_view_t h_c_xadj = Kokkos::create_mirror_view (col_map);
+    col_nnz_view_t h_c_adj = Kokkos::create_mirror_view (col_entries);
+    Kokkos::deep_copy (h_c_xadj, col_map);
+    Kokkos::deep_copy (h_c_adj, col_entries);
+    MyExecSpace::fence();
+
+
+    //create a ban color array to keep track of
+    //which colors have been taking by the neighbor vertices.
+    //row_index_type *banned_colors = new row_index_type[this->nv];
+    //std::vector <nonzero_index_type> banned_colors(this->nv);
+
+    Kokkos::Impl::Timer timer;
+
+    std::vector <nonzero_index_type> row_cs(this->nv);
+    std::vector <nonzero_index_type> col_d1_max_cs(num_cols);
+    std::vector <color_type> col_d1_forbid_colors(num_cols);
+    std::vector <nonzero_index_type> col_d1forbid_cs(num_cols);
+
+    for (nonzero_index_type i = 0; i < this->nv; ++i) {
+      colors(i) = row_cs[i] = 0;
+    }
+
+    for (nonzero_index_type i = 0; i < num_cols; ++i) {
+      col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
+    }
+
+    color_type max_color = 0;
+    //traverse vertices greedily
+
+    //size_t howmany = 0;
+    for (nonzero_index_type i = 0; i < this->nv; ++i){
+
+      //std::cout << "i:" << i << std::endl;
+      row_index_type colbegin = h_xadj(i);
+      nonzero_index_type row_size = h_xadj(i + 1) - colbegin;
+
+      nonzero_index_type my_row_cs = row_cs[i];
+      //nonzero_index_type my_max_ncs = col_d1_max_cs[i];
+
+      //now find maximum d1 cs
+      for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+        //howmany++;
+        row_index_type j = jj +  colbegin;
+        nonzero_index_type col = h_adj(j);
+        if (col >= num_cols) continue;
+        if (col_d1forbid_cs[col] > my_row_cs) my_row_cs = col_d1forbid_cs[col];
+      }
+
+      while (true){
+        color_type my_d2_forbidden = 0;
+
+        for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+
+
+          //howmany++;
+          row_index_type j = jj +  colbegin;
+
+          nonzero_index_type col = h_adj(j);
+
+          //std::cout << "\ti:" << i << " neighbor:" << jj << " col:" << col << std::endl;
+          if (col >= num_cols) continue;
+
+          //TODO: do we forbid distance-1 neighbors too?
+          /*
+          if (my_row_cs == row_cs[col]){
+            my_d2_forbidden = my_d2_forbidden | colors(col);
+          }
+          */
+          if (my_row_cs == col_d1forbid_cs[col]){
+            my_d2_forbidden = my_d2_forbidden | col_d1_forbid_colors[col];
+          }
+          else if (my_row_cs > col_d1forbid_cs[col] && my_row_cs <= col_d1_max_cs[col]){
+            //howmany++;
+            row_index_type row_begin = h_c_xadj(col);
+            nonzero_index_type col_size = h_c_xadj(col + 1) - row_begin;
+            for (nonzero_index_type jj2 = 0; jj2 < col_size; ++jj2){
+              row_index_type j2 = jj2 +  row_begin;
+              nonzero_index_type d2_row = h_c_adj(j2);
+              if (d2_row >= this->nv || d2_row == i) continue;
+              if (my_row_cs == row_cs[d2_row]){
+                my_d2_forbidden = my_d2_forbidden | colors(d2_row);
+              }
+            }
+          }
+          if (~my_d2_forbidden == 0) {
+            break;
+          }
+        }
+
+        color_type avaliable_colors = ~my_d2_forbidden;
+        if (avaliable_colors == 0) {
+          ++my_row_cs;
+        }
+        else {
+          colors(i) = avaliable_colors & (-avaliable_colors);
+          row_cs[i] = my_row_cs;
+
+
+          //std::cout << "\ti:" << i << " found color cs:" << my_row_cs << " colors:" << colors(i) << std::endl;
+
+
+          for (nonzero_index_type jj = 0; jj < row_size; ++jj){
+            //howmany++;
+            row_index_type j = jj +  colbegin;
+            nonzero_index_type col = h_adj(j);
+            if (col >= num_cols) continue;
+            //std::cout << "\ti:" << i << " sending color to neighbor:" << jj << " col:" << col << std::endl;
+
+
+            if (my_row_cs == col_d1forbid_cs[col]){
+              col_d1_forbid_colors[col] = col_d1_forbid_colors[col] | colors(i);
+              if (~col_d1_forbid_colors[col] == 0){
+                nonzero_index_type col_d1_cs = my_row_cs + 1;
+                color_type col_d1_forbidden = 0;
+
+                if (col_d1_cs <= col_d1_max_cs[col]){
+                  row_index_type row_begin2 = h_c_xadj(col);
+                  nonzero_index_type col_size2 = h_c_xadj(col + 1) - row_begin2;
+
+                  while (true){
+                    col_d1_forbidden = 0;
+                    //std::cout << "\ti:" << i << " creating forbid for col:" << col << " in cs:" << col_d1_cs << std::endl;
+                    for (nonzero_index_type jj = 0; jj < col_size2; ++jj){
+                      //howmany++;
+                      row_index_type j = jj +  row_begin2;
+                      nonzero_index_type d2_row = h_c_adj(j);
+                      if (d2_row >= this->nv) continue;
+                      if (row_cs[d2_row] == col_d1_cs) col_d1_forbidden = col_d1_forbidden | colors(d2_row);
+                      if (~col_d1_forbidden == 0){
+                        break;
+                      }
+                    }
+
+                    if (~col_d1_forbidden == 0){
+                      col_d1_cs++;
+                    }
+                    else {
+                      col_d1forbid_cs[col] = col_d1_cs;
+                      col_d1_forbid_colors[col] = col_d1_forbidden;
+                      break;
+                    }
+                  }
+                }
+                else {
+                  col_d1forbid_cs[col] = col_d1_cs;
+                  col_d1_forbid_colors[col] = col_d1_forbidden;
+                }
+              }
+            }
+            if(my_row_cs > col_d1_max_cs[col]) col_d1_max_cs[col] = my_row_cs;
+          }
+          break;
+        }
+      }
+    }
+
+    //std::cout << "howmany:" << howmany << std::endl;
+
+    int color_size = sizeof (color_type) * 8;
+
+    for (nonzero_index_type ii = 0; ii < this->nv; ++ii){
+      color_type val = colors(ii);
+      if (val){
+        //find the position in the bit.
+        int i = 1;
+        while ((val & 1) == 0) {
+          ++i;
+          val = val >> 1;
+        }
+        colors(ii) = i + row_cs[ii] * color_size;
+      }
+    }
+    std::cout << "D2 Optimized Seq Color time:" << timer.seconds()  << std::endl;
+
+    Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
+  }
+
+};
 
 /*! \brief Class for the vertex based graph coloring algorithms.
  *  They work better on CPUs and Xeon Phis, but edge-based ones are better on GPUs.
@@ -1969,6 +2435,7 @@ public:
     bool use_pps = (this->cp->get_conflict_list_type() == COLORING_PPS);
 
     bool tictoc = this->cp->get_tictoc();
+
     Kokkos::Impl::Timer *timer = NULL;
 
     if (tictoc){
@@ -2025,6 +2492,15 @@ public:
     double mc_time = 0, cnt_time = 0, ban_time = 0, expand_ban_time = 0, color_time = 0, pps_time = 0;
 
     row_index_type i = 0;
+
+
+    if (tictoc){
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_src);
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_dst);
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(kok_colors);
+    std::cout << "\t"; KokkosKernels::Experimental::Util::print_1Dview(color_set);
+    }
+
     while(1){
 
       ++i;
@@ -2066,6 +2542,7 @@ public:
           ),num_conflict_reduction);
 
       MyExecSpace::fence();
+
       /*
       std::cout << "nv:" << this->nv
           << " i:" << i
@@ -2078,7 +2555,7 @@ public:
           << " edge_conflict_indices:" << edge_conflict_indices.dimension_0()
           << " edge_conflict_marker:" << edge_conflict_marker.dimension_0()
           << std::endl;
-          */
+      */
 
       if (tictoc){
         cnt_time += timer->seconds();

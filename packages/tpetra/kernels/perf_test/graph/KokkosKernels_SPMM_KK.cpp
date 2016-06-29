@@ -15,7 +15,7 @@ typedef double wt;
 
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
-    crsMat_t crsmat, crsMat_t crsmat2, int algorithm, int repeat = 1);
+    crsMat_t crsmat, crsMat_t crsmat2, int algorithm, int repeat , int chunksize, int multi_color_scale);
 template <typename v1>
 struct compare{
   v1 f,s;
@@ -42,6 +42,8 @@ enum { CMD_USE_THREADS = 0
   , CMD_BIN_PMTX
   , CMD_MM_MODE
   , CMD_REPEAT
+  , CMD_CHUNKSIZE
+  , CMD_MULTICOLORSCALE
   , CMD_ERROR
   , CMD_COUNT };
 
@@ -53,10 +55,11 @@ int main (int argc, char ** argv){
   char *r_mtx_bin_file = NULL;
   char *a_mtx_bin_file = NULL;
   char *p_mtx_bin_file = NULL;
-  cmdline[ CMD_REPEAT ] = 1;
 
   for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
-
+  cmdline[ CMD_REPEAT ] = 1;
+  cmdline[ CMD_CHUNKSIZE ] = 32;
+  cmdline[ CMD_MULTICOLORSCALE ] = 1;
 
   for ( int i = 1 ; i < argc ; ++i ) {
     if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
@@ -76,6 +79,9 @@ int main (int argc, char ** argv){
     else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
     }
+    else if ( 0 == strcasecmp( argv[i] , "chunksize" ) ) {
+      cmdline[ CMD_CHUNKSIZE ] = atoi( argv[++i] ) ;
+    }
     else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
       cmdline[ CMD_USE_CUDA ] = 1 ;
       cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
@@ -83,6 +89,10 @@ int main (int argc, char ** argv){
 
     else if ( 0 == strcasecmp( argv[i] , "mmmode" ) ) {
       cmdline[ CMD_MM_MODE ] = atoi( argv[++i] ) ;
+    }
+
+    else if ( 0 == strcasecmp( argv[i] , "mcscale" ) ) {
+      cmdline[ CMD_MULTICOLORSCALE ] = atoi( argv[++i] ) ;
     }
 
     else if ( 0 == strcasecmp( argv[i] , "amtx" ) ) {
@@ -117,6 +127,22 @@ int main (int argc, char ** argv){
       else if ( 0 == strcasecmp( argv[i] , "SKK" ) ) {
         cmdline[ CMD_SPGEMM_ALGO ] = 6;
       }
+      else if ( 0 == strcasecmp( argv[i] , "KKSPEED" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 8;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMEM" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 7;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKCOLOR" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 9;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 10;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "KKMULTICOLOR2" ) ) {
+        cmdline[ CMD_SPGEMM_ALGO ] = 11;
+      }
+
       else {
         cmdline[ CMD_ERROR ] = 1 ;
         std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
@@ -202,7 +228,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
 
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
@@ -231,7 +257,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -258,7 +284,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -287,7 +313,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -315,7 +341,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
     }
 
@@ -374,12 +400,12 @@ int main (int argc, char ** argv){
 
 
     std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
-    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ]);
+    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
     std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
     }else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
@@ -406,7 +432,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
 
         /*
         char *file = "AP.mtx";
@@ -447,7 +473,7 @@ int main (int argc, char ** argv){
         delete [] ew;
 
         //cmdline[ CMD_SPGEMM_ALGO ] = 1;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
 
     }
@@ -477,7 +503,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -504,7 +530,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 3){
@@ -552,7 +578,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
 
 
         if (0)
@@ -641,7 +667,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
 
@@ -684,7 +710,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
 
       }
       {
@@ -727,7 +753,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -777,7 +803,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
 
       }
       {
@@ -828,7 +854,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ]);
       }
     }
 
@@ -850,7 +876,7 @@ int main (int argc, char ** argv){
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
     crsMat_t crsMat, crsMat_t crsMat2,
-    int algorithm, int repeat ){
+    int algorithm, int repeat, int chunk_size ,int multi_color_scale){
 
 
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
@@ -866,7 +892,7 @@ crsMat_t run_experiment(
       ExecSpace, ExecSpace,ExecSpace > KernelHandle;
 
   KernelHandle kh;
-
+  kh.set_team_work_size(chunk_size);
 
   const size_t m = crsMat.numRows();
   const size_t n = crsMat2.numRows();
@@ -900,11 +926,30 @@ crsMat_t run_experiment(
   case 6:
     kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK4);
     break;
+  case 7:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
+      break;
+  case 8:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED);
+      break;
+  case 9:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR);
+    break;
+
+  case 10:
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR);
+    break;
+
+  case 11:
+      kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2);
+      break;
+
   default:
-    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK1);
+    kh.create_spgemm_handle(KokkosKernels::Experimental::Graph::SPGEMM_KK_MEMORY);
     break;
   }
 
+  kh.get_spgemm_handle()->set_multi_color_scale(multi_color_scale);
   for (int i = 0; i < repeat; ++i){
     row_mapC = lno_view_t ("");
     entriesC = lno_nnz_view_t ("");
@@ -985,6 +1030,36 @@ crsMat_t run_experiment(
   std::cout << "valuesC:" << valuesC.dimension_0() << std::endl;
 
 
+
+  {
+
+
+    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
+    Kokkos::deep_copy ( hr, row_mapC);
+
+    ExecSpace::fence();
+
+
+    idx *cent = entriesC.ptr_on_device();
+    wt * cval = valuesC.ptr_on_device();
+
+    scalar_view_t my_row_0_vals ("row0", hr(1));
+    lno_nnz_view_t my_row_0_entries ("row0", hr(1));
+
+    ExecSpace::fence();
+    KokkosKernels::Experimental::Util::copy_vector<wt * , scalar_view_t, ExecSpace>(hr(1), cval, my_row_0_vals);
+    ExecSpace::fence();
+    KokkosKernels::Experimental::Util::copy_vector<idx * , lno_nnz_view_t, ExecSpace>(hr(1), cent, my_row_0_entries);
+    ExecSpace::fence();
+
+    KokkosKernels::Experimental::KokkosKernelsSorting::sort_key_value_views<lno_nnz_view_t,scalar_view_t, ExecSpace>(my_row_0_entries, my_row_0_vals);
+
+    std::cout << "RESULT FIRST ROW" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(my_row_0_entries, true);
+    KokkosKernels::Experimental::Util::print_1Dview(my_row_0_vals, true);
+    std::cout << "#################" << std::endl;
+  }
+
   if (0)
   {
     typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (row_mapC);
@@ -1024,9 +1099,124 @@ crsMat_t run_experiment(
     KokkosKernels::Experimental::Util::print_1Dview(entriesC);
     KokkosKernels::Experimental::Util::print_1Dview(valuesC);
   }
+/*
+  if (1)
+  {
+    std::cout << "D1 Coloring Result Matrix " << std::endl;
+    kh.create_graph_coloring_handle();
+    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
+    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance1);
+    gch->set_algorithm(KokkosKernels::Experimental::Graph::COLORING_SERIAL);
+
+    lno_view_t tmp_xadj;
+    lno_nnz_view_t tmp_adj;
 
 
-  if (0)
+    Kokkos::Impl::Timer timer;
+    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
+    < lno_view_t, lno_nnz_view_t,
+    lno_view_t, lno_nnz_view_t,
+    ExecSpace>
+    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
+
+
+
+    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
+    timer.reset();
+
+    KokkosKernels::Experimental::Graph::graph_color_symbolic
+        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
+
+
+
+
+    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
+
+
+    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
+
+    lno_view_t histogram ("histogram", gch->get_num_colors());
+
+    ExecSpace::fence();
+
+    timer.reset();
+
+
+    std::cout << "Histogram" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
+    std::cout << "Colors" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(color_view);
+
+    KokkosKernels::Experimental::Util::get_histogram
+      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
+
+
+    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
+
+    kh.destroy_graph_coloring_handle();
+  }
+
+  if (1)
+  {
+    std::cout << "Coloring Result Matrix with new distance-2 color" << std::endl;
+    kh.create_graph_coloring_handle();
+    typename KernelHandle::GraphColoringHandleType *gch = kh.get_graph_coloring_handle();
+    gch->set_coloring_type(KokkosKernels::Experimental::Graph::Distance2);
+    gch->set_algorithm(KokkosKernels::Experimental::Graph::COLORING_SERIAL2);
+
+    lno_view_t tmp_xadj;
+    lno_nnz_view_t tmp_adj;
+
+
+    Kokkos::Impl::Timer timer;
+    KokkosKernels::Experimental::Util::symmetrize_graph_symbolic_hashmap
+    < lno_view_t, lno_nnz_view_t,
+    lno_view_t, lno_nnz_view_t,
+    ExecSpace>
+    (m, row_mapC, entriesC, tmp_xadj, tmp_adj );
+
+
+
+    std::cout << " Symmetrized Graph: NV:" << m << " NE:" << entriesC.dimension_0() << " symmetrization time:" << timer.seconds() << std::endl;
+    timer.reset();
+
+    KokkosKernels::Experimental::Graph::graph_color_symbolic
+        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
+
+
+
+
+    std::cout << "Num colors:" << gch->get_num_colors() <<  " coloring time:" << timer.seconds()  << std::endl;
+
+
+    typename KernelHandle::GraphColoringHandleType::color_view_t color_view = kh.get_graph_coloring_handle()->get_vertex_colors();
+
+    lno_view_t histogram ("histogram", gch->get_num_colors());
+
+    ExecSpace::fence();
+
+    timer.reset();
+
+
+    std::cout << "Histogram" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
+    std::cout << "Colors" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(color_view);
+
+    KokkosKernels::Experimental::Util::get_histogram
+      <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
+
+
+    std::cout << "Histogram" << " time:" << timer.seconds()  << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
+
+    kh.destroy_graph_coloring_handle();
+  }
+
+
+
+  if (1)
   {
     std::cout << "Coloring Result Matrix" << std::endl;
     kh.create_graph_coloring_handle();
@@ -1050,7 +1240,7 @@ crsMat_t run_experiment(
     timer.reset();
 
     KokkosKernels::Experimental::Graph::graph_color_symbolic
-        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m /*not needed*/, tmp_xadj, tmp_adj);
+        <KernelHandle,lno_view_t,lno_nnz_view_t> (&kh,m, m , tmp_xadj, tmp_adj);
 
 
 
@@ -1067,6 +1257,11 @@ crsMat_t run_experiment(
     timer.reset();
 
 
+    std::cout << "Histogram" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(histogram);
+    std::cout << "Colors" << std::endl;
+    KokkosKernels::Experimental::Util::print_1Dview(color_view);
+
     KokkosKernels::Experimental::Util::get_histogram
       <typename KernelHandle::GraphColoringHandleType::color_view_t, lno_view_t, ExecSpace>(m, color_view, histogram);
 
@@ -1076,6 +1271,7 @@ crsMat_t run_experiment(
 
     kh.destroy_graph_coloring_handle();
   }
+*/
 
 
   typename crsMat_t::StaticCrsGraphType static_graph (entriesC, row_mapC);
