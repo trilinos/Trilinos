@@ -43,91 +43,151 @@
 /** \file   Intrepid_CubatureControlVolumeSide.hpp
     \brief  Header file for the Intrepid2::CubatureControlVolumeSide class.
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_CONTROLVOLUMESIDE_HPP
-#define INTREPID2_CUBATURE_CONTROLVOLUMESIDE_HPP
+#ifndef __INTREPID2_CUBATURE_CONTROLVOLUME_SIDE_HPP__
+#define __INTREPID2_CUBATURE_CONTROLVOLUME_SIDE_HPP__
 
+#include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
-#include "Teuchos_Assert.hpp"
+
 #include "Shards_CellTopology.hpp"
 #include "Intrepid2_CellTools.hpp"
+//#include "Intrepid2_DefaultCubatureFactory.hpp"
 
 namespace Intrepid2{
 
   /** \class Intrepid2::CubatureControlVolumeSide
       \brief Defines cubature (integration) rules over control volumes.
   */
-  template<class Scalar, class ArrayPoint, class ArrayWeight>
-  class CubatureControlVolumeSide : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>{
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureControlVolumeSide
+    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
   public:
-    
-    /** brief Constructor.
-	
-	\param cellTopology           [in]     - The topology of the primary cell.
-    */
-    CubatureControlVolumeSide(const Teuchos::RCP<const shards::CellTopology> & cellTopology);
+
+    template<typename cubPointViewType,
+             typename cubWeightViewType,
+             typename subcvCoordViewType,
+             typename subcvSideNormalViewType,
+             typename mapViewType>
+    struct Functor {
+      /**/  cubPointViewType        _cubPoints;
+      /**/  cubWeightViewType       _cubWeights;
+      const subcvCoordViewType      _subcvCoords;
+      const subcvSideNormalViewType _subcvSideNormals;
+      const mapViewType             _sideMap;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor( cubPointViewType        cubPoints_,
+               cubWeightViewType       cubWeights_,
+               subcvCoordViewType      subcvCoords_,
+               subcvSideNormalViewType subcvSideNormals_,
+               mapViewType             sideMap_ )
+        : _cubPoints(cubPoints_), _cubWeights(cubWeights_), 
+          _subcvCoords(subcvCoords_), _subcvSideNormals(subcvSideNormals_), _sideMap(sideMap_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {        
+        const auto numNodesPerCell  = _cubPoints.dimension(1);
+        const auto spaceDim         = _cubPoints.dimension(2);
+
+        const auto numNodesPerSide  = _sideMap(0);
+        const auto numSubcvPoints   = _subcvSideNormals.dimension(2);
+
+        const auto sideDim = spaceDim - 1;
+
+        // compute side centers
+        for (auto node=0;node<numNodesPerCell;++node) {
+          typename cubPointViewType::value_type val[3] = {};
+          for (auto j=0;j<numNodesPerSide;++j) {
+            for (auto i=0;i<spaceDim;++i) 
+              val[i] += _subcvCoords(cell, node, _sideMap(j+1), i);
+          }
+          for (auto i=0;i<spaceDim;++i) 
+            _cubPoints(cell, node, i) = (val[i]/numNodesPerSide);
+        }
+        
+        // compute weights (area or volume)
+        for (auto node=0;node<numNodesPerCell;++node) {
+          for (auto i=0;i<spaceDim;++i) {
+            typename cubWeightViewType::value_type val = 0;
+            for (auto pt=0;pt<numSubcvPoints;++pt)
+              val += _subcvSideNormals(cell, node, pt, i)*pow(2,sideDim);
+            _cubWeights(cell, node, i) = val;
+          }
+        }
+      }
+    };
+
+  protected:
+
+    /** \brief The topology of the primary cell.
+     */
+    shards::CellTopology primaryCellTopo_;
+
+    /** \brief The topology of the sub-control volume.
+     */
+    shards::CellTopology subcvCellTopo_;
+
+    /** \brief The degree of the polynomials that are integrated exactly.
+     */
+    ordinal_type degree_;
+
+    // cubature points and weights associated with sub-control volume.
+    Kokkos::View<ordinal_type**,ExecSpaceType> sideNodeMap_;
+    Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
+
+  public:
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     /** \brief Returns cubature points and weights
-	       Method for reference space cubature - throws an exception.
-	
-	\param cubPoints             [out]        - Array containing the cubature points.
-        \param cubWeights            [out]        - Array of corresponding cubature weights.
-    */
-    void getCubature(ArrayPoint& cubPoints,
-		     ArrayWeight& cubWeights) const;
-    
-    /** \brief Returns cubature points and weights
-	       (return arrays must be pre-sized/pre-allocated).
-	
+        (return arrays must be pre-sized/pre-allocated).
+
 	\param cubPoints             [out]        - Array containing the cubature points.
         \param cubWeights            [out]        - Array of corresponding cubature weights.
         \param cellCoords             [in]        - Array of cell coordinates
     */
-    void getCubature(ArrayPoint& cubPoints,
-		     ArrayWeight& cubWeights,
-                     ArrayPoint& cellCoords) const;
-    
+    virtual
+    void
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights,
+                 pointViewType  cellCoords) const;
+
     /** \brief Returns the number of cubature points.
      */
-    int getNumPoints() const;
-    
+    virtual
+    ordinal_type
+    getNumPoints() const {
+      return primaryCellTopo_.getEdgeCount();
+    }
+
     /** \brief Returns dimension of integration domain.
      */
-    int getDimension() const;
-    
-     /** \brief Returns max. degree of polynomials that are integrated exactly on each triangle.
-             The return vector has size 1.
-     */
-    void getAccuracy(std::vector<int> & accuracy) const;
+    virtual
+    ordinal_type
+    getDimension() const {
+      return primaryCellTopo_.getDimension();
+    }
 
-    
+    /** \brief Returns cubature name.
+     */
+    virtual
+    const char*
+    getName() const {
+      return "CubatureControlVolumeSide";
+    }
+
+    /** brief Constructor.
+	\param cellTopology           [in]     - The topology of the primary cell.
+    */
+    CubatureControlVolumeSide(const shards::CellTopology cellTopology);
     virtual ~CubatureControlVolumeSide() {}
-    
-  private:
-    
-    
-    /** \brief The topology of the primary cell.
-     */
-    Teuchos::RCP<const shards::CellTopology> primaryCellTopo_;
 
-    /** \brief The topology of the sub-control volume.
-     */
-    Teuchos::RCP<const shards::CellTopology> subCVCellTopo_;
-
-    /** \brief The degree of the polynomials that are integrated exactly.
-     */
-    int degree_;
-    
-    /** \brief The number of cubature points.
-     */
-    int numPoints_;
-    
-    /** \brief Dimension of integration domain.
-     */
-    int cubDimension_;
-    
-  }; // end class CubatureControlVolumeSide
+  }; // end class CubatureControlVolume
 
 } // end namespace Intrepid2
 
