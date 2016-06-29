@@ -414,6 +414,7 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
 
 //
 // Back-tracking line search
+// Taken from box I.1 in the appendix of Armero and Perez-Foguet (Jan. 2000)
 //
 template<typename T, Index N>
 template<typename FN>
@@ -424,26 +425,34 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
   Index const
   dimension = soln.get_dimension();
 
-  Vector < T, N >
+  Vector <T, N>
   step = direction;
 
-  Vector < T, N >
-  step_next(dimension, ZEROS);
+  Vector<T, N>
+  step_line_search(dimension, ZEROS);
+
+  Vector<T, N> const
+  resid = fn.gradient(soln);
+
+  Vector<T, N> const
+  resid_newton = fn.gradient(soln + step);
 
   Index
   line_iter{0};
 
+  T const
+  resid_norm = dot(resid, resid);
+
+  T const
+  resid_newton_norm = dot(resid_newton, resid_newton);
+
   T
-  alpha{1.0};
-
-  Vector<T, N> const
-  soln_next = soln + step;
-
-  Vector<T, N> const
-  gradient_next = fn.gradient(soln_next);
+  resid_line_norm = resid_newton_norm;
 
   for (Index i{0}; i < max_num_iter; i++) {
+
     if (line_iter == max_line_iter) {
+
       alpha = 1.0;
       line_iter = 0;
       search_parameter += search_increment;
@@ -451,28 +460,37 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
 
     if (search_parameter >= 1.0) break;
 
-    step_next = alpha * step;
+    step_line_search = alpha * step;
 
     Vector<T, N> const
-    soln_line_search = soln + step_next;
+    soln_line_search = soln + step_line_search;
 
     Vector<T, N> const
-    gradient_line_search = fn.gradient(soln_next);
-
-    alpha = alpha * 0.5;
-
-    line_iter++;
+    gradient_line_search = fn.gradient(soln_line_search);
 
     T const
+    resid_line_norm_old = resid_line_norm;
+
     resid_line_norm = dot(gradient_line_search, gradient_line_search);
 
     T const
-    resid_norm = dot(gradient_next, gradient_next);
+    num = 0.25 * alpha * alpha * resid_line_norm_old;
 
-    if (resid_line_norm <= search_parameter * resid_norm) {
-      step = step_next;
+    T const
+    den = resid_line_norm + resid_line_norm_old * (0.5 * alpha - 1.0);
+
+    T const
+    quad_approx = num / den;
+
+    alpha = std::max(0.5 * alpha, quad_approx);
+
+    line_iter++;
+
+    if (resid_line_norm <= (search_parameter * resid_norm)) {
+      step = step_line_search;
       break;
     }
+
   } //Index i
 
   return step;
@@ -616,10 +634,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   } else {
 
     bool const
-    at_boundary = std::abs(computed_size / region_size - 1.0) <= 1.0e-8;
-
-    bool const
-    increase_region_size = reduction > 0.75 && at_boundary;
+    increase_region_size = reduction > 0.75;
 
     if (increase_region_size == true) {
       region_size = std::min(2.0 * region_size, max_region_size);

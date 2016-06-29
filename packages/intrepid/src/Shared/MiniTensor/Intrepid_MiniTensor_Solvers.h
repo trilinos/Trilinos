@@ -250,6 +250,9 @@ struct BacktrackingLineSearch
   search_increment{0.1};
 
   T
+  alpha{1.0};
+
+  T
   tolerance{1.0e-6};
 };
 
