@@ -440,8 +440,27 @@ RCP<Tpetra::CrsMatrix<ST,LO,GO,NT> > buildGraphLaplacian(ST * x,ST * y,ST * z,GO
   */
 void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha,double beta)
 {
-   // Thyra::apply(*A,Thyra::NONCONJ_ELE,*x,&*y,alpha,beta);
    Thyra::apply(*A,Thyra::NOTRANS,*x,y.ptr(),alpha,beta);
+}
+
+/** \brief Apply a transposed linear operator to a multivector (think of this as a matrix
+  *        vector multiply).
+  *
+  * Apply a transposed linear operator to a multivector. This also permits arbitrary scaling
+  * and addition of the result. This function gives
+  *     
+  *    \f$ y = \alpha A^T x + \beta y \f$
+  *
+  * \param[in]     A
+  * \param[in]     x
+  * \param[in,out] y
+  * \param[in]     \alpha
+  * \param[in]     \beta
+  *
+  */
+void applyTransposeOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha,double beta)
+{
+   Thyra::apply(*A,Thyra::TRANS,*x,y.ptr(),alpha,beta);
 }
 
 /** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
