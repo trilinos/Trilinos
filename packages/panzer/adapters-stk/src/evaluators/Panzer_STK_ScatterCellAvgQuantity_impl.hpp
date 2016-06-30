@@ -94,7 +94,7 @@ PHX_POST_REGISTRATION_SETUP(ScatterCellAvgQuantity,d,fm)
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::ELEMENT_RANK, fieldName);
 
     // setup the field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -113,8 +113,8 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgQuantity,workset)
       PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];
       PHX::MDField<double,panzer::Cell,panzer::NODE> average = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
       // write to double field
-      for(int i=0; i<field.dimension(0);i++) {
-         for(int j=0; j<field.dimension(1);j++) 
+      for(unsigned i=0; i<field.dimension(0);i++) {
+         for(unsigned j=0; j<field.dimension(1);j++) 
             average(i,0) += Sacado::ScalarValue<ScalarT>::eval(field(i,j));
          average(i,0) /= field.dimension(1);
       }

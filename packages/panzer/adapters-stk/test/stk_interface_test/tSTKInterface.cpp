@@ -304,10 +304,12 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
 
 class CompareID {
 public:
-   CompareID(stk::mesh::EntityId id) : id_(id) {}
+   CompareID(Teuchos::RCP<STK_Interface> mesh, stk::mesh::EntityId id) : mesh_(mesh), id_(id) {}
 
    bool operator()(stk::mesh::Entity e)
-   { return e->identifier()==id_; }
+   { return mesh_->elementGlobalId(e)==id_; }
+
+   Teuchos::RCP<STK_Interface> mesh_;
    stk::mesh::EntityId id_;
 };
 
@@ -327,8 +329,8 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->getElementsSharingNode(2,elements);
  
       TEST_EQUALITY(elements.size(),2); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(2))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 2))!=elements.end()); 
    }
  
    {
@@ -336,8 +338,8 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->getElementsSharingNode(4,elements);
  
       TEST_EQUALITY(elements.size(),2); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
  
    {
@@ -345,9 +347,9 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
       mesh->getElementsSharingNode(3,elements);
  
       TEST_EQUALITY(elements.size(),3); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(2))!=elements.end()); 
-      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 2))!=elements.end()); 
+      TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
 
    {
@@ -359,8 +361,8 @@ TEUCHOS_UNIT_TEST(tSTKInterface, node_sharing_test)
      mesh->getElementsSharingNodes(nodes,elements);
 
      TEST_EQUALITY(elements.size(),2); 
-     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(1))!=elements.end()); 
-     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(3))!=elements.end()); 
+     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 1))!=elements.end()); 
+     TEST_ASSERT(std::find_if(elements.begin(),elements.end(),CompareID(mesh, 3))!=elements.end()); 
    }
     
    {
@@ -417,8 +419,6 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
 
-   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
-
    mesh->getMyElements(elements);
 
    // loop over all elements of mesh
@@ -426,20 +426,12 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
       stk::mesh::Entity elem = elements[elmI];
       std::size_t localId = mesh->elementLocalId(elem);
 
-      stk::mesh::PairIterRelation relations = elem->relations(nodeRank);
-      stk::mesh::PairIterRelation::iterator itr;
-      stk::mesh::Entity node = 0;
-      for(itr=relations.begin();itr!=relations.end();++itr) {
-         if(itr->identifier()==0) {
-            node = itr->entity();
-            break;
-         }
-      }
+      stk::mesh::Entity node = mesh->findConnectivityById(elem, stk::topology::NODE_RANK, 0);
 
-      TEST_ASSERT(node!=0);
+      TEST_ASSERT(mesh->isValid(node));
 
       // based on first node check local id of element
-      switch(node->identifier()) {
+      switch(mesh->elementGlobalId(node)) {
       case 1:
          TEST_EQUALITY(localId,0);
          break;

@@ -54,8 +54,6 @@
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-void getNodeIds(stk::mesh::Entity element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds);
-
 /** This example whows how to get vertex IDs for all the elements
   */
 int main( int argc, char **argv )
@@ -101,7 +99,7 @@ int main( int argc, char **argv )
         stk::mesh::Entity element = elements[elm];
 
         localIds.push_back(mesh->elementLocalId(element));
-        getNodeIds(element,mesh->getNodeRank(),nodes);
+        mesh->getNodeIdsForElement(element,nodes);
 
         TEUCHOS_ASSERT(nodes.size()==4);
 
@@ -117,13 +115,4 @@ int main( int argc, char **argv )
   Kokkos::finalize();
 
   return 0;
-}
-
-void getNodeIds(stk::mesh::Entity element,stk::mesh::EntityRank nodeRank,std::vector<stk::mesh::EntityId> & nodeIds)
-{
-   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
-
-   stk::mesh::PairIterRelation::iterator itr;
-   for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
-      nodeIds.push_back(itr->entity()->identifier());
 }

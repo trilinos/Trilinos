@@ -62,7 +62,6 @@
 
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include <stk_rebalance/ZoltanPartition.hpp>
 
 namespace panzer_stk {
 
@@ -78,17 +77,6 @@ public:
 private:
    Teuchos::RCP<const STK_Interface> mesh_;
 };
-
-/*
-static void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds)
-{
-   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
-
-   stk::mesh::PairIterRelation::iterator itr;
-   for(itr=nodeRel.begin();itr!=nodeRel.end();++itr)
-      nodeIds.push_back(itr->entity()->identifier());
-}
-*/
 
 /*
 static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, stk::mesh::Entity element,int id)
@@ -481,6 +469,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    SquareQuadMeshFactory factory; 
    factory.setParameterList(pl);
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   stk::mesh::BulkData & bulkData = *mesh->getBulkData();
 
    TEST_EQUALITY(mesh->getNumElementBlocks(),6);
    TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(12+1)*(12+1));
@@ -498,13 +487,13 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
 
       TEST_EQUALITY((int) myElements.size(),24/numprocs);
       
-      TEST_EQUALITY((int) myElements[0]->identifier(),1+rank*3); 
-      TEST_EQUALITY((int) myElements[1]->identifier(),2+rank*3); 
-      TEST_EQUALITY((int) myElements[2]->identifier(),3+rank*3); 
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[0]),1+rank*3);
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[1]),2+rank*3);
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[2]),3+rank*3);
 
-      TEST_EQUALITY((int) myElements[24/numprocs-3]->identifier(),40-(numprocs-1)*(1-rank)*3); 
-      TEST_EQUALITY((int) myElements[24/numprocs-2]->identifier(),41-(numprocs-1)*(1-rank)*3); 
-      TEST_EQUALITY((int) myElements[24/numprocs-1]->identifier(),42-(numprocs-1)*(1-rank)*3); 
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[24/numprocs-3]),40-(numprocs-1)*(1-rank)*3);
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[24/numprocs-2]),41-(numprocs-1)*(1-rank)*3);
+      TEST_EQUALITY((int) mesh->elementGlobalId(myElements[24/numprocs-1]),42-(numprocs-1)*(1-rank)*3);
    }
 
    {
@@ -541,11 +530,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity side = *itr;
-            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
-   
-            TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
-            TEST_EQUALITY((int) side->relations().size(),3);
-            TEST_EQUALITY(relations.size(),2);
+
+            TEST_EQUALITY(bulkData.entity_rank(side),mesh->getSideRank());
+            TEST_EQUALITY(bulkData.num_elements(side),1);
+            TEST_EQUALITY(bulkData.num_nodes(side),2);
          }
          
       }
@@ -585,11 +573,10 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          std::vector<stk::mesh::Entity>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity side = *itr;
-            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
-   
-            TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
-            TEST_EQUALITY((int) side->relations().size(),3);
-            TEST_EQUALITY(relations.size(),2);
+
+            TEST_EQUALITY(bulkData.entity_rank(side),mesh->getSideRank());
+            TEST_EQUALITY(bulkData.num_elements(side),1);
+            TEST_EQUALITY(bulkData.num_nodes(side),2);
          }
          
       }
@@ -658,12 +645,13 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm);
 
 using Teuchos::RCP;
 
-void entityVecToGIDVec(const std::vector<stk::mesh::Entity> & eVec,
+void entityVecToGIDVec(RCP<STK_Interface> mesh,
+                       const std::vector<stk::mesh::Entity> & eVec,
                              std::vector<stk::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
    for(std::size_t i=0;i<eVec.size();i++)
-      gidVec[i] = eVec[i]->identifier();
+      gidVec[i] = mesh->elementGlobalId(eVec[i]);
 
    std::sort(gidVec.begin(),gidVec.end());
 }
@@ -704,7 +692,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
 
          TEST_EQUALITY(localNodeIds.size(),1);
          TEST_EQUALITY(elements.size(),1);
-         TEST_EQUALITY(elements[0]->identifier(),1);
+         TEST_EQUALITY(mesh->elementGlobalId(elements[0]),1);
          TEST_EQUALITY(localNodeIds[0],0);
       }
       { 
@@ -716,7 +704,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, sideset_nodeset)
 
          TEST_EQUALITY(localNodeIds.size(),1);
          TEST_EQUALITY(elements.size(),1);
-         TEST_EQUALITY(elements[0]->identifier(),1);
+         TEST_EQUALITY(mesh->elementGlobalId(elements[0]),1);
          TEST_EQUALITY(localNodeIds[0],0);
       }
    }
@@ -762,35 +750,36 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, element_counts)
 
 TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory,rebalance)
 {
-   int size = 0; 
-   MPI_Comm_size(MPI_COMM_WORLD, &size);
+  // Temporarily disabled until we get rebalance into Trilinos
+   // int size = 0; 
+   // MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
-   pl->set("X Elements",5);
-   pl->set("Y Elements",5);
+   // RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+   // pl->set("X Elements",5);
+   // pl->set("Y Elements",5);
    
-   SquareQuadMeshFactory factory; 
-   factory.setParameterList(pl);
-   RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-   TEST_ASSERT(mesh!=Teuchos::null);
+   // SquareQuadMeshFactory factory; 
+   // factory.setParameterList(pl);
+   // RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+   // TEST_ASSERT(mesh!=Teuchos::null);
 
-   Teuchos::ParameterList params;
+   // Teuchos::ParameterList params;
 
-   mesh->rebalance(params);
-   mesh->buildLocalElementIDs();
+   // mesh->rebalance(params);
+   // mesh->buildLocalElementIDs();
 
-   // check to make sure that user specified parameters work
-   Teuchos::ParameterList zoltan_params;
-   zoltan_params.set("ZOLTAN DEBUG LEVEL","10");
-   mesh->rebalance(zoltan_params);
-   mesh->buildLocalElementIDs();
+   // // check to make sure that user specified parameters work
+   // Teuchos::ParameterList zoltan_params;
+   // zoltan_params.set("ZOLTAN DEBUG LEVEL","10");
+   // mesh->rebalance(zoltan_params);
+   // mesh->buildLocalElementIDs();
 
-   // check the size for the repartitioned mesh
-   if(size==2) {
-     std::vector<stk::mesh::Entity> elements;
-     mesh->getMyElements(elements);
-     TEST_ASSERT(elements.size()==12 || elements.size()==13);
-   }
+   // // check the size for the repartitioned mesh
+   // if(size==2) {
+   //   std::vector<stk::mesh::Entity> elements;
+   //   mesh->getMyElements(elements);
+   //   TEST_ASSERT(elements.size()==12 || elements.size()==13);
+   // }
 }
 
 void test1(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm)
@@ -850,7 +839,7 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
-   entityVecToGIDVec(myElements,myGids);
+   entityVecToGIDVec(mesh,myElements,myGids);
 
    if(rank==0) {
       TEST_EQUALITY(myGids.size(),4);
@@ -902,7 +891,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
-   entityVecToGIDVec(myElements,myGids);
+   entityVecToGIDVec(mesh,myElements,myGids);
 
    if(rank==0) {
       TEST_EQUALITY(myGids.size(),2);

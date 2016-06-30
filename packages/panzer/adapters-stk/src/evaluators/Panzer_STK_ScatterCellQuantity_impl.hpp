@@ -111,7 +111,7 @@ PHX_EVALUATE_FIELDS(ScatterCellQuantity,workset)
       PHX::MDField<double,panzer::Cell,panzer::NODE> value = af.buildStaticArray<double,panzer::Cell,panzer::NODE>("",field.dimension(0),1);
 
       // write to double field
-      for(int i=0; i<field.dimension(0);i++)
+      for(unsigned i=0; i<field.dimension(0);i++)
          value(i,0) = Sacado::ScalarValue<ScalarT>::eval(field(i));
 
       mesh_->setCellFieldData(field.fieldTag().name(),blockId,localCellIds,value);

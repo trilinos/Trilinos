@@ -109,30 +109,33 @@ namespace panzer {
     std::cout << std::endl;
     
     for (std::vector<stk::mesh::Entity>::const_iterator side=sides.begin(); side != sides.end(); ++side) {
-      *pout << "side element: rank(" << (*side)->entity_rank() << ")"
-	    << ", gid(" << (*side)->identifier() << ")"
-	    << ", owner_rank(" << (*side)->owner_rank()
-	    << ")" << std::endl;
+      *pout << "side element: rank(" << bulkData->entity_rank(*side) << ")"
+            << ", gid(" << bulkData->identifier(*side) << ")"
+            << ", owner_rank(" << bulkData->parallel_owner_rank(*side)
+            << ")" << std::endl;
       
       // get node relations
       std::vector<stk::mesh::Entity> nodes;
-      
-      stk::mesh::PairIterRelation node_relations = (*side)->relations(mesh->getNodeRank());
-      stk::mesh::PairIterRelation parent_element_relations = (*side)->relations(mesh->getElementRank());
-      
-      *pout << "parent element relation: " 
-	    << "size(" << parent_element_relations.size() << ")"  
-	    << ", entity_rank(" << parent_element_relations[0].entity_rank() << ")" 
-	    << ", topo map id(" << parent_element_relations[0].identifier() << ")" 
-	    << ", gid(" << parent_element_relations[0].entity()->identifier() << ")" 
-	    << std::endl;
-      
+
+      stk::mesh::Entity const* node_relations = bulkData->begin_nodes(*side);
+      const size_t numNodes = bulkData->num_nodes(*side);
+      stk::mesh::Entity const* parent_element_relations = bulkData->begin_elements(*side);
+      const size_t numElements = bulkData->num_elements(*side);
+      stk::mesh::ConnectivityOrdinal const* parent_element_ordinals = bulkData->begin_element_ordinals(*side);
+
+      *pout << "parent element relation: "
+            << "size(" << numElements << ")"
+            << ", entity_rank(" << stk::topology::ELEMENT_RANK << ")"
+            << ", topo map id(" << parent_element_ordinals[0] << ")"
+            << ", gid(" << bulkData->identifier(parent_element_relations[0]) << ")"
+            << std::endl;
+
       pout->pushTab(4);
-      for (stk::mesh::PairIterRelation::iterator node = node_relations.begin(); node != node_relations.end(); ++node) {
-	*pout << "face to node relation: "
-	      << "gid(" << node->entity()->identifier() << ")" 
-	      << ", topo map id(" << node->identifier() << ")" 
-	      << std::endl;
+      for (size_t i = 0; i < numNodes; ++i) {
+        *pout << "face to node relation: "
+              << "gid(" << bulkData->identifier(node_relations[i]) << ")"
+              << ", topo map id(" << i << ")"
+              << std::endl;
       }
       pout->popTab();
       

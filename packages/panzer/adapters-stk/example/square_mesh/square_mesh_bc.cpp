@@ -54,8 +54,6 @@
 
 typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
-void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds);
-
 /*
 void getSideElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId, const std::vector<stk::mesh::Entity> & sides,
@@ -124,7 +122,7 @@ int main( int argc, char **argv )
            stk::mesh::Entity element = elements[elm];
    
            localIds.push_back(mesh->elementLocalId(element));
-           getNodeIds(mesh->getNodeRank(),element,nodes);
+           mesh->getNodeIdsForElement(element,nodes);
    
            TEUCHOS_ASSERT(nodes.size()==4);
    
@@ -157,13 +155,4 @@ int main( int argc, char **argv )
   Kokkos::finalize();
 
   return 0;
-}
-
-void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,std::vector<stk::mesh::EntityId> & nodeIds)
-{
-   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
-
-   stk::mesh::PairIterRelation::iterator itr;
-   for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
-      nodeIds.push_back(itr->entity()->identifier());
 }

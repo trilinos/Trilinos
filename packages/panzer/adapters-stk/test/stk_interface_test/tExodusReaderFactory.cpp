@@ -213,7 +213,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, exo_scaling)
     {
 
       stk::mesh::Entity node = mesh->getBulkData()->get_entity(mesh->getNodeRank(), id);
-      if (node) 
+      if (mesh->isValid(node))
       {
         double const* coords = mesh->getNodeCoordinates(id);
         TEST_EQUALITY(coords[0], sf*good_node_coords[id-1][0]);

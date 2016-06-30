@@ -262,8 +262,8 @@ namespace panzer {
 
     factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD); 
 
-    VariableField * field = mesh->getMetaData()->get_field<VariableField>("dog");
-    CoordinateField * cField = mesh->getMetaData()->get_field<CoordinateField>("coordinates");
+    VariableField * field = mesh->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, "dog");
+    CoordinateField * cField = mesh->getMetaData()->get_field<CoordinateField>(stk::topology::NODE_RANK, "coordinates");
     TEUCHOS_ASSERT(field!=0);
     TEUCHOS_ASSERT(cField!=0);
 
@@ -277,13 +277,13 @@ namespace panzer {
        for(stk::mesh::Bucket::iterator itr=bucket->begin();
            itr!=bucket->end();++itr) {
 
-          stk::mesh::EntityArray<CoordinateField> coordinates(*cField,*itr);
-          stk::mesh::EntityArray<VariableField> dog_array(*field,*itr);
+          double* coordinates = stk::mesh::field_data(*cField,*itr);
+          double* dog_array   = stk::mesh::field_data(*field,*itr);
 
-          double x = coordinates(0);
-          double y = coordinates(1);
+          double x = coordinates[0];
+          double y = coordinates[1];
 
-          dog_array() = 4.0*x*x+y;
+          *dog_array = 4.0*x*x+y;
        }
     }
     

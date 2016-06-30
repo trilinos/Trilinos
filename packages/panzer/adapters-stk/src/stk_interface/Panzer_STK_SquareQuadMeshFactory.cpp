@@ -352,15 +352,6 @@ std::pair<int,int> SquareQuadMeshFactory::determineYElemSizeAndStart(int yBlock,
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-const stk::mesh::Relation * SquareQuadMeshFactory::getRelationByID(unsigned ID,stk::mesh::PairIterRelation relations) const
-{
-   for(std::size_t i=0;i<relations.size();i++) 
-      if(relations[i].identifier()==ID)
-         return &relations[i];
-
-   return 0;
-}
-
 void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
@@ -394,8 +385,7 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
    std::vector<stk::mesh::Entity>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity element = (*itr);
-      stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(mesh.getEdgeRank());
+      stk::mesh::EntityId gid = mesh.elementGlobalId(element);
 
       std::size_t nx,ny;
       ny = (gid-1) / totalXElems;
@@ -405,38 +395,38 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(nx+1==totalXElems) { 
-         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,right);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,right);
       }
 
       if(nx==0) {
-         stk::mesh::Entity edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 3);
 
          // on the left
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,left);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,left);
       }
 
       if(nx+1!=totalXElems && ((nx+1) % nXElems_==0)) {
-         stk::mesh::Entity edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 1);
 
          // on the right
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = (nx+1)/nXElems_-1;
-            mesh.addEntityToSideset(*edge,vertical[index]);
+            mesh.addEntityToSideset(edge,vertical[index]);
          }
       }
 
       if(nx!=0 && (nx % nXElems_==0)) {
-         stk::mesh::Entity edge = getRelationByID(3,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 3);
 
          // on the left
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = nx/nXElems_-1;
-            mesh.addEntityToSideset(*edge,vertical[index]);
+            mesh.addEntityToSideset(edge,vertical[index]);
          }
       }
 
@@ -444,38 +434,38 @@ void SquareQuadMeshFactory::addSideSets(STK_Interface & mesh) const
       ///////////////////////////////////////////
 
       if(ny==0) {
-         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 0);
 
          // on the bottom
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,bottom);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,bottom);
       }
 
       if(ny+1==totalYElems) {
-         stk::mesh::Entity edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 2);
 
          // on the top
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,top);
+         if(mesh.entityOwnerRank(edge)==machRank_)
+            mesh.addEntityToSideset(edge,top);
       }
 
       if(ny!=0 && (ny % nYElems_==0)) {
-         stk::mesh::Entity edge = getRelationByID(0,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 0);
 
          // on the bottom
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = ny/nYElems_-1;
-            mesh.addEntityToSideset(*edge,horizontal[index]);
+            mesh.addEntityToSideset(edge,horizontal[index]);
          }
       }
 
       if(ny+1!=totalYElems && ((ny+1) % nYElems_==0)) {
-         stk::mesh::Entity edge = getRelationByID(2,relations)->entity();
+         stk::mesh::Entity edge = mesh.findConnectivityById(element, stk::topology::EDGE_RANK, 2);
 
          // on the top
-         if(edge->owner_rank()==machRank_) {
+         if(mesh.entityOwnerRank(edge)==machRank_) {
             int index = (ny+1)/nYElems_-1;
-            mesh.addEntityToSideset(*edge,horizontal[index]);
+            mesh.addEntityToSideset(edge,horizontal[index]);
          }
       }
    }
@@ -499,10 +489,10 @@ void SquareQuadMeshFactory::addNodeSets(STK_Interface & mesh) const
    {
       // add zero node to lower_left node set
       stk::mesh::Entity node = bulkData->get_entity(mesh.getNodeRank(),1);
-      mesh.addEntityToNodeset(*node,lower_left);
+      mesh.addEntityToNodeset(node,lower_left);
 
       // add zero node to origin node set
-      mesh.addEntityToNodeset(*node,origin);
+      mesh.addEntityToNodeset(node,origin);
    }
 
    mesh.endModification();

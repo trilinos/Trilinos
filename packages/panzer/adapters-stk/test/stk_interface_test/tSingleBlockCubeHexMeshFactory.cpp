@@ -70,12 +70,13 @@ void test2(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test4(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 void test27(Teuchos::FancyOStream &out, bool &success, MPI_Comm & comm);
 
-void entityVecToGIDVec(const std::vector<stk::mesh::Entity> & eVec,
+void entityVecToGIDVec(RCP<STK_Interface> mesh,
+                       const std::vector<stk::mesh::Entity> & eVec,
                              std::vector<stk::mesh::EntityId> & gidVec)
 {
    gidVec.resize(eVec.size());
    for(std::size_t i=0;i<eVec.size();i++)
-      gidVec[i] = eVec[i]->identifier();
+      gidVec[i] = mesh->elementGlobalId(eVec[i]);
 
    std::sort(gidVec.begin(),gidVec.end());
 }
@@ -190,7 +191,7 @@ void test2(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
-   entityVecToGIDVec(myElements,myGids);
+   entityVecToGIDVec(mesh,myElements,myGids);
 
    if(rank==0) {
       TEST_EQUALITY(myGids.size(),20);
@@ -245,7 +246,7 @@ void test4(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
-   entityVecToGIDVec(myElements,myGids);
+   entityVecToGIDVec(mesh,myElements,myGids);
 
    if(rank==0) {
       TEST_EQUALITY(myGids.size(),12);
@@ -315,7 +316,7 @@ void test27(Teuchos::FancyOStream &out, bool &success,MPI_Comm & comm)
    std::vector<stk::mesh::Entity> myElements;
    std::vector<stk::mesh::EntityId> myGids;
    mesh->getMyElements(myElements);
-   entityVecToGIDVec(myElements,myGids);
+   entityVecToGIDVec(mesh,myElements,myGids);
 }
 
 }

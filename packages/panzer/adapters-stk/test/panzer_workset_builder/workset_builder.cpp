@@ -70,9 +70,6 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
-		  std::vector<stk::mesh::EntityId> & nodeIds);
-
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
@@ -497,7 +494,7 @@ namespace panzer {
 	stk::mesh::Entity element = elements[elm];
 	
 	local_cell_ids.push_back(mesh->elementLocalId(element));
-	getNodeIds(mesh->getNodeRank(),element,nodes);
+        mesh->getNodeIdsForElement(element,nodes);
 	
 	TEUCHOS_ASSERT(nodes.size()==4);
 	
@@ -658,23 +655,13 @@ namespace panzer {
 
         faceE.insert(5); faceE.insert(6);
 
-        bool nodes = true; for(int i= 0;i<18;i++) nodes &= (nodeE.find(elements[i]->identifier())!=nodeE.end()); TEST_ASSERT(nodes);
-        bool edges = true; for(int i=18;i<28;i++) edges &= (edgeE.find(elements[i]->identifier())!=edgeE.end()); TEST_ASSERT(edges);
-        bool faces = true; for(int i=28;i<30;i++) faces &= (faceE.find(elements[i]->identifier())!=faceE.end()); TEST_ASSERT(faces);
+        bool nodes = true; for(int i= 0;i<18;i++) nodes &= (nodeE.find(mesh->elementGlobalId(elements[i]))!=nodeE.end()); TEST_ASSERT(nodes);
+        bool edges = true; for(int i=18;i<28;i++) edges &= (edgeE.find(mesh->elementGlobalId(elements[i]))!=edgeE.end()); TEST_ASSERT(edges);
+        bool faces = true; for(int i=28;i<30;i++) faces &= (faceE.find(mesh->elementGlobalId(elements[i]))!=faceE.end()); TEST_ASSERT(faces);
       }
     }
   }
 
-  void getNodeIds(stk::mesh::EntityRank nodeRank,stk::mesh::Entity element,
-		  std::vector<stk::mesh::EntityId> & nodeIds)
-  {
-    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
-    
-    stk::mesh::PairIterRelation::iterator itr;
-    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 
-      nodeIds.push_back(itr->entity()->identifier());
-  }
-  
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs)
   {

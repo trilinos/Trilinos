@@ -62,7 +62,7 @@
 
 #include "stk_mesh/base/GetEntities.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include <stk_rebalance/ZoltanPartition.hpp>
+//#include <stk_rebalance/ZoltanPartition.hpp>
 
 namespace panzer_stk {
 

@@ -203,7 +203,7 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshFactory, allblock)
 
       TEST_EQUALITY(localNodeIds.size(),1);
       TEST_EQUALITY(elements.size(),1);
-      TEST_EQUALITY(elements[0]->identifier(),1);
+      TEST_EQUALITY(mesh->elementGlobalId(elements[0]),1);
       TEST_EQUALITY(localNodeIds[0],0);
    }
    else {

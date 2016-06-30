@@ -90,7 +90,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     std::string fieldName = gatherFields_[fd].fieldTag().name();
 
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
+    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(stk::topology::NODE_RANK, fieldName);
 
     if(stkFields_[fd]==0) {
       std::stringstream ss; 
@@ -119,8 +119,8 @@ evaluateFields(typename Traits::EvalData workset)
    // gather operation for each cell in workset
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
-      stk::mesh::PairIterRelation relations = localElements[cellLocalId]->relations(mesh_->getNodeRank());
- 
+      stk::mesh::Entity const* relations = mesh_->getBulkData()->begin_nodes(localElements[cellLocalId]);
+
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          VariableField * field = stkFields_[fieldIndex];
@@ -129,15 +129,13 @@ evaluateFields(typename Traits::EvalData workset)
 
          if(isConstant_) {
            // loop over basis functions and fill the fields
-           stk::mesh::EntityArray<VariableField> fieldData(*field,*localElements[cellLocalId]);
-           (gatherFields_[fieldIndex])(worksetCellIndex,0) = fieldData(); // from STK
+           (gatherFields_[fieldIndex])(worksetCellIndex,0) = *stk::mesh::field_data(*field, localElements[cellLocalId]);
          }
          else {
            // loop over basis functions and fill the fields
            for(std::size_t basis=0;basis<basisCnt;basis++) {
-              stk::mesh::Entity node = relations[basis].entity();
-              stk::mesh::EntityArray<VariableField> fieldData(*field,*node);
-              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = fieldData(); // from STK
+              stk::mesh::Entity node = relations[basis];
+              (gatherFields_[fieldIndex])(worksetCellIndex,basis) = *stk::mesh::field_data(*field, node);
            }
          }
       }
