@@ -330,6 +330,7 @@ public:
     }
   };
 
+#if 0
   template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t>
   struct SingleStepZipMatrixSingleVector{
 
@@ -391,7 +392,7 @@ public:
       {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const team_member_t & teamMember) const {
+    void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
       nnz_lno_t row_ind = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       //std::cout << "i:" << i << std::endl;
       if (row_ind >= numrows) return;
@@ -420,6 +421,7 @@ public:
     }
   };
 
+#endif
   template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t>
   struct SingleStepZipMatrix{
 
@@ -488,7 +490,36 @@ public:
       {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()(const team_member_t & teamMember) const {
+    void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
+      nnz_lno_t row_ind = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      //std::cout << "i:" << i << std::endl;
+      if (row_ind >= numrows) return;
+      size_type rowBegin = row_map(row_ind);
+
+      nnz_lno_t left_work = row_map(row_ind + 1) - rowBegin;
+
+      //same as second level hash map.
+      //second level hashmap.
+      KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+        hm2(left_work, left_work, pset_index_begins + rowBegin, pset_index_nexts+ rowBegin, pset_index_entries+ rowBegin, pset_entries+ rowBegin);
+
+      nnz_lno_t used_size = 0;
+      for (nnz_lno_t i = 0; i < left_work; ++i){
+        nnz_lno_t n_set = 1;
+        const size_type adjind = i + rowBegin;
+        const nnz_lno_t n = entries[adjind];
+        nnz_lno_t n_set_index = n >> compression_bit_divide_shift;
+        n_set = n_set << (n & compression_bit_mask);
+        nnz_lno_t hash = n_set_index % left_work;
+
+        int insertion = hm2.sequential_insert_into_hash_mergeOr(
+            hash, n_set_index,n_set, &used_size, hm2.max_value_size);
+      }
+      new_row_map(row_ind) = used_size;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const GPUTag&, const team_member_t & teamMember) const {
 
       nnz_lno_t row_ind = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
       //std::cout << "i:" << i << std::endl;
@@ -1820,393 +1851,6 @@ public:
   };
 
 
-#if 0
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_row_view_t, typename b_nnz_view_t,
-            typename c_row_view_t, typename c_nnz_view_t,
-            typename pool_memory_space>
-  struct NonzeroesC_CPU{
-    nnz_lno_t numrows;
-    a_row_view_t row_mapA;
-    a_nnz_view_t entriesA;
-
-    b_row_view_t row_mapB;
-    b_nnz_view_t entriesSetIndicesB;
-    b_nnz_view_t entriesSetsB;
-
-    c_row_view_t rowmapC;
-    c_nnz_view_t entriesSetIndicesC;
-    c_nnz_view_t entriesSetsC;
-
-
-    const nnz_lno_t pow2_hash_size;
-    const nnz_lno_t pow2_hash_func;
-    const nnz_lno_t MaxRoughNonZero;
-
-    pool_memory_space m_space;
-    const KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
-    NonzeroesC_CPU(
-
-        nnz_lno_t m_,
-        a_row_view_t row_mapA_,
-        a_nnz_view_t entriesA_,
-
-        b_row_view_t row_mapB_,
-        b_nnz_view_t entriesSetIndicesB_,
-        b_nnz_view_t entriesSetsB_,
-
-        c_row_view_t rowmapC_,
-        c_nnz_view_t entriesSetIndicesC_,
-
-        const nnz_lno_t hash_size_,
-        const nnz_lno_t MaxRoughNonZero_,
-        const size_t sharedMemorySize_,
-        const KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space_):
-
-          numrows(m_),
-
-          row_mapA (row_mapA_),
-          entriesA(entriesA_),
-
-          row_mapB(row_mapB_),
-          entriesSetIndicesB(entriesSetIndicesB_),
-          entriesSetsB(entriesSetsB_),
-
-          rowmapC(rowmapC_),
-          entriesSetIndicesC(entriesSetIndicesC_),
-          entriesSetsC(),
-
-
-          pow2_hash_size(hash_size_),
-          pow2_hash_func(hash_size_ - 1),
-          MaxRoughNonZero(MaxRoughNonZero_),
-          m_space(),
-          my_exec_space(my_exec_space_)
-          {}
-
-    KOKKOS_INLINE_FUNCTION
-    size_t get_thread_id(const size_t row_index) const{
-      switch (my_exec_space){
-      default:
-        return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
-      case KokkosKernels::Experimental::Util::Exec_SERIAL:
-        return 0;
-#endif
-#if defined( KOKKOS_HAVE_PTHREAD )
-      case KokkosKernels::Experimental::Util::Exec_OMP:
-        return Kokkos::OpenMP::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_PTHREAD )
-      case KokkosKernels::Experimental::Util::Exec_PTHREADS:
-        return Kokkos::Threads::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_QTHREAD)
-      case KokkosKernels::Experimental::Util::Exec_QTHREADS:
-        return Kokkos::Qthread::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_CUDA )
-      case KokkosKernels::Experimental::Util::Exec_CUDA:
-        return row_index;
-#endif
-      }
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
-
-      nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
-      if (row_index >= numrows) return;
-
-
-      //printf("row:%d\n", row_index);
-
-      nnz_lno_t *globally_used_hash_indices = NULL;
-      nnz_lno_t globally_used_hash_count = 0;
-      nnz_lno_t used_hash_size = 0;
-      KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
-
-
-
-      volatile nnz_lno_t * tmp = NULL;
-      size_t tid = get_thread_id(row_index);
-      while (tmp == NULL){
-        tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
-      }
-
-
-
-      globally_used_hash_indices = (nnz_lno_t *) tmp;
-      tmp += pow2_hash_size ;
-
-      hm2.hash_begins = (nnz_lno_t *) (tmp);
-      tmp += pow2_hash_size ;
-
-      //poins to the next elements
-      hm2.hash_nexts = (nnz_lno_t *) (tmp);
-      tmp += MaxRoughNonZero;
-
-      //holds the keys
-      hm2.keys = (nnz_lno_t *) (tmp);
-      tmp += MaxRoughNonZero;
-      hm2.values = (nnz_lno_t *) (tmp);
-
-      hm2.hash_key_size = pow2_hash_size;
-      hm2.max_value_size = MaxRoughNonZero;
-
-
-      {
-        const size_type col_begin = row_mapA[row_index];
-        const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
-
-        for (nnz_lno_t colind = 0; colind < col_size; ++colind){
-          size_type a_col = colind + col_begin;
-
-          nnz_lno_t rowB = entriesA[a_col];
-          size_type rowBegin = row_mapB(rowB);
-
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
-
-          for (nnz_lno_t i = 0; i < left_work; ++i){
-
-            const size_type adjind = i + rowBegin;
-            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
-            nnz_lno_t b_set = entriesSetsB[adjind];
-            nnz_lno_t hash = b_set_ind & pow2_hash_func;
-
-
-            int insertion = hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-                hash,b_set_ind,b_set,
-                &used_hash_size, hm2.max_value_size
-                ,&globally_used_hash_count, globally_used_hash_indices
-            );
-          }
-        }
-
-
-
-
-        int set_size = sizeof(nnz_lno_t) * 8;
-        nnz_lno_t num_el = rowmapC(row_index);
-        for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
-          nnz_lno_t c_rows_setind = hm2.keys[ii];
-          nnz_lno_t c_rows = hm2.values[ii];
-
-          int current_row = 0;
-          nnz_lno_t unit = 1;
-
-          while (c_rows){
-            if (c_rows & unit){
-              //std::cout << "num_el:" << num_el << " set_size * c_rows_setind + current_row:" << set_size * c_rows_setind + current_row << std::endl;
-              entriesSetIndicesC(num_el++) = set_size * c_rows_setind + current_row;
-            }
-            current_row++;
-            c_rows = c_rows & ~unit;
-            unit = unit << 1;
-          }
-        }
-        for (int i = 0; i < globally_used_hash_count; ++i){
-          nnz_lno_t dirty_hash = globally_used_hash_indices[i];
-          hm2.hash_begins[dirty_hash] = -1;
-        }
-
-      }
-
-      m_space.release_chunk(globally_used_hash_indices);
-    }
-
-
-  };
-
-
-  template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_row_view_t, typename b_nnz_view_t,
-            typename c_row_view_t, typename c_nnz_view_t,
-            typename pool_memory_space>
-  struct StructureC_CPU{
-    nnz_lno_t numrows;
-    a_row_view_t row_mapA;
-    a_nnz_view_t entriesA;
-
-    b_row_view_t row_mapB;
-    b_nnz_view_t entriesSetIndicesB;
-    b_nnz_view_t entriesSetsB;
-
-    c_row_view_t rowmapC;
-    c_nnz_view_t entriesSetIndicesC;
-    c_nnz_view_t entriesSetsC;
-
-
-    const nnz_lno_t pow2_hash_size;
-    const nnz_lno_t pow2_hash_func;
-    const nnz_lno_t MaxRoughNonZero;
-
-    pool_memory_space m_space;
-    const KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space;
-    StructureC_CPU(
-
-        nnz_lno_t m_,
-        a_row_view_t row_mapA_,
-        a_nnz_view_t entriesA_,
-
-        b_row_view_t row_mapB_,
-        b_nnz_view_t entriesSetIndicesB_,
-        b_nnz_view_t entriesSetsB_,
-
-        c_row_view_t rowmapC_,
-
-        const nnz_lno_t hash_size_,
-        const nnz_lno_t MaxRoughNonZero_,
-        const size_t sharedMemorySize_,
-        const KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space_):
-
-          numrows(m_),
-
-          row_mapA (row_mapA_),
-          entriesA(entriesA_),
-
-          row_mapB(row_mapB_),
-          entriesSetIndicesB(entriesSetIndicesB_),
-          entriesSetsB(entriesSetsB_),
-
-          rowmapC(rowmapC_),
-          entriesSetIndicesC(),
-          entriesSetsC(),
-
-
-          pow2_hash_size(hash_size_),
-          pow2_hash_func(hash_size_ - 1),
-          MaxRoughNonZero(MaxRoughNonZero_),
-          m_space(),
-          my_exec_space(my_exec_space_)
-          {}
-
-    KOKKOS_INLINE_FUNCTION
-    size_t get_thread_id(const size_t row_index) const{
-      switch (my_exec_space){
-      default:
-        return row_index;
-#if defined( KOKKOS_HAVE_SERIAL )
-      case KokkosKernels::Experimental::Util::Exec_SERIAL:
-        return 0;
-#endif
-#if defined( KOKKOS_HAVE_PTHREAD )
-      case KokkosKernels::Experimental::Util::Exec_OMP:
-        return Kokkos::OpenMP::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_PTHREAD )
-      case KokkosKernels::Experimental::Util::Exec_PTHREADS:
-        return Kokkos::Threads::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_QTHREAD)
-      case KokkosKernels::Experimental::Util::Exec_QTHREADS:
-        return Kokkos::Qthread::hardware_thread_id();
-#endif
-#if defined( KOKKOS_HAVE_CUDA )
-      case KokkosKernels::Experimental::Util::Exec_CUDA:
-        return row_index;
-#endif
-      }
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
-
-      nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
-      if (row_index >= numrows) return;
-
-
-      //printf("row:%d\n", row_index);
-
-      nnz_lno_t *globally_used_hash_indices = NULL;
-      nnz_lno_t globally_used_hash_count = 0;
-      nnz_lno_t used_hash_size = 0;
-      KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
-
-
-
-      volatile nnz_lno_t * tmp = NULL;
-      size_t tid = get_thread_id(row_index);
-      while (tmp == NULL){
-        tmp = (volatile nnz_lno_t * )( m_space.allocate_chunk(tid));
-      }
-
-
-
-      globally_used_hash_indices = (nnz_lno_t *) tmp;
-      tmp += pow2_hash_size ;
-
-      hm2.hash_begins = (nnz_lno_t *) (tmp);
-      tmp += pow2_hash_size ;
-
-      //poins to the next elements
-      hm2.hash_nexts = (nnz_lno_t *) (tmp);
-      tmp += MaxRoughNonZero;
-
-      //holds the keys
-      hm2.keys = (nnz_lno_t *) (tmp);
-      tmp += MaxRoughNonZero;
-      hm2.values = (nnz_lno_t *) (tmp);
-
-      hm2.hash_key_size = pow2_hash_size;
-      hm2.max_value_size = MaxRoughNonZero;
-
-
-      {
-        const size_type col_begin = row_mapA[row_index];
-        const nnz_lno_t col_size = row_mapA[row_index + 1] - col_begin;
-
-        for (nnz_lno_t colind = 0; colind < col_size; ++colind){
-          size_type a_col = colind + col_begin;
-
-          nnz_lno_t rowB = entriesA[a_col];
-          size_type rowBegin = row_mapB(rowB);
-
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
-
-          for (nnz_lno_t i = 0; i < left_work; ++i){
-
-            const size_type adjind = i + rowBegin;
-            nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
-            nnz_lno_t b_set = entriesSetsB[adjind];
-            nnz_lno_t hash = b_set_ind & pow2_hash_func;
-
-
-            int insertion = hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-                hash,b_set_ind,b_set,
-                &used_hash_size, hm2.max_value_size
-                ,&globally_used_hash_count, globally_used_hash_indices
-            );
-          }
-        }
-
-
-
-
-        nnz_lno_t num_el = 0;
-        for (nnz_lno_t ii = 0; ii < used_hash_size; ++ii){
-          nnz_lno_t c_rows = hm2.values[ii];
-
-          for (; c_rows; num_el++) {
-            c_rows &= c_rows - 1; // clear the least significant bit set
-          }
-        }
-        for (int i = 0; i < globally_used_hash_count; ++i){
-          nnz_lno_t dirty_hash = globally_used_hash_indices[i];
-          hm2.hash_begins[dirty_hash] = -1;
-        }
-
-        rowmapC(row_index) = num_el;
-      }
-
-      m_space.release_chunk(globally_used_hash_indices);
-    }
-
-
-  };
-
-#endif
-
   template <typename a_row_view_t, typename a_nnz_view_t,
             typename b_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t, typename c_nnz_view_t,
@@ -3069,7 +2713,6 @@ public:
       std::cout << "\tSymbolic Concurrency:" << concurrency << std::endl;
     }
 
-
     typedef KokkosKernels::Experimental::Util::UniformMemoryPool< MyExecSpace, nnz_lno_t> pool_memory_space;
     nnz_lno_t brows = row_mapB.dimension_0() - 1;
     size_type bnnz =  entriesSetIndex.dimension_0();
@@ -3119,18 +2762,17 @@ public:
     MyExecSpace::fence();
 
     if (verbose){
-      std::cout << "\tPool Allocation Time:" << timer1.seconds() << std::endl;
-      std::cout << "\tPool Alloc MB:" << (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
+      std::cout << "\t\tPool Allocation Time:" << timer1.seconds() << std::endl;
+      std::cout << "\t\tPool Alloc MB:" << (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
     }
 
     sc.vector_size = suggested_vector_size;
     sc.m_space = m_space;
 
     if (verbose){
-      std::cout << "Running symbolic-count with vs:" << suggested_vector_size
-          << " teamSizeMax:" << suggested_team_size
-          << " shmem_size:" << shmem_size
-          << std::endl;
+      std::cout << "\t\tRunning symbolic-count with vs:" << suggested_vector_size
+                << " teamSizeMax:" << suggested_team_size
+                << " shmem_size:" << shmem_size << std::endl;
     }
 
     timer1.reset();
@@ -3155,30 +2797,21 @@ public:
       this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
 
       if (verbose){
-        std::cout << "\tMax Reduce Count TIME:" << timer1.seconds() << std::endl;
+        std::cout << "\t\tMax Reduce Count TIME:" << timer1.seconds() << std::endl;
       }
     }
-
-
-    //perform parallel prefixsum for rowmapC
-
 
     KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(m+1, rowmapC);
     MyExecSpace::fence();
 
-    //KokkosKernels::Experimental::Util::print_1Dview(rowmapC);
-
-    auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
-    auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
-    Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-    typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
-    if (verbose){
-      std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
-    }
-
     if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
         spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
         spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2){
+
+      auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
+      auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
+      Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
+      typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
 
       entryIndicesC_ = c_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entryIndicesC_"), c_nnz_size);
       NonzeroesC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
@@ -3210,7 +2843,7 @@ public:
 
 
       if (verbose){
-        std::cout << "\tNNZ FILL TIME:" << timer1.seconds() <<  std::endl;
+        std::cout << "\tSymbolic NNZ FILL TIME:" << timer1.seconds() <<  std::endl;
       }
 
       nnz_lno_t num_colors, num_multi_colors, num_used_colors;
@@ -3219,7 +2852,6 @@ public:
 
       this->d2_color_c_matrix(rowmapC, entryIndicesC_, num_colors, color_xadj, color_adj , vertex_colors, num_multi_colors, num_used_colors, spgemm_algorithm);
 
-
       timer1.reset();
       for (nnz_lno_t i = 0; i < num_used_colors; ++i){
         if (color_xadj(i+1) - color_xadj(i) <= 32) continue;
@@ -3227,317 +2859,12 @@ public:
         Kokkos::sort(sv);
       }
 
-
       if (verbose){
         std::cout << "\tCOLOR SORT TIME:" << timer1.seconds() <<  std::endl;
       }
-
-      //this->write_matrix_to_plot(num_colors, color_xadj, color_adj, rowmapC,entryIndicesC_);
-
       this->handle->get_spgemm_handle()->set_color_xadj(num_colors, color_xadj, color_adj, vertex_colors, num_multi_colors, num_used_colors);
     }
 
-#if 0
-    if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA) {
-      //calculate the size of C
-      StructureC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
-        sc(
-          m,
-          row_mapA,
-          entriesA,
-          row_mapB,
-          entriesSetIndex,
-          entriesSets,
-          rowmapC,
-          min_hash_size,
-          maxNumRoughNonzeros,
-          shared_memory_size,
-          my_exec_space);
-
-
-      size_t chunksize = min_hash_size ; //this is for used hash indices
-      chunksize += min_hash_size ; //this is for the hash begins
-      chunksize += maxNumRoughNonzeros ; //this is for hash nexts
-      chunksize += maxNumRoughNonzeros ; //this is for hash keys
-      chunksize += maxNumRoughNonzeros ; //this is for hash values
-
-      //TODO: HERE I would like to check the memory limits, and reduce the number of chunks based on
-      //the available memory.
-      size_t num_chunks = concurrency / suggested_vector_size;
-
-      KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::ManyThread2OneChunk;
-
-
-      Kokkos::Impl::Timer timer1;
-      MyExecSpace::fence();
-      pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
-      MyExecSpace::fence();
-
-      if (verbose){
-        std::cout << "\tPool Allocation Time:" << timer1.seconds() << std::endl;
-        std::cout << "\tPool Alloc MB:" << (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
-      }
-
-      sc.vector_size = suggested_vector_size;
-      sc.m_space = m_space;
-
-      if (verbose){
-        std::cout << "Running symbolic-count with vs:" << suggested_vector_size
-            << " teamSizeMax:" << suggested_team_size
-            << " shmem_size:" << shmem_size
-            << std::endl;
-      }
-
-      timer1.reset();
-      Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      MyExecSpace::fence();
-
-      if (verbose){
-        std::cout << "\tNNZ Count TIME:" << timer1.seconds() << std::endl;
-      }
-      //if we need to find the max nnz in a row.
-      {
-        Kokkos::Impl::Timer timer1;
-        size_type c_max_nnz = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-        MyExecSpace::fence();
-        this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
-
-        if (verbose){
-          std::cout << "\tMax Reduce Count TIME:" << timer1.seconds() << std::endl;
-        }
-      }
-
-
-      //perform parallel prefixsum for rowmapC
-
-
-      KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(m+1, rowmapC);
-      MyExecSpace::fence();
-
-      //KokkosKernels::Experimental::Util::print_1Dview(rowmapC);
-
-      auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
-      auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
-      Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-      typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
-      if (verbose){
-        std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
-      }
-
-      if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2){
-
-        entryIndicesC_ = c_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entryIndicesC_"), c_nnz_size);
-
-        NonzeroesC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
-        sc( m,
-            row_mapA,
-            entriesA,
-            row_mapB,
-            entriesSetIndex,
-            entriesSets,
-            rowmapC,
-            entryIndicesC_,
-            min_hash_size,
-            maxNumRoughNonzeros,
-            shared_memory_size,
-            my_exec_space);
-
-        sc.vector_size = suggested_vector_size;
-        sc.m_space = m_space;
-
-
-        timer1.reset();
-        Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
-        MyExecSpace::fence();
-
-
-        if (verbose){
-          std::cout << "\tNNZ FILL TIME:" << timer1.seconds() <<  std::endl;
-        }
-
-        nnz_lno_t num_colors, num_multi_colors, num_used_colors;
-        nnz_lno_persistent_work_host_view_t color_xadj;
-        nnz_lno_persistent_work_view_t color_adj, vertex_colors;
-
-        this->d2_color_c_matrix(rowmapC, entryIndicesC_, num_colors, color_xadj, color_adj , vertex_colors, num_multi_colors, num_used_colors, spgemm_algorithm);
-
-
-        timer1.reset();
-        for (nnz_lno_t i = 0; i < num_used_colors; ++i){
-          if (color_xadj(i+1) - color_xadj(i) <= 32) continue;
-          auto sv = Kokkos::subview(color_adj,Kokkos::pair<nnz_lno_t, nnz_lno_t> (color_xadj(i), color_xadj(i+1)));
-          Kokkos::sort(sv);
-        }
-
-
-        if (verbose){
-          std::cout << "\tCOLOR SORT TIME:" << timer1.seconds() <<  std::endl;
-        }
-
-        //this->write_matrix_to_plot(num_colors, color_xadj, color_adj, rowmapC,entryIndicesC_);
-
-        this->handle->get_spgemm_handle()->set_color_xadj(num_colors, color_xadj, color_adj, vertex_colors, num_multi_colors, num_used_colors);
-
-
-      }
-    }
-    else {
-      KokkosKernels::Experimental::Util::PoolType my_pool_type = KokkosKernels::Experimental::Util::OneThread2OneChunk;
-
-
-      StructureC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
-      sc(
-          m,
-          row_mapA,
-          entriesA,
-          row_mapB,
-          entriesSetIndex,
-          entriesSets,
-          rowmapC,
-          min_hash_size,
-          maxNumRoughNonzeros,
-          shared_memory_size,
-          my_exec_space);
-
-
-      /*
-      int max_allowed_team_size = team_policy_t::team_size_max(sc);
-      KokkosKernels::Experimental::Util::get_suggested_vector_team_size<size_type, MyExecSpace>(
-          max_allowed_team_size, suggested_vector_size, suggested_team_size, brows,bnnz);
-          */
-
-      //teamSizeMax = 1;
-
-      size_t chunksize = min_hash_size ; //this is for used hash indices
-      chunksize += min_hash_size ; //this is for the hash begins
-      chunksize += maxNumRoughNonzeros ; //this is for hash nexts
-      chunksize += maxNumRoughNonzeros ; //this is for hash keys
-      chunksize += maxNumRoughNonzeros ; //this is for hash values
-
-      //TODO: HERE I would like to check the memory limits, and reduce the number of chunks based on
-      //the available memory.
-      size_t num_chunks = concurrency / suggested_vector_size;
-
-
-
-      Kokkos::Impl::Timer timer1;
-      MyExecSpace::fence();
-      pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
-      MyExecSpace::fence();
-
-      if (verbose){
-        std::cout << "\tPool Allocation Time:" << timer1.seconds() << std::endl;
-        std::cout << "\tPool Alloc MB:" << (num_chunks * chunksize) / 1024. / 1024.  << std::endl;
-      }
-
-      //sc.vector_size = vector_size;
-      sc.m_space = m_space;
-
-      if (verbose){
-        std::cout << "Running symbolic-count with vs:" << suggested_vector_size
-            << " teamSizeMax:" << suggested_team_size
-            //<< " max_allowed_team_size:" << max_allowed_team_size
-            << std::endl;
-      }
-
-      timer1.reset();
-      Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
-      MyExecSpace::fence();
-
-      if (verbose){
-        std::cout << "\tNNZ Count TIME:" << timer1.seconds() << std::endl;
-      }
-      //if we need to find the max nnz in a row.
-      {
-        Kokkos::Impl::Timer timer1;
-        size_type c_max_nnz = 0;
-        KokkosKernels::Experimental::Util::view_reduce_max<c_row_view_t, MyExecSpace>(m, rowmapC, c_max_nnz);
-        MyExecSpace::fence();
-        this->handle->get_spgemm_handle()->set_max_result_nnz(c_max_nnz);
-
-        if (verbose){
-          std::cout << "\tMax Reduce Count TIME:" << timer1.seconds() << std::endl;
-        }
-      }
-
-
-      //perform parallel prefixsum for rowmapC
-
-
-      KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum<row_lno_temp_work_view_t, MyExecSpace>(m+1, rowmapC);
-      MyExecSpace::fence();
-
-      //KokkosKernels::Experimental::Util::print_1Dview(rowmapC);
-
-      auto d_c_nnz_size = Kokkos::subview(rowmapC, m);
-      auto h_c_nnz_size = Kokkos::create_mirror_view (d_c_nnz_size);
-      Kokkos::deep_copy (h_c_nnz_size, d_c_nnz_size);
-      typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
-      if (verbose){
-        std::cout << "c_nnz_size:" << c_nnz_size << std::endl;
-      }
-      if (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2){
-
-
-        KokkosKernels::Experimental::Util::print_1Dview(rowmapC);
-        entryIndicesC_ = c_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entryIndicesC_"), c_nnz_size);
-
-        NonzeroesC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
-        sc( m,
-            row_mapA,
-            entriesA,
-            row_mapB,
-            entriesSetIndex,
-            entriesSets,
-            rowmapC,
-            entryIndicesC_,
-            min_hash_size,
-            maxNumRoughNonzeros,
-            shared_memory_size,
-            my_exec_space);
-
-        sc.m_space = m_space;
-
-
-        timer1.reset();
-        Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
-        MyExecSpace::fence();
-
-
-        if (verbose){
-          std::cout << "\tNNZ FILL TIME:" << timer1.seconds() << std::endl;
-        }
-
-        //KokkosKernels::Experimental::Util::print_1Dview(entryIndicesC_);
-
-        nnz_lno_t num_colors, num_multi_colors, num_used_colors;
-        nnz_lno_persistent_work_host_view_t color_xadj;
-        nnz_lno_persistent_work_view_t color_adj, vertex_colors;
-        this->d2_color_c_matrix(rowmapC, entryIndicesC_, num_colors, color_xadj, color_adj, vertex_colors, num_multi_colors, num_used_colors, spgemm_algorithm);
-
-        timer1.reset();
-        for (nnz_lno_t i = 0; i < num_used_colors; ++i){
-          if (color_xadj(i+1) - color_xadj(i) <= 32) continue;
-          auto sv = Kokkos::subview(color_adj,Kokkos::pair<nnz_lno_t, nnz_lno_t> (color_xadj(i), color_xadj(i+1)));
-          Kokkos::sort(sv);
-        }
-
-        if (verbose){
-          std::cout << "\tCOLOR SORT TIME:" << timer1.seconds() <<  std::endl;
-        }
-        this->handle->get_spgemm_handle()->set_color_xadj(num_colors, color_xadj, color_adj, vertex_colors, num_multi_colors, num_used_colors);
-
-        KokkosKernels::Experimental::Util::print_1Dview(color_xadj);
-        KokkosKernels::Experimental::Util::print_1Dview(color_adj);
-      }
-
-    }
-#endif
   }
 
 
@@ -3990,7 +3317,6 @@ public:
     nnz_lno_t n = in_row_map.dimension_0() - 1;
     size_type nnz = in_entries.dimension_0();
 
-
     int suggested_vector_size = get_suggested_vector__size(n, nnz, my_exec_space);
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
     nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, n);
@@ -4013,11 +3339,6 @@ public:
 
     size_type new_nnz_cnt = 0;
     out_row_map = out_rowmap_view_t (Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
-
-
-
-
-
     out_nnz_view_t set_entries_ (Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
     out_nnz_view_t set_indices_ (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
 
@@ -4028,66 +3349,44 @@ public:
 
     MyExecSpace::fence();
     if (this->verbose){
-      std::cout << "\tCompression Allocations :" <<  timer1.seconds() << std::endl;
+      std::cout << "\t\tCompression Allocations :" <<  timer1.seconds() << std::endl;
     }
 
+    SingleStepZipMatrix <in_row_view_t, in_nnz_view_t, out_rowmap_view_t, out_nnz_view_t>
+    sszm_compressMatrix(
+        in_row_map, in_entries, //input symbolic matrix
+        compression_bit_mask_, compression_bit_divide_shift_, suggested_vector_size, //divisor, shifter, vector size.
+        out_row_map, //output row map
+        set_begins_, set_nexts_, set_indices_, set_entries_ //global hash memory space.
+        , shmem_size
+    );
+    sszm_compressMatrix.vector_size = suggested_vector_size;
+
+    if (this->verbose){
+      std::cout
+          << "\t\tRunning compression with VECTORSIZE:" << suggested_vector_size
+          << " teamsize:" << suggested_team_size << " shmem_size:" << shmem_size
+          << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
+    }
+    timer1.reset();
     if (my_exec_space == KokkosKernels::Experimental::Util::Exec_CUDA){
-      SingleStepZipMatrix <in_row_view_t, in_nnz_view_t, out_rowmap_view_t, out_nnz_view_t>
-      sszm_compressMatrix(
-          in_row_map, in_entries, //input symbolic matrix
-          compression_bit_mask_, compression_bit_divide_shift_, suggested_vector_size, //divisor, shifter, vector size.
-          out_row_map, //output row map
-          set_begins_, set_nexts_, set_indices_, set_entries_ //global hash memory space.
-          , shmem_size
-      );
-      sszm_compressMatrix.vector_size = suggested_vector_size;
-
-      if (this->verbose){
-        std::cout << "\tRunning compression with VECTORSIZE:" << suggested_vector_size
-            << " teamsize:" << suggested_team_size << " shmem_size:" << shmem_size
-            << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
-      }
-
-      timer1.reset();
-      Kokkos::parallel_for( team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
-      MyExecSpace::fence();
+      Kokkos::parallel_for( gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     }
     else {
-
-      SingleStepZipMatrixSingleVector <in_row_view_t, in_nnz_view_t, out_rowmap_view_t, out_nnz_view_t>
-      sszm_compressMatrix(
-          in_row_map, in_entries, //input symbolic matrix
-          compression_bit_mask_, compression_bit_divide_shift_, suggested_vector_size, //divisor, shifter, vector size.
-          out_row_map, //output row map
-          set_begins_, set_nexts_, set_indices_, set_entries_ //global hash memory space.
-      );
-      sszm_compressMatrix.vector_size = suggested_vector_size;
-
-
-      if (this->verbose){
-        std::cout << "\tRunning compression with VECTORSIZE:" << suggested_vector_size
-            << " teamsize:" << suggested_team_size << " shmem_size:" << shmem_size
-            << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
-      }
-
-      timer1.reset();
-      Kokkos::parallel_for( team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
-      MyExecSpace::fence();
+      Kokkos::parallel_for( multicore_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     }
+    MyExecSpace::fence();
 
 
     if (this->verbose){
-      std::cout << "\tFirst Step of Zip Matrix:" <<  timer1.seconds() << std::endl;
+      std::cout << "\t\tFirst Step of Zip Matrix:" <<  timer1.seconds() << std::endl;
     }
-
-
-    //KokkosKernels::Experimental::Util::print_1Dview(out_row_map, true);
     timer1.reset();
     KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum <out_rowmap_view_t, MyExecSpace> (n+1, out_row_map);
     MyExecSpace::fence();
 
     if (this->verbose){
-      std::cout << "\tPPS Zip Matrix:" <<  timer1.seconds() << std::endl;
+      std::cout << "\t\tPPS Zip Matrix:" <<  timer1.seconds() << std::endl;
     }
 
     auto d_c_nnz_size = Kokkos::subview(out_row_map, n);
@@ -4103,23 +3402,19 @@ public:
     MyExecSpace::fence();
 
     if (this->verbose){
-      std::cout << "\tCompression Second Allocations:" <<  timer1.seconds() << std::endl;
+      std::cout << "\t\tCompression Second Allocations:" <<  timer1.seconds() << std::endl;
     }
-
 
     copyMatrix <in_row_view_t, out_rowmap_view_t, out_nnz_view_t>
               matrixCopy(
                   in_row_map, set_indices_, set_entries_,
                   out_row_map, out_nnz_indices, out_nnz_sets);
-
     timer1.reset();
     Kokkos::parallel_for( team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), matrixCopy/*, new_nnz_cnt*/);
     MyExecSpace::fence();
-
     if (this->verbose){
-      std::cout << "\tCompression Copy Compressed Matrix:" <<  timer1.seconds() << std::endl;
+      std::cout << "\t\tCompression Copy Compressed Matrix:" <<  timer1.seconds() << std::endl;
     }
-
   }
 
   template <typename out_row_view_t, typename out_nnz_view_t, typename in_row_view_t, typename in_nnz_view_t>
@@ -4209,7 +3504,7 @@ public:
     MyExecSpace::fence();
     //KokkosKernels::Experimental::Util::print_1Dview(transpose_col_adj, true);
     if (verbose){
-      std::cout << "\tTranspose Time:" << timer1.seconds() << std::endl;
+      std::cout << "\t\tTranspose Time:" << timer1.seconds() << std::endl;
     }
 
     /*
@@ -4255,7 +3550,7 @@ public:
       num_used_colors =  num_colors;
       num_multi_colors = 1;
 
-      std::cout << "Num colors:" << handle->get_graph_coloring_handle()->get_num_colors() <<  " coloring time:" << timer1.seconds()  << std::endl;
+      std::cout << "\t\tNum colors:" << handle->get_graph_coloring_handle()->get_num_colors() <<  " coloring time:" << timer1.seconds()  << std::endl;
       typename HandleType::GraphColoringHandleType::color_view_t color_view = handle->get_graph_coloring_handle()->get_vertex_colors();
 
       vertex_colors = nnz_lno_persistent_work_view_t(
@@ -4272,7 +3567,7 @@ public:
 
 
 
-      std::cout << "Histogram" << " time:" << timer1.seconds()  << std::endl;
+      std::cout << "\t\tHistogram" << " time:" << timer1.seconds()  << std::endl << "\t\t";
       KokkosKernels::Experimental::Util::print_1Dview(histogram);
 
       {
@@ -4322,7 +3617,7 @@ public:
         }
 
         if (verbose){
-          std::cout << "\tColor Reverse Map Create Time:" << timer1.seconds() << std::endl;
+          std::cout << "\t\tColor Reverse Map Create Time:" << timer1.seconds() << std::endl;
         }
 
         h_color_xadj = Kokkos::create_mirror_view (color_xadj);
