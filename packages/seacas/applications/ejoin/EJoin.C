@@ -904,6 +904,10 @@ namespace {
               nodelist[i] = gpos + 1;
           }
           ons->put_field_data("ids", nodelist);
+
+          std::vector<double> df;
+          in->get_field_data("distribution_factors", df);
+          ons->put_field_data("distribution_factors", df);
         }
       }
     }
