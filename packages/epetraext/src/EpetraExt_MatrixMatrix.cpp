@@ -1120,7 +1120,7 @@ int MatrixMatrix::TMultiply(const Epetra_CrsMatrix& A,
   if (transposeB && !transposeA) scenario = 2;//A*B^T
   if (transposeA && !transposeB) scenario = 3;//A^T*B
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
-  if(NewFlag && transposeA && !transposeB) scenario = 5; // A^T*B, newmatrix
+  if(NewFlag && call_FillComplete_on_result && transposeA && !transposeB) scenario = 5; // A^T*B, newmatrix
 
   //now check size compatibility
   long long Aouter = transposeA ? A.NumGlobalCols64() : A.NumGlobalRows64();
