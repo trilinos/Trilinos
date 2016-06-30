@@ -130,7 +130,6 @@ namespace Intrepid2 {
                                    cellCoords,
                                    primaryCellTopo_);
 
-
     const auto numSideNodeMaps = (spaceDim == 2 ? 1 : 2);
     const ordinal_type sideOrd[2] = { 1, 5 };
 

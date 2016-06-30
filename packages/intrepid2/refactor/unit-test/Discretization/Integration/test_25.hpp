@@ -58,7 +58,7 @@
 
 #include "Intrepid2_CubatureControlVolume.hpp"
 #include "Intrepid2_CubatureControlVolumeSide.hpp"
-//#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundary.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -79,13 +79,13 @@ namespace Intrepid2 {
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
-    template<template<typename,typename,typename> class CubatureType,
-             typename ValueType,
+    template<typename ValueType,
              typename DeviceSpaceType,
+             typename cubatureType,
              typename cellCoordViewType,
              typename exactValueType,
              typename outStreamType>
-    int Integration_Test25_CompareExactValues(const shards::CellTopology cellTopo,
+    int Integration_Test25_CompareExactValues(const cubatureType cubature,
                                               const cellCoordViewType cellCoords,
                                               const ordinal_type   exactNumPoints,
                                               const exactValueType *exactCubPoints,
@@ -97,10 +97,6 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
       
-      typedef ValueType pointValueType;
-      typedef ValueType weightValueType;
-      typedef CubatureType<DeviceSpaceType,pointValueType,weightValueType> CubatureControlVolumeType;
-      
       const auto tol = tolerence();
 
       int errorFlag = 0;
@@ -109,12 +105,11 @@ namespace Intrepid2 {
         //const auto numVerts = cellCoords.dimension(1);
         const auto spaceDim = cellCoords.dimension(2);
         
-        CubatureControlVolumeType CubatureControlVolume(cellTopo);
-        const bool isCubatureControlVolumeSide = std::string(CubatureControlVolume.getName()) == std::string("CubatureControlVolumeSide");
+        const bool isCubatureSide = std::string(cubature.getName()) == std::string("CubatureControlVolumeSide");
 
-        *outStream << " --- Testing cubature values and weights: " << CubatureControlVolume.getName() << "\n";
+        *outStream << " --- Testing cubature values and weights: " << cubature.getName() << "\n";
         
-        const auto numPoints = CubatureControlVolume.getNumPoints();
+        const auto numPoints = cubature.getNumPoints();
         if (exactNumPoints > 0) {
           if (numPoints != exactNumPoints) {
             errorFlag++;
@@ -128,12 +123,12 @@ namespace Intrepid2 {
         DynRankView cubPoints, cubWeights;
         cubPoints  = DynRankView("Integration::Test25::cubPoints",  numCells, numPoints, spaceDim);
 
-        if (isCubatureControlVolumeSide) 
+        if (isCubatureSide) 
           cubWeights = DynRankView("Integration::Test25::cubWeights", numCells, numPoints, spaceDim);
         else 
           cubWeights = DynRankView("Integration::Test25::cubWeights", numCells, numPoints);
           
-        CubatureControlVolume.getCubature(cubPoints, cubWeights, cellCoords);
+        cubature.getCubature(cubPoints, cubWeights, cellCoords);
 
         auto cubPointsHost  = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cubPoints);
         auto cubWeightsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cubWeights);
@@ -158,7 +153,7 @@ namespace Intrepid2 {
               }
 
               // check values of cubature weight for side cubature
-              if (isCubatureControlVolumeSide) {
+              if (isCubatureSide) {
                 if (std::isnan(cubWeightsHost(i,j,k)) || 
                     std::abs(cubWeightsHost(i,j,k) - exactCubWeights[p]) > tol) {
                   errorFlag++;
@@ -172,7 +167,7 @@ namespace Intrepid2 {
             }
             
             // check values of cubature weights
-            if (!isCubatureControlVolumeSide) {
+            if (!isCubatureSide) {
               if (std::isnan(cubWeightsHost(i,j)) ||
                   std::abs(cubWeightsHost(i,j) - exactCubWeights[w]) > tol) {
                 errorFlag++;
@@ -354,31 +349,50 @@ namespace Intrepid2 {
             -0.5, 0.0, 0.0,-0.25
           };
           
-          // // boundary points 
-          // const ValueType exactBCCubPoints[] = {
-          //   0.375, 1.0, 0.125, 1.0,
-          //   0.875, 1.0, 0.625, 1.0
-          // };
+          // boundary points 
+          const ValueType exactBCCubPoints[] = {
+            0.375, 1.0, 0.125, 1.0,
+            0.875, 1.0, 0.625, 1.0
+          };
           
-          // // boundary weights 
-          // const ValueType exactBCCubWeights[] = {
-          //   0.25, 0.25, 0.25, 0.25
-          // };
+          // boundary weights 
+          const ValueType exactBCCubWeights[] = {
+            0.25, 0.25, 0.25, 0.25
+          };
+
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<> >());
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolume,ValueType,DeviceSpaceType>(cellTopo,
-                                                              cellCoords,
-                                                              numVerts,
-                                                              exactCubPoints,
-                                                              exactCubWeights,
-                                                              outStream);
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolumeSide,ValueType,DeviceSpaceType>(cellTopo,
-                                                                  cellCoords,
-                                                                  numEdges,
-                                                                  exactSideCubPoints,
-                                                                  exactSideCubWeights,
-                                                                  outStream);
+          {
+            CubatureControlVolume<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numVerts,
+                                          exactCubPoints,
+                                          exactCubWeights,
+                                          outStream);
+          }
+          {
+            CubatureControlVolumeSide<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numEdges,
+                                          exactSideCubPoints,
+                                          exactSideCubWeights,
+                                          outStream);
+          }
+          {
+            const auto side = 2;
+            const auto numBoundary = 2;
+            CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numBoundary,
+                                          exactBCCubPoints,
+                                          exactBCCubWeights,
+                                          outStream);
+          }
         }
         
         *outStream << " - Triangle cell testing \n";
@@ -424,34 +438,51 @@ namespace Intrepid2 {
            -0.1666666666666667,-0.0833333333333333, 0.0833333333333333,-0.0833333333333333
           };
           
-          // // boundary points 
-          // const ValueType exactBCCubPoints[] = {
-          //   0.375, 0.125, 0.125, 0.375,
-          //   0.375, 0.5, 0.125, 0.5
-          // };
+          // boundary points 
+          const ValueType exactBCCubPoints[] = {
+            0.375, 0.125, 0.125, 0.375,
+            0.375, 0.5, 0.125, 0.5
+          };
           
-          // // boundary weights 
-          // const ValueType exactBCCubWeights[] = {
-          //   0.353553390593274, 0.353553390593274, 0.25, 0.25
-          // };
+          // boundary weights 
+          const ValueType exactBCCubWeights[] = {
+            0.353553390593274, 0.353553390593274, 0.25, 0.25
+          };
           
           // triangle primary cells      
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData< shards::Triangle<> >());
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolume,ValueType,DeviceSpaceType>(cellTopo,
-                                                              cellCoords,
-                                                              numVerts,
-                                                              exactCubPoints,
-                                                              exactCubWeights,
-                                                              outStream);
-          
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolumeSide,ValueType,DeviceSpaceType>(cellTopo,
-                                                                  cellCoords,
-                                                                  numEdges,
-                                                                  exactSideCubPoints,
-                                                                  exactSideCubWeights,
-                                                                  outStream);
+          {
+            CubatureControlVolume<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numVerts,
+                                          exactCubPoints,
+                                          exactCubWeights,
+                                          outStream);
+          }
+          {
+            CubatureControlVolumeSide<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numEdges,
+                                          exactSideCubPoints,
+                                          exactSideCubWeights,
+                                          outStream);
+          }
+          {
+            const auto side = 1;
+            const auto numBoundary = 2;
+            CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numBoundary,
+                                          exactBCCubPoints,
+                                          exactBCCubWeights,
+                                          outStream);
+          }
         }
         *outStream << " - Tetrahedron cell testing \n";
         {
@@ -501,36 +532,53 @@ namespace Intrepid2 {
             0.0000000000000000,-0.0416666666666667, 0.041666666666667
           };
 
-          // // boundary points 
-          // const ValueType exactBCCubPoints[] = {
-          //   0.208333333333333, 0.00, 0.208333333333333,
-          //   0.583333333333333, 0.00, 0.208333333333333, 
-          //   0.208333333333333, 0.00, 0.583333333333333, 
-          // };
+          // boundary points 
+          const ValueType exactBCCubPoints[] = {
+            0.208333333333333, 0.00, 0.208333333333333,
+            0.583333333333333, 0.00, 0.208333333333333, 
+            0.208333333333333, 0.00, 0.583333333333333, 
+          };
 
-          // // boundary weights 
-          // const ValueType exactBCCubWeights[] = {
-          //   0.166666666666667, 0.166666666666667, 0.166666666666667
-          // };
+          // boundary weights 
+          const ValueType exactBCCubWeights[] = {
+            0.166666666666667, 0.166666666666667, 0.166666666666667
+          };
 
           // tetrahedral primary cells
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData< shards::Tetrahedron<> >());
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolume,ValueType,DeviceSpaceType>(cellTopo,
-                                                              cellCoords,
-                                                              numVerts,
-                                                              exactCubPoints,
-                                                              exactCubWeights,
-                                                              outStream);
-
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolumeSide,ValueType,DeviceSpaceType>(cellTopo,
-                                                                  cellCoords,
-                                                                  numEdges,
-                                                                  exactSideCubPoints,
-                                                                  exactSideCubWeights,
-                                                                  outStream);
-        }
+          {
+            CubatureControlVolume<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numVerts,
+                                          exactCubPoints,
+                                          exactCubWeights,
+                                          outStream);
+          }
+          {
+            CubatureControlVolumeSide<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numEdges,
+                                          exactSideCubPoints,
+                                          exactSideCubWeights,
+                                          outStream);
+          }
+          {
+            const auto side = 0;
+            const auto numBoundary = 3;
+            CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numBoundary,
+                                          exactBCCubPoints,
+                                          exactBCCubWeights,
+                                          outStream);
+          }
+         }
         *outStream << " - Hexahedron cell testing \n";
         {
           const ordinal_type numCells = 1, numVerts = 8, spaceDim = 3, numEdges = 12; 
@@ -582,36 +630,53 @@ namespace Intrepid2 {
             0.000, 0.00, 0.75, 0.00, 0.00, 0.75,
           };
 
-          // // boundary points 
-          // const ValueType exactBCCubPoints[] = {
-          //   0.5, 0.00, 0.25,
-          //   1.5, 0.00, 0.25,
-          //   1.5, 0.00, 0.75,
-          //   0.5, 0.00, 0.75,
-          // };
+          // boundary points 
+          const ValueType exactBCCubPoints[] = {
+            0.5, 0.00, 0.25,
+            1.5, 0.00, 0.25,
+            1.5, 0.00, 0.75,
+            0.5, 0.00, 0.75,
+          };
 
-          // // boundary weights 
-          // const ValueType exactBCCubWeights[] = {
-          //   0.5, 0.5, 0.5, 0.5
-          // };
+          // boundary weights 
+          const ValueType exactBCCubWeights[] = {
+            0.5, 0.5, 0.5, 0.5
+          };
 
           // hexahedral primary cells
           const auto cellTopo = shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<> >());
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolume,ValueType,DeviceSpaceType>(cellTopo,
-                                                              cellCoords,
-                                                              numVerts,
-                                                              exactCubPoints,
-                                                              exactCubWeights,
-                                                              outStream);
-
-          errorFlag += Integration_Test25_CompareExactValues
-            <CubatureControlVolumeSide,ValueType,DeviceSpaceType>(cellTopo,
-                                                                  cellCoords,
-                                                                  numEdges,
-                                                                  exactSideCubPoints,
-                                                                  exactSideCubWeights,
-                                                                  outStream);
+          {
+            CubatureControlVolume<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numVerts,
+                                          exactCubPoints,
+                                          exactCubWeights,
+                                          outStream);
+          }
+          {
+            CubatureControlVolumeSide<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numEdges,
+                                          exactSideCubPoints,
+                                          exactSideCubWeights,
+                                          outStream);
+          }
+          {
+            const auto side = 0;
+            const auto numBoundary = 4;
+            CubatureControlVolumeBoundary<DeviceSpaceType,ValueType,ValueType> cubature(cellTopo, side);
+            errorFlag += Integration_Test25_CompareExactValues
+              <ValueType,DeviceSpaceType>(cubature,
+                                          cellCoords,
+                                          numBoundary,
+                                          exactBCCubPoints,
+                                          exactBCCubWeights,
+                                          outStream);
+          }
         }
       } catch (std::exception err) {
         *outStream << err.what() << "\n";
