@@ -112,6 +112,8 @@ private:
   typedef typename Kokkos::View <data_type *, MyExecSpace> data_view_t;
 
   size_t num_chunks;
+  size_t num_set_chunks;
+  size_t modular_num_chunks;
   size_t chunk_size;
   size_t overall_size;
   //const size_t next_free_chunk;
@@ -129,18 +131,19 @@ public:
 
   /**
    * \brief UniformMemoryPool constructor.
-   * \param num_chunks_: number of chunks
+   * \param num_chunks_: number of chunks. This will be rounded to minimum pow2 number.
    * \param chunk_size_: chunk size, the size of each allocation.
    * \param initialized_value: the value to initialize
    * \param pool_type_: whether ManyThread2OneChunk or OneThread2OneChunk
    */
   UniformMemoryPool(const size_t num_chunks_,
-                    const size_t chunk_size_,
+                    const size_t set_chunk_size_,
                     const data_type initialized_value = 0,
                     const PoolType pool_type_ = OneThread2OneChunk):
-                    num_chunks(num_chunks_),
-                    chunk_size(chunk_size_),
-                    overall_size(num_chunks_ * chunk_size_),
+                      num_chunks(1),
+                    num_set_chunks(num_chunks_), modular_num_chunks(0),
+                    chunk_size(set_chunk_size_),
+                    overall_size(num_chunks_ * set_chunk_size_),
                     //next_free_chunk(0),
                     //last_free_chunk(chunk_size_),
                     //free_chunks (),
@@ -150,6 +153,14 @@ public:
                     data(data_view.ptr_on_device()),
                     pool_type (pool_type_)
                     {
+
+    num_chunks = 1;
+    while (num_set_chunks > num_chunks){
+      num_chunks *= 2;
+    }
+    modular_num_chunks = num_chunks -1;
+
+
     this->set_pool_type(pool_type_);
     Kokkos::deep_copy(data_view, initialized_value);
   }
@@ -158,7 +169,8 @@ public:
    * \brief UniformMemoryPool constructor
    */
   UniformMemoryPool():
-                    num_chunks(0),
+                    num_chunks(1),
+                    num_set_chunks(0), modular_num_chunks(0),
                     chunk_size(0),
                     overall_size(0),
                     //next_free_chunk(0),
@@ -220,7 +232,8 @@ public:
    */
   KOKKOS_INLINE_FUNCTION
   data_type *get_my_chunk(const size_t &thread_index) const{
-    return data + (thread_index % num_chunks) * chunk_size;
+    //return data + (thread_index % num_chunks) * chunk_size;
+    return data + (thread_index & modular_num_chunks) * chunk_size;
   }
 
   /**
@@ -237,10 +250,12 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   data_type *get_arbitrary_free_chunk(const size_t &thread_index, const size_t max_tries) const{
-    size_t chunk_index = thread_index % num_chunks;
+    //size_t chunk_index = thread_index % num_chunks;
+    size_t chunk_index = thread_index & modular_num_chunks;
     size_t num_try = 0;
     while(!Kokkos::atomic_compare_exchange_strong(pchunk_locks + chunk_index, false, true)){
-      chunk_index = (chunk_index + 1) % num_chunks;
+      //chunk_index = (chunk_index + 1) % num_chunks;
+      chunk_index = (chunk_index + 1) & modular_num_chunks;
       ++num_try;
       if (num_try > max_tries){
         return NULL;
