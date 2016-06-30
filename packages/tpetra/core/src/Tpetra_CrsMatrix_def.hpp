@@ -493,9 +493,40 @@ namespace Tpetra {
     fillComplete_ (false),
     frobNorm_ (-STM::one ())
   {
-    typedef typename local_matrix_type::values_type values_type;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
+    const char suffix[] = ".  Please report this bug to the Tpetra developers.";
+
+    // Check the user's input.  Note that this might throw only on
+    // some processes but not others, causing deadlock.  We prefer
+    // deadlock due to exceptions to segfaults, because users can
+    // catch exceptions.
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (values.dimension_0 () != columnIndices.dimension_0 (),
+       std::invalid_argument, "Input arrays don't have matching dimensions.  "
+       "values.dimension_0() = " << values.dimension_0 () << " != "
+       "columnIndices.dimension_0() = " << columnIndices.dimension_0 () << ".");
+#ifdef HAVE_TPETRA_DEBUG
+    if (rowPointers.dimension_0 () != 0) {
+      using Kokkos::subview;
+      // Don't assume UVM.  Use "0-D" mirror views to get the last
+      // entry.  Only do this in a debug build because it requires an
+      // extra device-to-host copy.
+      auto ptr_last_d = subview (rowPointers, rowPointers.dimension_0 () - 1);
+      auto ptr_last_h = Kokkos::create_mirror_view (ptr_last_d);
+      Kokkos::deep_copy (ptr_last_h, ptr_last_d);
+      const size_t numEnt = static_cast<size_t> (ptr_last_h ());
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numEnt != static_cast<size_t> (columnIndices.dimension_0 ()) ||
+         numEnt != static_cast<size_t> (values.dimension_0 ()),
+         std::invalid_argument, "Last entry of rowPointers says that the matrix"
+         " has " << numEnt << " entr" << (numEnt != 1 ? "ies" : "y") << ", but "
+         "the dimensions of columnIndices and values don't match this.  "
+         "columnIndices.dimension_0() = " << columnIndices.dimension_0 () <<
+         " and values.dimension_0() = " << values.dimension_0 () << ".");
+    }
+#endif // HAVE_TPETRA_DEBUG
+
     RCP<crs_graph_type> graph;
     try {
       graph = Teuchos::rcp (new crs_graph_type (rowMap, colMap, rowPointers,
@@ -507,6 +538,24 @@ namespace Tpetra {
          "RCP<const Map>, ptr, ind[, params]) threw an exception: "
          << e.what ());
     }
+    // The newly created CrsGraph _must_ have a local graph at this
+    // point.  We don't really care whether CrsGraph's constructor
+    // deep-copies or shallow-copies the input, but the dimensions
+    // have to be right.  That's how we tell whether the CrsGraph has
+    // a local graph.
+    auto lclGraph = graph->getLocalGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclGraph.row_map.dimension_0 () != rowPointers.dimension_0 () ||
+       lclGraph.entries.dimension_0 () != columnIndices.dimension_0 (),
+       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
+       "ind[, params]) did not set the local graph correctly." << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclGraph.entries.dimension_0 () != values.dimension_0 (),
+       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, ind[, "
+       "params]) did not set the local graph correctly.  "
+       "lclGraph.entries.dimension_0() = " << lclGraph.entries.dimension_0 ()
+       << " != values.dimension_0() = " << values.dimension_0 () << suffix);
+
     // myGraph_ not null means that the matrix owns the graph.  This
     // is true because the column indices come in as nonconst,
     // implying shared ownership.
@@ -520,24 +569,16 @@ namespace Tpetra {
     // Note that the local matrix's number of columns comes from the
     // column Map, not the domain Map.
 
-    // The graph _must_ have a local graph at this point.  We don't
-    // really care whether CrsGraph's constructor deep-copies or
-    // shallow-copies the input, but the dimensions have to be right.
-    // That's how we tell whether the CrsGraph has a local graph.
-    auto lclGraph = staticGraph_->getLocalGraph ();
+    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
+    lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
+                                    numCols, values, lclGraph);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclGraph.row_map.dimension_0 () != rowPointers.dimension_0 () ||
-       lclGraph.entries.dimension_0 () != columnIndices.dimension_0 (),
-       std::logic_error, "CrsGraph's constructor (rowMap, colMap, ptr, "
-       "ind[, params]) did not set the local graph correctly.  Please "
-       "report this bug to the Tpetra developers.");
+      (lclMatrix_.values.dimension_0 () != values.dimension_0 (),
+       std::logic_error, "Local matrix's constructor did not set the values "
+       "correctly.  lclMatrix_.values.dimension_0() = " <<
+       lclMatrix_.values.dimension_0 () << " != values.dimension_0() = " <<
+       values.dimension_0 () << suffix);
 
-    const size_t numCols = staticGraph_->getColMap ()->getNodeNumElements ();
-    const size_t numEnt = lclGraph.entries.dimension_0 ();
-    values_type val ("Tpetra::CrsMatrix::val", numEnt);
-
-    this->lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                          numCols, val, lclGraph);
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
