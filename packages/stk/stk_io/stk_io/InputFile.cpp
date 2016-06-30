@@ -553,8 +553,14 @@ namespace stk {
 		      << "' has no transient data.");
 
       std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+      double time_read = -1.0;
       while (I != m_fields.end()) {
-	(*I).restore_field_data(bulk, sti, ignore_missing_fields);
+	// NOTE: If the fields being restored have different settings, the time
+	// value can be different for each field and this will return the value
+	// of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
+	// and one is TIME_INTERPOLATION, then the time value to return is
+	// ambiguous.
+	time_read = (*I).restore_field_data(bulk, sti, ignore_missing_fields);
 	++I;
       }
 
@@ -565,7 +571,7 @@ namespace stk {
       if (current_step != static_cast<int>(step))
 	region->begin_state(step);
 
-      return sti.t_analysis;
+      return time_read;
     }
 
   }

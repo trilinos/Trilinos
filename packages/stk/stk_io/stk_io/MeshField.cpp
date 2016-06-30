@@ -146,12 +146,13 @@ bool MeshField::operator==(const MeshField &other) const
          m_subsetParts == other.m_subsetParts;
 }
 
-void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
+double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 				   const stk::io::DBStepTimeInterval &sti,
 				   bool ignore_missing_fields)
 {
+  double time_read = -1.0;
   if (!is_active())
-    return;
+    return time_read;
   
   if (m_timeMatch == CLOSEST || m_timeMatch == SPECIFIED) {
     int step = 0;
@@ -164,7 +165,7 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
     }
     STKIORequire(step > 0);
     
-    sti.region->begin_state(step);
+    time_read = sti.region->begin_state(step);
 
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
@@ -251,10 +252,12 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       }
       ++I;
     }
+    time_read = sti.t_analysis;
   }
   if (m_oneTimeOnly) {
     set_inactive();
   }
+  return time_read;
 }
 
 void MeshFieldPart::release_field_data()
