@@ -72,6 +72,13 @@ namespace stk {
 	    }
 	  }
 	}
+
+	if (!exists_before && exists_after) {
+	  t_analysis = t_after;
+	}
+	else if (exists_before && !exists_after) {
+	  t_analysis = t_before;
+	}
       }
     
       size_t get_closest_step() const

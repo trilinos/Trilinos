@@ -330,14 +330,12 @@ public:
   public:
     /**
      * Creates a new <b>Resolver</b> instance.
-     *
      */
     Resolver()
     {}
 
     /**
      * Destroys a <b>Resolver</b> instance.
-     *
      */
     virtual ~Resolver()
     {}
@@ -366,7 +364,6 @@ private:
 
   /**
    * @brief Class <b>DefaultResolver</b> implement a default resolver.
-   *
    */
   class DefaultResolver : public Resolver
   {
@@ -376,7 +373,6 @@ private:
 
     /**
      * Destroys a <b>DefaultResolver</b> instance.
-     *
      */
     virtual ~DefaultResolver()
     {}
@@ -394,8 +390,6 @@ public:
   /**
    * @brief Member function <b>getDefaultResolver</b> returns a reference to the
    * default resolver.
-   *
-   * @return a <b>Resolver</b> ...
    */
   static Resolver &getDefaultResolver();
 
@@ -429,7 +423,7 @@ public:
    * @return			a <b>Variable</b> pointer to the new variable.
    */
   Variable *operator[](const std::string &s) {
-    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)NULL));
+    std::pair<iterator,bool> i = insert(std::pair<const std::string, Variable *>(s, (Variable*)nullptr));
     if (i.second) {
       (*i.first).second = new Variable();
     }

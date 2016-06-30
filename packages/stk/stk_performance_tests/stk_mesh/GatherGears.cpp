@@ -61,7 +61,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
   using namespace stk::mesh;
   typedef Field<double,Cartesian> VectorField;
 
-  MetaData& meta = MetaData::get(bulk);
+  const MetaData& meta = bulk.mesh_meta_data();
   const unsigned spatial_dim = meta.spatial_dimension();
   for(unsigned d=0; d<spatial_dim; ++d) sum_centroid[d] = 0;
 

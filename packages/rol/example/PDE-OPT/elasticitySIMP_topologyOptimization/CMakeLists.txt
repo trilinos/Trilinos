@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra   AND
    ${PROJECT_NAME}_ENABLE_Amesos   AND
@@ -17,6 +15,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
+    CATEGORIES HEAVY  # Currently tasks 18m to run (see #442)!
   )
 
   TRIBITS_ADD_EXECUTABLE(

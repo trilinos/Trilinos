@@ -136,16 +136,6 @@ EntityLess& EntityLess::operator=(const EntityLess& rhs)
 }
 
 inline
-BulkData & BulkData::get( const Bucket & bucket) {
-  return bucket.bulk_data();
-}
-
-inline
-BulkData & BulkData::get( const Ghosting & ghost) {
-  return ghost.bulk_data();
-}
-
-inline
 unsigned BulkData::num_connectivity(Entity entity, EntityRank rank) const
 {
   ThrowAssert(bucket_ptr(entity));
@@ -787,12 +777,12 @@ inline EntityState BulkData::state(Entity entity) const
   return m_meshModification.get_entity_state(entity.local_offset());
 }
 
-inline void BulkData::internal_mark_entity(Entity entity, entitySharing sharedType)
+inline void BulkData::internal_mark_entity(Entity entity, EntitySharing sharedType)
 {
     m_mark_entity[entity.local_offset()] = sharedType;
 }
 
-inline BulkData::entitySharing BulkData::internal_is_entity_marked(Entity entity) const
+inline BulkData::EntitySharing BulkData::internal_is_entity_marked(Entity entity) const
 {
     return m_mark_entity[entity.local_offset()];
 }

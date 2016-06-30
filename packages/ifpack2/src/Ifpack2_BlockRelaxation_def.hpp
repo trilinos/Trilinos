@@ -620,9 +620,9 @@ compute ()
   IsComputed_ = true;
 }
 
-template<class MatrixType,class ContainerType>
+template<class MatrixType, class ContainerType>
 void
-BlockRelaxation<MatrixType,ContainerType>::
+BlockRelaxation<MatrixType, ContainerType>::
 ExtractSubmatrices ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -641,7 +641,13 @@ ExtractSubmatrices ()
       localRows[j] = (*Partitioner_) (i,j);
     }
     if(numRows>1 || hasBlockCrsMatrix_) { // only do for non-singletons
-      Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
+      std::string containerName = ContainerType::getName();
+      if(containerName == "Generic")
+      {
+        //container type was not specified through templates, so get from param list
+        containerName = List_.get<std::string>("relaxation: container");
+      }
+      Containers_[i] = Teuchos::rcp_static_cast<ContainerType, Container<MatrixType> >(Details::createContainer(containerName, A_, localRows()));
       Containers_[i]->setParameters (List_);
       Containers_[i]->initialize ();
       Containers_[i]->compute ();
@@ -1308,6 +1314,10 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
 #endif
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>,   \
+    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
     Tpetra::RowMatrix<S, LO, GO, N>, \

@@ -63,7 +63,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
   ENDIF()
 
   IF (NOT EXISTS "${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota")
-    MESSAGE("-- " "  Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
+    MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_TriKota=OFF"
       " because '${Trilinos_SOURCE_DIR}/packages/TriKota/Dakota' does not exit!")
     SET(${PROJECT_NAME}_ENABLE_TriKota OFF)
   ENDIF()

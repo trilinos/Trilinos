@@ -51,15 +51,12 @@
 #ifndef KOKKOS_SPARSE_CRSMATRIX_HPP_
 #define KOKKOS_SPARSE_CRSMATRIX_HPP_
 
-#include <Kokkos_Core.hpp>
-#include <Kokkos_StaticCrsGraph.hpp>
+#include "Kokkos_Core.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
+#include "Kokkos_Sparse_findRelOffset.hpp"
 #include <sstream>
 #include <stdexcept>
-
-#ifdef KOKKOS_HAVE_CXX11
 #include <type_traits>
-#endif // KOKKOS_HAVE_CXX11
-
 
 namespace KokkosSparse {
 
@@ -623,86 +620,68 @@ public:
           OrdinalType* cols);
 
   KOKKOS_INLINE_FUNCTION
-  void
+  OrdinalType
   sumIntoValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const OrdinalType ncol,
                  const ScalarType vals[],
+                 const bool is_sorted = false,
                  const bool force_atomic = false) const
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const ordinal_type length = row_view.length;
 
-    for (ordinal_type i = 0; i < ncol; ++i) {
-      for (ordinal_type j = 0; j < length; ++j) {
-        if (row_view.colidx(j) == cols[i]) {
-          if (force_atomic) {
-            Kokkos::atomic_add(&row_view.value(j), vals[i]);
-          } else {
-            row_view.value(j) += vals[i];
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void
-  sumIntoValuesSorted (const OrdinalType rowi,
-                       const OrdinalType cols[],
-                       const OrdinalType ncol,
-                       const ScalarType vals[],
-                       const bool force_atomic = false) const
-  {
-    SparseRowView<CrsMatrix> row_view = this->row (rowi);
-    const ordinal_type length = row_view.length;
+    ordinal_type hint = 0; // Guess for offset of current column index in row
+    ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
-      ordinal_type low=0, hi=length, mid=length/2;
-      while (hi-low > 10){
-        if ( row_view.colidx(mid) > cols[i] )
-          hi = mid;
-        else
-          low = mid;
-        mid = (low+hi)/2;
-      }
-      for (ordinal_type j = low; j < hi; ++j) {
-        if (row_view.colidx(j) == cols[i]) {
-          if (force_atomic) {
-            Kokkos::atomic_add(&row_view.value(j), vals[i]);
-          } else {
-            row_view.value(j) += vals[i];
-          }
-          break;
+      const ordinal_type offset =
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
+      if (offset != length) {
+        if (force_atomic) {
+          Kokkos::atomic_add (&(row_view.value(offset)), vals[i]);
+        }
+        else {
+          row_view.value(offset) += vals[i];
         }
       }
+      hint = offset + 1;
+      ++numValid;
     }
+    return numValid;
   }
 
+
   KOKKOS_INLINE_FUNCTION
-  void
+  OrdinalType
   replaceValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const OrdinalType ncol,
-                 ScalarType vals[],
+                 const ScalarType vals[],
+                 const bool is_sorted = false,
                  const bool force_atomic = false) const
   {
     SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const ordinal_type length = row_view.length;
 
+    ordinal_type hint = 0; // Guess for offset of current column index in row
+    ordinal_type numValid = 0; // number of valid local column indices
+
     for (ordinal_type i = 0; i < ncol; ++i) {
-      for (ordinal_type j = 0; j < length; ++j) {
-        if (row_view.colidx(j) == cols[i]) {
-          if (force_atomic) {
-            Kokkos::atomic_assign(&row_view.value(j), vals[i]);
-          }
-          else {
-            row_view.value(j) = vals[i];
-          }
+      const ordinal_type offset =
+        findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
+      if (offset != length) {
+        if (force_atomic) {
+          Kokkos::atomic_assign (&(row_view.value(offset)), vals[i]);
+        }
+        else {
+          row_view.value(offset) = vals[i];
         }
       }
+      hint = offset + 1;
+      ++numValid;
     }
+    return numValid;
   }
 
   //! Attempt to assign the input matrix to \c *this.

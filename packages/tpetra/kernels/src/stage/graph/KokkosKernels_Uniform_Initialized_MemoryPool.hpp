@@ -114,8 +114,8 @@ private:
   size_t num_chunks;
   size_t chunk_size;
   size_t overall_size;
-  const size_t next_free_chunk;
-  const size_t last_free_chunk;
+  //const size_t next_free_chunk;
+  //const size_t last_free_chunk;
 
   //index_view_t free_chunks;
   lock_view_t chunk_locks;
@@ -141,8 +141,8 @@ public:
                     num_chunks(num_chunks_),
                     chunk_size(chunk_size_),
                     overall_size(num_chunks_ * chunk_size_),
-                    next_free_chunk(0),
-                    last_free_chunk(chunk_size_),
+                    //next_free_chunk(0),
+                    //last_free_chunk(chunk_size_),
                     //free_chunks (),
                     chunk_locks (),
                     pchunk_locks(),
@@ -154,6 +154,33 @@ public:
     Kokkos::deep_copy(data_view, initialized_value);
   }
 
+  /**
+   * \brief UniformMemoryPool constructor
+   */
+  UniformMemoryPool():
+                    num_chunks(0),
+                    chunk_size(0),
+                    overall_size(0),
+                    //next_free_chunk(0),
+                    //last_free_chunk(0),
+                    //free_chunks (),
+                    chunk_locks (),
+                    pchunk_locks(),
+                    data_view (),
+                    data(),
+                    pool_type ()
+                    {
+  }
+
+
+
+
+    ~UniformMemoryPool() = default;
+
+    UniformMemoryPool( UniformMemoryPool && ) = default;
+    UniformMemoryPool( const UniformMemoryPool & ) = default;
+    UniformMemoryPool & operator = ( UniformMemoryPool && ) = default;
+    UniformMemoryPool & operator = ( const UniformMemoryPool & ) = default;
 
   /**
    * \brief To set the pool type

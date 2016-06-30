@@ -51,8 +51,9 @@ These are the general rules for creating a YAML parameter list:
 \item Quotation marks (single or double) are optional for strings, but required for strings with special characters: \verb.:{}[],&*#?|-<>=!%@\.
 \item Quotation marks also turn non-string types into strings: '3' is a string
 \item As with XML parameter lists, keys are regular strings
-\item yes, no, y, n, true, false, on, off are all booleans. false, False and FALSE are all equivalent
+\item Even though YAML supports several names for bool true/false, only ``true'' and ``false'' are supported by the parameter list reader.
 \item Arrays of int, double and string supported. exampleArray: {[}hello, world, goodbye{]}
 \item {[}3, 4, 5{]} is an int array, {[}3, 4, 5.0{]} is a double array, and {[}3, '4', 5.0{]} is a string array
 \item For multi-line strings, place ``$|-$'' after the ``key:'' and then indent the string one level deeper than the key
+\item To preserve indentation in a multiline string, place ``$|2-$'' and then indent your string's content by 2 spaces relative to the key.
 \end{itemize}

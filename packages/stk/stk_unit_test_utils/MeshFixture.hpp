@@ -64,6 +64,11 @@ protected:
         metaData = nullptr;
     }
 
+    int get_parallel_rank()
+    {
+        return get_bulk().parallel_rank();
+    }
+
     virtual stk::mesh::MetaData& get_meta()
     {
         ThrowRequireMsg(metaData!=nullptr, "Unit test error. Trying to get meta data before it has been initialized.");
@@ -94,6 +99,13 @@ protected:
     {
         ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to reset non NULL bulk data.");
         bulkData = inBulkData;
+    }
+
+    void delete_meta()
+    {
+        ThrowRequireMsg(bulkData==nullptr, "Unit test error. Trying to delete meta with non NULL bulk data.");
+        delete metaData;
+        metaData = nullptr;
     }
 
 private:

@@ -50,8 +50,10 @@ inline
 std::ostream& operator<<(std::ostream &out, SearchMethod method)
 {
   switch( method )   {
-  case BOOST_RTREE: out << "BOOST_RTREE"; break;
-  case OCTREE:      out << "OCTREE"; break;
+  case BOOST_RTREE:            out << "BOOST_RTREE"; break;
+  case OCTREE:                 out << "OCTREE"; break;
+  case GTK_SEARCH:             out << "GTK_SEARCH"; break;
+  case MORTON_LINEARIZED_BVH:  out << "MORTON_LINEARIZED_BVH"; break;
   }
   return out;
 }
@@ -79,6 +81,10 @@ void coarse_search_nonIdentProc(
     std::cerr << "coarse_search_octree(..) does not support std::search::coarse_search_nonIdentProc(..) yet" << std::endl;
     std::abort();
     // coarse_search_octree(domain,range,comm,intersections);
+    break;
+  default:
+    std::cerr << "coarse_search(..) interface used does not support std::search::coarse_search_nonIdentProc(..) yet" << method << std::endl;
+    abort();
     break;
   }
 }
@@ -122,6 +128,10 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
 #endif
   case OCTREE:
     coarse_search_octree(domain,range,comm,intersections,communicateRangeBoxInfo);
+    break;
+  default:
+    std::cerr << "coarse_search(..) interface used does not support SearchMethod " << method << std::endl;
+    abort();
     break;
   }
 }

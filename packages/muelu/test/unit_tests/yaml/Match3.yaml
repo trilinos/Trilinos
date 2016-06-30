@@ -9,17 +9,17 @@ ANONYMOUS:
     Objective Aggregator:
       Output Value Name: F
       Output Derivative Name: dFdTopo
-      Values: !!seq [R0, R1, R2]
-      Derivatives: !!seq [dR0dTopo, dR1dTopo, dR2dTopo]
+      Values: [R0, R1, R2]
+      Derivatives: [dR0dTopo, dR1dTopo, dR2dTopo]
       Weighting: Scaled
-      Weights: !!seq [0.5, 0.375, 0.125]
+      Weights: [0.5, 0.375, 0.125]
       Spatial Filter: 0
     Spatial Filters:
       Number of Filters: 1
       Filter 0:
         Iterations: 2
         Filter Radius: 0.012
-        Blocks: !!seq [block_1]
+        Blocks: [block_1]
     Topological Optimization:
       Package: OC
       Stabilization Parameter: 0.5
@@ -64,7 +64,7 @@ ANONYMOUS:
                 Parameter Name: Density
                 Rule Type: Voigt
                 Voigt:
-                  Material Indices: !!seq [0, 1]
-                  Topology Indices: !!seq [1]
-                  Function Indices: !!seq [1]
+                  Material Indices: [0, 1]
+                  Topology Indices: [1]
+                  Function Indices: [1]
 ...

@@ -574,8 +574,7 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     stk::mesh::EntityVector localElemSideNodes;
     impl::fill_element_side_nodes_from_topology(m_bulk_data, localElem, side_index, localElemSideNodes);
 
-    stk::topology side_topology = m_bulk_data.bucket(localElem).topology().side_topology(side_index);
-    std::pair<bool,unsigned> permutationIfConnected = side_topology.equivalent(localElemSideNodes, sideNodes);
+    std::pair<bool,unsigned> permutationIfConnected = stk::mesh::side_equivalent(m_bulk_data, localElem, side_index, sideNodes.data());
     ThrowRequireWithSierraHelpMsg(permutationIfConnected.first);
 
     impl::LocalId local_elem_id = get_local_element_id(localElem);

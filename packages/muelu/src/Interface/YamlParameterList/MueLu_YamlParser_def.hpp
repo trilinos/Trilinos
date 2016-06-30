@@ -178,13 +178,17 @@ void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFil
   YAMLParameterList::writeYamlFile(yamlFileName, toConvert);
 }
 
-bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs)
+bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::ParameterList& rhs, bool verbose)
 {
   typedef Teuchos::ParameterList::ConstIterator Iter;
   Iter i = lhs.begin();
   Iter j = rhs.begin();
   if(lhs.name() != rhs.name())
   {
+    if(verbose)
+    {
+      std::cout << "Parameter list names: \"" << lhs.name() << "\" and \"" << rhs.name() << "\".\n";
+    }
     return false;
   }
   for(; i != lhs.end(); i++)
@@ -194,6 +198,10 @@ bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::P
     //check that rhs also contains this key
     if(!rhs.isParameter(key))
     {
+      if(verbose)
+      {
+        std::cout << "One list is missing parameter: \"" << key << "\"\n";
+      }
       return false;
     }
     const Teuchos::ParameterEntry& val2 = rhs.getEntry(key);
@@ -202,13 +210,18 @@ bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::P
     //check that types match
     if(any1.type() != any2.type())
     {
+      if(verbose)
+      {
+        std::cout << "Values for key \"" << key << "\" have different types.\n";
+      }
       return false;
     }
     //check for parameter list special case (don't use operator==)
     if(any1.type() == typeid(Teuchos::ParameterList))
     {
-      if(!haveSameValuesUnordered(Teuchos::any_cast<Teuchos::ParameterList>(any1), Teuchos::any_cast<Teuchos::ParameterList>(any2)))
+      if(!haveSameValuesUnordered(Teuchos::any_cast<Teuchos::ParameterList>(any1), Teuchos::any_cast<Teuchos::ParameterList>(any2), verbose))
       {
+        //Don't need to print message here, the deepest list not matching will do that
         return false;
       }
     }
@@ -217,6 +230,10 @@ bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::P
       //otherwise, use == to compare the values
       if(!(val1 == val2))
       {
+        if(verbose)
+        {
+          std::cout << "Values for key \"" << key << "\" are different.\n";
+        }
         return false;
       }
     }
@@ -225,6 +242,10 @@ bool haveSameValuesUnordered(const Teuchos::ParameterList& lhs, const Teuchos::P
   //lists must have same # of entries
   if(j != rhs.end())
   {
+    if(verbose)
+    {
+      std::cout << "Lists \"" << lhs.name() << "\" and \"" << rhs.name() << "\" have different number of parameters.\n";
+    }
     return false;
   }
   return true;
@@ -312,18 +333,23 @@ void processKeyValueNode(const std::string& key, const YAML::Node& node, Teuchos
       {
         try
         {
-          parent.set(key, node.as<bool>());
+          std::string rawString = node.as<std::string>();
+          if(rawString == "true")
+          {
+            parent.set<bool>(key, true);
+          }
+          else if(rawString == "false")
+          {
+            parent.set<bool>(key, false);
+          }
+          else
+          {
+            parent.set(key, rawString);
+          }
         }
         catch(...)
         {
-          try
-          {
-            parent.set(key, node.as<std::string>());
-          }
-          catch(...)
-          {
-            throw YamlScalarError("YAML scalars must be int, double, bool or string.");
-          }
+          throw YamlScalarError("YAML scalars must be int, double, bool or string.");
         }
       }
     }
@@ -409,10 +435,17 @@ void writeYamlFile(const std::string& yamlFile, Teuchos::RCP<Teuchos::ParameterL
 
 void writeParameterList(Teuchos::ParameterList& pl, std::ofstream& yaml, int indentLevel)
 {
-  yaml << '\n';
-  for(PLIter it = pl.begin(); it != pl.end(); it++)
+  if(pl.begin() == pl.end())
   {
-    writeParameter(pl.name(it), pl.entry(it), yaml, indentLevel);
+    yaml << "{ }\n";
+  }
+  else
+  {
+    yaml << '\n';
+    for(PLIter it = pl.begin(); it != pl.end(); it++)
+    {
+      writeParameter(pl.name(it), pl.entry(it), yaml, indentLevel);
+    }
   }
 }
 
@@ -477,7 +510,8 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     std::string& str = Teuchos::getValue<std::string>(entry);
     if(strchr(str.c_str(), '\n'))
     {
-      yaml << "|-\n";
+      //need explicit indentation so that indentation in the string is preserved
+      yaml << "|2-\n";    
       //for each line, apply indent then print the line verbatim
       size_t index = 0;
       while(true)

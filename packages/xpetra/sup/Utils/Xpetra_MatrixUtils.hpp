@@ -49,16 +49,14 @@
 
 #include "Xpetra_ConfigDefs.hpp"
 
-#include "Xpetra_Matrix.hpp"
-#include "Xpetra_MatrixMatrix.hpp"
-#include "Xpetra_CrsMatrixWrap.hpp"
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MapUtils.hpp"
 #include "Xpetra_StridedMap.hpp"
-#include "Xpetra_StridedMapFactory.hpp"
+#include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MapExtractor.hpp"
 #include "Xpetra_MapExtractorFactory.hpp"
+#include "Xpetra_Matrix.hpp"
 #include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 
@@ -387,7 +385,6 @@ public:
     }
     return bA;
   }
-
 };
 
 } // end namespace Xpetra

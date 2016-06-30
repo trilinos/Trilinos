@@ -161,9 +161,9 @@ struct MeshIndex
 // remove hop.
 struct FastMeshIndex
 {
-  FastMeshIndex() : bucket_id(0), bucket_ord(0) {}
-  FastMeshIndex(unsigned id, unsigned ord) : bucket_id(id), bucket_ord(ord) {}
-  ~FastMeshIndex(){}
+  STK_FUNCTION FastMeshIndex() : bucket_id(0), bucket_ord(0) {}
+  STK_FUNCTION FastMeshIndex(unsigned id, unsigned ord) : bucket_id(id), bucket_ord(ord) {}
+  STK_FUNCTION ~FastMeshIndex(){}
 
   unsigned bucket_id;
   unsigned bucket_ord;
@@ -222,7 +222,6 @@ struct RelationType
   {
     USES      = 0 ,
     USED_BY   = 1 ,
-    EMBEDDED  = 0x00ff , // 4
     CONTACT   = 0x00ff , // 5
     AUXILIARY = 0x00ff ,
     INVALID   = 10
@@ -245,6 +244,11 @@ typedef std::pair<Entity , int> EntityProc ;
 typedef std::vector<EntityProc>     EntityProcVec ;
 
 typedef std::pair<EntityKey, int> EntityKeyProc;
+
+typedef std::pair<EntityId, int> EntityIdProc;
+typedef std::vector<EntityIdProc> EntityIdProcVec;
+
+typedef std::map<EntityId, int> EntityIdProcMap;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

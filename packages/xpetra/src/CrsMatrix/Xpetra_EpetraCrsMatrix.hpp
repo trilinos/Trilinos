@@ -364,7 +364,7 @@ public:
       const local_matrix_type& lclMatrix,
       const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
     // local typedefs from local_matrix_type
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
@@ -1311,7 +1311,7 @@ public:
       const local_matrix_type& lclMatrix,
       const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
     // local typedefs from local_matrix_type
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 

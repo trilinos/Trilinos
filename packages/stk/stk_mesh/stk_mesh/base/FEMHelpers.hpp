@@ -135,12 +135,21 @@ OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mes
                                                   stk::mesh::Entity parent_entity,
                                                   stk::mesh::EntityRank to_rank,
                                                   const stk::mesh::EntityVector &nodes_of_sub_rank);
-OrdinalAndPermutation get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh,
-                                                           stk::mesh::Entity parent_entity,
-                                                           stk::mesh::EntityRank to_rank,
-                                                           const stk::mesh::EntityVector &nodes_of_sub_rank);
 
+std::pair<bool, unsigned> sub_rank_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank,
+                                                            const stk::mesh::Entity* subRankNodes);
 
+std::pair<bool, unsigned> side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+
+bool is_side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+
+bool is_edge_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned edgeOrdinal, const stk::mesh::Entity* candidateEdgeNodes);
+
+NAMED_PAIR(EquivAndPositive, bool, is_equiv, bool, is_positive)
+
+EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+
+EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes
  * that make up the subcell in a correct order for the given polarity.
@@ -175,7 +184,7 @@ void get_parts_with_topology(stk::topology topology,
 {
   parts.clear();
 
-  stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(mesh);
+  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
 
   const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
 

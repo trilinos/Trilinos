@@ -442,7 +442,7 @@ public:
           vals[sensIndex] = scatterField.fastAccessDx(sensIndex);
 
        // Sum Jacobian
-       jac.sumIntoValuesSorted(lid, cLIDs,numIds, vals, true);
+       jac.sumIntoValues(lid, cLIDs,numIds, vals, true, true);
     } // end basis
   }
 };

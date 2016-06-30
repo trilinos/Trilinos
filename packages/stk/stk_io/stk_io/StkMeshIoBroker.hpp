@@ -402,7 +402,7 @@ namespace impl
       // 'populate_field_data()' method declared below.
       // Note that the above-declared 'populate_bulk_data()' method
       // calls both of these methods.
-      void populate_mesh(bool delay_field_data_allocation = true);
+      virtual void populate_mesh(bool delay_field_data_allocation = true);
 
       // Read/generate the field-data for the mesh, including
       // coordinates, attributes and distribution factors.
@@ -433,13 +433,22 @@ namespace impl
 				       std::vector<stk::io::MeshField> *missing=NULL);
 
       // For all transient input fields defined, read the data at the
-      // specified database time 'time' and populate the stk
-      // data structures with those values.  The database time closest
-      // to the specified time will be used with no interpolation (yet).
+      // specified database time 'time' and populate the stk data
+      // structures with those values.  
+      //
+      // If the MeshField specifies "CLOSEST" option, then the
+      // database time closestto the specified time will be used; if
+      // the MeshField specifies "LINEAR_INTERPOLATION" option, then
+      // the field values will be interpolated based on the two
+      // surrounding times on the database; if the time is less than
+      // the minimum time on the database or greater than the maximum
+      // time, then the field values at those extremes will be
+      // returned (no extrapolation).
+      // 
       // If 'missing' is non-NULL, then any fields that are not found
-      // on the input database will be put on the vector.  If 'missing'
-      // is NULL, then an exception will be thrown if any fields are
-      // not found.
+      // on the input database will be put on the vector.  If
+      // 'missing' is NULL, then an exception will be thrown if any
+      // fields are not found.
       double read_defined_input_fields(double time,
 				       std::vector<stk::io::MeshField> *missing=NULL);
 
@@ -619,6 +628,9 @@ namespace impl
       void use_nodeset_for_part_nodes_fields(size_t output_index,
 					     bool true_false);
 
+      void set_option_to_not_collapse_sequenced_fields();
+      int get_num_time_steps();
+
       //-END
     protected:
       void set_sideset_face_creation_behavior_for_testing(SideSetFaceCreationBehavior behavior)
@@ -626,9 +638,12 @@ namespace impl
           m_sideset_face_creation_behavior = behavior;
       }
 
-    private:
+    protected:
       void create_bulk_data();
       void validate_input_file_index(size_t input_file_index) const;
+      void stk_mesh_resolve_node_sharing() { bulk_data().resolve_node_sharing(); }
+      void stk_mesh_modification_end_after_node_sharing_resolution() { bulk_data().modification_end_after_node_sharing_resolution(); }
+    private:
       void create_ioss_region();
       void validate_output_file_index(size_t output_file_index) const;
 
@@ -666,14 +681,14 @@ namespace impl
 
       std::vector<Teuchos::RCP<impl::OutputFile> > m_output_files;
       std::vector<Teuchos::RCP<impl::Heartbeat> > m_heartbeat;
+    protected:
       std::vector<Teuchos::RCP<InputFile> > m_input_files;
-
+    private:
       StkMeshIoBroker(const StkMeshIoBroker&); // Do not implement
       StkMeshIoBroker& operator=(const StkMeshIoBroker&); // Do not implement
+    protected:
       size_t m_active_mesh_index;
-
       SideSetFaceCreationBehavior m_sideset_face_creation_behavior;
-
     };
 
     inline Teuchos::RCP<Ioss::Region> StkMeshIoBroker::get_output_io_region(size_t output_file_index) {

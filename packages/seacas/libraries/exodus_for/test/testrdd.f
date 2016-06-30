@@ -67,7 +67,7 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       real*8 time_value, time_values(10), var_values(10)
       real*8 x(8), y(8), dummy(1)
       real*8 attrib(1), dist_fact(8)
-      real vers, fdum
+      real*4 vers
 
       character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
       character*(MXLNLN) inform(3), titl
@@ -414,10 +414,6 @@ c     read side set properties
          elem_list_len = exinqi (exoid, EXSSEL)
          write (iout, '(/"after exinq: EXSSEL =",i3,", error = ",i3)')
      1		elem_list_len,ierr
- 
-c        call exinq (exoid, EXSSNL, node_list_len, fdum, cdum, ierr)
-c        write (iout, '(/"after exinq: EXSSNL =",i3,", error = ",i3)')
-c    1		node_list_len,ierr
  
          df_list_len = exinqi (exoid, EXSSDF)
          write (iout, '(/"after exinq: EXSSDF =",i3,", error = ",i3)')

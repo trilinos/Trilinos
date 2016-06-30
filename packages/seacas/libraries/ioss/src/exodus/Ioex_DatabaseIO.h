@@ -220,7 +220,7 @@ namespace Ioex {
     // to using Ioss
     virtual int get_file_pointer() const = 0; // Open file and set exodusFilePtr.
   protected:
-    int free_file_pointer() const; // Close file and set exodusFilePtr.
+    virtual int free_file_pointer() const; // Close file and set exodusFilePtr.
 
     int  get_current_state() const; // Get current state with error checks and usage message.
     void put_qa();

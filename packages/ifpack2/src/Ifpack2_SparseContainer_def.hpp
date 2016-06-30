@@ -50,6 +50,7 @@
 #else
 #include "Teuchos_DefaultSerialComm.hpp"
 #endif
+#include "Teuchos_TestForException.hpp"
 
 namespace Ifpack2 {
 
@@ -591,6 +592,38 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   // assumptions on the column and row Maps (see note above), we may
   // need to supply custom domain and range Maps to fillComplete().
   diagBlock_->fillComplete ();
+}
+
+template<typename MatrixType, typename InverseType>
+std::string SparseContainer<MatrixType, InverseType>::getName()
+{
+  typedef typename MatrixType::scalar_type SC;
+  typedef typename MatrixType::local_ordinal_type LO;
+  typedef typename MatrixType::global_ordinal_type GO;
+  typedef typename MatrixType::node_type NO;
+  typedef ILUT<Tpetra::RowMatrix<SC, LO, GO, NO> > ILUTInverse;
+#ifdef HAVE_IFPACK2_AMESOS2
+  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<SC, LO, GO, NO>> AmesosInverse;
+  if(std::is_same<InverseType, ILUTInverse>::value)
+  {
+    return "SparseILUT";
+  }
+  else if(std::is_same<InverseType, AmesosInverse>::value)
+  {
+    return "SparseAmesos";
+  }
+  else
+  {
+    throw std::logic_error("InverseType for SparseContainer must be Ifpack2::ILUT or Details::Amesos2Wrapper");
+  }
+#else
+  // Macros can't have commas in their arguments, so we have to
+  // compute the bool first argument separately.
+  constexpr bool inverseTypeIsILUT = std::is_same<InverseType, ILUTInverse>::value;
+  TEUCHOS_TEST_FOR_EXCEPTION(! inverseTypeIsILUT, std::logic_error,
+    "InverseType for SparseContainer must be Ifpack2::ILUT<ROW>");
+  return "SparseILUT";    //the only supported sparse container specialization if no Amesos2
+#endif
 }
 
 } // namespace Ifpack2

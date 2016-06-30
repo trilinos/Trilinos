@@ -237,6 +237,13 @@ namespace MueLu {
 
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
+
+        } else {
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          if (!bA.is_null()) {
+            isBlockedMatrix = true;
+            merged2Mat = bA->Merge();
+          }
         }
       }
 
@@ -401,6 +408,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
 
     RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
 

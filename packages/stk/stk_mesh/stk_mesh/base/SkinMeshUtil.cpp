@@ -13,29 +13,28 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 
-
 namespace stk
 {
 namespace mesh
 {
 
-
 SkinMeshUtil::SkinMeshUtil(ElemElemGraph& elemElemGraph,
                            const stk::mesh::PartVector& skinParts,
                            const stk::mesh::Selector& inputSkinSelector,
                            const stk::mesh::Selector* inputAirSelector)
-: eeGraph(elemElemGraph), skinSelector(inputSkinSelector), airSelector(inputAirSelector)
+: eeGraph(elemElemGraph), skinSelector(inputSkinSelector), useAirSelector(inputAirSelector != nullptr)
 {
+    if (useAirSelector) airSelector = *inputAirSelector;
     stk::mesh::impl::populate_selected_value_for_remote_elements(eeGraph.get_mesh(), eeGraph, skinSelector, remoteSkinSelector);
-    if (airSelector != nullptr)
-        impl::populate_selected_value_for_remote_elements(eeGraph.get_mesh(), eeGraph, *airSelector, remoteAirSelector);
+    if (useAirSelector)
+        impl::populate_selected_value_for_remote_elements(eeGraph.get_mesh(), eeGraph, airSelector, remoteAirSelector);
 }
 
 std::vector<int> SkinMeshUtil::get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement)
 {
     std::vector<int> exposedSides;
     impl::add_exposed_sides(localId, maxSidesThisElement, eeGraph.get_graph(), exposedSides);
-    if(airSelector != nullptr)
+    if(useAirSelector)
         add_exposed_sides_due_to_air_selector(localId, exposedSides);
     return exposedSides;
 }
@@ -68,7 +67,7 @@ bool SkinMeshUtil::is_remote_element_air(const ParallelInfoForGraphEdges &parall
 bool SkinMeshUtil::is_connected_element_air(const stk::mesh::GraphEdge &graphEdge)
 {
     if(impl::is_local_element(graphEdge.elem2()))
-        return is_element_selected_and_can_have_side(*airSelector, eeGraph.get_entity_from_local_id(graphEdge.elem2()));
+        return is_element_selected_and_can_have_side(airSelector, eeGraph.get_entity_from_local_id(graphEdge.elem2()));
     else
         return is_remote_element_air(eeGraph.get_parallel_info_for_graph_edges(), graphEdge);
 }
@@ -129,11 +128,10 @@ std::vector<int> SkinMeshUtil::get_sides_exposed_on_other_procs(stk::mesh::impl:
     return exposedSides;
 }
 
-std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Selector& skinSelector,
-                                                      const stk::mesh::Bucket& bucket,
+
+std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Bucket& bucket,
                                                       stk::mesh::Entity element,
-                                                      stk::mesh::impl::LocalId localId,
-                                                      const stk::mesh::Selector* airSelector)
+                                                      stk::mesh::impl::LocalId localId)
 {
     int maxSidesThisElement = bucket.topology().num_sides();
     std::vector<int> exposedSides;
@@ -141,7 +139,7 @@ std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Selector&
     {
         if(skinSelector(bucket))
             exposedSides = get_exposed_sides(localId, maxSidesThisElement);
-        else if(airSelector != nullptr && (*airSelector)(bucket))
+        else if(useAirSelector && airSelector(bucket))
             exposedSides = get_sides_exposed_on_other_procs(localId, maxSidesThisElement);
         else if(!eeGraph.get_coincident_edges_for_element(localId).empty())
         {
@@ -162,6 +160,15 @@ std::vector<int> SkinMeshUtil::get_sides_for_skinning(const stk::mesh::Selector&
     return exposedSides;
 }
 
+bool checkIfSideIsNotCollapsed(stk::mesh::EntityVector& sideNodes, const stk::mesh::Bucket& bucket, const stk::mesh::BulkData& bulkData, stk::mesh::Entity element, int sideOrdinal)
+{
+    sideNodes.resize(bucket.topology().sub_topology(bulkData.mesh_meta_data().side_rank(), sideOrdinal).num_nodes());
+    stk::mesh::EntityVector nodes(bulkData.begin_nodes(element), bulkData.end_nodes(element));
+    bucket.topology().side_nodes(nodes, sideOrdinal, sideNodes.begin());
+    stk::util::sort_and_unique(sideNodes);
+    return sideNodes.size()>=bulkData.mesh_meta_data().spatial_dimension();
+}
+
 std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
 {
     std::vector<SideSetEntry> skinnedSideSet;
@@ -169,6 +176,8 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
     const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+
+    stk::mesh::EntityVector sideNodes;
 
     for(size_t i=0;i<buckets.size();++i)
     {
@@ -178,11 +187,12 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_skinned_sideset()
             stk::mesh::Entity element = bucket[j];
 
             stk::mesh::impl::LocalId localId = eeGraph.get_local_element_id(element);
-            std::vector<int> exposedSides = get_sides_for_skinning(skinSelector, bucket, element, localId, airSelector);
+            std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, localId);
 
             for(size_t k=0; k<exposedSides.size(); ++k)
             {
-                skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
+                if(checkIfSideIsNotCollapsed(sideNodes, bucket, bulkData, element, exposedSides[k]))
+                    skinnedSideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
             }
         }
     }
@@ -199,6 +209,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
 
     stk::mesh::impl::ParallelPartInfo parallelPartInfo;
     stk::mesh::impl::populate_part_ordinals_for_remote_edges(bulkData, eeGraph, parallelPartInfo);
+    stk::mesh::EntityVector sideNodes;
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     for(const stk::mesh::Bucket* bucket : buckets)
@@ -236,7 +247,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                             should_add_side = !stk::mesh::impl::are_entity_element_blocks_equivalent(bulkData, element, otherElement);
                     }
 
-                    if(should_add_side)
+                    if(should_add_side && checkIfSideIsNotCollapsed(sideNodes, *bucket, bulkData, element, graphEdge.side1()))
                     {
                         skinnedSideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1())));
                         if(!isParallelEdge)
@@ -261,6 +272,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
     sideSet.reserve(maxNumSides);
 
     const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    stk::mesh::EntityVector sideNodes;
 
     for (const stk::mesh::Bucket* bucketPtr : buckets) {
         const stk::mesh::Bucket & bucket = *bucketPtr;
@@ -268,10 +280,12 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
             stk::mesh::Entity element = bucket[i];
             impl::LocalId elementId = eeGraph.get_local_element_id(element);
 
-            std::vector<int> exposedSides = get_sides_for_skinning(skinSelector, bucket, element, elementId);
+            std::vector<int> exposedSides = get_sides_for_skinning(bucket, element, elementId);
 
-            for (size_t k=0; k<exposedSides.size(); ++k) {
-                sideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
+            for (size_t k=0; k<exposedSides.size(); ++k)
+            {
+                if(checkIfSideIsNotCollapsed(sideNodes, bucket, bulkData, element, exposedSides[k]))
+                        sideSet.push_back(SideSetEntry(element, static_cast<ConnectivityOrdinal> (exposedSides[k])));
             }
 
             for(const stk::mesh::GraphEdge & graphEdge : eeGraph.get_edges_for_element(elementId)) {
@@ -298,7 +312,8 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset()
                     }
                 }
 
-                if (should_add_side) {
+                if(should_add_side && checkIfSideIsNotCollapsed(sideNodes, bucket, bulkData, element, graphEdge.side1()))
+                {
                     sideSet.push_back(SideSetEntry(element, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side1())));
                     if (!isParallelEdge) {
                         sideSet.push_back(SideSetEntry(otherElement, static_cast<stk::mesh::ConnectivityOrdinal>(graphEdge.side2())));

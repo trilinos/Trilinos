@@ -106,3 +106,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  replaceSumInto
+  SOURCES replaceSumInto.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+# This test needs to be able to control when Kokkos gets initialized,
+# so it can't use the Teuchos unit test "main" .cpp file.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  replaceSumIntoLonger
+  SOURCES replaceSumIntoLonger.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )

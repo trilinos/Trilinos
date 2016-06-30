@@ -167,7 +167,6 @@ exe stk_io_utest
     /sierra/stk_io//stk_io_util
     /sierra/stk_unit_test_utils//stk_unit_test_utils
     /sierra/stk_util//stk_util_unit_test_support
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
   : <tag>@sierra-exec-tag
     <include>$(stk_io-root)/unit_tests
   ;
@@ -179,6 +178,7 @@ exe stk_io_doc_test
     stk_io
     /sierra/stk_io//stk_io_util
     /sierra/stk_util//stk_util_unit_test_support
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
   : <tag>@sierra-exec-tag
     <include>$(stk_io-root)/testsForDocumentation
   ;

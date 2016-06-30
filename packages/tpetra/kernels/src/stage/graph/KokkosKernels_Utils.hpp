@@ -20,6 +20,43 @@ namespace Experimental{
 
 namespace Util{
 
+enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
+template <typename ExecutionSpace>
+ExecSpaceType get_exec_space_type(){
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+    return Exec_SERIAL;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+    return Exec_PTHREADS;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+    return Exec_OMP;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+    return Exec_CUDA;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_QTHREAD)
+  if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+    return Exec_QTHREADS;
+  }
+#endif
+  return Exec_SERIAL;
+
+}
+
 
 template <typename in_lno_view_t,
           typename out_lno_view_t>

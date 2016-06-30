@@ -1014,11 +1014,6 @@ operator*(Tensor<S, N, ES> const & A, Tensor<T, N, ES> const & B)
 }
 
 //
-// R^N tensor vector product v = A u
-// \param A tensor
-// \param u vector
-// \return \f$ A u \f$
-//
 // Tensor vector product v = A u
 //
 template<typename S, typename T, Index N,  typename ES>

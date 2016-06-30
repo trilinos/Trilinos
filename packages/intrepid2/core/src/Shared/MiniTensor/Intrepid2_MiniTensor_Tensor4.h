@@ -137,6 +137,7 @@ public:
   ///
   KOKKOS_INLINE_FUNCTION
   Tensor4(Tensor<T, dimension_square<N>::value,ES> const & A);
+
   ///
   /// 4th-order tensor simple destructor
   ///

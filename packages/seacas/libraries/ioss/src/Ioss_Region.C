@@ -1607,7 +1607,9 @@ namespace Ioss {
     }
     // Should not reach this point...
     std::ostringstream errmsg;
-    errmsg << "Internal Program Error...Invalid local_id " << local_id << " specified";
+    errmsg << "ERROR: In Ioss::Region::get_element_block, an invalid local_id of " << local_id
+           << " is specified.  The valid range is 1 to "
+           << get_implicit_property("element_count").get_int();
     IOSS_ERROR(errmsg);
     return nullptr;
   }

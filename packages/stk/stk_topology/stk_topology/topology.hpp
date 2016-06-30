@@ -209,7 +209,7 @@ struct topology
   /// do the two arrays define equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
   template <typename NodeArrayA, typename NodeArrayB>
-  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b) const;
+  std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & possible_permutation_of_a) const;
 
   /// return the permutation index which gives the lowest lexicographical ordering of the nodes
   /// input 'nodes' is expected to be of length num_nodes.
@@ -320,11 +320,13 @@ struct topology
     return m_value > SUPERELEMENT_START;
   }
 
+  STK_FUNCTION
   bool is_superface() const
   {
     return m_value > SUPERFACE_START && m_value < SUPERFACE_END;
   }
 
+  STK_FUNCTION
   bool is_superedge() const
   {
     return m_value > SUPEREDGE_START && m_value < SUPEREDGE_END;

@@ -98,6 +98,7 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: print level", (int)0);
 
   // Ifpack2_Relaxation.cpp
+  params.set("relaxation: container", "TriDi");
   params.set("relaxation: type", "Jacobi");
   params.set("relaxation: sweeps", (int)1);
   params.set("relaxation: direction", "forward");

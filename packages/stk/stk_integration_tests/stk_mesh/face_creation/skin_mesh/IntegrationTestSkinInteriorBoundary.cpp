@@ -132,6 +132,13 @@ const SideTestUtil::TestCaseData createInteriorBoundaryForTwoBlockCoincidentElem
     {"2D_2block_partial_decomp.e",  1,       0,     {}}
 };
 
+const SideTestUtil::TestCaseData createInteriorBoundaryForDegenerateElementTestCases =
+{
+     {"quadInteriorDegenerateConnection.g",  3,  1, {}},
+     {"hexInteriorDegeneratedConnectionA.g", 3,  2, {}},
+     {"hexInteriorDegeneratedConnectionB.g", 3,  1, {}}
+};
+
 class InteriorBlockBoundaryTester : public SideTestUtil::SideCreationTester
 {
 public:
@@ -177,6 +184,16 @@ TEST(InteriorBlockBoundaryTest, run_all_test_cases_aura)
 TEST(InteriorBlockBoundaryTest, run_all_test_cases_no_aura)
 {
     InteriorBlockBoundaryTester().run_all_test_cases(interiorBlockBoundaryTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+TEST(InteriorBlockBoundaryTest, run_interior_block_boundary_degenerate_cases_aura)
+{
+    InteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForDegenerateElementTestCases, stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(InteriorBlockBoundaryTest, run_interior_block_boundary_degenerate_cases_no_aura)
+{
+    InteriorBlockBoundaryTester().run_all_test_cases(createInteriorBoundaryForDegenerateElementTestCases, stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 TEST(CreateInteriorBoundaryForSingleBlockTest, run_all_test_cases_aura)

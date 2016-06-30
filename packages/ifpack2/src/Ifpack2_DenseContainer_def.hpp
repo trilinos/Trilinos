@@ -1311,6 +1311,12 @@ DenseContainer<MatrixType, LocalScalarType, false>::
 extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
 {}
 
+template<class MatrixType, class LocalScalarType>
+std::string DenseContainer<MatrixType, LocalScalarType, true>::getName()
+{
+  return "Dense";
+}
+
 } // namespace Ifpack2
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2

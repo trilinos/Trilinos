@@ -47,6 +47,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, get_cell_topology
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, etc
+#include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.tcc"    // for topology::num_nodes, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowErrorMsgIf
@@ -166,7 +167,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
             bool equivalent = false;
             unsigned permutation_id = 0;
 
-            std::tie(equivalent,permutation_id) = side_topology.equivalent(side_nodes, potential_side_nodes);
+            std::tie(equivalent,permutation_id) = stk::mesh::side_equivalent(mesh, elem, k, potential_side_nodes.data());
 
             // the sides are not a match
             if (equivalent == false) continue;

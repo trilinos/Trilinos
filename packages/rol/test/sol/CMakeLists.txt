@@ -18,6 +18,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
+# This test fails in all autoamted builds of ROL (see Trilinos #442)
+SET(ROL_test_sol_solTeuchosBatchManager_MPI_4_DISABLE TRUE
+  CACHE BOOL "Set in ROL CMakeLists.txt file")
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   solTeuchosBatchManager
   SOURCES test_03.cpp

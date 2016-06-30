@@ -62,11 +62,13 @@ namespace MueLuTests
 {
   TEUCHOS_UNIT_TEST(YAML, XmlEquivalence)
   {
-    std::string matchStems[4] = {"Match1", "Match2", "Match3", "Match4"};
-    for(int i = 0; i < 4; i++)
+    using std::string;
+    using std::vector;
+    vector<string> matchStems = {"Match1", "Match2", "Match3", "Match4"};
+    for(size_t i = 0; i < matchStems.size(); i++)
     {
-      std::string xmlFile = std::string("yaml/") + matchStems[i] + ".xml";
-      std::string yamlFile = std::string("yaml/") + matchStems[i] + ".yaml";
+      string xmlFile = string("yaml/") + matchStems[i] + ".xml";
+      string yamlFile = string("yaml/") + matchStems[i] + ".yaml";
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
       RCP<ParameterList> yamlList = MueLu::getParametersFromYamlFile(yamlFile);
       TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), true);
@@ -139,10 +141,11 @@ namespace MueLuTests
   }
   TEUCHOS_UNIT_TEST(YAML, ConvertFromXML)
   {
+    using std::string;
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
     //This list can contain any valid XML param lists in the unit_tests/yaml/
-    std::string xmlFiles[4] = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml"};
-    for(int i = 0; i < 4; i++)
+    std::vector<string> xmlFiles = {"Match1.xml", "Match2.xml", "Match3.xml", "Match4.xml", "input_restingHydrostatic_RK4.xml", "plasma_oscillation_rtc.xml"};
+    for(size_t i = 0; i < xmlFiles.size(); i++)
     {
       std::string xmlFile = std::string("yaml/") + xmlFiles[i];
       std::string yamlFile = std::string("yaml/Proc") + std::to_string(comm->getRank()) + '-' + xmlFiles[i];
@@ -150,8 +153,7 @@ namespace MueLuTests
       MueLu::convertXmlToYaml(xmlFile, yamlFile);
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
       RCP<ParameterList> yamlList = MueLu::getParametersFromYamlFile(yamlFile);
-      remove(yamlFile.c_str());
-      TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList), true);
+      TEST_EQUALITY(MueLu::haveSameValuesUnordered(*xmlList, *yamlList, true), true);
     }
   }
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(YAML, MueLuConfig, Scalar, LocalOrdinal, GlobalOrdinal, Node)

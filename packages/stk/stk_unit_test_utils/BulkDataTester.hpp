@@ -339,7 +339,7 @@ public:
         internal_change_entity_key(old_key, new_key, entity);
     }
 
-    stk::mesh::BulkData::entitySharing my_internal_is_entity_marked(stk::mesh::Entity entity) const
+    stk::mesh::BulkData::EntitySharing my_internal_is_entity_marked(stk::mesh::Entity entity) const
     {
         return internal_is_entity_marked(entity);
     }

@@ -709,7 +709,6 @@ blockWiseMultiply (const Scalar& alpha,
                    const BlockMultiVector<Scalar, LO, GO, Node>& X)
 {
   using Kokkos::ALL;
-  const impl_scalar_type zero = static_cast<impl_scalar_type> (STS::zero ());
   const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
 
   if (alpha == STS::zero ()) {

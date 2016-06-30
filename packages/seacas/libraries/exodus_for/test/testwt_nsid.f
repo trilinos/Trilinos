@@ -65,7 +65,7 @@ c  create EXODUS II files
 c
       exoid = excre ("test-nsided.exo",
      1	 	     EXCLOB, cpu_word_size, io_word_size, ierr)
-      write (iout,'("after excre for test-nsided.exo, id: ", i4)') exoid
+      write (iout,'("after excre for test-nsided.exo, id: ", i8)') exoid
       write (iout,'("  cpu word size: ",i4," io word size: ",i4)')
      1                  cpu_word_size, io_word_size
       write (iout,'("after excre, error = ", i4)') ierr

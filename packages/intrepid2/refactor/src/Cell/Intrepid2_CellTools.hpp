@@ -72,14 +72,14 @@
 #include "Intrepid2_HGRAD_WEDGE_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_PYR_C1_FEM.hpp"
 
-//#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
-//#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_TET_COMP12_FEM.hpp"
 
-//#include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
+#include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
 #include "Kokkos_Core.hpp"
@@ -125,7 +125,7 @@ namespace Intrepid2 {
 
       case shards::Triangle<3>::key:
         // case shards::Triangle<4>::key:
-        // case shards::Triangle<6>::key:
+      case shards::Triangle<6>::key:
         // case shards::ShellTriangle<3>::key:
         // case shards::ShellTriangle<6>::key:
 
@@ -138,7 +138,7 @@ namespace Intrepid2 {
 
       case shards::Tetrahedron<4>::key:
         // case shards::Tetrahedron<8>::key:
-        // case shards::Tetrahedron<10>::key:
+      case shards::Tetrahedron<10>::key:
         // case shards::Tetrahedron<11>::key:
 
       case shards::Hexahedron<8>::key:
@@ -151,7 +151,7 @@ namespace Intrepid2 {
 
       case shards::Wedge<6>::key:
         // case shards::Wedge<15>::key:
-        // case shards::Wedge<18>::key:
+      case shards::Wedge<18>::key:
         r_val = true;
       }
       return r_val;
@@ -174,14 +174,14 @@ namespace Intrepid2 {
       case shards::Wedge<6>::key:         r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C1_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Pyramid<5>::key:       r_val = Teuchos::rcp(new Basis_HGRAD_PYR_C1_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
 
-        //case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Wedge<18>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_C2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Pyramid<13>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_PYR_I2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
 
       case shards::Quadrilateral<8>::key: 
@@ -1213,6 +1213,92 @@ namespace Intrepid2 {
     }
 
 
+    //============================================================================================//
+    //                                                                                            //
+    //                             Control Volume Coordinates                                     //
+    //                                                                                            //
+    //============================================================================================//
+
+    /** \brief Computes coordinates of sub-control volumes in each primary cell.
+
+      To build the system of equations for the control volume finite element method we
+      need to compute geometric data for integration over control volumes. A control
+      volume is polygon or polyhedron that surrounds a primary cell node and has
+      vertices that include the surrounding primary cells' barycenter, edge midpoints,
+      and face midpoints if in 3-d.
+
+      When using element-based assembly of the discrete equations over the primary mesh,
+      a single element will contain a piece of each control volume surrounding each of
+      the primary cell nodes. This piece of control volume (sub-control volume) is
+      always a quadrilateral in 2-d and a hexahedron in 3-d.
+
+      In 2-d the sub-control volumes are defined in the following way:
+
+      \verbatim
+
+       Quadrilateral primary element:
+
+           O________M________O
+           |        |        |
+           |   3    |   2    |     B = cell barycenter
+           |        |        |     O = primary cell nodes
+           M________B________M     M = cell edge midpoints
+           |        |        |
+           |   0    |   1    |     sub-control volumes 0, 1, 2, 3
+           |        |        |
+           O________M________O
+
+
+       Triangle primary element:
+
+                    O
+                   / \
+                  /   \             B = cell barycenter
+                 /     \            O = primary cell nodes
+                M   2   M           M = cell edge midpoints
+               / \     / \
+              /   \ B /   \         sub-control volumes 0, 1, 2
+             /      |      \
+            /   0   |   1   \
+           O________M________O
+
+      \endverbatim
+
+      In 3-d the sub-control volumes are defined by the primary cell face
+      centers and edge midpoints. The eight sub-control volumes for a
+      hexahedron are shown below:
+
+      \verbatim
+             O__________E__________O
+            /|         /|         /|
+           E_|________F_|________E |
+          /| |       /| |       /| |
+         O_|_|______E_|_|______O | |      O = primary cell nodes
+         | | E------|-|-F------|-|-E      B = cell barycenter
+         | |/|      | |/|      | |/|      F = cell face centers
+         | F-|------|-B-|------|-F |      E = cell edge midpoints
+         |/| |      |/| |      |/| |
+         E_|_|______F_|_|______E | |
+         | | O------|-|-E------|-|-O
+         | |/       | |/       | |/
+         | E--------|-F--------|-E
+         |/         |/         |/
+         O__________E__________O
+
+      \endverbatim
+
+    \param subCVCoords     [out] - array containing sub-control volume coordinates
+    \param cellCoords       [in] - array containing coordinates of primary cells
+    \param primaryCell      [in] - primary cell topology
+
+    */
+    template<typename subcvCoordValueType, class ...subcvCoordProperties,
+             typename cellCoordValueType,  class ...cellCoordProperties>
+    static void 
+    getSubcvCoords( /**/  Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoords, 
+                    const Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoords,
+                    const shards::CellTopology primaryCell );
+    
     // //============================================================================================//
     // //                                                                                            //
     // //                                        Inclusion tests                                     //
@@ -1360,100 +1446,6 @@ namespace Intrepid2 {
     //                                 const int&                    subcellDim,
     //                                 const int&                    subcellOrd,
     //                                 const int&                    fieldWidth = 3);
-
-    // //============================================================================================//
-    // //                                                                                            //
-    // //                             Control Volume Coordinates                                     //
-    // //                                                                                            //
-    // //============================================================================================//
-
-    // /** \brief Computes coordinates of sub-control volumes in each primary cell.
-
-    //   To build the system of equations for the control volume finite element method we
-    //   need to compute geometric data for integration over control volumes. A control
-    //   volume is polygon or polyhedron that surrounds a primary cell node and has
-    //   vertices that include the surrounding primary cells' barycenter, edge midpoints,
-    //   and face midpoints if in 3-d.
-
-    //   When using element-based assembly of the discrete equations over the primary mesh,
-    //   a single element will contain a piece of each control volume surrounding each of
-    //   the primary cell nodes. This piece of control volume (sub-control volume) is
-    //   always a quadrilateral in 2-d and a hexahedron in 3-d.
-
-    //   In 2-d the sub-control volumes are defined in the following way:
-
-    //   \verbatim
-
-    //    Quadrilateral primary element:
-
-    //        O________M________O
-    //        |        |        |
-    //        |   3    |   2    |     B = cell barycenter
-    //        |        |        |     O = primary cell nodes
-    //        M________B________M     M = cell edge midpoints
-    //        |        |        |
-    //        |   0    |   1    |     sub-control volumes 0, 1, 2, 3
-    //        |        |        |
-    //        O________M________O
-
-
-    //    Triangle primary element:
-
-    //                 O
-    //                / \
-    //               /   \             B = cell barycenter
-    //              /     \            O = primary cell nodes
-    //             M   2   M           M = cell edge midpoints
-    //            / \     / \
-    //           /   \ B /   \         sub-control volumes 0, 1, 2
-    //          /      |      \
-    //         /   0   |   1   \
-    //        O________M________O
-
-    //   \endverbatim
-
-    //   In 3-d the sub-control volumes are defined by the primary cell face
-    //   centers and edge midpoints. The eight sub-control volumes for a
-    //   hexahedron are shown below:
-
-    //   \verbatim
-    //          O__________E__________O
-    //         /|         /|         /|
-    //        E_|________F_|________E |
-    //       /| |       /| |       /| |
-    //      O_|_|______E_|_|______O | |      O = primary cell nodes
-    //      | | E------|-|-F------|-|-E      B = cell barycenter
-    //      | |/|      | |/|      | |/|      F = cell face centers
-    //      | F-|------|-B-|------|-F |      E = cell edge midpoints
-    //      |/| |      |/| |      |/| |
-    //      E_|_|______F_|_|______E | |
-    //      | | O------|-|-E------|-|-O
-    //      | |/       | |/       | |/
-    //      | E--------|-F--------|-E
-    //      |/         |/         |/
-    //      O__________E__________O
-
-    //   \endverbatim
-
-    // \param subCVCoords     [out] - array containing sub-control volume coordinates
-    // \param cellCoords       [in] - array containing coordinates of primary cells
-    // \param primaryCell      [in] - primary cell topology
-
-    // */
-
-    // template<class ArrayCVCoord, class ArrayCellCoord>
-    // static void getSubCVCoords(ArrayCVCoord & subCVcoords, const ArrayCellCoord & cellCoords,
-    //                            const shards::CellTopology& primaryCell);
-
-    // /** \brief Compute cell barycenters.
-
-    //     \param barycenter      [out] - array containing cell baycenters
-    //     \param cellCoords       [in] - array containing cell coordinates
-
-    // */
-    // template<class ArrayCent, class ArrayCellCoord>
-    // static void getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords);
-
   };
 
   //============================================================================================//
@@ -1584,11 +1576,13 @@ namespace Intrepid2 {
 #include "Intrepid2_CellToolsDefRefToPhys.hpp"
 #include "Intrepid2_CellToolsDefPhysToRef.hpp"
 
+#include "Intrepid2_CellToolsDefControlVolume.hpp"
+
 // not yet converted ...
 // #include "Intrepid2_CellToolsDefInclusion.hpp"
 
 // #include "Intrepid2_CellToolsDefDebug.hpp"
-// #include "Intrepid2_CellToolsDefControlVolume.hpp"
+
 
 #endif
 

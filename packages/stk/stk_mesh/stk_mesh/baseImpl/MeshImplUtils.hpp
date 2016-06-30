@@ -469,6 +469,10 @@ struct HashValueForEntityVector
     }
 };
 
+void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
+                                    const OrdinalVector& input_ordinals,
+                                    stk::mesh::PartVector& output_parts);
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

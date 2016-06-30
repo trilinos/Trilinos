@@ -54,7 +54,6 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     BlockedPFactory.cpp
     SchurComplementFactory.cpp
     SubBlockAFactory.cpp
-    Smoothers/BlockedSmoother.cpp
   )
 ENDIF()
 
@@ -79,6 +78,9 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2)
   APPEND_SET(SOURCES Smoothers/Ifpack2Smoother.cpp)
+  IF (${PACKAGE_NAME}_ENABLE_Experimental)
+    APPEND_SET(SOURCES Smoothers/BlockedSmoother.cpp)
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack)
@@ -145,7 +147,7 @@ IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(MueLu_Yaml_cp
     SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/yaml/
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/yaml/
-    SOURCE_FILES Match1.yaml Match1.xml Match2.yaml Match2.xml Match3.yaml Match3.xml Match4.yaml Match4.xml Arrays.yaml IllegalKeyString.yaml IntVsDouble.xml IntVsDouble.yaml MueLuConfig.yaml MueLuConfig.xml InconsistentArray.yaml
+    SOURCE_FILES Match1.yaml Match1.xml Match2.yaml Match2.xml Match3.yaml Match3.xml Match4.yaml Match4.xml Arrays.yaml IllegalKeyString.yaml IntVsDouble.xml IntVsDouble.yaml MueLuConfig.yaml MueLuConfig.xml InconsistentArray.yaml input_restingHydrostatic_RK4.xml plasma_oscillation_rtc.xml
   )
 ENDIF()
 

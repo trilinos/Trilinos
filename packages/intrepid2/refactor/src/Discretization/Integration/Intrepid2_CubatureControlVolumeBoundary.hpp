@@ -40,37 +40,40 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureControlVolume.hpp
-    \brief  Header file for the Intrepid2::CubatureControlVolume class.
+/** \file   Intrepid_CubatureControlVolumeBoundary.hpp
+    \brief  Header file for the Intrepid2::CubatureControlVolumeBoundary class.
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_CUBATURE_CONTROLVOLUME_HPP
-#define INTREPID2_CUBATURE_CONTROLVOLUME_HPP
+#ifndef INTREPID2_CUBATURE_CONTROLVOLUMEBOUNDARY_HPP
+#define INTREPID2_CUBATURE_CONTROLVOLUMEBOUNDARY_HPP
 
 #include "Intrepid2_Cubature.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
 #include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_FunctionSpaceTools.hpp"
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 
 namespace Intrepid2{
 
-  /** \class Intrepid2::CubatureControlVolume
-      \brief Defines cubature (integration) rules over control volumes.
+  /** \class Intrepid2::CubatureControlVolumeBoundary
+      \brief Defines cubature (integration) rules over Neumann boundaries for control volume method.
 
-      Each primary cell contains one sub-control volume per node and
-      there is one integration point per sub-control volume.
+      Integration on Neumann boundaries for the control volume method requires integration points
+      defined on primary cell sides. These points are not equivalent to control volume points on lower
+      dimensional topologies and therefore require a separate class to define them. 
   */
   template<class Scalar, class ArrayPoint, class ArrayWeight>
-  class CubatureControlVolume : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>{
+  class CubatureControlVolumeBoundary : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>{
   public:
     
     /** brief Constructor.
 	
 	\param cellTopology           [in]     - The topology of the primary cell.
+	\param cellSide               [in]     - The index of the boundary side of the primary cell 
     */
-    CubatureControlVolume(const Teuchos::RCP<const shards::CellTopology>& cellTopology);
+    CubatureControlVolumeBoundary(const Teuchos::RCP<const shards::CellTopology>& cellTopology, int cellSide=0);
 
     /** \brief Returns cubature points and weights
 	       Method for reference space cubature - throws an exception.
@@ -106,12 +109,12 @@ namespace Intrepid2{
     void getAccuracy(std::vector<int> & accuracy) const;
 
     
-    virtual ~CubatureControlVolume() {}
+    virtual ~CubatureControlVolumeBoundary() {}
     
   private:
     
     
-    /** \brief The topology of the primary cell.
+    /** \brief The topology of the primary cell side.
      */
     Teuchos::RCP<const shards::CellTopology> primaryCellTopo_;
 
@@ -130,12 +133,16 @@ namespace Intrepid2{
     /** \brief Dimension of integration domain.
      */
     int cubDimension_;
+
+    /** \brief Index of cell side
+     */
+    int sideIndex_;
     
-  }; // end class CubatureControlVolume
+  }; // end class CubatureControlVolumeBoundary
 
 } // end namespace Intrepid2
 
-#include "Intrepid2_CubatureControlVolumeDef.hpp"
+#include "Intrepid2_CubatureControlVolumeBoundaryDef.hpp"
 
 #endif
 

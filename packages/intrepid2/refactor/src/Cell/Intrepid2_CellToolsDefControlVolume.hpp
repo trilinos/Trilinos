@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
-#ifndef __INTREPID2_CELLTOOLS_DEF_HPP__
-#define __INTREPID2_CELLTOOLS_DEF_HPP__
+#ifndef __INTREPID2_CELLTOOLS_DEF_CONTROL_VOLUME_HPP__
+#define __INTREPID2_CELLTOOLS_DEF_CONTROL_VOLUME_HPP__
 
 // disable clang warnings
 #if defined (__clang__) && !defined (__INTEL_COMPILER)
@@ -62,283 +62,378 @@ namespace Intrepid2 {
   //                                                                                            //
   //============================================================================================//
 
-  template<class Scalar>
-  template<class ArrayCVCoord, class ArrayCellCoord>
-  void CellTools<Scalar>::getSubCVCoords(ArrayCVCoord & subCVCoords,
-                                         const ArrayCellCoord & cellCoords,
-                                         const shards::CellTopology& primaryCell)
-  {
-
-    // get array dimensions
-    index_type numCells        = static_cast<index_type>(cellCoords.dimension(0));
-    index_type numNodesPerCell = static_cast<index_type>(cellCoords.dimension(1));
-    index_type spaceDim        = static_cast<index_type>(cellCoords.dimension(2));
-
-    // num edges per primary cell
-    int numEdgesPerCell = primaryCell.getEdgeCount();
-
-    // num faces per primary cell
-    int numFacesPerCell = 0;
-    if (spaceDim > 2){
-      numFacesPerCell = primaryCell.getFaceCount();
-    }
-
-    // get cell centroids
-    FieldContainer<Scalar> barycenter(numCells,spaceDim);
-    getBarycenter(barycenter,cellCoords);
-
-    // loop over cells
-    for (index_type icell = 0; icell < numCells; icell++){
-
-      // get primary edge midpoints
-      FieldContainer<Scalar> edgeMidpts(numEdgesPerCell,spaceDim);
-      for (int iedge = 0; iedge < numEdgesPerCell; iedge++){
-        for (index_type idim = 0; idim < spaceDim; idim++){
-
-          int node0 = primaryCell.getNodeMap(1,iedge,0);
-          int node1 = primaryCell.getNodeMap(1,iedge,1);
-          edgeMidpts(iedge,idim) = (cellCoords(icell,node0,idim) +
-                                    cellCoords(icell,node1,idim))/2.0;
-
-        } // end loop over dimensions
-      } // end loop over cell edges
-
-      // get primary face midpoints in 3-D
-      int numNodesPerFace;
-      FieldContainer<Scalar> faceMidpts(numFacesPerCell,spaceDim);
-      if (spaceDim > 2) {
-        for (int iface = 0; iface < numFacesPerCell; iface++){
-          numNodesPerFace = primaryCell.getNodeCount(2,iface);
-
-          for (int idim = 0; idim < spaceDim; idim++){
-
-            for (int inode0 = 0; inode0 < numNodesPerFace; inode0++) {
-              int node1 = primaryCell.getNodeMap(2,iface,inode0);
-              faceMidpts(iface,idim) += cellCoords(icell,node1,idim)/numNodesPerFace;
-            }
-
-          } // end loop over dimensions
-        } // end loop over cell faces
-      }
-      // define coordinates for subcontrol volumes
-      switch(primaryCell.getKey() ) {
-
-        // 2-d  parent cells
-      case shards::Triangle<3>::key:
-      case shards::Quadrilateral<4>::key:
-
-        for (int inode = 0; inode < numNodesPerCell; inode++){
-          for (index_type idim = 0; idim < spaceDim; idim++){
-
-            // set first node to primary cell node
-            subCVCoords(icell,inode,0,idim) = cellCoords(icell,inode,idim);
-
-            // set second node to adjacent edge midpoint
-            subCVCoords(icell,inode,1,idim) = edgeMidpts(inode,idim);
-
-            // set third node to cell barycenter
-            subCVCoords(icell,inode,2,idim) = barycenter(icell,idim);
-
-            // set fourth node to other adjacent edge midpoint
-            int jnode = numNodesPerCell-1;
-            if (inode > 0) jnode = inode - 1;
-            subCVCoords(icell,inode,3,idim) = edgeMidpts(jnode,idim);
-
-          } // dim loop
-        } // node loop
-
-        break;
-
-      case shards::Hexahedron<8>::key:
-
-        for (index_type idim = 0; idim < spaceDim; idim++){
-
-          // loop over the horizontal quads that define the subcontrol volume coords
-          for (int icount = 0; icount < 4; icount++){
-
-            // set first node of bottom hex to primary cell node
-            // and fifth node of upper hex
-            subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
-            subCVCoords(icell,icount+4,4,idim) = cellCoords(icell,icount+4,idim);
-
-            // set second node of bottom hex to adjacent edge midpoint
-            // and sixth node of upper hex
-            subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
-            subCVCoords(icell,icount+4,5,idim) = edgeMidpts(icount+4,idim);
-
-            // set third node of bottom hex to bottom face midpoint (number 4)
-            // and seventh node of upper hex to top face midpoint
-            subCVCoords(icell,icount,2,idim) = faceMidpts(4,idim);
-            subCVCoords(icell,icount+4,6,idim) = faceMidpts(5,idim);
-
-            // set fourth node of bottom hex to other adjacent edge midpoint
-            // and eight node of upper hex to other adjacent edge midpoint
-            int jcount = 3;
-            if (icount > 0) jcount = icount - 1;
-            subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
-            subCVCoords(icell,icount+4,7,idim) = edgeMidpts(jcount+4,idim);
-
-            // set fifth node to vertical edge
-            // same as first node of upper hex
-            subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+numNodesPerCell,idim);
-            subCVCoords(icell,icount+4,0,idim) = edgeMidpts(icount+numNodesPerCell,idim);
-
-            // set sixth node to adjacent face midpoint
-            // same as second node of upper hex
-            subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
-            subCVCoords(icell,icount+4,1,idim) = faceMidpts(icount,idim);
-
-            // set seventh node to barycenter
-            // same as third node of upper hex
-            subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
-            subCVCoords(icell,icount+4,2,idim) = barycenter(icell,idim);
-
-            // set eighth node to other adjacent face midpoint
-            // same as fourth node of upper hex
-            jcount = 3;
-            if (icount > 0) jcount = icount - 1;
-            subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
-            subCVCoords(icell,icount+4,3,idim) = faceMidpts(jcount,idim);
-
-          } // count loop
-
-        } // dim loop
-
-        break;
-
-      case shards::Tetrahedron<4>::key:
-
-        for (index_type idim = 0; idim < spaceDim; idim++){
-
-          // loop over the three bottom nodes
-          for (int icount = 0; icount < 3; icount++){
-
-            // set first node of bottom hex to primary cell node
-            subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
-
-            // set second node of bottom hex to adjacent edge midpoint
-            subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
-
-            // set third node of bottom hex to bottom face midpoint (number 3)
-            subCVCoords(icell,icount,2,idim) = faceMidpts(3,idim);
-
-            // set fourth node of bottom hex to other adjacent edge midpoint
-            int jcount = 2;
-            if (icount > 0) jcount = icount - 1;
-            subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
-
-            // set fifth node to vertical edge
-            subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+3,idim);
-
-            // set sixth node to adjacent face midpoint
-            subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
-
-            // set seventh node to barycenter
-            subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
-
-            // set eighth node to other adjacent face midpoint
-            jcount = 2;
-            if (icount > 0) jcount = icount - 1;
-            subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
-
-          } //count loop
-
-            // Control volume attached to fourth node
-          // set first node of bottom hex to primary cell node
-          subCVCoords(icell,3,0,idim) = cellCoords(icell,3,idim);
-
-          // set second node of bottom hex to adjacent edge midpoint
-          subCVCoords(icell,3,1,idim) = edgeMidpts(3,idim);
-
-          // set third node of bottom hex to bottom face midpoint (number 3)
-          subCVCoords(icell,3,2,idim) = faceMidpts(2,idim);
-
-          // set fourth node of bottom hex to other adjacent edge midpoint
-          subCVCoords(icell,3,3,idim) = edgeMidpts(5,idim);
-
-          // set fifth node to vertical edge
-          subCVCoords(icell,3,4,idim) = edgeMidpts(4,idim);
-
-          // set sixth node to adjacent face midpoint
-          subCVCoords(icell,3,5,idim) = faceMidpts(0,idim);
-
-          // set seventh node to barycenter
-          subCVCoords(icell,3,6,idim) = barycenter(icell,idim);
-
-          // set eighth node to other adjacent face midpoint
-          subCVCoords(icell,3,7,idim) = faceMidpts(1,idim);
-
-        } // dim loop
-
-        break;
-
-      default:
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                      ">>> ERROR (getSubCVCoords: invalid cell topology.");
-      } // cell key
-
-    } // cell loop
-
-  } // getSubCVCoords
-
-  template<class Scalar>
-  template<class ArrayCent, class ArrayCellCoord>
-  void CellTools<Scalar>::getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords)
-  {
-    // get array dimensions
-    index_type numCells        = static_cast<index_type>(cellCoords.dimension(0));
-    index_type numVertsPerCell = static_cast<index_type>(cellCoords.dimension(1));
-    index_type spaceDim        = static_cast<index_type>(cellCoords.dimension(2));
-
-    if (spaceDim == 2)
-      {
-        // Method for general polygons
-        for (index_type icell = 0; icell < numCells; icell++){
-
-          FieldContainer<Scalar> cell_centroid(spaceDim);
-          Scalar area = 0;
-
-          for (index_type inode = 0; inode < numVertsPerCell; inode++){
-
-            index_type jnode = inode + 1;
-            if (jnode >= numVertsPerCell) {
-              jnode = 0;
-            }
-
-            Scalar area_mult = cellCoords(icell,inode,0)*cellCoords(icell,jnode,1)
-              - cellCoords(icell,jnode,0)*cellCoords(icell,inode,1);
-            cell_centroid(0) += (cellCoords(icell,inode,0) + cellCoords(icell,jnode,0))*area_mult;
-            cell_centroid(1) += (cellCoords(icell,inode,1) + cellCoords(icell,jnode,1))*area_mult;
-
-            area += 0.5*area_mult;
-          }
-
-          barycenter(icell,0) = cell_centroid(0)/(6.0*area);
-          barycenter(icell,1) = cell_centroid(1)/(6.0*area);
+  namespace FunctorCellTools {
+
+    template<typename centerViewType, typename vertViewType>
+    KOKKOS_INLINE_FUNCTION
+    void getBaryCenter( /**/  centerViewType center,
+                        const vertViewType verts) {
+      // the enumeration already assumes the ordering of vertices (circling around the polygon)
+      const auto nvert = verts.dimension(0);
+      const auto dim   = verts.dimension(1);
+      
+      switch (dim) {
+      case 2: {
+        center(0) = 0;
+        center(1) = 0;
+        typename centerViewType::value_type area = 0;
+        for (auto i=0;i<nvert;++i) {
+          const auto j = (i + 1)%nvert;
+          const auto scale = verts(i,0)*verts(j,1) - verts(j,0)*verts(i,1);
+          center(0) += (verts(i,0) + verts(j,0))*scale;
+          center(1) += (verts(i,1) + verts(j,1))*scale;
+          area += 0.5*scale;
         }
-
+        center(0) /= (6.0*area);
+        center(1) /= (6.0*area);
+        break;
       }
-    else
-      {
+      case 3: {
         // This method works fine for simplices, but for other 3-d shapes
         // is not precisely accurate. Could replace with approximate integration
         // perhaps.
-        for (index_type icell = 0; icell < numCells; icell++){
+        for (auto j=0;j<dim;++j) {
+          center(j) = 0;
+          for (auto i=0;i<nvert;++i) 
+            center(j) += verts(i,j);
+          center(j) /= nvert;
+        }
+        break;
+      }
+      }
+    }
+    
+    template<typename midPointViewType, typename nodeMapViewType, typename vertViewType>
+    KOKKOS_INLINE_FUNCTION      
+    void getMidPoints( /**/  midPointViewType midpts,
+                       const nodeMapViewType map,
+                       const vertViewType verts) {
+      const auto npts = map.dimension(0);
+      const auto dim  = verts.dimension(1);
+      
+      for (auto i=0;i<npts;++i) {
+        // first entry is the number of subcell vertices
+        const auto nvert_per_subcell = map(i, 0);
+        for (auto j=0;j<dim;++j) {
+          midpts(i,j) = 0;
+          for (auto k=1;k<=nvert_per_subcell;++k)
+            midpts(i,j) += verts(map(i,k),j);
+          midpts(i,j) /= nvert_per_subcell;
+        }
+      }
+    }
 
-          FieldContainer<Scalar> cell_centroid(spaceDim);
+    template<typename subcvCoordViewType,
+             typename cellCoordViewType,
+             typename mapViewType>
+    struct F_getSubcvCoords_Polygon2D {
+      /**/  subcvCoordViewType _subcvCoords;
+      const cellCoordViewType  _cellCoords;
+      const mapViewType        _edgeMap;
+      
+      KOKKOS_INLINE_FUNCTION
+      F_getSubcvCoords_Polygon2D( subcvCoordViewType subcvCoords_,
+                                  cellCoordViewType  cellCoords_,
+                                  mapViewType edgeMap_ )
+        : _subcvCoords(subcvCoords_), _cellCoords(cellCoords_), _edgeMap(edgeMap_) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {
+        // ** vertices of cell (P,D)
+        const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
+                                                   Kokkos::ALL(), Kokkos::ALL() );
+        const auto nvert = verts.dimension(0);
+        const auto dim   = verts.dimension(1);
 
-          for (index_type inode = 0; inode < numVertsPerCell; inode++){
-            for (index_type idim = 0; idim < spaceDim; idim++){
-              cell_centroid(idim) += cellCoords(icell,inode,idim)/numVertsPerCell;
-            }
-          }
-          for (index_type idim = 0; idim < spaceDim; idim++){
-            barycenter(icell,idim) = cell_centroid(idim);
+        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
+                                                Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        // ** work space for barycenter and midpoints on edges
+        typedef typename subcvCoordViewType::value_type value_type;
+        value_type buf_center[2], buf_midpts[4*2];
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 2);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> midpts(buf_midpts, 4, 2);
+
+        getBaryCenter(center, verts);
+        getMidPoints(midpts, _edgeMap, verts);
+
+        for (auto i=0;i<nvert;++i) {
+          for (auto j=0;j<dim;++j) {
+            // control volume is always quad
+            cvCoords(i, 0, j) = verts(i, j);
+            cvCoords(i, 1, j) = midpts(i, j);
+            cvCoords(i, 2, j) = center(j);
+            cvCoords(i, 3, j) = midpts((i+nvert-1)%nvert, j);
           }
         }
       }
+    };
 
-  } 
+    template<typename subcvCoordViewType,
+             typename cellCoordViewType,
+             typename mapViewType>
+    struct F_getSubcvCoords_Hexahedron {
+      /**/  subcvCoordViewType _subcvCoords;
+      const cellCoordViewType  _cellCoords;
+      const mapViewType        _edgeMap, _faceMap;
+      
+      KOKKOS_INLINE_FUNCTION
+      F_getSubcvCoords_Hexahedron( subcvCoordViewType subcvCoords_,
+                                   cellCoordViewType  cellCoords_,
+                                   mapViewType edgeMap_,
+                                   mapViewType faceMap_ )
+        : _subcvCoords(subcvCoords_), _cellCoords(cellCoords_), _edgeMap(edgeMap_), _faceMap(faceMap_) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {
+        // ** vertices of cell (P,D)
+        const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
+                                                   Kokkos::ALL(), Kokkos::ALL() );
+        //const auto nvert = verts.dimension(0);
+        const auto dim   = verts.dimension(1);
+
+        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
+                                                Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        // ** work space for barycenter and midpoints on edges
+        typedef typename subcvCoordViewType::value_type value_type;
+        value_type buf_center[3], buf_edge_midpts[12*3], buf_face_midpts[6*3];
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts, 12, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  6, 3);
+
+        getBaryCenter(center, verts);
+        getMidPoints(edge_midpts, _edgeMap, verts);
+        getMidPoints(face_midpts, _faceMap, verts);
+
+        for (auto i=0;i<4;++i) {
+          const auto ii = (i+4-1)%4;
+          for (auto j=0;j<dim;++j) {
+            
+            // set first node of bottom hex to primary cell node
+            // and fifth node of upper hex
+            cvCoords(i,  0,j) = verts(i,  j);
+            cvCoords(i+4,4,j) = verts(i+4,j);
+
+            // set second node of bottom hex to adjacent edge midpoint
+            // and sixth node of upper hex
+            cvCoords(i,  1,j) = edge_midpts(i,  j);
+            cvCoords(i+4,5,j) = edge_midpts(i+4,j);
+
+            // set third node of bottom hex to bottom face midpoint (number 4)
+            // and seventh node of upper hex to top face midpoint
+            cvCoords(i,  2,j) = face_midpts(4,j);
+            cvCoords(i+4,6,j) = face_midpts(5,j);
+
+            // set fourth node of bottom hex to other adjacent edge midpoint
+            // and eight node of upper hex to other adjacent edge midpoint
+            cvCoords(i,  3,j) = edge_midpts(ii,  j);
+            cvCoords(i+4,7,j) = edge_midpts(ii+4,j);
+
+            // set fifth node to vertical edge
+            // same as first node of upper hex
+            cvCoords(i,  4,j) = edge_midpts(i+8,j);
+            cvCoords(i+4,0,j) = edge_midpts(i+8,j);
+
+            // set sixth node to adjacent face midpoint
+            // same as second node of upper hex
+            cvCoords(i,  5,j) = face_midpts(i,j);
+            cvCoords(i+4,1,j) = face_midpts(i,j);
+
+            // set seventh node to barycenter
+            // same as third node of upper hex
+            cvCoords(i,  6,j) = center(j);
+            cvCoords(i+4,2,j) = center(j);
+
+            // set eighth node to other adjacent face midpoint
+            // same as fourth node of upper hex
+            cvCoords(i,  7,j) = face_midpts(ii,j);
+            cvCoords(i+4,3,j) = face_midpts(ii,j);
+          } 
+        } 
+      }
+    };
+
+
+    template<typename subcvCoordViewType,
+             typename cellCoordViewType,
+             typename mapViewType>
+    struct F_getSubcvCoords_Tetrahedron {
+      /**/  subcvCoordViewType _subcvCoords;
+      const cellCoordViewType  _cellCoords;
+      const mapViewType        _edgeMap, _faceMap;
+      
+      KOKKOS_INLINE_FUNCTION
+      F_getSubcvCoords_Tetrahedron( subcvCoordViewType subcvCoords_,
+                                    cellCoordViewType  cellCoords_,
+                                    mapViewType edgeMap_,
+                                    mapViewType faceMap_ )
+        : _subcvCoords(subcvCoords_), _cellCoords(cellCoords_), _edgeMap(edgeMap_), _faceMap(faceMap_) {}
+      
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {
+        // ** vertices of cell (P,D)
+        const auto verts = Kokkos::subdynrankview( _cellCoords, cell, 
+                                                   Kokkos::ALL(), Kokkos::ALL() );
+        //const auto nvert = verts.dimension(0);
+        const auto dim   = verts.dimension(1);
+
+        // ** control volume coords (N,P,D), here N corresponds to cell vertices
+        auto cvCoords = Kokkos::subdynrankview( _subcvCoords, cell, 
+                                                Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() );
+
+        // ** work space for barycenter and midpoints on edges
+        typedef typename subcvCoordViewType::value_type value_type;
+        value_type buf_center[3], buf_edge_midpts[6*3], buf_face_midpts[4*3];
+        Kokkos::View<value_type*,Kokkos::Impl::ActiveExecutionMemorySpace> center(buf_center, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> edge_midpts(buf_edge_midpts,  6, 3);
+        Kokkos::View<value_type**,Kokkos::Impl::ActiveExecutionMemorySpace> face_midpts(buf_face_midpts,  4, 3);
+
+        getBaryCenter(center, verts);
+        getMidPoints(edge_midpts, _edgeMap, verts);
+        getMidPoints(face_midpts, _faceMap, verts);
+
+        for (auto i=0;i<3;++i) {
+          const auto ii = (i+3-1)%3;
+          for (auto j=0;j<dim;++j) {
+            // set first node of bottom hex to primary cell node
+            cvCoords(i,0,j) = verts(i,j);
+
+            // set second node of bottom hex to adjacent edge midpoint
+            cvCoords(i,1,j) = edge_midpts(i,j);
+
+            // set third node of bottom hex to bottom face midpoint (number 3)
+            cvCoords(i,2,j) = face_midpts(3,j);
+
+            // set fourth node of bottom hex to other adjacent edge midpoint
+            cvCoords(i,3,j) = edge_midpts(ii,j);
+
+            // set fifth node to vertical edge
+            cvCoords(i,4,j) = edge_midpts(i+3,j);
+
+            // set sixth node to adjacent face midpoint
+            cvCoords(i,5,j) = face_midpts(i,j);
+
+            // set seventh node to barycenter
+            cvCoords(i,6,j) = center(j);
+
+            // set eighth node to other adjacent face midpoint
+            cvCoords(i,7,j) = face_midpts(ii,j);
+          }
+        }
+
+        for (auto j=0;j<dim;++j) {
+          // Control volume attached to fourth node
+          // set first node of bottom hex to primary cell node
+          cvCoords(3,0,j) = verts(3,j);
+
+          // set second node of bottom hex to adjacent edge midpoint
+          cvCoords(3,1,j) = edge_midpts(3,j);
+
+          // set third node of bottom hex to bottom face midpoint (number 3)
+          cvCoords(3,2,j) = face_midpts(2,j);
+
+          // set fourth node of bottom hex to other adjacent edge midpoint
+          cvCoords(3,3,j) = edge_midpts(5,j);
+
+          // set fifth node to vertical edge
+          cvCoords(3,4,j) = edge_midpts(4,j);
+
+          // set sixth node to adjacent face midpoint
+          cvCoords(3,5,j) = face_midpts(0,j);
+
+          // set seventh node to barycenter
+          cvCoords(3,6,j) = center(j);
+
+          // set eighth node to other adjacent face midpoint
+          cvCoords(3,7,j) = face_midpts(1,j);
+        }
+      }
+    };
+
+  }
+  
+  template<typename SpT>
+  template<typename subcvCoordValueType, class ...subcvCoordProperties,
+           typename cellCoordValueType,  class ...cellCoordProperties>
+  void
+  CellTools<SpT>::
+  getSubcvCoords( /**/  Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoords,
+                  const Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoords,
+                  const shards::CellTopology primaryCell ) {
+#ifdef HAVE_INTREPID2_DEBUG
+    INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(primaryCell), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): the primary cell must have a reference cell." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(1) != primaryCell.getVertexCount(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(1) does not match to # of vertices of the cell." );
+
+    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(2) != primaryCell.getDimension(), std::invalid_argument,
+                                  ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(2) does not match to the dimension of the cell." );
+#endif
+
+    // get array dimensions
+    const auto numCells = cellCoords.dimension(0);
+    //const auto numVerts = cellCoords.dimension(1);
+    const auto spaceDim = cellCoords.dimension(2);
+
+    // construct edge and face map for the cell type
+    const auto numEdge = primaryCell.getSubcellCount(1);
+    Kokkos::View<ordinal_type**,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
+    for (auto i=0;i<numEdge;++i) {
+      edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
+      for (auto j=0;j<edgeMapHost(i,0);++j)
+        edgeMapHost(i,j+1) = primaryCell.getNodeMap(1, i, j);
+    }
+
+    const auto numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
+    Kokkos::View<ordinal_type**,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
+    for (auto i=0;i<numFace;++i) {
+      faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
+      for (auto j=0;j<faceMapHost(i,0);++j)
+        faceMapHost(i,j+1) = primaryCell.getNodeMap(2, i, j);
+    }
+
+    // create mirror to device
+    auto edgeMap = Kokkos::create_mirror_view(typename SpT::memory_space(), edgeMapHost);
+    auto faceMap = Kokkos::create_mirror_view(typename SpT::memory_space(), faceMapHost);
+
+    // parallel run
+    typedef Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoordViewType;
+    typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;
+    typedef Kokkos::View<ordinal_type**,SpT>                                 mapViewType;
+
+    typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+    const auto loopSize = numCells;
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+    switch (primaryCell.getKey()) {
+    case shards::Triangle<3>::key:
+    case shards::Quadrilateral<4>::key: {
+      // 2D polygon
+      typedef FunctorCellTools::F_getSubcvCoords_Polygon2D<subcvCoordViewType,cellCoordViewType,mapViewType> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(subcvCoords, cellCoords, edgeMap) );
+      break;
+    }
+    case shards::Hexahedron<8>::key: {
+      typedef FunctorCellTools::F_getSubcvCoords_Hexahedron<subcvCoordViewType,cellCoordViewType,mapViewType> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(subcvCoords, cellCoords, edgeMap, faceMap) );
+      break;
+    }
+    case shards::Tetrahedron<4>::key: {
+      typedef FunctorCellTools::F_getSubcvCoords_Tetrahedron<subcvCoordViewType,cellCoordViewType,mapViewType> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(subcvCoords, cellCoords, edgeMap, faceMap) );
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>> ERROR (Intrepid2::CellTools::getSubcvCoords: the give cell topology is not supported.");
+    }
+    }
+  }
 }
 
 #endif

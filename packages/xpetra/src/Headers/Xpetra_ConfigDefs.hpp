@@ -128,6 +128,17 @@ namespace Xpetra {
 #define XPETRA_MONITOR(funcName)
 #endif
 
+// Special macro for exception testing
+// XPETRA_TEST_FOR_EXCEPTION is only active if Xpetra is configured with Xpetra_ENABLE_DEBUG:BOOL=ON
+// If you want an exception test both in the release and debug version of Xpetra you still can use directly
+// TEUCHOS_TEST_FOR_EXCEPTION
+#ifdef HAVE_XPETRA_DEBUG
+#define XPETRA_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
+  TEUCHOS_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg);
+#else
+#define XPETRA_TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg)
+#endif
+
 #include <functional>
 
 // mem management

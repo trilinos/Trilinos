@@ -35,6 +35,11 @@
 #include <mpi.h>                        // for MPI_Comm_rank, MPI_Finalize, etc
 #include <stk_util/stk_config.h>        // for STK_HAS_MPI
 #include <stk_unit_test_utils/ParallelGtestOutput.hpp>
+#include <Kokkos_Core.hpp>
+
+#ifdef KOKKOS_HAVE_OPENMP
+#include <Kokkos_OpenMP.hpp>
+#endif
 
 int gl_argc = 0;
 char** gl_argv = 0;
@@ -48,6 +53,16 @@ int main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
 #endif
 
+#ifdef KOKKOS_HAVE_OPENMP
+    Kokkos::InitArguments init_args;
+    char *num_threads_string = std::getenv("OMP_NUM_THREADS");
+    init_args.num_threads = std::atoi(num_threads_string);
+    Kokkos::initialize(init_args);
+    Kokkos::OpenMP::print_configuration( std::cout );
+#else
+    Kokkos::initialize();
+#endif
+
     testing::InitGoogleTest(&argc, argv);
 
     gl_argc = argc;
@@ -56,6 +71,8 @@ int main(int argc, char **argv)
     stk::unit_test_util::create_parallel_output(procId);
 
     int returnVal = RUN_ALL_TESTS();
+
+    Kokkos::finalize_all();
 
 #if defined(STK_HAS_MPI)
     MPI_Finalize();
