@@ -97,6 +97,12 @@ SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_SuperLU OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
+# Disable Zoltan usage of 64-bit Scotch and ParMETIS because we can't
+# selectively disable the failing tests due Zoltan CMakeLists.txt files not
+# correclty usign the ADDED_TEST_NAME_OUT argument (see Trilinos #475).
+SET(Zoltan_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+SET(Zoltan_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+
 #
 # D) Set up the paths to the TPL includes and libs
 #
