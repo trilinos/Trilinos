@@ -275,12 +275,12 @@ public:
   {
     Problem<Adapter>::generateSourceParameters(pl, inputParams);
 
-		// special case - read unvalidated algorithm parameter and check to see what we need
-		// algorithm is a parameter which we will validate but it also determines other parameters that may be included
-		const Teuchos::ParameterEntry * pe = inputParams.getEntryPtr("algorithm");
-		if (pe) {
-			std::string algorithmName;
-		  algorithmName = pe->getValue<std::string>(&algorithmName);
+    // special case - read unvalidated algorithm parameter and check to see what we need
+    // algorithm is a parameter which we will validate but it also determines other parameters that may be included
+    const Teuchos::ParameterEntry * pe = inputParams.getEntryPtr("algorithm");
+    if (pe) {
+      std::string algorithmName;
+      algorithmName = pe->getValue<std::string>(&algorithmName);
 
       // load the algorithm parameters which are handled in a spacial way
       // we saved our initial passed in value and will use it now (without validation) to determine other dependent parameters
@@ -299,7 +299,7 @@ public:
         else if (algorithmName == "forTestingOnly") {
           AlgForTestingOnly<Adapter>::static_generateSourceParameters(pl, inputParams);
         }
-			}
+      }
     }
 
     // This set up does not use tuple because we didn't have constructors that took that many elements
