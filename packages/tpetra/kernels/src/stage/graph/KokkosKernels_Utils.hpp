@@ -1871,7 +1871,7 @@ void transpose_graph(
   if (suggested_team_size == -1)
     Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
   else
-    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+    Kokkos::parallel_for(  tfp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
 
   MyExecSpace::fence();
 
