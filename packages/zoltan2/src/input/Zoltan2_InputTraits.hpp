@@ -202,18 +202,37 @@ struct InputTraits {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-// This combination of macros is used to define a single line STATIC_ASSERT_TYPES for each InputTraits with custom template types
-#define ISSAME(s,type) std::is_same< s, type >::value
-#define STYPES(s) ( ISSAME(s,float) || ISSAME(s,double) || ISSAME(s,int) )
-#define LTYPES(l) ( ISSAME(l,int) || ISSAME(l,long) || ISSAME(l,long long) || ISSAME(l,ssize_t) )
-#define GTYPES(g) ( ISSAME(g,int) || ISSAME(g,long) || ISSAME(g,long long) || ISSAME(g,ssize_t) || ISSAME(g,unsigned int) || ISSAME(g,unsigned long) || ISSAME(g,unsigned long long) || ISSAME(g,size_t) )
-#define SERROR "Invalid scalar type. It must be float, double, or int."
-#define LERROR "Invalid local ordinal type. It must be int, long, long long, or ssize_t."
-#define GERROR "Invalid global ordinal type. It must be int, long, long long, ssize_t, unsigned int, unsigned long long, size_t."
-#ifdef INVERT_STATIC_ASSERT_FOR_UNIT_TESTING
-  #define STATIC_ASSERT_TYPES static_assert( ( !STYPES(scalar_t) || !LTYPES(lno_t) || !GTYPES(gno_t) ), "Inverted unit test for InputTraits was supposed to fail but did not." );
+// This combination of macros is used to define a single line
+// Z2_STATIC_ASSERT_TYPES for each InputTraits with custom template types
+#define Z2_ISSAME(s,type) (std::is_same< s, type >::value)
+
+#define Z2_STYPES(s) ( Z2_ISSAME(s,float) || \
+  Z2_ISSAME(s,double) || Z2_ISSAME(s,int) )
+
+#define Z2_LTYPES(l) ( Z2_ISSAME(l,int) ||  \
+  Z2_ISSAME(l,long) || Z2_ISSAME(l,long long) || Z2_ISSAME(l,ssize_t) )
+
+#define Z2_GTYPES(g) ( Z2_ISSAME(g,int) || Z2_ISSAME(g,long) || \
+  Z2_ISSAME(g,long long) || Z2_ISSAME(g,ssize_t) || \
+  Z2_ISSAME(g,unsigned int) || Z2_ISSAME(g,unsigned long) || \
+  Z2_ISSAME(g,unsigned long long) || Z2_ISSAME(g,size_t) )
+
+#define Z2_SERROR "Invalid scalar type. It must be float, double, or int."
+
+#define Z2_LERROR "Invalid local ordinal type. It must be int, long, " \
+  "long long, or ssize_t."
+
+#define Z2_GERROR "Invalid global ordinal type. It must be int, long, " \
+  "long long, ssize_t, unsigned int, unsigned long long, size_t."
+
+#ifdef Z2_INVERT_STATIC_ASSERT_FOR_UNIT_TESTING
+  #define Z2_STATIC_ASSERT_TYPES static_assert( ( !Z2_STYPES(scalar_t) || \
+  !Z2_LTYPES(lno_t) || !Z2_GTYPES(gno_t) ), \
+  "Inverted unit test for InputTraits was supposed to fail but did not." );
 #else
-  #define STATIC_ASSERT_TYPES static_assert( STYPES(scalar_t), SERROR ); static_assert( LTYPES(lno_t), LERROR ); static_assert( GTYPES(gno_t), GERROR );
+  #define Z2_STATIC_ASSERT_TYPES static_assert( Z2_STYPES(scalar_t), \
+  Z2_SERROR ); static_assert( Z2_LTYPES(lno_t), Z2_LERROR ); \
+  static_assert( Z2_GTYPES(gno_t), Z2_GERROR );
 #endif
 
 template <typename Scalar,
@@ -228,7 +247,7 @@ struct InputTraits<BasicUserTypes<Scalar, LocalOrdinal, GlobalOrdinal> >
   typedef Zoltan2::default_node_t node_t;
   static inline std::string name() {return "BasicUserTypes";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -244,7 +263,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsMatrix";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -260,7 +279,7 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsMatrix";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -289,7 +308,7 @@ struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::RowMatrix";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -305,7 +324,7 @@ struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::RowMatrix";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename LocalOrdinal,
@@ -333,7 +352,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::CrsGraph";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename LocalOrdinal,
@@ -348,7 +367,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::CrsGraph";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -377,7 +396,7 @@ struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::Vector";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
  /*! \todo A Tpetra::Vector is a Tpetra::MultiVector - can we just
@@ -396,7 +415,7 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::Vector";}
 
-  STATIC_ASSERT_TYPES  // validate the types
+  Z2_STATIC_ASSERT_TYPES  // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA
@@ -425,7 +444,7 @@ struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Xpetra::MultiVector";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 template <typename Scalar,
@@ -441,7 +460,7 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef Node          node_t;
   static inline std::string name() {return "Tpetra::MultiVector";}
 
-  STATIC_ASSERT_TYPES // validate the types
+  Z2_STATIC_ASSERT_TYPES // validate the types
 };
 
 #ifdef HAVE_ZOLTAN2_EPETRA

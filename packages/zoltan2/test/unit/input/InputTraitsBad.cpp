@@ -45,14 +45,16 @@
 //
 // Test for Zoltan2::InputTraitsBad
 
-#define INVERT_STATIC_ASSERT_FOR_UNIT_TESTING  // This should only be used for this test - varifies that bad forms would not compile
+// This should only be used for this test - verifies bad forms do not compile
+#define Z2_INVERT_STATIC_ASSERT_FOR_UNIT_TESTING
 
 #include <Zoltan2_InputTraits.hpp>
 
 using Zoltan2::InputTraits;
 
 #define BEGIN_CHECK   if( InputTraits<
-#define END_CHECK     >::name() == "unused string" ) { std::cout << "Unused - Just make sure it compiles." << std::endl; }
+#define END_CHECK     >::name() == "unused string" ) \
+  { std::cout << "Unused - Just make sure it compiles." << std::endl; }
 
 template< class A, class B, class C >
 class SomeBadType {
@@ -61,10 +63,12 @@ public: SomeBadType() {}
 
 int main(int argc, char *argv[])
 {
-  // makes a general list of 'bad' types - generally just check these all would fail - the #define above inverts the status of the static_asserts
+  // makes a general list of 'bad' types - generally just check these all
+  // would fail - the #define above inverts the status of the static_asserts
   // that means these should all compile but only in this test and nowhere else
 
-  // scalar ordinal (first slot) must be float, double, or int - this validates we would fail for any
+  // scalar ordinal (first slot) must be float, double, or int
+  // this validates we would fail for any
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned int, int, long>                       END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned long, int, long>                      END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<uint32_t, int, long>                           END_CHECK
@@ -73,9 +77,12 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int64_t, int, long>                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<size_t, int, long>                             END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<int>, int, long>                  END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<double>, int, long>               END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<std::complex<float>, int, long>                END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<SomeBadType<int,long, int>, int, long>         END_CHECK
 
-  // local ordinal (second slot) must always be signed - this validates that we would fail for any unsigned setting
+  // local ordinal (second slot) must always be signed
+  // this validates that we would fail for any unsigned setting
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, unsigned int, long>                     END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, unsigned long, long>                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, uint32_t, long>                         END_CHECK
@@ -85,20 +92,25 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, float, long>                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, double, long>                           END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, std::complex<int>, long>                END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<float, std::complex<float>, long>              END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<float, std::complex<double>, long>             END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, SomeBadType<int,long, int>, long>       END_CHECK
 
-  // global ordinal (third slot) must be int, long, long long, ssize_t, unsigned int, unsigned long, unsigned long long, size_t
+  // global ordinal (third slot) must be int, long, long long, ssize_t,
+  // unsigned int, unsigned long, unsigned long long, size_t
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, std::complex<int>>                   END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, std::complex<float>>                 END_CHECK
+  BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, std::complex<double>>                END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, SomeBadType<int,long, int>>          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, float>                               END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, double>                              END_CHECK
 
-  // we also want to make sure that user typedefs will work just fine - lots of redundancy here just to make sure std::is_same is really working as we think
+  // we also want to make sure that user typedefs will work just fine
+  // lots of redundancy here  to make sure std::is_same is  working as we think
   typedef signed int user_int_t;
   typedef unsigned int user_unsigned_int_t;
   typedef float user_float_t;
   typedef double user_double_t;
-//  typedef int32_t user_int32_t; // not used because this is the only type which is valid for all 3 slots: scalar, local, or ordinal - left here for symmetry with the InputTraitsGood test
   typedef uint32_t user_uint32_t;
   typedef int64_t user_int64_t;
   typedef uint64_t user_uint64_t;
@@ -110,7 +122,7 @@ int main(int argc, char *argv[])
   typedef ssize_t user_ssize_t;
   typedef SomeBadType<int,int, int> user_some_bad_t;
 
-  // scalar ordinal (first slot) must be float, double, or int - this validates we would fail for any
+  // scalar ordinal (first slot) must be float, double, or int
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_unsigned_int_t, user_int_t, user_long_t>                                      END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_unsigned_long_t, user_int_t, user_long_t>                                     END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_uint32_t, user_int_t, user_long_t>                                            END_CHECK
@@ -126,7 +138,7 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_long_long_t, user_int_t, user_long_t>                                         END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int64_t, user_int_t, user_long_t>                                             END_CHECK
 
-  // local ordinal (second slot) must always be signed - this validates that we would fail for any unsigned setting
+  // local ordinal (second slot) must always be signed 
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_int_t, user_long_t>                                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_long_t, user_long_t>                                   END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_uint32_t, user_long_t>                                          END_CHECK
@@ -139,14 +151,16 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, SomeBadType<user_int_t,user_long_t, user_int_t>, user_long_t>        END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, size_t, user_long_t>        END_CHECK
 
-  // global ordinal (third slot) must be int, long, long long, ssize_t, unsigned int, unsigned long, unsigned long long, size_t
+  // global ordinal (third slot) must be int, long, long long, ssize_t,
+  // unsigned int, unsigned long, unsigned long long, size_t
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int_t, user_int_t, std::complex<user_int_t>>                                  END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int_t, user_int_t, SomeBadType<user_int_t,user_long_t, user_int_t>>           END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int_t, user_int_t, user_float_t>                                              END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int_t, user_int_t, user_double_t>                                             END_CHECK
 
 
-  // some more checks that should all fail - this doesn't check all combinations but just tries a bunch of things on different class types
+  // some more checks that should all fail - this doesn't check all
+  // combinations but just tries a bunch of things on different class types
   BEGIN_CHECK    Zoltan2::BasicUserTypes<long, int, long long>                          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<long long, long, unsigned int>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<unsigned int, unsigned int, unsigned long>     END_CHECK
@@ -163,7 +177,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Xpetra::CrsGraph<int, double>                                          END_CHECK
 
   // set the PASS keyword
-  std::cout << "Validated bad InputTraits - The test PASSED because it compiled with the static_assert checks inverted." << std::endl;
+  std::cout << "Validated bad InputTraits - The test PASSED because it "
+    "compiled with the static_assert checks inverted." << std::endl;
   return 0;
 }
 

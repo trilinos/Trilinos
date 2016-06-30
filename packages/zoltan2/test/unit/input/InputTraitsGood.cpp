@@ -50,17 +50,20 @@
 using Zoltan2::InputTraits;
 
 #define BEGIN_CHECK   if( InputTraits<
-#define END_CHECK     >::name() == "unused string" ) { std::cout << "Unused - Just make sure it compiles." << std::endl; }
+#define END_CHECK     >::name() == "unused string" ) \
+  { std::cout << "Unused - Just make sure it compiles." << std::endl; }
 
 int main(int argc, char *argv[])
 {
-  // scalar ordinal (first slot) must be float, double, or int - this validates we would fail for any
+  // scalar ordinal (first slot) must be float, double, or int
+  // this validates they all work
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, signed int, long>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<double, long>                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int, int, long>                          END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<int32_t, int, long>                      END_CHECK
 
-  // local ordinal (second slot) must always be signed - this validates that we would fail for any unsigned setting
+  // local ordinal (second slot) must always be signed
+  // this validates they all work
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, signed int, long>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, signed long, long>                END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, signed long long, long>           END_CHECK
@@ -68,7 +71,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int32_t, long>                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int64_t, long>                    END_CHECK
 
-  // global ordinal (third slot) must be int, long, long long, ssize_t, unsigned int, unsigned long, unsigned long long, size_t
+  // global ordinal (third slot) must be int, long, long long, ssize_t,
+  // unsigned int, unsigned long, unsigned long long, size_t
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int, int>                         END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int, long>                        END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int, long long>                   END_CHECK
@@ -82,7 +86,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int, uint32_t>                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<float, int, uint64_t>                    END_CHECK
 
-  // we also want to make sure that user typedefs will work just fine - lots of redundancy here just to make sure std::is_same is really working as we think
+  // we also want to make sure that user typedefs will work just fine
+  // lots of redundancy here  to make sure std::is_same is working as we think
   typedef signed int user_int_t;
   typedef unsigned int user_unsigned_int_t;
   typedef float user_float_t;
@@ -98,13 +103,13 @@ int main(int argc, char *argv[])
   typedef size_t user_size_t;
   typedef ssize_t user_ssize_t;
 
-  // scalar ordinal (first slot) must be float, double, or int - this validates we would fail for any
+  // scalar ordinal (first slot) must be float, double, or int
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_long_t>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_double_t, user_long_t>                            END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int_t, user_int_t, user_long_t>                   END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int32_t, user_int_t, user_long_t>                 END_CHECK
 
-  // local ordinal (second slot) must always be signed - this validates that we would fail for any unsigned setting
+  // local ordinal (second slot) must always be signed
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_long_t>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_long_t, user_long_t>                END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_long_long_t, user_long_t>           END_CHECK
@@ -112,7 +117,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int32_t, user_long_t>               END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int64_t, user_long_t>               END_CHECK
 
-  // global ordinal (third slot) must be int, long, long long, ssize_t, unsigned int, unsigned long, unsigned long long, size_t
+  // global ordinal (third slot) must be int, long, long long, ssize_t,
+  // unsigned int, unsigned long, unsigned long long, size_t
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_int_t>                  END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_long_t>                 END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_long_long_t>            END_CHECK
@@ -127,7 +133,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_int_t, user_uint64_t>               END_CHECK
 
   // this section takes each specific type and validates a few combinations
-  // note that some types may pass only two templaye parameters, not three - so it can be scalar + local + global or it can be just local + global.
+  // note that some types may pass only two template parameters, not three,
+  // so it can be scalar + local + global or it can be just local + global.
 
   // validate Zoltan2::BasicUserTypes
   BEGIN_CHECK    Zoltan2::BasicUserTypes<double, signed int, long long>           END_CHECK
@@ -207,7 +214,8 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Tpetra::CrsGraph<ssize_t, unsigned int>                          END_CHECK
 
   // set the PASS keyword
-  std::cout << "Validated InputTraits - The test PASSED because it compiled" << std::endl;
+  std::cout << "Validated InputTraits - The test PASSED "
+    "because it compiled" << std::endl;
   return 0;
 }
 
