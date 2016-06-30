@@ -175,6 +175,28 @@ SET(BoostLib_INCLUDE_DIRS "${Boost_ROOT}/include"
 SET(BoostLib_LIBRARY_DIRS "${Boost_ROOT}/lib"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 
+# Scotch (SEMS only provides an MPI version)
+IF (TPL_ENABLE_MPI)
+  SET(TPL_ENABLE_Scotch ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
+  #PRINT_VAR(Scotch_ROOT)
+  SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+ENDIF()
+
+# ParMETIS (SEMS only provides an MPI version)
+IF (TPL_ENABLE_MPI)
+  SET(TPL_ENABLE_ParMETIS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  SEMS_SELECT_TPL_ROOT_DIR(PARMETIS ParMETIS_ROOT)
+  #PRINT_VAR(ParMETIS_ROOT)
+  SET(TPL_ParMETIS_INCLUDE_DIRS "${ParMETIS_ROOT}/include"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+  SET(ParMETIS_LIBRARY_DIRS "${ParMETIS_ROOT}/lib}"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+ENDIF()
+
 # Zlib
 SET(TPL_ENABLE_Zlib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(ZLIB Zlib_ROOT)
@@ -212,4 +234,4 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 # Test disables
 #
 
-# ToDo: Enter them as needed!
+# ToDo: Add test disables when needed!
