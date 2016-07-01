@@ -51,11 +51,10 @@ namespace Zoltan2{
 ////////////////////////////////////////////////////////////////////
 // Parameter-related namespace methods 
 
-// This is a relic function which will be deleted once this conversion completes
-void RELIC_getOldFormatParameterListAllTogether(Teuchos::ParameterList &pList);
+void createAllParameters(Teuchos::ParameterList &pList);
 
-void setValidatorsInList(
-   const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut, const Teuchos::ParameterList &plSource);
+void createValidatorList(
+   const Teuchos::ParameterList &plIn, Teuchos::ParameterList &plOut);
 
 void printListDocumentation( const Teuchos::ParameterList &pl, std::ostream &os,
   std::string listNames=std::string(""));

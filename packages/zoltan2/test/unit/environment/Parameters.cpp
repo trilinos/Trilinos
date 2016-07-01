@@ -52,43 +52,14 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ParameterEntryValidator.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Zoltan2_TestHelpers.hpp>
-#include <Zoltan2_VerySimpleVectorAdapter.hpp>
-#include <Zoltan2_MappingProblem.hpp>
-#include <Zoltan2_BasicIdentifierAdapter.hpp>
 
 typedef Teuchos::Array<int> rangeList_t;
-
-Teuchos::ParameterList runTest(Teuchos::ParameterList inputParams)
-{
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-  // a test problem pulled out of block.cpp - later we will need to make all types and test them here
-  typedef Tpetra::Map<> Map_t;
-  typedef Map_t::local_ordinal_type localId_t;
-  typedef Map_t::global_ordinal_type globalId_t;
-  typedef double scalar_t;
-  size_t localCount = 40;
-  globalId_t *globalIds = new globalId_t [localCount];
-  globalId_t offset = 0;
-  for (size_t i=0; i < localCount; i++)
-    globalIds[i] = offset++;
-  typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
-  typedef Zoltan2::BasicIdentifierAdapter<myTypes> inputAdapter_t;
-
-  std::vector<const scalar_t *> noWeights;
-  std::vector<int> noStrides;
-
-  inputAdapter_t ia(localCount, globalIds, noWeights, noStrides);
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &inputParams, comm);
-  return problem.getEnvironment()->getParameters();
-}
 
 int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank();
 
@@ -96,10 +67,15 @@ int main(int argc, char *argv[])
     return 0;
 
   // Set a few parameters, and then validate them.
+
+  Teuchos::ParameterList validParameters;
+
   Teuchos::ParameterList myParams("testParameterList");
+
   myParams.set("debug_level", "detailed_status");        
   myParams.set("debug_procs", "all");   
   myParams.set("debug_output_stream", "std::cout");
+
   myParams.set("timer_output_file", "appPerformance.txt");
 
   // Normally an application would not call this.  The
@@ -107,9 +83,11 @@ int main(int argc, char *argv[])
   // Since debug_procs is an IntegerRangeList,
   // this call will convert it to a Teuchos::Array that uses
   // a special flag to indicate "all" or "none".
-  Teuchos::ParameterList outputParams;
+
   try{
-    outputParams = runTest(myParams);
+    Zoltan2::createValidatorList(myParams, validParameters);
+    myParams.validateParametersAndSetDefaults(validParameters);
+    Zoltan2::Environment::convertStringToInt(myParams);
   }
   catch(std::exception &e){
     std::cerr << "Validate parameters generated an error:" << std::endl;
@@ -118,13 +96,13 @@ int main(int argc, char *argv[])
     return 1;
   }
 
+  validParameters = Teuchos::ParameterList();
+
   std::cout << std::endl;
   std::cout << "A few parameters after validation: " << std::endl;
-  std::cout << outputParams << std::endl;
+  std::cout << myParams << std::endl;
 
-  // MDM - Note that this was a reference and it will crash for me when a1 is set again later
-  // Didn't work out the pipeline yet but switching to a non reference seems to resolve it
-  rangeList_t a1 = outputParams.get<rangeList_t>("debug_procs");
+  rangeList_t &a1 = myParams.get<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
   Zoltan2::printIntegralRangeList(std::cout, *a1);
   std::cout << std::endl;
@@ -136,7 +114,8 @@ int main(int argc, char *argv[])
   faultyParams.set("debug_procs", "not-even-remotely-an-integer-range");
   bool failed = false;
   try{
-    outputParams = runTest(faultyParams);
+    Zoltan2::createValidatorList(faultyParams, validParameters);
+    faultyParams.validateParametersAndSetDefaults(validParameters);
   }
   catch(std::exception &e){
     std::cout << std::endl;
@@ -144,6 +123,8 @@ int main(int argc, char *argv[])
     std::cout << e.what() << std::endl;
     failed = true;
   }
+
+  validParameters = Teuchos::ParameterList();
 
   if (!failed){
     std::cerr << "Bad parameter was not detected in parameter list." << std::endl;
@@ -153,8 +134,6 @@ int main(int argc, char *argv[])
   // Now set every parameter to a reasonable value
 
   Teuchos::ParameterList all("setAllParametersList");
-
-
   all.set("debug_level", "basic_status");
 
   all.set("debug_procs", "1,2,5-10,2");
@@ -198,8 +177,10 @@ int main(int argc, char *argv[])
   all.set("symmetrize_input", "no");
   all.set("subset_graph", "false");
 
-  try {
-    outputParams = runTest(all);
+  try{
+    Zoltan2::createValidatorList(all, validParameters);
+    all.validateParametersAndSetDefaults(validParameters);
+    Zoltan2::Environment::convertStringToInt(all);
   }
   catch(std::exception &e){
     std::cerr << "Validate parameters generated an error:" << std::endl;
@@ -210,7 +191,7 @@ int main(int argc, char *argv[])
 
   std::cout << std::endl;
   std::cout << "All parameters validated and modified: ";
-  std::cout << outputParams << std::endl;
+  std::cout << all << std::endl;
 
   a1 = all.getPtr<rangeList_t>("debug_procs");
   std::cout << "debug_procs translation: ";
@@ -226,10 +207,8 @@ int main(int argc, char *argv[])
 
   std::cout << std::endl;
   std::cout << "Parameter documentation:" << std::endl;
+  Zoltan2::printListDocumentation(validParameters, std::cout, std::string()); 
 
-  // MDM - will refactor this - should probably pull the validParameters from the Problem environment
-  // Perhaps we want to do this for each test we run - eventually this needs to cover all the Problem types
-  // Zoltan2::printListDocumentation(validParameters, std::cout, std::string());
   std::cout << "PASS"  << std::endl;
   return 0;
 }

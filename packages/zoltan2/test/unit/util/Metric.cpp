@@ -102,7 +102,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
   typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
   typedef idInput_t::part_t part_t;
-//  typedef idInput_t::base_adapter_t base_adapter_t;
+  typedef idInput_t::base_adapter_t base_adapter_t;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -135,58 +135,21 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     cout << "Number of procs " << nprocs;
     cout << ", each with " << numLocalObj << " objects, part = rank." << endl;
   }
+
+  // An environment.  This is usually created by the problem.
+
+  Teuchos::ParameterList pl("test list");
+  pl.set("num_local_parts", double(numLocalParts));
   
+  RCP<const Zoltan2::Environment> env = 
+    rcp(new Zoltan2::Environment(pl, comm));
+
   // A simple identifier map.  Usually created by the model.
 
   zgno_t *myGids = new zgno_t [numLocalObj];
   for (int i=0, x=rank*numLocalObj; i < numLocalObj; i++, x++){
     myGids[i] = x;
   }
-
-  // An input adapter with random weights.  Created by the user.
-
-  std::vector<const zscalar_t *> weights;
-  std::vector<int> strides;   // default to 1
-
-  int len = numLocalObj*nWeights;
-  ArrayRCP<zscalar_t> wgtBuf;
-  zscalar_t *wgts = NULL;
-
-  if (len > 0){
-    wgts = new zscalar_t [len];
-    wgtBuf = arcp(wgts, 0, len, true);
-    for (int i=0; i < len; i++)
-      wgts[i] = (zscalar_t(rand()) / zscalar_t(RAND_MAX)) + 1.0;
-  }
-
-  for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
-    weights.push_back(wgts);
-
-   idInput_t *ia;
-
-  try{
-    ia = new idInput_t(numLocalObj, myGids, weights, strides);
-  }
-  catch (std::exception &e){
-    fail=1;
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
-
-  // An environment.  This is usually created by the problem.
-
-  Teuchos::ParameterList pl("test list");
-  pl.set("num_local_parts", double(numLocalParts));
-
-  // we need the parameters for a ParititioningProblem but have no problem in this unit test
-  // so this test should be reconsidered but for now I am generating one here
-  // this seems better than creating a special case in the Problem - such as a static handler to access these
-  Zoltan2::PartitioningProblem<idInput_t> problem( ia, &pl );
-  Teuchos::ParameterList sourceParameters;
-  problem.generateSourceParameters(sourceParameters, pl);
-
-  RCP<const Zoltan2::Environment> env =
-    rcp(new Zoltan2::Environment(pl, sourceParameters, comm));
 
   // Part sizes.  Usually supplied by the user to the Problem.
   // Then the problem supplies them to the Solution.
@@ -211,10 +174,40 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
       for (int i=0; i < numLocalParts; i++)
         psizes[i] = sizeFactor;
       sizes[dim] = arcp(psizes, 0, numLocalParts, true);
-
+      
       ids[dim] = partNums;
     }
   }
+
+  // An input adapter with random weights.  Created by the user.
+
+  std::vector<const zscalar_t *> weights;
+  std::vector<int> strides;   // default to 1
+
+  int len = numLocalObj*nWeights;
+  ArrayRCP<zscalar_t> wgtBuf;
+  zscalar_t *wgts = NULL;
+
+  if (len > 0){
+    wgts = new zscalar_t [len];
+    wgtBuf = arcp(wgts, 0, len, true);
+    for (int i=0; i < len; i++)
+      wgts[i] = (zscalar_t(rand()) / zscalar_t(RAND_MAX)) + 1.0;
+  }
+
+  for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
+    weights.push_back(wgts);
+
+  const idInput_t *ia;
+
+  try{
+    ia = new idInput_t(numLocalObj, myGids, weights, strides);
+  }
+  catch (std::exception &e){
+    fail=1;
+  }
+
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "create adapter", 1);
 
   // A solution (usually created by a problem)
 

@@ -79,34 +79,45 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
   */
-  static void static_generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
+  static void getDefaultParameters(ParameterList & pl)
   {
-    // we may eventually make this a true class hierarchy but right now algorithms don't allocate until we solve them and we want each type to contain parameters with the class
-    // so the static method allows us to put the parameters here but we have to manually call each static type in the Zoltan2_PartitioningProblem
-    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_vert_imbalance_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
-    pl.set("pulp_vert_imbalance", "1.1", "  vertex imbalance tolerance, ratio of maximum load over average load (default 1.1)");
-    pl.getEntryRCP("pulp_vert_imbalance")->setValidator(pulp_vert_imbalance_Validator);
+    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_vert_imbalance_Validator
+      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
+    pl.set("pulp_vert_imbalance", "1.1", "vertex imbalance tolerance, ratio of "
+      "maximum load over average load (default 1.1)");
+    pl.getEntryRCP("pulp_vert_imbalance")->setValidator(
+      pulp_vert_imbalance_Validator);
 
-    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_edge_imbalance_Validator = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() ); // default is DOUBLE and accept Double, Int, String
-    pl.set("pulp_edge_imbalance", "1.1", "  edge imbalance tolerance, ratio of maximum load over average load (default 1.1)");
-    pl.getEntryRCP("pulp_edge_imbalance")->setValidator(pulp_edge_imbalance_Validator);
+    RCP<Teuchos::AnyNumberParameterEntryValidator> pulp_edge_imbalance_Validator
+      = Teuchos::rcp( new Teuchos::AnyNumberParameterEntryValidator() );
+    pl.set("pulp_edge_imbalance", "1.1", "edge imbalance tolerance, ratio of "
+      "maximum load over average load (default 1.1)");
+    pl.getEntryRCP("pulp_edge_imbalance")->setValidator(
+      pulp_edge_imbalance_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > general_on_off_validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
-      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "no") );
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+      general_on_off_validator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<int>(
+          Teuchos::tuple<std::string>(
+            "true", "yes", "1", "on", "false", "no", "0", "off" ),
+          // original for did not define documentation
+          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
+          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ), "no") );
 
-    pl.set("pulp_lp_init", "false", "  perform label propagation-based initialization (default false)");
+    pl.set("pulp_lp_init", "false", "perform label propagation-based "
+      "initialization (default false)");
     pl.getEntryRCP("pulp_lp_init")->setValidator(general_on_off_validator);
 
-    pl.set("pulp_minimize_maxcut", "false", "  perform per-part max cut minimization (default false)");
-    pl.getEntryRCP("pulp_minimize_maxcut")->setValidator(general_on_off_validator);
+    pl.set("pulp_minimize_maxcut", "false", "perform per-part max cut "
+      "minimization (default false)");
+    pl.getEntryRCP("pulp_minimize_maxcut")->setValidator(
+      general_on_off_validator);
 
-    pl.set("pulp_verbose", "false", "  verbose output (default false)");
+    pl.set("pulp_verbose", "false", "verbose output (default false)");
     pl.getEntryRCP("pulp_verbose")->setValidator(general_on_off_validator);
   }
 };
+
 }
 #endif
 

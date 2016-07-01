@@ -78,13 +78,14 @@ public:
 
   /*! \brief Set up validators specific to this algorithm
     */
-  static void static_generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
+  static void getDefaultParameters(ParameterList & pl)
   {
-    // we may eventually make this a true class hierarchy but right now algorithms don't allocate until we solve them and we want each type to contain parameters with the class
-    // so the static method allows us to put the parameters here but we have to manually call each static type in the Zoltan2_PartitioningProblem
-    RCP<Teuchos::EnhancedNumberValidator<int>> forTestingOnlyFlag_Validator = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
-    pl.set("forTestingOnlyFlag", 0, "  Used only for testing; look at Zoltan2_AlgForTestingOnly for interpretations");
-    pl.getEntryRCP("forTestingOnlyFlag")->setValidator(forTestingOnlyFlag_Validator);
+    RCP<Teuchos::EnhancedNumberValidator<int>> forTestingOnlyFlag_Validator =
+      Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(0, 1000, 1, 0) );
+    pl.set("forTestingOnlyFlag", 0, "Used only for testing; look at "
+      "Zoltan2_AlgForTestingOnly for interpretations");
+    pl.getEntryRCP("forTestingOnlyFlag")->setValidator(
+      forTestingOnlyFlag_Validator);
   }
 
   void partition(const RCP<PartitioningSolution<Adapter> > &solution)

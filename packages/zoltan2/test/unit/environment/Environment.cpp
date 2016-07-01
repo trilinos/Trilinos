@@ -146,18 +146,13 @@ int main(int argc, char *argv[])
 
   myParams.set("topology", "2,6,6");
   myParams.set("randomize_input", "true");
-
-  // In the new style may make sense to test these in Parameters.cpp - only want true core Environment variables in this file
-//  myParams.set("partitioning_objective", "minimize_cut_edge_weight");
-//  myParams.set("imbalance_tolerance", 1.2);
+  myParams.set("partitioning_objective", "minimize_cut_edge_weight");
+  myParams.set("imbalance_tolerance", 1.2);
 
   Environment *env = NULL;
 
-  // in our test case we pass no additional source parameters so Environment will only build the core set and validate against those
-  // the new formatting of ParameterList has the source built up from various Problem classes, etc
-  ParameterList noSourceParameters;
   try{
-    env = new Environment(myParams, noSourceParameters, comm);
+    env = new Environment(myParams, comm);
   }
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;
@@ -248,16 +243,14 @@ int main(int argc, char *argv[])
   newParams.set("error_check_level", "debug_mode_assertions");
   newParams.set("memory_versus_speed", "speed");
   newParams.remove("memory_output_file");
+  newParams.set("imbalance_tolerance", "1.05");
+  newParams.set("algorithm", "phg");
+  newParams.set("partitioning_objective", "minimize_cut_edge_weight");
   
-  // In the new style may make better sense to test these in Parameters.cpp - only code Environmental variables in this file
-  //newParams.set("imbalance_tolerance", "1.05");
-  //newParams.set("algorithm", "phg");
-  //newParams.set("partitioning_objective", "minimize_cut_edge_weight");
-
   RCP<Environment> newEnv;
 
   try{
-    newEnv = Teuchos::rcp(new Environment(newParams, noSourceParameters, oldComm));
+    newEnv = Teuchos::rcp(new Environment(newParams, oldComm));
   }
   catch(std::exception &e){
     std::cerr << e.what() << std::endl;

@@ -457,19 +457,12 @@ void EvaluatePartition<Adapter>::sharedConstructor(
     problemComm = comm;
   }
 
-<<<<<<< 311942ac44125f5e54053efae05de86c7de5da0c
   RCP<Environment> env;
 
   try{
     env = rcp(new Environment(*p, problemComm));
   }
   Z2_FORWARD_EXCEPTIONS
-=======
-  // there are some things that need to be resolved now that Problem generates the source parameters
-  Teuchos::ParameterList sourceParameters;
-  RELIC_getOldFormatParameterListAllTogether(sourceParameters);
-  RCP<Environment> env = rcp(new Environment(*p, sourceParameters, problemComm)); // handles environment in a special way
->>>>>>> Improvements to the new ParameterList method.
 
   env->debug(DETAILED_STATUS, std::string("Entering EvaluatePartition"));
   env->timerStart(MACRO_TIMERS, "Computing metrics");

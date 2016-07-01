@@ -72,7 +72,7 @@ public:
   
   /*! \brief Constructor where communicator is Teuchos default.
    */
-  Problem(const Adapter *input, ParameterList *params, bool bSetupParametersAtThisClassLevel = true):
+  Problem(const Adapter *input, ParameterList *params):
         inputAdapter_(rcp(input,false)), 
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
@@ -81,17 +81,14 @@ public:
   {
     RCP<const Comm<int> > tmp = DefaultComm<int>::getComm();
     comm_ = tmp->duplicate();
-
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
-      setupProblemEnvironment(params);
-    }
+    setupProblemEnvironment(params);
   }
 
 
   /*! \brief Constructor where Teuchos communicator is specified
    */
   Problem(const Adapter *input, ParameterList *params, 
-        const RCP<const Comm<int> > &comm, bool bSetupParametersAtThisClassLevel = true):
+        const RCP<const Comm<int> > &comm):
         inputAdapter_(rcp(input,false)),
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
@@ -99,15 +96,13 @@ public:
         params_(), comm_(), env_(), envConst_(), timer_()
   {
     comm_ = comm->duplicate();
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
-      setupProblemEnvironment(params);
-    }
+    setupProblemEnvironment(params);
   }
 
 #ifdef HAVE_ZOLTAN2_MPI
   /*! \brief Constructor for MPI builds
    */
-  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm, bool bSetupParametersAtThisClassLevel = true):
+  Problem(const Adapter *input, ParameterList *params, MPI_Comm comm):
         inputAdapter_(rcp(input,false)),
         baseInputAdapter_(rcp(dynamic_cast<const base_adapter_t *>(input),
                               false)),
@@ -119,9 +114,7 @@ public:
     RCP<const Comm<int> > tmp = 
                   rcp<const Comm<int> >(new Teuchos::MpiComm<int>(wrapper));
     comm_ = tmp->duplicate();
-    if (bSetupParametersAtThisClassLevel) { // higher level class tells us we don't allocate
-      setupProblemEnvironment(params);
-    }
+    setupProblemEnvironment(params);
   }
 #endif
 
@@ -167,55 +160,82 @@ public:
   }
 #endif
 
-  // Set up validators which are general to all probloems - if they are specific to a problem use the virtual inheritance of this function place it at a higher level - see PartitioningProblem for example
-  virtual void generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
+  // Set up validators which are general to all probloems
+  static void getDefaultParameters(ParameterList & pl)
   {
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > compute_metrics_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
-      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "no") );
-    pl.set("compute_metrics", "no", "  Compute metrics after computing solution");
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+      compute_metrics_Validator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<int>(
+          Teuchos::tuple<std::string>( "true", "yes", "1", "on",
+            "false", "no", "0", "off" ),
+          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
+         Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+         "no") );
+    pl.set("compute_metrics", "no", "Compute metrics after computing solution");
     pl.getEntryRCP("compute_metrics")->setValidator(compute_metrics_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > rectilinear_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
-      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
-      "no") );
-    pl.set("rectilinear", "no", "  If true, then when a cut is made, all of the dots located on the cut     are moved to the same side of the cut. The resulting regions are then     rectilinear.  The resulting load balance may not be as good as when     the group of dots is split by the cut. Default is false.");
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+      rectilinear_Validator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<int>(
+          Teuchos::tuple<std::string>( "true", "yes", "1", "on",
+            "false", "no", "0", "off" ),
+          // original did not have this documented - left blank
+          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
+          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+          "no") );
+    pl.set("rectilinear", "no", "If true, then when a cut is made, all of the "
+      "dots located on the cut are moved to the same side of the cut. The "
+      "resulting regions are then rectilinear. The resulting load balance may "
+      "not be as good as when the group of dots is split by the cut. "
+      "Default is false.");
     pl.getEntryRCP("rectilinear")->setValidator(rectilinear_Validator);
 
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> > average_cuts_Validator = Teuchos::rcp( new Teuchos::StringToIntegralParameterEntryValidator<int>(
-      Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false", "no", "0", "off" ),
-      Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ), // original did not have this documented - left this here for building later
-      Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
+    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
+      average_cuts_Validator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<int>(
+          Teuchos::tuple<std::string>( "true", "yes", "1", "on", "false",
+            "no", "0", "off" ),
+           // original did not have this documented - left balnk
+          Teuchos::tuple<std::string>( "", "", "", "", "", "", "", "" ),
+          Teuchos::tuple<int>( 1, 1, 1, 1, 0, 0, 0, 0 ),
       "no") );
-    pl.set("average_cuts", "no", "  When true, coordinates of RCB cutting planes are computed to be      the average of the coordinates of the closest object on each side      of the cut. Otherwise, coordinates of cutting planes may equal      those of one of the closest objects. Default is false.");
+    pl.set("average_cuts", "no", "When true, coordinates of RCB cutting planes "
+      "are computed to be the average of the coordinates of the closest object "
+      "on each side of the cut. Otherwise, coordinates of cutting planes may "
+      "equal those of one of the closest objects. Default is false.");
     pl.getEntryRCP("average_cuts")->setValidator(average_cuts_Validator);
 
     // this was an int type
-    RCP<Teuchos::EnhancedNumberValidator<int>> bisection_num_test_cuts_Validator = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 250, 1, 0) );
-    pl.set("bisection_num_test_cuts", 1, "  Experimental: number of test cuts to do simultaneously (default is 1)");
-    pl.getEntryRCP("bisection_num_test_cuts")->setValidator(bisection_num_test_cuts_Validator);
+    RCP<Teuchos::EnhancedNumberValidator<int>> bisection_num_test_cuts_Validator
+      = Teuchos::rcp( new Teuchos::EnhancedNumberValidator<int>(1, 250, 1, 0) );
+    pl.set("bisection_num_test_cuts", 1, "Experimental: number of test cuts "
+      "to do simultaneously (default is 1)");
+    pl.getEntryRCP("bisection_num_test_cuts")->setValidator(
+      bisection_num_test_cuts_Validator);
 
-    RCP<Teuchos::StringValidator> hypergraph_model_type_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "traditional", "ghosting" )));
-    pl.set("hypergraph_model_type", "traditional", "  construction type when creating a hypergraph model");
-    pl.getEntryRCP("hypergraph_model_type")->setValidator(hypergraph_model_type_Validator);
+    RCP<Teuchos::StringValidator> hypergraph_model_type_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "traditional", "ghosting" )));
+    pl.set("hypergraph_model_type", "traditional", "construction type when "
+      "creating a hypergraph model");
+    pl.getEntryRCP("hypergraph_model_type")->setValidator(
+      hypergraph_model_type_Validator);
 
-    // originally the xml loaded these two empty sublists - will check into how they are used
+    // these sublists are used for parameters which do not get validated
     pl.sublist("zoltan_parameters");
     pl.sublist("parma_parameters");
 
-    RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "SerialGreedy" )));
-    pl.set("color_method", "rcm", "  coloring algorithm");
+    RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "SerialGreedy" )));
+    pl.set("color_method", "rcm", "coloring algorithm");
     pl.getEntryRCP("color_method")->setValidator(color_method_Validator);
 
-    RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "FirstFit", "Random", "RandomFast", "LeastUsed" )));
-    pl.set("color_choice", "amd", "  selection criterion for coloring");
+    RCP<Teuchos::StringValidator> color_choice_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+      Teuchos::tuple<std::string>( "FirstFit", "Random",
+        "RandomFast", "LeastUsed" )));
+    pl.set("color_choice", "amd", "selection criterion for coloring");
     pl.getEntryRCP("color_choice")->setValidator(color_choice_Validator);
   }
 
@@ -228,20 +248,6 @@ public:
   }
 
 protected:
-
-  // this function has some awkward issues
-  // We would like to call it just once when the Problem is constructed
-  // However, it depends on the inherited calls of generateSourceParameters()
-  // So if a derived class is adding customized parameters the derived class will pass bSetupParametersAtThisClassLevel = false
-  // to the Problem constructor, disabling this call, then call it when appropriate
-  // If another class derives from that, there may be some tangles to resolve as the derived classes use Environment while setting up their problem state
-  // We may choose to just change things so each level can allocate this and then overwrite if a higher level class inherits from the previous
-  // However that would mean ignoring high level parameters which don't appear in the validation list - currently produces a useful error
-  // So the current form is enforcing an initialize once and only when the highest level constructs
-  // Once the Problem is constructed, it's fine to call this again (set bConstructing false) because the full class hierarchy exists
-  // If we used a factory method to allocate problem, then call this afterwards, it would prevent the problem but we must preserve the simple interface for the users which allocate Problems directly
-  // This will all probably be considered some more as we continue developing this new setup
-  void setupProblemEnvironment(ParameterList *pl, bool bConstructing = true);
 
   // The Problem is templated on the input adapter.  We interact
   // with the input adapter through the base class interface.  
@@ -286,29 +292,15 @@ protected:
   RCP<TimerManager> timer_;
 
 private:
+  void setupProblemEnvironment(ParameterList *pl);
 
 };
 
 template <typename Adapter>
-  void Problem<Adapter>::setupProblemEnvironment(ParameterList *params, bool bConstructing)
+  void Problem<Adapter>::setupProblemEnvironment(ParameterList *params)
 {
-  // collect all Problem specific parameters (Problem + Model + Algorithms) and pass them to environoment
-  // Environment will add in the base set common to all environments to generate the final full set
-  ParameterList sourceParameters;
-  generateSourceParameters(sourceParameters, *params);  // now collect everything from the problem, classes, etc
-
-  if (bConstructing && env_ != Teuchos::null) {
-   // this awkward situation exists becuase the user must be able to call new Problem and when it's done the parameters should all be initalized
-   // however, building the parameter validation list now requires the full inherited structed to exist
-   // therefore we have to enforce that this function is called at the highest level
-   // we don't want to simply call it over again and overwrite previous set ups because the parameters passed in should match the list
-   // if a high level parameter is not found in the source parameters we want a nice error
-   // if you are not in the constructor, it's perfectly fine to call this function and reinitialize the list - then set bInitializing false
-    throw std::logic_error( "setupProblemEnvironment should only be initialized once. If you called this from a derived class pass bSetupParametersAtThisClassLevel = false to prevent the base class from calling this.");
-  }
-
   try{
-    env_ = rcp(new Environment(*params, sourceParameters, Teuchos::DefaultComm<int>::getComm()));
+    env_ = rcp(new Environment(*params, Teuchos::DefaultComm<int>::getComm()));
   }
   Z2_FORWARD_EXCEPTIONS
 
@@ -382,7 +374,7 @@ template <typename Adapter>
 template <typename Adapter>
   void Problem<Adapter>::resetParameters(ParameterList *params)
 {
-  setupProblemEnvironment(params, false); // this will recreate the Environment - the false flag indicates that it's ok for the old to be overwritten - otherwise it will throw a warning error for bad class hierarchy
+  setupProblemEnvironment(params);
 
   // We assume the timing output parameters have not changed,
   // and carry on with the same timer.

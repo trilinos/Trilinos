@@ -48,70 +48,45 @@
 */
 
 #include <Zoltan2_Parameters.hpp>
-#include <Zoltan2_IntegerRangeList.hpp>
 
-#include <Teuchos_StringInputSource.hpp>
-#include <Teuchos_XMLParser.hpp>
-#include <Teuchos_XMLObject.hpp>
-#include <Teuchos_XMLParameterListReader.hpp>
-#include <Teuchos_ValidatorXMLConverterDB.hpp>
-
-// A generated header file in {zoltan2-binary-directory}/src
-// which defines ZOLTAN2_XML_PARAMETER_STRING.
-
-#include <Zoltan2_XML_Parameters.hpp>  
+// Parameters.cpp builds the full lists from a series of member statics
+#include <Zoltan2_InputTraits.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_Problem.hpp>
+#include <Zoltan2_PartitioningProblem.hpp>
+#include <Zoltan2_OrderingProblem.hpp>
+#include <Zoltan2_MappingProblem.hpp>
 
 namespace Zoltan2 {
 
-/*! \brief  This is the old format which loaded everything from one large XML define string - now they are are hard coded into the Problems, Models, and Algorithms and this is going away.
-*/
+/*! \brief  Create a list of all Zoltan2 parameters and validators.
+ *
+ *  \param pList on return, pList is the parameter list that was created.
+ *
+ *  This is the validating parameter list that can be
+ *  used to process the user's parameter list.
+ */
 
-
-// This can be deleted but I'm keeping this here for now because as we build the new parameter system it's convenient to have a way to load the original for error checking
-void RELIC_getOldFormatParameterListAllTogether(Teuchos::ParameterList &pList)
+void createAllParameters(Teuchos::ParameterList &pList)
 {
-  // An XML converter for IntegerRangeListValidator
-  // needs to be added to the converter database.
+  // the old method loads from a larger #define XML string
+  // the new way loads from a series of static functions
+  typedef Zoltan2::BasicUserTypes<int, int, int> dummyTypes;
+  typedef Zoltan2::BasicVectorAdapter< dummyTypes > dummyAdapter;
 
-  typedef Zoltan2::IntegerRangeListValidator<int> irl_t;
-  typedef Zoltan2::IntegerRangeListValidatorXMLConverter<int> irlConverter_t;
+  // environment has some of it's own parameters to provide
+  Environment::getDefaultParameters(pList);
 
-  RCP<const irl_t> intRangeValidatorP = rcp(new irl_t); // dummy
-  RCP<irlConverter_t > converter = rcp(new irlConverter_t);
-  Teuchos::ValidatorXMLConverterDB::addConverter(
-        intRangeValidatorP,
-        converter);
+  // Problem provides the base set of parameters for all problems
+  Zoltan2::Problem<dummyAdapter>::getDefaultParameters(pList);
 
-  // Create a Teuchos::ParameterList from an XML string.
-  // To add a parameter to Zoltan2, edit zoltan2/data/parameters.xml.
+  // PartitioningProblem will also add parameters for each Algorithm
+  Zoltan2::PartitioningProblem<dummyAdapter>::getDefaultParameters(pList);
 
-  std::string xmlParameterString(ZOLTAN2_XML_PARAMETER_STRING);
-  Teuchos::StringInputSource src(xmlParameterString);
-
-  Teuchos::XMLObject xmlObj;
-  std::ostringstream errMsg;
-
-  Teuchos::XMLParser parser(src.stream());
-
-  try{
-    xmlObj = parser.parse();
-  }
-  catch (std::exception &e){
-    errMsg << e.what() << " invalid xml";
-  }
-
-  if (errMsg.str().size() == 0){
-    try{
-      Teuchos::XMLParameterListReader rdr;
-      pList = rdr.toParameterList(xmlObj);
-    }
-    catch (std::exception &e){
-      errMsg << e.what() << " invalid parameter list";
-    }
-  }
-
-  if (errMsg.str().size() > 0)
-    throw std::logic_error(errMsg.str().c_str());
+  // Other problems have their own unique parameters
+  Zoltan2::OrderingProblem<dummyAdapter>::getDefaultParameters(pList);
+  Zoltan2::MappingProblem<dummyAdapter>::getDefaultParameters(pList);
 }
 
 /*! \brief  Create a parameter list that can validate a
@@ -137,10 +112,10 @@ void RELIC_getOldFormatParameterListAllTogether(Teuchos::ParameterList &pList)
  *  parameters that appear in the user's parameter list.
  *  
  */
-void setValidatorsInList(
+static void setValidatorsInList(
   const Teuchos::ParameterList &plSome,   // in: user's parameters
-  Teuchos::ParameterList &plVal,          // out: validators for user's params
-  const Teuchos::ParameterList &plSource) // source params
+  const Teuchos::ParameterList &plAll,    // in: validators for all params
+  Teuchos::ParameterList &plVal)          // out: validators for user's params
 {
   ParameterList::ConstIterator next = plSome.begin();
 
@@ -148,7 +123,7 @@ void setValidatorsInList(
 
     const std::string &name = next->first;
     const ParameterEntry &entrySome = plSome.getEntry(name);
-    const ParameterEntry &entryAll = plSource.getEntry(name);
+    const ParameterEntry &entryAll = plAll.getEntry(name);
 
     if (entrySome.isList()){
       plVal.sublist(name);     // create & get
@@ -160,6 +135,26 @@ void setValidatorsInList(
 
     ++next;
   }
+}
+
+/*! \brief Create a list by adding validators to the users parameter list.
+ *  \param plIn  the user's parameter list
+ *  \param plOut  a new parameter list which is the user's list with
+ *                     our validators added.
+ */
+
+void createValidatorList(
+   const Teuchos::ParameterList &plIn,
+   Teuchos::ParameterList &plOut)
+{
+  ParameterList allParameters;
+
+  try{
+    createAllParameters(allParameters);
+  }
+  Z2_FORWARD_EXCEPTIONS
+
+  setValidatorsInList(plIn, allParameters, plOut);
 }
 
 // Why isn't there a Teuchos method that does this?

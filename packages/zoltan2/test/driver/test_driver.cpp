@@ -98,6 +98,29 @@ using std::queue;
 #define EXC_ERRMSG(msg, e) \
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
+void xmlToModelPList(const Teuchos::XMLObject &xml,
+  Teuchos::ParameterList & plist)
+{
+  // This method composes a plist for the problem
+  Teuchos::XMLParameterListReader reader;
+  plist = reader.toParameterList(xml);
+  
+  //  Get list of valid Zoltan2 Parameters
+  // Zoltan 2 parameters appear in the input file
+  // Right now we have default values stored in
+  // the parameter list, we would like to apply
+  // the options specified by the user in their
+  // input file
+  Teuchos::ParameterList zoltan2Parameters;
+  Zoltan2::createAllParameters(zoltan2Parameters);
+  
+  if (plist.isSublist("Zoltan2Parameters")) {
+    // Apply user specified zoltan2Parameters
+    ParameterList &sub = plist.sublist("Zoltan2Parameters");
+    zoltan2Parameters.setParameters(sub);
+  }
+}
+
 bool getParameterLists(const string &inputFileName,
                        queue<ParameterList> &problems,
                        queue<ParameterList> &comparisons,
@@ -126,8 +149,9 @@ bool getParameterLists(const string &inputFileName,
   // get the parameter lists for each model
   for(int i = 0; i < xmlInput.numChildren(); i++)
   {
-    Teuchos::XMLParameterListReader reader;
-    ParameterList plist = reader.toParameterList(xmlInput.getChild(i));
+    ParameterList plist;
+    xmlToModelPList(xmlInput.getChild(i), plist);
+
     if(plist.name() == "Comparison") {
       comparisons.emplace(plist);
     }
@@ -230,11 +254,6 @@ bool run(const UserInputForTests &uinput,
   if (rank == 0) {
     std::cout << "Creating a new " << problem_kind << " problem." << std::endl;
   }
-
-  // get the sublist Zoltan2Parameters which are currently not validated
-  // they will be validated by the construction of the problem
-  ParameterList zoltan2Parameters = problem_parameters.sublist( "Zoltan2Parameters" );
-
 #ifdef HAVE_ZOLTAN2_MPI
   base_problem_t * problem = 
     Zoltan2_TestingFramework::ProblemFactory::newProblem(problem_kind,
@@ -427,7 +446,6 @@ bool run(const UserInputForTests &uinput,
                                        problem_parameters.get<string>("kind") :
                                        "?");
     comparison_source->adapter_kind = adapter_name;
-
   
     // write mesh solution
     //  auto sol = reinterpret_cast<partitioning_problem_t *>(problem)->getSolution();
@@ -530,7 +548,8 @@ bool mainExecute(int argc, char *argv[], RCP<const Comm<int> > &comm)
   }
   else {
     if(rank == 0) {
-      cout << "\nFAILED to load input data source. Skipping all tests." << endl;
+      cout << "\nFAILED to load input data source. Skipping "
+        "all tests." << endl;
       return false;
     }
   }

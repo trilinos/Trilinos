@@ -110,34 +110,35 @@ public:
   /*! \brief Constructor that takes an MPI communicator
    */
   OrderingProblem(Adapter *A, ParameterList *p, MPI_Comm comm) 
-                      : Problem<Adapter>(A, p, comm, false)
+                      : Problem<Adapter>(A, p, comm) 
   {
     HELLO;
-    createOrderingProblem(p);
+    createOrderingProblem();
   };
 #endif
 
   /*! \brief Constructor that uses a default communicator
    */
-  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p, false)
+  OrderingProblem(Adapter *A, ParameterList *p) : Problem<Adapter>(A, p) 
   {
     HELLO;
-    createOrderingProblem(p);
+    createOrderingProblem();
   };
 
   /*! \brief Set up validators specific to this Problem
   */
-  virtual void generateSourceParameters(ParameterList & pl, const ParameterList & inputParams)
+  static void getDefaultParameters(ParameterList & pl)
   {
-    Problem<Adapter>::generateSourceParameters(pl, inputParams);
-
-    RCP<Teuchos::StringValidator> order_method_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural", "random", "sorted_degree", "scotch", "nd" )));
+    RCP<Teuchos::StringValidator> order_method_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "rcm", "minimum_degree", "natural",
+          "random", "sorted_degree", "scotch", "nd" )));
     pl.set("order_method", "rcm", "  order algorithm");
     pl.getEntryRCP("order_method")->setValidator(order_method_Validator);
 
-    RCP<Teuchos::StringValidator> order_package_Validator = Teuchos::rcp( new Teuchos::StringValidator(
-      Teuchos::tuple<std::string>( "amd", "package2", "package3" )));
+    RCP<Teuchos::StringValidator> order_package_Validator = Teuchos::rcp(
+      new Teuchos::StringValidator(
+        Teuchos::tuple<std::string>( "amd", "package2", "package3" )));
     pl.set("order_package", "amd", "  package to use in ordering");
     pl.getEntryRCP("order_package")->setValidator(order_package_Validator);
   }
@@ -175,7 +176,7 @@ public:
   };
 
 private:
-  void createOrderingProblem(ParameterList * p);
+  void createOrderingProblem();
 
   RCP<OrderingSolution<lno_t, gno_t> > solution_;
 
@@ -279,13 +280,10 @@ void OrderingProblem<Adapter>::solve(bool newData)
 //  This method does everything that all constructors must do.
 
 template <typename Adapter>
-void OrderingProblem<Adapter>::createOrderingProblem(ParameterList * p)
+void OrderingProblem<Adapter>::createOrderingProblem()
 {
   HELLO;
   using Teuchos::ParameterList;
-
-  // need this before the below
-  Problem<Adapter>::setupProblemEnvironment(p);
 
 //  std::cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 

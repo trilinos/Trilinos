@@ -150,7 +150,6 @@ int main(int narg, char **arg)
   Zoltan2::PartitioningSolution<adapter_t> solution = problem.getSolution();
 
   // create metric object
-	Zoltan2::PartitioningProblem<adapter_t> makeDummyProblem(adapter, &params, comm);
 
   quality_t *metricObject = new quality_t(adapter, &params, comm, &solution);
 
