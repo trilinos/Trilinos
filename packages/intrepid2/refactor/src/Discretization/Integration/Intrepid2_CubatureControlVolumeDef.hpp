@@ -94,12 +94,24 @@ namespace Intrepid2 {
                weightViewType cubWeights,
                pointViewType  cellCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    // Coords are (C,P,D) rank 3
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 3, std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cubPoints must have rank 3 (C,P,D).");
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 2, std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cubWeights must have rank 2 (C,P).");
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
                                   ">>> ERROR (CubatureControlVolume): cellCoords must have rank 3 of (C,P,D).");
 
-    INTREPID2_TEST_FOR_EXCEPTION( cellCoords.dimension(2) != getDimension(), std::out_of_range,
-                                  ">>> ERROR (CubatureControlVolume): cellCoords dimension(2) does not match to cubature dimension.");
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0) != cellCoords.dimension(0) ||
+                                  cubPoints.dimension(0) != cubWeights.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(1) != cellCoords.dimension(1) ||
+                                  cubPoints.dimension(1) != cubWeights.dimension(1), std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cubPoints, cubWeights and cellCoords dimension(1) are not consistent, numNodesPerCell");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
+                                  cubPoints.dimension(2) != getDimension(), std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolume): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 

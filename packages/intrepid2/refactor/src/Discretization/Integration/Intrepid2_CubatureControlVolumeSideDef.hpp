@@ -112,9 +112,21 @@ namespace Intrepid2 {
                weightViewType cubWeights,
                pointViewType  cellCoords ) const {
 #ifdef HAVE_INTREPID2_DEBUG
-    // Coords are (C,P,D) rank 3
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.rank() != 3, std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolumeSide): cubPoints must have rank 3 (C,P,D).");
+    INTREPID2_TEST_FOR_EXCEPTION( cubWeights.rank() != 3, std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolumeSide): cubWeights must have rank 2 (C,P,D).");
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.rank() != 3, std::invalid_argument,
-                                  ">>> ERROR (CubatureControlVolume): cellCoords must have rank 3 of (C,P,D).");
+                                  ">>> ERROR (CubatureControlVolumeSide): cellCoords must have rank 3 of (C,P,D).");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(0) != cellCoords.dimension(0) ||
+                                  cubPoints.dimension(0) != cubWeights.dimension(0), std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolumeSide): cubPoints, cubWeights and cellCoords dimension(0) are not consistent, numCells");
+
+    INTREPID2_TEST_FOR_EXCEPTION( cubPoints.dimension(2) != cellCoords.dimension(2) ||
+                                  cubPoints.dimension(2) != cubWeights.dimension(2) ||
+                                  cubPoints.dimension(2) != getDimension(), std::invalid_argument,
+                                  ">>> ERROR (CubatureControlVolumeSide): cubPoints, cellCoords, this->getDimension() are not consistent, spaceDim.");
 #endif
     typedef Kokkos::DynRankView<PT,SpT> tempPointViewType;
 
@@ -129,7 +141,6 @@ namespace Intrepid2 {
     CellTools<SpT>::getSubcvCoords(subcvCoords,
                                    cellCoords,
                                    primaryCellTopo_);
-
 
     const auto numSideNodeMaps = (spaceDim == 2 ? 1 : 2);
     const ordinal_type sideOrd[2] = { 1, 5 };

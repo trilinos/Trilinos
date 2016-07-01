@@ -54,7 +54,6 @@
 
 #include "Shards_CellTopology.hpp"
 #include "Intrepid2_CellTools.hpp"
-//#include "Intrepid2_DefaultCubatureFactory.hpp"
 
 namespace Intrepid2{
 

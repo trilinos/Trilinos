@@ -97,6 +97,20 @@ SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_SuperLU OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
+# Disable Zoltan usage of 64-bit Scotch and ParMETIS because we can't
+# selectively disable the failing tests due Zoltan CMakeLists.txt files not
+# correclty usign the ADDED_TEST_NAME_OUT argument (see Trilinos #475).
+SET(Zoltan_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+SET(Zoltan_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+
+# Disable Zoltan2 usage of 64-bit Scotch and ParMETIS becaues this causes
+# several existing Zoltan2 tests to fail that pass otherwise (see Trilinos
+# #476). Also, you have to not enable ParMETIS for ShyLU because it requires
+# #that ParMETIS is enabled in Zoltan2.
+SET(Zoltan2_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+SET(Zoltan2_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+SET(ShyLUCore_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
+
 #
 # D) Set up the paths to the TPL includes and libs
 #
@@ -161,6 +175,28 @@ SET(BoostLib_INCLUDE_DIRS "${Boost_ROOT}/include"
 SET(BoostLib_LIBRARY_DIRS "${Boost_ROOT}/lib"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 
+# Scotch (SEMS only provides an MPI version)
+IF (TPL_ENABLE_MPI)
+  SET(TPL_ENABLE_Scotch ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
+  #PRINT_VAR(Scotch_ROOT)
+  SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+ENDIF()
+
+# ParMETIS (SEMS only provides an MPI version)
+IF (TPL_ENABLE_MPI)
+  SET(TPL_ENABLE_ParMETIS ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  SEMS_SELECT_TPL_ROOT_DIR(PARMETIS ParMETIS_ROOT)
+  #PRINT_VAR(ParMETIS_ROOT)
+  SET(TPL_ParMETIS_INCLUDE_DIRS "${ParMETIS_ROOT}/include"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+  SET(ParMETIS_LIBRARY_DIRS "${ParMETIS_ROOT}/lib}"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
+ENDIF()
+
 # Zlib
 SET(TPL_ENABLE_Zlib ON CACHE BOOL "Set in SEMSDevEnv.cmake")
 SEMS_SELECT_TPL_ROOT_DIR(ZLIB Zlib_ROOT)
@@ -198,4 +234,4 @@ SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
 # Test disables
 #
 
-# ToDo: Enter them as needed!
+# ToDo: Add test disables when needed!

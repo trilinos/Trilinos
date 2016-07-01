@@ -43,104 +43,146 @@
 /** \file   Intrepid_CubatureControlVolumeBoundary.hpp
     \brief  Header file for the Intrepid2::CubatureControlVolumeBoundary class.
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
+            Kokkorized by Kyungjoo Kim
 */
 
-#ifndef INTREPID2_CUBATURE_CONTROLVOLUMEBOUNDARY_HPP
-#define INTREPID2_CUBATURE_CONTROLVOLUMEBOUNDARY_HPP
+#ifndef __INTREPID2_CUBATURE_CONTROLVOLUME_BOUNDARY_HPP__
+#define __INTREPID2_CUBATURE_CONTROLVOLUME_BOUNDARY_HPP__
 
+#include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
-#include "Teuchos_Assert.hpp"
+
 #include "Shards_CellTopology.hpp"
 #include "Intrepid2_CellTools.hpp"
+
 #include "Intrepid2_FunctionSpaceTools.hpp"
-#include "Intrepid2_DefaultCubatureFactory.hpp"
 
 namespace Intrepid2{
-
+  
   /** \class Intrepid2::CubatureControlVolumeBoundary
       \brief Defines cubature (integration) rules over Neumann boundaries for control volume method.
-
+      
       Integration on Neumann boundaries for the control volume method requires integration points
       defined on primary cell sides. These points are not equivalent to control volume points on lower
       dimensional topologies and therefore require a separate class to define them. 
   */
-  template<class Scalar, class ArrayPoint, class ArrayWeight>
-  class CubatureControlVolumeBoundary : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>{
+  template<typename ExecSpaceType = void,
+           typename pointValueType = double,
+           typename weightValueType = double>
+  class CubatureControlVolumeBoundary
+    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
   public:
+
+    template<typename cubPointViewType,
+             typename subcvCoordViewType,
+             typename mapViewType>
+    struct Functor {
+      /**/  cubPointViewType        _cubPoints;
+      const subcvCoordViewType      _subcvCoords;
+      const mapViewType             _sideMap;
+
+      KOKKOS_INLINE_FUNCTION
+      Functor( cubPointViewType        cubPoints_,
+               subcvCoordViewType      subcvCoords_,
+               mapViewType             sideMap_ )
+        : _cubPoints(cubPoints_), 
+          _subcvCoords(subcvCoords_), _sideMap(sideMap_) {}
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const ordinal_type cell) const {        
+        const auto numNodesPerSide = _sideMap(0);
+        const auto spaceDim        = _cubPoints.dimension(1);
+
+        // compute side centers
+        typename cubPointViewType::value_type val[3] = {};
+        for (auto j=0;j<numNodesPerSide;++j) {
+          for (auto i=0;i<spaceDim;++i) 
+            val[i] += _subcvCoords(cell, _sideMap(j+1), i);
+        }
+        for (auto i=0;i<spaceDim;++i) 
+          _cubPoints(cell, i) = (val[i]/numNodesPerSide);
+        
+      }
+    };
+
+  protected:
     
-    /** brief Constructor.
-	
-	\param cellTopology           [in]     - The topology of the primary cell.
-	\param cellSide               [in]     - The index of the boundary side of the primary cell 
-    */
-    CubatureControlVolumeBoundary(const Teuchos::RCP<const shards::CellTopology>& cellTopology, int cellSide=0);
+    /** \brief The topology of the primary cell side.
+     */
+    shards::CellTopology primaryCellTopo_;
+
+    /** \brief The topology of the sub-control volume.
+     */
+    shards::CellTopology subcvCellTopo_;
+
+    /** \brief The degree of the polynomials that are integrated exactly.
+     */
+    ordinal_type degree_;
+    
+    /** \brief Index of cell side
+     */
+    ordinal_type sideIndex_;
+
+    // cubature points and weights associated with sub-control volume.
+    Kokkos::View<ordinal_type**,Kokkos::HostSpace> boundarySidesHost_;
+    Kokkos::View<ordinal_type**,ExecSpaceType> sideNodeMap_;
+    Kokkos::DynRankView<pointValueType, ExecSpaceType> sidePoints_;
+    
+  public:
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::pointViewType  pointViewType;
+    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
     /** \brief Returns cubature points and weights
-	       Method for reference space cubature - throws an exception.
-	
-	\param cubPoints             [out]        - Array containing the cubature points.
-        \param cubWeights            [out]        - Array of corresponding cubature weights.
-    */
-    void getCubature(ArrayPoint& cubPoints,
-		     ArrayWeight& cubWeights) const;
-    
-    /** \brief Returns cubature points and weights
-	       (return arrays must be pre-sized/pre-allocated).
+        (return arrays must be pre-sized/pre-allocated).
 	
 	\param cubPoints             [out]        - Array containing the cubature points.
         \param cubWeights            [out]        - Array of corresponding cubature weights.
         \param cellCoords             [in]        - Array of cell coordinates
     */
-    void getCubature(ArrayPoint& cubPoints,
-		     ArrayWeight& cubWeights,
-                     ArrayPoint& cellCoords) const;
+    virtual
+    void
+    getCubature( pointViewType  cubPoints,
+                 weightViewType cubWeights,
+                 pointViewType  cellCoords) const;
     
     /** \brief Returns the number of cubature points.
      */
-    int getNumPoints() const;
+    virtual
+    ordinal_type
+    getNumPoints() const {
+      // one control volume boundary cubature point per subcell node (for now)
+      const auto sideDim = primaryCellTopo_.getDimension() - 1;
+      return primaryCellTopo_.getNodeCount(sideDim, sideIndex_);
+    }
     
     /** \brief Returns dimension of integration domain.
      */
-    int getDimension() const;
+    virtual
+    ordinal_type 
+    getDimension() const {
+      return primaryCellTopo_.getDimension();
+    }
     
-     /** \brief Returns max. degree of polynomials that are integrated exactly.
-             The return vector has size 1.
+    /** \brief Returns cubature name.
      */
-    void getAccuracy(std::vector<int> & accuracy) const;
+    virtual
+    const char*
+    getName() const {
+      return "CubatureControlVolumeBoundary";
+    }
 
-    
+    /** brief Constructor.
+	
+	\param cellTopology           [in]     - The topology of the primary cell.
+	\param cellSide               [in]     - The index of the boundary side of the primary cell 
+    */
+    CubatureControlVolumeBoundary(const shards::CellTopology cellTopology, 
+                                  const ordinal_type         sideIndex);
     virtual ~CubatureControlVolumeBoundary() {}
     
-  private:
-    
-    
-    /** \brief The topology of the primary cell side.
-     */
-    Teuchos::RCP<const shards::CellTopology> primaryCellTopo_;
+  };
 
-    /** \brief The topology of the sub-control volume.
-     */
-    Teuchos::RCP<const shards::CellTopology> subCVCellTopo_;
-
-    /** \brief The degree of the polynomials that are integrated exactly.
-     */
-    int degree_;
-    
-    /** \brief The number of cubature points.
-     */
-    int numPoints_;
-    
-    /** \brief Dimension of integration domain.
-     */
-    int cubDimension_;
-
-    /** \brief Index of cell side
-     */
-    int sideIndex_;
-    
-  }; // end class CubatureControlVolumeBoundary
-
-} // end namespace Intrepid2
+} 
 
 #include "Intrepid2_CubatureControlVolumeBoundaryDef.hpp"
 
