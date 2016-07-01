@@ -787,6 +787,7 @@ parseFunction(
 
   if (!c_function) {
     function->m_data.function.undefinedFunction = true;
+    eval.getUndefinedFunctionSet().insert(function_name);
   }
 
   return function;

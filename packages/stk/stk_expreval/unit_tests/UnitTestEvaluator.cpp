@@ -74,16 +74,17 @@ bool
 checkUndefinedFunction(
     const char *	expr)
 {
+  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
-    if (expr_eval.undefinedFunction()) {
-      return true;
-    } else {
-      return false;
-    }
   }
   catch (std::runtime_error &x) {
+    // parse throws on undefined function(s) and lists them
+    std::cerr << x.what();
+  }
+  if (expr_eval.undefinedFunction()) {
+    return true;
+  } else {
     return false;
   }
 }
