@@ -473,6 +473,11 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
 
     resid_line_norm = dot(gradient_line_search, gradient_line_search);
 
+    if (resid_line_norm <= (search_parameter * resid_norm)) {
+      step = step_line_search;
+      break;
+    }
+
     T const
     num = 0.25 * alpha * alpha * resid_line_norm_old;
 
@@ -485,11 +490,6 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
     alpha = std::max(0.5 * alpha, quad_approx);
 
     line_iter++;
-
-    if (resid_line_norm <= (search_parameter * resid_norm)) {
-      step = step_line_search;
-      break;
-    }
 
   } //Index i
 
