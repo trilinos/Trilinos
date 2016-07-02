@@ -47,7 +47,7 @@
 
 #include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
-#include "Thyra_ModelEvaluatorDefaultBase.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Piro_ObserverBase.hpp"
@@ -59,7 +59,7 @@ namespace Piro {
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 class TrapezoidDecorator
-    : public Thyra::ModelEvaluatorDefaultBase<Scalar> {
+    : public Thyra::ModelEvaluatorDelegatorBase<Scalar> {
 
   public:
 
@@ -78,33 +78,6 @@ class TrapezoidDecorator
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_x_dot() const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > get_x_dotdot() const;
-
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
-  /** \brief . */
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
-  /** \brief . */
-  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
-   /** \brief . */
-   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
-   /** \brief . */
-   Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-   /** \brief . */
-   Teuchos::RCP< Thyra::LinearOpBase< Scalar > > create_W_op () const;
-   /** \brief . */
-   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
-
-   Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > create_W_prec() const;
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgsImpl() const;
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
    void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool wasSolved);
 
@@ -127,14 +100,7 @@ class TrapezoidDecorator
 
   private:
 
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
-   /** \brief . */
-   Thyra::ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const;
-
-
    //These are set in the constructor and used in evalModel
-   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
    Teuchos::RCP<Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar> > DMEWSF;
    Teuchos::RCP<Thyra::VectorBase<Scalar> > xDotDot;
    Teuchos::RCP<Thyra::VectorBase<Scalar> > xDot;
@@ -146,7 +112,6 @@ class TrapezoidDecorator
    Scalar time;
 
    Teuchos::RCP<Teuchos::FancyOStream> out;
-
 
 };
 
