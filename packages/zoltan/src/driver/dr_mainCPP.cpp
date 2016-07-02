@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
   Test.Multi_Callbacks = 0;
   Test.Gen_Files = 0;
   Test.Fixed_Objects = 0;
-  Test.Null_Lists = NONE;
+  Test.Null_Lists = NO_NULL_LISTS;
 
   Output.Text = 1;
   Output.Gnuplot = 0;
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
        *  Create a Zoltan DD for tracking elements during repartitioning.
        */
 
-      if (mesh.data_type == HYPERGRAPH && !build_elem_dd(&mesh)) {
+      if (mesh.data_type == ZOLTAN_HYPERGRAPH && !build_elem_dd(&mesh)) {
         Gen_Error(0, "fatal: Error returned from build_elem_dd\n");
         error_report(Proc);
         print_output = 0;
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
 
 End:
   
-  if (mesh.data_type == HYPERGRAPH)
+  if (mesh.data_type == ZOLTAN_HYPERGRAPH)
   {
     destroy_elem_dd();
   }

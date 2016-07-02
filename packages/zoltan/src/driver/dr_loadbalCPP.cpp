@@ -435,7 +435,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (mesh->data_type == HYPERGRAPH) {
+  if (mesh->data_type == ZOLTAN_HYPERGRAPH) {
     if (zz.Set_HG_Size_CS_Fn(get_hg_size_compressed_pin_storage,
 	 (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0,
@@ -848,7 +848,7 @@ MESH_INFO_PTR mesh;
 
   STOP_CALLBACK_TIMER;
 
-  if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx) {
+  if ((mesh->data_type == ZOLTAN_HYPERGRAPH) && mesh->visible_nvtx) {
     int i, cnt = 0;
     for (i = 0; i < mesh->num_elems; i++)
       if (mesh->elements[i].globalID <= mesh->visible_nvtx) cnt++;
@@ -889,7 +889,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
     if (mesh->blank && mesh->blank[i]) continue;
 
     current_elem = &elem[i];
-    if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx &&
+    if ((mesh->data_type == ZOLTAN_HYPERGRAPH) && mesh->visible_nvtx &&
 	(current_elem->globalID > mesh->visible_nvtx)) continue;
 
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;

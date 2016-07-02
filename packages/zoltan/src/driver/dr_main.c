@@ -73,6 +73,11 @@
 #include "dr_dd.h"
 #include "dr_compress_const.h"
 
+/* Normally, an application would not include zz_const.h,
+ * but we want to print TPL data types indextype and 
+ * realtype in test output, so we'll include it here. */
+#include "zz_const.h"
+
 /* #define IGNORE_FIRST_ITERATION_STATS */
 /* #define RANDOM_DIST */
 
@@ -190,7 +195,7 @@ int main(int argc, char *argv[])
   Test.Graph_Callbacks = 1;
   Test.Hypergraph_Callbacks = 1;
   Test.Gen_Files = 0;
-  Test.Null_Lists = NONE;
+  Test.Null_Lists = NO_NULL_LISTS;
   Test.Dynamic_Weights = .0;
   Test.Dynamic_Graph = .0;
   Test.Vtx_Inc = 0;
@@ -335,7 +340,7 @@ int main(int argc, char *argv[])
        *  Create a Zoltan DD for tracking elements during repartitioning.
        */
 
-      if (mesh.data_type == HYPERGRAPH && !build_elem_dd(&mesh)) {
+      if (mesh.data_type == ZOLTAN_HYPERGRAPH && !build_elem_dd(&mesh)) {
         Gen_Error(0, "fatal: Error returned from build_elem_dd\n");
         error_report(Proc);
         print_output = 0;
@@ -395,7 +400,7 @@ int main(int argc, char *argv[])
     }
 
     if (Test.Vtx_Inc){
-      if (mesh.data_type == HYPERGRAPH ) {
+      if (mesh.data_type == ZOLTAN_HYPERGRAPH ) {
         if (Test.Vtx_Inc>0)
           mesh.visible_nvtx += Test.Vtx_Inc; /* Increment uniformly */
         else
@@ -713,6 +718,10 @@ int i;
     fprintf(fp, "\n");
   }
 
+#if defined(ZOLTAN_PARMETIS) || defined(ZOLTAN_SCOTCH)
+  fprintf(fp, "sizeof indextype = %u\n", sizeof(indextype));
+  fprintf(fp, "sizeof realtype = %u\n", sizeof(realtype));
+#endif
 
   fprintf(fp, "##########################################################\n");
 }
