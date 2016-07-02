@@ -3,7 +3,31 @@
 #
 
 #
-# A) Define the compilers and basic env
+# A) Set up some basic Trilinos options defaults
+#
+
+SET(BUILD_SHARED_LIBS ON CACHE BOOL
+  "Set in SEMSDevEnv.cmake")
+
+SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION ON CACHE BOOL
+  "Set in SEMSDevEnv.cmake")
+
+# Turn off float and complex by default
+SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
+# ToDo: Remove the above when Trlinos_ENABLE_FLOAT and Trilinos_ENABLE_COMPLEX
+# are supported and are off by default (see Trilinos #362)
+
+SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
+  "Set in SEMSDevEnv.cmake")
+
+#
+# B) Define the compilers and basic env
 #
 # NOTE: Set up different compilers depending on if MPI is enabled or not.
 #
@@ -57,36 +81,13 @@ SET(MPI_BASE_DIR "$ENV{SEMS_OPENMPI_ROOT}" CACHE PATH
  "Set in SEMSDevEnv.cmake")
 
 #
-# B) Set up some basic Trilinos options
-#
-
-# Turn on explicit template instantaition by default
-SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION  ON  CACHE BOOL
-  "Set in SEMSDevEnv.cmake")
-
-# Turn off float and complex
-SET(Teuchos_ENABLE_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Teuchos_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Sacado_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Thyra_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Tpetra_INST_COMPLEX_DOUBLE OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Tpetra_INST_COMPLEX_FLOAT OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(Anasazi_ENABLE_COMPLEX OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-# ToDo: Remoe the above when Trlinos_ENABLE_FLOAT and Trilinos_ENABLE_COMPLEX
-# are supported and are off by default (see Trilinos 
-
-# Enable configure timing
-SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING ON CACHE BOOL
-  "Set in SEMSDevEnv.cmake")
-
-#
 # C) Disable packages and TPLs not supported by SEMS Dev Env
 #
 
-# Disable packages we can't enable on this system
+# Don't have SWIG so can't enable PyTrilinos
 SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
-# STK does not build in a serial build!
+# STK does not build in a serial build (see #466)
 IF (NOT TPL_ENABLE_MPI)
   SET(${PROJECT_NAME}_ENABLE_STK OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 ENDIF()
@@ -98,15 +99,15 @@ SET(TPL_ENABLE_SuperLU OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
 # Disable Zoltan usage of 64-bit Scotch and ParMETIS because we can't
-# selectively disable the failing tests due Zoltan CMakeLists.txt files not
-# correclty usign the ADDED_TEST_NAME_OUT argument (see Trilinos #475).
+# selectively disable the failing tests since Zoltan CMakeLists.txt files do
+# not correclty use the ADDED_TEST_NAME_OUT argument (see Trilinos #475).
 SET(Zoltan_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
 SET(Zoltan_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
 
 # Disable Zoltan2 usage of 64-bit Scotch and ParMETIS becaues this causes
 # several existing Zoltan2 tests to fail that pass otherwise (see Trilinos
 # #476). Also, you have to not enable ParMETIS for ShyLU because it requires
-# #that ParMETIS is enabled in Zoltan2.
+# that ParMETIS is enabled in Zoltan2.
 SET(Zoltan2_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
 SET(Zoltan2_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
 SET(ShyLUCore_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
