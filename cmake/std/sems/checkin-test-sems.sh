@@ -11,18 +11,18 @@
 #
 #   $ ./checkin-test-sems.sh [other options] --local-do-all
 #
-# For testing and pushing:
+# For testing and pushing, run with:
 #
 #   $ ./checkin-test-sems.sh [other options] --do-all --push
 #
-# NOTE: After the first time rumming this script (e.g. #
-# ./checkin-test-sems.sh --help), please modify the created file:
+# NOTE: After the first time running this script (e.g. ./checkin-test-sems.sh
+# --help), please modify the created file:
 #
 #    ./local-checkin-test-defaults.py
 #
-# to adjust the defaults for the given machine you are on.  For example, you
-# will want to adjust the parallel level -j<N> option to take better advantage
-# of the cores on your local machine.  Also, one may want to make
+# to adjust the defaults for usage on your machine.  For example, you will
+# want to adjust the parallel level -j<N> option to take better advantage of
+# the cores on your local machine.  Also, youe will want to make
 # --ctest-timeout larger if the machine you are on is particularly slow.
 #
 
@@ -62,19 +62,36 @@ echo "
 # up automatically!
 
 echo "
+-DTPL_ENABLE_MPI=ON
 -DCMAKE_BUILD_TYPE=RELEASE
 -DTrilinos_ENABLE_DEBUG=ON
--DTPL_ENABLE_MPI=ON
+-DBUILD_SHARED_LIBS=ON
 -DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
-" > MPI_RELEASE_DEBUG_ST.config
+" > MPI_RELEASE_DEBUG_SHARED_ST.config
 
 echo "
--DCMAKE_BUILD_TYPE=RELEASE
--DTrilinos_ENABLE_DEBUG=OFF
 -DTPL_ENABLE_MPI=OFF
-" > SERIAL_RELEASE_ST.config
+-DCMAKE_BUILD_TYPE=RELEASE
+-DBUILD_SHARED_LIBS=ON
+" > SERIAL_RELEASE_SHARED_ST.config
 
-# ToDo: Add some more builds?
+echo "
+-DTPL_ENABLE_MPI=ON
+-DCMAKE_BUILD_TYPE=RELEASE
+-DTrilinos_ENABLE_DEBUG=ON
+-DBUILD_SHARED_LIBS=OFF
+-DTPL_FIND_SHARED_LIBS=OFF
+-DTrilinos_LINK_SEARCH_START_STATIC=ON
+-DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
+" > MPI_RELEASE_DEBUG_STATIC_ST.config
+
+echo "
+-DTPL_ENABLE_MPI=OFF
+-DCMAKE_BUILD_TYPE=RELEASE
+-DBUILD_SHARED_LIBS=OFF
+-DTPL_FIND_SHARED_LIBS=OFF
+-DTrilinos_LINK_SEARCH_START_STATIC=ON
+" > SERIAL_RELEASE_STATIC_ST.config
 
 #
 # C) Create a default local defaults file
@@ -91,23 +108,25 @@ else
 defaults = [
   \"-j4\",
   \"--ctest-timeout=180\",
-  \"--st-extra-builds=MPI_RELEASE_DEBUG_ST,SERIAL_RELEASE_ST\",
   \"--disable-packages=PyTrilinos,Pliris,Claps,TriKota\",
   \"--skip-case-no-email\",
-  \"--ctest-options=-E '()'\",
   ]
   " > $_LOCAL_CHECKIN_TEST_DEFAULTS
 fi
 # Note the above defaults:
+#
 # -j4: Uses very few processes by default
+#
 # --ctest-timeout=180: A default 3 minute timeout
-# --st-extra-builds=MPI_RELEASE_DEBUG_ST,SERIAL_RELEASE_ST: Test a
-#    larger set of packages supported by the SEMS Dev Env
+#
 # --disable-packages: These a packages that most Trilinos developers wil not
 #    want to test by default.
+#
 # --skip-case-no-email: Don't send email for skipped test cases
-# --ctest-options=-E '()':  Can be replaced by -E '(<test1>|<test2>>|...)'
-#    to skip tests that are filing on the local machine for some reason.
+#
+# To exclude tests, include the option:
+#
+#  \"--ctest-options=-E '(<test1>|<test2>|...)\",
 
 #
 # D) Run the checkin-test.py script!
