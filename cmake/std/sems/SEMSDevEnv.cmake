@@ -170,15 +170,17 @@ SET(BoostLib_INCLUDE_DIRS "${Boost_ROOT}/include"
 SET(BoostLib_LIBRARY_DIRS "${Boost_ROOT}/lib"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 
+
 # Scotch (SEMS only provides an MPI version)
 IF (TPL_ENABLE_MPI)
-  SET(TPL_ENABLE_Scotch ON CACHE BOOL "Set in SEMSDevEnv.cmake")
-  SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
-  #PRINT_VAR(Scotch_ROOT)
-  SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
-    CACHE PATH "Set in SEMSDevEnv.cmake")
-  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
-    CACHE PATH "Set in SEMSDevEnv.cmake")
+  # Disable 32-bit Scotch because it is not compatible with 64-bit ParMETIS
+  # because it causes Zoltan Scotch tests to fail.
+  #SET(TPL_ENABLE_Scotch ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+  #SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
+  #SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
+  #  CACHE PATH "Set in SEMSDevEnv.cmake")
+  #SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
+  #  CACHE PATH "Set in SEMSDevEnv.cmake")
 ENDIF()
 
 # ParMETIS (SEMS only provides an MPI version)
