@@ -59,6 +59,7 @@ fi
 # C) Unload the modules (in the reverse order)
 #
 
+module unload sems-superlu/4.3/base
 module unload sems-scotch/6.0.3/parallel 
 module unload sems-parmetis/4.0.3/parallel 
 module unload sems-netcdf/4.3.2/parallel 

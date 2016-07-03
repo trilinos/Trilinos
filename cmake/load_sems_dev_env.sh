@@ -154,6 +154,7 @@ module load sems-hdf5/1.8.12/parallel
 module load sems-netcdf/4.3.2/parallel 
 module load sems-parmetis/4.0.3/parallel 
 module load sems-scotch/6.0.3/parallel 
+module load sems-superlu/4.3/base
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then
   module list

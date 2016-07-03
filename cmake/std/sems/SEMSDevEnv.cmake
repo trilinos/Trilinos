@@ -95,7 +95,6 @@ ENDIF()
 # Disable a bunch of TPLs that are not on this system
 SET(TPL_ENABLE_GLM OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
-SET(TPL_ENABLE_SuperLU OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
 # Disable Zoltan2 usage of 64-bit Scotch and ParMETIS becaues this causes
@@ -225,6 +224,17 @@ SET(TPL_Netcdf_INCLUDE_DIRS "${Netcdf_ROOT}/include;${TPL_HDF5_INCLUDE_DIRS}"
 SET(Netcdf_LIBRARY_DIRS "${Netcdf_ROOT}/lib;${HDF5_LIBRARY_DIRS}"
   CACHE PATH "Set in SEMSDevEnv.cmake")
 SET(Netcdf_LIBRARY_NAMES "netcdf;pnetcdf;${HDF5_LIBRARY_NAMES}"
+  CACHE STRING "Set in SEMSDevEnv.cmake")
+
+# SuperLU
+SET(TPL_ENABLE_SuperLU ON CACHE BOOL "Set in SEMSDevEnv.cmake")
+SEMS_SELECT_TPL_ROOT_DIR(SUPERLU SuperLU_ROOT)
+#PRINT_VAR(SuperLU_ROOT)
+SET(TPL_SuperLU_INCLUDE_DIRS "${SuperLU_ROOT}/include"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+SET(SuperLU_LIBRARY_DIRS "${SuperLU_ROOT}/lib"
+  CACHE PATH "Set in SEMSDevEnv.cmake")
+SET(SuperLU_LIBRARY_NAMES "superlu;lapack;blas"
   CACHE STRING "Set in SEMSDevEnv.cmake")
 
 #
