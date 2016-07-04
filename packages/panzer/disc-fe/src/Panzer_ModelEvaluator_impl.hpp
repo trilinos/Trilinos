@@ -919,6 +919,12 @@ evalModel_D2gDx2(int respIndex,
   panzer::AssemblyEngineInArgs ae_inargs;
   setupAssemblyInArgs(inArgs,ae_inargs);
 
+  ae_inargs.beta = 1.0;
+
+  auto deltaXContainer = lof_->buildDomainContainer();
+  deltaXContainer->setUniqueVector(delta_x);
+  ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container - X",deltaXContainer);
+
   // evaluate responses
   responseLibrary_->addResponsesToInArgs<panzer::Traits::Hessian>(ae_inargs);
   responseLibrary_->evaluate<panzer::Traits::Hessian>(ae_inargs);

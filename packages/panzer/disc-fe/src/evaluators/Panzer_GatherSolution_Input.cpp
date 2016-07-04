@@ -50,7 +50,7 @@ setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & p)
 
   // required by Hessian types
   secondSensAvail_         = p->get<bool>("Second Sensitivities Available");    
-  secondSensDataKeyPrefix_ = p->get<bool>("Second Sensitivities Data Key Prefix");
+  secondSensDataKeyPrefix_ = p->get<std::string>("Second Sensitivities Data Key Prefix");
 }
   
 Teuchos::RCP<const Teuchos::ParameterList> 
@@ -81,7 +81,7 @@ getValidParameters() const
 
   // required by Hessian types
   p->set<bool>("Second Sensitivities Available",true);          // Hessian only
-  p->set<bool>("Second Sensitivities Data Key Prefix","DELTA"); // Hessian only
+  p->set<std::string>("Second Sensitivities Data Key Prefix","DELTA_"); // Hessian only
 
   return p;
 }

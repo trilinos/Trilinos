@@ -235,7 +235,7 @@ namespace panzer {
 
       me->evalModel_D2gDx2(rIndex,in_args,dx,D2gDx2);
 
-      out << Teuchos::describe(*D2gDx2,Teuchos::VERB_EXTREME) << std::endl;
+      out << "D2gDx2 = \n" << Teuchos::describe(*D2gDx2,Teuchos::VERB_EXTREME) << std::endl;
     }
 
     Teuchos::ArrayRCP<const double> D2gDx2_data;
@@ -244,12 +244,13 @@ namespace panzer {
     double scale = 2.0*DENSITY_VALUE*PERTURB_VALUE;
     double int_phi = 1.0/192.0;
     for(int i=0;i<D2gDx2_data.size();i++) {
-      out << D2gDx2_data[i]  << " " << int_phi << std::endl;
+      out << D2gDx2_data[i]  << " " << D2gDx2_data[i]/(scale*int_phi) << std::endl;
       bool a = std::fabs(D2gDx2_data[i]-scale*int_phi)/(scale*int_phi)          <= 1e-14;
       bool b = std::fabs(D2gDx2_data[i]-2.0*scale*int_phi)/(2.0*scale*int_phi)  <= 1e-14;
       bool c = std::fabs(D2gDx2_data[i]-4.0*scale*int_phi)/(4.0*scale*int_phi)  <= 1e-14;
+      bool d = (D2gDx2_data[i]==0.0);
 
-      TEST_ASSERT(a || b || c);
+      TEST_ASSERT(a || b || c || d);
     }
   }
 
