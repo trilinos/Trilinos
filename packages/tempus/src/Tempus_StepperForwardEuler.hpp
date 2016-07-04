@@ -16,8 +16,8 @@ public:
 
   /// Constructor
   StepperForwardEuler(
-    Teuchos::RCP<Teuchos::ParameterList>                pList_,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model_ );
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel);
 
   /// \name Basic stepper methods
   //@{
@@ -25,6 +25,7 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
   //@}
 
@@ -51,7 +52,8 @@ private:
 protected:
 
   Teuchos::RCP<Teuchos::ParameterList>               pList_;
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  /// Explicit ODE ModelEvaluator
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > eODEModel_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;

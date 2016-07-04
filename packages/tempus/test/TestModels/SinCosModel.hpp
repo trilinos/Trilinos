@@ -96,9 +96,6 @@ class SinCosModel
   // Exact sensitivity solution
   ModelEvaluatorBase::InArgs<double> getExactSensSolution(int j, double t) const;
 
-  // Set explicit/implicit flag
-  void setImplicitFlag(bool implicit);
-
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
@@ -143,7 +140,6 @@ private:
   int np_;          ///< Number of parameters in this vector (2)
   int Ng_;          ///< Number of observation functions (1)
   int ng_;          ///< Number of elements in this observation function (1)
-  bool isImplicit_; ///< false => xdot = f(x,t)   W = beta*df/dx; true =>  F(xdot,x,t) = 0 W = alpha*dF/dxdot + beta*dF/dx
   bool haveIC_;     ///< false => no nominal values are provided (default=true)
   bool acceptModelParams_; ///< Changes inArgs to require parameters
   mutable bool isInitialized_;

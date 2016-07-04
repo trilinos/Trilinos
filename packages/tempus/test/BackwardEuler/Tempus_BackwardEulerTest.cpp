@@ -67,7 +67,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, SinCos)
       RCP<SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
-      for (int i=0; i<solutionHistory->getSize(); i++) {
+      for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
         RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();

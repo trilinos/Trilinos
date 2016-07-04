@@ -122,7 +122,11 @@ void SolutionHistory<Scalar>::addState(
     }
     history_->insert(state_it, state_);
   }
-  currentState = history_->back();
+
+  if      (getNumStates() > 1) currentState_ = (*history_)[getNumStates()-2];
+  else if (getNumStates() == 1) currentState_ = (*history_)[0];
+  TEUCHOS_TEST_FOR_EXCEPTION(getNumStates() <= 0, std::logic_error,
+    "Error - SolutionHistory::addState() Invalid history size!\n");
 
   return;
 }
@@ -201,40 +205,39 @@ SolutionHistory<Scalar>::interpolateState(const Scalar time) const
 }
 
 
-template<class Scalar>
-Teuchos::RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getCurrentState() const
-{
-  return currentState;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<SolutionState<Scalar> > SolutionHistory<Scalar>::getWorkingState() const
-{
-  return workingState;
-}
-
 /** Initialize the working state */
 template<class Scalar>
 void SolutionHistory<Scalar>::initWorkingState()
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(currentState == Teuchos::null, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(getCurrentState() == Teuchos::null,
+    std::logic_error,
     "Error - SolutionHistory::initWorkingState()\n"
     "Can not initialize working state without a current state!\n");
 
-  // If workingState has a valid pointer, we are still working on it,
-  // i.e., step failed and trying again.  So do not initialize it.
-  if (workingState != Teuchos::null) return;
+  // If workingState_ has a valid pointer, we are still working on it,
+  // i.e., step failed and trying again, so do not initialize it.
+  if (getWorkingState() != Teuchos::null) return;
 
-  if (storageLimit == 1) {
-    workingState = currentState;
-    workingState->metaData_->solutionStatus_ = Status::WORKING;
-    currentState = Teuchos::null;
+  Teuchos::RCP<SolutionState<Scalar> > newState;
+  if (getNumStates() < storageLimit) {
+    // Create newState which is duplicate of currentState_
+    newState = getCurrentState()->clone();
   } else {
-    workingState = currentState->clone();
-    workingState->metaData_->solutionStatus_ = Status::WORKING;
-    addState(workingState);
+    // Recycle old state and duplicate currentState_
+    newState = (*history_)[0];
+    history_->erase(history_->begin());
+    newState->copy(getCurrentState());
+    // When using the Griewank algorithm, we will want to select which
+    // older state to recycle.
   }
+
+  // Add newState and sort
+  addState(newState);
+
+  // Set workingState_
+  workingState_ = (*history_)[getNumStates()-1];
+
+  getWorkingState()->metaData_->solutionStatus_ = Status::WORKING;
 
   return;
 }
@@ -243,7 +246,7 @@ void SolutionHistory<Scalar>::initWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::promoteWorkingState()
 {
-  Teuchos::RCP<SolutionStateMetaData<Scalar> > md = workingState->metaData_;
+  Teuchos::RCP<SolutionStateMetaData<Scalar> > md =getWorkingState()->metaData_;
   md->time_ += md->dt_;
   md->iStep_++;
   md->nFailures_ = std::max(0,md->nFailures_-1);
@@ -251,8 +254,8 @@ void SolutionHistory<Scalar>::promoteWorkingState()
   md->solutionStatus_ = Status::PASSED;
   md->isRestartable_ = true;
   md->isInterpolated_ = false;
-  currentState = workingState;
-  workingState = Teuchos::null;
+  currentState_ = workingState_;
+  workingState_ = Teuchos::null;
 }
 
 
@@ -326,7 +329,7 @@ void SolutionHistory<Scalar>::setParameterList(
     storageType = STORAGE_TYPE_KEEP_NEWEST;
     if (storage_limit != 1) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"SoltuionHistory::setParameterList");
+      Teuchos::OSTab ostab(out,1,"SolutionHistory::setParameterList");
       *out << "Warning - 'Storage Limit' for 'Keep Newest' is 1.\n"
            << "  (Storage Limit = "<<storage_limit<<").  Resetting to 1."
            << std::endl;
@@ -338,7 +341,7 @@ void SolutionHistory<Scalar>::setParameterList(
   case STORAGE_TYPE_UNDO: {
     if (storage_limit != 2) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-      Teuchos::OSTab ostab(out,1,"SoltuionHistory::setParameterList");
+      Teuchos::OSTab ostab(out,1,"SolutionHistory::setParameterList");
       *out << "Warning - 'Storage Limit' for 'Undo' is 2.\n"
            << "  (Storage Limit = "<<storage_limit<<").  Resetting to 2."
            << std::endl;

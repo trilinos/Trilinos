@@ -72,11 +72,14 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
 
-  /// This is a shallow copy constructor, use clone for a deep copy
-  SolutionState(const SolutionState<Scalar>& ss_);
+  /// This is a shallow copy constructor, use clone for a deep copy constructor
+  SolutionState(const SolutionState<Scalar>& ss);
 
-  /// This is a deep copy and copies the underlying vectors
+  /// This is a deep copy constructor
   virtual Teuchos::RCP<SolutionState<Scalar> > clone() const;
+
+  /// This is a deep copy
+  virtual void copy(Teuchos::RCP<SolutionState<Scalar> > ss);
 
   /// \name Accessor methods
   //@{

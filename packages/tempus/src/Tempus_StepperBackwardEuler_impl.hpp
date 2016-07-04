@@ -1,11 +1,14 @@
 #ifndef TEMPUS_STEPPERBACKWARDEULER_IMPL_HPP
 #define TEMPUS_STEPPERBACKWARDEULER_IMPL_HPP
 
-// Teuchos
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Tempus_StepperFactory.hpp"
 
 
 namespace Tempus {
+
+// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
+template<class Scalar> class StepperFactory;
 
 
 template <typename Scalar>
@@ -31,18 +34,30 @@ StepperBackwardEuler<Scalar>::StepperBackwardEuler(
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
+
   this->setParameterList(pList);
 
-  residualModel_ = rcp(new ResidualModelEvaluator<Scalar>(transientModel));
+  this->validImplicitODE_DAE(transientModel);
+  residualModel_ =
+    Teuchos::rcp(new ResidualModelEvaluator<Scalar>(transientModel));
 
   inArgs_  = residualModel_->getNominalValues();
   outArgs_ = residualModel_->createOutArgs();
 
+  // Construct solver
   std::string solverName = pList_->get<std::string>("Solver Name");
-  RCP<ParameterList> solverPL = Teuchos::sublist(pList_,solverName,true);
-  RCP<ParameterList> noxPL    = Teuchos::sublist(solverPL,"NOX",true);
+  RCP<ParameterList> solverPL = Teuchos::sublist(pList_, solverName, true);
+  RCP<ParameterList> noxPL    = Teuchos::sublist(solverPL, "NOX", true);
   solver_ = rcp(new Thyra::NOXNonlinearSolver());
   solver_->setParameterList(noxPL);
+
+  // Construct predictor
+  std::string predictorName = pList_->get<std::string>("Predictor Name","None");
+  if (predictorName != "None") {
+    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
+    RCP<ParameterList> predPL = Teuchos::sublist(pList_, predictorName, true);
+    predictorStepper_ = sf->createStepper(predPL, transientModel);
+  }
 }
 
 
@@ -51,12 +66,16 @@ void StepperBackwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   using Teuchos::RCP;
+
   RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
   RCP<SolutionState<Scalar> > currentState = solutionHistory->getCurrentState();
 
   RCP<const Thyra::VectorBase<Scalar> > xOld = currentState->getX();
   RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
   RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
+
+  computePredictor(solutionHistory);
+  if (workingState->stepperState_->stepperStatus_ == Status::FAILED) return;
 
   typedef Thyra::ModelEvaluatorBase MEB;
   const Scalar time = workingState->getTime();
@@ -86,6 +105,27 @@ void StepperBackwardEuler<Scalar>::takeStep(
   return;
 }
 
+template<class Scalar>
+void StepperBackwardEuler<Scalar>::computePredictor(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
+{
+  if (predictorStepper_ == Teuchos::null) return;
+  predictorStepper_->takeStep(solutionHistory);
+
+  Status & stepperStatus =
+    solutionHistory->getWorkingState()->stepperState_->stepperStatus_;
+
+  if (stepperStatus == Status::FAILED) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"StepperBackwardEuler::computePredictor");
+    *out << "Warning - predictorStepper has failed." << std::endl;
+  } else {
+    // Reset status to WORKING since this is the predictor
+    stepperStatus = Status::WORKING;
+  }
+}
+
+
 /** \brief Provide a StepperState to the SolutionState.
  *  Backward Euler does not have any special state data,
  *  so just provide the base class StepperState with the
@@ -93,8 +133,8 @@ void StepperBackwardEuler<Scalar>::takeStep(
  *  that the input StepperState can be used by Backward Euler.
  */
 template<class Scalar>
-Teuchos::RCP<Tempus::StepperState<Scalar> > StepperBackwardEuler<Scalar>::
-getDefaultStepperState()
+Teuchos::RCP<Tempus::StepperState<Scalar> >
+StepperBackwardEuler<Scalar>::getDefaultStepperState()
 {
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState =
     rcp(new StepperState<Scalar>(description()));

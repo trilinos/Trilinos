@@ -1,6 +1,7 @@
 #ifndef TEMPUS_SOLUTIONSTATE_IMPL_HPP
 #define TEMPUS_SOLUTIONSTATE_IMPL_HPP
 
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 
@@ -64,6 +65,7 @@ SolutionState<Scalar>::SolutionState(const SolutionState<Scalar>& ss_)
    stepperState_(ss_.stepperState_)
 {}
 
+
 template<class Scalar>
 Teuchos::RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 {
@@ -89,6 +91,19 @@ Teuchos::RCP<SolutionState<Scalar> > SolutionState<Scalar>::clone() const
 
   return ss_out;
 }
+
+
+template<class Scalar>
+void SolutionState<Scalar>::
+copy(Teuchos::RCP<SolutionState<Scalar> > ss)
+{
+  metaData_->copy(ss->metaData_);
+  Thyra::V_V(x_.ptr(),       *(ss->x_));
+  Thyra::V_V(xdot_.ptr(),    *(ss->xdot_));
+  Thyra::V_V(xdotdot_.ptr(), *(ss->xdotdot_));
+  stepperState_->copy(ss->stepperState_);
+}
+
 
 template<class Scalar>
 bool SolutionState<Scalar>::operator< (const SolutionState<Scalar>& ss) const

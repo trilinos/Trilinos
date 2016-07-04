@@ -1,9 +1,7 @@
 #ifndef TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
 #define TEMPUS_STEPPERFORWARDEULER_IMPL_HPP
 
-// Teuchos
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
 
 namespace Tempus {
 
@@ -11,31 +9,28 @@ namespace Tempus {
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
-  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model )
-  : model_(model)
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& transientModel )
 {
   this->setParameterList(pList);
 
-  inArgs_  = model_->createInArgs();
-  outArgs_ = model_->createOutArgs();
-  inArgs_  = model_->getNominalValues();
+  this->validExplicitODE(transientModel);
+  eODEModel_ = transientModel;
+
+  inArgs_  = eODEModel_->createInArgs();
+  outArgs_ = eODEModel_->createOutArgs();
+  inArgs_  = eODEModel_->getNominalValues();
 }
 
 template<class Scalar>
 void StepperForwardEuler<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  Teuchos::RCP<SolutionState<Scalar> > workingState = solutionHistory->getWorkingState();
-
-  TEUCHOS_TEST_FOR_EXCEPTION(is_null(workingState), std::logic_error,
-    "Error - SolutionState, workingState, is invalid!\n");
+  Teuchos::RCP<SolutionState<Scalar> > currentState =
+    solutionHistory->getCurrentState();
 
   typedef Thyra::ModelEvaluatorBase MEB;
-  const Scalar time = workingState->getTime();
-  const Scalar dt   = workingState->getTimeStep();
-
-  inArgs_.set_x(workingState->getX());
-  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
+  inArgs_.set_x(currentState->getX());
+  if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(currentState->getTime());
 
   // For model evaluators whose state function f(x, x_dot, t) describes
   // an implicit ODE, and which accept an optional x_dot input argument,
@@ -43,12 +38,17 @@ void StepperForwardEuler<Scalar>::takeStep(
   // of a state function corresponding to the explicit ODE formulation
   // x_dot = f(x, t)
   if (inArgs_.supports(MEB::IN_ARG_x_dot)) inArgs_.set_x_dot(Teuchos::null);
-  outArgs_.set_f(workingState->getXDot());
+  outArgs_.set_f(currentState->getXDot());
 
-  model_->evalModel(inArgs_,outArgs_);
+  Teuchos::RCP<SolutionState<Scalar> > workingState =
+    solutionHistory->getWorkingState();
+
+  eODEModel_->evalModel(inArgs_,outArgs_);
 
   // Forward Euler update, x = x + dt*xdot
-  Thyra::Vp_StV(workingState->getX().ptr(),dt,*(workingState->getXDot().ptr()));
+  const Scalar dt = workingState->getTimeStep();
+  Thyra::V_VpStV(Teuchos::outArg(*(workingState->getX())),
+    *(currentState->getX()),dt,*(currentState->getXDot()));
 
   workingState->stepperState_->stepperStatus_ = Status::PASSED;
   return;
@@ -85,7 +85,7 @@ void StepperForwardEuler<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   out << description() << "::describe:" << std::endl
-      << "model_ = " << model_->description() << std::endl;
+      << "eODEModel_ = " << eODEModel_->description() << std::endl;
 }
 
 

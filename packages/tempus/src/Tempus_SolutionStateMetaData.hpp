@@ -34,15 +34,19 @@ public:
     const int    nConsecutiveFailures,
     const Status solutionStatus,
     const bool   output,
+    const bool   outputScreen,
     const bool   isRestartable,
     const bool   isInterpolated,
     const Scalar accuracy);
 
   /// Copy constructor
-  SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_);
+  SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd);
 
-  /// Clone
+  /// Clone constructor
   Teuchos::RCP<SolutionStateMetaData<Scalar> > clone();
+
+  /// This is a deep copy
+  void copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd);
 
   /// Destructor
   virtual ~SolutionStateMetaData() {};
@@ -65,6 +69,7 @@ public:
   */
   Status solutionStatus_;
   bool   output_;            ///< SolutionState should be or has been outputted
+  bool   outputScreen_;      ///< Output screen dump
   bool   isRestartable_;     ///< T - soln can be used as a restart
   bool   isInterpolated_;    ///< F - soln is time integrated; T - soln is interpolated
   Scalar accuracy_;          ///< Interpolation accuracy of solution

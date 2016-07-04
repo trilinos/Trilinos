@@ -228,20 +228,6 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
     }
 
-    // Check if to output this step
-    std::vector<int>::const_iterator it;
-    it = std::find(outputIndices_.begin(), outputIndices_.end(), iStep+1);
-    if (it != outputIndices_.end()) output = true;
-
-    if (!output) {
-      for (int i=0; i < outputTimes_.size(); ++i) {
-        if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
-          output = true;
-          break;
-        }
-      }
-    }
-
     const Scalar relTol = 1.0e-14;
     if (time+dt < timeMin_*(1.0-relTol) || time+dt > timeMax_*(1.0+relTol)) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -279,21 +265,6 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     if (time + dt > timeMax_ ) dt = timeMax_ - time;
 
-    // Check if to output this step
-    std::vector<int>::const_iterator it =
-      std::find(outputIndices_.begin(), outputIndices_.end(), iStep);
-    if (it != outputIndices_.end()) output = true;
-
-    if (!output) {
-      for (int i=0; i < outputTimes_.size(); ++i) {
-        if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
-          output = true;
-          dt = outputTimes_[i] - time;
-          break;
-        }
-      }
-    }
-
     // Consistency checks
     TEUCHOS_TEST_FOR_EXCEPTION(
       (time + dt < timeMin_), std::out_of_range,
@@ -306,6 +277,21 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       "Error - Time step move time OUT OF time range.\n"
       "    [timeMin, timeMax] = [" << timeMin_ << ", " << timeMax_ << "]\n"
       "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+  }
+
+  // Check if we need to output this step
+  std::vector<int>::const_iterator it =
+    std::find(outputIndices_.begin(), outputIndices_.end(), iStep+1);
+  if (it != outputIndices_.end()) output = true;
+
+  if (!output) {
+    for (int i=0; i < outputTimes_.size(); ++i) {
+      if (time < outputTimes_[i] && outputTimes_[i] <= time + dt) {
+        output = true;
+        if (stepType_ == VARIABLE_STEP_SIZE) dt = outputTimes_[i] - time;
+        break;
+      }
+    }
   }
 
   return;

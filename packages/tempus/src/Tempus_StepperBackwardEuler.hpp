@@ -27,7 +27,12 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+    /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+
+    /// Compute predictor given the supplied stepper
+    virtual void computePredictor(
+      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
   //@}
 
   /// \name ParameterList methods
@@ -55,6 +60,7 @@ private:
   Teuchos::RCP<Teuchos::ParameterList>              pList_;
   Teuchos::RCP<ResidualModelEvaluator<Scalar> >     residualModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
+  Teuchos::RCP<Stepper<Scalar> >                    predictorStepper_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;

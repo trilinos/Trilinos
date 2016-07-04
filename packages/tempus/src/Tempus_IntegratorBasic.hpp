@@ -38,12 +38,14 @@ public:
 
   /// \name Basic integrator methods
   //@{
-    /// Perform tasks before start of integrator.
-    void startIntegrator();
     /// Advance the solution to timeMax, and return true if successful.
     bool advanceTime();
     /// Advance the solution to timeFinal, and return true if successful.
     bool advanceTime(const Scalar timeFinal);
+    /// Perform tasks before start of integrator.
+    void startIntegrator();
+    /// Start time step.
+    void startTimeStep();
     /// Only accept step after meeting time step criteria.
     void acceptTimeStep();
     /// Perform tasks after end of integrator.
@@ -99,16 +101,16 @@ protected:
   Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
   Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
-  Teuchos::RCP<Teuchos::Time>  integratorTimer;
-  Teuchos::RCP<Teuchos::Time>  stepperTimer;
+  Teuchos::RCP<Teuchos::Time>  integratorTimer_;
+  Teuchos::RCP<Teuchos::Time>  stepperTimer_;
 
-  std::vector<int>    outputScreenIndices; ///< Vector of screen output indices.
+  std::vector<int>    outputScreenIndices_;///< Vector of screen output indices.
 
   /** The integratorStatus is primarily in the WORKING Status, and
    *  PASSED/FAILED are noted at the end of the run.  A FAILED value
    *  is used to jump out of the time-integration loop.
    */
-  Status integratorStatus;
+  Status integratorStatus_;
 };
 } // namespace Tempus
 

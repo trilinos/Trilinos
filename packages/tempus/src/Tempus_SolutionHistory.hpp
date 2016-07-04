@@ -74,12 +74,6 @@ public:
     /// Generate and interpolate a new solution state at requested time
     Teuchos::RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
 
-    /// Return the current state, i.e., the last accepted state
-    Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const;
-
-    /// Return the working state
-    Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const;
-
     /// Initialize the working state
     void initWorkingState();
 
@@ -104,18 +98,22 @@ public:
       return (*history_)[i];
     }
 
-    /// Get current state
-    Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
-      {return currentState;}
+    /// Return the current state, i.e., the last accepted state
+    Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
+      { return currentState_; }
 
-    /// Get the current number of states
-    int getSize() const {return history_->size();}
+    /// Return the working state
+    Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
+      { return workingState_; }
+
+    /// Get the number of states
+    int getNumStates() const {return history_->size();}
 
     /// Get the current time
-    Scalar getCurrentTime() const {return currentState->getTime();}
+    Scalar getCurrentTime() const {return getCurrentState()->getTime();}
 
     /// Get the current index
-    int getCurrentIndex() const {return currentState->getIndex();}
+    int getCurrentIndex() const {return getCurrentState()->getIndex();}
 
     /// Set the maximum storage of this history
     void setStorageLimit(int storage_limit);
@@ -165,8 +163,8 @@ protected:
   StorageType                               storageType;
   int                                       storageLimit;
 
-  Teuchos::RCP<SolutionState<Scalar> > currentState;   ///< The last accepted state
-  Teuchos::RCP<SolutionState<Scalar> > workingState;   ///< The state being worked on
+  Teuchos::RCP<SolutionState<Scalar> > currentState_; ///< The last accepted state
+  Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
 

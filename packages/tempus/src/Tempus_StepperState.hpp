@@ -38,13 +38,20 @@ public:
   StepperState(std::string name, Status stepperStatus = WORKING)
     : stepperName_(name), stepperStatus_(stepperStatus){}
 
-  /// This is a deep copy
+  /// Clone copy constructor
   virtual Teuchos::RCP<StepperState<Scalar> > clone() const
   {
      Teuchos::RCP<StepperState<Scalar> > ss_out =
        Teuchos::rcp(new StepperState<Scalar> (this->stepperName_,
                                               this->stepperStatus_));
      return ss_out;
+  }
+
+  /// This is a deep copy
+  virtual void copy(Teuchos::RCP<StepperState<Scalar> >  ss)
+  {
+     stepperName_   = ss->stepperName_;
+     stepperStatus_ = ss->stepperStatus_;
   }
 
   /// \name Overridden from Teuchos::Describable

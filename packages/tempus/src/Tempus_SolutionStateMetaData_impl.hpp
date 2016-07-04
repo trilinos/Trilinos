@@ -17,6 +17,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    nConsecutiveFailures_(0),
    solutionStatus_(WORKING),
    output_        (false),
+   outputScreen_  (false),
    isRestartable_ (true),
    isInterpolated_(false),
    accuracy_      (0.0)
@@ -34,6 +35,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const int    nConsecutiveFailures,
   const Status solutionStatus,
   const bool   output,
+  const bool   outputScreen,
   const bool   isRestartable,
   const bool   isInterpolated,
   const Scalar accuracy)
@@ -47,26 +49,28 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    nConsecutiveFailures_(nConsecutiveFailures),
    solutionStatus_(solutionStatus),
    output_        (output),
+   outputScreen_  (outputScreen),
    isRestartable_ (isRestartable),
    isInterpolated_(isInterpolated),
    accuracy_      (accuracy)
 {}
 
 template<class Scalar>
-SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd_)
-  :time_          (ssmd_.time_),
-   iStep_         (ssmd_.iStep_),
-   dt_            (ssmd_.dt_),
-   errorAbs_      (ssmd_.errorAbs_),
-   errorRel_      (ssmd_.errorRel_),
-   order_         (ssmd_.order_),
-   nFailures_     (ssmd_.nFailures_),
-   nConsecutiveFailures_(ssmd_.nConsecutiveFailures_),
-   solutionStatus_(ssmd_.solutionStatus_),
-   output_        (ssmd_.output_),
-   isRestartable_ (ssmd_.isRestartable_),
-   isInterpolated_(ssmd_.isInterpolated_),
-   accuracy_      (ssmd_.accuracy_)
+SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData<Scalar>& ssmd)
+  :time_          (ssmd.time_),
+   iStep_         (ssmd.iStep_),
+   dt_            (ssmd.dt_),
+   errorAbs_      (ssmd.errorAbs_),
+   errorRel_      (ssmd.errorRel_),
+   order_         (ssmd.order_),
+   nFailures_     (ssmd.nFailures_),
+   nConsecutiveFailures_(ssmd.nConsecutiveFailures_),
+   solutionStatus_(ssmd.solutionStatus_),
+   output_        (ssmd.output_),
+   outputScreen_  (ssmd.outputScreen_),
+   isRestartable_ (ssmd.isRestartable_),
+   isInterpolated_(ssmd.isInterpolated_),
+   accuracy_      (ssmd.accuracy_)
 {}
 
 
@@ -85,11 +89,33 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       nConsecutiveFailures_,
       solutionStatus_,
       output_,
+      outputScreen_,
       isRestartable_,
       isInterpolated_,
       accuracy_));
 
   return md;
+}
+
+
+template<class Scalar>
+void SolutionStateMetaData<Scalar>::
+copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd)
+{
+  time_           = ssmd->time_;
+  iStep_          = ssmd->iStep_;
+  dt_             = ssmd->dt_;
+  errorAbs_       = ssmd->errorAbs_;
+  errorRel_       = ssmd->errorRel_;
+  order_          = ssmd->order_;
+  nFailures_      = ssmd->nFailures_;
+  nConsecutiveFailures_ = ssmd->nConsecutiveFailures_;
+  solutionStatus_ = ssmd->solutionStatus_;
+  output_         = ssmd->output_;
+  outputScreen_   = ssmd->outputScreen_;
+  isRestartable_  = ssmd->isRestartable_;
+  isInterpolated_ = ssmd->isInterpolated_;
+  accuracy_       = ssmd->accuracy_;
 }
 
 
@@ -118,6 +144,7 @@ void SolutionStateMetaData<Scalar>::describe(
         << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
         << "solutionStatus = " << toString(solutionStatus_) << std::endl
         << "output         = " << output_ << std::endl
+        << "outputScreen   = " << outputScreen_ << std::endl
         << "isRestartable  = " << isRestartable_ << std::endl
         << "isInterpolated = " << isInterpolated_ << std::endl
         << "accuracy       = " << accuracy_ << std::endl;

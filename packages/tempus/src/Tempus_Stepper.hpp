@@ -60,6 +60,71 @@ public:
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState() = 0;
   //@}
 
+  /// \name Helper functions
+  //@{
+    /// Validate that the model supports explicit ODE evaluation, f(x,t) [= xdot]
+    /** Currently the convention to evaluate f(x,t) is to set xdot=null!
+     *  There is no InArgs support to test if xdot is null, so we set
+     *  xdot=null and hopefully the ModelEvaluator can handle it.
+     */
+    void validExplicitODE(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model) const
+    {
+      typedef Thyra::ModelEvaluatorBase MEB;
+      const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+      const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+      const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                            outArgs.supports(MEB::OUT_ARG_f);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+        model->description() << "can not support an explicit ODE with\n"
+        << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+        << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+        << "Explicit ODE requires:\n"
+        << "  IN_ARG_x  = true\n"
+        << "  OUT_ARG_f = true\n"
+        << "\n"
+        << "NOTE: Currently the convention to evaluate f(x,t) is to set\n"
+        << "xdot=null!  There is no InArgs support to test if xdot is null,\n"
+        << "so we set xdot=null and hope the ModelEvaluator can handle it.\n");
+
+      return;
+    }
+
+    /// Validate that the model supports implicit ODE/DAE evaluation, f(xdot,x,t) [= 0]
+    void validImplicitODE_DAE(
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model) const
+    {
+      typedef Thyra::ModelEvaluatorBase MEB;
+      const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+      const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+      const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                            inArgs.supports(MEB::IN_ARG_x_dot) and
+                            inArgs.supports(MEB::IN_ARG_alpha) and
+                            inArgs.supports(MEB::IN_ARG_beta) and
+                            outArgs.supports(MEB::OUT_ARG_f) and
+                            outArgs.supports(MEB::OUT_ARG_W);
+
+      TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+        model->description() << "can not support an implicit ODE with\n"
+        << "  IN_ARG_x     = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+        << "  IN_ARG_x_dot = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+        << "  IN_ARG_alpha = " << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+        << "  IN_ARG_beta  = " << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+        << "  OUT_ARG_f    = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+        << "  OUT_ARG_W    = " << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+        << "Implicit ODE requires:\n"
+        << "  IN_ARG_x     = true\n"
+        << "  IN_ARG_x_dot = true\n"
+        << "  IN_ARG_alpha = true\n"
+        << "  IN_ARG_beta  = true\n"
+        << "  OUT_ARG_f    = true\n"
+        << "  OUT_ARG_W    = true\n");
+
+      return;
+    }
+  //@}
+
   /// \name Error estimation methods
   //@{
 

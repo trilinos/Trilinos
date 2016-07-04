@@ -1,15 +1,7 @@
 #ifndef TEMPUS_STEPPERFACTORY_HPP
 #define TEMPUS_STEPPERFACTORY_HPP
 
-//Teuchos
-//#include "Teuchos_VerboseObject.hpp"
-//#include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
-//#include "Teuchos_StandardParameterEntryValidators.hpp"
-//// Thyra
-//#include "Thyra_ModelEvaluator.hpp"
-//// Tempus
-#include "Tempus_Stepper.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
 
