@@ -38,7 +38,6 @@
 #include <vector>                       // for vector
 
 
-
 bool
 utest_demangle()
 {
@@ -61,32 +60,7 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-    typedef std::vector<double> DoubleVector;
-
-    DoubleVector double_vector;
-
-    std::string linux_name("std::vector<double, std::allocator<double>>");
-    std::string demangled_name = stk::demangle(typeid(double_vector).name());
-    ASSERT_EQ(linux_name, demangled_name);
-  }
-
-#elif defined(__sun)
-  {
-    std::string linux_name("ThisIsJunk");
-    std::string demangled_name = stk::demangle(linux_name.c_str());
-    ASSERT_EQ(linux_name, demangled_name);
-  }
-
-  {
-    std::string linux_name("bool()");
-    std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-    ASSERT_EQ(linux_name, demangled_name);
-  }
-
-  {
-    typedef std::vector<double> DoubleVector;
-
-    DoubleVector double_vector;
+    std::vector<double> double_vector;
 
     std::string linux_name("std::vector<double, std::allocator<double>>");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
@@ -107,9 +81,7 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-    typedef std::vector<double> DoubleVector;
-
-    DoubleVector double_vector;
+    std::vector<double> double_vector;
 
     std::string linux_name("std::vector<double, std::allocator<double> >");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
@@ -123,7 +95,7 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-#if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__)
+#if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__) && !defined(__INTEL_COMPILER)
     std::string linux_name("bool ()");
 #else
     std::string linux_name("bool ()()");
@@ -133,9 +105,7 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-    typedef std::vector<double> DoubleVector;
-
-    DoubleVector double_vector;
+    std::vector<double> double_vector;
 
 #ifdef _GLIBCXX_DEBUG
     std::string linux_name("__gnu_debug_def::vector<double, std::allocator<double> >");
