@@ -97,14 +97,6 @@ SET(TPL_ENABLE_GLM OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_Matio OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 SET(TPL_ENABLE_X11 OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 
-# Disable Zoltan2 usage of 64-bit Scotch and ParMETIS becaues this causes
-# several existing Zoltan2 tests to fail that pass otherwise (see Trilinos
-# #476). Also, you have to not enable ParMETIS for ShyLU because it requires
-# that ParMETIS is enabled in Zoltan2.
-SET(Zoltan2_ENABLE_Scotch OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
-SET(Zoltan2_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
-SET(ShyLUCore_ENABLE_ParMETIS OFF CACHE BOOL "Disabled in SEAMSDevEnv.cmake")
-
 #
 # D) Set up the paths to the TPL includes and libs
 #
