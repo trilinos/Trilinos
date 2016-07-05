@@ -111,7 +111,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,long);
 #endif
 }
-#endif
+#endif //END INST_INT_LONG
 
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
 namespace Amesos2 {
@@ -127,6 +127,8 @@ namespace Amesos2 {
 #ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,int,long long);
 #endif
+}
+#endif //END INST_INT_LONG_LONG
 
 #ifdef HAVE_TPETRA_INST_LONG_LONG
 namespace Amesos2 {
@@ -143,8 +145,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(Superlu,std::complex<double>,long, long);
 #endif
 }
-#endif
-#endif
+#endif //END INST_LONG_LONG
 //
 // mfh 16 Jan 2014: Hack to make explicit instantiation for
 // Ifpack2::Details::Amesos2Wrapper work.
