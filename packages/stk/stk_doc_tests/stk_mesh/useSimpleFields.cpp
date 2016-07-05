@@ -48,36 +48,39 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace {
 
+namespace SpatialDimension { const unsigned three = 3; }
+
+void create_two_tet_element_mesh(stk::mesh::BulkData &bulk)
+{
+    stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+    stk::mesh::Part &tetPart = meta.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
+    meta.commit();
+
+    bulk.modification_begin();
+    stk::mesh::EntityId elem1Id = 1;
+    stk::mesh::EntityIdVector elem1Nodes {1, 2, 3, 4};
+    stk::mesh::declare_element(bulk, tetPart, elem1Id, elem1Nodes);
+    stk::mesh::EntityId elem2Id = 2;
+    stk::mesh::EntityIdVector elem2Nodes {2, 3, 4, 5};
+    stk::mesh::declare_element(bulk, tetPart, elem2Id, elem2Nodes);
+    bulk.modification_end();
+}
 //BEGIN
 TEST(stkMeshHowTo, useSimpleFields)
 {
-    const unsigned spatialDimension = 3;
-    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());
+    stk::mesh::MetaData metaData(SpatialDimension::three, stk::mesh::entity_rank_names());
 
     typedef stk::mesh::Field<double> ScalarField;
     typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
     ScalarField& pressureField = metaData.declare_field<ScalarField>(stk::topology::ELEM_RANK, "pressure");
     VectorField& displacementsField = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "displacements");
-    ScalarField& nodePressureField = metaData.declare_field<ScalarField>(stk::topology::NODE_RANK, "pressure");
 
     double initialPressureValue = 4.4;
     stk::mesh::put_field_on_entire_mesh_with_initial_value(pressureField, &initialPressureValue);
-    double initialNodePressureValue = 2.7;
-    stk::mesh::put_field_on_entire_mesh_with_initial_value(nodePressureField, &initialNodePressureValue);
     stk::mesh::put_field_on_entire_mesh(displacementsField);
 
-    stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
-
-    metaData.commit();
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
-    mesh.modification_begin();
-    stk::mesh::EntityId elem1Id = 1;
-    stk::mesh::EntityIdVector elem1Nodes {1, 2, 3, 4};
-    stk::mesh::Entity elem1=stk::mesh::declare_element(mesh, tetPart, elem1Id, elem1Nodes);
-    stk::mesh::EntityId elem2Id = 2;
-    stk::mesh::EntityIdVector elem2Nodes {2, 3, 4, 5};
-    stk::mesh::Entity elem2=stk::mesh::declare_element(mesh, tetPart, elem2Id, elem2Nodes);
-    mesh.modification_end();
+    create_two_tet_element_mesh(mesh);
 
     const stk::mesh::BucketVector& nodeBuckets = mesh.buckets(stk::topology::NODE_RANK);
     EXPECT_TRUE(!nodeBuckets.empty());
@@ -89,8 +92,7 @@ TEST(stkMeshHowTo, useSimpleFields)
         for(size_t nodeIndex=0; nodeIndex<bucket.size(); nodeIndex++)
         {
             unsigned numValuesPerNode = stk::mesh::field_scalars_per_entity(displacementsField, bucket);
-            const unsigned cartesian_enum_size = stk::mesh::Cartesian3d::Size;
-            EXPECT_EQ(cartesian_enum_size, numValuesPerNode);
+            EXPECT_EQ(SpatialDimension::three, numValuesPerNode);
             for(unsigned i=0; i<numValuesPerNode; i++)
             {
                 EXPECT_EQ(0.0, displacementDataForBucket[nodeIndex*numValuesPerNode + i]);
@@ -99,16 +101,49 @@ TEST(stkMeshHowTo, useSimpleFields)
         }
     }
 
+    stk::mesh::Entity elem1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     double* pressureFieldDataForElem1 = stk::mesh::field_data(pressureField, elem1);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem1);
 
+    stk::mesh::Entity elem2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
-
-    stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
-    double* pressureFieldDataForNode1 = stk::mesh::field_data(nodePressureField, node1);
-    EXPECT_EQ(initialNodePressureValue, *pressureFieldDataForNode1);
 }
 //END
+
+void create_single_tet_element(stk::mesh::BulkData &bulk)
+{
+    stk::mesh::MetaData &meta = bulk.mesh_meta_data();
+    stk::mesh::Part &tetPart = meta.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
+    meta.commit();
+    bulk.modification_begin();
+    stk::mesh::EntityId elem1Id = 1;
+    stk::mesh::EntityIdVector elem1Nodes {1, 2, 3, 4};
+    stk::mesh::declare_element(bulk, tetPart, elem1Id, elem1Nodes);
+    bulk.modification_end();
+}
+
+//BEGINBADFIELD
+TEST(stkMeshHowTo, declareVectorFields_putFieldIgnoresLength)
+{
+    stk::mesh::MetaData metaData(SpatialDimension::three, stk::mesh::entity_rank_names());
+
+    typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
+    VectorField& velocitiesField = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "velocities");
+
+    typedef stk::mesh::Field<double> badVectorField;
+    badVectorField& displacementsField = metaData.declare_field<badVectorField>(stk::topology::NODE_RANK, "displacements");
+
+    unsigned fieldLength = 3;
+    stk::mesh::put_field(velocitiesField, metaData.universal_part(), fieldLength);
+    stk::mesh::put_field(displacementsField, metaData.universal_part(), fieldLength);
+
+    stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
+    create_single_tet_element(mesh);
+
+    stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
+    EXPECT_NE(stk::mesh::field_scalars_per_entity(velocitiesField, node1), stk::mesh::field_scalars_per_entity(displacementsField, node1));
+}
+//ENDBADFIELD
 
 }
