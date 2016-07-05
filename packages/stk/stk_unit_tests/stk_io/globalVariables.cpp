@@ -115,11 +115,14 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
 TEST(GlobalVariablesTest, OneGlobalDouble)
 {
     const std::string outputFileName = "OneGlobalDouble.exo";
-    const std::string globalVarName = "testGlobal";
+    //                                 0        1         2         3         4         5
+    //                                 12345678901234567890123456789012345678901234567890
+    const std::string globalVarName = "a_global_variable_with_a_longer_name_than_the_default";
     const double globalVarValue = 13.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
+	stkIo.property_add(Ioss::Property("MAXIMUM_NAME_LENGTH", 64));
 	const std::string exodusFileName = "generated:1x1x8";
 	stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
 	stkIo.create_input_mesh();
