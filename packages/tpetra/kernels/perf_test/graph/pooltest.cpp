@@ -41,6 +41,11 @@ struct MemoryPoolTest{
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const typename Kokkos::TeamPolicy<ExecutionSpace>::member_type & teamMember) const {
+
+
+    Kokkos::single(Kokkos::PerTeam(teamMember),[=] () {
+      printf("teamMember teamsize:%d\n", teamMember.team_size());
+    });
     volatile idx * myData = NULL;
     size_t tid = this->get_thread_id(teamMember);
 
@@ -88,10 +93,26 @@ template <typename MyExecSpace1>
 void run_test(int TEAMSIZE, int VECTORSIZE, int numpools){
 
 
+  const int leage_size = 100;
+  typedef Kokkos::TeamPolicy<MyExecSpace1> team_policy_t ;
+
+  team_policy_t my_policy_t1 (leage_size, Kokkos::AUTO_t(), 1);
+  team_policy_t my_policy_t2 (leage_size, Kokkos::AUTO_t(), 2);
+  team_policy_t my_policy_t4 (leage_size, Kokkos::AUTO_t(), 4);
+  team_policy_t my_policy_t8 (leage_size, Kokkos::AUTO_t(), 8);
+  team_policy_t my_policy_t16 (leage_size, Kokkos::AUTO_t(), 16);
+  team_policy_t my_policy_t32 (leage_size, Kokkos::AUTO_t(), 32);
+
+  std::cout << "my_policy_t1.teamsize():" << my_policy_t1.team_size()
+            << " my_policy_t2.teamsize():" << my_policy_t2.team_size()
+            << " my_policy_t4.teamsize():" << my_policy_t4.team_size()
+            << " my_policy_t8.teamsize():" << my_policy_t8.team_size()
+            << " my_policy_t16.teamsize():" << my_policy_t16.team_size()
+            << " my_policy_t32.teamsize():" << my_policy_t32.team_size()
+            << std::endl;
 
 
 
-  typedef Kokkos::TeamPolicy<MyExecSpace1> team_policy_t1 ;
   typedef typename KokkosKernels::Experimental::Util::UniformMemoryPool<MyExecSpace1, idx> simple_pool1;
 
   int chunk_size = 32;
@@ -109,16 +130,32 @@ void run_test(int TEAMSIZE, int VECTORSIZE, int numpools){
   space1_one2one_mp.print_memory_pool();
 
   Kokkos::Impl::Timer timer1;
-  Kokkos::parallel_for( team_policy_t1(1000000 , TEAMSIZE, VECTORSIZE), t1);
+  Kokkos::parallel_for( team_policy_t(leage_size , Kokkos::AUTO_t(), VECTORSIZE), t1);
   MyExecSpace1::fence();
   std::cout << "One to One Time:" << timer1.seconds() << std::endl;
+
+  timer1.reset();
+  Kokkos::parallel_for( my_policy_t1, t1);
+  MyExecSpace1::fence();
+  std::cout << "team_policy_t1:" << timer1.seconds() << std::endl;
+
+  timer1.reset();
+  Kokkos::parallel_for( my_policy_t2, t1);
+  MyExecSpace1::fence();
+  std::cout << "team_policy_t2:" << timer1.seconds() << std::endl;
+
+  timer1.reset();
+  Kokkos::parallel_for( my_policy_t4, t1);
+  MyExecSpace1::fence();
+  std::cout << "my_policy_t4:" << timer1.seconds() << std::endl;
+
 
 
   printf("\n\nRunning Many2One\n");
   printf("Memory Pool\n");
   space1_many2one_mp.print_memory_pool();
   timer1.reset();
-  Kokkos::parallel_for( team_policy_t1(1000000, TEAMSIZE, VECTORSIZE), t2);
+  Kokkos::parallel_for( team_policy_t(leage_size, TEAMSIZE, VECTORSIZE), t2);
   MyExecSpace1::fence();
   std::cout << "Many to One Time:" << timer1.seconds() << std::endl;
 
