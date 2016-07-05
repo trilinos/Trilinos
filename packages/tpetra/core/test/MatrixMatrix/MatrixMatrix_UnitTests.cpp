@@ -99,8 +99,7 @@ template<class Scalar, class LO, class GO>
 RCP<CrsMatrix<Scalar, LO, GO, node_type> >
 getIdentityMatrix (Teuchos::FancyOStream& out,
                    const Tpetra::global_size_t globalNumRows,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                   const Teuchos::RCP<node_type>& node)
+                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::RCP;
   using std::endl;
@@ -113,7 +112,7 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
 
   out << "Create row Map" << endl;
   RCP<const map_type> identityRowMap =
-    Tpetra::createUniformContigMapWithNode<LO, GO, node_type> (globalNumRows, comm, node);
+    Tpetra::createUniformContigMapWithNode<LO, GO, node_type> (globalNumRows, comm);
 
   out << "Create CrsMatrix" << endl;
   RCP<crs_matrix_type> identityMatrix =
@@ -337,7 +336,9 @@ mult_test_results multiply_reuse_test(
   computedC1->leftScale (*leftScaling);
   computedC1->rightScale(*rightScaling);
 
-  RCP<node_type> node = KokkosClassic::Details::getNode<node_type>();
+  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
+  // point only for the syntax.
+  RCP<node_type> node = map->getNode ();
 
   // As = leftScaling * op(A) =
   //   leftScaling * A, if AT=false
@@ -445,7 +446,10 @@ mult_test_results jacobi_reuse_test(
   computedC1->rightScale(*rightScaling);
 
   // Bs = B * rightScaling
-  RCP<node_type> node = KokkosClassic::Details::getNode<node_type>();
+
+  // NOTE (mfh 05 Jun 2016) This may even be null.  It exists at this
+  // point only for the syntax.
+  RCP<node_type> node = map->getNode ();
   RCP<Matrix_t> Bs = B->clone(node);
   Bs->rightScale(*rightScaling);
 
@@ -487,10 +491,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test)
   newOut << "Tpetra sparse matrix-matrix multiply: operations_test" << endl;
   Teuchos::OSTab tab1 (newOut);
 
-  newOut << "Create Node instance" << endl;
-  ParameterList defaultParameters;
-  RCP<node_type> node = rcp(new node_type(defaultParameters));
-
   newOut << "Get parameters from XML file" << endl;
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
@@ -515,9 +515,9 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test)
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm, node);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm, node);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm, node);
+    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
 
     TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
       "Unrecognized Matrix Operation: " << op);
@@ -614,7 +614,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test)
       newOut << "\tComputed norm: " << results.computedNorm << endl;
       newOut << "\tEpsilon: " << results.epsilon << endl;
 
-      B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
+      B = Reader<Matrix_t >::readSparseFile(B_file, comm, false);
 
       if (! BT) {
         if (verbose)
@@ -665,10 +665,6 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   newOut << "Tpetra sparse matrix-matrix multiply: range row test" << endl;
   Teuchos::OSTab tab1 (newOut);
 
-  newOut << "Create Node instance" << endl;
-  ParameterList defaultParameters;
-  RCP<node_type> node = rcp(new node_type(defaultParameters));
-
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //THIS NUMBER MUST BE EVEN SO THAT WHEN I CALCULATE THE NUMBER
   //OF ROWS IN THE DOMAIN MAP I DON'T ENCOUNTER ANY
@@ -680,7 +676,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
 
   newOut << "Create identityMatrix" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identityMatrix =
-    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm);
 
   newOut << "Fill identityMatrix" << endl;
 //Create "B"
@@ -753,7 +749,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
 
   newOut << "Create identity2" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identity2 =
-    getIdentityMatrix<double,int,int> (newOut, globalNumRows/2, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows/2, comm);
 
   RCP<const Map<int,int,node_type> > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<int,int,node_type>(globalNumRows/2,comm,node);
@@ -863,22 +859,19 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test)
     "where A's row Map and range Map differ" << endl;
   Teuchos::OSTab tab1 (newOut);
 
-  newOut << "Create Node instance" << endl;
-  ParameterList defaultParameters;
-  RCP<node_type> node = rcp(new node_type(defaultParameters));
-  int numProcs = comm->getSize();
+  const int numProcs = comm->getSize();
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //THIS NUMBER MUST BE EVEN SO THAT WHEN I CALCULATE THE NUMBER
   //OF ROWS IN THE DOMAIN MAP I DON'T ENCOUNTER ANY
   //WEIRD RESULTS DUE TO INTEGER DIVISION
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   int numRowsPerProc = 4;
-  int rank = comm->getRank();
+  const int rank = comm->getRank();
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
   newOut << "Create identity matrix" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identityMatrix =
-    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm);
 
   newOut << "Create Maps for matrix aMat" << endl;
   Array<int> aMyRows = tuple<int>(
@@ -976,9 +969,8 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test)
 /*TEUCHOS_UNIT_TEST(Tpetra_MatMat, Multiple_row_owners){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
   ParameterList defaultParameters;
-  RCP<node_type> node = rcp(new node_type(defaultParameters));
-  RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile("matrices/denserATa.mtx", comm, node);
-  RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile("matrices/denserATc.mtx", comm, node, true, true);
+  RCP<Matrix_t > A = Reader<Matrix_t >::readSparseFile("matrices/denserATa.mtx", comm);
+  RCP<Matrix_t > C = Reader<Matrix_t >::readSparseFile("matrices/denserATc.mtx", comm, true, true);
   RowMatrixTransposer<double, int,int,node_type> transposer(*A);
   RCP<Matrix_t> AT = transposer.createTranspose();
 

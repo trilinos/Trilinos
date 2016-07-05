@@ -57,8 +57,6 @@
 
 #include <MatrixMarket_Tpetra.hpp>
 
-#include <Kokkos_DefaultNode.hpp>
-
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -156,19 +154,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
     return;
   }
 
-  // Get a Kokkos Node instance.  It would be nice if we could pass in
-  // parameters here, but threads don't matter for this test; it's a
-  // test for distributed-memory capabilities.
-
-  if (myRank == 0) {
-    out << "Creating Kokkos Node of type " << TypeNameTraits<node_type>::name () << endl;
-  }
-  RCP<node_type> node;
-  {
-    ParameterList pl; // Kokkos Node types require a PL inout.
-    node = rcp (new node_type (pl));
-  }
-
   // Number of rows in the matrix owned by each process.
   const LO numLocalRows = 10;
 
@@ -185,7 +170,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalSumInto, LocalOrdinalType,
   }
 
   // Create a contiguous row Map, with numLocalRows rows per process.
-  RCP<const map_type> rowMap = createContigMapWithNode<LO, GO, NT> (INVALID, numLocalRows, comm, node);
+  RCP<const map_type> rowMap = createContigMapWithNode<LO, GO, NT> (INVALID, numLocalRows, comm);
 
   // For now, reuse the row Map for the domain and range Maps.  Later,
   // we might want to test using different domain or range Maps.

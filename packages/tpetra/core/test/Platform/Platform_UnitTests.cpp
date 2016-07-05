@@ -68,25 +68,15 @@ namespace {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Platform type " << Teuchos::TypeNameTraits<PLAT>::name() << " not defined.");
   }
 
-  RCP<node_type> snode;
-
   template <>
   RCP<SerialPlatform<node_type> > getPlatform() {
-    if (snode == Teuchos::null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new node_type(pl));
-    }
-    return rcp(new SerialPlatform<node_type>(snode));
+    return rcp (new SerialPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
   }
 
 #ifdef HAVE_TPETRA_MPI
   template <>
   RCP<MpiPlatform<node_type> > getPlatform() {
-    if (snode == Teuchos::null) {
-      Teuchos::ParameterList pl;
-      snode = rcp(new node_type(pl));
-    }
-    return rcp(new MpiPlatform<node_type>(snode));
+    return rcp (new MpiPlatform<node_type> (KokkosClassic::Details::getNode<node_type> ()));
   }
 #endif
 

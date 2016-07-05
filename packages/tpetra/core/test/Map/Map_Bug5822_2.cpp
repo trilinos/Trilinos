@@ -146,11 +146,6 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
     }
   }
 
-  RCP<NT> node;
-  {
-    Teuchos::ParameterList defaultParams;
-    node = Teuchos::rcp (new NT (defaultParams));
-  }
   // if (myRank == 0) {
   //   std::cout << "type '0' and hit enter" << std::endl;
   //   int zero;
@@ -163,7 +158,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   RCP<const map_type> map;
   try {
     TEUCHOS_FUNC_TIME_MONITOR("Construct Map");
-    map = Teuchos::rcp (new map_type (globalNumElts, myGids (), indexBase, comm, node));
+    map = Teuchos::rcp (new map_type (globalNumElts, myGids (), indexBase, comm));
   }
   catch (std::exception& e) {
     locallyThrew = 1;
