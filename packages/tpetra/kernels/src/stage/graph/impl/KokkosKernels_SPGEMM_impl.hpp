@@ -16,7 +16,7 @@
 #include <string>
 //#include <bitset>
 
-#define KOKKOSKERNELS_VERBOSE 0
+#define KOKKOSKERNELS_VERBOSE 1
 
 //#define shmem_size 16128//12032//16128//16384
 
@@ -258,6 +258,7 @@ public:
       },
       max_num_results_in_row);
       if (overal_max < max_num_results_in_row) { overal_max = max_num_results_in_row;}
+      rough_row_mapC(row_index)  = max_num_results_in_row;
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -625,6 +626,15 @@ public:
     typename c_row_view_t::non_const_value_type rough_size = 0;
     Kokkos::parallel_reduce( team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
     MyExecSpace::fence();
+
+    size_t flops = 0;
+    for (int i = 0; i < a_row_cnt; ++i){
+      flops += row_mapC(i);
+    }
+
+
+    std::cout << "\tFLOPS:" << flops << std::endl;
+
     return rough_size;
   }
 
@@ -2812,7 +2822,12 @@ public:
 
     int pool_init_val = -1;
     //std::cout << "concurrency:" << concurrency << " sizeof (nnz_lno_t) * 2:" << sizeof (nnz_lno_t) * 2 << std::endl;
-    if (concurrency <=  sizeof (nnz_lno_t) * 16 ||
+    if (
+        ( !(spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
+            spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
+            spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2 ) &&
+            concurrency <=  sizeof (nnz_lno_t) * 16)
+            ||
         (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED &&
         my_exec_space != KokkosKernels::Experimental::Util::Exec_CUDA)){
       //if speed is set, and exec space is cpu, then  we use dense accumulators.
@@ -2871,7 +2886,10 @@ public:
     }
     else {
 
-      if (concurrency <=  sizeof (nnz_lno_t) * 16 || spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED){
+      if (( !(spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
+          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
+          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2 ) &&
+          concurrency <=  sizeof (nnz_lno_t) * 16)  || spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED){
         Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
       else {
@@ -3042,6 +3060,7 @@ public:
       sc.team_work_size = team_row_chunk_size;
 
       switch (spgemm_algorithm){
+      default:
       case KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR:
         Kokkos::parallel_for( team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
             suggested_team_size, suggested_vector_size), sc);
@@ -3379,7 +3398,11 @@ public:
 
     //First get a rough count.
     nnz_lno_t maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB, rowmapC);
+
+
     if (KOKKOSKERNELS_VERBOSE){
+
+
       std::cout << "\tUpper Bound Max NNZ in a Row:" << maxNumRoughZeros  << std::endl;
       std::cout << "\tCalculate Upper Bound Time:" << timer1.seconds()  << std::endl;
     }
