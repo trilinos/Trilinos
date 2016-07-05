@@ -4,7 +4,7 @@
 #
 #   $ source load_ci_sems_dev_env.sh
 #
-# All this script does is to source load_ci_sems_dev_env.sh with the standard
+# All this script does is to source load_sems_dev_env.sh with the standard
 # versions of the various modules used for CI testing.
 #
 
