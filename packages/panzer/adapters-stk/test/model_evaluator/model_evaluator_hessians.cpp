@@ -254,7 +254,6 @@ namespace panzer {
     }
   }
 
-/*
   // Testing Parameter Support
   TEUCHOS_UNIT_TEST(model_evaluator_hessians, d2g_dp2)
   {
@@ -343,7 +342,7 @@ namespace panzer {
 
       Teuchos::ArrayRCP<const double> g_data;
       rcp_dynamic_cast<Thyra::SpmdVectorBase<double> >(g)->getLocalData(Teuchos::ptrFromRef(g_data));
-      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE,1e-12);
+      TEST_FLOATING_EQUALITY(g_data[0],TEMPERATURE_VALUE*TEMPERATURE_VALUE*DENSITY_VALUE*DENSITY_VALUE*DENSITY_VALUE,1e-12);
         // Volume of integral is 1.0, then just compute the integrand
     }
 
@@ -361,7 +360,7 @@ namespace panzer {
       InArgs  in_args = me->createInArgs();
       in_args.set_x(x);
 
-      me->evalModel_D2gDp2(rIndex,in_args,dx,D2gDp2);
+      me->evalModel_D2gDp2(rIndex,pIndex,in_args,dx,D2gDp2);
 
       out << "D2gDp2 = \n" << Teuchos::describe(*D2gDp2,Teuchos::VERB_EXTREME) << std::endl;
     }
@@ -381,7 +380,6 @@ namespace panzer {
       TEST_ASSERT(a || b || c || d);
     }
   }
-*/
 
   bool testEqualityOfVectorValues(const Thyra::VectorBase<double> & a, 
                                   const Thyra::VectorBase<double> & b, 

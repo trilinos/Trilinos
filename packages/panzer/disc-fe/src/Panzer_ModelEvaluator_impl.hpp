@@ -938,6 +938,56 @@ evalModel_D2gDx2(int respIndex,
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+evalModel_D2gDp2(int respIndex,
+                 int pIndex,
+                 const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                 const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDp2) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // set model parameters from supplied inArgs
+  setParameters(inArgs);
+
+  ResponseLibrary<Traits> & rLibrary = *parameters_[pIndex]->dgdp_rl;
+
+  {
+    std::string responseName = responses_[respIndex]->name;
+    Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Hessian> > resp
+        = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Hessian> >(
+            rLibrary.getResponse<panzer::Traits::Hessian>(responseName));
+    resp->setDerivative(D2gDp2);
+  }
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
+                                         // gather seeds
+  ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+  ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  deltaPContainer->setUniqueVector(delta_p);
+  ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
+
+  // evaluate responses
+  rLibrary.addResponsesToInArgs<panzer::Traits::Hessian>(ae_inargs);
+  rLibrary.evaluate<panzer::Traits::Hessian>(ae_inargs);
+
+  // reset parameters back to nominal values
+  resetParameters();
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {

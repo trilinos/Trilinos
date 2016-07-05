@@ -240,8 +240,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
     dx_ = ro_ged->getGhostedVector_Epetra();
   }
-  else if(d.gedc.containsDataObject(globalDataKey_)) {
-    ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_+post);
+  else if(d.gedc.containsDataObject(sensitivities2ndPrefix_+globalDataKey_)) {
+    ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_);
 
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
 

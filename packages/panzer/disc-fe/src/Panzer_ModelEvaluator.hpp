@@ -387,14 +387,29 @@ public:
 
   /** Compute second (x) derivative of the response in the direction <code>delta_x</code>.
     *
+    * \param[in] rIndex Response to differentiate
     * \param[in] inArgs Input arguments that sets the state
     * \param[in] delta_x Direction to take the derivative with respect to.
     * \param[out] D2gDx2 Result vector allocated by <code>get_x_space()</code>.
     */
-  void evalModel_D2gDx2(int respIndex,
+  void evalModel_D2gDx2(int rIndex,
                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
                         const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const;
+
+  /** Compute second (p) derivative of the response in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2gDx2 Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2gDp2(int rIndex,
+                        int pIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDp2) const;
 
 private:
 
