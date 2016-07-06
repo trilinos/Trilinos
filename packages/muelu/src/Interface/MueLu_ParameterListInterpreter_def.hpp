@@ -481,7 +481,7 @@ namespace MueLu {
       int overlap = 0;
       ParameterList defaultSmootherParams;
       defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
-      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
+      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<int>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
       RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
