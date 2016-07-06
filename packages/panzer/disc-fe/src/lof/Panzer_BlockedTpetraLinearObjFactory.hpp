@@ -53,6 +53,7 @@
 
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
@@ -93,9 +94,6 @@ public:
    typedef Thyra::TpetraLinearOp<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> ThyraLinearOp;
 
 
-   BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
-                                 const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,std::pair<int,GlobalOrdinalT> > > & blkProvider,
-                                 const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> > > & gidProviders);
    BlockedTpetraLinearObjFactory(const Teuchos::RCP<const Teuchos::MpiComm<int> > & comm,
                                  const Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > & gidProvider);
 
@@ -172,7 +170,7 @@ public:
    //! Use preconstructed gather evaluators
    template <typename EvalT>
    Teuchos::RCP<panzer::CloneableEvaluator > buildGatherOrientation() const
-   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,std::pair<int,GlobalOrdinalT> >(blockProvider_)); }
+   { return Teuchos::rcp(new GatherOrientation<EvalT,Traits,LocalOrdinalT,GlobalOrdinalT>(nc2c_vector(blockedDOFManager_->getFieldDOFManagers()))); }
 
    //! Use preconstructed dirichlet scatter evaluators
    template <typename EvalT>
@@ -272,9 +270,6 @@ public:
    //! how many block columns
    int getBlockColCount() const;
 
-   Teuchos::RCP<const BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT> > getGlobalIndexer() const
-   { return blockedDOFManager_; }
-
    //! exclude a block pair from the matrix
    void addExcludedPair(int rowBlock,int colBlock);
 
@@ -284,8 +279,15 @@ public:
    virtual void beginFill(LinearObjContainer & loc) const;
    virtual void endFill(LinearObjContainer & loc) const;
 
-   //! Get the unique global indexer this factory was created with.
-   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getUniqueGlobalIndexerBase() const
+   Teuchos::RCP<const panzer::BlockedDOFManager<int,GlobalOrdinalT> > getGlobalIndexer() const
+   { return blockedDOFManager_; }
+
+   //! Get the domain unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getDomainGlobalIndexer() const
+   { return blockProvider_; }
+
+   //! Get the range unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const
    { return blockProvider_; }
 
 protected:

@@ -57,6 +57,7 @@
 #include "Tpetra_MatrixIO.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 
 #if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
 #include <qd/dd_real.h>
@@ -207,7 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -261,7 +262,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -315,7 +316,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
     }
@@ -394,8 +395,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  typedef Tpetra::Experimental::LittleBlock<Scalar,LocalOrdinal> little_block_type;
-  typedef Tpetra::Experimental::LittleVector<Scalar,LocalOrdinal> little_vec_type;
+  typedef Kokkos::View<Scalar**,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_block_type;
+  typedef Kokkos::View<Scalar*,Kokkos::LayoutRight,Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
   typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
@@ -469,10 +470,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   bMatrix[23] = 4;
   bMatrix[24] = -5;
 
-  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
-  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize, 1); // row major
+  little_block_type A (aMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type B (bMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type C (cMatrix.getRawPtr (), blockSize, blockSize); // row major
+  little_block_type I (identityMatrix.getRawPtr (), blockSize, blockSize); // row major
 
   Tpetra::Experimental::GEMM ("N", "N", STS::one (), A, I, STS::zero (), C);
   //blockOps.square_matrix_matrix_multiply(aMatrix.getRawPtr(), identityMatrix.getRawPtr(), cMatrix.getRawPtr(), blockSize);
@@ -523,9 +524,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   }
 
   const LocalOrdinal rowStride = blockSize;
-  const LocalOrdinal colStride = 1;
 
-  little_block_type dMat(cMatrix.getRawPtr(),blockSize,rowStride,colStride);
+  little_block_type dMat(cMatrix.getRawPtr(),blockSize,rowStride);
   Teuchos::Array<int> ipiv_teuchos(blockSize);
   Kokkos::View<int*, Kokkos::HostSpace,
     Kokkos::MemoryUnmanaged> ipiv (ipiv_teuchos.getRawPtr (), blockSize);
@@ -559,8 +559,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
   exactSolution[3] = -0.0384615384615381;
   exactSolution[4] = -0.0384615384615385;
 
-  little_vec_type bval(onevec.getRawPtr(),blockSize,1);
-  little_vec_type xval(computeSolution.getRawPtr(),blockSize,1);
+  little_vec_type bval(onevec.getRawPtr(),blockSize);
+  little_vec_type xval(computeSolution.getRawPtr(),blockSize);
 
   //xval.matvecUpdate(1.0,dMat,bval);
   Tpetra::Experimental::GEMV (1.0, dMat, bval, xval);
@@ -583,11 +583,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   //typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type; // unused
   std::ostringstream errStrm; // for error collection
-
-  out << "Ifpack2::RBILUK diagonal block matrix test" << endl;
+  int lclSuccess = 1;
+  int gblSuccess = 1;
 
   RCP<const Teuchos::Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  const bool useOut = false;
+  RCP<Teuchos::oblackholestream> blackHole (new Teuchos::oblackholestream ());
+  RCP<Teuchos::FancyOStream> newOutPtr;
+  if (useOut) {
+    newOutPtr = Teuchos::rcpFromRef (out);
+  }
+  else {
+    newOutPtr = comm->getRank () == 0 ?
+      Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+      Teuchos::getFancyOStream (blackHole);
+  }
+  Teuchos::FancyOStream& newOut = *newOutPtr;
+
+  newOut << "Ifpack2::RBILUK diagonal block matrix test" << endl;
+  Teuchos::OSTab tab1 (out);
 
   const int num_rows_per_proc = 5;
   const int blockSize = 3;
@@ -595,32 +611,129 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
     tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node> (num_rows_per_proc);
 
   RCP<block_crs_matrix_type> bcrsmatrix;
-  bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
+  try {
+    bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix constructor "
+      "threw an exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix constructor "
+      "threw an exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "BlockCrsMatrix constructor did not throw an exception" << endl;
+  }
+  else {
+    newOut << "BlockCrsMatrix constructor threw an exception on one or more "
+      "processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
+  RCP<Ifpack2::Experimental::RBILUK<block_crs_matrix_type> > prec;
+  try {
+    using Teuchos::rcp;
+    prec = rcp (new Ifpack2::Experimental::RBILUK<block_crs_matrix_type> (const_bcrsmatrix));
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": RBILUK constructor threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": RBILUK constructor threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "RBILUK constructor did not throw an exception" << endl;
+  }
+  else {
+    newOut << "RBILUK constructor threw an exception on one or more processes!"
+        << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
   params.set("fact: relax value", 0.0);
-  prec.setParameters(params);
+  prec->setParameters(params);
 
-  prec.initialize();
-  TEST_NOTHROW(prec.compute());
+  try {
+    prec->initialize ();
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": prec->initialize() threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": prec->initialize() threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "prec->initialize() did not throw an exception" << endl;
+  }
+  else {
+    newOut << "prec->initialize() threw an exception on one or more processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
+
+  try {
+    prec->compute ();
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << comm->getRank () << ": prec->compute() threw an "
+      "exception: " << e.what () << endl;
+    success = false;
+  }
+  catch (...) {
+    errStrm << "Proc " << comm->getRank () << ": prec->compute() threw an "
+      "exception, not a subclass of std::exception" << endl;
+    success = false;
+  }
+
+  lclSuccess = success ? 1 : 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  if (gblSuccess == 1) {
+    newOut << "prec->compute() did not throw an exception" << endl;
+  }
+  else {
+    newOut << "prec->compute() threw an exception on one or more processes!" << endl;
+    Teuchos::OSTab tab2 (newOut);
+    Tpetra::Details::gathervPrint (newOut, errStrm.str (), *comm);
+    return; // stop the test on failure
+  }
 
   BMV xBlock (*crsgraph->getRowMap (), blockSize, 1);
   BMV yBlock (*crsgraph->getRowMap (), blockSize, 1);
   MV x = xBlock.getMultiVectorView ();
   MV y = yBlock.getMultiVectorView ();
   x.putScalar (Teuchos::ScalarTraits<Scalar>::one ());
-
-  prec.apply (x, y);
+  prec->apply (x, y);
 
   const Scalar exactSol = 0.2;
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
     typename BMV::little_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.getRawPtr();
+    Scalar* yb = ylcl.ptr_on_device();
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
     }

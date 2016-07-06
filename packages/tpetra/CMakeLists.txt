@@ -417,9 +417,6 @@ ENDIF ()
 IF (Tpetra_INST_INT_UNSIGNED)
   MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED.  This means that you want to use GlobalOrdinal = unsigned with Tpetra objects.  Please don't do that.  I only maintain this option for backwards compatibility.  While I have gone through some effort to make unsigned GlobalOrdinal types work in Tpetra, they are not tested and thus I don't want to promise that they still work.")
 ENDIF ()
-IF (Tpetra_INST_INT_UNSIGNED_LONG)
-  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED_LONG.  This means that you want to use GlobalOrdinal = unsigned long with Tpetra objects.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him.")
-ENDIF ()
 
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
@@ -434,16 +431,18 @@ GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED_LONG ${Tpetra_INST_INT_UNSIGNED_LONG})
 IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_UNSIGNED_LONG)
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
 ELSE()
-  # mfh 18 Aug 2015: CASL wants to set GlobalOrdinal = unsigned long.
-  # Tpetra doesn't have an option for this (for good reason: I don't
-  # want to promise support for unsigned GlobalOrdinal types --
-  # "unsigned" is already a bad idea).  Thus, CASL sets it using
-  # TriBITS' ETI support.  As a result, their build disables ALL
-  # GlobalOrdinal types that Tpetra claims to support; they explicitly
-  # set the four Tpetra_INST_INT_* options above to OFF.  Tpetra's
+  # mfh 16 May 2016: This branch could only conceivably be useful
+  # for users who want a GlobalOrdinal type other than the types
+  # that Tpetra explicitly supports (see above list).  This branch
+  # would only take effect if such users explicitly disable all 
+  # the explicitly supported GlobalOrdinal types.  In that case,
+  # the users would be responsible for setting their special 
+  # GlobalOrdinal type through TriBITS' ETI support.  Tpetra's
   # CMakeLists.txt files get processed before its ETI logic, so the
-  # code here doesn't see the GlobalOrdinal type that CASL adds.  This
-  # is why we don't error out if none of the above options are ON.
+  # code here would not see the GlobalOrdinal type that such users
+  # might have added.  This is why we don't error out if none of the
+  # above options are ON.  However, we still print a STATUS message,
+  # to help with debugging in case users do this by accident.
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
   MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()

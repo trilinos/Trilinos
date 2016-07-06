@@ -51,6 +51,7 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Kokkos_View.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_MDFieldToKokkos.hpp"
 #include "Phalanx_MDField_TypeTraits.hpp"
@@ -68,26 +69,26 @@ namespace PHX {
            typename Tag0 = void, typename Tag1 = void, typename Tag2 = void,
            typename Tag3 = void, typename Tag4 = void, typename Tag5 = void,
            typename Tag6 = void, typename Tag7 = void>
-  struct KokkosDimentionType{
+  struct KokkosDimensionType{
     typedef DataT******** type;
  };
 
   template<typename DataT,
            typename Tag0> 
-  struct KokkosDimentionType<DataT, Tag0, void, void, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, void, void, void, void, void, void, void> {
     typedef DataT* type;
   };
   template<typename DataT,
            typename Tag0,
            typename Tag1> 
-  struct KokkosDimentionType<DataT, Tag0, Tag1, void, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, void, void, void, void, void, void> {
     typedef DataT** type;
   };
    template<typename DataT,
            typename Tag0,
            typename Tag1,
            typename Tag2>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, void, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, void, void, void, void, void> {
     typedef DataT*** type;
   };
   template<typename DataT,
@@ -95,7 +96,7 @@ namespace PHX {
            typename Tag1,
            typename Tag2,
            typename Tag3>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, void, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, void, void, void, void> {
     typedef DataT**** type;
   };
  template<typename DataT,
@@ -104,7 +105,7 @@ namespace PHX {
            typename Tag2,
            typename Tag3,
            typename Tag4>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, void, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, void, void, void> {
     typedef DataT***** type;
   };
   template<typename DataT,
@@ -114,7 +115,7 @@ namespace PHX {
            typename Tag3,
            typename Tag4,
            typename Tag5>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, void, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, void, void> {
     typedef DataT****** type;
  };
  template<typename DataT,
@@ -125,7 +126,7 @@ namespace PHX {
            typename Tag4,
            typename Tag5,
            typename Tag6>
-  struct KokkosDimentionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, void> {
+  struct KokkosDimensionType<DataT, Tag0, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, void> {
     typedef DataT******* type;
  };
 
@@ -144,7 +145,7 @@ namespace PHX {
     typedef DataT value_type;
     typedef DataT& reference_type;
 
-    typedef typename KokkosDimentionType<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::type kokkos_data_type;
+    typedef typename KokkosDimensionType<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::type kokkos_data_type;
     typedef typename Kokkos::View <kokkos_data_type, PHX::Device> array_type;
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
@@ -222,6 +223,18 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     size_type rank() const;
 
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+    extent( const iType & r ) const
+    {return m_field_data.extent(r);}
+    
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , int >::type
+    extent_int( const iType & r ) const
+    {return m_field_data.extent_int(r);}
+
     KOKKOS_FORCEINLINE_FUNCTION
     size_type dimension_0() const 
     {return m_field_data.dimension_0();}
@@ -276,13 +289,24 @@ namespace PHX {
     void dimensions(std::vector<iType>& dims);
    
     KOKKOS_FORCEINLINE_FUNCTION 
-    array_type get_kokkos_view();
+    Kokkos::DynRankView<DataT,PHX::Device> get_view();
 
     KOKKOS_FORCEINLINE_FUNCTION
-    const array_type get_kokkos_view()const;
+    const Kokkos::DynRankView<DataT,PHX::Device> get_view() const;
 
-    template<typename MDFieldType>
-    void deep_copy(const MDFieldType& source);
+    //! Returns a static view of the underlying kokkos static view.
+    KOKKOS_FORCEINLINE_FUNCTION 
+    array_type get_static_view();
+
+    //! Returns a static view of the underlying kokkos static view.
+    KOKKOS_FORCEINLINE_FUNCTION
+    const array_type get_static_view() const;
+
+    template<typename SrcDataT,
+             typename SrcTag0,typename SrcTag1, typename SrcTag2, typename SrcTag3,
+             typename SrcTag4,typename SrcTag5, typename SrcTag6, typename SrcTag7>
+    void deep_copy(const PHX::MDField<SrcDataT,SrcTag0,SrcTag1,SrcTag2,SrcTag3,
+                   SrcTag4,SrcTag5,SrcTag6,SrcTag7>& source);
 
     void deep_copy(const DataT source);
 
@@ -307,10 +331,18 @@ namespace PHX {
   std::ostream& operator<<(std::ostream& os, 
 			   const PHX::MDField<DataT, Tag0, Tag1, 
 			   Tag2, Tag3, Tag4, Tag5, Tag6, Tag7>& h);
-  
+}
+
   // *************************************
   // Runtime time checked MDField
   // *************************************
+#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
+
+#include "Phalanx_MDField_DynRank.hpp"
+
+#else
+
+namespace PHX {
 
   // temporary for bracket op support
   template <typename ViewType>
@@ -404,6 +436,18 @@ namespace PHX {
     KOKKOS_FORCEINLINE_FUNCTION
     size_type rank() const;
 
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , size_t >::type
+    extent( const iType & r ) const
+    {return m_dimension_rank_size(r);}
+    
+    template< typename iType >
+    KOKKOS_INLINE_FUNCTION constexpr
+    typename std::enable_if< std::is_integral<iType>::value , int >::type
+    extent_int( const iType & r ) const
+    {return m_dimension_rank_size(r);}
+
     template<typename iType>
     KOKKOS_FORCEINLINE_FUNCTION
     size_type dimension(const iType& ord) const;
@@ -425,12 +469,6 @@ namespace PHX {
     
     void print(std::ostream& os, bool printValues = false) const;
 
-/*    KOKKOS_FORCEINLINE_FUNCTION
-    array_type1 get_kokkos_view();
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    const array_type1 get_kokkos_view()const;
-*/
     template<typename MDFieldType>
     void deep_copy(const MDFieldType& source);
 
@@ -448,16 +486,8 @@ namespace PHX {
 
     template<typename MDFieldType>
     void V_Multiply(const MDFieldType& source);
- 
-    template<typename ArrayType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    ArrayType get_kokkos_view();
-
-    template<typename ArrayType>
-    KOKKOS_FORCEINLINE_FUNCTION
-    const ArrayType get_kokkos_view() const;
-   
-    private:
+    
+  private:
    
     PHX::Tag<DataT> m_tag;  
     typedef Kokkos::View<DataT*, PHX::Device> array_type1;
@@ -495,8 +525,9 @@ namespace PHX {
   std::ostream& operator<<(std::ostream& os, 
 			   const PHX::MDField<DataT, void, void, 
 			   void, void, void, void, void, void>& h);
-  
-} 
+
+}
+#endif // PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
 
 namespace Intrepid2 {
 

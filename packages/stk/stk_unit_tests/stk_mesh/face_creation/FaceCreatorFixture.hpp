@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_unit_test_utils/SideSharingUsingGraph.hpp>
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 class FaceCreatorFixture : public stk::unit_test_util::MeshFixture
 {
@@ -11,10 +11,11 @@ protected:
 
     FaceCreatorFixture(unsigned spatial_dim = 3) : MeshFixture(spatial_dim) {}
 
-    virtual ~FaceCreatorFixture() {}
+    virtual ~FaceCreatorFixture() { }
 
     void test_that_one_face_exists_after_both_procs_create_face_on_proc_boundary()
     {
+        get_bulk().initialize_face_adjacent_element_graph();
         each_proc_make_face_on_proc_boundary();
         test_that_num_sides_is_expected_value(1);
     }
@@ -71,7 +72,7 @@ protected:
     {
         unsigned id = get_bulk().parallel_rank()+1;
         stk::topology side_topology = get_bulk().bucket(element).topology().side_topology();
-        stk::mesh::Entity side = stk::mesh::declare_element_to_sub_topology_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().side_rank(),
+        stk::mesh::Entity side = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(get_bulk(), element, nodes_of_face, id, get_meta().side_rank(),
                 get_meta().get_topology_root_part(side_topology));
         EXPECT_TRUE(get_bulk().is_valid(side));
     }

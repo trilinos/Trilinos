@@ -176,27 +176,33 @@ void Line::add_newvar(string& type, string& newVar, Line* sizePtr,bool isArray)
   Object* ptr;
   if (type == "int") {
     if (isArray)
-      ptr = new ArrayVar<int>(newVar, IntT, sizePtr);
+      ptr = new ArrayVar<int>(newVar, sizePtr);
     else
-      ptr = new ScalarVar<int>(newVar, IntT);
+      ptr = new ScalarVar<int>(newVar);
+  }
+  else if (type == "long") {
+    if (isArray)
+      ptr = new ArrayVar<long>(newVar, sizePtr);
+    else
+      ptr = new ScalarVar<long>(newVar);
   }
   else if (type == "float") {
     if (isArray)
-      ptr = new ArrayVar<float>(newVar, FloatT, sizePtr);
+      ptr = new ArrayVar<float>(newVar, sizePtr);
     else
-      ptr = new ScalarVar<float>(newVar, FloatT);
+      ptr = new ScalarVar<float>(newVar);
   }
   else if (type == "double") {
     if (isArray)
-      ptr = new ArrayVar<double>(newVar, DoubleT, sizePtr);
+      ptr = new ArrayVar<double>(newVar, sizePtr);
     else
-      ptr = new ScalarVar<double>(newVar, DoubleT);
+      ptr = new ScalarVar<double>(newVar);
   }
   else  {
     if (isArray)
-      ptr = new ArrayVar<char>(newVar, CharT, sizePtr);
+      ptr = new ArrayVar<char>(newVar, sizePtr);
     else
-      ptr = new ScalarVar<char>(newVar, CharT);
+      ptr = new ScalarVar<char>(newVar);
   }
 
   addNewObject(ptr);
@@ -295,20 +301,20 @@ void Line::process_number(Tokenizer& tokens)
   Object* ptr;
   string temp = tokens.token().value();
   if (isInt(temp)) {
-    int value = atoi(temp.c_str());
-    ptr = new ScalarNumber<int>(IntT, value);
+    long value = stol(temp);
+    ptr = new ScalarNumber<long>(value);
   }
   else if (isDouble(temp)) {
-    double value = atof(temp.c_str());
-    ptr = new ScalarNumber<double>(DoubleT, value);
+    double value = stod(temp);
+    ptr = new ScalarNumber<double>(value);
   }
   else if (isString(temp)) {
-    ptr = new ArrayNumber<char>(CharT, temp.c_str(), temp.size());
+    ptr = new ArrayNumber<char>(temp.c_str(), temp.size());
   }
   else {
     assert(isChar(temp));
     char value = (char) temp[1];
-    ptr = new ScalarNumber<char>(CharT, value);
+    ptr = new ScalarNumber<char>(value);
   }
   addNewObject(ptr);
   _objsToDelete.insert(ptr);
@@ -438,7 +444,7 @@ void Line::performNumericOps()
             --_tempSize; //we no longer need a temporary for this operation
 
             //create a new constant containing the result of the operation
-	    ScalarNumber<double>* d = new ScalarNumber<double>(DoubleT, 0);
+	    ScalarNumber<double>* d = new ScalarNumber<double>(0);
 	    ((Operator*)(*op))->performOp(((Value*)*arg2), *d);
 
             //put this new value in postfix
@@ -473,7 +479,7 @@ void Line::performNumericOps()
             --_tempSize; //we no longer need a temporary for this operation
 
             //create a new constant containing the result of the operation
-	    ScalarNumber<double>* d = new ScalarNumber<double>(DoubleT, 0);
+	    ScalarNumber<double>* d = new ScalarNumber<double>(0);
 	    ((Operator*)(*op))->performOp(((Value*)*arg1),((Value*)*arg2),*d);
 
             //put this new value in postfix
@@ -517,7 +523,7 @@ void Line::performNumericOps()
 
         //create a new constant containing the result of the operation
         ScalarNumber<double>* d =
-          new ScalarNumber<double>(DoubleT,((FunctionCall*)(*itr))->execute());
+          new ScalarNumber<double>(((FunctionCall*)(*itr))->execute());
 
         //put this new value in postfix
         _postfixLine.insert(itr, d);

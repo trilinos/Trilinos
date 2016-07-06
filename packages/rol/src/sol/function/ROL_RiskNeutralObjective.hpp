@@ -168,11 +168,11 @@ public:
   }
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {
-    Real myval = 0.0, ptval = 0.0, val = 0.0, error = 2.0*tol + 1.0;
+    Real myval(0), ptval(0), val(0), one(1), two(2), error(two*tol + one);
     std::vector<Real> ptvals;
     while ( error > tol ) {
       ValueSampler_->refine();
-      for ( int i = ValueSampler_->start(); i < ValueSampler_->numMySamples(); i++ ) {
+      for ( int i = ValueSampler_->start(); i < ValueSampler_->numMySamples(); ++i ) {
         getValue(ptval,x,ValueSampler_->getMyPoint(i),tol);
         myval += ValueSampler_->getMyWeight(i)*ptval;
         ptvals.push_back(ptval);
@@ -189,10 +189,10 @@ public:
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     g.zero(); pointDual_->zero(); sumDual_->zero();
     std::vector<Teuchos::RCP<Vector<Real> > > ptgs;
-    Real error = 2.0*tol + 1.0;
+    Real one(1), two(2), error(two*tol + one);
     while ( error > tol ) {
       GradientSampler_->refine();
-      for ( int i = GradientSampler_->start(); i < GradientSampler_->numMySamples(); i++ ) {
+      for ( int i = GradientSampler_->start(); i < GradientSampler_->numMySamples(); ++i ) {
         getGradient(*pointDual_,x,GradientSampler_->getMyPoint(i),tol);
         sumDual_->axpy(GradientSampler_->getMyWeight(i),*pointDual_);
         ptgs.push_back(pointDual_->clone());
@@ -202,7 +202,7 @@ public:
       ptgs.clear();
     }
     GradientSampler_->sumAll(*sumDual_,g);
-    gradient_->axpy(1.0,g);
+    gradient_->plus(g);
     g.set(*(gradient_));
     GradientSampler_->setSamples();
   }
@@ -210,7 +210,7 @@ public:
   virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
                         const Vector<Real> &x, Real &tol ) {
     hv.zero(); pointDual_->zero(); sumDual_->zero();
-    for ( int i = 0; i < HessianSampler_->numMySamples(); i++ ) {
+    for ( int i = 0; i < HessianSampler_->numMySamples(); ++i ) {
       getHessVec(*pointDual_,v,x,HessianSampler_->getMyPoint(i),tol);
       sumDual_->axpy(HessianSampler_->getMyWeight(i),*pointDual_);
     }

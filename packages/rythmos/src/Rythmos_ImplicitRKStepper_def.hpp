@@ -290,6 +290,10 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
 
   x_ = x_init->clone_v();
 
+ // for the embedded RK method
+  xhat_ = x_init->clone_v();
+  ee_ = x_init->clone_v();
+
   // x_dot
 
   x_dot_ = createMember(x_->space());
@@ -530,7 +534,7 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
         // for now setCorrection just sets the rkNewtonConvergenceStatus_ in the stepControl
         // and this is used by acceptStep method of the stepControl
 
-        stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), (x_stage_bar_->getNonconstVectorBlock(stage)), rkNewtonConvergenceStatus_);
+        stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), Teuchos::null , rkNewtonConvergenceStatus_);
         bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
 
         if (!stepPass) { // stepPass = false
@@ -562,6 +566,31 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
      assembleIRKSolution( irkButcherTableau_->b(), current_dt, *x_old_, *x_stage_bar_,
        outArg(*x_)
        );
+    
+     //if using embedded method, estimate LTE
+     if (irkButcherTableau_->isEmbeddedMethod() ){
+
+        assembleIRKSolution( irkButcherTableau_->bhat(), current_dt, *x_old_, *x_stage_bar_,
+          outArg(*xhat_)
+          ); 
+
+        // ee_ = (x_ - xhat_)
+        Thyra::V_VmV(ee_.ptr(), *x_, *xhat_);
+        stepControl_->setCorrection(*this, x_, ee_ , rkNewtonConvergenceStatus_);
+
+        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
+
+        if (!stepPass) { // stepPass = false
+           stepLETStatus_ = STEP_LET_STATUS_FAILED;
+           rkNewtonConvergenceStatus_ = -1; // just making sure here
+        } else { // stepPass = true
+           stepLETStatus_ = STEP_LET_STATUS_PASSED;
+           rkNewtonConvergenceStatus_ = 0; // just making sure here
+        }
+     }
+   }
+
+   if (rkNewtonConvergenceStatus_ == 0) {
 
      // Update time range
      timeRange_ = timeRange(t,t+current_dt);
@@ -797,6 +826,8 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   if (isVariableStep_ ) {
   // Initialize StepControl
+
+    isEmbeddedRK_ = irkButcherTableau_->isEmbeddedMethod(); // determine if RK method is an embedded method
   if (stepControl_ == Teuchos::null) {
      RCP<ImplicitBDFStepperRampingStepControl<Scalar> > rkStepControl =
      Teuchos::rcp(new ImplicitBDFStepperRampingStepControl<Scalar>());

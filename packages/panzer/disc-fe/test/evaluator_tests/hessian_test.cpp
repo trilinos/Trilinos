@@ -85,8 +85,12 @@ inline panzer::Traits::HessianType seed_second_deriv(int num_vars,int index,doub
 {
   typedef panzer::Traits::HessianType SecondFadType;
 
-  SecondFadType x = SecondFadType(1,panzer::Traits::FadType(num_vars,index,xi));
-  x.fastAccessDx(0) = vi;
+//  SecondFadType x = SecondFadType(1,panzer::Traits::FadType(num_vars,index,xi));
+//  x.fastAccessDx(0) = vi;
+
+  Sacado::Fad::SFad<panzer::Traits::RealType,1> xi_fad;
+  xi_fad.fastAccessDx(0) = vi;
+  SecondFadType x = SecondFadType(num_vars,index,xi_fad);
 
   return x;
 }
@@ -239,7 +243,6 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  PHX::KokkosDeviceSession session;
 
   // the one and only evaluator
   Teuchos::ParameterList empty_pl;
@@ -278,7 +281,7 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
 
     TEST_EQUALITY(Value::eval(r),f);
     TEST_EQUALITY(r.fastAccessDx(0).fastAccessDx(0),hess[0]);
-    TEST_EQUALITY(r.fastAccessDx(0).fastAccessDx(1),hess[1]);
+    TEST_EQUALITY(r.fastAccessDx(1).fastAccessDx(0),hess[1]);
   }
 }
 

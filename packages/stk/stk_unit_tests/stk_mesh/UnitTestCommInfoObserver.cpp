@@ -52,7 +52,7 @@ protected:
     CommInfoObserverTest()
     : meta(), bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA)
     {
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk, MPI_COMM_WORLD);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk);
 
         observer = new MockCommInfoObserver();
         bulk.register_observer(observer);

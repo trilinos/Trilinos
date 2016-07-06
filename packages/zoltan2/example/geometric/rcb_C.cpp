@@ -156,9 +156,9 @@ int main(int argc, char *argv[])
 
   problem1->solve();
 
-  // create metric object
+  // create metric object where communicator is Teuchos default
 
-  quality_t *metricObject1 = new quality_t(ia1, &params, problem1->getComm(),
+  quality_t *metricObject1 = new quality_t(ia1, &params, //problem1->getComm(),
 					   &problem1->getSolution());
   // Check the solution.
 
@@ -167,8 +167,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb;
-    metricObject1->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject1->getObjectCountImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -213,10 +212,16 @@ int main(int argc, char *argv[])
 
   problem2->solve();
 
-  // create metric object
+  // create metric object for MPI builds
 
+#ifdef HAVE_ZOLTAN2_MPI
+  quality_t *metricObject2 = new quality_t(ia2, &params, //problem2->getComm()
+					   MPI_COMM_WORLD,
+					   &problem2->getSolution());
+#else
   quality_t *metricObject2 = new quality_t(ia2, &params, problem2->getComm(),
 					   &problem2->getSolution());
+#endif
   // Check the solution.
 
   if (rank == 0) {
@@ -224,8 +229,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb;
-    metricObject2->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject2->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -281,7 +285,7 @@ int main(int argc, char *argv[])
 
   problem3->solve();
 
-  // create metric object
+  // create metric object where Teuchos communicator is specified
 
   quality_t *metricObject3 = new quality_t(ia3, &params, problem3->getComm(),
 					   &problem3->getSolution());
@@ -292,8 +296,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb;
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -317,8 +320,7 @@ int main(int argc, char *argv[])
                                 &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
-    scalar_t imb;
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -337,8 +339,7 @@ int main(int argc, char *argv[])
                                 &problem3->getSolution());
   if (rank == 0){
     metricObject3->printMetrics(cout);
-    scalar_t imb;
-    metricObject3->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject3->getWeightImbalance(0);
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else
@@ -404,7 +405,7 @@ int main(int argc, char *argv[])
 
   // Solution changed!
 
-  metricObject1 = new quality_t(ia1, &params, problem1->getComm(),
+  metricObject1 = new quality_t(ia1, &params, //problem1->getComm(),
                                 &problem1->getSolution());
   // Check the solution.
 
@@ -413,8 +414,7 @@ int main(int argc, char *argv[])
   }
 
   if (rank == 0){
-    scalar_t imb;
-    metricObject1->getWeightImbalance(imb, 0);
+    scalar_t imb = metricObject1->getObjectCountImbalance();
     if (imb <= tolerance)
       std::cout << "pass: " << imb << std::endl;
     else

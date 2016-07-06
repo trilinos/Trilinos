@@ -1,0 +1,643 @@
+\label{sec:options}
+In this section, we report the complete list of input parameters. Input
+parameters are passed to \ifpacktwo in a single \parameterlist.
+
+In some cases, the parameter types may depend on runtime template parameters.
+In such cases, we will follow the conventions in Table~\ref{tab:conventions}.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{p{13.3cm} p{2.5cm}}
+    \toprule
+    \verb!MatrixType::local_ordinal_type!                                  & \verb!local_ordinal! \\
+    \verb!MatrixType::global_ordinal_type!                                 & \verb!global_ordinal! \\
+    \verb!MatrixType::scalar_type!                                         & \verb!scalar! \\
+    \verb!MatrixType::node_type!                                           & \verb!node! \\
+    \verb!Tpetra::Vector<scalar,local_ordinal,global_ordinal,node>!        & \verb!vector!\\
+    \verb!Tpetra::MultiVector<scalar,local_ordinal,global_ordinal,node>!   & \verb!multi_vector!\\
+    \verb!vector::mag_type!                                                & \verb!magnitude! \\
+    \bottomrule
+  \end{tabular}
+  \caption{\label{tab:conventions}Conventions for option types that depend on templates.}
+\end{table}
+
+\noindent\textbf{Note:} if \verb!scalar! is \texttt{double}, then \verb!magnitude! is also \texttt{double}.
+
+\section{Point relaxation}\label{s:relaxation}
+
+\textbf{Preconditioner type:} ``RELAXATION''.
+
+\ifpacktwo{} implements the following classical relaxation methods: Jacobi (with
+optional damping), Gauss-Seidel, Successive Over-Relaxation (SOR), symmetric
+version of Gauss-Seidel and SOR. \ifpacktwo{} calls both Gauss-Seidel and SOR
+"Gauss-Seidel". The algorithmic details can be found in~\cite{Saad2003}.
+
+Besides the classical relaxation methods, \ifpacktwo{} also implements $l_1$
+variants of Jacobi and Gauss-Seidel methods proposed in~\cite{Baker2011}, which
+lead to a better performance in parallel applications.
+
+\noindent{\bf Note:} if a user provides a \texttt{Tpetra::BlockCrsMatrix}, the point relaxation
+methods become block relaxation methods, such as block Jacobi or block
+Gauss-Seidel.
+
+The following parameters are used in the point relaxation methods:
+
+\ccc{relaxation: type}
+    {string}
+    {``Jacobi''}
+    {Relaxation method to use. Accepted values: ``Jacobi'',
+     ``Gauss-Seidel'', ``Symmetric Gauss-Seidel''.}
+\ccc{relaxation: sweeps}
+    {int}
+    {1}
+    {Number of sweeps of the relaxation.}
+\ccc{relaxation: damping factor}
+    {scalar}
+    {1.0}
+    {The value of the damping factor $\omega$ for the relaxation.}
+\ccc{relaxation: backward mode}
+    {bool}
+    {\false}
+    {Governs whether Gauss-Seidel is done in forward-mode (\false) or
+     backward-mode (\true). Only valid for ``Gauss-Seidel'' type.}
+\ccc{relaxation: use l1}
+    {bool}
+    {\false}
+    {Use the $l_1$ variant of Jacobi or Gauss-Seidel.}
+\ccc{relaxation: l1 eta}
+    {magnitude}
+    {1.5}
+    {$\eta$ parameter for $l_1$ variant of Gauss-Seidel. Only used if
+     {\tt "relaxation: use l1"} is \true.}
+\ccc{relaxation: zero starting solution}
+    {bool}
+    {\true}
+    {Governs whether or not \ifpacktwo{} uses existing values in the left hand
+     side vector. If true, \ifpacktwo{} fill it with zeros before applying
+     relaxation sweeps which may make the first sweep more efficient.}
+\ccc{relaxation: fix tiny diagonal entries}
+    {bool}
+    {\false}
+    {If true, the compute() method will do extra work (computation only, no MPI
+     communication) to fix diagonal entries. Specifically, the diagonal values
+     with a magnitude smaller than the magnitude of the threshold \texttt{relaxation: min
+     diagonal value} are increased to threshold for the diagonal inversion. The
+     matrix is not modified, instead the updated diagonal values are stored. If the
+     threshold is zero, only the diagonal entries that are exactly zero are replaced
+     with a small nonzero value (machine precision).}
+\ccc{relaxation: min diagonal value}
+    {scalar}
+    {0.0}
+    {The threshold value used in {\tt "relaxation: fix tiny diagonal entries"}.
+     Only used if {\tt "relaxation: fix tiny diagonal entries"} is \true.}
+\ccc{relaxation: check diagonal entries}
+    {bool}
+    {\false}
+    {If true, the \texttt{compute()} method will do extra work (both computation
+     and communication) to count diagonal entries that are zero, have negative
+     real part, or are small in magnitude. This information can be later shown
+     in the description.}
+\ccc{relaxation: local smoothing indices}
+    {Teuchos::ArrayRCP<local\_ordinal>}
+    {empty}
+%Teuchos::ArrayRCP MatrixType::local_ordinal_type}{\texttt{Teuchos::null}}
+    {A given method will only relax on the local indices listed in the
+     \texttt{ArrayRCP}, in the order that they are listed. This can be used to
+     reorder the relaxation, or to only relax on a subset of ids.}
+
+\section{Block relaxation}\label{s:block_relaxation}
+
+\textbf{Preconditioner type:} ``BLOCK\_RELAXATION''.
+
+% \info[inline]{AP}{ILUTP cannot be constructed through {\tt Ifpack2::Factory},
+% only through additive Schwarz}
+
+\ifpacktwo{} supports block relaxation methods. Each block corresponds to a set
+of degrees of freedom within a local subdomain. The blocks can be
+non-overlapping or overlapping. Block relaxation can be considered as domain
+decomposition within an MPI process, and should not be confused with additive
+Schwarz preconditioners (see~\ref{s:schwarz}) which implement domain
+decomposition across MPI processes.
+
+There are several ways the blocks are constructed:
+\begin{itemize}
+  \item Linear partitioning of unknowns
+
+    The unknowns are divided equally among a specified number of
+    partitions $L$ defined by {\tt "partitioner: local parts"}. In other words,
+    assuming number of unknowns $n$ is divisible by $L$, unknown $i$ will belong
+    to block number $\lfloor iL/n \rfloor$.
+
+  \item Line partitioning of unknowns
+
+    The unknowns are grouped based on a geometric criteria which tries to
+    identify degrees of freedom that form an approximate geometric line.
+    Current approach uses a local line detection inspired by the work of
+    Mavriplis~\cite{Mavriplis1999} for convection-diffusion. \ifpacktwo uses
+    coordinate information provided by {\tt "partitioner: coordinates"} to pick
+    "close" points if they are sufficiently far away from the "far" points. It
+    also makes sure the line can never double back on itself.
+
+    These "line" partitions were found to be very beneficent to problems on
+    highly anisotropic geometries such as ice-sheet simulations.
+
+  \item User partitioning of unknowns
+
+    The unknowns are grouped according to a user provided partition. A user
+    may provide a non-overlapping partition {\tt "partitioner: map"} or an
+    overlapping one {\tt "partitioner: parts"}.
+
+    A particular example of a smoother using this approach is a Vanka
+    smoother~\cite{Vanka1986}, where a user may in {\tt "partition: parts"} pressure
+    degrees of freedom, and request a overlap of one thus constructing Vanka
+    blocks.
+\end{itemize}
+The original partitioning may be further modified with {\tt "partitioner: overlap"}
+parameter which will use the local matrix graph to construct overlapping
+partitions.
+
+The blocks are applied in the order they were constructed. This means that in
+the case of overlap the entries in the solution vector relaxed by one block may
+later be overwritten by relaxing another block.
+
+The following parameters are used in the block relaxation methods:
+
+\cccc{relaxation: type}
+    {See~\ref{s:relaxation}.}
+\cccc{relaxation: sweeps}
+    {See~\ref{s:relaxation}.}
+\cccc{relaxation: damping factor}
+    {See~\ref{s:relaxation}.}
+\cccc{relaxation: zero starting solution}
+    {See~\ref{s:relaxation}.}
+\cccc{relaxation: backward mode}
+    {See~\ref{s:relaxation}. Currently has no effect. }
+\ccc{partitioner: type}
+    {string}
+    {``linear''}
+    {The partitioner to use for defining the blocks.  This can be either
+     ``linear'', ``line'' or ``user''.}
+\ccc{partitioner: overlap}
+    {int}
+    {0}
+    {The amount of overlap between partitions (0 corresponds to no overlap).
+     Only valid for ``Jacobi'' relaxation.}
+\ccc{partitioner: local parts}
+    {int}
+    {1}
+    {Number of local partitions (1 corresponds to one local partition, which
+     means "do not partition locally"). Only valid for ``linear'' partitioner
+     type.}
+\ccc{partitioner: map}
+    {Teuchos::ArrayRCP<local\_ordinal>}
+    {empty}
+    {An array containing the partition number for each element.
+     The $i$th entry in the \texttt{ArrayRCP} is the part (block) number that
+     row $i$ belongs to. Use this option if the parts (blocks) do not
+     overlap. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: parts}
+    {Teuchos::Array<Teuchos::ArrayRCP\\<local\_ordinal>>}
+    {empty}
+    {Use this option if the parts (blocks) overlap. The $i$th entry in the
+     \texttt{Array} is an \texttt{ArrayRCP} that contains all the rows in part
+     (block) $i$. Only valid for ``user'' partitioner type.}
+\ccc{partitioner: line detection threshold}
+    {magnitude}
+    {0.0}
+    {Threshold used in line detection. If the distance between two connected
+     points $i$ and $j$ is within the threshold times maximum distance of all
+     points connected to $i$, then point $j$ is considered close enough to line
+     smooth. Only valid for ``line'' partition type.}
+\ccc{partitioner: PDE equations}
+    {int}
+    {1}
+    {Number of equations per node. Only valid for ``line'' partition type.}
+\ccc{partitioner: coordinates}
+    {Teuchos::RCP<multi\_vector>}
+    {null}
+    {Coordinates of local nodes. Only valid for ``line'' partitioner type.}
+\ccc{partitioner: print level}
+    {bool}
+    {\false}
+    {If true, produce extra information about used blocks.}
+
+\section{Chebyshev}\label{s:Chebyshev}
+
+\textbf{Preconditioner type:} ``CHEBYSHEV''.
+
+% Mark Hoemmen (2016/05/31):
+%   The "textbook version" of Chebyshev doesn't really
+%   work; we need to get rid of it.
+
+\ifpacktwo{} implements a variant of Chebyshev iterative method following
+\ifpack{}'s implementation.  \ifpack{} has a special-case modification of the
+eigenvalue bounds for the case where the maximum eigenvalue estimate is close to
+one. Experiments show that the \ifpack{} imitation is much less sensitive to the
+eigenvalue bounds than the textbook version.
+
+\ifpacktwo{} uses the diagonal of the matrix to precondition the linear system on the
+left. Diagonal elements less than machine precision are replaced with machine
+precision.
+
+\ifpacktwo{} requires can take any matrix $A$ but can only guarantee convergence
+for real valued symmetric positive definite matrices.
+\iffalse
+If users could provide the ellipse parameters ($d$ and $c$ in the literature,
+where $d$ is the real-valued center of the ellipse, and $d-c$ and $d+c$ the two
+foci), the iteration itself would work fine with nonsymmetric real-valued $A$,
+as long as the eigenvalues of $A$ can be bounded in an ellipse that is entirely
+to the right of the origin.
+\unsure[inline]{AP}{Really unsure about Chebyshev nonsymmetric matrices. There does not
+seem anything in the code to work with ellipse. I need to ask Mark Hoemmen
+about this.}
+\fi
+
+The following parameters are used in the Chebyshev method:
+
+\ccc{chebyshev: degree}
+    {int}
+    {1}
+    {Degree of the Chebyshev polynomial, or the number of iterations. This
+     overrides parameters {\tt "relaxation: sweeps"} and {\tt "smoother: sweeps"}.}
+\cccc{relaxation: sweeps}
+    {Same as {\tt "chebyshev: degree"}, for compatibility with \ifpack{}.}
+\cccc{smoother: sweeps}
+    {Same as {\tt "chebyshev: degree"}, for compatibility with \ml{}.}
+\ccc{chebyshev: max eigenvalue}
+    {scalar|double}
+    {computed}
+    {An upper bound of the matrix eigenvalues. If not provided, the value will
+     be computed by power method (see parameters {\tt "eigen-analysis: type"} and
+     {\tt "chebyshev: eigenvalue max iterations"}).}
+\ccc{chebyshev: min eigenvalue}
+    {scalar|double}
+    {computed}
+    {A lower bound of the matrix eigenvalues.  If not provided, \ifpacktwo{}
+     will provide an estimate based on the maximum eigenvalue and the ratio.}
+\ccc{chebyshev: ratio eigenvalue}
+    {scalar|double}
+    {30.0}
+    {The ratio of the maximum and minimum estimates of the matrix
+     eigenvalues.}
+\cccc{smoother: Chebyshev alpha}
+    {Same as {\tt "chebyshev: ratio eigenvalue"}, for compatibility with \ml{}.}
+% \ccc{chebyshev: textbook algorithm}
+    % {bool}
+    % {\false}
+    % {If true, use the textbook variant; otherwise, use the \ifpack{} variant.}
+\ccc{chebyshev: compute max residual norm}
+    {bool}
+    {\false}
+    {The \texttt{apply} call will optionally return the norm of the residual.}
+\ccc{eigen-analysis: type}
+    {string}
+    {"power-method"}
+    {The algorithm for estimating the max eigenvalue. Currently only supports
+     power method ("power-method" or "power method"). The cost of the procedure is
+     roughly equal to several matrix-vector multiplications.}
+\ccc{chebyshev: eigenvalue max iterations}
+    {int}
+    {10}
+    {Number of iterations to be used in calculating the estimate for the maximum
+     eigenvalue, if it is not provided by the user.}
+\cccc{eigen-analysis: iterations}
+    {Same as {\tt "chebyshev: eigenvalue max iterations"}, for compatibility with \ml{}.}
+\ccc{chebyshev: min diagonal value}
+    {scalar}
+    {0.0}
+    {Values on the diagonal smaller than this value are increased to this value
+     for the diagonal inversion.}
+\ccc{chebyshev: boost factor}
+    {double}
+    {1.1}
+    {Factor used to increase the estimate of matrix maximum eigenvalue to ensure
+    the high-energy modes are not magnified by a smoother.}
+\ccc{chebyshev: assume matrix does not change}
+    {bool}
+    {\false}
+    {Whether \texttt{compute()} should assume that the matrix has not changed
+     since the last call to \texttt{compute()}. If true, \texttt{compute()}
+     will not recompute inverse diagonal or eigenvalue estimates.}
+\ccc{chebyshev: operator inv diagonal}
+    {Teuchos::RCP<const vector>|\\Teuchos::RCP<vector>|const vector*|\\vector}
+    {Teuchos::null}
+    {If nonnull, a deep copy of this vector will be used as the inverse
+     diagonal of the matrix, instead of computing it. Expert use only.}
+\ccc{chebyshev: min diagonal value}
+    {scalar}
+    {machine precision}
+    {If any entry of the matrix diagonal is less that this in magnitude, it will
+     be replaced with this value in the inverse diagonal used for left scaling.}
+\cccc{chebyshev: zero starting solution}
+    {See {\tt "relaxation: zero starting solution"}.}
+
+\section{Incomplete factorizations}
+
+\subsection{ILU($k$)}\label{s:ILU}
+
+\textbf{Preconditioner type:} ``RILUK''.
+
+\ifpacktwo{} implements a standard and modified (MILU) variants of the
+ILU($k$) factorization~\cite{Saad2003}. In addition, it also provides an
+optional \textit{a priori} modification of the diagonal entries of a matrix to
+improve the stability of the factorization.
+
+The following parameters are used in the ILU($k$) method:
+
+\ccc{fact: iluk level-of-fill}
+    {int|global\_ordinal|magnitude|double}
+    {0}
+    {Level-of-fill of the factorization.}
+\ccc{fact: relax value}
+    {magnitude|double}
+    {0.0}
+    {MILU diagonal compensation value. Entries dropped during factorization
+     times this factor are added to diagonal entries.}
+\ccc{fact: absolute threshold}
+    {magnitude|double}
+    {0.0}
+    {Prior to the factorization, each diagonal entry is updated by adding
+     this value (with the sign of the actual diagonal entry). Can be combined
+     with {\tt "fact: relative threshold"}. The matrix remains unchanged.}
+\ccc{fact: relative threshold}
+    {magnitude|double}
+    {1.0}
+    {Prior to the factorization, each diagonal element is scaled by this factor
+     (not including contribution specified by {\tt "fact: absolute
+     threshold"}). Can be combined with {\tt "fact: absolute threshold"}.
+     The matrix remains unchanged.}
+% All overlap-related code was removed by M. Hoemmen in
+%
+% commit 162f64572fbf93e2cac73e3034d76a3db918a494
+% Author: Mark Hoemmen <mhoemme@sandia.gov>
+% Date:   Fri Jan 24 17:16:19 2014 -0700
+%
+%     Ifpack2: RILUK: Removed all overlap-related code.
+%
+%     Overlap never had a correct implementation in RILUK.  Furthermore,
+%     AdditiveSchwarz is the proper place for overlap to be implemented, not
+%     RILUK.  Ifpack2's incomplete factorizations are local (per MPI
+%     process) solvers and don't need to know anything about overlap across
+%     processes.  Thus, this commit removes all overlap-related code from
+%     RILUK.
+%
+% So, older parameter "fact: iluk level-of-overlap" is no longer valid and is ignored.
+
+\subsection{ILUT}\label{s:ILUT}
+
+\textbf{Preconditioner type:} ``ILUT''.
+
+\ifpacktwo{} implements a slightly modified variant of the standard ILU factorization with specified fill and
+drop tolerance ILUT($p,\tau$)~\cite{Saad1994}. The modifications follow the \aztecoo implementation.
+The main difference between the \ifpacktwo implementation and the algorithm in \cite{Saad1994} is the definition of
+\texttt{fact: ilut level-of-fill}.
+
+The following parameters are used in the ILUT method:
+
+\ccc{fact: ilut level-of-fill}
+    {int|magnitude|double}
+    {1}
+    {Maximum number of entries to keep in each row of $L$ and $U$. Each row of
+     $L$ ($U$) will have at most $\lceil\frac{(\mbox{\small\tt
+     level-of-fill}-1)nnz(A)}{2n}\rceil$ nonzero entries, where $nnz(A)$ is the
+     number of nonzero entries in the matrix, and $n$ is the number of rows.
+     ILUT always keeps the diagonal entry in the current row, regardless of the
+     drop tolerance or fill level. \textbf{Note:} \textit{This is
+     different from the $p$ in the classic algorithm in~\cite{Saad1994}.}}
+\ccc{fact: drop tolerance}
+    {magnitude|double}
+    {0.0}
+    {A threshold for dropping entries ($\tau$ in~\cite{Saad1994}).}
+\cccc{fact: absolute threshold}
+    {See~\ref{s:ILU}.}
+\cccc{fact: relative threshold}
+    {See~\ref{s:ILU}.}
+\cccc{fact: relax value}
+    {Currently has no effect. For backwards compatibility only.}
+
+\subsection{ILUTP}\label{s:ILUTP}
+
+\textbf{Preconditioner type:} ``AMESOS2''.
+
+% \info[inline]{AP}{ILUTP cannot be constructed through {\tt Ifpack2::Factory},
+% only through additive Schwarz}
+
+\ifpacktwo{} implements a standard ILUTP factorization~\cite{Saad2003}. This is
+done through is through the \amesostwo interface to SuperLU~\cite{Li2011}. We
+reproduce the \amesostwo options here for convenience. {\em You should consider
+the \href{http://trilinos.org/docs/dev/packages/amesos2/doc/html/group__amesos2__solver__parameters.html#superlu_parameters}{\amesostwo
+documentation} to be the final authority.}
+
+The following parameters are used in the ILUTP method:
+
+\ccc{ILU\_DropTol}
+    {double}
+    {1e-4}
+    {ILUT drop tolerance.}
+\ccc{ILU\_FillFactor}
+    {double}
+    {10.0}
+    {ILUT fill factor.}
+\ccc{ILU\_Norm}
+    {string}
+    {``INF\_NORM''}
+    {Norm to be used in factorization. Accepted values: ``ONE\_NORM'', ``TWO\_NORM'', or ``INF\_NORM''.}
+\ccc{ILU\_MILU}
+    {string}
+    {``SILU''}
+    {Type of modified ILU to use. Accepted values: ``SILU'', ``SMILU\_1'', ``SMILU\_2'', or ``SMILU\_3''.}
+
+
+\section{Additive Schwarz}\label{s:schwarz}
+
+\textbf{Preconditioner type:} ``SCHWARZ''.
+
+\ifpacktwo{} implements additive Schwarz domain decomposition with optional
+overlap. Each subdomain corresponds to exactly one MPI process in the given
+matrix's MPI communication. For domain decomposition within an
+MPI process see~\ref{s:block_relaxation}.
+
+One-level overlapping domain decomposition preconditioners use local solvers of
+Dirichlet type. This means that the inverse of the local matrix (possibly with
+overlap) is applied to the residual to be preconditioned. The preconditioner can
+be written as:
+$$ P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i, $$
+where $M$ is the number of subdomains (in this case, the number of (MPI)
+processes in the computation), $R_i$ is an operator that restricts the global
+vector to the vector lying on subdomain $i$, $P_i$ is the prolongator
+operator, and $A_i = R_i A P_i$.
+
+Constructing a Schwarz preconditioner requires defining two components.
+
+{\bf Definition of the restriction and prolongation operators.}
+Users may control how the data is combined with existing data by setting {\tt
+"combine mode"} parameter. Table~\ref{t:combine_mode} contains a list of modes to
+combine overlapped entries. The default mode is ``ZERO'' which is equivalent to
+using a restricted additive Schwarz~\cite{Cai1999} method.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{p{3.5cm} p{12.0cm}}
+    \toprule
+    Combine mode name & Description \\
+    \midrule
+    ``ADD''           & Sum values into existing values \\
+    ``ZERO''          & Replace old values with zero \\
+    ``INSERT''        & Insert new values that don't currently exist \\
+    ``REPLACE''       & Replace existing values with new values \\
+    ``ABSMAX''        & Replace old values with maximum of magnitudes of old and new values \\
+    \bottomrule
+  \end{tabular}
+  \caption{\label{t:combine_mode}Combine mode descriptions.}
+\end{table}
+
+{\bf Definition of a solver for subdomain linear system.}
+Some preconditioners may benefit from local modifications to the subdomain
+matrix. It can be filtered to eliminate singletons and/or reordered.
+Reordering will often improve performance during incomplete factorization setup,
+and improve the convergence. The matrix reordering algorithms specified in {\tt
+"schwarz: reordering list"} are provided by \zoltantwo.  At the present time,
+the only available reordering algorithm is RCM (reverse Cuthill-McKee). Other
+orderings will be supported by the Zoltan2 package in the future.
+
+To solve linear systems involving $A_i$ on each subdomain, a user can specify
+the inner solver by setting {\tt "inner preconditioner name"} parameter (or any
+of its aliases) which allows to use any \ifpacktwo preconditioner. These include
+but are not necessarily limited to the preconditioners in
+Table~\ref{t:schwarz_inner}.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{p{5.0cm} p{10.5cm}}
+    \toprule
+    Inner solver type       & Description \\
+    \midrule
+    ``DIAGONAL''            & Diagonal scaling \\
+    ``RELAXATION''          & Point relaxation (see~\ref{s:relaxation}) \\
+    ``BLOCK\_RELAXATION''   & Block relaxation (see~\ref{s:block_relaxation}) \\
+    ``CHEBYSHEV''           & Chebyshev iteration (see~\ref{s:Chebyshev}) \\
+    ``RILUK''               & ILU($k$) (see~\ref{s:ILU}) \\
+    ``ILUT''                & ILUT (see~\ref{s:ILUT}) \\
+    ``AMESOS2''             & \amesostwo's interface to sparse direct solvers \\
+    ``DENSE'' or ``LAPACK'' & LAPACK's LU factorization for a dense representation of a subdomain matrix \\
+    ``CUSTOM''              & User provided inner solver \\
+    % ``RBILUK''
+    \bottomrule
+  \end{tabular}
+  \caption{\label{t:schwarz_inner}Additive Schwarz solver preconditioner types.}
+\end{table}
+
+The following parameters are used in the Schwarz method:
+
+\ccc{schwarz: inner preconditioner name}
+    {string}
+    {none}
+    {The name of the subdomain solver.}
+\cccc{inner preconditioner name}
+    {Same as {\tt "schwarz: inner preconditioner name"}.}
+\cccc{schwarz: subdomain solver name}
+    {Same as {\tt "schwarz: inner preconditioner name"}.}
+\cccc{subdomain solver name}
+    {Same as {\tt "schwarz: inner preconditioner name"}.}
+\ccc{schwarz: inner preconditioner parameters}
+    {\parameterlist}
+    {empty}
+    {Parameters for the subdomain solver. If not provided, the subdomain solver
+     will use its specific default parameters.}
+\cccc{inner preconditioner parameters}
+    {Same as {\tt "schwarz: inner preconditioner parameters"}.}
+\cccc{schwarz: subdomain solver parameters}
+    {Same as {\tt "schwarz: inner preconditioner parameters"}.}
+\cccc{subdomain solver parameters}
+    {Same as {\tt "schwarz: inner preconditioner parameters"}.}
+\ccc{schwarz: combine mode}
+    {string}
+    {``ZERO''}
+    {The rule for combining incoming data with existing data in overlap regions.
+     Accepted values: see Table~\ref{t:combine_mode}.}
+\ccc{schwarz: overlap level}
+    {int}
+    {0}
+    {The level of overlap (0 corresponds to no overlap).}
+\ccc{schwarz: num iterations}
+    {int}
+    {1}
+    {Number of iterations to perform.}
+\ccc{schwarz: use reordering}
+    {bool}
+    {\false}
+    {If true, local matrix is reordered before computing subdomain solver. \trilinos must have been built with
+     \zoltantwo and \xpetra enabled.}
+\ccc{schwarz: reordering list}
+    {\parameterlist}
+    {empty}
+    {Specify options for a \zoltantwo reordering algorithm to use. See {\tt
+     "order\_method"}. {\em You should consider the
+     \href{http://trilinos.org/docs/dev/packages/zoltan2/doc/html/z2_parameters.html}{\zoltantwo
+     documentation} to be the final authority.}}
+\ccc{order\_method}
+    {string}
+    {``rcm''}
+    {Reordering algorithm. Accepted values: ``rcm'', ``minimum\_degree'',
+     ``natural'', ``random'', or ``sorted\_degree''. Only used in {\tt
+     "schwarz: reordering list"} sublist.}
+\cccc{schwarz: zero starting solution}
+    {See {\tt "relaxation: zero starting solution"}.}
+\ccc{schwarz: filter singletons}
+    {bool}
+    {\false}
+    {If true, exclude rows with just a single entry on the calling process.}
+\cccc{schwarz: subdomain id}
+    {Currently has no effect.}
+\cccc{schwarz: compute condest}
+    {Currently has no effect. For backwards compatibility only.}
+
+\section{Hiptmair}
+
+\ifpacktwo{} implements Hiptmair algorithm of~\cite{Hiptmair1997}. The method
+operates on two spaces: a primary space and an auxiliary space. This situation
+arises, for instance,  when preconditioning Maxwell's equations discretized by
+edge elements. It is used in \muelu~\cite{MueLu} ``RefMaxwell''
+solver~\cite{RefMaxwell}.
+
+Hiptmair's algorithm does not use \texttt{Ifpack2::Factory} interface for
+construction.  Instead, a user must explicitly call the constructor
+\begin{lstlisting}[language=C++]
+  Teuchos::RCP<Tpetra::CrsMatrix<> > A, Aaux, P;
+  // create A, Aaux, P here ...
+  Teuchos::ParameterList paramList;
+  paramList.set("hiptmair: smoother type 1", "CHEBYSHEV");
+  // ...
+  RCP<Ifpack2::Ifpack2Preconditioner<> > ifpack2Preconditioner =
+    Teuchos::rcp(new Ifpack2::Hiptmair(A, Aaux, P);
+  ifpack2Preconditioner->setParameters(paramList);
+\end{lstlisting}
+\noindent Here, $A$ is a matrix in the primary space, $Aaux$ is a matrix in
+auxiliary space, and $P$ is a prolongator/restrictor between the two spaces.
+
+The following parameters are used in the Hiptmair method:
+
+\ccc{hiptmair: smoother type 1}
+    {string}
+    {"CHEBYSHEV"}
+    {Smoother type for smoothing the primary space.}
+\ccc{hiptmair: smoother list 1}
+    {\parameterlist}
+    {empty}
+    {Smoother parameters for smoothing the primary space.}
+\ccc{hiptmair: smoother type 2}
+    {string}
+    {"CHEBYSHEV"}
+    {Smoother type for smoothing the auxiliary space.}
+\ccc{hiptmair: smoother list 2}
+    {\parameterlist}
+    {empty}
+    {Smoother parameters for smoothing the auxiliary space.}
+\ccc{hiptmair: pre or post}
+    {string}
+    {``both''}
+    {\ifpacktwo{} always relaxes on the auxiliary space. ``pre'' (``post'') means
+     that it relaxes on the primary space before (after) the relaxation on the
+     auxiliary space. ``both'' means that we do both ``pre'' and ``post''.}
+\cccc{hiptmair: zero starting solution}
+    {See {\tt "relaxation: zero starting solution"}.}

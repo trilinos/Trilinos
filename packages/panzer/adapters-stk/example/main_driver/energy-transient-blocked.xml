@@ -170,7 +170,7 @@
 
     <ParameterList name="Options">
         <Parameter name="Write Volume Assembly Graphs" type="bool" value="0"/> 
-        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-transient_"/> 
+        <Parameter name="Volume Assembly Graph Prefix" type="string" value="energy-transient"/> 
     </ParameterList>
 
 <ParameterList name="Solution Control">

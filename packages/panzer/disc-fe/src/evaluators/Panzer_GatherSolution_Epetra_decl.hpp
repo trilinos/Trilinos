@@ -54,6 +54,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
+#include "Panzer_GatherSolution_Input.hpp"
+
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 class Epetra_Vector;
@@ -120,7 +122,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -177,7 +179,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -228,7 +230,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;     // This disables sensitivities absolutely
   std::string sensitivitiesName_; // This sets which gather operations have sensitivities

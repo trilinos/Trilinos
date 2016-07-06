@@ -5,17 +5,82 @@
 #include <Kokkos_MemoryTraits.hpp>
 #include <KokkosKernels_SortKeyValue.hpp>
 #include <iostream>
-
+#include <limits>
 #include <Kokkos_UnorderedMap.hpp>
 
 #ifndef _KOKKOSKERNELSUTILS_HPP
 #define _KOKKOSKERNELSUTILS_HPP
+
+
+#define KOKKOSKERNELS_MACRO_MIN(x,y) ((x) < (y) ? (x) : (y))
 
 namespace KokkosKernels{
 
 namespace Experimental{
 
 namespace Util{
+
+enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
+template <typename ExecutionSpace>
+ExecSpaceType get_exec_space_type(){
+
+#if defined( KOKKOS_HAVE_SERIAL )
+  if (Kokkos::Impl::is_same< Kokkos::Serial , ExecutionSpace >::value){
+    return Exec_SERIAL;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  if (Kokkos::Impl::is_same< Kokkos::Threads , ExecutionSpace >::value){
+    return Exec_PTHREADS;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  if (Kokkos::Impl::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
+    return Exec_OMP;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+    return Exec_CUDA;
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_QTHREAD)
+  if (Kokkos::Impl::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+    return Exec_QTHREADS;
+  }
+#endif
+  return Exec_SERIAL;
+
+}
+
+
+template <typename in_lno_view_t,
+          typename out_lno_view_t>
+struct Histogram{
+  in_lno_view_t inview;
+  out_lno_view_t outview;
+  Histogram (in_lno_view_t inview_, out_lno_view_t outview_): inview(inview_), outview(outview_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &ii) const {
+    Kokkos::atomic_fetch_add(&(outview(inview(ii))),1);
+  }
+};
+
+template <typename in_lno_view_t,
+          typename out_lno_view_t,
+          typename MyExecSpace>
+void get_histogram(
+    typename in_lno_view_t::size_type in_elements,
+    in_lno_view_t in_view,
+    out_lno_view_t histogram /*must be initialized with 0s*/){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_for( my_exec_space(0, in_elements), Histogram<in_lno_view_t, out_lno_view_t>(in_view, histogram));
+}
 
 template <typename idx, typename ExecutionSpace>
 void get_suggested_vector_team_size(
@@ -83,6 +148,7 @@ void get_suggested_vector_team_size(
 #endif
 
 }
+
 
 
 template <typename idx_array_type,
@@ -1313,6 +1379,113 @@ void view_reduce_sum(size_t num_elements, view_type view_to_reduce, typename vie
   typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
   Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceSumFunctor<view_type>(view_to_reduce), sum_reduction);
 }
+
+template<typename view_type>
+struct ReduceMaxFunctor{
+
+  view_type view_to_reduce;
+  typedef typename view_type::non_const_value_type value_type;
+  const value_type min_val;
+  ReduceMaxFunctor(
+      view_type view_to_reduce_): view_to_reduce(view_to_reduce_),
+          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, value_type &max_reduction) const {
+    value_type val = view_to_reduce(i);
+    if (max_reduction < val) { max_reduction = val;}
+
+  }
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile value_type& dst,const volatile value_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (value_type& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating -point Inf and NaN. Trilinos does , however;
+    // see Kokkos :: ArithTraits in the Tpetra package.
+    dst = min_val;
+  }
+
+};
+
+template <typename view_type , typename MyExecSpace>
+void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename view_type::non_const_value_type &max_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), ReduceMaxFunctor<view_type>(view_to_reduce), max_reduction);
+}
+
+
+template<typename view_type1, typename view_type2>
+struct IsEqualFunctor{
+  view_type1 view1;
+  view_type2 view2;
+
+  IsEqualFunctor(view_type1 view1_, view_type2 view2_): view1(view1_), view2(view2_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, int &is_equal) const {
+    if (view1(i) != view2(i)) {
+      //std::cout << "i:" << i << "view1:" << view1(i) << " view2:" <<  view2(i) << std::endl;
+      //printf("i:%d v1:")
+      is_equal = 0;
+    }
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile int& dst,const volatile int& src) const {
+    dst = dst & src;
+  }
+  KOKKOS_INLINE_FUNCTION
+  void init (int& dst) const
+  {
+    dst = 1;
+  }
+
+};
+template <typename view_type1, typename view_type2, typename MyExecSpace>
+bool isSame(size_t num_elements, view_type1 view1, view_type2 view2){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  int issame = 1;
+  Kokkos::parallel_reduce( my_exec_space(0,num_elements), IsEqualFunctor<view_type1, view_type2>(view1, view2), issame);
+  MyExecSpace::fence();
+  return issame;
+}
+
+
+template <typename a_view_t, typename b_view_t, typename size_type>
+struct MaxHeap{
+
+  a_view_t heap_keys;
+  b_view_t heap_values;
+  size_type max_size;
+  size_type current_size;
+
+  MaxHeap (
+      a_view_t heap_keys_,
+      b_view_t heap_values_,
+      size_type max_size_): heap_keys(heap_keys_), heap_values(heap_values_), max_size(max_size_), current_size(0){}
+
+  KOKKOS_INLINE_FUNCTION
+  void insert(typename a_view_t::value_type &key, typename b_view_t::value_type &val){
+    for (size_type i = 0; i < current_size; ++i){
+      if (key == heap_keys(i)){
+        heap_values(i) = heap_values(i) & val;
+        return;
+      }
+    }
+    heap_keys(current_size) = key;
+    heap_values(current_size++) = val;
+  }
+
+
+};
+
 }
 }
 }

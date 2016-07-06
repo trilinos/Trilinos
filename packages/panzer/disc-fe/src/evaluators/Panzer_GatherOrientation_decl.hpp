@@ -70,12 +70,18 @@ class GatherOrientation
     public panzer::CloneableEvaluator  {
    
 public:
-  
-  GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer) :
-     globalIndexer_(indexer) {}
+
+  GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer)
+  { indexers_.push_back(indexer); }
 
   GatherOrientation(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
                         const Teuchos::ParameterList& p);
+
+  GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers)
+     : indexers_(indexers) {}
+
+  GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > & indexers,
+                    const Teuchos::ParameterList& p);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -83,7 +89,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData d);
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherOrientation<EvalT,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherOrientation<EvalT,TRAITS,LO,GO>(indexers_,pl)); }
   
 private:
 
@@ -92,7 +98,11 @@ private:
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
-  std::vector<int> fieldIds_; // field IDs needing mapping
+
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > > indexers_;
+
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFieldOrientations_;
 

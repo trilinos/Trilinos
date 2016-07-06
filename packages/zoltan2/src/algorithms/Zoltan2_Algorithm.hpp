@@ -59,6 +59,7 @@ class Algorithm;
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
 
@@ -98,10 +99,18 @@ public:
   }
   
   //! \brief Matching method
-  virtual void match() { Z2_THROW_NOT_IMPLEMENTED }
+  virtual void match() { 
+    Z2_THROW_NOT_IMPLEMENTED 
+  }
 
   //! \brief Partitioning method
   virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Mapping method
+  virtual void map(const RCP<MappingSolution<Adapter> > &solution) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -168,6 +177,35 @@ public:
   {
     Z2_THROW_NOT_IMPLEMENTED
   }
+
+  //! \brief In mapping, returns the rank to which a part is assigned
+  //  \param p: (in) the part for which the rank is sought
+  //  This method need not be implemented by every algorithm or, indeed,
+  //  for every mapping algorithm.  Mapping algorithms may provide this 
+  //  function to prevent additional memory use in MappingSolution.
+  //  For example, AlgContiguousMapping can compute this function implicitly, 
+  //  with no additional storage.  However, Mapping algorithms can skip this
+  //  function and, instead, register their results in MappingSolution.
+  virtual int getRankForPart(part_t p)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief In mapping, returns a view of parts assigned to the current rank
+  //  \param numParts: (out) the number of parts assigned to the current rank
+  //  \param parts: (out) a view of the assigned parts
+  //
+  //  This method need not be implemented by every algorithm or, indeed,
+  //  for every mapping algorithm.  Mapping algorithms may provide this 
+  //  function to prevent additional memory use in MappingSolution.
+  //  For example, AlgContiguousMapping can compute this function implicitly, 
+  //  with no additional storage.  However, Mapping algorithms can skip this
+  //  function and, instead, register their results in MappingSolution.
+  virtual void getMyPartsView(part_t &numParts, part_t *&parts)
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
 
 private:
 };

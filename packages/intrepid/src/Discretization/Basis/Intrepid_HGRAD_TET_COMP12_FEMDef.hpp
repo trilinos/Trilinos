@@ -238,9 +238,9 @@ void Basis_HGRAD_TET_COMP12_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar &   
       FieldContainer<Scalar> Lopt(10,3);
       for (int pt=0; pt < dim0; ++pt) {
 
-        Scalar r = inputPoints(pt, 0);
-        Scalar s = inputPoints(pt, 1);
-        Scalar t = inputPoints(pt, 2);
+        r = inputPoints(pt, 0);
+        s = inputPoints(pt, 1);
+        t = inputPoints(pt, 2);
 
         Lopt(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
         Lopt(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;

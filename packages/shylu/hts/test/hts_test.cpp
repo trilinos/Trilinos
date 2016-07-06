@@ -11,8 +11,6 @@
 
 #include <complex>
 
-#include <omp.h>
-
 #include "hts_test_util.hpp"
 
 namespace Experimental {
@@ -225,13 +223,13 @@ template<typename Int, typename Size, typename Sclr> class Tester {
     } catch (const hts::NotFullDiagonal&) {
       correct_exception_thrown = to.matrix_type == TestOptions::missing_diag;
     } catch (const hts::NotTriangularException&) {
-      correct_exception_thrown = to.matrix_type == TestOptions::not_tri;
+      correct_exception_thrown = ut::is_not_tri(to.matrix_type);
     }
     const int nerr = correct_exception_thrown ? 0 : 1;
     if (nerr && to.verbose) {
       std::cout << "test_for_exception failed for ";
       to.print(std::cout);
-      std::cout << "\n";      
+      std::cout << "\n";
     }
     return nerr;
   }
@@ -255,7 +253,7 @@ public:
     // Test our own transpose to make sure it's OK for subsequent use.
     nerr += test_transpose(verbose, 277);
 
-    const int ns[] = {1, 2, 11, 300};
+    const int ns[] = {1, 2, 3, 21, 300};
     const int max_nthreads = omp_get_max_threads();
     const int nthreads_step = max_nthreads > 40 ? 11 : 3;
 
@@ -290,8 +288,12 @@ public:
                   to.matrix_type = TestOptions::sparse; nerr += test(to);
                   to.matrix_type = TestOptions::block_sparse; nerr += test(to);
                   if (to.n > 2) {
-                    to.matrix_type = TestOptions::not_tri; nerr += test_for_exception(to);
-                    to.matrix_type = TestOptions::missing_diag; nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::not_tri;
+                    nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::missing_diag;
+                    nerr += test_for_exception(to);
+                    to.matrix_type = TestOptions::not_tri_almost_diag;
+                    nerr += test_for_exception(to);
                   }
                 }
               }

@@ -190,7 +190,7 @@ namespace MueLu {
 
         LO realnnz = 0;
         Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage1_reduce", numRows, KOKKOS_LAMBDA(const LO row, LO& nnz) {
-          auto rowView = kokkosMatrix.template row<LO>(row);
+          auto rowView = kokkosMatrix.row (row);
           auto length  = rowView.length;
 
           LO rownnz = 0;
@@ -226,7 +226,7 @@ namespace MueLu {
         typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
         typename entries_type::non_const_type        cols    ("entries",       realnnz);
         Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:stage2_reduce", numRows, KOKKOS_LAMBDA(const LO row, GO& dropped) {
-          auto rowView = kokkosMatrix.template row<LO>(row);
+          auto rowView = kokkosMatrix.row (row);
           auto length = rowView.length;
 
           LO rownnz = 0;
@@ -375,7 +375,7 @@ namespace MueLu {
 
     }
 
-    if (GetVerbLevel() & Statistics0) {
+    if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
       Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", boundaryNodes.dimension_0(), KOKKOS_LAMBDA(const LO i, GO& n) {
@@ -385,16 +385,16 @@ namespace MueLu {
 
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
-      GetOStream(Statistics0) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+      GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
     }
 
-    if ((GetVerbLevel() & Statistics0) && threshold != STS::zero()) {
+    if ((GetVerbLevel() & Statistics1) && threshold != STS::zero()) {
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       GO numGlobalTotal, numGlobalDropped;
       MueLu_sumAll(comm, numTotal,   numGlobalTotal);
       MueLu_sumAll(comm, numDropped, numGlobalDropped);
       if (numGlobalTotal != 0) {
-        GetOStream(Statistics0) << "Number of dropped entries: "
+        GetOStream(Statistics1) << "Number of dropped entries: "
             << numGlobalDropped << "/" << numGlobalTotal
             << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)" << std::endl;
       }

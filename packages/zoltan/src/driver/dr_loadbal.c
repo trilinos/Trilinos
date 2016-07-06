@@ -908,6 +908,9 @@ exit(-1);
       /* Not yet impl. */
     }
 
+    {
+    double kddstart = MPI_Wtime();
+
     if (Zoltan_Order(zz, num_gid_entries,
 	mesh->num_elems, order_gids,
 	order) == ZOLTAN_FATAL) {
@@ -916,6 +919,12 @@ exit(-1);
       safe_free((void **)(void *) &order_gids);
       safe_free((void **)(void *) &order_lids);
       return 0;
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("\nOrdering time = %f seconds\n", MPI_Wtime() - kddstart);
+
     }
 
     /* Evaluate the new ordering */

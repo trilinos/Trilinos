@@ -197,7 +197,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("DOF Names", basis_it->second.second);
       p.set("Indexer Names", basis_it->second.second);
       p.set("Sensitivities Name", "");
-      p.set("Disable Sensitivities", false);
+      p.set("First Sensitivities Available", true);
 
       // Set tangent field names
       if (tangent_field_names != Teuchos::null)
@@ -222,7 +222,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
         p.set("DOF Names", names);
         p.set("Indexer Names", basis_it->second.second);
         p.set("Sensitivities Name", "");
-        p.set("Disable Sensitivities", true);
+        p.set("First Sensitivities Available", false);
         p.set("Global Data Key", "X TANGENT GATHER CONTAINER: " + this->m_tangent_param_names[i]);
 
         RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherTangent<EvalT>(p);
@@ -368,7 +368,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 
   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer;
   if(lof!=Teuchos::null) 
-    globalIndexer = lof->getUniqueGlobalIndexerBase();
+    globalIndexer = lof->getRangeGlobalIndexer();
   
   // DOFs: Scalar value @ basis --> Scalar value @ IP 
   for (DescriptorIterator dof_iter = m_provided_dofs_desc.begin(); dof_iter != m_provided_dofs_desc.end(); ++dof_iter) {

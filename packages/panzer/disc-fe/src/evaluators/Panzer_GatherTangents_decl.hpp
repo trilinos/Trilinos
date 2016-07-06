@@ -94,8 +94,8 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<const PointRule> pointRule;
-  Intrepid2::FieldContainer<ScalarT> edgeTan; // edge tangents
-  Intrepid2::FieldContainer<ScalarT> refEdgeTan; // reference edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
+  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
   PointValues2<ScalarT,PHX::MDField> pointValues;
 

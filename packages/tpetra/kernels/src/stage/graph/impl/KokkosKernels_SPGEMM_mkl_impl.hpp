@@ -38,9 +38,9 @@ namespace Impl{
       in_nonzero_index_view_type entriesB,
       in_nonzero_value_view_type valuesB,
       bool transposeB,
-      in_row_index_view_type &row_mapC,
-      in_nonzero_index_view_type &entriesC,
-      in_nonzero_value_view_type &valuesC){
+      typename in_row_index_view_type::non_const_type &row_mapC,
+      typename in_nonzero_index_view_type::non_const_type &entriesC,
+      typename in_nonzero_value_view_type::non_const_type &valuesC){
 
 #ifdef KERNELS_HAVE_MKL
 
@@ -120,7 +120,12 @@ namespace Impl{
           return;
         }
 
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C)){
+
+        Kokkos::Impl::Timer timer1;
+        bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        std::cout << "Actual FLOAT MKL SPMM Time:" << timer1.seconds() << std::endl;
+
+        if (success){
           std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
           return;
         }
@@ -143,9 +148,9 @@ namespace Impl{
           }
 
 
-          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
-          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
+          row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+          entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+          valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
           KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
           idx nnz = row_mapC(m) =  rows_end[m - 1];
@@ -201,7 +206,11 @@ namespace Impl{
         }
 
 
-        if (SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C)){
+        Kokkos::Impl::Timer timer1;
+        bool success = SPARSE_STATUS_SUCCESS != mkl_sparse_spmm (operation, A, B, &C);
+        std::cout << "Actual DOUBLE MKL SPMM Time:" << timer1.seconds() << std::endl;
+
+        if (success){
           std::cerr << "CANNOT multiply mkl_sparse_spmm " << std::endl;
           return;
         }
@@ -223,18 +232,20 @@ namespace Impl{
             std::cerr << "C is not zero based indexed." << std::endl;
             return;
           }
+          {
+            Kokkos::Impl::Timer copy_time;
+            row_mapC = typename in_row_index_view_type::non_const_type(Kokkos::ViewAllocateWithoutInitializing("rowmapC"), c_rows + 1);
+            entriesC = typename in_nonzero_index_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("EntriesC") , rows_end[m - 1] );
+            valuesC = typename in_nonzero_value_view_type::non_const_type (Kokkos::ViewAllocateWithoutInitializing("valuesC") ,  rows_end[m - 1]);
 
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
+            idx nnz = row_mapC(m) =  rows_end[m - 1];
 
-
-          row_mapC = typename in_row_index_view_type::non_const_type("rowmapC", c_rows + 1);
-          entriesC = typename in_nonzero_index_view_type::non_const_type ("EntriesC" , rows_end[m - 1] );
-          valuesC = typename in_nonzero_value_view_type::non_const_type ("valuesC" ,  rows_end[m - 1]);
-
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_row_index_view_type::non_const_type, MyExecSpace> (m, rows_start, row_mapC);
-          idx nnz = row_mapC(m) =  rows_end[m - 1];
-
-          KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
-          KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            KokkosKernels::Experimental::Util::copy_vector<MKL_INT *, typename in_nonzero_index_view_type::non_const_type, MyExecSpace> (nnz, columns, entriesC);
+            KokkosKernels::Experimental::Util::copy_vector<double *, typename in_nonzero_value_view_type::non_const_type, MyExecSpace> (m, values, valuesC);
+            double copy_time_d = copy_time.seconds();
+            std::cout << "MKL COPYTIME:" << copy_time_d << std::endl;
+          }
 
         }
 
@@ -260,7 +271,28 @@ namespace Impl{
       }
     }
     else {
+
+      //int *a_xadj = row_mapA.ptr_on_device();
       std::cerr << "MKL requires integer values" << std::endl;
+
+      if (Kokkos::Impl::is_same<idx, unsigned int>::value){
+        std::cerr << "MKL is given unsigned integer" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, long>::value){
+        std::cerr << "MKL is given long" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, const int>::value){
+        std::cerr << "MKL is given const int" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, unsigned long>::value){
+        std::cerr << "MKL is given unsigned long" << std::endl;
+      }
+      else if (Kokkos::Impl::is_same<idx, const unsigned long>::value){
+        std::cerr << "MKL is given const unsigned long" << std::endl;
+      }
+      else{
+        std::cerr << "MKL is given something else" << std::endl;
+      }
       return;
     }
 #else

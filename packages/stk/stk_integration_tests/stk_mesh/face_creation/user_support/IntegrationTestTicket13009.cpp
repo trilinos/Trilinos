@@ -11,7 +11,7 @@ protected:
     void setup_mesh_with_auto_decomp(const std::string &meshSpecification, stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
         allocate_bulk(auraOption);
-        stk::unit_test_util::fill_mesh_using_stk_io_with_auto_decomp(meshSpecification, get_bulk(), get_comm());
+        stk::unit_test_util::fill_mesh_using_stk_io_with_auto_decomp(meshSpecification, get_bulk());
     }
 
     void run_test_on_procs(int num_procs)
@@ -32,7 +32,7 @@ TEST_F(Ticket13009, check_create_adjacent_entities_serial)
     run_test_on_procs(1);
 }
 
-TEST_F(Ticket13009, DISABLED_check_create_adjacent_entities_parallel)
+TEST_F(Ticket13009, check_create_adjacent_entities_parallel)
 {
     run_test_on_procs(2);
 }

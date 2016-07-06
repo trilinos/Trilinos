@@ -158,6 +158,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Allocate the MDMap constructor arrays
   Teuchos::Array< Domi::Slice > myGlobalBounds(numDims);
   Teuchos::Array< PaddingType > padding(numDims);
+  Teuchos::Array< int >         repBndry;
 
   // Fill in the MDMap constructor arrays
   for (int axis = 0; axis < numDims; ++axis)
@@ -179,6 +180,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
     return Teuchos::rcp(new Domi::MDMap<>(mdComm,
                                           myGlobalBounds,
                                           padding,
+                                          repBndry,
                                           layout));
   }
   catch (Domi::InvalidArgument & e)

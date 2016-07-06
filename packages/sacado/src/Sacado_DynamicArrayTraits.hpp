@@ -50,7 +50,7 @@ namespace Sacado {
     static T* my_alloc(const int sz) {
 #if defined(__CUDACC__) && defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       T* m;
-      cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
+      CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
 #else
       T* m = static_cast<T* >(operator new(sz*sizeof(T)));
 #endif
@@ -61,7 +61,7 @@ namespace Sacado {
     static void my_free(T* m, int sz) {
       if (sz > 0) {
 #if defined(__CUDACC__) && defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
-        cudaFree(m);
+        CUDA_SAFE_CALL( cudaFree(m) );
 #else
         operator delete((void*) m);
 #endif
@@ -183,7 +183,7 @@ namespace Sacado {
     static T* my_alloc(const int sz) {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
       T* m;
-      cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal );
+      CUDA_SAFE_CALL( cudaMallocManaged( (void**) &m, sz*sizeof(T), cudaMemAttachGlobal ) );
 #else
       T* m = static_cast<T* >(operator new(sz*sizeof(T)));
 #endif
@@ -194,7 +194,7 @@ namespace Sacado {
     static void my_free(T* m, int sz) {
       if (sz > 0) {
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_CUDA_UVM) && !defined( __CUDA_ARCH__ )
-        cudaFree(m);
+        CUDA_SAFE_CALL( cudaFree(m) );
 #else
         operator delete((void*) m);
 #endif
@@ -216,7 +216,12 @@ namespace Sacado {
     static T* get_and_fill(int sz) {
       if (sz > 0) {
         T* m = my_alloc(sz);
+#ifdef __CUDACC__
+        for (int i=0; i<sz; ++i)
+          m[i] = 0.0;
+#else
         std::memset(m,0,sz*sizeof(T));
+#endif
         return m;
       }
       return NULL;
@@ -255,7 +260,13 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void copy(const T* src, T* dest, int sz) {
-      std::memcpy(dest,src,sz*sizeof(T));
+      if (sz > 0)
+#ifdef __CUDACC__
+        for (int i=0; i<sz; ++i)
+          dest[i] = src[i];
+#else
+        std::memcpy(dest,src,sz*sizeof(T));
+#endif
     }
 
     //! Copy array from \c src to \c dest of length \c sz
@@ -273,7 +284,12 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static void zero(T* dest, int sz) {
       if (sz > 0)
+#ifdef __CUDACC__
+        for (int i=0; i<sz; ++i)
+          dest[i] = T(0.);
+#else
         std::memset(dest,0,sz*sizeof(T));
+#endif
     }
 
     //! Zero out array \c dest of length \c sz

@@ -476,6 +476,13 @@ namespace Abstract {
   //! Return solution vector.
   virtual const NOX::Abstract::Vector& getX() const = 0;
 
+  //! If right scaling vector exist, return a right scaled vector.
+  //! \note Default to getX
+  virtual const NOX::Abstract::Vector& getScaledX() const
+  {
+     return getX();
+  }
+
   //! Return F(x)
   virtual const NOX::Abstract::Vector& getF() const = 0;
 

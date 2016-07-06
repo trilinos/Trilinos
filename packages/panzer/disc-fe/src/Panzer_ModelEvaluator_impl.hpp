@@ -303,21 +303,12 @@ panzer::ModelEvaluator<Scalar>::getNominalValues() const
 
     // setup parameter support
     nomInArgs.set_Np(num_me_parameters_);
-    std::size_t v_index = 0;
     for(std::size_t p=0;p<parameters_.size();p++) {
       // setup nominal in arguments
       nomInArgs.set_p(p,parameters_[p]->initial_value);
-      if (!parameters_[p]->is_distributed) {
-        Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_x = Thyra::createMember(*tangent_space_[v_index]);
-        Thyra::assign(v_nom_x.ptr(),0.0);
-        nomInArgs.set_p(v_index+parameters_.size(),v_nom_x);
-        if (build_transient_support_) {
-          Teuchos::RCP<Thyra::VectorBase<Scalar> > v_nom_xdot = Thyra::createMember(*tangent_space_[v_index]);
-          Thyra::assign(v_nom_xdot.ptr(),0.0);
-          nomInArgs.set_p(v_index+parameters_.size()+tangent_space_.size(),v_nom_xdot);
-        }
-        ++v_index;
-      }
+
+      // We explicitly do not set nominal values for tangent parameters
+      // as these are parameters that should be hidden from client code
     }
 
     nominalValues_ = nomInArgs;
@@ -419,7 +410,7 @@ setupModel(const Teuchos::RCP<panzer::WorksetContainer> & wc,
   // Second: build the responses
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  responseLibrary_->initialize(wc,lof_->getUniqueGlobalIndexerBase(),lof_);
+  responseLibrary_->initialize(wc,lof_->getRangeGlobalIndexer(),lof_);
 
   buildResponses(physicsBlocks,eqset_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Responses_");
   buildDistroParamDfDp_RL(wc,physicsBlocks,bcs,eqset_factory,bc_factory,volume_cm_factory,closure_models,user_data,writeGraph,graphPrefix+"Response_DfDp_");
@@ -526,7 +517,6 @@ setupAssemblyInArgs(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
     }
   }
 
-  //ae_inargs.addGlobalEvaluationData(nonParamGlobalEvaluationData_);
   ae_inargs.addGlobalEvaluationData(distrParamGlobalEvaluationData_);
 
   // here we are building a container, this operation is fast, simply allocating a struct
@@ -821,7 +811,7 @@ addFlexibleResponse(const std::string & responseName,
             const Teuchos::RCP<ResponseMESupportBuilderBase> & builder)
 {
    // add a basic response, use x global indexer to define it
-   builder->setDerivativeInformationBase(lof_,lof_->getUniqueGlobalIndexerBase());
+   builder->setDerivativeInformation(lof_);
 
    int respIndex = addResponse(responseName,wkst_desc,*builder);
 
@@ -900,6 +890,44 @@ applyDirichletBCs(const Teuchos::RCP<Thyra::VectorBase<Scalar> > & x,
 
   // use the linear object factory to apply the result
   lof_->applyDirichletBCs(*counter,*result);
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+evalModel_D2gDx2(int respIndex,
+                 const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                 const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDx2) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // set model parameters from supplied inArgs
+  setParameters(inArgs);
+
+  {
+    std::string responseName = responses_[respIndex]->name;
+    Teuchos::RCP<panzer::ResponseMESupportBase<panzer::Traits::Hessian> > resp
+        = Teuchos::rcp_dynamic_cast<panzer::ResponseMESupportBase<panzer::Traits::Hessian> >(
+            responseLibrary_->getResponse<panzer::Traits::Hessian>(responseName));
+    resp->setDerivative(D2gDx2);
+  }
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  // evaluate responses
+  responseLibrary_->addResponsesToInArgs<panzer::Traits::Hessian>(ae_inargs);
+  responseLibrary_->evaluate<panzer::Traits::Hessian>(ae_inargs);
+
+  // reset parameters back to nominal values
+  resetParameters();
+#else
+  TEUCHOS_ASSERT(false);
+#endif
 }
 
 template <typename Scalar>
@@ -1279,7 +1307,7 @@ evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     panzer::AssemblyEngineInArgs ae_inargs;
     setupAssemblyInArgs(inArgs,ae_inargs);
 
-    ae_inargs.sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
+    ae_inargs.first_sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
     ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
                                            // gather seeds
 
@@ -1556,7 +1584,7 @@ evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> 
     panzer::AssemblyEngineInArgs ae_inargs;
     setupAssemblyInArgs(inArgs,ae_inargs);
 
-    ae_inargs.sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
+    ae_inargs.first_sensitivities_name = (*parameters_[p]->names)[0]; // distributed parameters have one name!
     ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
                                            // gather seeds
     rLibrary.addResponsesToInArgs<Traits::Jacobian>(ae_inargs);
@@ -1739,7 +1767,7 @@ buildDistroParamDfDp_RL(
 
     // the user wants global sensitivities, hooray! Build and setup the response library
     RCP<ResponseLibrary<Traits> > rLibrary
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(),
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getRangeGlobalIndexer(),
                                                    param_lof,true));
     rLibrary->buildResidualResponseEvaluators(physicsBlocks,eqset_factory,bcs,bc_factory,
                                               cm_factory,closure_models,user_data,
@@ -1790,7 +1818,7 @@ buildDistroParamDgDp_RL(
 
     // the user wants global sensitivities, hooray! Build and setup the response library
     RCP<ResponseLibrary<Traits> > rLibrary
-        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getUniqueGlobalIndexerBase(), lof_));
+        = Teuchos::rcp(new ResponseLibrary<Traits>(wc,lof_->getRangeGlobalIndexer(), lof_));
 
 
     // build evaluators for all flexible responses
@@ -1800,7 +1828,8 @@ buildDistroParamDgDp_RL(
         continue;
 
       // set the current derivative information in the builder
-      responses_[r]->builder->setDerivativeInformationBase(param_lof,param_ugi);
+      // responses_[r]->builder->setDerivativeInformationBase(param_lof,param_ugi);
+      responses_[r]->builder->setDerivativeInformation(param_lof);
 
       // add the response
       rLibrary->addResponse(responses_[r]->name,

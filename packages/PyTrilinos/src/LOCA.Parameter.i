@@ -95,7 +95,7 @@ The python version of LOCA.Parameter supports the following classes:
 // Teuchos::RCP support
 %teuchos_rcp(LOCA::Parameter::Library)
 %teuchos_rcp(LOCA::Parameter::LibraryT)
-%teuchos_rcp(LOCA::Parameter::Vector)
+//%teuchos_rcp(LOCA::Parameter::Vector)
 
 // Import base class declarations
 

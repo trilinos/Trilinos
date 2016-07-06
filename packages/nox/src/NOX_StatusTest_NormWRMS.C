@@ -125,7 +125,7 @@ checkStatus(const NOX::Solver::Generic& problem,
 
   const Abstract::Group& soln = problem.getSolutionGroup();
   const Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
-  const Abstract::Vector& x = soln.getX();
+  const Abstract::Vector& x = soln.getScaledX();
 
   // On the first iteration, the old and current solution are the same so
   // we should return the test as unconverged until there is a valid
@@ -149,7 +149,7 @@ checkStatus(const NOX::Solver::Generic& problem,
 
   // Create the weighting vector u = RTOL |x| + ATOL
   // |x| is evaluated at the old time step
-  v->abs(oldsoln.getX());
+  v->abs(oldsoln.getScaledX());
   if (atolIsScalar)
   {
     u->init(1.0);
@@ -164,7 +164,7 @@ checkStatus(const NOX::Solver::Generic& problem,
   v->reciprocal(*u);
 
   // u = x - oldx (i.e., the update)
-  u->update(1.0, x, -1.0, oldsoln.getX(), 0.0);
+  u->update(1.0, x, -1.0, oldsoln.getScaledX(), 0.0);
 
   // u = Cp * u @ v (where @ represents an elementwise multiply)
   u->scale(*v);

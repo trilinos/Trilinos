@@ -24,6 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos)
     belos/BelosXpetraAdapter.hpp
     belos/BelosXpetraAdapterMultiVector.hpp
     belos/BelosXpetraAdapterOperator.hpp
+    belos/BelosXpetraStatusTestGenResSubNorm.hpp
     belos/BelosMueLuAdapter.hpp
     )
 

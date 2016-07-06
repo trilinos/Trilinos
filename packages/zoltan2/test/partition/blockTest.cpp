@@ -162,8 +162,7 @@ int main(int narg, char **arg)
   memset(totalCnt, 0, nprocs * sizeof(int));
 
   const part_t *partList = solution.getPartListView();
-  zscalar_t libImbalance;
-  metricObject->getWeightImbalance(libImbalance, 0);
+  zscalar_t libImbalance = metricObject->getWeightImbalance(0);
   delete metricObject;
   delete adapter;
 

@@ -91,9 +91,9 @@ namespace user_app {
       Teuchos::RCP<const Thyra::VectorBase<double> > solution = stepper.getStepStatus().solution;
       
       // Next few lines are inefficient, but we can revisit later
-      Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap()), solution);
-      Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap()));
-      Teuchos::RCP<Epetra_Import> importer = m_lof->getGhostedImport();
+      Teuchos::RCP<const Epetra_Vector> ep_solution = Thyra::get_Epetra_Vector(*(m_lof->getMap(0)), solution);
+      Epetra_Vector ghosted_solution(*(m_lof->getGhostedMap(0)));
+      Teuchos::RCP<Epetra_Import> importer = m_lof->getGhostedImport(0);
       ghosted_solution.PutScalar(0.0);
       ghosted_solution.Import(*ep_solution,*importer,Insert);
 

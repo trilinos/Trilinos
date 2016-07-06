@@ -353,7 +353,7 @@ namespace MueLu {
 
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
     Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row) {
-      auto rowView = localMatrix.template row<LO>(row);
+      auto rowView = localMatrix.row (row);
       auto length  = rowView.length;
 
       boundaryNodes(row) = true;

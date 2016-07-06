@@ -142,8 +142,9 @@ public:
 
   unsigned get_bucket_capacity() const { return m_bucket_capacity; }
 
-private:
+  void delete_bucket(Bucket * bucket);
 
+private:
   BucketRepository();
 
   Bucket *allocate_bucket(EntityRank arg_entity_rank,

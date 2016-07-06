@@ -144,7 +144,9 @@ int main(int argc, char *argv[])
 
   int me = comm->getRank();
   int np = comm->getSize();
-  char *name = "node0";
+  //char *name = "node0";  Causes compiler warnings.  Do weirdness.
+  char node0[6] = {'n', 'o', 'd', 'e', '0', '\0'};
+  char *name = node0;
   int fail = 0;
 
   typedef zlno_t ncoord_t;

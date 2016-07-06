@@ -620,9 +620,9 @@ compute ()
   IsComputed_ = true;
 }
 
-template<class MatrixType,class ContainerType>
+template<class MatrixType, class ContainerType>
 void
-BlockRelaxation<MatrixType,ContainerType>::
+BlockRelaxation<MatrixType, ContainerType>::
 ExtractSubmatrices ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -641,7 +641,13 @@ ExtractSubmatrices ()
       localRows[j] = (*Partitioner_) (i,j);
     }
     if(numRows>1 || hasBlockCrsMatrix_) { // only do for non-singletons
-      Containers_[i] = Teuchos::rcp (new ContainerType (A_, localRows ()));
+      std::string containerName = ContainerType::getName();
+      if(containerName == "Generic")
+      {
+        //container type was not specified through templates, so get from param list
+        containerName = List_.get<std::string>("relaxation: container");
+      }
+      Containers_[i] = Teuchos::rcp_static_cast<ContainerType, Container<MatrixType> >(Details::createContainer(containerName, A_, localRows()));
       Containers_[i]->setParameters (List_);
       Containers_[i]->initialize ();
       Containers_[i]->compute ();
@@ -689,12 +695,13 @@ DoJacobi (const MV& X, MV& Y) const
     // Non-overlapping Jacobi
     for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
       // may happen that a partition is empty
-      if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+      if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
         if(Containers_[i]->getNumRows () == 0 ) continue;
         Containers_[i]->apply (X, Y, Teuchos::NO_TRANS, DampingFactor_, one);
         ApplyFlops_ += NumVectors * 2 * NumGlobalRows_;
       }
-      else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+      else if( Partitioner_->numRowsInPart (i) == 1) {
+        // singleton, can't access Containers_[i] as it was never filled and may be null.
         local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
         getMatDiag();
         Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
@@ -714,8 +721,8 @@ DoJacobi (const MV& X, MV& Y) const
     // Overlapping Jacobi
     for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; i++) {
       // may happen that a partition is empty
-      if(Containers_[i]->getNumRows() == 0) continue;
-      if ( Partitioner_->numRowsInPart (i)  != 1 ) {
+      if (Containers_[i]->getNumRows() == 0) continue;
+      if ( Partitioner_->numRowsInPart (i)  > 1 ) {
         try {
           Containers_[i]->weightedApply(X,Y,*W_,Teuchos::NO_TRANS,DampingFactor_,one);
         } catch (std::exception& e) {
@@ -802,7 +809,7 @@ DoGaussSeidel (MV& X, MV& Y) const
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+    if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) continue;
       // update from previous block
       ArrayView<const local_ordinal_type> localRows =
@@ -863,7 +870,8 @@ DoGaussSeidel (MV& X, MV& Y) const
       // operations for all getrow's
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
     }
-    else {       // singleton, can't access Containers_[i] as it was never filled and may be null.
+    else if ( Partitioner_->numRowsInPart (i) == 1) {
+      // singleton, can't access Containers_[i] as it was never filled and may be null.
       // a singleton calculation is exact, all residuals should be zero.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       getMatDiag();
@@ -977,7 +985,7 @@ DoSGS (MV& X, MV& Y) const
 
   // Forward Sweep
   for (local_ordinal_type i = 0; i < NumLocalBlocks_; ++i) {
-    if( Partitioner_->numRowsInPart (i) != 1 || hasBlockCrsMatrix_) {
+    if( Partitioner_->numRowsInPart (i) > 1 || hasBlockCrsMatrix_) {
       if (Containers_[i]->getNumRows () == 0) {
         continue; // Skip empty partitions
       }
@@ -1032,7 +1040,8 @@ DoSGS (MV& X, MV& Y) const
       ApplyFlops_ += NumVectors * (2 * NumGlobalNonzeros_ + 2 * NumGlobalRows_);
 
     }
-    else { // singleton, can't access Containers_[i] as it was never filled and may be null.
+    else if( Partitioner_->numRowsInPart (i) == 1) {
+      // singleton, can't access Containers_[i] as it was never filled and may be null.
       local_ordinal_type LRID  = (*Partitioner_)(i,0);  // by definition, a singleton 1 row in block.
       getMatDiag();
       Teuchos::ArrayRCP< const scalar_type > Diag   = DiagRCP_->getData();
@@ -1056,7 +1065,8 @@ DoSGS (MV& X, MV& Y) const
   // i--" will loop forever if local_ordinal_type is unsigned, because
   // unsigned integers are (trivially) always nonnegative.
   for (local_ordinal_type i = NumLocalBlocks_; i > 0; --i) {
-    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i-1) != 1 ) {
+    //FIXME 7-June-2016 JJH should this have an "else" optimization, similar to the forward sweeps?
+    if( hasBlockCrsMatrix_ || Partitioner_->numRowsInPart (i-1) > 1 ) {
       if (Containers_[i-1]->getNumRows () == 0) continue;
 
       // update from previous block
@@ -1283,12 +1293,31 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
 #include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Ifpack2_BandedContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
 // more specific than RowMatrix.
 
+#ifdef HAVE_IFPACK2_AMESOS2
+#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer<       \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > > >;
+#else
+#define IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N) /* */
+#endif
+
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>,   \
+    Ifpack2::Container<Tpetra::RowMatrix<S, LO, GO, N> > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
     Tpetra::RowMatrix<S, LO, GO, N>, \
@@ -1312,7 +1341,8 @@ BlockRelaxation<MatrixType,ContainerType>::getMatDiag () const
     Tpetra::RowMatrix<S, LO, GO, N>, \
     Ifpack2::BandedContainer<        \
       Tpetra::RowMatrix<S, LO, GO, N>, \
-      S > >;
+      S > >; \
+  IFPACK2_BLOCKRELAXATION_AMESOS2_INSTANT(S,LO,GO,N)
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

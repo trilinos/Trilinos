@@ -47,6 +47,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Comm.hpp>
 #include <array>
+#include <stk_unit_test_utils/FaceTestingUtils.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
@@ -153,7 +154,7 @@ TEST(FEMHelper, check_permutation_consistency_using_FEMHelper_parallel)
     stk::mesh::Part &part = mesh.mesh_meta_data().get_topology_root_part(stk::topology::QUAD_4);
     mesh.modification_begin();
     stk::mesh::Entity side
-      = stk::mesh::declare_element_to_sub_topology_with_nodes(mesh, elem, side_nodes, global_side_id, stk::topology::FACE_RANK, part);
+      = stk::unit_test_util::declare_element_to_sub_topology_with_nodes(mesh, elem, side_nodes, global_side_id, stk::topology::FACE_RANK, part);
     EXPECT_NO_THROW(mesh.modification_end());
 
     std::vector<size_t> mesh_counts;
@@ -219,8 +220,8 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
       = stk::mesh::get_ordinal_and_permutation(bulk, elem, sub_topo_rank, side_nodes);
 
-    EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]);
-    EXPECT_EQ(ordinalAndPermutation.first, i);
+    EXPECT_EQ(ordinalAndPermutation.second, gold_side_permutations[i]) << topo;
+    EXPECT_EQ(ordinalAndPermutation.first, i) << topo;
   }
 
   if (edge_ids.empty()) {
@@ -248,8 +249,8 @@ void build_element_from_topology_verify_ordinals_and_permutations(stk::mesh::Bul
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation
       = stk::mesh::get_ordinal_and_permutation(bulk, elem, stk::topology::EDGE_RANK, edge_nodes);
 
-    EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]);
-    EXPECT_EQ(ordinalAndPermutation.first, i);
+    EXPECT_EQ(ordinalAndPermutation.second, gold_edge_permutations[i]) << topo;
+    EXPECT_EQ(ordinalAndPermutation.first, i) << topo;
   }
 
   bulk.modification_end();

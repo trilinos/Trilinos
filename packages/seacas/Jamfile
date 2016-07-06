@@ -100,6 +100,7 @@ alias install-targets
     Utst_ioel
     Utst_superelement
     Utst_database_io
+    Utst_sort
     $(seacas-root)/scripts/decomp
     /tpl/netcdf//ncdump
     /tpl/netcdf//ncgen
@@ -158,6 +159,7 @@ alias install-targets
     Utst_ioel
     Utst_superelement
     Utst_database_io
+    Utst_sort
     $(seacas-root)/scripts/blot
     $(seacas-root)/scripts/decomp
     $(seacas-root)/scripts/fastq
@@ -177,7 +179,7 @@ alias install-targets
 # This rule provides a common name for the multiple install rules.
 
 explicit install-user-include ;
-alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include2b install-user-include3 install-user-include4 install-user-include5 ;
+alias install-user-include : install-user-include0 install-user-include1 install-user-include2 install-user-include3 install-user-include4 install-user-include5 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -190,7 +192,7 @@ install install-user-include0
 
 explicit install-user-include1 ;
 install install-user-include1
-  : [ glob $(seacas-root)/libraries/suplib/*.h ]
+  : [ glob $(seacas-root)/libraries/suplib_c/*.h ]
   : <location>$(install-root)/seacas/include
   ;
 
@@ -199,16 +201,9 @@ install install-user-include1
 # the install-root.
 explicit install-user-include2 ;
 install install-user-include2
-  : [ path.glob-tree $(seacas-root)/libraries/exodus/cbind/include : *.h ]
+  : [ path.glob-tree $(seacas-root)/libraries/exodus/include : *.h ]
   : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus/cbind/include
-  ;
-
-explicit install-user-include2b ;
-install install-user-include2b
-  : $(seacas-root)/libraries/exodus/cbind/sierra/exodusII_meta.h
-  : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus/cbind/sierra
+    <install-source-root>$(seacas-root)/libraries/exodus/include
   ;
 
 # This rule copies all headers it finds in the named directory of the
@@ -223,9 +218,9 @@ install install-user-include3
 
 explicit install-user-include4 ;
 install install-user-include4
-  : [ path.glob-tree $(seacas-root)/libraries/exodus_for/forbind/include : *.inc ]
+  : [ path.glob-tree $(seacas-root)/libraries/exodus_for/include : *.inc ]
   : <location>$(install-root)/seacas/include/exodus
-    <install-source-root>$(seacas-root)/libraries/exodus_for/forbind/include
+    <install-source-root>$(seacas-root)/libraries/exodus_for/include
   ;
 
 explicit install-user-include5 ;
@@ -251,6 +246,7 @@ explicit install-user-lib ;
 
 install install-user-lib
   : suplib
+    suplib_c
     suplib_cpp
     plt
     chaco
@@ -263,6 +259,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    io_info_lib
     iocgns
     iopg
     iohb
@@ -277,6 +274,7 @@ install install-user-lib
 
 install install-user-lib
   : suplib
+    suplib_c
     suplib_cpp
     plt
     chaco
@@ -291,6 +289,7 @@ install install-user-lib
     ioex_fac
     iopx
     iofx
+    io_info_lib
     iocgns
     iopg
     iohb
@@ -492,6 +491,31 @@ lib iofx
     ]
   ;
 
+lib io_info_lib
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        $(seacas-root)/libraries/ioss/src/main/io_info.C
+        $(seacas-root)/libraries/ioss/src/main/volume.C
+        $(seacas-root)/libraries/ioss/src/main/info_interface.C
+    ]
+    ioinit
+    ioss
+    iotr
+    ioxf
+    iocgns
+    /mpi//mpi
+  : <define>USE_CGNS
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <file>$(seacas-root)/lib/libio_info_lib.a
+    ]
+  :
+  : <define>USE_CGNS
+  ;
+
 lib iopg
   :
     [ ifdevbuild
@@ -569,6 +593,7 @@ lib ioinit
         [ glob $(seacas-root)/libraries/ioss/src/init/*.C ]
     ]
     ioex_fac
+    iocgns
     ioex
     iopx
     iofx
@@ -594,6 +619,8 @@ lib ioss
     # builds only and will not be present for user builds.
         [ glob $(seacas-root)/libraries/ioss/src/*.C ]
     ]
+    /tpl/trilinos//zoltan
+    /tpl/parmetis//parmetis
     /mpi//mpi
   : <define>SIERRA_PARALLEL_MPI
     [ ifuserbuild
@@ -652,13 +679,12 @@ lib iovs
     ioss
     /sierra/stk_util//stk_util_util
     /sierra/stk_util//stk_util_diag
-    /tpl/boost-filesystem//boost_filesystem
     exodus
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/../TPLs/ParaViewCatalystSierraAdaptor/include
+        <include>$(seacas-root)/../TPLs_src/ParaViewCatalystSierraAdaptor/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -682,7 +708,7 @@ obj blot_main : $(seacas-root)/applications/blot/blot.f
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <include>$(seacas-root)/libraries/suplib
   ;
 
@@ -696,7 +722,7 @@ obj fastq_main : $(seacas-root)/applications/fastq/fastq.f
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <include>$(seacas-root)/libraries/suplib
   ;
 
@@ -705,14 +731,14 @@ lib exodus
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/exodus/cbind/src/*.c ]
+        [ glob $(seacas-root)/libraries/exodus/src/*.c ]
     ]
     /tpl/netcdf//netcdf
   :
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus/cbind/include
+        <include>$(seacas-root)/libraries/exodus/include
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -725,7 +751,7 @@ lib exodus
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus/cbind/include
+        <include>$(seacas-root)/libraries/exodus/include
 	<define>PARALLEL_AWARE_EXODUS
     ]
     [ ifuserbuild
@@ -736,7 +762,7 @@ lib exodus
     ]
   ;
 
-obj addrwrap : $(seacas-root)/libraries/exodus_for/forbind/src/addrwrap.F
+obj addrwrap : $(seacas-root)/libraries/exodus_for/src/addrwrap.F
   : <toolset>gcc:<fflags>-fcray-pointer
     <toolset>clang:<fflags>-fcray-pointer
     <toolset>nvidia:<fflags>-fcray-pointer
@@ -750,7 +776,7 @@ obj addrwrap : $(seacas-root)/libraries/exodus_for/forbind/src/addrwrap.F
     <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
     <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
     <toolset>vacpp,<address-model>64:<fflags>"-WF,-D__XLF__ -qintsize=8 -qrealsize=8"
-    <include>$(seacas-root)/libraries/exodus_for/forbind/include
+    <include>$(seacas-root)/libraries/exodus_for/include
     <link>shared:<fflags>-fPIC
   ;
 
@@ -759,7 +785,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        $(seacas-root)/libraries/exodus_for/forbind/src/exo_jack.c
+        $(seacas-root)/libraries/exodus_for/src/exo_jack.c
         addrwrap
     ]
     exodus
@@ -767,7 +793,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus_for/forbind/include
+        <include>$(seacas-root)/libraries/exodus_for/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -788,7 +814,7 @@ lib exodus_for
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <include>$(seacas-root)/libraries/exodus_for/forbind/include
+        <include>$(seacas-root)/libraries/exodus_for/include
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -853,6 +879,7 @@ lib suplib
     ]
     exodus_for
     supes
+    /tpl/netcdf//netcdf
   : 
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
@@ -926,15 +953,38 @@ lib suplib_cpp
     # builds only and will not be present for developer builds.
         <include>$(sierra-root)/seacas/include
     ]
-    <toolset>darwin,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>gcc,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>clang,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>nvidia,<address-model>64:<fflags>"-fdefault-real-8 -fdefault-integer-8"
-    <toolset>intel,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>pgi,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>pathscale,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>open64,<address-model>64:<fflags>"-r8 -i8"
-    <toolset>vacpp,<address-model>64:<fflags>"-WF,-D__XLF__ -qintsize=8 -qrealsize=8"
+  ;
+
+lib suplib_c
+  :
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        [ glob $(seacas-root)/libraries/suplib_c/*.c ]
+    ]
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root)/libraries/suplib_c
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <include>$(sierra-root)/seacas/include
+    ]
+  :
+  : 
+    [ ifdevbuild
+    # Any parameters within this 'ifdevbuild' block apply to development
+    # builds only and will not be present for user builds.
+        <include>$(seacas-root-inc)/libraries/suplib_c
+    ]
+    [ ifuserbuild
+    # Any parameters within this 'ifuserbuild' block apply to user
+    # builds only and will not be present for developer builds.
+        <include>$(sierra-root)/seacas/include
+    ]
   ;
 
 lib plt
@@ -1471,8 +1521,9 @@ exe aprepro-orig
   $(seacas-root)/applications/aprepro-orig/ap_stat.c
   $(seacas-root)/applications/aprepro-orig/ap_units.c
   $(seacas-root)/applications/aprepro-orig/ap_util.c
+  $(seacas-root)/applications/aprepro-orig/ap_getline_int.c
   y_tab_o
-    suplib
+    suplib_c
   : <include>$(seacas-root)/applications/aprepro-orig
     <include>$(seacas-root-inc)/applications/aprepro-orig
     <define>NO_EXODUSII
@@ -1490,7 +1541,7 @@ exe conjoin
   $(seacas-root)/applications/conjoin/CJ_Internals.C
   $(seacas-root)/applications/conjoin/CJ_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     exodus
     /tpl/netcdf//netcdf
   : <include>$(seacas-root)/applications/conjoin
@@ -1510,7 +1561,7 @@ exe ejoin
   $(seacas-root)/applications/ejoin/EJ_match_xyz.C
   $(seacas-root)/applications/ejoin/EJ_vector3d.C
     suplib_cpp
-    suplib
+    suplib_c
     ioss
     ioinit
   : <include>$(seacas-root)/applications/ejoin
@@ -1525,7 +1576,7 @@ exe epu
   $(seacas-root)/applications/epu/EP_ParallelDisks.C
   $(seacas-root)/applications/epu/EP_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     exodus
     /tpl/netcdf//netcdf
   : <include>$(seacas-root)/applications/epu
@@ -1536,7 +1587,7 @@ exe exodiff
   :
     [ glob $(seacas-root)/applications/exodiff/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     exodus
   : <include>$(seacas-root)/applications/exodiff
     <tag>@utility-exec-tag
@@ -1548,7 +1599,7 @@ exe exomatlab
   $(seacas-root)/applications/exomatlab/exomatlab.C
   $(seacas-root)/applications/exomatlab/EML_SystemInterface.C
     suplib_cpp
-    suplib
+    suplib_c
     ioss
     ioinit
     exodus
@@ -1567,7 +1618,7 @@ exe exo_format
 exe exo2mat
   :
   $(seacas-root)/applications/exo2mat/exo2mat.C
-    suplib
+    suplib_c
     exodus
     /tpl/matio//matio
   : <include>$(seacas-root)/applications/exo2mat
@@ -1577,7 +1628,7 @@ exe exo2mat
 exe mat2exo
   :
   $(seacas-root)/applications/mat2exo/mat2exo.C
-    suplib
+    suplib_c
     exodus
     /tpl/matio//matio
   : <include>$(seacas-root)/applications/mat2exo
@@ -1588,7 +1639,7 @@ exe nem_slice
   :
     [ glob $(seacas-root)/applications/nem_slice/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     chaco
     exodus
     /tpl/trilinos//zoltan
@@ -1601,7 +1652,7 @@ exe nem_spread
   :
     [ glob $(seacas-root)/applications/nem_spread/*.C ]
     suplib_cpp
-    suplib
+    suplib_c
     exodus
   : <include>$(seacas-root)/applications/nem_spread
     <tag>@utility-exec-tag
@@ -1752,14 +1803,13 @@ fexe txtexo
 
 exe io_shell
   :
+
     $(seacas-root)/libraries/ioss/src/main/io_shell.C
     $(seacas-root)/libraries/ioss/src/main/shell_interface.C
-    $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
     ioinit
     ioss
     iotr
     ioxf
-    iocgns
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1767,15 +1817,12 @@ exe io_shell
 
 exe io_info
   :
-    $(seacas-root)/libraries/ioss/src/main/io_info.C
-    $(seacas-root)/libraries/ioss/src/main/volume.C
-    $(seacas-root)/libraries/ioss/src/main/info_interface.C
-    $(seacas-root)/libraries/ioss/src/main/Ioss_GetLongOpt.C
+    $(seacas-root)/libraries/ioss/src/main/io_info_main.C
+    io_info_lib
     ioinit
     ioss
     iotr
     ioxf
-    iocgns
     /mpi//mpi
   : <define>USE_CGNS
     <tag>@sierra-exec-tag
@@ -1813,6 +1860,14 @@ exe Utst_ioel
   : <tag>@sierra-exec-tag
   ;
 
+exe Utst_sort
+  :
+    $(seacas-root)/libraries/ioss/src/utest/Utst_sort.C
+    ioss
+    /mpi//mpi
+  : <tag>@sierra-exec-tag
+  ;
+
 exe Utst_superelement
   :
     $(seacas-root)/libraries/ioss/src/utest/Utst_superelement.C
@@ -1835,6 +1890,14 @@ exe Utst_database_io
   : <tag>@utility-exec-tag
   ;
 
+rule xcb-for_cray-rule ( properties * )
+{
+  if $(cray-system) = "yes"
+  {
+     return <linkflags>"-lxcb -lxcb-xlib -lXau" ;
+  }
+}
+
 fexe blot_x11
   :
     blot_main
@@ -1842,7 +1905,7 @@ fexe blot_x11
     blotlib
   : <include>$(seacas-root)/applications/blot
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1855,7 +1918,7 @@ fexe blot_xcps
     blotlib
   : <include>$(seacas-root)/applications/blot
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1906,7 +1969,7 @@ fexe fastq_x11
     fastqlib
   : <include>$(seacas-root)/applications/fastq
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 
@@ -1919,7 +1982,7 @@ fexe fastq_xcps
     fastqlib
   : <include>$(seacas-root)/applications/fastq
     <tag>@utility-exec-tag
-    <architecture>cray:<linkflags>"-lxcb -lxcb-xlib -lXau"
+    <conditional>@xcb-for_cray-rule
   ;
 
 

@@ -54,6 +54,7 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialTriDiMatrix.hpp"
 #include <type_traits>
+#include <string>
 
 namespace Ifpack2 {
 
@@ -241,6 +242,9 @@ public:
             Teuchos::Describable::verbLevel_default) const;
 
   //@}
+
+  /// \brief Get the name of this container type for Details::constructContainer()
+  static std::string getName();
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   TriDiContainer (const TriDiContainer<MatrixType, LocalScalarType>& rhs);

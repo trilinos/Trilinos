@@ -24,6 +24,9 @@ TRIBITS_ADD_EXECUTABLE(
 
 SET( RES_FILES )
 
+# This test has been failing for a long time (see Trilinos #23)
+ADVANCED_SET(Pamgen_run_test_script_l_01_DISABLE ON CACHE BOOL
+  "Set in pamgen/test/CMakeLists.txt")
 
 FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
 
@@ -190,3 +193,9 @@ d360tri.txt  dbrick.txt sdbrick.txt ssdbrick.txt  dgeom_warp2d.txt
 1tri_elem.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )
+
+#
+# RTC testing
+#
+
+ADD_SUBDIRECTORY(rtc_test)

@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,77 +33,106 @@
 #ifndef IOSS_Ioss_Property_h
 #define IOSS_Ioss_Property_h
 
-#include <stdint.h>                     // for int64_t
-#include <string>                       // for string
-namespace Ioss { class GroupingEntity; }
+#include <stdint.h> // for int64_t
+#include <string>   // for string
+namespace Ioss {
+  class GroupingEntity;
+}
 
 namespace Ioss {
 
-  class Property {
+  /** \brief A named value that has a known type.
+   *
+   */
+  class Property
+  {
   public:
-    enum BasicType {INVALID = -1, REAL, INTEGER, POINTER, STRING};
-    enum VariableType { UNKNOWN_VAR_TYPE = -1, SCALAR};
+    enum BasicType { INVALID = -1, REAL, INTEGER, POINTER, STRING };
+    enum VariableType { UNKNOWN_VAR_TYPE = -1, SCALAR };
 
     Property();
-    Property(std::string name, const BasicType type,
-		  const VariableType storage, void *data,
-		  bool is_it_implicit = false);
-    Property(std::string name, int64_t  value,
-		  bool is_it_implicit = false);
-    Property(std::string name, int      value,
-		  bool is_it_implicit = false);
-    Property(std::string name, double   value,
-		  bool is_it_implicit = false);
-    Property(std::string name, const std::string &value,
-		  bool is_it_implicit = false);
+    Property(std::string name, const BasicType type, const VariableType storage, void *data,
+             bool is_it_implicit = false);
+    Property(std::string name, int64_t value, bool is_it_implicit = false);
+    Property(std::string name, int value, bool is_it_implicit = false);
+    Property(std::string name, double value, bool is_it_implicit = false);
+    Property(std::string name, const std::string &value, bool is_it_implicit = false);
     Property(std::string name, void *value, bool is_it_implicit);
 
     // To set implicit property
-    Property(const GroupingEntity* ge,
-		  std::string name, const BasicType type);
+    Property(const GroupingEntity *ge, std::string name, const BasicType type);
 
-    Property(const Property& /*from*/);
+    Property(const Property & /*from*/);
 
-    bool operator<(const Property& other) const;
+    bool operator<(const Property &other) const;
 
     ~Property();
 
-    std::string get_string()  const;
-    int64_t  get_int()     const;
-    double   get_real()    const;
-    void*    get_pointer() const;
+    std::string get_string() const;
+    int64_t     get_int() const;
+    double      get_real() const;
+    void *      get_pointer() const;
 
-    bool is_implicit() const {return isImplicit_;}
-    bool is_explicit() const {return !isImplicit_;}
-    bool is_valid()    const {return type_ != INVALID;}
-    bool is_invalid()  const {return type_ == INVALID;}
+    /** \brief Tells whether the property is calculated, rather than stored.
+     *
+     * \returns True if property is calculated; False if it is stored directly.
+     */
+    bool is_implicit() const { return isImplicit_; }
 
-    std::string get_name() const {return name_;}
-    BasicType get_type() const {return type_;}
+    /** \brief Tells whether the property is stored, rather than calculated.
+     *
+     * \returns True if property is stored directly; False if it is calculated.
+     */
+    bool is_explicit() const { return !isImplicit_; }
+
+    /** Tells whether the property has a valid type (currently REAL, INTEGER, POINTER, or STRING)
+     *
+     *  \returns True if the property type is valid.
+     */
+    bool is_valid() const { return type_ != INVALID; }
+
+    /** Tells whether the property has an invalid type (currently not one of REAL, INTEGER, POINTER,
+     * or STRING)
+     *
+     *  \returns True if the property type is invalid.
+     */
+    bool is_invalid() const { return type_ == INVALID; }
+
+    /** \brief Get the property name.
+     *
+     *  \returns The property name.
+     */
+    std::string get_name() const { return name_; }
+
+    /** \brief Get the property type.
+     *
+     *  \returns The property type.
+     */
+    BasicType get_type() const { return type_; }
 
   private:
-    Property& operator=(const Property&); // Do not implement
+    Property &   operator=(const Property &); // Do not implement
     std::string  name_;
-    BasicType       type_;
-    VariableType    storage_;
+    BasicType    type_;
+    VariableType storage_;
 
     bool get_value(int64_t *value) const;
-    bool get_value(double  *value) const;
+    bool get_value(double *value) const;
     bool get_value(std::string *value) const;
-    bool get_value(void   *&value) const;
+    bool get_value(void *&value) const;
 
     // True if property is calculated rather than stored.
     // False if property is stored in 'data_'
-    bool            isImplicit_;
+    bool isImplicit_;
 
     // The actual value of the property.  Use 'type_' and 'storage_' to
     // discriminate the actual type of the property.
     union Data {
-      std::string* sval;
-      void*   pval;
+      std::string *         sval;
+      void *                pval;
       const GroupingEntity *ge;
-      double    rval;
-      int64_t   ival;
+      double                rval;
+      int64_t               ival;
     };
     Data data_;
   };

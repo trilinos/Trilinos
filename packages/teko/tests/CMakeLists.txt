@@ -18,6 +18,27 @@ APPEND_GLOB( SOURCES
   ./src/*.cpp
 )
 
+SET(UNIT_TEST_DRIVER
+  "${PACKAGE_SOURCE_DIR}/tests/Teko_UnitTestMain.cpp")
+
+# For serial tests, use 1 MPI proc, one thread when threads are available
+# For parallel tests, use 4 MPI procs when OpenMP not enabled; use 2 MPI procs, 2 threads when OpenMP enabled
+IF(DEFINED KOKKOS_HAVE_OPENMP)
+  IF(KOKKOS_HAVE_OPENMP)
+    SET(SERIAL_ARGS_STRING "--kokkos-threads=1")
+    SET(PARALLEL_ARGS_STRING "--kokkos-threads=2")
+    SET(CUSTOM_MPI_PROCS "2")
+  ELSE()
+    SET(SERIAL_ARGS_STRING "")
+    SET(PARALLEL_ARGS_STRING "")
+    SET(CUSTOM_MPI_PROCS "4")
+  ENDIF()
+ELSE()
+  SET(SERIAL_ARGS_STRING "")
+  SET(PARALLEL_ARGS_STRING "")
+  SET(CUSTOM_MPI_PROCS "4")
+ENDIF()
+
 TRIBITS_ADD_EXECUTABLE(
   testdriver
   SOURCES
@@ -31,14 +52,14 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
    testdriver
-   ARGS
-   NUM_MPI_PROCS 4
+   ARGS ${PARALLEL_ARGS_STRING}
+   NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
 TRIBITS_ADD_TEST(
    testdriver
-   ARGS
+   ARGS ${SERIAL_ARGS_STRING}
    NUM_MPI_PROCS 1
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
@@ -56,14 +77,14 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
    testdriver_tpetra
-   ARGS
-   NUM_MPI_PROCS 4
+   ARGS ${PARALLEL_ARGS_STRING}
+   NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
 
 TRIBITS_ADD_TEST(
    testdriver_tpetra
-   ARGS
+   ARGS ${SERIAL_ARGS_STRING}
    NUM_MPI_PROCS 1
    FAIL_REGULAR_EXPRESSION "Teko tests failed"
    )
@@ -109,8 +130,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
   SOURCES
     unit_tests/tIterativePreconditionerFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -118,8 +140,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LU2x2InverseOp_test
   SOURCES
     unit_tests/tLU2x2InverseOp.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -127,17 +150,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StridedEpetraOperator_test
   SOURCES
     unit_tests/tStridedEpetraOperator.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
-  NUM_MPI_PROCS 1-4
+  ARGS ${PARALLEL_ARGS_STRING}
+  NUM_MPI_PROCS ${CUSTOM_MPI_PROCS}
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RequestInterface_test 
   SOURCES
     unit_tests/tRequestInterface.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -145,8 +170,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagnosticLinearOp_test 
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -154,8 +180,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagonallyScaledPreconditioner 
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -163,8 +190,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   InverseFactoryOperator 
   SOURCES
     unit_tests/tInverseFactoryOperator.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -172,8 +200,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ProbingFactory
   SOURCES
     unit_tests/tProbingFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -181,8 +210,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DiagonalPreconditionerFactory 
   SOURCES
     unit_tests/tDiagonalPreconditionerFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 2
   )
 
@@ -190,8 +220,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   StratimikosFactory 
   SOURCES
     unit_tests/tStratimikosFactory.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -199,8 +230,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ExplicitOps 
   SOURCES
     unit_tests/tExplicitOps.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 2
   )
 
@@ -208,8 +240,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ALOperator 
   SOURCES
     unit_tests/tALOperator.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -217,8 +250,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ModALPreconditioner
   SOURCES
     unit_tests/tModALPreconditioner.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -226,8 +260,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ReorderBlocking
   SOURCES
     unit_tests/tReorderBlocking.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
   NUM_MPI_PROCS 1
   )
 
@@ -235,6 +270,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UtilitiesTests 
   SOURCES
     unit_tests/tUtilitiesTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${UNIT_TEST_DRIVER}
   COMM serial mpi
+  ARGS ${SERIAL_ARGS_STRING}
+  NUM_MPI_PROCS 1
   )

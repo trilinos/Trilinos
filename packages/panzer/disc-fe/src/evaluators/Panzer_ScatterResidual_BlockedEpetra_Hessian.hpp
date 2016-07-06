@@ -61,11 +61,16 @@ class ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>
     public panzer::CloneableEvaluator {
   
 public:
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : globalIndexer_(indexer) {}
+
+  ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
+                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+                                bool useDiscreteAdjoint=false)
+     : rowIndexers_(rIndexers), useDiscreteAdjoint_(useDiscreteAdjoint) {}
   
-  ScatterResidual_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p);
+  ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
+                                const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
+                                const Teuchos::ParameterList& p,
+                                bool useDiscreteAdjoint=false);
   
   void postRegistrationSetup(typename TRAITS::SetupData d,
 			     PHX::FieldManager<TRAITS>& vm);
@@ -75,7 +80,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(rowIndexers_,colIndexers_,pl,useDiscreteAdjoint_)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
@@ -86,9 +91,8 @@ private:
   // fields that need to be scattered will be put in this vector
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > scatterFields_;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > globalIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > rowIndexers_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > colIndexers_;
 
   std::vector<int> fieldIds_; // field IDs needing mapping
 
@@ -102,6 +106,8 @@ private:
   Teuchos::RCP<const BlockedEpetraLinearObjContainer> blockedContainer_;
 
   ScatterResidual_BlockedEpetra();
+
+  bool useDiscreteAdjoint_;
 };
 
 }

@@ -11,7 +11,7 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * ArrayVar objects represent variables that are arrays. 
+ * ArrayVar objects represent variables that are arrays.
  */
 template <class T>
 class ArrayVar : public Variable
@@ -22,11 +22,10 @@ class ArrayVar : public Variable
    * Constructor -> Constructs the super class, initializes instance variables
    *
    * @param name - The name of the variable
-   * @param type - The type of the variable
    * @param size - The number of elements in the array
    */
-  ArrayVar(const std::string& name, Type type, int size = 0) 
-    : Variable(name, type, ArrayVarOT)
+  ArrayVar(const std::string& name, long size = 0)
+    : Variable(name, TypeToTypeT<T>::value, ArrayVarOT)
   {
     _size    = size;
     _sizeExp = NULL;
@@ -37,12 +36,11 @@ class ArrayVar : public Variable
    * Constructor -> Constructs the super class, initializes instance variables
    *
    * @param name    - The name of the variable
-   * @param type    - The type of the variable
-   * @param sizePtr - An expression that, when evaluated, will be 
+   * @param sizePtr - An expression that, when evaluated, will be
    *                  the array's size
    */
-  ArrayVar(const std::string& name, Type type, Executable* sizePtr)
-    : Variable(name, type, ArrayVarOT)
+  ArrayVar(const std::string& name, Executable* sizePtr)
+    : Variable(name, TypeToTypeT<T>::value, ArrayVarOT)
   {
     _size = 0;
     _sizeExp = sizePtr;
@@ -51,11 +49,11 @@ class ArrayVar : public Variable
 
   /**
    * Destructor -> Delete the size expression if it is not null. We also delete
-   *               the values if we are not dealing with user provided 
+   *               the values if we are not dealing with user provided
    *               argument.
    */
-  virtual ~ArrayVar() 
-  { 
+  virtual ~ArrayVar()
+  {
     if (_sizeExp != NULL)
       delete _sizeExp;
     if (!_isArg)
@@ -67,11 +65,11 @@ class ArrayVar : public Variable
    *
    * @param offset - The index we want the value of
    */
-  double getArrayValue(int offset) const 
+  double getArrayValue(long offset) const
   {
     assert(_values != NULL);
     if (offset >= _size || offset < 0) {
-      std::cout << "Index: " << offset << " is out of bounds on array: " 
+      std::cout << "Index: " << offset << " is out of bounds on array: "
                 << _name << std::endl;
       return 0;
     }
@@ -80,11 +78,11 @@ class ArrayVar : public Variable
 
   /**
    * setValue -> Sets the value of the array at a certain index
-   * 
-   * @param value  - The value we are going to set to 
+   *
+   * @param value  - The value we are going to set to
    * @param offset - The location in the array being changed
    */
-  void setArrayValue(double value, int offset) 
+  void setArrayValue(double value, long offset)
   {
     assert(_values != NULL);
     if (offset >= _size || offset < 0) {
@@ -97,17 +95,17 @@ class ArrayVar : public Variable
   /**
    * getSize -> Returns the size of the array
    */
-  int getSize() const {return _size;}
+  long getSize() const {return _size;}
 
   /**
    * setSize -> Sets the size of the array
    *
    * @param size - The new size of the array
    */
-  void setSize(int size) { _size = size; }
+  void setSize(long size) { _size = size; }
 
   /**
-   * evaluateSizeExpr -> Evaluates the size expression to get the array size, 
+   * evaluateSizeExpr -> Evaluates the size expression to get the array size,
    *                     then allocates a corresponding number of values.
    */
   void evaluateSizeExpr()
@@ -115,7 +113,7 @@ class ArrayVar : public Variable
     assert(_sizeExp != NULL);
     _size = (int) _sizeExp->execute()->getValue();
     _isArg = false;
-    
+
     if (_values != NULL)
       delete[] _values;
     _values = new T[_size];
@@ -123,7 +121,7 @@ class ArrayVar : public Variable
 
   /**
    * setAddress -> Only called if the array is a function argument. We make the
-   *               array point to a user provided address. 
+   *               array point to a user provided address.
    *
    * @param addr - The address of the array's values
    */
@@ -149,11 +147,11 @@ class ArrayVar : public Variable
 
  private:
 
-  int _size; //!< The length of the array
-  
+  long _size; //!< The length of the array
+
   T* _values; //!< The array of values
 
-  bool _isArg; /**!< Tells us if the array is a user argument or declared in 
+  bool _isArg; /**!< Tells us if the array is a user argument or declared in
                 *    in the user defined function. This boolean will affect how
                 *    the array memory is cleaned up. We would not want to call
                 *    delete on an address the user provided to us as we have no

@@ -65,7 +65,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -101,7 +101,6 @@ RCP<const panzer::Intrepid2FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -225,7 +224,6 @@ TEUCHOS_UNIT_TEST(tSquareTriMeshDOFManager, buildTest_tri)
       }
    }
    
-   PHX::FinalizeKokkosDevice();
 }
 
 /*

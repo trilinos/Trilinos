@@ -139,6 +139,7 @@ public:
 
 
 private:
+  typedef typename panzer::Traits::Residual EvalT;
   typedef typename panzer::Traits::Residual::ScalarT ScalarT;
 
   typedef BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> ContainerType;
@@ -157,7 +158,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -168,7 +169,7 @@ private:
   // even if they are supplied, but it is useful to declare them as dependencies anyway
   // when saving the tangent components to the output file
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_BlockedTpetra();
 };
@@ -203,6 +204,7 @@ public:
 
 
 private:
+  typedef typename panzer::Traits::Tangent EvalT;
   typedef typename panzer::Traits::Tangent::ScalarT ScalarT;
   //typedef typename panzer::Traits::RealType RealT;
 
@@ -222,7 +224,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   std::string globalDataKey_; // what global data does this fill?
 
@@ -230,7 +232,7 @@ private:
 
   // Fields for storing tangent components dx/dp of solution vector x
   bool has_tangent_fields_;
-  std::vector< std::vector< PHX::MDField<ScalarT,Cell,NODE> > > tangentFields_;
+  std::vector< std::vector< PHX::MDField<const ScalarT,Cell,NODE> > > tangentFields_;
 
   GatherSolution_BlockedTpetra();
 };
@@ -262,6 +264,7 @@ public:
   { return Teuchos::rcp(new GatherSolution_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,S,LO,GO>(gidIndexer_,pl)); }
 
 private:
+  typedef typename panzer::Traits::Jacobian EvalT;
   typedef typename panzer::Traits::Jacobian::ScalarT ScalarT;
 
   typedef BlockedTpetraLinearObjContainer<S,LO,GO,NodeT> ContainerType;
@@ -280,7 +283,7 @@ private:
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 
-  Teuchos::RCP<std::vector<std::string> > indexerNames_;
+  std::vector<std::string> indexerNames_;
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;
   std::string globalDataKey_; // what global data does this fill?

@@ -125,7 +125,7 @@ void kernel_coalesce_drop(local_matrix_type A) {
   // Stage 0: detect Dirichlet rows
   boundary_nodes_type boundaryNodes("boundaryNodes", numRows);
   Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const local_ordinal_type row) {
-    auto rowView = A.template row<local_ordinal_type>(row);
+    auto rowView = A.row (row);
     auto length  = rowView.length;
 
     boundaryNodes(row) = true;
@@ -144,7 +144,7 @@ void kernel_coalesce_drop(local_matrix_type A) {
   local_ordinal_type realnnz = 0;
   Kokkos::parallel_reduce("kernel_cd:stage1_reduce", numRows,
     KOKKOS_LAMBDA(const local_ordinal_type row, local_ordinal_type& nnz) {
-      auto rowView = A.template row<local_ordinal_type>(row);
+      auto rowView = A.row (row);
       auto length  = rowView.length;
 
       local_ordinal_type rownnz = 0;
@@ -176,7 +176,7 @@ void kernel_coalesce_drop(local_matrix_type A) {
   local_ordinal_type numDropped = 0;
   Kokkos::parallel_reduce("kernel_cd:stage2_reduce", numRows,
     KOKKOS_LAMBDA(const local_ordinal_type row, local_ordinal_type& dropped) {
-      auto rowView = A.template row<local_ordinal_type>(row);
+      auto rowView = A.row (row);
       auto length = rowView.length;
 
       local_ordinal_type rownnz = 0;

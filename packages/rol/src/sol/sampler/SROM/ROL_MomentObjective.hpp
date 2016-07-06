@@ -67,14 +67,14 @@ private:
                    const ProbabilityVector<Real> &prob,
                    const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
-    Real val = 0., xpt = 0., xwt = 0., sum = 0.;
+    Real val(0), xpt(0), xwt(0), sum(0), half(0.5), one(1), two(2);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
-      val += xwt * ((power==1) ? xpt : std::pow(xpt,power));
+      val += xwt * ((power==one) ? xpt : std::pow(xpt,power));
     }
     bman_->sumAll(&val,&sum,1);
-    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
-    return 0.5*std::pow((sum-moment)/denom,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? one : moment);
+    return half*std::pow((sum-moment)/denom,two);
   }
 
   void momentGradient(std::vector<Real> &gradx, std::vector<Real> &gradp,  Real &scale,
@@ -82,20 +82,20 @@ private:
                 const ProbabilityVector<Real> &prob,
                 const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
-    gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
-    scale = 0.;
-    Real xpt = 0., xwt = 0., xpow = 0., psum = 0.;
+    gradx.resize(numSamples,0); gradp.resize(numSamples,0);
+    scale = 0;
+    Real xpt(0), xwt(0), xpow(0), psum(0), one(1), two(2);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
-      xpow = ((power==1) ? 1. : ((power==2) ? xpt : std::pow(xpt,power-1)));
+      xpow = ((power==one) ? one : ((power==two) ? xpt : std::pow(xpt,power-one)));
       psum += xwt * xpow * xpt;
       gradx[k] = xwt * xpow * power;
       gradp[k] = xpow * xpt;
     }
     bman_->sumAll(&psum,&scale,1);
     scale -= moment;
-    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
-    scale /= std::pow(denom,2);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? one : moment);
+    scale /= std::pow(denom,two);
   }
 
   void momentHessVec(std::vector<Real> &hvx1, std::vector<Real> &hvx2, std::vector<Real> &hvx3,
@@ -107,30 +107,30 @@ private:
                const ProbabilityVector<Real> &vprob,
                const AtomVector<Real>        &vatom) const {
     const int numSamples = prob.getNumMyAtoms();
-    hvx1.resize(numSamples,0.); hvx2.resize(numSamples,0.); hvx3.resize(numSamples,0.);
-    hvp1.resize(numSamples,0.); hvp2.resize(numSamples,0.);
-    scale1 = 0.; scale2 = 0.; scale3 = 0.;
-    std::vector<Real> psum(3,0.0), scale(3,0.0);
-    Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
-    Real xpow0 = 0., xpow1 = 0., xpow2 = 0.;
+    hvx1.resize(numSamples,0); hvx2.resize(numSamples,0); hvx3.resize(numSamples,0);
+    hvp1.resize(numSamples,0); hvp2.resize(numSamples,0);
+    scale1 = 0; scale2 = 0; scale3 = 0;
+    std::vector<Real> psum(3,0), scale(3,0);
+    Real xpt(0), xwt(0), vpt(0), vwt(0);
+    Real xpow0(0), xpow1(0), xpow2(0), zero(0), one(1), two(2), three(3);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
       vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
-      xpow2 = ((power==1) ? 0. : ((power==2) ? 1. : ((power==3) ?  xpt :
-                std::pow(xpt,power-2))));
-      xpow1 = ((power==1) ? 1. : xpow2 * xpt);
+      xpow2 = ((power==one) ? zero : ((power==two) ? one : ((power==three) ?  xpt :
+                std::pow(xpt,power-two))));
+      xpow1 = ((power==one) ? one : xpow2 * xpt);
       xpow0 = xpow1 * xpt;
       psum[0] += xwt * xpow1 * vpt;
       psum[1] += xwt * xpow0;
       psum[2] += vwt * xpow0;
       hvx1[k] = power * xwt * xpow1;
-      hvx2[k] = power * (power-1.) * xwt * xpow2 * vpt;
+      hvx2[k] = power * (power-one) * xwt * xpow2 * vpt;
       hvx3[k] = power * vwt * xpow1;
       hvp1[k] = xpow0;
       hvp2[k] = power * xpow1 * vpt;
     }
     bman_->sumAll(&psum[0],&scale[0],3);
-    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? 1.0 : moment);
+    Real denom = ((std::abs(moment) < ROL_EPSILON<Real>()) ? one : moment);
     Real denom2 = denom*denom;
     //const Real moment2 = std::pow(moment,2);
     scale1 = scale[0] * power/denom2;
@@ -169,7 +169,7 @@ public:
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
-    Real val = 0.;
+    Real val(0);
     std::vector<std::pair<int, Real> > data;
     for (int d = 0; d < dimension_; d++) {
       data = moments_[d];
@@ -186,10 +186,10 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     int numSamples = prob.getNumMyAtoms();
-    std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
-    Real scale = 0.;
+    std::vector<Real> gradx(numSamples,0), gradp(numSamples,0);
+    Real scale(0);
     std::vector<std::pair<int, Real> > data;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
+    std::vector<Real> val_wt(numSamples,0), tmp(dimension_,0);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
     for (int d = 0; d < dimension_; d++) {
       data = moments_[d];
@@ -223,11 +223,11 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
-    std::vector<Real> hvx1(numSamples,0.), hvx2(numSamples,0.), hvx3(numSamples,0.);
-    std::vector<Real> hvp1(numSamples,0.), hvp2(numSamples,0.);
-    Real scale1 = 0., scale2 = 0., scale3 = 0.;
+    std::vector<Real> hvx1(numSamples,0), hvx2(numSamples,0), hvx3(numSamples,0);
+    std::vector<Real> hvp1(numSamples,0), hvp2(numSamples,0);
+    Real scale1(0), scale2(0), scale3(0);
     std::vector<std::pair<int, Real> > data;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
+    std::vector<Real> val_wt(numSamples,0), tmp(dimension_,0);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
     for (int d = 0; d < dimension_; d++) {
       data = moments_[d];

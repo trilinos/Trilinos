@@ -2318,7 +2318,7 @@ namespace BaskerNS
     printf("---VECTOR: %d ----\n", n);
     for(Int i = 0; i< n; i++)
       {
-	printf("%d %f, \n", i, x[i]);
+	printf("%d %g, \n", i, x[i]);
       }
     printf("---END VECTOR: %d ---\n", n);
 
@@ -2416,8 +2416,11 @@ namespace BaskerNS
 
 
     //Debug
-    //printVec("left_perm.csc", outp_l, gn);
-    //printVec("right_perm.csc", outp_r, gn);
+    if(Options.verbose_matrix_out == BASKER_TRUE)
+      {
+	printVec("left_perm.csc", outp_l, gn);
+	printVec("right_perm.csc", outp_r, gn);
+      }
 
     FREE_INT_1DARRAY(temp);
 

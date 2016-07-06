@@ -87,11 +87,14 @@ private:
   void solve_state_equation(const ROL::Vector<Real> &x, Real &tol, bool flag = true, int iter = -1) { 
     // Solve state equation if not done already
     if (!is_state_computed_ || !storage_) {
+      // Update SimOpt equality constraint with respect to optimization variable
+      con_->update_2(x,flag,iter);
+      // Solve state
       con_->solve(*dualadjoint_,*state_,x,tol);
-      // Update full objective function
+      // Update SimOpt equality constraint with respect to state
+      con_->update_1(*state_,flag,iter);
+      // Update SimOpt objective function
       obj_->update(*state_,x,flag,iter);
-      // Update equality constraint
-      con_->update(*state_,x,flag,iter);
       // Reset storage flags
       is_state_computed_ = true;
     }

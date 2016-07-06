@@ -302,34 +302,34 @@ namespace {
   // problem (the identity matrix).
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SolveIdentity, ST, LO )
   {
-    typedef Tpetra::Experimental::LittleBlock<ST, LO> block_type;
-    typedef Tpetra::Experimental::LittleVector<ST, LO> vec_type;
-    typedef Tpetra::Experimental::LittleVector<int, LO> piv_type;
-    const ST zero = static_cast<ST> (0.0);
-    const ST one = static_cast<ST> (1.0);
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> block_type;
+    typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
+    typedef Kokkos::View<int*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> piv_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
     const LO maxBlockSize = 32;
 
     // Memory pool for the LittleBlock instances.
-    Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
+    Teuchos::Array<IST> blockPool (maxBlockSize * maxBlockSize);
     // Memory pool for the LittleVector instances (x and b).
-    Teuchos::Array<ST> vecPool (maxBlockSize * 2);
+    Teuchos::Array<IST> vecPool (maxBlockSize * 2);
     // Memory pool for the pivot vector.
     Teuchos::Array<int> ipivPool (maxBlockSize);
 
     for (LO blockSize = minBlockSize; blockSize <= maxBlockSize; ++blockSize) {
-      block_type A (blockPool (0, blockSize*blockSize).getRawPtr (),
-                    blockSize, 1, blockSize);
-      Teuchos::ArrayView<ST> x_view = vecPool (0, blockSize);
-      vec_type x (x_view.getRawPtr (), blockSize, 1);
-      Teuchos::ArrayView<ST> b_view = vecPool (blockSize, blockSize);
-      vec_type b (b_view.getRawPtr (), blockSize, 1);
-      piv_type ipiv (ipivPool.getRawPtr (), blockSize, 1);
+      block_type A (blockPool (0, blockSize*blockSize).getRawPtr (), blockSize, blockSize);
+      Teuchos::ArrayView<IST> x_view = vecPool (0, blockSize);
+      vec_type x (x_view.getRawPtr (), blockSize);
+      Teuchos::ArrayView<IST> b_view = vecPool (blockSize, blockSize);
+      vec_type b (b_view.getRawPtr (), blockSize);
+      piv_type ipiv (ipivPool.getRawPtr (), blockSize);
 
-      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
+      Tpetra::Experimental::FILL (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
-        b(i) = static_cast<ST> (i + 1);
+        b(i) = static_cast<IST> (i + 1);
         x(i) = b(i); // copy of right-hand side on input
         ipiv(i) = 0;
       }
@@ -346,7 +346,7 @@ namespace {
 
       // Re-fill b, in case A.solve brokenly clobbered it.
       for (LO i = 0; i < blockSize; ++i) {
-        b(i) = static_cast<ST> (i + 1);
+        b(i) = static_cast<IST> (i + 1);
       }
 
       TEST_COMPARE_ARRAYS( x_view, b_view );
@@ -361,40 +361,39 @@ namespace {
   // calling GEQRF compiles.
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, GEQRF, ST, LO )
   {
-    using std::endl;
-    typedef Tpetra::Experimental::LittleBlock<ST, LO> block_type;
-    const ST zero = static_cast<ST> (0.0);
-    const ST one = static_cast<ST> (1.0);
+    typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST;
+    typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> block_type;
+    const IST zero = static_cast<IST> (0.0);
+    const IST one = static_cast<IST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
     const LO maxBlockSize = 32;
 
-    typename GetLapackType<ST>::lapack_type lapack;
+    typename GetLapackType<IST>::lapack_type lapack; // ??? does IST (Kokkos::complex) work here?
 
     // Memory pool for the LittleBlock instances.
-    Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
+    Teuchos::Array<IST> blockPool (maxBlockSize * maxBlockSize);
     // Memory pool for LAPACK's temporary workspace.  It might need to
     // be resized in the loop below, because LAPACK may want more
     // workspace than just the minimum (the number of columns, which
     // is what the BLAS 2 QR factorization GEQR2 requires).  This must
     // have length at least one, for the workspace query.
-    Teuchos::Array<ST> workPool (std::max (1, maxBlockSize));
+    Teuchos::Array<IST> workPool (std::max (1, maxBlockSize));
     // Memory pool for the TAU output array.
-    Teuchos::Array<ST> tauPool (maxBlockSize);
+    Teuchos::Array<IST> tauPool (maxBlockSize);
 
     for (LO blockSize = minBlockSize; blockSize <= maxBlockSize; ++blockSize) {
-      block_type A (blockPool (0, blockSize*blockSize).getRawPtr (),
-                    blockSize, 1, blockSize);
+      block_type A (blockPool (0, blockSize*blockSize).getRawPtr (), blockSize, blockSize);
 
       // Fill A with the identity matrix.
-      Tpetra::Experimental::deep_copy (A, zero); // assign zero to each entry
+      Tpetra::Experimental::FILL (A, zero); // assign zero to each entry
       for (LO i = 0; i < blockSize; ++i) {
         A(i,i) = one;
       }
 
-      Teuchos::ArrayView<ST> tauView = tauPool (0, blockSize);
+      Teuchos::ArrayView<IST> tauView = tauPool (0, blockSize);
 
       // Workspace query.
-      Teuchos::ArrayView<ST> workView = workPool (0, std::max (1, blockSize));
+      Teuchos::ArrayView<IST> workView = workPool (0, std::max (1, blockSize));
       int lda = blockSize;
       int lwork = -1;
       int info = 0;
@@ -407,7 +406,7 @@ namespace {
       if (info != 0) {
         continue; // workspace query failed; skip the rest
       }
-      lwork = static_cast<int> (Teuchos::ScalarTraits<ST>::real (workView[0]));
+      lwork = static_cast<int> (Kokkos::Details::ArithTraits<IST>::real (workView[0]));
       TEST_ASSERT( lwork >= 0 );
       if (lwork < 0) {
         continue; // workspace query failed; skip the rest
@@ -542,9 +541,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, SCAL, ST, LO )
   {
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
+    typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 
-    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
-    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
     //const IST zero = static_cast<IST> (0.0); // unused
     const IST one = static_cast<IST> (1.0);
     const IST two = one + one;
@@ -561,14 +560,10 @@ namespace {
     Teuchos::Array<IST> vecPool (2 * maxBlkSize);
 
     for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
-      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (), blkSize);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (), blkSize);
 
       // A1 == A2 and x1 == x2.  We will use SCAL on A1 and x1, and
       // use conventional loops on A2 and x2, then compare the
@@ -625,9 +620,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, COPY, ST, LO )
   {
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
+    typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 
-    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
-    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
     const IST zero = static_cast<IST> (0.0);
     const IST one = static_cast<IST> (1.0);
     //const IST two = one + one; // unused
@@ -644,18 +639,12 @@ namespace {
     Teuchos::Array<IST> vecPool (3 * maxBlkSize);
 
     for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
-      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (), blkSize);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (), blkSize);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (), blkSize);
 
       // A1 == A2 and x1 == x2.  We will use COPY to copy A1 into A3
       // and x1 into A3, then compare the result against A2 resp. x2.
@@ -703,9 +692,9 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, AXPY, ST, LO )
   {
     typedef typename Kokkos::Details::ArithTraits<ST>::val_type IST; // "impl_scalar_type"
+    typedef Kokkos::View<IST**, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> blk_type;
+    typedef Kokkos::View<IST*, Kokkos::LayoutRight, Kokkos::HostSpace, Kokkos::MemoryUnmanaged> vec_type;
 
-    typedef Tpetra::Experimental::LittleBlock<IST, LO> blk_type;
-    typedef Tpetra::Experimental::LittleVector<IST, LO> vec_type;
     //const IST zero = static_cast<IST> (0.0); // unused
     const IST one = static_cast<IST> (1.0);
     const IST two = one + one;
@@ -720,22 +709,14 @@ namespace {
     Teuchos::Array<IST> vecPool (4 * maxBlkSize);
 
     for (LO blkSize = minBlkSize; blkSize <= maxBlkSize; ++blkSize) {
-      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      blk_type A4 (blkPool (3*blkSize*blkSize, blkSize*blkSize).getRawPtr (),
-                   blkSize, 1, blkSize);
-      vec_type x1 (vecPool (0, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
-      vec_type x4 (vecPool (3*blkSize, blkSize).getRawPtr (),
-                   blkSize, 1);
+      blk_type A1 (blkPool (0, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A2 (blkPool (blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A3 (blkPool (2*blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      blk_type A4 (blkPool (3*blkSize*blkSize, blkSize*blkSize).getRawPtr (), blkSize, blkSize);
+      vec_type x1 (vecPool (0, blkSize).getRawPtr (), blkSize);
+      vec_type x2 (vecPool (blkSize, blkSize).getRawPtr (), blkSize);
+      vec_type x3 (vecPool (2*blkSize, blkSize).getRawPtr (), blkSize);
+      vec_type x4 (vecPool (3*blkSize, blkSize).getRawPtr (), blkSize);
 
       // Compare AXPY(alpha, A1, A3) and AXPY(alpha, x1, x3) with the
       // manual equivalent of AXPY(alpha, A2, A4) resp. AXPY(alpha,

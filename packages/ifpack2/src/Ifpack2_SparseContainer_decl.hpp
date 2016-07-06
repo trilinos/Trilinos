@@ -53,7 +53,10 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_ParameterList.hpp"
-
+#include "Ifpack2_ILUT_decl.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
 
 namespace Ifpack2 {
 
@@ -262,8 +265,11 @@ public:
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel =
             Teuchos::Describable::verbLevel_default) const;
-
   //@}
+
+  /// \brief Get the name of this container type for Details::constructContainer()
+  static std::string getName();
+
 private:
   typedef typename InverseType::scalar_type         InverseScalar;
   typedef typename InverseType::local_ordinal_type  InverseLocalOrdinal;
@@ -325,7 +331,5 @@ private:
 };
 
 }// namespace Ifpack2
-
-
 
 #endif // IFPACK2_SPARSECONTAINER_HPP

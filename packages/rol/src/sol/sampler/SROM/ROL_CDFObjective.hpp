@@ -112,10 +112,10 @@ private:
                 const ProbabilityVector<Real> &prob,
                 const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
-    Real val = 0., hs = 0., xpt = 0., xwt = 0., sum = 0.;
+    Real val = 0, hs = 0, xpt = 0, xwt = 0, sum = 0, half(0.5), one(1);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
-      hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
+      hs = half * (one + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
     }
     bman_->sumAll(&val,&sum,1);
@@ -127,11 +127,11 @@ private:
              const ProbabilityVector<Real> &prob,
              const AtomVector<Real>        &atom) const {
     const int numSamples = prob.getNumMyAtoms();
-    gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
-    Real val = 0., hs = 0., xpt = 0., xwt = 0., sum = 0.;
+    gradx.resize(numSamples,0); gradp.resize(numSamples,0);
+    Real val = 0, hs = 0, xpt = 0, xwt = 0, sum = 0, half(0.5), one(1);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim]; xwt = prob.getProbability(k);
-      hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
+      hs = half * (one + erf((loc-xpt)/(sqrt2_*scale_)));
       val += xwt * hs;
       gradx[k] = -(xwt/(sqrt2_*sqrtpi_*scale_))
                  * std::exp(-std::pow((loc-xpt)/(sqrt2_*scale_),2));
@@ -150,16 +150,16 @@ private:
              const ProbabilityVector<Real> &vprob,
              const AtomVector<Real>        &vatom) const {
     const int numSamples = prob.getNumMyAtoms();
-    hvxx.resize(numSamples,0.); hvxp.resize(numSamples,0.); hvpx.resize(numSamples,0.);
-    gradx.resize(numSamples,0.); gradp.resize(numSamples,0.);
-    sumx = 0.; sump = 0.;
-    std::vector<Real> psum(3,0.0), out(3,0.0);
-    Real val = 0., hs = 0., dval = 0., scale3 = std::pow(scale_,3);
-    Real xpt = 0., xwt = 0., vpt = 0., vwt = 0.;
+    hvxx.resize(numSamples,0); hvxp.resize(numSamples,0); hvpx.resize(numSamples,0);
+    gradx.resize(numSamples,0); gradp.resize(numSamples,0);
+    sumx = 0; sump = 0;
+    std::vector<Real> psum(3,0), out(3,0);
+    Real val = 0, hs = 0, dval = 0, scale3 = std::pow(scale_,3);
+    Real xpt = 0, xwt = 0, vpt = 0, vwt = 0, half(0.5), one(1);
     for (int k = 0; k < numSamples; k++) {
       xpt = (*atom.getAtom(k))[dim];  xwt = prob.getProbability(k);
       vpt = (*vatom.getAtom(k))[dim]; vwt = vprob.getProbability(k);
-      hs = 0.5 * (1. + erf((loc-xpt)/(sqrt2_*scale_)));
+      hs = half * (one + erf((loc-xpt)/(sqrt2_*scale_)));
       psum[0] += xwt * hs;
       dval = std::exp(-std::pow((loc-xpt)/(sqrt2_*scale_),2));
       gradx[k] = -(xwt/(sqrt2_*sqrtpi_*scale_)) * dval;
@@ -183,8 +183,8 @@ public:
     : Objective<Real>(), bman_(bman), dist_(dist), dimension_(dist.size()),
       scale_(scale), sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(M_PI)),
       optProb_(optProb), optAtom_(optAtom) {
-    lowerBound_.resize(dimension_,0.0);
-    upperBound_.resize(dimension_,0.0);
+    lowerBound_.resize(dimension_,0);
+    upperBound_.resize(dimension_,0);
     for ( int i = 0; i < dimension_; i++ ) {
       lowerBound_[i] = dist[i]->lowerBound();
       upperBound_[i] = dist[i]->upperBound();
@@ -196,10 +196,11 @@ public:
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(x);
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
-    Real val = 0., diff = 0., pt = 0., wt = 0., meas = 0., lb = 0.;
+    Real val(0), diff(0), pt(0), wt(0), meas(0), lb(0), one(1);
     for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
+      meas = ((meas > ROL_EPSILON<Real>()) ? meas : one);
       for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
@@ -216,13 +217,14 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
-    std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
-    Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0.;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
+    std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0);
+    Real diff(0), pt(0), wt(0), meas(0), lb(0), val(0), one(1);
+    std::vector<Real> val_wt(numSamples,0), tmp(dimension_,0);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
     for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
+      meas = ((meas > ROL_EPSILON<Real>()) ? meas : one);
       for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;
@@ -256,14 +258,15 @@ public:
     const ProbabilityVector<Real> &prob = *(ex.getProbabilityVector());
     const AtomVector<Real> &atom = *(ex.getAtomVector());
     const int numSamples = prob.getNumMyAtoms();
-    std::vector<Real> hvxx(numSamples,0.), hvxp(numSamples,0.), hvpx(numSamples,0.);
-    std::vector<Real> gradx(numSamples,0.), gradp(numSamples,0.);
-    Real diff = 0., pt = 0., wt = 0., meas = 0., lb = 0., val = 0., sumx = 0., sump = 0.;
-    std::vector<Real> val_wt(numSamples,0.), tmp(dimension_,0.);
+    std::vector<Real> hvxx(numSamples,0), hvxp(numSamples,0), hvpx(numSamples,0);
+    std::vector<Real> gradx(numSamples,0), gradp(numSamples,0);
+    Real diff(0), pt(0), wt(0), meas(0), lb(0), val(0), sumx(0), sump(0), one(1);
+    std::vector<Real> val_wt(numSamples,0), tmp(dimension_,0);
     std::vector<std::vector<Real> > val_pt(numSamples,tmp);
     for (int d = 0; d < dimension_; d++) {
       lb   = lowerBound_[d];
       meas = (upperBound_[d] - lb);
+      meas = ((meas > ROL_EPSILON<Real>()) ? meas : one);
       for (int k = 0; k < numPoints_; k++) {
         pt = meas*pts_[k] + lb;
         wt = wts_[k]/meas;

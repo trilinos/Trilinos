@@ -161,6 +161,7 @@ cmake \
 -D TPL_ENABLE_Netcdf=ON \
   -D Netcdf_INCLUDE_DIRS:PATH="${NETCDF_PATH}/include" \
   -D Netcdf_LIBRARY_DIRS:PATH="${NETCDF_PATH}/lib" \
+  -D TPL_Netcdf_PARALLEL:BOOL=ON \
   -D TPL_Netcdf_LIBRARIES:PATH="${NETCDF_PATH}/lib/libnetcdf.a;${HDF5_PATH}/lib/libhdf5_hl.a;${HDF5_PATH}/lib/libhdf5.a;${ZLIB_PATH}/lib/libz.a" \
 -D TPL_ENABLE_HDF5=ON \
   -D HDF5_INCLUDE_DIRS:PATH="${HDF5_PATH}/include" \
@@ -168,6 +169,7 @@ cmake \
 -D TPL_ENABLE_Zlib=ON \
   -D Zlib_INCLUDE_DIRS:PATH="${ZLIB_PATH}/include" \
   -D TPL_Zlib_LIBRARIES:PATH="${ZLIB_PATH}/lib/libz.a" \
+-D TPL_ENABLE_DLlib=ON \
 \
 \
 -D Trilinos_ENABLE_Amesos=ON \
@@ -213,6 +215,12 @@ cmake \
   -D Sacado_ENABLE_UNINIT:BOOL=ON \
   -D Sacado_ENABLE_TESTS:BOOL=${TESTS} \
   -D Sacado_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_ShyLU=ON \
+  -D ShyLU_ENABLE_TESTS:BOOL=${TESTS} \
+  -D ShyLU_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+  -D Trilinos_ENABLE_ShyLUBasker:STRING=ON \
+  -D Trilinos_ENABLE_ShyLUBDDC:STRING=ON \
+  -D Trilinos_ENABLE_ShyLUTacho:STRING=ON \
 -D Trilinos_ENABLE_Stokhos=ON \
   -D Stokhos_ENABLE_TESTS:BOOL=${TESTS} \
   -D Stokhos_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \

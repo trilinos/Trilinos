@@ -159,7 +159,8 @@ protected:
         expect_local_face_shared_to_other_proc({otherProc, otherProc}, {1, 2});
     }
 };
-TEST_F(TwoCoincidentQuad4ShellsInParallel, Skin)
+// disabled due to split coincident elements
+TEST_F(TwoCoincidentQuad4ShellsInParallel, DISABLED_Skin)
 {
     run_test_on_num_procs(2, stk::mesh::BulkData::NO_AUTO_AURA);
 }

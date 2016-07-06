@@ -54,7 +54,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(zero_sensitivites, scalar)
   {
-    PHX::KokkosDeviceSession session;
 
     panzer::Traits::RealType x = 1.0;
     TEST_FLOATING_EQUALITY(x,1.0,1e-12);
@@ -127,7 +126,6 @@ namespace panzer {
     using panzer::Cell;
     using panzer::BASIS;
 
-    PHX::KokkosDeviceSession session;
 
     RCP<MDALayout<Cell,BASIS> > dl = rcp(new MDALayout<Cell,BASIS>(2,3));
     panzer::Traits::RealType tolerance = Teuchos::ScalarTraits<panzer::Traits::RealType>::eps()*100.0;

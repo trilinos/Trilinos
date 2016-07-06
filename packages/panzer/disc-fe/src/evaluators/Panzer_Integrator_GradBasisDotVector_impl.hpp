@@ -47,6 +47,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 #define PANZER_USE_FAST_QUAD 1
 // #define PANZER_USE_FAST_QUAD 0
@@ -112,7 +113,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_GradBasisDotVector,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Intrepid2::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",flux.dimension(0), num_qp, num_dim); 
 }
 
 //**********************************************************************
@@ -121,7 +122,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
   //for (int i=0; i < residual.size(); ++i)
   //  residual[i] = 0.0;
 
-  Kokkos::deep_copy(residual.get_kokkos_view(), ScalarT(0.0));
+  Kokkos::deep_copy(residual.get_static_view(), ScalarT(0.0));
 
 #if PANZER_USE_FAST_QUAD
   // do a scaled copy
@@ -147,7 +148,7 @@ PHX_EVALUATE_FIELDS(Integrator_GradBasisDotVector,workset)
     }
   } 
 
-  // const Intrepid2::FieldContainer<double> & weighted_grad_basis = this->wda(workset).bases[basis_index]->weighted_grad_basis;
+  // const Kokkos::DynRankView<double,PHX::Device> & weighted_grad_basis = this->wda(workset).bases[basis_index]->weighted_grad_basis;
   const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
   // perform integration and vector dot product (at the same time! whoah!)

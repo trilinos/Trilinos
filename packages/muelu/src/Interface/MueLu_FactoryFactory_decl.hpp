@@ -106,6 +106,7 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
+#include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SegregatedAFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -113,8 +114,8 @@
 #include "MueLu_SimpleSmoother.hpp"
 #endif
 #include "MueLu_SmootherFactory.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_SubBlockAFactory.hpp"
+#ifdef HAVE_MUELU_EXPERIMENTAL
 #ifdef HAVE_MUELU_TEKO
 #include "MueLu_TekoSmoother.hpp"
 #endif
@@ -217,10 +218,9 @@ namespace MueLu {
       if (factoryName == "RAPFactory")                      return BuildRAPFactory<RAPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceTransferFactory")        return Build2<RebalanceTransferFactory>      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ReorderBlockAFactory")            return Build2<ReorderBlockAFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SegregatedAFactory")              return Build2<SegregatedAFactory>            (paramList, factoryMapIn, factoryManagersIn);
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>              (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ToggleCoordinatesTransferFactory")return BuildToggleCoordinatesTransferFactory (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>   (paramList, factoryMapIn, factoryManagersIn);
@@ -695,8 +695,11 @@ namespace MueLu {
       // create a new blocked smoother
       RCP<T> bs = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
-      // important: set block factory for A here! TODO think about this in more detail
-      bs->SetFactory("A", MueLu::NoFactory::getRCP());
+      // important: set block factory for A here!
+      // TAW: 7/6/2016: We should not need to set/hardcode the blocked operator here.
+      //                The user might want to overwrite this in the xml file, so just
+      //                use what is declared as "A"
+      //bs->SetFactory("A", MueLu::NoFactory::getRCP());
 
       for (int i = 0; i<Teuchos::as<int>(facManagers.size()); i++) {
         bs->AddFactoryManager(facManagers[i],i);
@@ -715,8 +718,13 @@ namespace MueLu {
       // create a new blocked smoother
       RCP<TekoSmoother> bs = Build2<TekoSmoother>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
-      // important: set block factory for A here! TODO think about this in more detail
-      bs->SetFactory("A", MueLu::NoFactory::getRCP());
+      // important: set block factory for A here!
+      // TAW: 7/6/2016: We should not need to set/hardcode the blocked operator here.
+      //                The user might want to overwrite this in the xml file, so just
+      //                use what is declared as "A"
+      //bs->SetFactory("A", MueLu::NoFactory::getRCP());
+
+      // Set Teko parameters ("Inverse Factory Library")
       bs->SetTekoParameters(tekoParams);
 
       return rcp(new SmootherFactory(bs));

@@ -320,8 +320,10 @@ int Ifpack_Chebyshev::Compute()
 
     // Automatically Compute Eigenvalues
     double lambda_max = 0;
-    PowerMethod(EigMaxIters_, lambda_max);
-    LambdaMax_ = lambda_max;
+    if (LambdaMax_ == -1) {
+      PowerMethod(EigMaxIters_, lambda_max);
+      LambdaMax_ = lambda_max;
+    }
 
     // Test for Exact Preconditioned case
     if (ABS(LambdaMax_-1) < 1e-6)
@@ -727,13 +729,14 @@ int Ifpack_Chebyshev::
 PowerMethod(const Epetra_Operator& Operator,
             const Epetra_Vector& InvPointDiagonal,
             const int MaximumIterations,
-            double& lambda_max)
+            double& lambda_max,const unsigned int * RngSeed)
 {
   // this is a simple power method
   lambda_max = 0.0;
   double RQ_top, RQ_bottom, norm;
   Epetra_Vector x(Operator.OperatorDomainMap());
   Epetra_Vector y(Operator.OperatorRangeMap());
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   x.Norm2(&norm);
   if (norm == 0.0) IFPACK_CHK_ERR(-1);
@@ -760,11 +763,12 @@ int Ifpack_Chebyshev::
 CG(const Epetra_Operator& Operator,
    const Epetra_Vector& InvPointDiagonal,
    const int MaximumIterations,
-   double& lambda_min, double& lambda_max)
+   double& lambda_min, double& lambda_max,const unsigned int * RngSeed)
 {
 #ifdef HAVE_IFPACK_AZTECOO
   Epetra_Vector x(Operator.OperatorDomainMap());
   Epetra_Vector y(Operator.OperatorRangeMap());
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   y.PutScalar(0.0);
 
@@ -799,7 +803,7 @@ CG(const Epetra_Operator& Operator,
 //==============================================================================
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Chebyshev::
-PowerMethod(const int MaximumIterations,  double& lambda_max)
+PowerMethod(const int MaximumIterations,  double& lambda_max,const unsigned int * RngSeed)
 {
 
   if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
@@ -809,6 +813,7 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
   Epetra_Vector x(Operator_->OperatorDomainMap());
   Epetra_Vector y(Operator_->OperatorRangeMap());
   Epetra_Vector z(Operator_->OperatorRangeMap());
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   x.Norm2(&norm);
   if (norm == 0.0) IFPACK_CHK_ERR(-1);
@@ -840,7 +845,7 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Chebyshev::
 CG(const int MaximumIterations,
-   double& lambda_min, double& lambda_max)
+   double& lambda_min, double& lambda_max,const unsigned int * RngSeed)
 {
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.
@@ -850,6 +855,7 @@ CG(const int MaximumIterations,
 #ifdef HAVE_IFPACK_AZTECOO
   Epetra_Vector x(Operator_->OperatorDomainMap());
   Epetra_Vector y(Operator_->OperatorRangeMap());
+  if(RngSeed) x.SetSeed(*RngSeed);
   x.Random();
   y.PutScalar(0.0);
   Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);

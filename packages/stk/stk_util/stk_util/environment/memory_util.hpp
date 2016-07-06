@@ -57,6 +57,7 @@ namespace stk {
   void get_processor_count(std::vector<int> &procinfo);
   void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max, size_t& hwm_min, size_t& hwm_avg);
   void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg);
+  void get_current_memory_usage_across_processors(MPI_Comm comm, size_t& curr_max, size_t& curr_min, size_t& curr_avg);
 
   template <typename T>
   inline

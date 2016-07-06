@@ -82,7 +82,7 @@ namespace panzer {
 std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
@@ -94,7 +94,6 @@ typedef Intrepid2::FieldContainer<double> FieldContainer;
 //    - getDimension 
 TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 

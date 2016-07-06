@@ -312,11 +312,13 @@ namespace Xpetra {
     }
 
     void replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
+      XPETRA_MONITOR("TpetraMultiVector::replaceMap");
       this->getTpetra_MultiVector()->replaceMap(toTpetra(map));
     }
 
     template<class Node2>
     RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> > clone(const RCP<Node2> &node2) const {
+      XPETRA_MONITOR("TpetraMultiVector::clone");
       return RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2> >(new TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node2>(vec_->clone(node2)));
         //toXpetra(vec_->clone(node2));
     }
@@ -363,12 +365,12 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
           Kokkos::ALL(), Kokkos::ALL());
     }
 
@@ -704,13 +706,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }
@@ -973,13 +975,13 @@ namespace Xpetra {
     }
 
     typename dual_view_type::t_host_um getHostLocalView () const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::host_mirror_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::host_mirror_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_host_um();
     }
 
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
-      //return subview(vec_->getDualView().template view<typename dual_view_type::t_dev_um::execution_space> (),
+      //return subview(vec_->template getLocalView<typename dual_view_type::t_dev_um::execution_space> (),
       //    Kokkos::ALL(), Kokkos::ALL());
       return typename dual_view_type::t_dev_um();
     }

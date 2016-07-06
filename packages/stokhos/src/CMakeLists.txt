@@ -682,14 +682,16 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra)
       APPEND_GLOB(TPETRA_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.hpp)
       IF(TpetraCore_ENABLE_EXPLICIT_INSTANTIATION)
-        APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
+        #APPEND_GLOB(TPETRA_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/tpetra/*.cpp)
+        LIST(REMOVE_ITEM TPETRA_ETI_CLASSES CrsMatrix)
         IF (Tpetra_INST_SERIAL)
           PROCESS_ETI_TEMPLATE(
             "${TPETRA_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Serial.tmpl
             "Tpetra_CLASS_FILE_NAME_UQ_PCE_Serial.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS}
+            sacado/kokkos/pce/tpetra/Tpetra_CrsMatrix_UQ_PCE_Serial.cpp)
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Serial.tmpl
@@ -703,7 +705,8 @@ IF (Stokhos_ENABLE_Sacado)
             sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Threads.tmpl
             "Tpetra_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS}
+            sacado/kokkos/pce/tpetra/Tpetra_CrsMatrix_UQ_PCE_Threads.cpp)
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Threads.tmpl
@@ -717,7 +720,8 @@ IF (Stokhos_ENABLE_Sacado)
             sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_OpenMP.tmpl
             "Tpetra_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS}
+            sacado/kokkos/pce/tpetra/Tpetra_CrsMatrix_UQ_PCE_OpenMP.cpp)
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_OpenMP.tmpl
@@ -731,7 +735,8 @@ IF (Stokhos_ENABLE_Sacado)
             sacado/kokkos/pce/tpetra/Tpetra_ETI_UQ_PCE_Cuda.tmpl
             "${CMAKE_CURRENT_BINARY_DIR}/Tpetra_CLASS_FILE_NAME_UQ_PCE_Cuda.cpp"
             TPETRA_SRCS)
-          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS})
+          LIST(APPEND TPETRA_CPP_SOURCES ${TPETRA_SRCS}
+            sacado/kokkos/pce/tpetra/Tpetra_CrsMatrix_UQ_PCE_Cuda.cpp)
           PROCESS_ETI_TEMPLATE(
             "${TPETRAEXT_ETI_CLASSES}"
             sacado/kokkos/pce/tpetra/TpetraExt_ETI_UQ_PCE_Cuda.tmpl
@@ -987,4 +992,3 @@ IF (Stokhos_ENABLE_Sacado)
   ENDIF()
 
 ENDIF()
-

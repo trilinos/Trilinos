@@ -55,7 +55,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(stlmap_utilities, all)
   {
-    PHX::KokkosDeviceSession session;
     
     std::map<std::string,int> my_map;
     my_map["a"] = 1;

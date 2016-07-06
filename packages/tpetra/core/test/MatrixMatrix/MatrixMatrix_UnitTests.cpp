@@ -62,27 +62,30 @@ namespace {
   bool verbose = false;
   std::string matnamesFile;
 
-  using Teuchos::null;
-  using Teuchos::rcp;
-  using Teuchos::RCP;
-  using Teuchos::tuple;
-  using Tpetra::global_size_t;
-  using Teuchos::Comm;
+  using Tpetra::MatrixMarket::Reader;
   using Tpetra::CrsMatrix;
-  using Tpetra::Map;
-  using Teuchos::Array;
-  using Tpetra::Vector;
   using Tpetra::CrsMatrixMultiplyOp;
   using Tpetra::DefaultPlatform;
-  using Tpetra::MatrixMarket::Reader;
-  using Teuchos::ArrayView;
-  using Teuchos::FancyOStream;
-  using Teuchos::ParameterList;
+  using Tpetra::global_size_t;
+  using Tpetra::Map;
   using Tpetra::RowMatrixTransposer;
+  using Tpetra::Vector;
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::Comm;
+  using Teuchos::FancyOStream;
+  using Teuchos::null;
+  using Teuchos::outArg;
+  using Teuchos::ParameterList;
+  using Teuchos::rcp;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using Teuchos::tuple;
+  using std::endl;
+
   typedef Tpetra::Details::DefaultTypes::node_type node_type;
-
   typedef CrsMatrix<double, int, int, node_type> Matrix_t;
-
 
 TEUCHOS_STATIC_SETUP(){
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -92,33 +95,42 @@ TEUCHOS_STATIC_SETUP(){
     "Whether or not to use verbose output");
 }
 
-template<
-  class Scalar,
-  class LocalOrdinal,
-  class GlobalOrdinal,
-  class Ordinal>
-RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type> >
-getIdentityMatrix(
-  global_size_t globalNumRows,
-  RCP<const Comm<Ordinal> > comm,
-  RCP<node_type> node)
+template<class Scalar, class LO, class GO>
+RCP<CrsMatrix<Scalar, LO, GO, node_type> >
+getIdentityMatrix (Teuchos::FancyOStream& out,
+                   const Tpetra::global_size_t globalNumRows,
+                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                   const Teuchos::RCP<node_type>& node)
 {
-  RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> > identityRowMap =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,node_type>(
-      globalNumRows, comm, node);
-  RCP<CrsMatrix<Scalar, LocalOrdinal,GlobalOrdinal, node_type> > identityMatrix =
-    Tpetra::createCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type>(identityRowMap, 1);
-  for(
-    ArrayView<const int>::iterator it =
-      identityRowMap->getNodeElementList().begin();
-    it != identityRowMap->getNodeElementList().end();
-    ++it)
-  {
-    Array<GlobalOrdinal> col(1,*it);
-    Array<Scalar> val(1,Teuchos::ScalarTraits<Scalar>::one());
-    identityMatrix->insertGlobalValues(*it, col(), val());
+  using Teuchos::RCP;
+  using std::endl;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, node_type> crs_matrix_type;
+  typedef Tpetra::Map<LO, GO, node_type> map_type;
+
+  Teuchos::OSTab tab0 (out);
+  out << "getIdentityMatrix" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  out << "Create row Map" << endl;
+  RCP<const map_type> identityRowMap =
+    Tpetra::createUniformContigMapWithNode<LO, GO, node_type> (globalNumRows, comm, node);
+
+  out << "Create CrsMatrix" << endl;
+  RCP<crs_matrix_type> identityMatrix =
+    Tpetra::createCrsMatrix<Scalar, LO, GO, node_type> (identityRowMap, 1);
+
+  out << "Fill CrsMatrix" << endl;
+  Teuchos::ArrayView<const GO> gblRows = identityRowMap->getNodeElementList ();
+  for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+    Teuchos::Array<GO> col (1, *it);
+    Teuchos::Array<Scalar> val (1, Teuchos::ScalarTraits<Scalar>::one ());
+    identityMatrix->insertGlobalValues (*it, col (), val ());
   }
-  identityMatrix->fillComplete();
+
+  out << "Call fillComplete" << endl;
+  identityMatrix->fillComplete ();
+
+  out << "Done!" << endl;
   return identityMatrix;
 }
 
@@ -175,8 +187,6 @@ null_add_test (const CrsMatrixType& A,
                const CrsMatrixType& C,
                Teuchos::FancyOStream& out)
 {
-  using Teuchos::RCP;
-  using std::endl;
   typedef typename CrsMatrixType::scalar_type scalar_type;
   typedef typename CrsMatrixType::local_ordinal_type local_ordinal_type;
   typedef typename CrsMatrixType::global_ordinal_type global_ordinal_type;
@@ -458,16 +468,33 @@ mult_test_results jacobi_reuse_test(
 
 
 
-TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
-  using Teuchos::ParameterList;
-  using std::endl;
-
+TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test)
+{
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank ();
+  //const int numProcs = comm->getSize();
 
+  // Create an output stream that prints immediately, rather than
+  // waiting until the test finishes.  This lets us get debug output
+  // even if an unexpected exception or crash happens.  Unfortunately,
+  // Teuchos::FancyOStream does not implement operator=, so we can't
+  // replace 'out' temporarily.
+  RCP<FancyOStream> newOutP = (myRank == 0) ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::getFancyOStream (rcp (new Teuchos::oblackholestream ()));
+  FancyOStream& newOut = *newOutP;
+
+  newOut << "Tpetra sparse matrix-matrix multiply: operations_test" << endl;
+  Teuchos::OSTab tab1 (newOut);
+
+  newOut << "Create Node instance" << endl;
   ParameterList defaultParameters;
   RCP<node_type> node = rcp(new node_type(defaultParameters));
+
+  newOut << "Get parameters from XML file" << endl;
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
+
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -476,7 +503,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       "ParameterList instances.  " << endl <<
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
-      std::endl << std::endl);
+      endl << endl);
 
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
@@ -497,80 +524,80 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
 
     if (op == "multiply") {
       if (verbose)
-        out << "Running multiply test for " << currentSystem.name() << endl;
+        newOut << "Running multiply test for " << currentSystem.name() << endl;
 
-      mult_test_results results = multiply_test(name, A, B, AT, BT, C, comm, out);
+      mult_test_results results = multiply_test(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
-        out << "Results:"     << endl;
-        out << "\tEpsilon: "  << results.epsilon  << endl;
-        out << "\tcNorm: "    << results.cNorm    << endl;
-        out << "\tcompNorm: " << results.compNorm << endl;
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
       }
-      TEST_COMPARE(results.epsilon, <, epsilon)
+      TEST_COMPARE(results.epsilon, <, epsilon);
 
       if (verbose)
-        out << "Running multiply reuse test for " << currentSystem.name() << endl;
+        newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
 
-      results = multiply_reuse_test(name, A, B, AT, BT, C, comm, out);
+      results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
 
       if (verbose) {
-        out << "Results:"     << endl;
-        out << "\tEpsilon: "  << results.epsilon  << endl;
-        out << "\tcNorm: "    << results.cNorm    << endl;
-        out << "\tcompNorm: " << results.compNorm << endl;
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
       }
-      TEST_COMPARE(results.epsilon, <, epsilon)
+      TEST_COMPARE(results.epsilon, <, epsilon);
 
 
       // Do we try Jacobi?
       if (AT == false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
         if (verbose)
-          out << "Running jacobi test for " << currentSystem.name() << endl;
+          newOut << "Running jacobi test for " << currentSystem.name() << endl;
 
-        results = jacobi_test(name, A, B, comm, out);
+        results = jacobi_test(name, A, B, comm, newOut);
         if (verbose) {
-          out << "Results:"     << endl;
-          out << "\tEpsilon: "  << results.epsilon  << endl;
-          out << "\tcNorm: "    << results.cNorm    << endl;
-          out << "\tcompNorm: " << results.compNorm << endl;
+          newOut << "Results:"     << endl;
+          newOut << "\tEpsilon: "  << results.epsilon  << endl;
+          newOut << "\tcNorm: "    << results.cNorm    << endl;
+          newOut << "\tcompNorm: " << results.compNorm << endl;
         }
         TEST_COMPARE(results.epsilon, <, epsilon)
 
         if (verbose)
-          out << "Running jacobi reuse test for " << currentSystem.name() << endl;
+          newOut << "Running jacobi reuse test for " << currentSystem.name() << endl;
 
-        results = jacobi_reuse_test(name, A, B, comm, out);
+        results = jacobi_reuse_test(name, A, B, comm, newOut);
 
         if (verbose) {
-          out << "Results:"     << endl;
-          out << "\tEpsilon: "  << results.epsilon  << endl;
-          out << "\tcNorm: "    << results.cNorm    << endl;
-          out << "\tcompNorm: " << results.compNorm << endl;
+          newOut << "Results:"     << endl;
+          newOut << "\tEpsilon: "  << results.epsilon  << endl;
+          newOut << "\tcNorm: "    << results.cNorm    << endl;
+          newOut << "\tcompNorm: " << results.compNorm << endl;
         }
         TEST_COMPARE(results.epsilon, <, epsilon)
       }
     }
     else if (op == "add") {
       if (verbose)
-        out << "Running 3-argument add test (nonnull C on input) for "
-            << currentSystem.name() << endl;
+        newOut << "Running 3-argument add test (nonnull C on input) for "
+               << currentSystem.name() << endl;
 
       add_test_results results = regular_add_test(A, B, AT, BT, C, comm);
 
-      TEST_COMPARE(results.epsilon, <, epsilon)
-      out << "Regular Add Test Results: " << endl;
-      out << "\tCorrect Norm: " << results.correctNorm << endl;
-      out << "\tComputed norm: " << results.computedNorm << endl;
-      out << "\tEpsilon: " << results.epsilon << endl;
+      TEST_COMPARE(results.epsilon, <, epsilon);
+      newOut << "Regular Add Test Results: " << endl;
+      newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+      newOut << "\tComputed norm: " << results.computedNorm << endl;
+      newOut << "\tEpsilon: " << results.epsilon << endl;
 
       // FIXME (mfh 09 May 2013) This test doesn't currently pass.  I
       // don't think anyone ever exercised the case where C is null on
       // input before.  I'm disabling this test for now until I have a
       // chance to fix that case.
       if (verbose)
-        out << "Running 3-argument add test (null C on input) for "
-            << currentSystem.name() << endl;
+        newOut << "Running 3-argument add test (null C on input) for "
+               << currentSystem.name() << endl;
 
       TEUCHOS_TEST_FOR_EXCEPTION(A.is_null (), std::logic_error,
                                  "Before null_add_test: A is null");
@@ -579,30 +606,39 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
 
-      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, out);
+      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, newOut);
 
-      TEST_COMPARE(results.epsilon, <, epsilon)
-      out << "Null Add Test Results: " << endl;
-      out << "\tCorrect Norm: " << results.correctNorm << endl;
-      out << "\tComputed norm: " << results.computedNorm << endl;
-      out << "\tEpsilon: " << results.epsilon << endl;
+      TEST_COMPARE(results.epsilon, <, epsilon);
+      newOut << "Null Add Test Results: " << endl;
+      newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+      newOut << "\tComputed norm: " << results.computedNorm << endl;
+      newOut << "\tEpsilon: " << results.epsilon << endl;
 
       B = Reader<Matrix_t >::readSparseFile(B_file, comm, node, false);
 
       if (! BT) {
         if (verbose)
-          out << "Running 2-argument add test for "
-              << currentSystem.name() << endl;
+          newOut << "Running 2-argument add test for "
+                 << currentSystem.name() << endl;
 
         results = add_into_test(A,B,AT,C,comm);
         TEST_COMPARE(results.epsilon, <, epsilon)
-        out << "Add Into Test Results: " << endl;
-        out << "\tCorrect Norm: " << results.correctNorm << endl;
-        out << "\tComputed norm: " << results.computedNorm << endl;
-        out << "\tEpsilon: " << results.epsilon << endl;
+        newOut << "Add Into Test Results: " << endl;
+        newOut << "\tCorrect Norm: " << results.correctNorm << endl;
+        newOut << "\tComputed norm: " << results.computedNorm << endl;
+        newOut << "\tEpsilon: " << results.epsilon << endl;
       }
     }
   }
+
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  newOut << "We made it through operations_test on all processes!" << endl;
+  if (gblSuccess != 1) {
+    newOut << "FAILED on at least one process!" << endl;
+  }
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
 
 /*
@@ -613,9 +649,26 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
  */
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  const int myRank = comm->getRank ();
+  const int numProcs = comm->getSize();
+
+  // Create an output stream that prints immediately, rather than
+  // waiting until the test finishes.  This lets us get debug output
+  // even if an unexpected exception or crash happens.  Unfortunately,
+  // Teuchos::FancyOStream does not implement operator=, so we can't
+  // replace 'out' temporarily.
+  RCP<FancyOStream> newOutP = (myRank == 0) ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::getFancyOStream (rcp (new Teuchos::oblackholestream ()));
+  FancyOStream& newOut = *newOutP;
+
+  newOut << "Tpetra sparse matrix-matrix multiply: range row test" << endl;
+  Teuchos::OSTab tab1 (newOut);
+
+  newOut << "Create Node instance" << endl;
   ParameterList defaultParameters;
   RCP<node_type> node = rcp(new node_type(defaultParameters));
-  int numProcs = comm->getSize();
+
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   //THIS NUMBER MUST BE EVEN SO THAT WHEN I CALCULATE THE NUMBER
   //OF ROWS IN THE DOMAIN MAP I DON'T ENCOUNTER ANY
@@ -625,10 +678,11 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   int rank = comm->getRank();
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
+  newOut << "Create identityMatrix" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identityMatrix =
-    getIdentityMatrix<double,int,int,int>(globalNumRows, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm, node);
 
-
+  newOut << "Fill identityMatrix" << endl;
 //Create "B"
   Array<int> myRows = tuple<int>(
     rank*numRowsPerProc,
@@ -651,6 +705,7 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
       (rank-1)*numRowsPerProc+3);
   }
 
+  newOut << "Create row, range, and domain Maps of B" << endl;
   RCP<const Map<int,int,node_type> > bRowMap =
     Tpetra::createNonContigMapWithNode<int,int,node_type>(myRows, comm, node);
   RCP<const Map<int,int,node_type> > bRangeMap =
@@ -659,21 +714,26 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
   RCP<const Map<int,int,node_type> > bDomainMap =
     Tpetra::createUniformContigMapWithNode<int,int,node_type>(
       globalNumRows/2, comm, node);
+
+  newOut << "Create bMatrix" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > bMatrix =
     Tpetra::createCrsMatrix<double,int,int,node_type>(bRowMap, 1);
-  for(
-    ArrayView<const int>::iterator it =
-      bRowMap->getNodeElementList().begin();
-    it != bRowMap->getNodeElementList().end();
-    ++it)
+
+  newOut << "Fill bMatrix" << endl;
   {
-    Array<int> col(1,(*it)/2);
-    Array<double> val(1,3.0);
-    bMatrix->insertGlobalValues(*it, col(), val());
+    typedef int GO;
+    Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
+    for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+      Array<int> col(1,(*it)/2);
+      Array<double> val(1,3.0);
+      bMatrix->insertGlobalValues(*it, col(), val());
+    }
   }
+
+  newOut << "Call fillComplete on bMatrix" << endl;
   bMatrix->fillComplete(bDomainMap, bRangeMap);
 
-  out << "Regular I*P" << std::endl;
+  newOut << "Regular I*P" << endl;
   mult_test_results results = multiply_test(
     "Different Range and Row Maps",
     identityMatrix,
@@ -684,19 +744,21 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
     comm,
     out);
   if(verbose){
-    out << "Results:" <<std::endl;
-    out << "\tEpsilon: " << results.epsilon << std::endl;
-    out << "\tcNorm: " << results.cNorm << std::endl;
-    out << "\tcompNorm: " << results.compNorm << std::endl;
+    newOut << "Results:" << endl;
+    newOut << "\tEpsilon: " << results.epsilon << endl;
+    newOut << "\tcNorm: " << results.cNorm << endl;
+    newOut << "\tcompNorm: " << results.compNorm << endl;
   }
-  TEST_COMPARE(results.epsilon, <, defaultEpsilon)
+  TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
+  newOut << "Create identity2" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identity2 =
-    getIdentityMatrix<double,int,int,int>(globalNumRows/2, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows/2, comm, node);
 
   RCP<const Map<int,int,node_type> > bTransRowMap =
     Tpetra::createUniformContigMapWithNode<int,int,node_type>(globalNumRows/2,comm,node);
 
+  newOut << "Create and fill bTrans" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > bTrans =
     Tpetra::createCrsMatrix<double,int,int,node_type>(bTransRowMap, 1);
   Array<int> bTransRangeElements;
@@ -710,50 +772,70 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
       (rank-1)*(numRowsPerProc/2)+1,
       (rank-1)*(numRowsPerProc/2));
   }
-  out << bTransRangeElements << std::endl;
+  newOut << bTransRangeElements << endl;
+
   RCP<const Map<int,int,node_type> > bTransRangeMap =
     Tpetra::createNonContigMapWithNode<int,int,node_type>(bTransRangeElements, comm, node);
   RCP<const Map<int,int,node_type> > bTransDomainMap =
     Tpetra::createUniformContigMapWithNode<int,int,node_type>(globalNumRows,comm,node);
+
+  newOut << "Compute identity * transpose(bTrans)" << endl;
   Tpetra::MatrixMatrix::Multiply(*identity2,false,*bMatrix, true, *bTrans, false);
+
+  newOut << "Call fillComplete on bTrans" << endl;
   bTrans->fillComplete(bTransDomainMap, bTransRangeMap);
 
+  newOut << "Create and fill bTransTest" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > bTransTest =
     Tpetra::createCrsMatrix<double,int,int,node_type>(bTransRowMap, 1);
 
-  for(
-    ArrayView<const int>::iterator it =
-      bRowMap->getNodeElementList().begin();
-    it != bRowMap->getNodeElementList().end();
-    ++it)
   {
-    Array<int> col(1,*it);
-    Array<double> val(1,3.0);
-    bTransTest->insertGlobalValues((*it)/2, col(), val());
+    typedef int GO;
+    Teuchos::ArrayView<const GO> gblRows = bRowMap->getNodeElementList ();
+    for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+      Teuchos::Array<int> col(1,*it);
+      Teuchos::Array<double> val(1,3.0);
+      bTransTest->insertGlobalValues((*it)/2, col(), val());
+    }
   }
+
+  newOut << "Call fillComplete on bTransTest" << endl;
   bTransTest->fillComplete(bTransDomainMap, bTransRangeMap);
 
+  // FIXME (mfh 03 May 2016) I didn't write this output message.  I
+  // don't know what it means, but I'm leaving it here in case it's
+  // meaningful to someone.
+  newOut << "Regular I*P^T" << endl;
 
-  out << "Regular I*P^T" << std::endl;
   RCP<CrsMatrix<double,int,int,node_type> > bTransDiff =
     Tpetra::createCrsMatrix<double,int,int,node_type>(bTransRowMap, 1);
   Tpetra::MatrixMatrix::Add<double,int,int,node_type>(*bTransTest, false, -1.0, *bTrans, false, 1.0,bTransDiff);
+
+  newOut << "Call fillComplete on bTransDiff" << endl;
   bTransDiff->fillComplete(bTransDomainMap, bDomainMap);
+
   double diffNorm = bTransDiff->getFrobeniusNorm ();
   double realNorm = bTransTest->getFrobeniusNorm ();
   double calcEpsilon = diffNorm/realNorm;
 
-  out << "B" << std::endl;
-
+  newOut << "B" << endl;
 
   if(verbose){
-    out << "Results:" <<std::endl;
-    out << "\tEpsilon: " << calcEpsilon<< std::endl;
-    out << "\treal norm: " << realNorm<< std::endl;
-    out << "\tcompNorm: " << diffNorm<< std::endl;
+    out << "Results:" << endl;
+    out << "\tEpsilon: " << calcEpsilon << endl;
+    out << "\treal norm: " << realNorm << endl;
+    out << "\tcompNorm: " << diffNorm << endl;
   }
-  TEST_COMPARE(calcEpsilon, <, defaultEpsilon)
+  TEST_COMPARE(calcEpsilon, <, defaultEpsilon);
 
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  newOut << "We made it through range_row_test on all processes!" << endl;
+  if (gblSuccess != 1) {
+    newOut << "FAILED on at least one process!" << endl;
+  }
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
 
 /**
@@ -762,8 +844,26 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, range_row_test){
  * when A's rowmap and rangemap are differnt.
  * KLN 23/06/2011
  */
-TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
+TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test)
+{
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+
+  // Create an output stream that prints immediately, rather than
+  // waiting until the test finishes.  This lets us get debug output
+  // even if an unexpected exception or crash happens.  Unfortunately,
+  // Teuchos::FancyOStream does not implement operator=, so we can't
+  // replace 'out' temporarily.
+  const int myRank = comm->getRank ();
+  RCP<FancyOStream> newOutP = (myRank == 0) ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::getFancyOStream (rcp (new Teuchos::oblackholestream ()));
+  FancyOStream& newOut = *newOutP;
+
+  newOut << "Tpetra sparse matrix-matrix multiply: Test A^T * I, "
+    "where A's row Map and range Map differ" << endl;
+  Teuchos::OSTab tab1 (newOut);
+
+  newOut << "Create Node instance" << endl;
   ParameterList defaultParameters;
   RCP<node_type> node = rcp(new node_type(defaultParameters));
   int numProcs = comm->getSize();
@@ -776,12 +876,11 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
   int rank = comm->getRank();
   global_size_t globalNumRows = numRowsPerProc*numProcs;
 
-//Create identity matrix
+  newOut << "Create identity matrix" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > identityMatrix =
-    getIdentityMatrix<double,int,int,int>(globalNumRows, comm, node);
+    getIdentityMatrix<double,int,int> (newOut, globalNumRows, comm, node);
 
-
-  //Create A
+  newOut << "Create Maps for matrix aMat" << endl;
   Array<int> aMyRows = tuple<int>(
     rank*numRowsPerProc,
     rank*numRowsPerProc+1,
@@ -812,26 +911,33 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
     Tpetra::createNonContigMapWithNode<int,int,node_type>(
       aRangeElements, comm, node);
 
+  newOut << "Create matrix aMat" << endl;
   RCP<CrsMatrix<double,int,int,node_type> > aMat =
     Tpetra::createCrsMatrix<double,int,int,node_type>(aRowMap, 1);
-  for(
-    ArrayView<const int>::iterator it =
-      aRowMap->getNodeElementList().begin();
-    it != aRowMap->getNodeElementList().end();
-    ++it)
+
+  newOut << "Fill matrix aMat" << endl;
   {
-    Array<int> col(1,(*it)/2);
-    Array<double> val(1,3.0);
-    aMat->insertGlobalValues(*it, col(), val());
+    typedef int GO;
+    Teuchos::ArrayView<const GO> gblRows = aRowMap->getNodeElementList ();
+    for (auto it = gblRows.begin (); it != gblRows.end (); ++it) {
+      Teuchos::Array<int> col(1,(*it)/2);
+      Teuchos::Array<double> val(1,3.0);
+      aMat->insertGlobalValues(*it, col(), val());
+    }
   }
+  newOut << "Call fillComplete on matrix aMat" << endl;
   aMat->fillComplete(aDomainMap, aRangeMap);
 
+  newOut << "Create RowMatrixTransposer with aMat" << endl;
   RowMatrixTransposer<double,int,int,node_type> transposer (aMat);
+
+  newOut << "Use RowMatrixTransposer to create transpose of aMat" << endl;
   RCP<CrsMatrix<double, int, int, node_type> > knownAMat =
     transposer.createTranspose();
 
-
-  out << "Regular I*P" << std::endl;
+  // FIXME (mfh 03 May 2016) I'm not sure what this message means, so
+  // I'll leave it.
+  newOut << "Regular I*P" << endl;
   mult_test_results results = multiply_test(
     "Different Range and Row Maps",
     aMat,
@@ -840,15 +946,23 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
     false,
     knownAMat,
     comm,
-    out);
+    newOut);
   if(verbose){
-    out << "Results:" <<std::endl;
-    out << "\tEpsilon: " << results.epsilon << std::endl;
-    out << "\tcNorm: " << results.cNorm << std::endl;
-    out << "\tcompNorm: " << results.compNorm << std::endl;
+    newOut << "Results:" <<endl;
+    newOut << "\tEpsilon: " << results.epsilon << endl;
+    newOut << "\tcNorm: " << results.cNorm << endl;
+    newOut << "\tcompNorm: " << results.compNorm << endl;
   }
-  TEST_COMPARE(results.epsilon, <, defaultEpsilon)
+  TEST_COMPARE(results.epsilon, <, defaultEpsilon);
 
+  const int lclSuccess = success ? 1 : 0;
+  int gblSuccess = 0;
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  newOut << "We made it through ATI_range_row_test on all processes!" << endl;
+  if (gblSuccess != 1) {
+    newOut << "FAILED on at least one process!" << endl;
+  }
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
 
 /*
@@ -884,10 +998,10 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, ATI_range_row_test){
     comm,
     out);
   if(verbose){
-    out << "Results:" <<std::endl;
-    out << "\tEpsilon: " << results.epsilon << std::endl;
-    out << "\tcNorm: " << results.cNorm << std::endl;
-    out << "\tcompNorm: " << results.compNorm << std::endl;
+    out << "Results:" <<endl;
+    out << "\tEpsilon: " << results.epsilon << endl;
+    out << "\tcNorm: " << results.cNorm << endl;
+    out << "\tcompNorm: " << results.compNorm << endl;
   }
   TEST_COMPARE(results.epsilon, <, defaultEpsilon)
 

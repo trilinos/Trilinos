@@ -41,15 +41,16 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Tpetra_TestingUtilities.hpp>
-#include <MatrixMarket_Tpetra.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
-#include <Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp>
-#include <Tpetra_Experimental_BlockVector.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "MatrixMarket_Tpetra.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix.hpp"
+#include "Tpetra_Experimental_BlockCrsMatrix_Helpers.hpp"
+#include "Tpetra_Experimental_BlockVector.hpp"
 
 namespace {
   using Tpetra::TestingUtilities::getDefaultComm;
+  using Tpetra::Details::gathervPrint;
   using Teuchos::Array;
   using Teuchos::Comm;
   using Teuchos::outArg;
@@ -311,7 +312,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock (tempBlockPtr, blockSize, blockSize, 1);
+        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             TEST_ASSERT( tempBlock(i,j) == STS::zero () );
@@ -324,7 +325,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock (tempBlockPtr, blockSize, blockSize, 1);
+        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize));
@@ -346,7 +347,7 @@ namespace {
 
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* curBlkPtr = myVals + k * blockSize * blockSize;
-        little_block_type curBlk (curBlkPtr, blockSize, blockSize, 1);
+        little_block_type curBlk ((typename little_block_type::value_type*) curBlkPtr, blockSize, blockSize);
 
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
@@ -387,8 +388,8 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
-        TEST_ASSERT( X_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
@@ -400,8 +401,8 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -430,8 +431,8 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -492,8 +493,8 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
-          TEST_ASSERT( X_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -507,8 +508,8 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -540,8 +541,8 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -598,8 +599,8 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
-        TEST_ASSERT( X_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
           X_lcl(i) = static_cast<Scalar> (static_cast<MT> (blockSize - i));
         }
@@ -618,8 +619,8 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -648,8 +649,8 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
-        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+        TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+        TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
         // Test that each actual output value matches its expected value.
         for (LO i = 0; i < blockSize; ++i) {
@@ -710,8 +711,8 @@ namespace {
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
-          TEST_ASSERT( X_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( X_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (X_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
             X_lcl(i) = static_cast<Scalar> (static_cast<MT> ((blockSize - i) * (j + 1)));
           }
@@ -732,8 +733,8 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -765,8 +766,8 @@ namespace {
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
           little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
-          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
-          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+          TEST_ASSERT( Y_lcl.ptr_on_device () != NULL );
+          TEST_ASSERT( static_cast<size_t> (Y_lcl.dimension_0 ()) == static_cast<size_t> (blockSize) );
 
           // Test that each actual output value matches its expected value.
           for (LO i = 0; i < blockSize; ++i) {
@@ -907,7 +908,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock (tempBlockPtr, blockSize, blockSize, 1);
+        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize) + 0.0123);
@@ -1113,7 +1114,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
         little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
-                                    blockSize, blockSize, 1); // row major
+                                    blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
           IST curVal = STS::one ();
@@ -1125,7 +1126,7 @@ namespace {
           }
         }
         else { // not the diagonal block
-          Tpetra::Experimental::deep_copy (curBlock, static_cast<IST> (-STS::one ()));
+          Kokkos::deep_copy (curBlock, static_cast<IST> (-STS::one ()));
         }
       }
     } // for each local mesh row
@@ -1150,7 +1151,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
         little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
-                                    blockSize, blockSize, 1); // row major
+                                    blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
           auto diagBlock = subview (diagBlocks, lclRowInd, ALL (), ALL ());
@@ -1219,6 +1220,7 @@ namespace {
     BCM blockMat (graph, blockSize);
 
     // Test that the point domain and range Maps are correct.
+    out << "Test the matrix's point domain and range Maps" << endl;
     map_type pointDomainMap = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
     TEST_ASSERT( ! blockMat.getDomainMap ().is_null () &&
                  pointDomainMap.isSameAs (* (blockMat.getDomainMap ())) );
@@ -1227,6 +1229,8 @@ namespace {
                  pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
 
     // Test that the result of getGraph() has the same Maps.
+    out << "Test that the result of getGraph() has the same Maps "
+      "as the original graph" << endl;
     {
       graph_type graph2 = blockMat.getCrsGraph ();
       TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
@@ -1244,6 +1248,7 @@ namespace {
     }
 
     // Fill all entries of the matrix with 3.
+    out << "Fill all entries of the matrix with 3 (setAllToScalar)" << endl;
     const Scalar three = STS::one () + STS::one () + STS::one ();
     blockMat.setAllToScalar (three);
 
@@ -1251,12 +1256,14 @@ namespace {
     // of 1s.  Since there are two block entries per row, each of
     // which is all 3s, we know that each entry of the result Y will
     // be 6*blockSize.
+    out << "Test applyBlock" << endl;
     const Scalar requiredValue = static_cast<Scalar> (6 * blockSize);
     BMV X (* (graph.getDomainMap ()), pointDomainMap, blockSize, static_cast<LO> (1));
     X.putScalar (STS::one ());
     BMV Y (* (graph.getRangeMap ()), pointRangeMap, blockSize, static_cast<LO> (1));
     blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, STS::one (), STS::zero ());
 
+    out << "Make sure applyBlock got the right answer" << endl;
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
@@ -1342,11 +1349,20 @@ namespace {
     const Scalar three = STS::one () + STS::one () + STS::one ();
     A1.setAllToScalar (three);
 
+#ifdef HAVE_TPETRA_DEBUG
+    if (! std::is_same<typename Kokkos::HostSpace, typename BCM::device_type::memory_space>::value) {
+      // The above setAllToScalar should have run on device.
+      TEST_ASSERT( A1.template need_sync<Kokkos::HostSpace> () );
+      TEST_ASSERT( ! A1.template need_sync<typename BCM::device_type> () );
+    }
+#endif // HAVE_TPETRA_DEBUG
+
     out << "The matrix A1, after construction:" << endl;
     A1.describe (out, Teuchos::VERB_EXTREME);
 
     // Fill all entries of the second matrix with -2.
     const Scalar minusTwo = -STS::one () - STS::one ();
+    out << "Fill all entries of A2 with " << minusTwo << endl;
     A2.setAllToScalar (minusTwo);
 
     out << "The matrix A2, after construction:" << endl;
@@ -1766,6 +1782,9 @@ namespace {
     exactSolution[1] = -12.0/35.0;
     exactSolution[2] = -17.0/35.0;
 
+    // NOTE (mfh 26 May 2016) We may start modifying the matrix on
+    // host now, because we haven't yet done anything to it on device.
+
     Teuchos::Array<LO> lclColInds(1);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
@@ -1784,6 +1803,9 @@ namespace {
 
     Kokkos::View<size_t*, device_type> diagonalOffsets ("offsets", numLocalMeshPoints);
     graph.getLocalDiagOffsets (diagonalOffsets);
+
+    // Sync the matrix to device, since getLocalDiagCopy runs there.
+    blockMat.template sync<device_type> ();
 
     typedef Kokkos::View<IST***, device_type> block_diag_type;
     block_diag_type blockDiag ("blockDiag", numLocalMeshPoints,
@@ -1806,7 +1828,7 @@ namespace {
 
       TEST_EQUALITY( blkNumEnt, static_cast<LO> (1) );
       if (blkNumEnt == 1) {
-        typename BCM::const_little_block_type diagBlock2 (blkVals, blockSize, blockSize, 1);
+        typename BCM::const_little_block_type diagBlock2 ((typename BCM::const_little_block_type::value_type*) blkVals, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             TEST_EQUALITY( diagBlock(i,j), diagBlock2(i,j) );
@@ -1833,7 +1855,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.getRawPtr ());
+      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       out << "row = " << lclRowInd << endl;
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], 1e-12 );
@@ -1846,7 +1868,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.getRawPtr ());
+      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], 1e-12 );
       }
@@ -2023,7 +2045,7 @@ namespace {
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.getRawPtr ());
+      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], 1e-12 );
         x[k] = -STS::one ();
@@ -2088,7 +2110,7 @@ namespace {
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
       typename BV::little_vec_type xlcl = solution.getLocalBlock (lclRowInd);
-      ST* x = reinterpret_cast<ST*> (xlcl.getRawPtr ());
+      ST* x = reinterpret_cast<ST*> (xlcl.ptr_on_device ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], 1e-12 );
         x[k] = -STS::one ();
@@ -2118,14 +2140,46 @@ namespace {
     typedef typename STS::magnitudeType                            magnitude_type;
     ST zero = STS::zero(), one = STS::one();
 
+    Teuchos::OSTab tab0 (out);
+    out << "Test conversion from (point) CrsMatrix to BlockCrsMatrix" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    std::ostringstream errStrm;
+
     RCP<const Comm<int> > comm = getDefaultComm();
     std::string matrixFile;
-    if (STS::isComplex)
+    if (STS::isComplex) {
       matrixFile = "blockA-complex.mm";
-    else
+    }
+    else {
       matrixFile = "blockA.mm";
-    out << "reading " << matrixFile << std::endl;
-    RCP<crs_matrix_type> pointMatrix = reader_type::readSparseFile(matrixFile, comm);
+    }
+    out << "Read CrsMatrix from file \"" << matrixFile << "\"" << endl;
+    RCP<crs_matrix_type> pointMatrix;
+    try {
+      pointMatrix = reader_type::readSparseFile(matrixFile, comm);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": readSparseFile threw an "
+        "std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": readSparseFile threw an "
+        "exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
+
+    out << "Migrate input CrsMatrix to final parallel distribution" << endl;
 
     // Migrate pointMatrix to final parallel distribution.
     // Note that the input matrix has 12 point rows, with block size 3.  Point rows associated with a mesh node
@@ -2139,12 +2193,58 @@ namespace {
       rcp (new crs_matrix_type (parPointMap, pointMatrix->getGlobalMaxNumRowEntries ()));
     RCP<const import_type> importer =
       rcp (new import_type (pointMatrix->getRowMap(), parPointMap));
-    parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+
+    try {
+      parPointMatrix->doImport(*pointMatrix, *importer, Tpetra::INSERT);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": doImport (point matrix to "
+        "point matrix) threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": doImport (point matrix to "
+        "point matrix) threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
+
     parPointMatrix->fillComplete();
     pointMatrix.swap(parPointMatrix);
 
+    out << "Convert CrsMatrix to BlockCrsMatrix" << endl;
+
     int blockSize = 3;
-    RCP<block_matrix_type> blockMatrix = Tpetra::Experimental::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+    RCP<block_matrix_type> blockMatrix;
+    try {
+      blockMatrix = Tpetra::Experimental::convertToBlockCrsMatrix(*pointMatrix,blockSize);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": convertToBlockCrsMatrix "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": convertToBlockCrsMatrix "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
+
+    out << "Test resulting BlockCrsMatrix by comparing mat-vec result against "
+      "CrsMatrix mat-vec result" << endl;
 
     //normalized pseudo-random vector
     RCP<mv_type> randVec = rcp(new mv_type(pointMatrix->getDomainMap(),1));
@@ -2154,11 +2254,52 @@ namespace {
     randVec->scale(1.0/normVec1[0]);
 
     RCP<mv_type> resultVec1 = rcp(new mv_type(pointMatrix->getRangeMap(),1));
-    pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    out << "CrsMatrix::apply" << endl;
+    try {
+      pointMatrix->apply(*randVec, *resultVec1, Teuchos::NO_TRANS, one, zero);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": CrsMatrix::apply "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": CrsMatrix::apply "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
+    out << "Compute norm of result" << endl;
     resultVec1->norm2(normVec1);
 
     RCP<mv_type> resultVec2 = rcp(new mv_type(blockMatrix->getRangeMap(),1));
-    blockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+    out << "BlockCrsMatrix::apply" << endl;
+    try {
+      blockMatrix->apply(*randVec, *resultVec2, Teuchos::NO_TRANS, one, zero);
+    }
+    catch (std::exception& e) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix::apply "
+        "threw an std::exception: " << e.what ();
+    }
+    catch (...) {
+      lclSuccess = 0;
+      errStrm << "Proc " << comm->getRank () << ": BlockCrsMatrix::apply "
+        "threw an exception not a subclass of std::exception";
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_ASSERT( gblSuccess == 1 );
+    if (gblSuccess != 1) {
+      gathervPrint (out, errStrm.str (), *comm);
+      success = false;
+      return;
+    }
     Teuchos::Array<magnitude_type> normVec2(1);
     resultVec2->norm2(normVec2);
 

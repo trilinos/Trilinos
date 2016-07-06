@@ -61,11 +61,10 @@ Entity declare_element( BulkData & mesh ,
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
-Entity declare_element_side_using_graph(BulkData& mesh,
-                                        const stk::mesh::EntityId global_side_id,
-                                        Entity elem,
-                                        const unsigned side_ordinal,
-                                        const stk::mesh::PartVector& add_parts);
+Entity declare_element_side(BulkData& bulkData,
+                            Entity elem,
+                            const unsigned side_ordinal,
+                            const stk::mesh::PartVector& add_parts = stk::mesh::PartVector());
 
 /** \brief  Create (or find) an element side.
  *
@@ -136,20 +135,21 @@ OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mes
                                                   stk::mesh::Entity parent_entity,
                                                   stk::mesh::EntityRank to_rank,
                                                   const stk::mesh::EntityVector &nodes_of_sub_rank);
-OrdinalAndPermutation get_ordinal_and_positive_permutation(const stk::mesh::BulkData& mesh,
-                                                           stk::mesh::Entity parent_entity,
-                                                           stk::mesh::EntityRank to_rank,
-                                                           const stk::mesh::EntityVector &nodes_of_sub_rank);
 
+std::pair<bool, unsigned> sub_rank_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank,
+                                                            const stk::mesh::Entity* subRankNodes);
 
-/** \brief declares relation from an element to an entity of lower rank based on nodes that the entity contains
- *
- *
- *
- */
-stk::mesh::Entity declare_element_to_sub_topology_with_nodes(stk::mesh::BulkData &mesh, stk::mesh::Entity elem, const stk::mesh::EntityVector &sub_topology_nodes,
-		        stk::mesh::EntityId global_sub_topology_id, stk::mesh::EntityRank to_rank, stk::mesh::Part &part);
+std::pair<bool, unsigned> side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
 
+bool is_side_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+
+bool is_edge_equivalent(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned edgeOrdinal, const stk::mesh::Entity* candidateEdgeNodes);
+
+NAMED_PAIR(EquivAndPositive, bool, is_equiv, bool, is_positive)
+
+EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
+
+EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes
  * that make up the subcell in a correct order for the given polarity.
@@ -184,7 +184,7 @@ void get_parts_with_topology(stk::topology topology,
 {
   parts.clear();
 
-  stk::mesh::MetaData & fem_meta = stk::mesh::MetaData::get(mesh);
+  const stk::mesh::MetaData & fem_meta = mesh.mesh_meta_data();
 
   const stk::mesh::PartVector& all_parts = fem_meta.get_parts();
 

@@ -114,7 +114,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_time_vector, residual)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 1;
     const std::string fieldName_q1 = "TEMPERATURE";

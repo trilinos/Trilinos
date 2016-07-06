@@ -136,7 +136,6 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_vector = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",flux_vector.dimension(0),num_qp,num_dim);
-    // tmp = Intrepid2::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
   }
   else {
     this->utils.setFieldData(flux_scalar,fm);
@@ -148,7 +147,6 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_scalar = af.buildStaticArray<ScalarT,Cell,IP>("btv_scratch",flux_scalar.dimension(0),num_qp);
-    // tmp = Intrepid2::FieldContainer<ScalarT>(flux.dimension(0), num_qp); 
   }
 }
 

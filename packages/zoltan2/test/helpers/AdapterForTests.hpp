@@ -539,11 +539,11 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsGraphAda
   // set adapter
   if(input_type == "tpetra_crs_graph")
   {
-    typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> problem_t;
+    typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> adapter_t;
     
     RCP<tcrsGraph_t> data = uinput->getUITpetraCrsGraph();
     RCP<const tcrsGraph_t> const_data = rcp_const_cast<const tcrsGraph_t>(data);
-    problem_t *ia = new problem_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
+    adapter_t *ia = new adapter_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
     
     if(!vtx_weights.empty())
     {
@@ -561,11 +561,11 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsGraphAda
   }
   else if(input_type == "xpetra_crs_graph")
   {
-    typedef Zoltan2::XpetraCrsGraphAdapter<xcrsGraph_t, tMVector_t> problem_t;
+    typedef Zoltan2::XpetraCrsGraphAdapter<xcrsGraph_t, tMVector_t> adapter_t;
     
     RCP<xcrsGraph_t> data = uinput->getUIXpetraCrsGraph();
     RCP<const xcrsGraph_t> const_data = rcp_const_cast<const xcrsGraph_t>(data);
-    problem_t *ia = new problem_t(const_data, (int)vtx_weights.size(), (int)edge_weights.size());
+    adapter_t *ia = new adapter_t(const_data, (int)vtx_weights.size(), (int)edge_weights.size());
     
     if(!vtx_weights.empty())
     {
@@ -585,11 +585,11 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsGraphAda
   
   else if(input_type == "epetra_crs_graph")
   {
-    typedef Zoltan2::XpetraCrsGraphAdapter<Epetra_CrsGraph, tMVector_t> problem_t;
+    typedef Zoltan2::XpetraCrsGraphAdapter<Epetra_CrsGraph, tMVector_t> adapter_t;
     
     RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
     RCP<const Epetra_CrsGraph> const_data = rcp_const_cast<const Epetra_CrsGraph>(data);
-    problem_t *ia = new problem_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
+    adapter_t *ia = new adapter_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
     
     if(!vtx_weights.empty())
     {
@@ -704,13 +704,13 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAd
   else if(input_type == "xpetra_crs_matrix")
   {
     // type def this adapter type
-    typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t> problem_t;
+    typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t> adapter_t;
     
     RCP<xcrsMatrix_t> data = uinput->getUIXpetraCrsMatrix();
     RCP<const xcrsMatrix_t> const_data = rcp_const_cast<const xcrsMatrix_t>(data);
     
     // new adapter
-    problem_t *ia = new problem_t(const_data, (int)weights.size());
+    adapter_t *ia = new adapter_t(const_data, (int)weights.size());
     
     // if we have weights set them
     if(!weights.empty())
@@ -726,13 +726,13 @@ Zoltan2_TestingFramework::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAd
   
   else if(input_type == "epetra_crs_matrix")
   {
-    typedef Zoltan2::XpetraCrsMatrixAdapter<Epetra_CrsMatrix, tMVector_t> problem_t;
+    typedef Zoltan2::XpetraCrsMatrixAdapter<Epetra_CrsMatrix, tMVector_t> adapter_t;
     
     RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
     RCP<const Epetra_CrsMatrix> const_data = rcp_const_cast<const Epetra_CrsMatrix>(data);
     
     // new adapter
-    problem_t *ia = new problem_t(const_data, (int)weights.size());
+    adapter_t *ia = new adapter_t(const_data, (int)weights.size());
     
     // if we have weights set them
     if(!weights.empty())

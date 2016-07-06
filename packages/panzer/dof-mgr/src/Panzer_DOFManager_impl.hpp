@@ -525,13 +525,14 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     ElementBlockAccess naborAccess(false,connMngr_);
     RCP<const Map> overlapmap_nabor = buildOverlapMapFromElements(naborAccess);
 
-    Export e(overlapmap_nabor,non_overlap_map);
+    // Export e(overlapmap_nabor,non_overlap_map);
+    Import imp_nabor(non_overlap_map,overlapmap_nabor);
 
     Teuchos::RCP<MultiVector> overlap_mv_nabor
         = Tpetra::createMultiVector<GO>(overlapmap_nabor,(size_t)numFields_);
 
     // get all neighbor information
-    overlap_mv_nabor->doImport(*non_overlap_mv,imp,Tpetra::REPLACE);
+    overlap_mv_nabor->doImport(*non_overlap_mv,imp_nabor,Tpetra::REPLACE);
 
     fillGIDsFromOverlappedMV(naborAccess,elementGIDs_,*overlapmap_nabor,*overlap_mv_nabor);
   }

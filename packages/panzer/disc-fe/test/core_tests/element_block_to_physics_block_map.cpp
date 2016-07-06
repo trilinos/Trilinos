@@ -53,7 +53,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(ElementBlockToPhsyicsBlockMap,basic)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::ParameterList p;
     p.set("eblock-0_0", "fluid");

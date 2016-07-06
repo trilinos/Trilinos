@@ -67,7 +67,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
     
     //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Teuchos::RCP<Teuchos::FancyOStream> pout= Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -244,14 +243,14 @@ namespace panzer {
     std::string sideName = "top";
     std::string blockName = "eblock-0_0_0";
     
-    std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> > normals;
+    std::unordered_map<std::size_t,Kokkos::DynRankView<double,PHX::Device> > normals;
     
     panzer_stk_classic::computeSidesetNodeNormals(normals,mesh,sideName,blockName);
 
-    for (std::unordered_map<std::size_t,Intrepid2::FieldContainer<double> >::const_iterator element = normals.begin();
+    for (std::unordered_map<std::size_t,Kokkos::DynRankView<double,PHX::Device> >::const_iterator element = normals.begin();
 	 element != normals.end(); ++element) {
 
-      const Intrepid2::FieldContainer<double>& values = element->second;
+      const Kokkos::DynRankView<double,PHX::Device>& values = element->second;
 
       *pout << "local element id = " << element->first << std::endl;
       TEST_EQUALITY(values.size(),24);

@@ -42,12 +42,15 @@
 // @HEADER
 
 
+#include "Kokkos_DynRankView_Fad.hpp"
 #include "Phalanx_config.hpp"
 #include "Phalanx.hpp"
 #include "Phalanx_DimTag.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
+#include "Phalanx_MDField_UnmanagedAllocator.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_MDField.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Assert.hpp"
@@ -217,65 +220,48 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // rank()
-    out << "Testing rank() method...";
-    TEUCHOS_TEST_FOR_EXCEPTION(a.rank() != 2, std::logic_error,
-			       "Rank in a is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.rank() != 3, std::logic_error,
-			       "Rank in b is wrong!");
-    out << "passed!" << endl;
+    TEST_EQUALITY(a.rank(), 2);
+    TEST_EQUALITY(b.rank(), 3);
+    TEST_EQUALITY(c.rank(), 2);
+    TEST_EQUALITY(d.rank(), 3);
+    TEST_EQUALITY(e.rank(), 2);
+    TEST_EQUALITY(f.rank(), 3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent()
+    TEST_EQUALITY(b.extent(0), num_cells);
+    TEST_EQUALITY(b.extent(1), 4);
+    TEST_EQUALITY(b.extent(2), 3);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // extent_int()
+    TEST_EQUALITY(b.extent_int(0), static_cast<int>(num_cells));
+    TEST_EQUALITY(b.extent_int(1), static_cast<int>(4));
+    TEST_EQUALITY(b.extent_int(2), static_cast<int>(3));
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimension()
-    out << "Testing dimension() method...";
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
-			       "Cell dimesion is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(1) != 4, std::logic_error,
-			 "Quadrature dimesion is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.dimension(2) != 3, std::logic_error,
-			       "Dim dimesion is wrong!");
-    out << "passed!" << endl;
+    TEST_EQUALITY(b.dimension(0), num_cells);
+    TEST_EQUALITY(b.dimension(1), 4);
+    TEST_EQUALITY(b.dimension(2), 3);
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // dimensions()
-    out << "Testing dimensions() method...";
     std::vector<size_type> dims;
     b.dimensions(dims);
-
-   TEUCHOS_TEST_FOR_EXCEPTION(dims.size() != 3, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[0] != 100, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[1] != 4, std::logic_error,
-			       "Number of dimesions is wrong!");
-    TEUCHOS_TEST_FOR_EXCEPTION(dims[2] != 3, std::logic_error,
-			       "Number of dimesions is wrong!");
-    out << "passed!" << endl;
+    TEST_EQUALITY(dims.size(), 3);
+    TEST_EQUALITY(dims[0], 100);
+    TEST_EQUALITY(dims[1], 4);
+    TEST_EQUALITY(dims[2], 3);
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // size()
-    out << "Testing size() method...";
-
-   TEUCHOS_TEST_FOR_EXCEPTION(a.size() != node_scalar->size(), 
-			       std::logic_error, 
-			       "Size of array a is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(b.size() != quad_vector->size(), 
-			       std::logic_error, 
-			       "Size of array b is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(c.size() != node_scalar->size(), 
-			       std::logic_error, 
-			       "Size of array c is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(d.size() != quad_vector->size(), 
-			       std::logic_error, 
-			       "Size of array d is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(e.size() != node_scalar->size(),
-			       std::logic_error,
-			       "Size of array e is not equal to requested size.");
-    TEUCHOS_TEST_FOR_EXCEPTION(f.size() != quad_vector->size(),
-			       std::logic_error,
-			       "Size of array f is not equal to requested size.");
-    out << "passed!" << endl;
- 
-   
+    TEST_EQUALITY(a.size(), node_scalar->size());
+    TEST_EQUALITY(b.size(), quad_vector->size());
+    TEST_EQUALITY(c.size(), node_scalar->size());
+    TEST_EQUALITY(d.size(), quad_vector->size());
+    TEST_EQUALITY(e.size(), node_scalar->size());
+    TEST_EQUALITY(f.size(), quad_vector->size());
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // operator()
@@ -289,23 +275,34 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     RCP<DataLayout> d6 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5));
     RCP<DataLayout> d7 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5,6));
    
-   //double
- 
-    MDField<double> f1("Test1",d1);
-    MDField<double> f2("Test2",d2);
-    MDField<double> f3("Test3",d3);
-    MDField<double> f4("Test4",d4);
-    MDField<double> f5("Test5",d5);
-    MDField<double> f6("Test6",d6);
-    MDField<double> f7("Test7",d7);
+    //double
+
+
+    // Use unmanaged allocator
+    MDField<double> f1 = PHX::allocateUnmanagedMDField<double>("Test1",d1);
+    MDField<double> f2 = PHX::allocateUnmanagedMDField<double>("Test2",d2);
+    MDField<double> f3 = PHX::allocateUnmanagedMDField<double>("Test3",d3);
+    MDField<double> f4 = PHX::allocateUnmanagedMDField<double>("Test4",d4);
+    MDField<double> f5 = PHX::allocateUnmanagedMDField<double>("Test5",d5);
+    MDField<double> f6 = PHX::allocateUnmanagedMDField<double>("Test6",d6);
+    MDField<double> f7 = PHX::allocateUnmanagedMDField<double>("Test7",d7);
+
+    // Pre- Unmnaged allocator
+    // MDField<double> f1("Test1",d1);
+    // MDField<double> f2("Test2",d2);
+    // MDField<double> f3("Test3",d3);
+    // MDField<double> f4("Test4",d4);
+    // MDField<double> f5("Test5",d5);
+    // MDField<double> f6("Test6",d6);
+    // MDField<double> f7("Test7",d7);
   
-    f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f1.fieldTag()));
-    f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag()));
-    f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f3.fieldTag()));
-    f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f4.fieldTag()));
-    f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f5.fieldTag()));
-    f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f6.fieldTag()));
-    f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f7.fieldTag()));
+    // f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f1.fieldTag()));
+    // f2.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag()));
+    // f3.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f3.fieldTag()));
+    // f4.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f4.fieldTag()));
+    // f5.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f5.fieldTag()));
+    // f6.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f6.fieldTag()));
+    // f7.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f7.fieldTag()));
 
     // Access last entry in contiguous array
     f1(99) = 1.0;
@@ -443,6 +440,16 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // operator[]
     out << "Testing operator[](...) accessors...";
 
+    // The bracket operator use in Kokkos is normally liimited to a
+    // rank-1 view. Intrepid requires access to the entire array for
+    // views with rank greater than 1. This is a very dangerous hack
+    // because it allows users to bypass the underlying layout. This
+    // accessor will not work correctly with subviews or
+    // padding. Kokkos will suppor this for now until we can remove
+    // all use of bracket operator from intrepid. Teh below tests
+    // verify that this capability works. We can remove the tests
+    // below once the bracket op is no longer needed in our stack.
+
     f1[f1.size()-1] = 2.0;
     f2[f2.size()-1] = 3.0;
     f3[f3.size()-1] = 4.0;
@@ -457,7 +464,6 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     TEST_FLOATING_EQUALITY(f4[f4.size()-1], cf4[f4.size()-1], tol);
     TEST_FLOATING_EQUALITY(f5[f5.size()-1], cf5[f5.size()-1], tol);
     TEST_FLOATING_EQUALITY(f6[f6.size()-1], cf6[f6.size()-1], tol);
-
    
     // fad checking
     f1_fad[f1_fad.size()-1] = MyTraits::FadType(2.0);
@@ -472,6 +478,25 @@ TEUCHOS_UNIT_TEST(mdfield, RuntimeTimeChecked)
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // check for array rank enforcement
     TEST_THROW(f1.setFieldData(PHX::KokkosViewFactory<double,PHX::Device>::buildView(f2.fieldTag())),PHX::bad_any_cast);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // kokkos view accessors
+#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
+    {
+      // non-const view
+      auto kva = a.get_view(); 
+      kva(0,0) = 1.0;
+      auto kvc = c.get_view(); 
+      kvc(0,0) = MyTraits::FadType(1.0);
+      // const view (view const, not const data)
+      const auto const_kva = a.get_view(); 
+      const_kva(0,0) = 1.0;
+      const auto const_kvc = c.get_view(); 
+      const_kvc(0,0) = MyTraits::FadType(1.0);
+    }
+#else
+    // unsupported on the deprecated runtime view
+#endif
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // ostream

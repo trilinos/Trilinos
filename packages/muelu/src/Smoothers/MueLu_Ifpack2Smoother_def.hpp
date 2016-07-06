@@ -144,7 +144,7 @@ namespace MueLu {
 
     SmootherPrototype::IsSetup(true);
 
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics1) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -219,8 +219,7 @@ namespace MueLu {
           TEUCHOS_TEST_FOR_EXCEPTION(bA2.is_null(), Exceptions::BadCast,
                                      "Matrix A must be of type BlockedCrsMatrix.");
 
-          RCP<CrsMatrix> mergedMat = bA2->Merge();
-          merged2Mat = rcp(new CrsMatrixWrap(mergedMat));
+          merged2Mat = bA2->Merge();
 
           // Add Dirichlet rows to the list of seeds
           ArrayRCP<const bool> boundaryNodes = Utilities::DetectDirichletRows(*merged2Mat, 0.0);
@@ -238,6 +237,13 @@ namespace MueLu {
 
           subList.set("partitioner: map",         blockSeeds);
           subList.set("partitioner: local parts", as<int>(numBlocks));
+
+        } else {
+          RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+          if (!bA.is_null()) {
+            isBlockedMatrix = true;
+            merged2Mat = bA->Merge();
+          }
         }
       }
 
@@ -402,6 +408,10 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupGeneric(Level& currentLevel) {
     typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
 
     RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
 

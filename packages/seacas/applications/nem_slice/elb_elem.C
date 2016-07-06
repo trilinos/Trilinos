@@ -34,12 +34,12 @@
  */
 
 #include "elb_elem.h"
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for sprintf
-#include <stdlib.h>                     // for exit
-#include <string.h>                     // for strncasecmp
-#include "elb_err.h"                    // for error_report, Gen_Error
-#include "elb_util.h"                   // for in_list
+#include "elb_err.h"  // for error_report, Gen_Error
+#include "elb_util.h" // for in_list
+#include <cstddef>    // for size_t
+#include <cstdio>     // for sprintf
+#include <cstdlib>    // for exit
+#include <cstring>    // for strncasecmp
 
 #if __cplusplus > 199711L
 #define TOPTR(x) x.data()
@@ -51,9 +51,10 @@
 /*****************************************************************************/
 namespace {
   template <typename INT>
-  inline int numbermatch(INT* sidenodes, size_t i, size_t j, size_t k, size_t value )
+  inline int numbermatch(INT *sidenodes, size_t i, size_t j, size_t k, size_t value)
   {
-    if ( (size_t)sidenodes[(i+j)%k] == value ) return 1;
+    if ((size_t)sidenodes[(i + j) % k] == value)
+      return 1;
     return 0;
   }
 }
@@ -67,230 +68,215 @@ namespace {
  * Need the number of dimensions in order to distinguish between
  * TRI elements in a 2d mesh from TRI elements in a 3d mesh.
  *****************************************************************************/
-const char* elem_name_from_enum(const E_Type elem_type) {
-  static const char* elem_names[NULL_EL] = {"SPHERE", "BAR2", "BAR3", "QUAD4", "QUAD8", "QUAD9",
-					    "SHELL4", "SHELL8", "SHELL9", "TRI3", "TRI6", "TSHELL3", "TSHELL6", "HEX8",
-					    "HEX20", "HEX27", "HEXSHELL", "TET4", "TET10", "TET8", "WEDGE6", "WEDGE15",
-					    "WEDGE16", "PYRAMID5", "PYRAMID13", "SHELL2", "SHELL3"};
+const char *elem_name_from_enum(const E_Type elem_type)
+{
+  static const char *elem_names[NULL_EL] = {
+    "SPHERE",
+    "BAR2",      "BAR3",
+    "QUAD4",     "QUAD8",   "QUAD9",
+    "SHELL4",    "SHELL8",  "SHELL9",
+    "TRI3",      "TRI4",    "TRI6",    "TRI7",
+    "TSHELL3",   "TSHELL4", "TSHELL6", "TSHELL7",
+    "HEX8",      "HEX20",   "HEX27",   "HEXSHELL",
+    "TET4",      "TET10",   "TET8",    "TET14",   "TET15",
+    "WEDGE6",    "WEDGE15", "WEDGE16", "WEDGE20", "WEDGE21",
+    "PYRAMID5",
+    "PYRAMID13",
+    "SHELL2",    "SHELL3"
+  };
   return elem_names[elem_type];
 }
 
-E_Type get_elem_type(const char *elem_name, const int num_nodes,
-                     const int num_dim)
+E_Type get_elem_type(const char *elem_name, const int num_nodes, const int num_dim)
 {
 
   E_Type answer = NULL_EL;
   switch (elem_name[0]) {
   case 'h':
   case 'H':
-  if(strncasecmp(elem_name, "HEX", 3) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 8:
-      answer = HEX8;
-      break;
-    case 12:
-      answer = HEXSHELL;
-      break;
-    case 20:
-      answer = HEX20;
-      break;
-    case 27:
-      answer = HEX27;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported HEX element");
-      error_report();
-      exit(1);
+    if (strncasecmp(elem_name, "HEX", 3) == 0) {
+      switch (num_nodes) {
+      case 8: answer  = HEX8; break;
+      case 12: answer = HEXSHELL; break;
+      case 20: answer = HEX20; break;
+      case 27: answer = HEX27; break;
+      default:
+        Gen_Error(0, "fatal: unsupported HEX element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  break;
+    break;
 
   case 'c':
   case 'C':
-  if(strncasecmp(elem_name, "CIRCLE", 6) == 0)
-    answer = SPHERE;
-  break;
-  
+    if (strncasecmp(elem_name, "CIRCLE", 6) == 0)
+      answer = SPHERE;
+    break;
+
   case 's':
   case 'S':
-  if(strncasecmp(elem_name, "SPHERE", 6) == 0)
-    answer = SPHERE;
-  else if(strncasecmp(elem_name, "SHELL", 5) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 2:
-      if(num_dim == 2) answer = SHELL2;
-      else {
+    if (strncasecmp(elem_name, "SPHERE", 6) == 0)
+      answer = SPHERE;
+    else if (strncasecmp(elem_name, "SHELL", 5) == 0) {
+      switch (num_nodes) {
+      case 2:
+        if (num_dim == 2)
+          answer = SHELL2;
+        else {
+          Gen_Error(0, "fatal: unsupported SHELL element");
+          error_report();
+          exit(1);
+        }
+        break;
+      case 3:
+        if (num_dim == 2)
+          answer = SHELL3;
+        else {
+          Gen_Error(0, "fatal: unsupported SHELL element");
+          error_report();
+          exit(1);
+        }
+        break;
+      case 4: answer = SHELL4; break;
+      case 8: answer = SHELL8; break;
+      case 9: answer = SHELL9; break;
+      default:
         Gen_Error(0, "fatal: unsupported SHELL element");
         error_report();
         exit(1);
       }
-      break;
-    case 3:
-      if(num_dim == 2) answer = SHELL3;
-      else {
-        Gen_Error(0, "fatal: unsupported SHELL element");
-        error_report();
-        exit(1);
-      }
-      break;
-    case 4:
-      answer = SHELL4;
-      break;
-    case 8:
-      answer = SHELL8;
-      break;
-    case 9:
-      answer = SHELL9;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported SHELL element");
-      error_report();
-      exit(1);
     }
-  }
-  break;
-  
+    break;
+
   case 'b':
   case 'B':
   case 't':
   case 'T':
   case 'r':
   case 'R':
-  if(strncasecmp(elem_name, "BEAM", 4) == 0 ||
-     strncasecmp(elem_name, "TRUSS", 5) == 0 ||
-     strncasecmp(elem_name, "ROD", 3) == 0 ||
-     strncasecmp(elem_name, "BAR", 3) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 2:
-      answer=BAR2;
-      break;
-    case 3:
-      answer=BAR3;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported BAR/BEAM/TRUSS element");
-      error_report();
-      exit(1);
+    if (strncasecmp(elem_name, "BEAM", 4) == 0 || strncasecmp(elem_name, "TRUSS", 5) == 0 ||
+        strncasecmp(elem_name, "ROD", 3) == 0 || strncasecmp(elem_name, "BAR", 3) == 0) {
+      switch (num_nodes) {
+      case 2: answer = BAR2; break;
+      case 3: answer = BAR3; break;
+      default:
+        Gen_Error(0, "fatal: unsupported BAR/BEAM/TRUSS element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  else if(strncasecmp(elem_name, "TRI", 3) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 3:
-      if (num_dim == 2) answer = TRI3;
-      else              answer = TSHELL3;
-      break;
-    case 6:
-      if (num_dim == 2) answer = TRI6;
-      else              answer = TSHELL6;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported TRI element");
-      error_report();
-      exit(1);
+    else if (strncasecmp(elem_name, "TRI", 3) == 0) {
+      switch (num_nodes) {
+      case 3:
+        if (num_dim == 2)
+          answer = TRI3;
+        else
+          answer = TSHELL3;
+        break;
+      case 4:
+        if (num_dim == 2)
+          answer = TRI4;
+        else
+          answer = TSHELL4;
+        break;
+      case 6:
+        if (num_dim == 2)
+          answer = TRI6;
+        else
+          answer = TSHELL6;
+        break;
+      case 7:
+        if (num_dim == 2)
+          answer = TRI7;
+        else
+          answer = TSHELL7;
+        break;
+      default:
+        Gen_Error(0, "fatal: unsupported TRI element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  else if(strncasecmp(elem_name, "TET", 3) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 4:
-      answer = TET4;
-      break;
-    case 8:
-      answer = TET8;
-      break;
-    case 10:
-      answer = TET10;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported TET element");
-      error_report();
-      exit(1);
+    else if (strncasecmp(elem_name, "TET", 3) == 0) {
+      switch (num_nodes) {
+      case 4: answer  = TET4; break;
+      case 8: answer  = TET8; break;
+      case 10: answer = TET10; break;
+      case 14: answer = TET14; break;
+      case 15: answer = TET15; break;
+      default:
+        Gen_Error(0, "fatal: unsupported TET element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  break;
-  
+    break;
+
   case 'q':
   case 'Q':
-  if(strncasecmp(elem_name, "QUAD", 4) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 4:
-      if(num_dim == 2) answer = QUAD4;
-      else             answer = SHELL4;
-      break;
-    case 8:
-      if(num_dim == 2) answer = QUAD8;
-      else             answer = SHELL8;
-      break;
-    case 9:
-      if(num_dim == 2) answer = QUAD9;
-      else             answer = SHELL9;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported QUAD element");
-      error_report();
-      exit(1);
+    if (strncasecmp(elem_name, "QUAD", 4) == 0) {
+      switch (num_nodes) {
+      case 4:
+        if (num_dim == 2)
+          answer = QUAD4;
+        else
+          answer = SHELL4;
+        break;
+      case 8:
+        if (num_dim == 2)
+          answer = QUAD8;
+        else
+          answer = SHELL8;
+        break;
+      case 9:
+        if (num_dim == 2)
+          answer = QUAD9;
+        else
+          answer = SHELL9;
+        break;
+      default:
+        Gen_Error(0, "fatal: unsupported QUAD element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  break;
+    break;
 
   case 'w':
   case 'W':
-  if(strncasecmp(elem_name, "WEDGE", 5) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 6:
-      answer = WEDGE6;
-      break;
-    case 15:
-      answer = WEDGE16;
-      break;
-    case 16:
-      answer = WEDGE15;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported WEDGE element");
-      error_report();
-      exit(1);
+    if (strncasecmp(elem_name, "WEDGE", 5) == 0) {
+      switch (num_nodes) {
+      case 6: answer  = WEDGE6; break;
+      case 15: answer = WEDGE15; break;
+      case 16: answer = WEDGE16; break;
+      case 20: answer = WEDGE20; break;
+      case 21: answer = WEDGE21; break;
+      default:
+        Gen_Error(0, "fatal: unsupported WEDGE element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  break;
-  
+    break;
+
   case 'p':
   case 'P':
-  if(strncasecmp(elem_name, "PYR", 3) == 0)
-  {
-    switch(num_nodes)
-    {
-    case 5:
-      answer = PYRAMID5;
-      break;
-    case 13:
-      answer = PYRAMID13;
-      break;
-    default:
-      Gen_Error(0, "fatal: unsupported PYRAMID element");
-      error_report();
-      exit(1);
+    if (strncasecmp(elem_name, "PYR", 3) == 0) {
+      switch (num_nodes) {
+      case 5: answer  = PYRAMID5; break;
+      case 13: answer = PYRAMID13; break;
+      default:
+        Gen_Error(0, "fatal: unsupported PYRAMID element");
+        error_report();
+        exit(1);
+      }
     }
-  }
-  break;
-  
-  default:
     break;
+
+  default: break;
   }
-  
+
   if (answer == NULL_EL) {
     char errstr[80];
     sprintf(errstr, "fatal: unknown element type '%s' read", elem_name);
@@ -298,7 +284,7 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
     error_report();
     exit(1);
   }
-  
+
   return answer;
 
 } /*---------------------------End get_elem_type()---------------------------*/
@@ -313,25 +299,16 @@ E_Type get_elem_type(const char *elem_name, const int num_nodes,
 int get_elem_info(const int req, const E_Type etype)
 {
 
-  int answer=0;
+  int answer = 0;
 
-  switch(etype)		/* Switch over the element type */
+  switch (etype) /* Switch over the element type */
   {
   case BAR2:
-    switch(req)
-    {
-    case NNODES:
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 1;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 1;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 1; break;
+    case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -340,20 +317,11 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case SHELL2:
-    switch(req)
-    {
-    case NNODES:
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 1;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 1;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 1; break;
+    case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -362,20 +330,11 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case SHELL3:
-    switch(req)
-    {
-    case NNODES:
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 1;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 1;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 3; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 1; break;
+    case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -384,20 +343,11 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case BAR3:
-    switch(req)
-    {
-    case NNODES:
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 1;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 1;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 3; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 1; break;
+    case NDIM: /* number of physical dimensions */ answer = 1; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -406,38 +356,21 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case SPHERE:
-    switch(req)
-    {
-    case NNODES:
-      answer = 1;
-      break;
-    case NSIDE_NODES:
-      answer = 0;
-      break;
-    case NSIDES:
-      answer = 0;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 1; break;
+    case NSIDE_NODES: answer                              = 0; break;
+    case NSIDES: answer                                   = 0; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     }
     break;
 
-  case QUAD4:		/* First order quad */
-    switch(req)		/* select type of information required*/
+  case QUAD4:    /* First order quad */
+    switch (req) /* select type of information required*/
     {
-    case NNODES:	/* number of nodes */
-      answer = 4;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal:unknown quantity");
       error_report();
@@ -445,21 +378,13 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case QUAD8:		/* 2nd order serendipity quad */
-    switch(req)		/* select type of information required */
+  case QUAD8:    /* 2nd order serendipity quad */
+    switch (req) /* select type of information required */
     {
-    case NNODES:		/* number of nodes */
-      answer = 8;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 3;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 8; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -467,21 +392,13 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case QUAD9:	/* biquadratic quadrilateral */
-    switch(req)		/* select type of information required */
+  case QUAD9:    /* biquadratic quadrilateral */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 9;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 3;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 9; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -491,17 +408,10 @@ int get_elem_info(const int req, const E_Type etype)
 
   /* NOTE: cannot determine NSIDE_NODES for SHELL element */
   case SHELL4:
-    switch(req)
-    {
-    case NNODES:
-      answer = 4;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 4; break;
+    case NSIDES: answer                                   = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -510,17 +420,10 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case SHELL8:
-    switch(req)
-    {
-    case NNODES:
-      answer = 8;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 8; break;
+    case NSIDES: answer                                   = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -529,17 +432,10 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case SHELL9:
-    switch(req)
-    {
-    case NNODES:
-      answer = 9;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 9; break;
+    case NSIDES: answer                                   = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -548,20 +444,26 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case TRI3:
-    switch(req)		/* select type of information required */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 3;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 3;
-      break;
+    case NNODES: /* number of nodes */ answer             = 3; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TRI4:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 2; break;
+    case NSIDES: answer                                   = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -570,20 +472,26 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case TRI6:
-    switch(req)		/* select type of information required */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 6;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDE_NODES:
-      answer = 3;
-      break;
-    case NSIDES:
-      answer = 3;
-      break;
+    case NNODES: /* number of nodes */ answer             = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TRI7:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 7; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -593,17 +501,24 @@ int get_elem_info(const int req, const E_Type etype)
 
   /* NOTE: cannot determine NSIDE_NODES for TSHELL element */
   case TSHELL3:
-    switch(req)		/* select type of information required */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 3;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
+    case NNODES: /* number of nodes */ answer             = 3; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TSHELL4:
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -612,17 +527,11 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case TSHELL6:
-    switch(req)		/* select type of information required */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 6;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 2;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
+    case NNODES: /* number of nodes */ answer             = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -630,21 +539,12 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case HEX8:		/* trilinear hexahedron */
-    switch(req)	/* select type of information required */
+  case TSHELL7:
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 8;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 4;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
+    case NNODES: /* number of nodes */ answer             = 7; break;
+    case NDIM: /* number of physical dimensions */ answer = 2; break;
+    case NSIDES: answer                                   = 5; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -652,21 +552,13 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case HEX20:		/* serendipity triquadratic hexahedron */
-    switch(req)	/* select type of information required */
+  case HEX8:     /* trilinear hexahedron */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 20;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 8;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
+    case NNODES: /* number of nodes */ answer             = 8; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 4; break;
+    case NSIDES: answer                                   = 6; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -674,21 +566,27 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case HEX27:		/* triquadratic hexahedron */
-    switch(req)		/* select type of information required*/
+  case HEX20:    /* serendipity triquadratic hexahedron */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 27;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 9;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
+    case NNODES: /* number of nodes */ answer             = 20; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 8; break;
+    case NSIDES: answer                                   = 6; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case HEX27:    /* triquadratic hexahedron */
+    switch (req) /* select type of information required*/
+    {
+    case NNODES: /* number of nodes */ answer             = 27; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 9; break;
+    case NSIDES: answer                                   = 6; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -698,17 +596,10 @@ int get_elem_info(const int req, const E_Type etype)
 
   /* NOTE: cannot determine NSIDE_NODES for HEXSHELL element */
   case HEXSHELL:
-    switch(req)
-    {
-    case NNODES:
-      answer = 12;
-      break;
-    case NSIDES:
-      answer = 6;
-      break;
-    case NDIM:          /* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 12; break;
+    case NSIDES: answer                                   = 6; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -716,21 +607,13 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET4:		/* trilinear tetrahedron */
-    switch(req)		/* select type of information required*/
+  case TET4:     /* trilinear tetrahedron */
+    switch (req) /* select type of information required*/
     {
-    case NNODES:	/* number of nodes */
-      answer = 4;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 3;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 4; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 3; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -738,21 +621,13 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET10:		/* triquadradic tetrahedron */
-    switch(req)		/* select type of information required */
+  case TET10:    /* triquadradic tetrahedron */
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 10;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 6;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 10; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 6; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -760,21 +635,41 @@ int get_elem_info(const int req, const E_Type etype)
     }
     break;
 
-  case TET8:		/* 8-node (midface nodes) tetrahedron */
-    switch(req)		/* select type of information required */
+  case TET14:   
+    switch (req) /* select type of information required */
     {
-    case NNODES:	/* number of nodes */
-      answer = 8;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
-    case NSIDE_NODES:
-      answer = 4;
-      break;
-    case NSIDES:
-      answer = 4;
-      break;
+    case NNODES: /* number of nodes */ answer             = 14; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 7; break;
+    case NSIDES: answer                                   = 4; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TET15:   
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 15; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 7; break;
+    case NSIDES: answer                                   = 4; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case TET8:     /* 8-node (midface nodes) tetrahedron */
+    switch (req) /* select type of information required */
+    {
+    case NNODES: /* number of nodes */ answer             = 8; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    case NSIDE_NODES: answer                              = 4; break;
+    case NSIDES: answer                                   = 4; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -784,17 +679,10 @@ int get_elem_info(const int req, const E_Type etype)
 
   /* NOTE: cannot determine NSIDE_NODES for WEDGE elements */
   case WEDGE6:
-    switch(req)
-    {
-    case NNODES:
-      answer = 6;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 6; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -803,17 +691,10 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case WEDGE15:
-    switch(req)
-    {
-    case NNODES:
-      answer = 16;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 15; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -822,17 +703,34 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case WEDGE16:
-    switch(req)
-    {
-    case NNODES:
-      answer = 15;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
-    case NDIM:		/* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 16; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case WEDGE20:
+    switch (req) {
+    case NNODES: answer                                   = 20; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
+    default:
+      Gen_Error(0, "fatal: unknown quantity");
+      error_report();
+      exit(1);
+    }
+    break;
+
+  case WEDGE21:
+    switch (req) {
+    case NNODES: answer                                   = 21; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -842,17 +740,10 @@ int get_elem_info(const int req, const E_Type etype)
 
   /* NOTE: cannot determine NSIDE_NODES for PYRAMID element */
   case PYRAMID5:
-    switch(req)
-    {
-    case NNODES:
-      answer = 5;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
-    case NDIM:          /* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 5; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -861,17 +752,10 @@ int get_elem_info(const int req, const E_Type etype)
     break;
 
   case PYRAMID13:
-    switch(req)
-    {
-    case NNODES:
-      answer = 13;
-      break;
-    case NSIDES:
-      answer = 5;
-      break;
-    case NDIM:          /* number of physical dimensions */
-      answer = 3;
-      break;
+    switch (req) {
+    case NNODES: answer                                   = 13; break;
+    case NSIDES: answer                                   = 5; break;
+    case NDIM: /* number of physical dimensions */ answer = 3; break;
     default:
       Gen_Error(0, "fatal: unknown quantity");
       error_report();
@@ -903,28 +787,28 @@ int get_elem_info(const int req, const E_Type etype)
  * Now supoports degenerate faces in HEX elements.
  *****************************************************************************/
 template int get_side_id(const E_Type etype, const int *connect, const int nsnodes,
-			 int side_nodes[], const int skip_check, const int partial_adj);
+                         int side_nodes[], const int skip_check, const int partial_adj);
 template int get_side_id(const E_Type etype, const int64_t *connect, const int nsnodes,
-			 int64_t side_nodes[], const int skip_check, const int partial_adj);
+                         int64_t side_nodes[], const int skip_check, const int partial_adj);
 
 template <typename INT>
-int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
-                INT side_nodes[], const int skip_check, const int partial_adj)
+int get_side_id(const E_Type etype, const INT *connect, const int nsnodes, INT side_nodes[],
+                const int skip_check, const int partial_adj)
 {
-  const char *func_name="get_side_id";
+  const char *func_name = "get_side_id";
 
   int dup, location[9];
   int count;
-  /*  min_match for hex elements means that min_match+1 nodes 
+  /*  min_match for hex elements means that min_match+1 nodes
       on a face of a hex must match to return the side of the
       hex on which the nodes exist, i.e., if 3/4 nodes of a hex
-      match, then it might be considered connected.  If it is 
-      connected, then min_match states if 3/4 nodes is considered a face of 
+      match, then it might be considered connected.  If it is
+      connected, then min_match states if 3/4 nodes is considered a face of
       a hex or not */
 
   /*  Default for min_match is 3, 2 is trial and error stuff */
 
-  const int min_match = 3; 
+  const int min_match = 3;
   /* const int min_match = 2; */
 
   /* check if this is a degenerate face */
@@ -941,31 +825,30 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
 
   /* Find all of the side nodes in the connect table */
   int num = 0;
-  for(int i=0; i < nnodes; i++) {
-    for(int j=0; j < nsnodes; j++)  {
-      if(connect[i] == side_nodes[j]) {
+  for (int i = 0; i < nnodes; i++) {
+    for (int j = 0; j < nsnodes; j++) {
+      if (connect[i] == side_nodes[j]) {
         num++;
         break;
       }
     }
-    if(num == nsnodes)
+    if (num == nsnodes)
       break;
   }
 
   /* printf("%s::%d num = %d and nsnodes = %d\n",__FILE__,__LINE__,num,nsnodes); */
 
-  /* I commented out the conditional statement causing the 
+  /* I commented out the conditional statement causing the
      error if 2 hexes only share 3 out of 4 nodes.  I replaced
      this with what is seen below.  It works, but only for
      this particular case */
 
-
-  /* the following ifdef is used to determine face adjacency 
+  /* the following ifdef is used to determine face adjacency
      old way:  numnodes on face must match on both elements
      new way:  only 3/4 of hex nodes have to match to be face adjacent */
 
-  if (((partial_adj == 1) && (num < nsnodes - 1) &&  (num >= 2)) ||
-      ((partial_adj != 1) && (num != nsnodes ))) {
+  if (((partial_adj == 1) && (num < nsnodes - 1) && (num >= 2)) ||
+      ((partial_adj != 1) && (num != nsnodes))) {
     if (skip_check)
       Gen_Error(0, "warning: not all side nodes in connect table for element");
     else {
@@ -974,415 +857,432 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
     }
   }
 
-  if ((partial_adj == 1) && ( num != nsnodes )) {
+  if ((partial_adj == 1) && (num != nsnodes)) {
     return 0;
   }
 
   /* Find the side ID */
-  switch(etype)
-    {
-    case BAR2: 
-    case BAR3:
-    case SHELL2:
-    case SHELL3:
-      /* SIDE 1 */
-      if (side_nodes[0] == connect[0] &&
-	  side_nodes[1] == connect[1]) return 1;
-      break;
-    case QUAD4:
-    case QUAD8:
-    case QUAD9:
-      /* SIDE 1 */
-      if (side_nodes[0] == connect[0] &&
-	  side_nodes[1] == connect[1]) return 1;
+  switch (etype) {
+  case BAR2:
+  case BAR3:
+  case SHELL2:
+  case SHELL3:
+    /* SIDE 1 */
+    if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
+      return 1;
+    break;
+  case QUAD4:
+  case QUAD8:
+  case QUAD9:
+    /* SIDE 1 */
+    if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
+      return 1;
 
-      /* SIDE 2 */
-      if (side_nodes[0] == connect[1] &&
-	  side_nodes[1] == connect[2]) return 2;
+    /* SIDE 2 */
+    if (side_nodes[0] == connect[1] && side_nodes[1] == connect[2])
+      return 2;
 
+    /* SIDE 3 */
+    if (side_nodes[0] == connect[2] && side_nodes[1] == connect[3])
+      return 3;
+
+    /* SIDE 4 */
+    if (side_nodes[0] == connect[3] && side_nodes[1] == connect[0])
+      return 4;
+
+    break;
+
+  case TRI3:
+  case TRI4:
+  case TRI6:
+  case TRI7:
+    /* SIDE 1 */
+    if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
+      return 1;
+
+    /* SIDE 2 */
+    if (side_nodes[0] == connect[1] && side_nodes[1] == connect[2])
+      return 2;
+
+    /* SIDE 3 */
+    if (side_nodes[0] == connect[2] && side_nodes[1] == connect[0])
+      return 3;
+
+    break;
+
+  case TET4:
+  case TET10:
+  case TET14:
+  case TET15:
+  case TET8:
+    /* check the # of side nodes */
+    if (nsnodes < 3)
+      return 0;
+
+    /* SIDE 1 */
+    if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == connect[1] && side_nodes[(2 + num) % 3] == connect[3])
+        return 1;
+    }
+
+    /* SIDE 2 */
+    if ((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == connect[2] && side_nodes[(2 + num) % 3] == connect[3])
+        return 2;
+    }
+
+    /* SIDE 3 */
+    if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == connect[3] && side_nodes[(2 + num) % 3] == connect[2])
+        return 3;
+    }
+
+    /* SIDE 4 */
+    if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == connect[2] && side_nodes[(2 + num) % 3] == connect[1])
+        return 4;
+    }
+
+    break;
+
+  case HEX8:
+  case HEX20:
+  case HEX27:
+  case HEXSHELL: /* this should be the same as a HEX element */
+    /* check the # of side nodes */
+    if (nsnodes < 4)
+      return 0;
+
+    /* SIDE 1 */
+    if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[1]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[5]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[4]);
+      if (count >= min_match)
+        return 1;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[0] == side_nodes[location[i]]) {
+            num   = in_list(connect[0], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[1]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[5]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[4]);
+            if (count >= min_match)
+              return 1;
+          }
+        }
+      }
+    }
+
+    /* SIDE 2 */
+    if ((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[2]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[6]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[5]);
+      if (count >= min_match)
+        return 2;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[1] == side_nodes[location[i]]) {
+            num   = in_list(connect[1], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[2]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[6]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[5]);
+            if (count >= min_match)
+              return 2;
+          }
+        }
+      }
+    }
+
+    /* SIDE 3 */
+    if ((num = in_list(connect[2], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[3]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[7]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[6]);
+      if (count >= min_match)
+        return 3;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[2] == side_nodes[location[i]]) {
+            num   = in_list(connect[2], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[3]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[7]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[6]);
+            if (count >= min_match)
+              return 3;
+          }
+        }
+      }
+    }
+
+    /* SIDE 4 */
+    if ((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[0]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[4]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[7]);
+      if (count >= min_match)
+        return 4;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[3] == side_nodes[location[i]]) {
+            num   = in_list(connect[3], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[0]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[4]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[7]);
+            if (count >= min_match)
+              return 4;
+          }
+        }
+      }
+    }
+
+    /* SIDE 5 */
+    if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[3]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[2]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[1]);
+      if (count >= min_match)
+        return 5;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[0] == side_nodes[location[i]]) {
+            num   = in_list(connect[0], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[3]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[2]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[1]);
+            if (count >= min_match)
+              return 5;
+          }
+        }
+      }
+    }
+
+    /* SIDE 6 */
+    if ((num = in_list(connect[4], nsnodes, side_nodes)) >= 0) {
+      count = 0;
+      count += numbermatch(side_nodes, 1, num, 4, connect[5]);
+      count += numbermatch(side_nodes, 2, num, 4, connect[6]);
+      count += numbermatch(side_nodes, 3, num, 4, connect[7]);
+      if (count >= min_match)
+        return 6;
+
+      /* if this is the duplicated node, then find the next occurence */
+      if (dup) {
+        for (int i = 0; i < dup; i++) {
+          if (connect[4] == side_nodes[location[i]]) {
+            num   = in_list(connect[4], (nsnodes - num), &(side_nodes[num + 1])) + location[i] + 1;
+            count = 0;
+            count += numbermatch(side_nodes, 1, num, 4, connect[5]);
+            count += numbermatch(side_nodes, 2, num, 4, connect[6]);
+            count += numbermatch(side_nodes, 3, num, 4, connect[7]);
+            if (count >= min_match)
+              return 6;
+          }
+        }
+      }
+    }
+
+    break;
+
+  case SHELL4:
+  case SHELL8:
+  case SHELL9:
+
+    /* 2D sides */
+    if (nsnodes == 2 || nsnodes == 3) {
       /* SIDE 3 */
-      if (side_nodes[0] == connect[2] &&
-	  side_nodes[1] == connect[3]) return 3;
+      if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
+        return 3;
 
       /* SIDE 4 */
-      if (side_nodes[0] == connect[3] &&
-	  side_nodes[1] == connect[0]) return 4;
+      if (side_nodes[0] == connect[1] && side_nodes[1] == connect[2])
+        return 4;
 
-      break;
+      /* SIDE 5 */
+      if (side_nodes[0] == connect[2] && side_nodes[1] == connect[3])
+        return 5;
 
-    case TRI3:
-    case TRI6:
-      /* SIDE 1 */
-      if (side_nodes[0] == connect[0] &&
-	  side_nodes[1] == connect[1]) return 1;
+      /* SIDE 6 */
+      if (side_nodes[0] == connect[3] && side_nodes[1] == connect[0])
+        return 6;
+    }
 
-      /* SIDE 2 */
-      if (side_nodes[0] == connect[1] &&
-	  side_nodes[1] == connect[2]) return 2;
-
-      /* SIDE 3 */
-      if (side_nodes[0] == connect[2] &&
-	  side_nodes[1] == connect[0]) return 3;
-
-      break;
-
-    case TET4:
-    case TET10:
-    case TET8:
-      /* check the # of side nodes */
-      if (nsnodes < 3) return 0;
+    /* 3D faces */
+    else if (nsnodes == 4 || nsnodes == 8 || nsnodes == 9) {
 
       /* SIDE 1 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	if (side_nodes[(1 + num) % 3] == connect[1] &&
-	    side_nodes[(2 + num) % 3] == connect[3]) return 1;
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[1] && side_nodes[(2 + num) % 4] == connect[2] &&
+            side_nodes[(3 + num) % 4] == connect[3])
+          return 1;
       }
 
       /* SIDE 2 */
-      if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-	if (side_nodes[(1 + num) % 3] == connect[2] &&
-	    side_nodes[(2 + num) % 3] == connect[3]) return 2;
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[3] && side_nodes[(2 + num) % 4] == connect[2] &&
+            side_nodes[(3 + num) % 4] == connect[1])
+          return 2;
+      }
+    }
+
+    break;
+
+  case WEDGE6:
+  case WEDGE15:
+  case WEDGE16:
+  case WEDGE20:
+  case WEDGE21:
+
+    /* quad sides */
+    if (nsnodes == 4 || nsnodes == 8 || nsnodes == 9) {
+      /* SIDE 1 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[1] && side_nodes[(2 + num) % 4] == connect[4] &&
+            side_nodes[(3 + num) % 4] == connect[3])
+          return 1;
+      }
+
+      /* SIDE 2 */
+      if ((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[2] && side_nodes[(2 + num) % 4] == connect[5] &&
+            side_nodes[(3 + num) % 4] == connect[4])
+          return 2;
       }
 
       /* SIDE 3 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	if (side_nodes[(1 + num) % 3] == connect[3] &&
-	    side_nodes[(2 + num) % 3] == connect[2]) return 3;
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[3] && side_nodes[(2 + num) % 4] == connect[5] &&
+            side_nodes[(3 + num) % 4] == connect[2])
+          return 3;
       }
+    }
 
+    /* triangle sides */
+    else if (nsnodes == 3 || nsnodes == 6 || nsnodes == 7) {
       /* SIDE 4 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	if (side_nodes[(1 + num) % 3] == connect[2] &&
-	    side_nodes[(2 + num) % 3] == connect[1]) return 4;
-      }
-
-      break;
-
-    case HEX8:
-    case HEX20:
-    case HEX27:
-    case HEXSHELL:  /* this should be the same as a HEX element */
-      /* check the # of side nodes */
-      if (nsnodes < 4) return 0;
-
-      /* SIDE 1 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[1]);
-	count += numbermatch(side_nodes,2,num,4,connect[5]);
-	count += numbermatch(side_nodes,3,num,4,connect[4]);
-	if ( count >= min_match ) return 1;  
-
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[0] == side_nodes[location[i]]) {
-	      num = in_list(connect[0], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[1]);
-	      count += numbermatch(side_nodes,2,num,4,connect[5]);
-	      count += numbermatch(side_nodes,3,num,4,connect[4]); 
-	      if (count >=min_match ) return 1;       
-	    }
-	  }
-	}
-      }
-
-      /* SIDE 2 */
-      if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[2]);
-	count += numbermatch(side_nodes,2,num,4,connect[6]);
-	count += numbermatch(side_nodes,3,num,4,connect[5]);
-	if (count >= min_match) return 2;
-      
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[1] == side_nodes[location[i]]) {
-	      num = in_list(connect[1], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[2]);
-	      count += numbermatch(side_nodes,2,num,4,connect[6]);
-	      count += numbermatch(side_nodes,3,num,4,connect[5]);
-	      if (count >= min_match) return 2;
-	    }
-	  }
-	}
-      }
-
-      /* SIDE 3 */
-      if((num = in_list(connect[2], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[3]);
-	count += numbermatch(side_nodes,2,num,4,connect[7]);
-	count += numbermatch(side_nodes,3,num,4,connect[6]);
-	if (count >= min_match) return 3;
-   
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[2] == side_nodes[location[i]]) {
-	      num = in_list(connect[2], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[3]);
-	      count += numbermatch(side_nodes,2,num,4,connect[7]);
-	      count += numbermatch(side_nodes,3,num,4,connect[6]);
-	      if (count >= min_match) return 3;
-	    }
-	  }
-	}
-      }
-
-      /* SIDE 4 */
-      if((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[0]);
-	count += numbermatch(side_nodes,2,num,4,connect[4]);
-	count += numbermatch(side_nodes,3,num,4,connect[7]);
-	if (count >= min_match) return 4;
-
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[3] == side_nodes[location[i]]) {
-	      num = in_list(connect[3], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[0]);
-	      count += numbermatch(side_nodes,2,num,4,connect[4]);
-	      count += numbermatch(side_nodes,3,num,4,connect[7]);
-	      if (count >= min_match) return 4;
-	    }
-	  }
-	}
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[2] && side_nodes[(2 + num) % 3] == connect[1])
+          return 4;
       }
 
       /* SIDE 5 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[3]);
-	count += numbermatch(side_nodes,2,num,4,connect[2]);
-	count += numbermatch(side_nodes,3,num,4,connect[1]);
-	if (count >= min_match) return 5;
+      if ((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[4] && side_nodes[(2 + num) % 3] == connect[5])
+          return 5;
+      }
+    }
 
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[0] == side_nodes[location[i]]) {
-	      num = in_list(connect[0], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[3]);
-	      count += numbermatch(side_nodes,2,num,4,connect[2]);
-	      count += numbermatch(side_nodes,3,num,4,connect[1]);
-	      if (count >= min_match) return 5;
-	    }
-	  }
-	} 
+    break;
+
+  case TSHELL3:
+  case TSHELL4:
+  case TSHELL6:
+  case TSHELL7:
+
+    /* 2D sides */
+    if (nsnodes == 2 || (etype == TSHELL6 && nsnodes == 3) || (etype == TSHELL7 && nsnodes == 3)) {
+      /* SIDE 3 */
+      if (side_nodes[0] == connect[0] && side_nodes[1] == connect[1])
+        return 3;
+
+      /* SIDE 4 */
+      if (side_nodes[0] == connect[1] && side_nodes[1] == connect[2])
+        return 4;
+
+      /* SIDE 5 */
+      if (side_nodes[0] == connect[2] && side_nodes[1] == connect[0])
+        return 5;
+    }
+
+    /* 3D faces */
+    else if (nsnodes == 3 || nsnodes == 4 || nsnodes == 6 || nsnodes == 7) {
+
+      /* SIDE 1 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[1] && side_nodes[(2 + num) % 3] == connect[2])
+          return 1;
       }
 
-      /* SIDE 6 */
-      if((num = in_list(connect[4], nsnodes, side_nodes)) >= 0) {
-	count = 0;
-	count += numbermatch(side_nodes,1,num,4,connect[5]);
-	count += numbermatch(side_nodes,2,num,4,connect[6]);
-	count += numbermatch(side_nodes,3,num,4,connect[7]);
-	if (count >= min_match) return 6;
+      /* SIDE 2 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[2] && side_nodes[(2 + num) % 3] == connect[1])
+          return 2;
+      }
+    }
 
-	/* if this is the duplicated node, then find the next occurence */
-	if (dup) {
-	  for (int i=0; i < dup; i++) {
-	    if (connect[4] == side_nodes[location[i]]) {
-	      num = in_list(connect[4], (nsnodes-num), &(side_nodes[num+1])) + location[i] + 1;
-	      count = 0;
-	      count += numbermatch(side_nodes,1,num,4,connect[5]);
-	      count += numbermatch(side_nodes,2,num,4,connect[6]);
-	      count += numbermatch(side_nodes,3,num,4,connect[7]);
-	      if (count >= min_match) return 6;
-	    }
-	  }
-	}
+    break;
+
+  case PYRAMID5:
+  case PYRAMID13:
+    /* triangular sides */
+    if (nsnodes == 3 || nsnodes == 6) {
+      /* SIDE 1 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[1] && side_nodes[(2 + num) % 3] == connect[4])
+          return 1;
       }
 
-      break;
-
-    case SHELL4:
-    case SHELL8:
-    case SHELL9:
-
-      /* 2D sides */
-      if(nsnodes == 2 || nsnodes == 3) {
-	/* SIDE 3 */
-	if (side_nodes[0] == connect[0] &&
-	    side_nodes[1] == connect[1]) return 3;
-
-	/* SIDE 4 */
-	if (side_nodes[0] == connect[1] &&
-	    side_nodes[1] == connect[2]) return 4;
-
-	/* SIDE 5 */
-	if (side_nodes[0] == connect[2] &&
-	    side_nodes[1] == connect[3]) return 5;
-
-	/* SIDE 6 */
-	if (side_nodes[0] == connect[3] &&
-	    side_nodes[1] == connect[0]) return 6;
+      /* SIDE 2 */
+      if ((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[2] && side_nodes[(2 + num) % 3] == connect[4])
+          return 2;
       }
 
-      /* 3D faces */
-      else if (nsnodes == 4 || nsnodes == 8 || nsnodes == 9) {
-
-	/* SIDE 1 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[1] &&
-	      side_nodes[(2 + num) % 4] == connect[2] &&
-	      side_nodes[(3 + num) % 4] == connect[3]) return 1;
-	}
-
-	/* SIDE 2 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[3] &&
-	      side_nodes[(2 + num) % 4] == connect[2] &&
-	      side_nodes[(3 + num) % 4] == connect[1]) return 2;
-	}
+      /* SIDE 3 */
+      if ((num = in_list(connect[2], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[3] && side_nodes[(2 + num) % 3] == connect[4])
+          return 3;
       }
 
-      break;
-
-    case WEDGE6:
-    case WEDGE15:
-    case WEDGE16:
-
-      /* quad sides */
-      if (nsnodes == 4 || nsnodes == 8) {
-	/* SIDE 1 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[1] &&
-	      side_nodes[(2 + num) % 4] == connect[4] &&
-	      side_nodes[(3 + num) % 4] == connect[3]) return 1;
-	}
-
-	/* SIDE 2 */
-	if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[2] &&
-	      side_nodes[(2 + num) % 4] == connect[5] &&
-	      side_nodes[(3 + num) % 4] == connect[4]) return 2;
-	}
-
-	/* SIDE 3 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[3] &&
-	      side_nodes[(2 + num) % 4] == connect[5] &&
-	      side_nodes[(3 + num) % 4] == connect[2]) return 3;
-	}
+      /* SIDE 4 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == connect[4] && side_nodes[(2 + num) % 3] == connect[3])
+          return 4;
       }
+    }
 
-      /* triangle sides */
-      else if (nsnodes == 3 || nsnodes == 6) {
-	/* SIDE 4 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[2] &&
-	      side_nodes[(2 + num) % 3] == connect[1]) return 4;
-	}
-
-	/* SIDE 5 */
-	if((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[4] &&
-	      side_nodes[(2 + num) % 3] == connect[5]) return 5;
-	}
+    else if (nsnodes == 4 || nsnodes == 8) {
+      /* SIDE 5 */
+      if ((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == connect[3] && side_nodes[(2 + num) % 4] == connect[2] &&
+            side_nodes[(3 + num) % 4] == connect[1])
+          return 5;
       }
+    }
 
-      break;
+    break;
 
-    case TSHELL3:
-    case TSHELL6:
+  case SPHERE: break;
 
-      /* 2D sides */
-      if(nsnodes == 2 || (etype == TSHELL6 && nsnodes == 3)) {
-	/* SIDE 3 */
-	if (side_nodes[0] == connect[0] &&
-	    side_nodes[1] == connect[1]) return 3;
-
-	/* SIDE 4 */
-	if (side_nodes[0] == connect[1] &&
-	    side_nodes[1] == connect[2]) return 4;
-
-	/* SIDE 5 */
-	if (side_nodes[0] == connect[2] &&
-	    side_nodes[1] == connect[0]) return 5;
-
-      }
-
-      /* 3D faces */
-      else if (nsnodes == 3 || nsnodes == 6) {
-
-	/* SIDE 1 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[1] &&
-	      side_nodes[(2 + num) % 3] == connect[2]) return 1;
-	}
-
-	/* SIDE 2 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[2] &&
-	      side_nodes[(2 + num) % 3] == connect[1]) return 2;
-	}
-      }
-
-      break;
-
-    case PYRAMID5:
-    case PYRAMID13:
-      /* triangular sides */
-      if(nsnodes == 3 || nsnodes == 6) {
-	/* SIDE 1 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[1] &&
-	      side_nodes[(2 + num) % 3] == connect[4]) return 1;
-	}
-
-	/* SIDE 2 */
-	if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[2] &&
-	      side_nodes[(2 + num) % 3] == connect[4]) return 2;
-	}
-
-	/* SIDE 3 */
-	if((num = in_list(connect[2], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[3] &&
-	      side_nodes[(2 + num) % 3] == connect[4]) return 3;
-	}
-
-	/* SIDE 4 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 3] == connect[4] &&
-	      side_nodes[(2 + num) % 3] == connect[3]) return 4;
-	}
-      }
-
-      else if (nsnodes == 4 || nsnodes == 8) {
-	/* SIDE 5 */
-	if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-	  if (side_nodes[(1 + num) % 4] == connect[3] &&
-	      side_nodes[(2 + num) % 4] == connect[2] &&
-	      side_nodes[(3 + num) % 4] == connect[1]) return 5;
-	}
-      }
-
-      break;
-
-    case SPHERE:
-      break;
-
-    default:
-      {
-	char  err_buff[300];
-	sprintf(err_buff, "fatal: unknown element type %d in function %s",
-		(int)etype, func_name);
-	Gen_Error(0, err_buff);
-	error_report();
-	exit(1);
-      }
-    } /* End "switch(etype)" */
+  default: {
+    char err_buff[300];
+    sprintf(err_buff, "fatal: unknown element type %d in function %s", (int)etype, func_name);
+    Gen_Error(0, err_buff);
+    error_report();
+    exit(1);
+  }
+  } /* End "switch(etype)" */
 
   return 0;
 } /*---------------------------End get_side_id()-----------------------------*/
@@ -1398,32 +1298,34 @@ int get_side_id(const E_Type etype, const INT *connect, const int nsnodes,
  * connected to a side of a hex, there are only three nodes connecting
  * the two. In this case a side id can be found.
  *****************************************************************************/
-template int get_side_id_hex_tet(const E_Type  etype, const int *connect, int  nsnodes, const int  side_nodes[]);
-template int get_side_id_hex_tet(const E_Type  etype, const int64_t *connect, int  nsnodes, const int64_t  side_nodes[]);
+template int get_side_id_hex_tet(const E_Type etype, const int *connect, int nsnodes,
+                                 const int side_nodes[]);
+template int get_side_id_hex_tet(const E_Type etype, const int64_t *connect, int nsnodes,
+                                 const int64_t side_nodes[]);
 
 template <typename INT>
-int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
-			const INT *connect,       /* The element connectivity */
-			int  nsnodes,             /* The number of side nodes */
-			const INT  side_nodes[])  /* The list of side node IDs */
+int get_side_id_hex_tet(const E_Type etype,        /* The element type */
+                        const INT *  connect,      /* The element connectivity */
+                        int          nsnodes,      /* The number of side nodes */
+                        const INT    side_nodes[]) /* The list of side node IDs */
 {
-  const char *func_name="get_side_id_hex";
+  const char *func_name = "get_side_id_hex";
 
-  int nnodes, lcnt, i1, i2;
+  int              nnodes, lcnt, i1, i2;
   std::vector<int> loc_node_ids(MAX_SIDE_NODES);
 
   nnodes = get_elem_info(NNODES, etype);
 
   /* Find the local node numbers for nodes forming the side */
   lcnt = 0;
-  for(i1=0; i1 < nnodes; i1++) {
-    for(i2=0; i2 < nsnodes; i2++) {
-      if(connect[i1] == side_nodes[i2]) {
-	loc_node_ids[lcnt++] = i1+1;
-	break;
+  for (i1 = 0; i1 < nnodes; i1++) {
+    for (i2 = 0; i2 < nsnodes; i2++) {
+      if (connect[i1] == side_nodes[i2]) {
+        loc_node_ids[lcnt++] = i1 + 1;
+        break;
       }
     }
-    if(lcnt == nsnodes)
+    if (lcnt == nsnodes)
       break;
   }
 
@@ -1431,25 +1333,27 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
   case TET4:
   case TET10:
   case TET8:
+  case TET14:
+  case TET15:
     /* SIDE 1 */
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 1;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 && in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+        in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      return 1;
 
     /* SIDE 2 */
-    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 2;
+    if (in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 && in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+        in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      return 2;
 
     /* SIDE 3 */
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) return 3;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 && in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+        in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      return 3;
 
     /* SIDE 4 */
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
-       in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) return 4;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0 && in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0 &&
+        in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0)
+      return 4;
 
     break;
 
@@ -1458,63 +1362,91 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
   case HEX27:
     /* SIDE 1 */
     nnodes = 0;
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++; 
-    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 1;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 1;
 
     /* SIDE 2 */
     nnodes = 0;
-    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 2;
+    if (in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 2;
 
     /* SIDE 3 */
     nnodes = 0;
-    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 3;
+    if (in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 3;
 
     /* SIDE 4 */
     nnodes = 0;
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 4;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 4;
 
     /* SIDE 5 */
     nnodes = 0;
-    if(in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 5;
+    if (in_list(1, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(2, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(3, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(4, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 5;
 
     /* SIDE 6 */
     nnodes = 0;
-    if(in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if(in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0) nnodes++;
-    if (nnodes > 2) return 6;
+    if (in_list(5, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(6, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(7, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (in_list(8, lcnt, TOPTR(loc_node_ids)) >= 0)
+      nnodes++;
+    if (nnodes > 2)
+      return 6;
 
     break;
 
-  default:
-    {
-      char  err_buff[300];
-      sprintf(err_buff, "fatal: unknown element type %d in function %s",
-	      (int)etype, func_name);
-      Gen_Error(0, err_buff);
-      error_report();
-      exit(1);
-    }
+  default: {
+    char err_buff[300];
+    sprintf(err_buff, "fatal: unknown element type %d in function %s", (int)etype, func_name);
+    Gen_Error(0, err_buff);
+    error_report();
+    exit(1);
+  }
 
   } /* End "switch(etype)" */
 
@@ -1530,16 +1462,18 @@ int get_side_id_hex_tet(const E_Type  etype,      /* The element type */
  * the element type, and the side id. It also returns the number of nodes
  * in that side.
  *****************************************************************************/
-template int ss_to_node_list(const E_Type  etype, const int *connect, int  side_num, int  ss_node_list[]);
-template int ss_to_node_list(const E_Type  etype, const int64_t *connect, int  side_num, int64_t  ss_node_list[]);
+template int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
+                             int ss_node_list[]);
+template int ss_to_node_list(const E_Type etype, const int64_t *connect, int side_num,
+                             int64_t ss_node_list[]);
 
 template <typename INT>
-int ss_to_node_list(const E_Type  etype,		/* The element type */
-		    const INT *connect,		/* The element connectivity */
-		    int  side_num,		/* The element side number */
-		    INT  ss_node_list[])		/* The list of side node IDs */
+int ss_to_node_list(const E_Type etype,          /* The element type */
+                    const INT *  connect,        /* The element connectivity */
+                    int          side_num,       /* The element side number */
+                    INT          ss_node_list[]) /* The list of side node IDs */
 {
-  int i=0;
+  int i = 0;
 
   /*
    * This function returns a list of global node numbers forming a
@@ -1548,75 +1482,108 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
 
   /* triangle */
   static int tri_table[3][3] = {
-  /*   1        2        3                                            side   */
-    {1,2,4}, {2,3,5}, {3,1,6}                                      /* nodes  */
+    {1, 2, 4}, // side 1
+    {2, 3, 5}, // side 2
+    {3, 1, 6}  // side 3
   };
 
   /* tshell */
-  static int tshell_table[2][6] = {
-  /*        1                  2                                      side   */
-    {1,2,3,4,5,6,}, {1,3,2,6,5,4}                                  /* nodes  */
+  static int tshell_table[2][7] = {
+    {1, 2, 3, 4, 5, 6, 7}, // side 1
+    {1, 3, 2, 6, 5, 4, 7}  // side 2
   };
 
   /* quad */
   static int quad_table[4][3] = {
-  /*   1        2        3        4                                   side   */
-    {1,2,5}, {2,3,6}, {3,4,7}, {4,1,8}                             /* nodes  */
+    {1, 2, 5}, // side 1
+    {2, 3, 6}, // side 2
+    {3, 4, 7}, // side 3
+    {4, 1, 8}  // side 4
   };
 
   /* shell */
   static int shell_table[2][9] = {
-  /*        1                  2                                      side   */
-    {1,2,3,4,5,6,7,8,9}, {1,4,3,2,8,7,6,5,9}                       /* nodes  */
+    {1, 2, 3, 4, 5, 6, 7, 8, 9}, // side 1
+    {1, 4, 3, 2, 8, 7, 6, 5, 9}  // side 2
   };
 
   /* tetra */
-  static int tetra_table[4][6] = {
-  /*      1              2               3               4            side   */
-    {1,2,4,5,9,8}, {2,3,4,6,10,9}, {1,4,3,8,10,7}, {1,3,2,7,6,5}   /* nodes  */
+  static int tetra_table[4][7] = {
+    {1, 2, 4, 5, 9, 8, 14},  /* Side 1 nodes */
+    {2, 3, 4, 6, 10, 9, 12}, /* Side 2 nodes */
+    {1, 4, 3, 8, 10, 7, 13}, /* Side 3 nodes */
+    {1, 3, 2, 7, 6, 5, 11}   /* Side 4 nodes */
   };
 
   /* wedge */
-  static int wedge_table[5][8] = {
-  /*        1                     2                     3             side   */
-    {1,2,5,4,7,11,13,10}, {2,3,6,5,8,12,14,11}, {1,4,6,3,10,15,12,9},
-  /*        4                  5                                      side   */
-    {1,3,2,9,8,7,0,0}, {4,5,6,13,14,15,0,0}                        /* nodes  */
+  /* wedge 6 or 7 */
+  static int wedge6_table[5][4] = {
+    {1, 2, 5, 4}, /* Side 1 nodes -- quad     */
+    {2, 3, 6, 5}, /* Side 2 nodes -- quad     */
+    {1, 4, 6, 3}, /* Side 3 nodes -- quad     */
+    {1, 3, 2, 0}, /* Side 4 nodes -- triangle */
+    {4, 5, 6, 0}  /* Side 5 nodes -- triangle */
   };
 
+  /* wedge 15 or 16 */
+  static int wedge15_table[5][8] = {
+      {1, 2, 5,  4,  7, 11, 13, 10}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 20 */
+  static int wedge20_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 20}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 18}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 19}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 16,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 17,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+
+  /* wedge 21 */
+  static int wedge21_table[5][9] = {
+      {1, 2, 5,  4,  7, 11, 13, 10, 21}, /* Side 1 nodes -- quad     */
+      {2, 3, 6,  5,  8, 12, 14, 11, 19}, /* Side 2 nodes -- quad     */
+      {1, 4, 6,  3, 10, 15, 12,  9, 20}, /* Side 3 nodes -- quad     */
+      {1, 3, 2,  9,  8,  7, 17,  0,  0}, /* Side 4 nodes -- triangle */
+      {4, 5, 6, 13, 14, 15, 18,  0,  0}  /* Side 5 nodes -- triangle */
+  };
+  
   /* hex */
   static int hex_table[6][9] = {
-  /*        1                     2                                   side   */
-    {1,2,6,5,9,14,17,13,26},  {2,3,7,6,10,15,18,14,25},
-  /*        3                     4                                   side   */
-    {3,4,8,7,11,16,19,15,27}, {4,1,5,8,13,20,16,12,24},
-  /*        5                     6                                   side   */
-    {1,4,3,2,12,11,10,9,22},  {5,6,7,8,17,18,19,20,23}                /*nodes*/
+    {1, 2, 6, 5,  9, 14, 17, 13, 26}, /* side 1 */
+    {2, 3, 7, 6, 10, 15, 18, 14, 25}, /* side 2 */
+    {3, 4, 8, 7, 11, 16, 19, 15, 27}, /* side 3 */
+    {1, 5, 8, 4, 13, 20, 16, 12, 24}, /* side 4 */
+    {1, 4, 3, 2, 12, 11, 10,  9, 22}, /* side 5 */
+    {5, 6, 7, 8, 17, 18, 19, 20, 23}  /* side 6 */
   };
 
   /* hexshell */
   static int hexshell_table[6][6] = {
-  /*      1               2                3                4         side   */
-    {1,2,6,5,10,9}, {2,3,7,6,11,10}, {3,4,8,7,12,11}, {4,1,5,8,9,12},
-  /*      5               6                                           side   */
-    {1,4,3,2,0,0},  {5,6,7,8,0,0}                                     /*nodes*/
+    {1, 2, 6, 5, 10, 9},   // side 1
+    {2, 3, 7, 6, 11, 10},  // side 2
+    {3, 4, 8, 7, 12, 11},  // side 3
+    {4, 1, 5, 8, 9, 12},   // side 4
+    {1, 4, 3, 2, 0, 0},    // side 5
+    {5, 6, 7, 8, 0, 0}     // side 6
   };
 
   /* pyramid */
   static int pyramid_table[5][8] = {
-  /*          1                   2                    3              side   */
-    {1,2,5,6,11,10,0,0}, {2,3,5,7,12,11,0,0}, {3,4,5,8,13,12,0,0},
-  /*          4                  5                                    side   */
-    {1,5,4,10,13,9,0,0}, {1,4,3,2,9,8,7,6}                         /* nodes  */
+    {1, 2, 5, 6, 11, 10, 0, 0}, // side 1 (tri)
+    {2, 3, 5, 7, 12, 11, 0, 0}, // side 2 (tri)
+    {3, 4, 5, 8, 13, 12, 0, 0}, // side 3 (tri)
+    {1, 5, 4, 10, 13, 9, 0, 0}, // side 4 (tri)
+    {1, 4, 3, 2, 9, 8, 7, 6}    // side 5 (quad)
   };
 
-  static int bar_table[1][3] = { {1, 2, 3} };
-
-/* {2, 0} , {1,2} */
-/***************************** execution begins ******************************/
+  static int bar_table[1][3] = {{1, 2, 3}};
 
   /* Locally decrement side_num */
-
   side_num--;
 
   /* Switch over the element type. */
@@ -1624,25 +1591,25 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
   case BAR2:
   case SHELL2:
     /* Bar1 has 1 side */
-        for (i=0;i<2;i++)
-           ss_node_list[i] = connect[(bar_table[side_num][i]-1)];
+    for (i            = 0; i < 2; i++)
+      ss_node_list[i] = connect[(bar_table[side_num][i] - 1)];
     break;
 
   case BAR3:
   case SHELL3:
     /* Bar has 1 side */
-        for (i=0;i<3;i++)
-	  ss_node_list[i] = connect[(bar_table[side_num][i]-1)];
+    for (i            = 0; i < 3; i++)
+      ss_node_list[i] = connect[(bar_table[side_num][i] - 1)];
     break;
-    
+
   case QUAD4:
-    for (i = 0; i < 2; i++)
+    for (i            = 0; i < 2; i++)
       ss_node_list[i] = connect[(quad_table[side_num][i] - 1)];
     break;
 
   case QUAD8:
   case QUAD9:
-    for (i = 0; i < 3; i++)
+    for (i            = 0; i < 3; i++)
       ss_node_list[i] = connect[(quad_table[side_num][i] - 1)];
     break;
 
@@ -1650,7 +1617,7 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     switch (side_num) {
     case 0:
     case 1:
-      for (i = 0; i < 4; i++)
+      for (i            = 0; i < 4; i++)
         ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
       break;
 
@@ -1659,8 +1626,8 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
        * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
        * of the quad element.
        */
-      for (i = 0; i < 2; i++)
-        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+      for (i            = 0; i < 2; i++)
+        ss_node_list[i] = connect[(quad_table[(side_num - 2)][i] - 1)];
       break;
     }
     break;
@@ -1669,7 +1636,7 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     switch (side_num) {
     case 0:
     case 1:
-      for (i = 0; i < 8; i++)
+      for (i            = 0; i < 8; i++)
         ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
       break;
 
@@ -1678,8 +1645,8 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
        * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
        * of the quad element.
        */
-      for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+      for (i            = 0; i < 3; i++)
+        ss_node_list[i] = connect[(quad_table[(side_num - 2)][i] - 1)];
       break;
     }
     break;
@@ -1688,7 +1655,7 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     switch (side_num) {
     case 0:
     case 1:
-      for (i = 0; i < 9; i++)
+      for (i            = 0; i < 9; i++)
         ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
       break;
 
@@ -1697,27 +1664,30 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
        * sides 3, 4, 5, & 6 correspond to sides 1, 2, 3, & 4
        * of the quad element.
        */
-      for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+      for (i            = 0; i < 3; i++)
+        ss_node_list[i] = connect[(quad_table[(side_num - 2)][i] - 1)];
       break;
     }
     break;
 
   case TRI3:
-    for (i = 0; i < 2; i++)
+  case TRI4:
+    for (i            = 0; i < 2; i++)
       ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TRI6:
-    for (i = 0; i < 3; i++)
+  case TRI7:
+    for (i            = 0; i < 3; i++)
       ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TSHELL3:
+  case TSHELL4:
     switch (side_num) {
     case 0:
     case 1:
-      for (i = 0; i < 3; i++)
+      for (i            = 0; i < 3; i++)
         ss_node_list[i] = connect[(tshell_table[side_num][i] - 1)];
       break;
 
@@ -1726,17 +1696,18 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
        * sides 3, 4 & 5 correspond to sides 1, 2 & 3
        * of the tri element.
        */
-      for (i = 0; i < 2; i++)
-        ss_node_list[i] = connect[(tri_table[(side_num-2)][i] - 1)];
+      for (i            = 0; i < 2; i++)
+        ss_node_list[i] = connect[(tri_table[(side_num - 2)][i] - 1)];
       break;
     }
     break;
 
   case TSHELL6:
+  case TSHELL7:
     switch (side_num) {
     case 0:
     case 1:
-      for (i = 0; i < 6; i++)
+      for (i            = 0; i < 6; i++)
         ss_node_list[i] = connect[(tshell_table[side_num][i] - 1)];
       break;
 
@@ -1745,39 +1716,45 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
        * sides 3, 4 & 5 correspond to sides 1, 2 & 3
        * of the tri element.
        */
-      for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(tri_table[(side_num-2)][i] - 1)];
+      for (i            = 0; i < 3; i++)
+        ss_node_list[i] = connect[(tri_table[(side_num - 2)][i] - 1)];
       break;
     }
     break;
 
   case HEX8:
-    for (i = 0; i < 4; i++)
+    for (i            = 0; i < 4; i++)
       ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
     break;
 
   case HEX20:
-    for (i = 0; i < 8; i++)
+    for (i            = 0; i < 8; i++)
       ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
     break;
 
   case HEX27:
-    for (i = 0; i < 9; i++)
+    for (i            = 0; i < 9; i++)
       ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
     break;
 
   case TET4:
-    for (i = 0; i < 3; i++)
+    for (i            = 0; i < 3; i++)
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
     break;
 
   case TET10:
-    for (i = 0; i < 6; i++)
+    for (i            = 0; i < 6; i++)
+      ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
+    break;
+
+  case TET14:
+  case TET15:
+    for (i            = 0; i < 7; i++)
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
     break;
 
   case TET8:
-    for (i = 0; i < 4; i++)
+    for (i            = 0; i < 4; i++)
       ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
     break;
 
@@ -1785,43 +1762,59 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     switch (side_num) {
     case 3:
     case 4:
-      for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+      for (i            = 0; i < 3; i++)
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
 
     default:
-      for (i = 0; i < 4; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+      for (i            = 0; i < 4; i++)
+        ss_node_list[i] = connect[(wedge6_table[side_num][i] - 1)];
       break;
     }
     break;
 
   case WEDGE15:
-    switch (side_num) {
-    case 3:
-    case 4:
-      for (i = 0; i < 6; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
-      break;
-
-    default:
-      for (i = 0; i < 8; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
-      break;
-    }
-    break;
-
   case WEDGE16:
     switch (side_num) {
     case 3:
     case 4:
-      for (i = 0; i < 6; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+      for (i            = 0; i < 6; i++)
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
       break;
 
     default:
-      for (i = 0; i < 8; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+      for (i            = 0; i < 8; i++)
+        ss_node_list[i] = connect[(wedge15_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
+  case WEDGE20:
+    switch (side_num) {
+    case 3:
+    case 4:
+      for (i            = 0; i < 7; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(wedge20_table[side_num][i] - 1)];
+      break;
+    }
+    break;
+
+  case WEDGE21:
+    switch (side_num) {
+    case 3:
+    case 4:
+      for (i            = 0; i < 7; i++)
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
+      break;
+
+    default:
+      for (i            = 0; i < 9; i++)
+        ss_node_list[i] = connect[(wedge21_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1830,12 +1823,12 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
     switch (side_num) {
     case 4:
     case 5:
-      for (i = 0; i < 4; i++)
+      for (i            = 0; i < 4; i++)
         ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
       break;
 
     default:
-      for (i = 0; i < 6; i++)
+      for (i            = 0; i < 6; i++)
         ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
       break;
     }
@@ -1844,12 +1837,12 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
   case PYRAMID5:
     switch (side_num) {
     case 4:
-      for (i = 0; i < 4; i++)
+      for (i            = 0; i < 4; i++)
         ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
       break;
 
     default:
-      for (i = 0; i < 3; i++)
+      for (i            = 0; i < 3; i++)
         ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
       break;
     }
@@ -1858,21 +1851,19 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
   case PYRAMID13:
     switch (side_num) {
     case 4:
-      for (i = 0; i < 8; i++)
+      for (i            = 0; i < 8; i++)
         ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
       break;
 
     default:
-      for (i = 0; i < 6; i++)
+      for (i            = 0; i < 6; i++)
         ss_node_list[i] = connect[(pyramid_table[side_num][i] - 1)];
       break;
     }
     break;
 
   case SPHERE: /* SHPERE's have no side sets */
-  case NULL_EL:
-    i = 0;
-    break;
+  case NULL_EL: i = 0; break;
 
   } /* End "switch (etype)" */
 
@@ -1890,17 +1881,19 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
  * given. This will be the node list of a face that is connected
  * to this element on this face.
  *****************************************************************************/
-template int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num, int mirror_node_list[]);
-template int get_ss_mirror(const E_Type etype, const int64_t *ss_node_list, int side_num, int64_t mirror_node_list[]);
+template int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
+                           int mirror_node_list[]);
+template int get_ss_mirror(const E_Type etype, const int64_t *ss_node_list, int side_num,
+                           int64_t mirror_node_list[]);
 
 template <typename INT>
-int get_ss_mirror(const E_Type etype,		/* The element type */
-		  const INT *ss_node_list,	/* The list of side node IDs */
-		  int side_num,			/* The element side number */
-		  INT mirror_node_list[]	/* The list of the mirror side node IDs */
-		  )
+int get_ss_mirror(const E_Type etype,             /* The element type */
+                  const INT *  ss_node_list,      /* The list of side node IDs */
+                  int          side_num,          /* The element side number */
+                  INT          mirror_node_list[] /* The list of the mirror side node IDs */
+                  )
 {
-  int i=0;
+  int i = 0;
 
   /*
    * the following arrays are the conversion from the side to
@@ -1908,39 +1901,39 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
    */
 
   /* line (1-d) */
-  static int line_table[3] = {1,0,2};
+  static int line_table[3] = {1, 0, 2};
 
   /* square (2-d) */
-  static int sqr_table[9] = {0,3,2,1,7,6,5,4,8};
+  static int sqr_table[9] = {0, 3, 2, 1, 7, 6, 5, 4, 8};
 
   /* square hexshell (2-d) */
-  static int hs_table[6] = {0,3,2,1,5,4};
+  static int hs_table[6] = {0, 3, 2, 1, 5, 4};
 
   /* triangle (2-d) */
-  static int tri_table[6] = {1,0,2,3,5,4};
+  static int tri_table[7] = {1, 0, 2, 3, 5, 4, 6};
 
-/***************************** execution begins ******************************/
+  /***************************** execution begins ******************************/
 
   /* Switch over the element type. */
   switch (etype) {
   case BAR2:
   case SHELL2:
-    for (i = 0; i < 2; i++)
+    for (i                = 0; i < 2; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
   case BAR3:
   case SHELL3:
-    for (i = 0; i < 3; i++)
+    for (i                = 0; i < 3; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
   case QUAD4:
-    for (i = 0; i < 2; i++)
+    for (i                = 0; i < 2; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
 
   case QUAD8:
   case QUAD9:
-    for (i = 0; i < 3; i++)
+    for (i                = 0; i < 3; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
 
@@ -1948,12 +1941,12 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 1:
     case 2:
-      for (i = 0; i < 4; i++)
+      for (i                = 0; i < 4; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 2; i++)
+      for (i                = 0; i < 2; i++)
         mirror_node_list[i] = ss_node_list[line_table[i]];
       break;
     }
@@ -1963,12 +1956,12 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 1:
     case 2:
-      for (i = 0; i < 8; i++)
+      for (i                = 0; i < 8; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[line_table[i]];
       break;
     }
@@ -1978,24 +1971,26 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 1:
     case 2:
-      for (i = 0; i < 9; i++)
+      for (i                = 0; i < 9; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[line_table[i]];
       break;
     }
     break;
 
   case TRI3:
-    for (i = 0; i < 2; i++)
+  case TRI4:
+    for (i                = 0; i < 2; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
 
   case TRI6:
-    for (i = 0; i < 3; i++)
+  case TRI7:
+    for (i                = 0; i < 3; i++)
       mirror_node_list[i] = ss_node_list[line_table[i]];
     break;
 
@@ -2003,12 +1998,27 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 1:
     case 2:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 
     default:
-      for (i = 0; i < 2; i++)
+      for (i                = 0; i < 2; i++)
+        mirror_node_list[i] = ss_node_list[line_table[i]];
+      break;
+    }
+    break;
+
+  case TSHELL4:
+    switch (side_num) {
+    case 1:
+    case 2:
+      for (i                = 0; i < 4; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 2; i++)
         mirror_node_list[i] = ss_node_list[line_table[i]];
       break;
     }
@@ -2018,44 +2028,65 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 1:
     case 2:
-      for (i = 0; i < 6; i++)
+      for (i                = 0; i < 6; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 
     default:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
+        mirror_node_list[i] = ss_node_list[line_table[i]];
+      break;
+    }
+    break;
+
+  case TSHELL7:
+    switch (side_num) {
+    case 1:
+    case 2:
+      for (i                = 0; i < 7; i++)
+        mirror_node_list[i] = ss_node_list[tri_table[i]];
+      break;
+
+    default:
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[line_table[i]];
       break;
     }
     break;
 
   case HEX8:
-    for (i = 0; i < 4; i++)
+    for (i                = 0; i < 4; i++)
       mirror_node_list[i] = ss_node_list[sqr_table[i]];
     break;
 
   case HEX27:
-    for (i = 0; i < 9; i++)
+    for (i                = 0; i < 9; i++)
       mirror_node_list[i] = ss_node_list[sqr_table[i]];
     break;
 
   case HEX20:
-    for (i = 0; i < 8; i++)
+    for (i                = 0; i < 8; i++)
       mirror_node_list[i] = ss_node_list[sqr_table[i]];
     break;
 
   case TET4:
-    for (i = 0; i < 3; i++)
+    for (i                = 0; i < 3; i++)
       mirror_node_list[i] = ss_node_list[tri_table[i]];
     break;
 
   case TET8:
-    for (i = 0; i < 4; i++)
+    for (i                = 0; i < 4; i++)
       mirror_node_list[i] = ss_node_list[tri_table[i]];
     break;
 
   case TET10:
-    for (i = 0; i < 6; i++)
+    for (i                = 0; i < 6; i++)
+      mirror_node_list[i] = ss_node_list[tri_table[i]];
+    break;
+
+  case TET14:
+  case TET15:
+    for (i                = 0; i < 7; i++)
       mirror_node_list[i] = ss_node_list[tri_table[i]];
     break;
 
@@ -2063,42 +2094,44 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 4:
     case 5:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 
     default:
-      for (i = 0; i < 4; i++)
+      for (i                = 0; i < 4; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
     }
     break;
 
   case WEDGE15:
+  case WEDGE16:
     switch (side_num) {
     case 4:
     case 5:
-      for (i = 0; i < 6; i++)
+      for (i                = 0; i < 6; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 
     default:
-      for (i = 0; i < 8; i++)
+      for (i                = 0; i < 8; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
     }
     break;
 
-  case WEDGE16:
+  case WEDGE20:
+  case WEDGE21:
     switch (side_num) {
     case 4:
     case 5:
-      for (i = 0; i < 6; i++)
+      for (i                = 0; i < 7; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
 
     default:
-      for (i = 0; i < 8; i++)
+      for (i                = 0; i < 9; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
     }
@@ -2108,12 +2141,12 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
     switch (side_num) {
     case 5:
     case 6:
-      for (i = 0; i < 4; i++)
+      for (i                = 0; i < 4; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 6; i++)
+      for (i                = 0; i < 6; i++)
         mirror_node_list[i] = ss_node_list[hs_table[i]];
       break;
     }
@@ -2122,12 +2155,12 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
   case PYRAMID5:
     switch (side_num) {
     case 5:
-      for (i = 0; i < 4; i++)
+      for (i                = 0; i < 4; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 3; i++)
+      for (i                = 0; i < 3; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
     }
@@ -2136,21 +2169,19 @@ int get_ss_mirror(const E_Type etype,		/* The element type */
   case PYRAMID13:
     switch (side_num) {
     case 5:
-      for (i = 0; i < 8; i++)
+      for (i                = 0; i < 8; i++)
         mirror_node_list[i] = ss_node_list[sqr_table[i]];
       break;
 
     default:
-      for (i = 0; i < 6; i++)
+      for (i                = 0; i < 6; i++)
         mirror_node_list[i] = ss_node_list[tri_table[i]];
       break;
     }
     break;
 
   case SPHERE: /* SHPERE's have no side sets */
-  case NULL_EL:
-    i = 0;
-    break;
+  case NULL_EL: i = 0; break;
 
   } /* End "switch (etype)" */
 

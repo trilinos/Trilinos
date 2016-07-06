@@ -198,7 +198,7 @@ TEST(ElementGraph, skin_part_3_blocks)
          stk::mesh::PartVector blocks = create_element_blocks(meta, stk::topology::HEX_8);
 
          stk::mesh::Part& active = meta.declare_part("active");
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData);
 
          stk::mesh::EntityVector elements = get_elements(bulkData);
          add_elements_to_various_blocks(bulkData, blocks, elements);

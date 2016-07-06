@@ -68,7 +68,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
   }
   delete [] send_buffer;
   delete [] receive_buffer;
-  delete req;
+  delete [] req;
 #endif
 }
 

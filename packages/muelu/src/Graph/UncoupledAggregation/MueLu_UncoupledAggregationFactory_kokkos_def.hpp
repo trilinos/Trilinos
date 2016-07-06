@@ -247,7 +247,7 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics0) << aggregates->description() << std::endl;
+    GetOStream(Statistics1) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

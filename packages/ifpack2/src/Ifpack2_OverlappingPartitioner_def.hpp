@@ -211,7 +211,7 @@ void OverlappingPartitioner<GraphType>::compute()
 
   // 1.- allocate memory 
   Partition_.resize (Graph_->getNodeNumRows ());
-  Parts_.resize (NumLocalParts_);
+  //Parts_ is allocated in computeOverlappingPartitions_, where it is used
 
   // 2.- sanity checks on input graph
   TEUCHOS_TEST_FOR_EXCEPTION( 
@@ -239,6 +239,11 @@ void OverlappingPartitioner<GraphType>::compute()
 template<class GraphType>
 void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
 {
+  //If user has explicitly specified parts, then Partition_ size has been set to 0.
+  //In this case, there is no need to compute Parts_.
+  if (Partition_.size() == 0)
+    return;
+
   const local_ordinal_type invalid = 
     Teuchos::OrdinalTraits<local_ordinal_type>::invalid();
 
@@ -267,6 +272,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
   }
 
   // 2.- allocate space for each subgraph
+  Parts_.resize (NumLocalParts_);
   for (int i = 0; i < NumLocalParts_; ++i) {
     Parts_[i].resize (sizes[i]);
   }

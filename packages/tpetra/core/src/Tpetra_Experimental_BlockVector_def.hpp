@@ -163,12 +163,11 @@ namespace Experimental {
   getLocalBlock (const LO localRowIndex) const
   {
     if (! this->isValidLocalMeshIndex (localRowIndex)) {
-      return little_vec_type (NULL, 0, 0);
+      return little_vec_type ();
     } else {
-      const LO strideX = this->getStrideX ();
       const size_t blockSize = this->getBlockSize ();
-      const size_t offset = localRowIndex * blockSize * strideX;
-      return little_vec_type (this->getRawPtr () + offset, blockSize, strideX);
+      const size_t offset = localRowIndex * blockSize;
+      return little_vec_type (this->getRawPtr () + offset, blockSize);
     }
   }
 

@@ -130,7 +130,7 @@ namespace MueLu {
 
     // Test1: skip repartitioning if current level is less than the specified minimum level for repartitioning
     if (currentLevel.GetLevelID() < startLevel) {
-      GetOStream(Statistics0) << "Repartitioning?  NO:" <<
+      GetOStream(Statistics1) << "Repartitioning?  NO:" <<
           "\n  current level = " << Teuchos::toString(currentLevel.GetLevelID()) <<
           ", first level where repartitioning can happen is " + Teuchos::toString(startLevel) << std::endl;
 
@@ -154,7 +154,7 @@ namespace MueLu {
       MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
       if (numActiveProcesses == 1) {
-        GetOStream(Statistics0) << "Repartitioning?  NO:" <<
+        GetOStream(Statistics1) << "Repartitioning?  NO:" <<
             "\n  # processes with rows = " << Teuchos::toString(numActiveProcesses) << std::endl;
 
         Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
@@ -196,13 +196,13 @@ namespace MueLu {
     }
 
     if (!test3 && !test4) {
-      GetOStream(Statistics0) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
+      GetOStream(Statistics1) << "Repartitioning?  NO:" << msg3 + msg4 << std::endl;
 
       Set<RCP<const Import> >(currentLevel, "Importer", Teuchos::null);
       return;
     }
 
-    GetOStream(Statistics0) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
+    GetOStream(Statistics1) << "Repartitioning? YES:" << msg3 + msg4 << std::endl;
 
     GO                     indexBase = rowMap->getIndexBase();
     Xpetra::UnderlyingLib  lib       = rowMap->lib();
@@ -236,7 +236,7 @@ namespace MueLu {
 
       currentLevel.Set("number of partitions", numPartitions, NoFactory::get());
     }
-    GetOStream(Statistics0) << "Number of partitions to use = " << numPartitions << std::endl;
+    GetOStream(Statistics1) << "Number of partitions to use = " << numPartitions << std::endl;
 
     // ======================================================================================================
     // Construct decomposition vector
@@ -569,7 +569,7 @@ namespace MueLu {
         numMatched++;
       }
     }
-    GetOStream(Statistics0) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
+    GetOStream(Statistics1) << "Number of unassigned paritions before cleanup stage: " << (numPartitions - numMatched) << " / " << numPartitions << std::endl;
 
     // Step 4: Assign unassigned partitions
     // We do that through random matching for remaining partitions. Not all part numbers are valid, but valid parts are a subset of [0, numProcs).

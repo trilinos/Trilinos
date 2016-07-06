@@ -49,8 +49,6 @@
 #ifdef HAVE_MUELU_EXPERIMENTAL
 
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_CrsMatrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
@@ -192,8 +190,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlockedRAPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals) {
-    RCP<CrsMatrix> c00 = bAc->getMatrix(0, 0);
-    RCP<CrsMatrix> Aout = CrsMatrixFactory::Build(c00->getRowMap(), c00->getGlobalMaxNumRowEntries(), Xpetra::StaticProfile);
+    RCP<Matrix> c00 = bAc->getMatrix(0, 0);
+    RCP<Matrix> Aout = MatrixFactory::Build(c00->getRowMap(), c00->getGlobalMaxNumRowEntries(), Xpetra::StaticProfile);
 
     RCP<Vector> diagVec = VectorFactory::Build(c00->getRowMap());
     c00->getLocalDiagCopy(*diagVec);

@@ -30,7 +30,7 @@ TEST(ForEntityFunctionInMeshImplUtils, test_counting_nodes_using_raw_bucket_loop
         stk::mesh::BulkData bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         {
             unsigned numNodes = 0;

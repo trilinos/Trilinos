@@ -66,9 +66,9 @@ public:
   /// For a serial build, this will be SerialPlatform. Otherwise, it
   /// will be MpiPlatform.
 #ifdef HAVE_TPETRA_MPI
-  typedef MpiPlatform<Details::DefaultTypes::node_type> DefaultPlatformType;
+  typedef MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
 #else
-  typedef SerialPlatform<Details::DefaultTypes::node_type> DefaultPlatformType;
+  typedef SerialPlatform< ::Tpetra::Details::DefaultTypes::node_type> DefaultPlatformType;
 #endif
 
   //! Return a reference to the default platform singleton.

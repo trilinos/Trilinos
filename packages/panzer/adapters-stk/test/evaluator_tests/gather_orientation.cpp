@@ -87,7 +87,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(gather_orientation, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";

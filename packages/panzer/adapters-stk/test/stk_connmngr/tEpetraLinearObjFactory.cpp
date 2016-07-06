@@ -67,7 +67,7 @@
    #include "Epetra_SerialComm.h"
 #endif
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -103,7 +103,6 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -113,6 +112,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
+
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
    int numProcs = stk_classic::parallel_machine_size(Comm);
    int myRank = stk_classic::parallel_machine_rank(Comm);
@@ -129,11 +130,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
-   Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
-   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
-   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
-   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
+   Teuchos::RCP<Epetra_Map> map = laFactory.getMap(0);
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap(0);
+   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
    std::vector<int> owned,ownedAndShared;
    dofManager->getOwnedIndices(owned);
@@ -207,14 +208,12 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad_fei)
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 9 : 6);
    }
    
-   PHX::FinalizeKokkosDevice();
 }
 #endif
 
 // quad tests
 TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 {
-   PHX::InitializeKokkosDevice();
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -224,6 +223,8 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       stk_classic::ParallelMachine Comm = WHAT_TO_DO_COMM;
       Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_SerialComm());
    #endif
+
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
 
    int numProcs = stk_classic::parallel_machine_size(Comm);
    int myRank = stk_classic::parallel_machine_rank(Comm);
@@ -240,11 +241,11 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(eComm.getConst(),dofManager);
-   Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
-   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
-   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
-   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
+   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
+   Teuchos::RCP<Epetra_Map> map = laFactory.getMap(0);
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap(0);
+   Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph(0,0);
 
    std::vector<int> owned,ownedAndShared;
    dofManager->getOwnedIndices(owned);
@@ -318,7 +319,6 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
       TEST_EQUALITY(graph->MaxNumIndices(),myRank==0 ? 6 : 9);
    }
 
-   PHX::FinalizeKokkosDevice();
 }
 
 }

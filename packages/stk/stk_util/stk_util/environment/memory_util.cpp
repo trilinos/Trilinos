@@ -53,6 +53,9 @@
 #  endif
 #endif
 
+//#define STK_MEMORY_TRACKING
+#include <stk_util/util/MemoryTracking.hpp>
+
 namespace stk
 {
 
@@ -112,6 +115,12 @@ size_t get_memory_usage_now()
 // return current resident set size in bytes
 void get_memory_usage(size_t & now, size_t & hwm)
 {
+#ifdef STK_MEMORY_TRACKING
+    now = stk::get_total_bytes_currently_allocated();
+    hwm = stk::get_high_water_mark_in_bytes();
+    return;
+#endif
+
 #if defined (PROCFS)
   std::string vmhwm;
   std::string vmrss;
@@ -280,6 +289,15 @@ void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max
   stk::get_memory_usage(now, hwm);
 
   get_max_min_avg(comm, hwm, hwm_max, hwm_min, hwm_avg);
+}
+
+void get_current_memory_usage_across_processors(MPI_Comm comm, size_t& curr_max, size_t& curr_min, size_t& curr_avg)
+{
+  size_t now = 0;
+  size_t hwm = 0;
+  stk::get_memory_usage(now, hwm);
+
+  get_max_min_avg(comm, now, curr_max, curr_min, curr_avg);
 }
 
 void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg)

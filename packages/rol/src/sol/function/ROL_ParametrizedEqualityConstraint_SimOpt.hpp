@@ -73,7 +73,13 @@ public:
     this->param_ = param;
   }
 
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
+    update_1(u,flag,iter);
+    update_2(z,flag,iter);
+  }
+
+  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
 
   virtual void value(Vector<Real> &c,
                      const Vector<Real> &u,

@@ -8,6 +8,28 @@
 namespace panzer {
 
 
+BlockedVector_ReadOnly_GlobalEvaluationData::
+BlockedVector_ReadOnly_GlobalEvaluationData() 
+  : isInitialized_(false) 
+{
+}
+
+BlockedVector_ReadOnly_GlobalEvaluationData::
+BlockedVector_ReadOnly_GlobalEvaluationData(const BlockedVector_ReadOnly_GlobalEvaluationData & src) 
+  : isInitialized_(false) 
+{ 
+  initialize(src.ghostedSpace_,Teuchos::null,src.gedBlocks_); 
+}
+
+BlockedVector_ReadOnly_GlobalEvaluationData::
+BlockedVector_ReadOnly_GlobalEvaluationData(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > ghostedSpace,
+                                            const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > uniqueSpace,
+                                            const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> > & gedBlocks)
+  : isInitialized_(false) 
+{ 
+  initialize(ghostedSpace,uniqueSpace,gedBlocks); 
+}
+
 void 
 BlockedVector_ReadOnly_GlobalEvaluationData::
 initialize(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & ghostedSpace,

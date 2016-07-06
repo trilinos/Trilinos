@@ -19,6 +19,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Smoothers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
+IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Interface/YamlParameterList)
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
@@ -27,6 +30,13 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     SOURCES ParameterListInterpreter.cpp ../unit_tests/MueLu_TestHelpers.cpp
     COMM serial mpi
     )
+  IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+    TRIBITS_ADD_EXECUTABLE(
+      YamlParameterListInterpreter
+      SOURCES YamlParameterListInterpreter.cpp ../unit_tests/MueLu_TestHelpers.cpp
+      COMM serial mpi
+      )
+  ENDIF()
 
   IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
@@ -72,6 +82,17 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         NUM_MPI_PROCS 4
         COMM mpi
         )
+
+      IF(TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+        TRIBITS_ADD_TEST(
+          YamlParameterListInterpreter
+          NAME "YamlParameterListInterpreterEpetra"
+          ARGS "--linAlgebra=Epetra"
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 4
+          COMM mpi
+          )
+      ENDIF()
 
       IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 
@@ -136,6 +157,17 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         NUM_MPI_PROCS 4
         COMM mpi
         )
+
+      IF(TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
+        TRIBITS_ADD_TEST(
+          YamlParameterListInterpreter
+          NAME "YamlParameterListInterpreterTpetra"
+          ARGS "--linAlgebra=Tpetra"
+          STANDARD_PASS_OUTPUT
+          NUM_MPI_PROCS 4
+          COMM mpi
+          )
+      ENDIF()
 
       IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
 

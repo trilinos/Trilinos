@@ -312,13 +312,13 @@ int main(int narg, char** arg)
   // Validate the inverse permutation.
   cout << "Checking inverse permutation" << endl;
   for (size_t i=0; i< checkLength; i++){
-    testReturn = (checkInvPerm[checkPerm[i]] != i);
+    testReturn = (checkInvPerm[checkPerm[i]] != z2TestLO(i));
     if (testReturn) goto End;
   }
     
   // Validate NumBlocks
   cout << "Checking num blocks" << endl;
-  testReturn = !((NumBlocks > 0) && (NumBlocks<checkLength));
+  testReturn = !((NumBlocks > 0) && (NumBlocks<z2TestGO(checkLength)));
   if (testReturn) goto End;
 
   // Validate RangeTab.
@@ -327,7 +327,7 @@ int main(int narg, char** arg)
   testReturn = RangeTab[0];
   if (testReturn) goto End;
 
-  for (size_t i = 0; i < NumBlocks; i++){
+  for (z2TestGO i = 0; i < NumBlocks; i++){
     testReturn = !(RangeTab[i] < RangeTab[i+1]);
     if (testReturn) goto End;
   }

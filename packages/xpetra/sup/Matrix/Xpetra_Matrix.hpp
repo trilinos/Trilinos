@@ -436,6 +436,12 @@ namespace Xpetra {
     //! Get Frobenius norm of the matrix
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const = 0;
 
+    //! Left scale matrix using the given vector entries
+    virtual void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+
+    //! Right scale matrix using the given vector entries
+    virtual void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) = 0;
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods

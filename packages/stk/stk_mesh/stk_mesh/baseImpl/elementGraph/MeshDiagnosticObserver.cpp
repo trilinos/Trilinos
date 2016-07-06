@@ -2,7 +2,7 @@
 #include <map>
 #include <utility>
 #include "../../base/BulkData.hpp"
-#include "MeshDiagnostics.hpp"
+#include "../../base/MeshDiagnostics.hpp"
 #include <cstdio>
 
 namespace stk { namespace mesh {
@@ -13,6 +13,10 @@ void MeshDiagnosticObserver::gather_new_errors(std::ofstream & out, const std::v
         std::pair<std::unordered_set<std::string>::iterator, bool> result = m_errorDatabase.insert(error);
         if (result.second) {
             out << error;
+
+            if(m_throwOnError)
+                ThrowRequireMsg( false,
+                                 "Mesh diagnostic rule failure: " + error );
         }
     }
 }
@@ -32,7 +36,7 @@ void MeshDiagnosticObserver::finished_modification_end_notification()
 
         if(m_diagnosticFlag & RULE_1)
         {
-            std::map<stk::mesh::EntityId, std::pair<stk::mesh::EntityId, int> > splitCoincidentElements = stk::mesh::get_split_coincident_elements(m_bulkData);
+            stk::mesh::SplitCoincidentInfo splitCoincidentElements = stk::mesh::get_split_coincident_elements(m_bulkData);
             std::vector<std::string> splitCoincidentErrors = stk::mesh::get_messages_for_split_coincident_elements(m_bulkData, splitCoincidentElements);
             gather_new_errors(out, splitCoincidentErrors);
         }
@@ -48,6 +52,13 @@ void MeshDiagnosticObserver::finished_modification_end_notification()
         {
             std::vector<stk::mesh::Entity> orphanedSides = stk::mesh::get_orphaned_sides_with_attached_element_on_different_proc(m_bulkData);
             std::vector<std::string> orphanedSideErrors = stk::mesh::get_messages_for_orphaned_owned_sides(m_bulkData, orphanedSides);
+            gather_new_errors(out, orphanedSideErrors);
+        }
+
+        if(m_diagnosticFlag & SOLO_SIDES)
+        {
+            std::vector<stk::mesh::Entity> orphanedSides = stk::mesh::get_solo_sides_without_element_on_different_proc(m_bulkData);
+            std::vector<std::string> orphanedSideErrors = stk::mesh::get_messages_for_solo_sides(m_bulkData, orphanedSides);
             gather_new_errors(out, orphanedSideErrors);
         }
 

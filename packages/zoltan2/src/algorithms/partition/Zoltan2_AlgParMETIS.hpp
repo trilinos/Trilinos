@@ -327,6 +327,7 @@ void AlgParMETIS<Adapter>::partition(
                                  pm_partsizes, pm_imbTols,
                                  &itr, pm_options,
                                  &pm_edgecut, pm_partList, &mpicomm);
+      delete [] pm_vsize;
     }
     else if (parmetis_method == "REFINE_KWAY") {
       ParMETIS_V3_RefineKway(pm_vtxdist, pm_offsets, pm_adjs, pm_vwgts,

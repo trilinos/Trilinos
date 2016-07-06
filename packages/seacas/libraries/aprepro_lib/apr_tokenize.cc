@@ -55,26 +55,23 @@ SEAMS::tokenize(const std::string& str, const std::string& separators)
 
 #if 0
 #include <iostream>
-using std::cout;
-using std::cin;
-
 typedef std::vector<std::string> TokenList;
 
 int main()
 {
   char s[128];
-  while(!cin.eof()) {
-    cout << "Enter a string: ";
-    cin.getline(s,128);
+  while(!std::cin.eof()) {
+    std::cout << "Enter a string: ";
+    std::cin.getline(s,128);
     std::string input_line(s);
     if (input_line != "quit") {
       std::vector<std::string> tokens = tokenize(input_line, ": \t\r\v\n");
-      cout << "There were " << tokens.size() << " tokens in the line\n";
+      std::cout << "There were " << tokens.size() << " tokens in the line\n";
       TokenList::const_iterator I = tokens.begin();
       while (I != tokens.end()) {
-        cout << "'" << *I++ << "'\t";
+	std::cout << "'" << *I++ << "'\t";
       }
-      cout << '\n';
+      std::cout << '\n';
     } else {
       exit(0);
     }

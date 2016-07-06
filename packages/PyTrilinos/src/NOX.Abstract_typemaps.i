@@ -49,6 +49,11 @@
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
 
+// Epetra includes
+#ifdef HAVE_NOX_EPETRA
+#include "Epetra_Vector.h"
+#endif
+
 // NOX includes
 #include "NOX_Abstract_Vector.H"
 #ifdef HAVE_NOX_PETSC
@@ -60,9 +65,9 @@
 %include "petsc4py/petsc4py.i"
 #endif
 
-///////////////////////////////////////////////////////////////////
-// *** Utility functions for downcasting NOX::Abstract::Vectors ***
-///////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+// *** Utility functions for downcasting NOX::Abstract classes *** //
+/////////////////////////////////////////////////////////////////////
 
 %fragment("NOX_Abstract_downcast", "header")
 {
@@ -78,13 +83,14 @@
                                  bool owner)
   {
     static swig_type_info * swig_NAV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< NOX::Abstract::Vector > *");
+      SWIG_TypeQuery("NOX::Abstract::Vector *");
 
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
-    static swig_type_info * swig_PENPV_ptr =
+    static swig_type_info * swig_EV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
-    NOX::Epetra::Vector * nevResult = dynamic_cast< NOX::Epetra::Vector * >(&nav);
+    NOX::Epetra::Vector * nevResult =
+      dynamic_cast< NOX::Epetra::Vector * >(&nav);
     if (nevResult != NULL)
     {
       Teuchos::RCP< Epetra_Vector > *smartresult = new
@@ -94,7 +100,7 @@
                         0),
                                       owner);
       return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                                swig_PENPV_ptr,
+                                swig_EV_ptr,
                                 SWIG_POINTER_OWN);
     }
 #endif
@@ -110,9 +116,7 @@
 
     // No downcasts worked, so return as a Python wrapped
     // NOX::Abstract::Vector
-    Teuchos::RCP< NOX::Abstract::Vector > * smartresult = new
-      Teuchos::RCP< NOX::Abstract::Vector >(&nav, owner);
-    return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
+    return SWIG_NewPointerObj(SWIG_as_voidptr(&nav),
                               swig_NAV_ptr,
                               SWIG_POINTER_OWN);
   }
@@ -131,11 +135,11 @@
                                  bool owner)
   {
     static swig_type_info * swig_NAV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< const NOX::Abstract::Vector > *");
+      SWIG_TypeQuery("const NOX::Abstract::Vector *");
 
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
-    static swig_type_info * swig_PENPV_ptr =
+    static swig_type_info * swig_EV_ptr =
       SWIG_TypeQuery("Teuchos::RCP< const Epetra_Vector > *");
     const NOX::Epetra::Vector * nevResult =
       dynamic_cast< const NOX::Epetra::Vector * >(&nav);
@@ -148,7 +152,7 @@
                               0),
                                             owner);
       return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                                swig_PENPV_ptr,
+                                swig_EV_ptr,
                                 SWIG_POINTER_OWN);
     }
 #endif
@@ -165,123 +169,13 @@
 
     // No downcasts worked, so return as a Python wrapped
     // NOX::Abstract::Vector
-    Teuchos::RCP< const NOX::Abstract::Vector > * smartresult = new
-      Teuchos::RCP< const NOX::Abstract::Vector >(&nav, owner);
-    return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                              swig_NAV_ptr,
-                              SWIG_POINTER_OWN);
-  }
-
-  /////////////////////////////////////////////////////////////////////
-
-  /////////////////////////////////////////////////////////////////////
-  // A utility function that attempts to downcast a Teuchos::RCP<
-  // NOX::Abstract::Vector > to an RCP of a viable subclass and return
-  // as a wrapped Python object.  Viable subclasses currently include
-  // NOX::Epetra::Vector and NOX::Petsc::Vector.
-  /////////////////////////////////////////////////////////////////////
-
-  PyObject *
-    downcast_RCP_NOX_Abstract_Vector(Teuchos::RCP< NOX::Abstract::Vector > nav,
-                                     bool owner)
-  {
-    static swig_type_info * swig_NAV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< NOX::Abstract::Vector > *");
-
-#ifdef HAVE_NOX_EPETRA
-    // Try to downcast to a NOX::Epetra::Vector
-    static swig_type_info * swig_PENPV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
-    Teuchos::RCP< NOX::Epetra::Vector > nevResult =
-      Teuchos::rcp_dynamic_cast< NOX::Epetra::Vector >(nav);
-    if (!nevResult.is_null())
-    {
-      Teuchos::RCP< Epetra_Vector > * smartresult = new
-        Teuchos::RCP< Epetra_Vector >(new
-          Epetra_Vector(View,
-                        nevResult->getEpetraVector(),
-                        0),
-                                      owner);
-      return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                                swig_PENPV_ptr,
-                                SWIG_POINTER_OWN);
-    }
-#endif
-
-#ifdef HAVE_NOX_PETSC
-    // Try to downcast to a NOX::Petsc::Vector
-    Teuchos::RCP< NOX::Petsc::Vector > npvResult =
-      Teuchos::rcp_dynamic_cast< NOX::Petsc::Vector >(nav);
-    if (!npvResult.is_null())
-    {
-      return PyPetscVec_New(npvResult->getPetscVector());
-    }
-#endif
-
-    // No downcasts worked, so return as a Python wrapped
-    // NOX::Abstract::Vector
-    Teuchos::RCP< NOX::Abstract::Vector > * smartresult = new
-      Teuchos::RCP< NOX::Abstract::Vector >(nav);
-    return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                              swig_NAV_ptr,
-                              SWIG_POINTER_OWN);
-  }
-
-  /////////////////////////////////////////////////////////////////////
-
-  /////////////////////////////////////////////////////////////////////
-  // A utility function that attempts to downcast a Teuchos::RCP<
-  // NOX::Abstract::Vector > to an RCP of a viable subclass and return
-  // as a wrapped Python object.  Viable subclasses currently include
-  // NOX::Epetra::Vector and NOX::Petsc::Vector.
-  /////////////////////////////////////////////////////////////////////
-
-  PyObject *
-    downcast_RCP_NOX_Abstract_Vector(Teuchos::RCP< const NOX::Abstract::Vector > nav,
-                                     bool owner)
-  {
-    static swig_type_info * swig_NAV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< const NOX::Abstract::Vector > *");
-
-#ifdef HAVE_NOX_EPETRA
-    // Try to downcast to a NOX::Epetra::Vector
-    static swig_type_info * swig_PENPV_ptr =
-      SWIG_TypeQuery("Teuchos::RCP< const Epetra_Vector > *");
-    Teuchos::RCP< const NOX::Epetra::Vector > nevResult =
-      Teuchos::rcp_dynamic_cast< const NOX::Epetra::Vector >(nav);
-    if (!nevResult.is_null())
-    {
-      Teuchos::RCP< const Epetra_Vector > * smartresult = new
-        Teuchos::RCP< const Epetra_Vector >(new
-          Epetra_Vector(View,
-                        nevResult->getEpetraVector(),
-                        0),
-                                            owner);
-      return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
-                                swig_PENPV_ptr,
-                                SWIG_POINTER_OWN);
-    }
-#endif
-
-#ifdef HAVE_NOX_PETSC
-    // Try to downcast to a NOX::Petsc::Vector
-    Teuchos::RCP< const NOX::Petsc::Vector > npvResult =
-      Teuchos::rcp_dynamic_cast< const NOX::Petsc::Vector >(nav);
-    if (!npvResult.is_null())
-    {
-      return PyPetscVec_New(npvResult->getPetscVector());
-    }
-#endif
-
-    // No downcasts worked, so return as a Python wrapped
-    // NOX::Abstract::Vector
-    Teuchos::RCP< const NOX::Abstract::Vector > * smartresult = new
-      Teuchos::RCP< const NOX::Abstract::Vector >(nav);
-    return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
+    return SWIG_NewPointerObj(SWIG_as_voidptr(&nav),
                               swig_NAV_ptr,
                               SWIG_POINTER_OWN);
   }
 }
+
+/////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////
 // *** Typemaps ***
@@ -298,15 +192,6 @@
 }
 
 /////////////////////////////////////////////////////////////////////
-
-// Take an output Teuchos::RCP< const NOX::Abstract::Vector > and
-// downcast to either Teuchos::RCP< const Epetra.Vector > or
-// Teuchos::RCP< const PETSc.Vec >, if possible, and convert to Python
-%typemap(out, fragment="NOX_Abstract_downcast")
-  Teuchos::RCP< const NOX::Abstract::Vector >
-{
-  $result = downcast_RCP_NOX_Abstract_Vector($1, bool($owner));
-}
 
 #ifdef HAVE_NOX_EPETRA
 
@@ -361,6 +246,17 @@
 /////////////////////////////////////////////////////////////////////
 
 %typecheck(1190) NOX::Epetra::Vector &
+{
+  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, 0, $descriptor, 0)) ? 1 : 0;
+  if (!$1)
+    $1 = SWIG_CheckState(SWIG_ConvertPtrAndOwn($input, 0,
+			       $descriptor(Teuchos::RCP< Epetra_Vector > *),
+			       %convertptr_flags, 0)) ? 1 : 0;
+}
+
+/////////////////////////////////////////////////////////////////////
+
+%typecheck(1190) const NOX::Epetra::Vector &
 {
   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, 0, $descriptor, 0)) ? 1 : 0;
   if (!$1)

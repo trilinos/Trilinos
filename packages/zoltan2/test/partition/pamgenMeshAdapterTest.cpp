@@ -296,10 +296,6 @@ int main(int narg, char *arg[]) {
 
     if (!me) {
       metricObject->printMetrics(cout);
-
-      if (action == "scotch") {
-	metricObject->printGraphMetrics(cout);
-      }
     }
   }
   else {

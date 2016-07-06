@@ -560,12 +560,6 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
-    const ValueTypeReductionOp<Ordinal,char> &reductOp
-    ,const Ordinal sendBytes, const char sendBuffer[]
-    ,const Ordinal recvCounts[], char myGlobalReducts[]
-    ) const;
-  /** \brief . */
   virtual void scan(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
@@ -1085,72 +1079,6 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
     err != MPI_SUCCESS, std::runtime_error, "Teuchos::reduceAll: "
     "MPI_Type_free failed with error \"" << mpiErrorCodeToString (err)
     << "\".");
-}
-
-
-template<typename Ordinal>
-TEUCHOS_DEPRECATED void MpiComm<Ordinal>::reduceAllAndScatter(
-  const ValueTypeReductionOp<Ordinal,char> &reductOp
-  ,const Ordinal sendBytes, const char sendBuffer[]
-  ,const Ordinal recvCounts[], char myGlobalReducts[]
-  ) const
-{
-
-  (void)sendBytes; // Ignore if not in debug mode
-
-  TEUCHOS_COMM_TIME_MONITOR(
-    "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAllAndScatter(...)"
-    );
-
-#ifdef TEUCHOS_DEBUG
-  Ordinal sumRecvBytes = 0;
-  for( Ordinal i = 0; i < size_; ++i ) {
-    sumRecvBytes += recvCounts[i];
-  }
-  TEUCHOS_TEST_FOR_EXCEPT(!(sumRecvBytes==sendBytes));
-#endif // TEUCHOS_DEBUG
-
-#ifdef TEUCHOS_MPI_COMM_DUMP
-  if(show_dump) {
-    dumpBuffer<Ordinal,char>(
-      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
-      "sendBuffer", sendBytes, sendBuffer );
-    dumpBuffer<Ordinal,Ordinal>(
-      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
-      "recvCounts", as<Ordinal>(size_), recvCounts );
-    dumpBuffer<Ordinal,char>(
-      "Teuchos::MpiComm<Ordinal>::reduceAllAndScatter(...)",
-      "myGlobalReducts", as<char>(recvCounts[rank_]), myGlobalReducts );
-  }
-#endif // TEUCHOS_MPI_COMM_DUMP
-
-  // Create a new recvCount[] if Ordinal!=int
-  WorkspaceStore* wss = get_default_workspace_store().get();
-  const bool Ordinal_is_int = typeid(int)==typeid(Ordinal);
-  Workspace<int> ws_int_recvCounts(wss,Ordinal_is_int?0:size_);
-  const int *int_recvCounts = 0;
-  if(Ordinal_is_int) {
-    int_recvCounts = reinterpret_cast<const int*>(recvCounts);
-    // Note: We must do an reinterpet cast since this must
-    // compile even if it is not executed.  I could implement
-    // code that would not need to do this using template
-    // conditionals but I don't want to bother.
-  }
-  else {
-    std::copy(recvCounts, recvCounts+size_, &ws_int_recvCounts[0]);
-    int_recvCounts = &ws_int_recvCounts[0];
-  }
-
-  Details::MpiReductionOp<Ordinal> opWrap (reductOp);
-  MPI_Op op = Details::setMpiReductionOp (opWrap);
-  const int err =
-    MPI_Reduce_scatter (const_cast<char*> (sendBuffer), myGlobalReducts,
-                        const_cast<int*> (int_recvCounts), MPI_CHAR,
-                        op, *rawMpiComm_);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    err != MPI_SUCCESS, std::runtime_error, "Teuchos::MpiComm::"
-    "reduceAllAndScatter: MPI_Reduce_scatter failed with error \""
-    << mpiErrorCodeToString (err) << "\".");
 }
 
 

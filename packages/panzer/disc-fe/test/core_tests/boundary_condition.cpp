@@ -57,7 +57,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, nonmember_ctor)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::ParameterList bc_params;
 
@@ -94,7 +93,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, neumann_no_param_list)
   {
-    PHX::KokkosDeviceSession session;
     
 
     std::size_t bc_id = 0;
@@ -121,7 +119,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_with_param_list)
   {
-    PHX::KokkosDeviceSession session;
     
     std::size_t bc_id = 0;
     panzer::BCType dirichlet = BCT_Dirichlet;
@@ -147,7 +144,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, dirichlet_complete_param_list)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::ParameterList p;
     p.set("Type", "Dirichlet");
@@ -171,7 +167,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bc, map_comparitor)
   {
-    PHX::KokkosDeviceSession session;
     
     using panzer::BC;
 

@@ -47,7 +47,7 @@
 #include <string>
 #include "Teuchos_RCP.hpp"
 #include "Phalanx_DataLayout.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Intrepid2_Basis.hpp"
 
 #include "Panzer_Dimension.hpp"
@@ -94,7 +94,7 @@ namespace panzer {
     
     std::string fieldNameD2() const;
 
-    Teuchos::RCP< Intrepid2::Basis<double,Intrepid2::FieldContainer<double> > > 
+    Teuchos::RCP< Intrepid2::Basis<double,Kokkos::DynRankView<double,PHX::Device> > > 
     getIntrepid2Basis() const;
 
     Teuchos::RCP<const PureBasis> getBasis() const;

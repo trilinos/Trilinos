@@ -171,6 +171,8 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {  }
   void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const { }
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const { }
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
 
   void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const { }
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
@@ -362,7 +364,7 @@ public:
       const local_matrix_type& lclMatrix,
       const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
     // local typedefs from local_matrix_type
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
@@ -379,7 +381,7 @@ public:
     Teuchos::ArrayRCP< size_t > NumEntriesPerRowToAlloc(lclNumRows);
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
       NumEntriesPerRowToAlloc[r] = rowview.length;
     }
 
@@ -391,7 +393,7 @@ public:
     // loop over all rows and colums of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
 
       // arrays for current row data
       Teuchos::ArrayRCP<ordinal_type> indout(rowview.length,Teuchos::ScalarTraits<ordinal_type>::zero());
@@ -784,6 +786,13 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
+
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    XPETRA_ERR_CHECK(mtx_->LeftScale(toEpetra<GlobalOrdinal,Node>(x)));
+  };
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    XPETRA_ERR_CHECK(mtx_->RightScale(toEpetra<GlobalOrdinal,Node>(x)));
+  };
 
   //@}
 
@@ -1302,7 +1311,7 @@ public:
       const local_matrix_type& lclMatrix,
       const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
     // local typedefs from local_matrix_type
-    typedef typename local_matrix_type::size_type size_type;
+    //typedef typename local_matrix_type::size_type size_type;
     typedef typename local_matrix_type::value_type value_type;
     typedef typename local_matrix_type::ordinal_type ordinal_type;
 
@@ -1319,7 +1328,7 @@ public:
     Teuchos::ArrayRCP< size_t > NumEntriesPerRowToAlloc(lclNumRows);
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
       NumEntriesPerRowToAlloc[r] = rowview.length;
     }
 
@@ -1331,7 +1340,7 @@ public:
     // loop over all rows and colums of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
-      Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+      auto rowview = lclMatrix.row (r);
 
       // arrays for current row data
       Teuchos::ArrayRCP<ordinal_type> indout(rowview.length,Teuchos::ScalarTraits<ordinal_type>::zero());
@@ -1724,6 +1733,13 @@ public:
   void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.getLocalDiagCopy using offsets is not implemented or supported.");
   }
+
+  void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    XPETRA_ERR_CHECK(mtx_->LeftScale(toEpetra<GlobalOrdinal,Node>(x)));
+  };
+  void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {
+    XPETRA_ERR_CHECK(mtx_->RightScale(toEpetra<GlobalOrdinal,Node>(x)));
+  };
 
   //@}
 

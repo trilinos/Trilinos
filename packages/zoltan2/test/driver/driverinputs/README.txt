@@ -70,23 +70,29 @@ Zoltan2Parameters:  This block defines all of the parameters applicable to a giv
 
 ======================================================================== Section 3: Metric definitions (OPTIONAL)
 ========================================================================
-In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block (ex. 4 and 5).  The “Metrics” block contains a “Metric” sub-block which may contain multiple “Metric Value” blocks each defining lower and/or upper tolerances for pass/fail testing of specific Zoltan2 calculated metrics.  Each “Metric Value” sub-block should be named according the metric being tested, must include a double typed parameter definition for “lower” and /or “upper’, which refer to an acceptable lower/upper bound on the defined metric.  If any of the tolerances are violated then the test driver will report a failure.
+In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block (ex. 4 and 5).
+Sublists titled "metriccheck1", "metriccheck2", etc define each check to be conducted.
 
-The following metrics blocks are currently supported: ‘Metrics’, ‘Graph Metrics.  ‘Metrics’ is available for partitioning problems only, and ‘Graph Metrics’ only for problems using a graph adapter.  ‘Metrics’ currently supports the ‘object count’ metric, and ‘Graph Metrics’ the ‘cut count’ metric.
-
-For  an ‘object count’  metric a user may query the following ‘Metric Values’:
-	* ‘local sum’
-	* ’global sum’
-	* ’global minimum’
-	* ’global maximum’
-	* ’global average’
-	* ’minimum imbalance’
-	* ’maximum imbalance’
-	* ’average imbalance’
-
-For ‘cut count’ a user may query the following ‘Metric Values’:
-	* ’global sum’
-	* ’global maximum’
+For example:
+     <ParameterList name="Metrics">
+       <ParameterList name="metriccheck1">
+         <Parameter name="check" type="string" value="imbalance"/>
+         <Parameter name="weight" type="int" value="0"/>
+         <Parameter name="lower" type="double" value="0.99"/>
+         <Parameter name="upper" type="double" value="1.4"/>
+       </ParameterList>
+    </ParameterList>
+    
+The 'check' value is type string and can accept the following key names which correspond to API calls in EvaluatePartition
+	* ’imbalance’ is for ImbalanceMetrics
+	* ’total edge cuts’ is for GraphMetrics
+	* ’max edge cuts’ is for GraphMetrics
+	
+Additional values which can be specified:
+	* ’weight’ is optional int type 0 or greater
+	* 'normed' is optional bool type for ImbalanceMetrics only - not compatible with the weight option
+	* 'lower' is double type and at least one of lower or upper should be specified
+	* 'upper' is double type and at least one of lower or upper should be specified
  ======================================================================== Section 4: Comparison definitions (OPTIONAL)
 ========================================================================
  This section is optional, and may be defined to compare of solutions, metrics, or timers for different algorithms/adapters defined in section 2.  Like section 2 this section may include multiple “Comparison” blocks each specifying two problems/tests to compare.  For solution comparisons we compare problem “A” and problem “B” .  For metric or timer comparisons we compare a “Problem” vs. a “Reference”.  
@@ -238,81 +244,40 @@ Example 3a: A Partitioning problem definition block.
     
     <!--####################################################
      (OPTIONAL) Define block of metric tolerances
-     * block names must == Zoltan2 metric name
-     * object count, weight ##, edge ## etc
      #####################################################-->
     
-    <ParameterList name=“METRICS NAME">
-      <ParameterList name="METRIC NAME”>
-      	<ParameterList name="METRIC VALUE NAME 1">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="METRIC VALUE NAME 2">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-       </ParameterList>
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
     </ParameterList>
     
   </ParameterList>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Example 4. Metric Definition for ‘object count’
+Example 4. Metric Definition for ‘object count’ for ImbalanceMetrics
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     <ParameterList name="Metrics">
-      <ParameterList name=“object count”>
-      	<ParameterList name="local sum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="global sum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="global minimum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="global maximum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="global average">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="minimum imbalance">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="maximum imbalance">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="average imbalance">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-       </ParameterList>
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
     </ParameterList>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-Example 5. Metric Definition for ‘cut count’
+Example 5. Metric Definition for ‘total edge cuts’ for GraphMetrics
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    <ParameterList name=“Graph Metrics">
-      <ParameterList name=“cut count”>
-      	<ParameterList name="global sum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-      	<ParameterList name="global maximum">
-        	    <Parameter name="lower" type="double" value="##.####"/>
-        	    <Parameter name="upper" type="double" value=“##.####"/>
-      	</ParameterList>
-       </ParameterList>
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value=“total edge cuts”/>
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
     </ParameterList>
  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 Example 6.
@@ -337,9 +302,12 @@ Example 7.
     <Parameter name="Problem" type="string" value="TEST/PROBLEM TITLE #1"/>
     <Parameter name="Reference" type="string" value="TEST/PROBLEM TITLE #2"/>
     
-    <ParameterList name="METRIC NAME">
-      <Parameter name="lower" type="double" value="##.####"/>
-      <Parameter name="upper" type="double" value="##.####"/>
+    <ParameterList name="Metrics">
+      <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value=“total edge cuts”/>
+        <Parameter name="lower" type="double" value=“0.5”/>
+        <Parameter name="upper" type="double" value=“1.5”/>
+      </ParameterList>
     </ParameterList>
     
     <ParameterList name="TIMER NAME">

@@ -53,12 +53,14 @@
 #if defined(__MIC__)
 // For MIC (Xeon Phi) -- vector width = 8 (double precision)
 #define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  8, D, LO, GO, N)      \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
 #else
 // For CPU with AVX instructions -- vector width = 4 (double precision)
 #define INSTANTIATE_MP_VECTOR_SFS_SLD_CPU(INSTMACRO, S, L, D, LO, GO, N) \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  4, D, LO, GO, N)      \
+  INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L,  8, D, LO, GO, N)      \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 16, D, LO, GO, N)      \
   INSTANTIATE_MP_VECTOR_SFS_SLND(INSTMACRO, S, L, 32, D, LO, GO, N)
 #endif

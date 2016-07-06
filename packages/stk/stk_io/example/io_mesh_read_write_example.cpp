@@ -318,9 +318,13 @@ int main(int argc, char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "generated";
   }
-  if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
+  else if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
+  }
+  else if (strncasecmp("cgns:", mesh.c_str(), 5) == 0) {
+    mesh = mesh.substr(5, mesh.size());
+    type = "cgns";
   }
 
   stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output

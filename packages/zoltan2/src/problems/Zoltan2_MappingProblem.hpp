@@ -57,6 +57,7 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_MachineRepresentation.hpp>
 
+#include <Zoltan2_AlgBlockMapping.hpp>
 #include <Zoltan2_TaskMapping.hpp>
 #include <string>
 
@@ -76,7 +77,10 @@ namespace Zoltan2{
  *  is to be partitioned.
  */
 
-template<typename Adapter>
+template<typename Adapter, 
+         typename MachineRep =   // Default MachineRep type
+                  MachineRepresentation<typename Adapter::scalar_t,
+                                        typename Adapter::part_t> >
 class MappingProblem : public Problem<Adapter>
 {
 public:
@@ -89,7 +93,7 @@ public:
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
   typedef PartitioningSolution<Adapter> partsoln_t;
-  typedef MachineRepresentation<scalar_t, part_t> machine_t;
+  typedef MappingSolution<Adapter> mapsoln_t;
 
   /*! \brief Destructor
    */
@@ -99,7 +103,7 @@ public:
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &ucomm_,
-                 partsoln_t *partition_ = NULL, machine_t *machine_ = NULL) : 
+                 partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) : 
     Problem<Adapter>(A_, p_, ucomm_) 
   {
     HELLO;
@@ -111,7 +115,7 @@ public:
    */
   MappingProblem(Adapter *A_, Teuchos::ParameterList *p_, 
                  MPI_Comm ucomm_,
-                 partsoln_t *partition_ = NULL, machine_t *machine_ = NULL) :
+                 partsoln_t *partition_ = NULL, MachineRep *machine_ = NULL) :
     Problem<Adapter>(A_, p_, ucomm_) 
   {
     HELLO;
@@ -141,15 +145,15 @@ public:
   //
   //   \return  the solution to the most recent solve().
 
-  MappingSolution<Adapter> *getSolution() { return soln.getRawPtr(); };
+  mapsoln_t *getSolution() { return soln.getRawPtr(); };
 
 private:
-  void createMappingProblem(partsoln_t *partition_, machine_t *machine_);
+  void createMappingProblem(partsoln_t *partition_, MachineRep *machine_);
 
-  Teuchos::RCP<MappingSolution<Adapter> > soln;
+  Teuchos::RCP<mapsoln_t> soln;
 
   Teuchos::RCP<partsoln_t> partition;
-  Teuchos::RCP<machine_t> machine;
+  Teuchos::RCP<MachineRep> machine;
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -158,10 +162,10 @@ private:
 //  Individual constructors do appropriate conversions of input, etc.
 //  This method does everything that all constructors must do.
 
-template <typename Adapter>
-void MappingProblem<Adapter>::createMappingProblem(
+template <typename Adapter, typename MachineRep>
+void MappingProblem<Adapter, MachineRep>::createMappingProblem(
   partsoln_t *partition_,
-  machine_t *machine_)
+  MachineRep *machine_)
 {
   HELLO;
 
@@ -201,41 +205,58 @@ void MappingProblem<Adapter>::createMappingProblem(
     machine = Teuchos::rcp(machine_, false);
   else {
     try {
-      machine = Teuchos::rcp(new machine_t(*(this->comm_)));
+      machine = Teuchos::rcp(new MachineRep(*(this->comm_)));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
 }
 
 ////////////////////////////////////////////////////////////////////////
-template <typename Adapter>
-void MappingProblem<Adapter>::solve(bool newData)
+template <typename Adapter, typename MachineRep>
+void MappingProblem<Adapter, MachineRep>::solve(bool newData)
 {
   HELLO;
 
-  // Create a mapping solution.
-  try
-  {
-    this->soln = rcp(new MappingSolution<Adapter>());
-  }
-  Z2_FORWARD_EXCEPTIONS;
 
   // Determine which algorithm to use based on defaults and parameters.
-  std::string algName("geometric");  // TODO:  create a default mapping method
+  std::string algName("block");  
 
   Teuchos::ParameterList pl = this->env_->getParametersNonConst();
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("mapping_algorithm");
   if (pe) algName = pe->getValue<std::string>(&algName);
 
   try {
-    if (algName == "geometric") {
-      CoordinateTaskMapper<Adapter, part_t> alg(this->comm_,
-                                                machine, 
-                                                this->inputAdapter_,
-                                                partition,
-                                                this->envConst_);
-      alg.map(this->soln);
+    if (algName == "default") {
+      throw(NotImplemented(__FILE__, __LINE__, __func__zoltan2__));
+#ifdef KDDKDD_NOT_READH
+      this->algorithm_ = rcp(new AlgDefaultMapping<Adapter,MachineRep>(
+                                                   this->comm_, machine,
+                                                   this->inputAdapter_,
+                                                   partition, this->envConst_));
+      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->algorithm_->map(this->soln);
+#endif
     }
+    else if (algName == "block") {
+      this->algorithm_ = rcp(new AlgBlockMapping<Adapter,MachineRep>(
+                                                 this->comm_, machine,
+                                                 this->inputAdapter_,
+                                                 partition, this->envConst_));
+      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->algorithm_->map(this->soln);
+    }
+#ifdef KDDNOTREADY_NEEDTOMAKE_CTM_ANALGORITHM
+    else if (algName == "geometric") {
+      this->algorithm_ = 
+            rcp(new CoordinateTaskMapper<Adapter,part_t>(this->comm_,
+                                                         machine, 
+                                                         this->inputAdapter_,
+                                                         partition,
+                                                         this->envConst_));
+      this->soln = rcp(new mapsoln_t(this->comm_, this->algorithm_));
+      this->algorithm_->map(this->soln);
+    }
+#endif
     else {
       // Add other mapping methods here
       throw std::logic_error("specified mapping_algorithm not supported");

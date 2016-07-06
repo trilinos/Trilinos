@@ -3,9 +3,12 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_io/IossBridge.hpp>
 #include "stk_util/environment/ReportHandler.hpp"
 
 namespace stk
@@ -21,7 +24,6 @@ std::vector<std::string> &split(const std::string &s, char delim, std::vector<st
     }
     return elems;
 }
-
 
 std::vector<std::string> split(const std::string &s, char delim) {
     std::vector<std::string> elems;
@@ -168,16 +170,21 @@ void setup_node_sharing(const MeshData& parsedData, stk::mesh::BulkData &bulkDat
     }
 }
 
+stk::mesh::Part * get_topology_part(stk::mesh::MetaData & meta, stk::topology topology)
+{
+    return meta.get_part("block_" + topology.name());
+}
+
 void setup_mesh(const MeshData& meshData, stk::mesh::BulkData &bulkData)
 {
+    stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
     bulkData.modification_begin();
     for(const ElementData& elementData : meshData.elementDataVec)
     {
         if(bulkData.parallel_rank() == elementData.proc || bulkData.parallel_size() == 1)
         {
-            stk::mesh::PartVector topologyParts = {&bulkData.mesh_meta_data().get_topology_root_part(elementData.topology)};
             stk::mesh::declare_element(bulkData,
-                                       topologyParts,
+                                       *get_topology_part(meta, elementData.topology),
                                        elementData.identifier,
                                        elementData.nodeIds);
         }
@@ -185,6 +192,8 @@ void setup_mesh(const MeshData& meshData, stk::mesh::BulkData &bulkData)
     setup_node_sharing(meshData, bulkData);
     bulkData.modification_end();
 }
+
+
 
 MeshData parse_input(const std::string& meshDescription)
 {
@@ -197,11 +206,12 @@ MeshData parse_input(const std::string& meshDescription)
         size_t userLineNumber = lineI+1;
         std::string line = make_upper_case(remove_spaces(lines[lineI]));
         const std::vector<std::string> tokens = split(line,',');
-        ThrowRequireMsg(tokens.size()>=4, "Error!  Each line must contain the following fields (with at least one node):  Processor, Element Topology, GlobalId, NodeIds.  Error on line " << userLineNumber << ".");
+        ThrowRequireMsg(tokens.size()>=4, "Error!  Each line must contain the following fields (with at least one node):  Processor, GlobalId, Element Topology, NodeIds.  Error on line " << userLineNumber << ".");
         ElementData elementData;
         elementData.proc = std::stoi(tokens[0]);
         elementData.identifier = static_cast<stk::mesh::EntityId>(std::stoi(tokens[1]));
         elementData.topology = get_topology_by_name(tokens[2]);
+
         ThrowRequireMsg(elementData.topology != stk::topology::INVALID_TOPOLOGY, "Error!  Topology = >>" << tokens[2] << "<< is invalid from line " << userLineNumber << ".");
         if (-1 == spatialDim)
         {
@@ -224,13 +234,50 @@ MeshData parse_input(const std::string& meshDescription)
     return data;
 }
 
+void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta)
+{
+    for(const ElementData& elementData : meshData.elementDataVec)
+    {
+        stk::mesh::Part & part = meta.declare_part_with_topology("block_" + elementData.topology.name(), elementData.topology);
+        if(!stk::io::is_part_io_part(part))
+            stk::io::put_io_part_attribute(part);
+    }
+    CoordinatesField & coordsField = meta.declare_field<stk::mesh::Field<double, stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates", 1);
+    stk::mesh::put_field(coordsField, meta.universal_part(), meshData.spatialDim);
+}
 
+void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
+{
+    stk::mesh::EntityVector nodes;
+    bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+    CoordinatesField & coordsField = static_cast<CoordinatesField&>(*bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates"));
+    for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
+    {
+       double * nodalCoords = stk::mesh::field_data(coordsField, nodes[nodeIndex]);
+       for(unsigned coordIndex=0; coordIndex < spatialDimension; coordIndex++)
+           nodalCoords[coordIndex] = coordinates[nodeIndex*spatialDimension+coordIndex];
+    }
+}
 
+void fill_mesh(MeshData &meshData, const std::string &meshDesc, stk::mesh::BulkData &bulkData)
+{
+    meshData = parse_input(meshDesc);
+    if(!bulkData.mesh_meta_data().is_commit())
+        declare_parts_and_coordinates(meshData, bulkData.mesh_meta_data());
+    setup_mesh(meshData, bulkData);
+}
+
+void fill_mesh_using_text_mesh_with_coordinates(const std::string &meshDesc, const std::vector<double> & coordinates, stk::mesh::BulkData &bulkData)
+{
+    MeshData meshData;
+    fill_mesh(meshData, meshDesc, bulkData);
+    fill_coordinates(coordinates, bulkData, meshData.spatialDim);
+}
 
 void fill_mesh_using_text_mesh(const std::string &meshDesc, stk::mesh::BulkData &bulkData)
 {
-    MeshData meshData = parse_input(meshDesc);
-    setup_mesh(meshData, bulkData);
+    MeshData meshData;
+    fill_mesh(meshData, meshDesc, bulkData);
 }
 
 } // namespace unit_test_util

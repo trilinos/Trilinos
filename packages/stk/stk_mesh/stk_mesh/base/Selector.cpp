@@ -433,20 +433,27 @@ bool Selector::is_all_unions() const
   return is_all_union_impl(&m_expr.back());
 }
 
-template <typename PartVectorType>
-Selector selectUnion( const PartVectorType & union_part_vector )
+namespace
+{
+template <typename T> T & dereference_if_pointer(T *item) { return *item; }
+template <typename T> T & dereference_if_pointer(T &item) { return item; }
+}
+
+template <typename VectorType>
+Selector selectUnion( const VectorType & union_vector )
 {
   Selector selector;
-  if (union_part_vector.size() > 0) {
-    selector = *union_part_vector[0];
-    for (unsigned i = 1 ; i < union_part_vector.size() ; ++i) {
-      selector |= *union_part_vector[i];
+  if (union_vector.size() > 0) {
+    selector = dereference_if_pointer(union_vector[0]);
+    for (unsigned i = 1 ; i < union_vector.size() ; ++i) {
+      selector |= dereference_if_pointer(union_vector[i]);
     }
   }
   return selector;
 }
 template Selector selectUnion( const PartVector& union_part_vector);
 template Selector selectUnion( const ConstPartVector& union_part_vector);
+template Selector selectUnion( const std::vector<stk::mesh::Selector>& selectorVector);
 
 Selector selectIntersection( const PartVector& intersection_part_vector )
 {

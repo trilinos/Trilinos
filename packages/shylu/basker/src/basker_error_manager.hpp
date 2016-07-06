@@ -137,6 +137,7 @@ namespace BaskerNS
 		REALLOC_ENTRY_1DARRAY(L.val,
 				      L.nnz,
 				      resize_L);
+		L.clear_pend();
 		if(Options.incomplete == BASKER_TRUE)
 		  {
 		    REALLOC_INT_1DARRAY(L.inc_lvl,
@@ -159,6 +160,10 @@ namespace BaskerNS
 				      U.nnz,
 				      resize_U);
 		U.nnz = resize_U;
+		//Still need to clear pend
+		BASKER_MATRIX &L = 
+		  LL(thread_array(ti).error_blk)(0);
+		L.clear_pend();
   
 	      }
 
@@ -232,7 +237,7 @@ namespace BaskerNS
       }
 
     //Should never be here
-    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    BASKER_ASSERT(0==1, "nfactor_domain_error, should never");
     return BASKER_SUCCESS;
   }//end nfactor_domain_error
 
@@ -325,7 +330,7 @@ namespace BaskerNS
 		resize_L = thread_array(ti).error_info;    
 		if(Options.verbose == BASKER_TRUE)
 		  {
-		printf("L size: %d \n", resize_L);
+		    printf("L size: %d \n", resize_L);
 		  }
 	      }
 	    //We don't care about the other way since,
@@ -335,7 +340,7 @@ namespace BaskerNS
 		resize_U = thread_array(ti).error_info;
 		if(Options.verbose == BASKER_TRUE)
 		  {
-		printf("U size: %d \n", resize_U);
+		    printf("U size: %d \n", resize_U);
 		  }
 	      }
 
@@ -353,6 +358,7 @@ namespace BaskerNS
 				      L.nnz,
 				  resize_L);
 		L.nnz = resize_L;
+		L.clear_pend();
 	      }
 
 	    //Resize U
@@ -483,7 +489,7 @@ namespace BaskerNS
       }
 
     //Should never be here
-    BASKER_ASSERT(0==1, "nfactor_diag_error, should never");
+    BASKER_ASSERT(0==1, "nfactor_sep_error, should never");
     return BASKER_SUCCESS;
 
   }//end nfactor_sep_error
@@ -566,6 +572,7 @@ namespace BaskerNS
 
 	    //Resize L
 	    BASKER_MATRIX &L = LBTF(thread_array(ti).error_blk);
+	    L.clear_pend();
 	    REALLOC_INT_1DARRAY(L.row_idx,
 			       L.nnz,
 			       thread_array(ti).error_info);

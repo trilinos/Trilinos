@@ -57,13 +57,16 @@ class Objective_PDEOPT_Poisson : public ROL::Objective_SimOpt<Real> {
 private:
 
   Teuchos::RCP<PoissonData<Real> > data_;
+  Teuchos::RCP<Tpetra::MultiVector<> > vecWeights_;
   Real alpha_;
 
 public:
 
   Objective_PDEOPT_Poisson(const Teuchos::RCP<PoissonData<Real> > &data,
+                           const Teuchos::RCP<Tpetra::MultiVector<> > &vecWeights,
                            const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     data_ = data;
+    vecWeights_ = vecWeights;
     alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);
   }
 
@@ -87,7 +90,8 @@ public:
     diffp->update(-1.0, *(data_->getVecUd()), 1.0);
     // M*(u-ud)
     //data_->getMatM()->apply(*diffp, *matvecp); // mass matrix product
-    matvecp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0); // (weighted) diagonal product
+    //matvecp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0); // (weighted) diagonal product
+    matvecp->elementWiseMultiply(1.0, *(vecWeights_->getVector(0)), *diffp, 0.0); // (weighted) diagonal product
     // (u-ud)'*M*(u-ud)
     diffp->dot(*matvecp, dotvalU);
 
@@ -113,7 +117,8 @@ public:
     diffp->update(-1.0, *(data_->getVecUd()), 1.0);
     // M*(u-ud)
     //data_->getMatM()->apply(*diffp, *gp); // mass matrix product
-    gp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0);  // (weighted) diagonal product
+    //gp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *diffp, 0.0);  // (weighted) diagonal product
+    gp->elementWiseMultiply(1.0, *(vecWeights_->getVector(0)), *diffp, 0.0);  // (weighted) diagonal product
   }
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
@@ -136,7 +141,8 @@ public:
 
     // M*v
     //data_->getMatM()->apply(*vp, *hvp); // mass matrix product
-    hvp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *vp, 0.0);  // (weighted) diagonal product
+    //hvp->elementWiseMultiply(1.0, *(data_->getVecWeights()->getVector(0)), *vp, 0.0);  // (weighted) diagonal product
+    hvp->elementWiseMultiply(1.0, *(vecWeights_->getVector(0)), *vp, 0.0);  // (weighted) diagonal product
   }
 
   void hessVec_12(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,

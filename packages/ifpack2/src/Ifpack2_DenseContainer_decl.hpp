@@ -262,6 +262,10 @@ public:
             Teuchos::Describable::verbLevel_default) const;
 
   //@}
+
+  /// \brief Get the name of this container type for Details::constructContainer()
+  static std::string getName();
+
 private:
 
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
@@ -477,6 +481,7 @@ public:
   ///
   /// operator<< uses this method.
   virtual std::ostream& print (std::ostream& os) const;
+
 
   //@}
   //! @name Implementation of Teuchos::Describable

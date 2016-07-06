@@ -348,15 +348,27 @@ namespace {
 #endif
 
 
-#ifndef XPETRA_TEST_USE_LONGLONG_GO
-        typedef int GO;
-#else
-        typedef long long GO;
+#if defined(HAVE_XPETRA_TPETRA)
+#ifdef HAVE_TPETRA_INST_INT_INT
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, long, NodeType )
+#endif
+#ifdef HAVE_TPETRA_INST_INT_LONG
+        typedef long long LongLong;
+        TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, LongLong, NodeType )
+#endif
 #endif
 
-#ifdef HAVE_XPETRA_TPETRA_INST_INT_INT
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, GO, NodeType )
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, GO, NodeType )
+#if defined(HAVE_XPETRA_EPETRA)
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, int, NodeType )
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneEpetra, int, LongLong, NodeType )
+#endif
 #endif
 
   // FIXME (mfh 28 Sep 2013) I disabled this test.  Please uncomment

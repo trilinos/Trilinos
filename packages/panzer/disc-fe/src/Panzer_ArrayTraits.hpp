@@ -44,7 +44,7 @@
 #ifndef PANZER_ARRAY_TRAITS_HPP
 #define PANZER_ARRAY_TRAITS_HPP
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "Phalanx_MDField.hpp"
 
 namespace panzer {
@@ -53,10 +53,10 @@ namespace panzer {
   {
     typedef typename Array::size_type size_type;
   };
-
+  /*
   // Specialization for Intrepid2::FieldContainer
   template<typename Scalar>
-  struct ArrayTraits<Scalar,Intrepid2::FieldContainer<Scalar> >
+  struct ArrayTraits<Scalar,Kokkos::DynRankView<Scalar,PHX::Device> >
   {
     typedef int size_type;
 
@@ -64,7 +64,7 @@ namespace panzer {
     // struct mod_scalar { typedef Intrepid2::FieldContainer<SubType> array_type; };
     
   };
-
+  */
 /*
   // Specialization for MDField
   template<typename Scalar>

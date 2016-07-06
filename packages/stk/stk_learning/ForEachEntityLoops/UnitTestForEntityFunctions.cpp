@@ -266,7 +266,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_inherited_functor)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         //BEGIN_INHERITANCE_USAGE_EXAMPLE
         unsigned numNodes = 0;
@@ -288,7 +288,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_lambda)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         //BEGIN_LAMBDA_USAGE_EXAMPLE
         unsigned numNodes = 0;
@@ -317,7 +317,7 @@ TEST(ForEntityFunction, test_counting_nodes_using_raw_bucket_loops)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         //BEGIN_RAW_LOOP_USAGE_EXAMPLE
         unsigned numNodes = 0;
@@ -388,7 +388,7 @@ TEST(ForEntityFunction, test_for_communicated_entities_run)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         size_t numCommunicatedEntities = 0;
         CountNumCommunicatedEntitiesAlgorithm countNumCommunicatedEntitiesAlgorithm(numCommunicatedEntities);
@@ -461,7 +461,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_templates)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         unsigned numNodes = 0;
         CountNumNodesAlgorithmFunctorWithSum countNumNodesAlgorithm;
@@ -481,7 +481,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_templates_and_lambdas)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:1x1x4";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         unsigned numNodes = 0;
         bulkData.for_each_node_run_and_sum(numNodes,
@@ -574,7 +574,7 @@ TEST(ForEntityFunction, test_element_death_using_inheritance)
         BulkDataForEntityTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
         put_locally_owned_elements_into_active_part(bulkData, activePart);
 
 
@@ -615,7 +615,7 @@ TEST(ForEntityFunction, test_element_death_using_lambdas)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = "generated:2x2x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
         put_locally_owned_elements_into_active_part(bulkData, activePart);
 
 
@@ -712,7 +712,7 @@ double test_count_nodes_raw_for_loops(const unsigned numIterations)
     stk::mesh::BulkData bulkData(metaData, communicator);
 
     std::string generatedMeshSpec = countNodesMeshSpec;
-    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
     unsigned numNodes = 0;
     double startTime = get_cpu_or_wall_time();
@@ -747,7 +747,7 @@ double test_count_nodes_inheritance_functor(const unsigned numIterations)
     BulkDataForEntityTester bulkData(metaData, communicator);
 
     std::string generatedMeshSpec = countNodesMeshSpec;
-    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
     unsigned numNodes = 0;
     double startTime = get_cpu_or_wall_time();
@@ -769,7 +769,7 @@ double test_count_nodes_templated_on_functor(const unsigned numIterations)
     BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
     std::string generatedMeshSpec = countNodesMeshSpec;
-    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
     unsigned numNodes = 0;
     double startTime = get_cpu_or_wall_time();
@@ -791,7 +791,7 @@ double test_count_nodes_lambda_functor(const unsigned numIterations)
     BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
     std::string generatedMeshSpec = countNodesMeshSpec;
-    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+    stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
     unsigned numNodes = 0;
     double startTime = get_cpu_or_wall_time();
@@ -834,7 +834,7 @@ TEST(ForEntityFunction, performance_test_for_each_node_run)
             BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
             std::string generatedMeshSpec = countNodesMeshSpec;
-            stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+            stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
             //BEGIN_STD_FUNCTION_EXAMPLE
             unsigned numNodes = 0;
@@ -1111,7 +1111,7 @@ TEST(ForEntityFunction, performance_test_getting_per_bucket_values_per_entity)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
 
 
@@ -1254,7 +1254,7 @@ TEST(ForEntityFunction, performance_test_getting_field_values_per_entity)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         double goldSum = static_cast<double>(stk::mesh::count_selected_entities(metaData.universal_part(), bulkData.buckets(stk::topology::NODE_RANK)));
         const double tolerance = 1e-12;
@@ -1419,7 +1419,7 @@ TEST(ForEntityFunction, performance_test_calculate_acceleration)
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         unsigned numTimesItRan = 2;
         unsigned numIterations = numTimesToRun;
@@ -1603,7 +1603,7 @@ TEST(ForEntityFunction, performance_test_centroid_calculation_using_bucket_acces
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         const stk::mesh::FieldBase &coordField = *metaData.coordinate_field();
 
@@ -1770,7 +1770,7 @@ TEST(ForEntityFunction, performance_test_using_bucket_accessors_vs_bulk_data_acc
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         ASSERT_TRUE(bulkData.in_synchronized_state());
         bulkData.initialize_fast_entity_access();
@@ -1881,7 +1881,7 @@ TEST(ForEntityFunction, performance_test_node_to_element_connectivity_bucket_acc
         BulkDataForEntityTemplatedTester bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         bulkData.initialize_fast_entity_access();
 
@@ -1951,7 +1951,7 @@ TEST(ForEntityFunction, test_free_function_versions_of_for_each_entity_abstracti
         stk::mesh::BulkData bulkData(metaData, communicator);
 
         std::string generatedMeshSpec = countNodesMeshSpec;
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, bulkData);
 
         unsigned numNodes = 0;
 

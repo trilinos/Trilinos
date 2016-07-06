@@ -796,7 +796,102 @@ __version__ = version()
 %ignore Tpetra::Map::getLocalElement;
 %ignore Tpetra::Map::getGlobalElement;
 %ignore Tpetra::Map::getRemoteIndexList;
-%include "Tpetra_Map_decl.hpp"
+// The official definition of Tpetra::Map uses some C++ 11 and other
+// advanced features that confuse SWIG, so I declare a "simplified"
+// version here.
+namespace Tpetra
+{
+template< class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
+          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
+          class Node = Details::DefaultTypes::node_type >
+class Map :
+    public Teuchos::Describable
+{
+public:
+  typedef LocalOrdinal local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef Node node_type;
+  typedef typename Kokkos::Device< typename Node::execution_space,
+                                   typename Node::memory_space > device_type;
+  typedef Details::LocalMap< LocalOrdinal, GlobalOrdinal, device_type >
+    local_map_type;
+  Map(global_size_t numGlobalElements,
+      GlobalOrdinal indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+      LocalGlobal lg=GloballyDistributed,
+      const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+  Map(global_size_t numGlobalElements,
+      size_t numLocalElements,
+      GlobalOrdinal indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+      const Teuchos::RCP<Node> &node = defaultArgNode<Node>());
+  Map(const global_size_t numGlobalElements,
+      const Kokkos::View<const GlobalOrdinal*, device_type>& indexList,
+      const GlobalOrdinal indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  Map(const global_size_t numGlobalElements,
+      const GlobalOrdinal indexList[],
+      const LocalOrdinal indexListSize,
+      const GlobalOrdinal indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+  Map(const global_size_t numGlobalElements,
+      const Teuchos::ArrayView<const GlobalOrdinal>& indexList,
+      const GlobalOrdinal indexBase,
+      const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+      const Teuchos::RCP<Node>& node = defaultArgNode<Node>());
+  Map();
+  ~Map();
+  bool isOneToOne() const;
+  global_size_t getGlobalNumElements() const;
+  size_t getNodeNumElements() const;
+  GlobalOrdinal getIndexBase() const;
+  LocalOrdinal getMinLocalIndex() const;
+  LocalOrdinal getMaxLocalIndex() const;
+  GlobalOrdinal getMinGlobalIndex() const;
+  GlobalOrdinal getMaxGlobalIndex() const;
+  GlobalOrdinal getMinAllGlobalIndex() const;
+  GlobalOrdinal getMaxAllGlobalIndex() const;
+  LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
+  GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
+  LookupStatus
+  getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
+                     const Teuchos::ArrayView< int > & nodeIDList,
+                     const Teuchos::ArrayView< LocalOrdinal> & LIDList) const;
+  LookupStatus
+  getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > & GIDList,
+                     const Teuchos::ArrayView< int > & nodeIDList) const;
+  Kokkos::View< const GlobalOrdinal*,
+                Kokkos::LayoutLeft,
+                device_type > getMyGlobalIndices() const;
+  Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
+  bool isNodeLocalElement(LocalOrdinal localIndex) const;
+  bool isNodeGlobalElement(GlobalOrdinal globalIndex) const;
+  bool isUniform() const;
+  bool isContiguous() const;
+  bool isDistributed() const;
+  bool isCompatible(const Map< LocalOrdinal,GlobalOrdinal,Node > & map) const;
+  bool isSameAs(const Map< LocalOrdinal,GlobalOrdinal,Node > & map) const;
+  bool locallySameAs(const Map< LocalOrdinal,
+                                GlobalOrdinal,
+                                node_type > & map) const;
+  Teuchos::RCP<const Teuchos::Comm< int > > getComm() const;
+  Teuchos::RCP< Node > getNode() const;
+  std::string description() const;
+  void
+  describe(Teuchos::FancyOStream &out,
+           const Teuchos::EVerbosityLevel verbLevel=
+             Teuchos::Describable::verbLevel_default) const;
+  template < class NodeOut >
+  Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, NodeOut > >
+  clone(const RCP< NodeOut > & nodeOut) const;
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >
+  removeEmptyProcesses() const;
+  RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >
+  replaceCommWithSubset(
+      const Teuchos::RCP<const Teuchos::Comm< int > > & newComm) const;
+};
+}
+// %include "Tpetra_Map_decl.hpp"
 // N.B.: Technically, the third template argument in the two SWIG
 // directives below are redundant, because it is the same as the
 // default template argument.  But SWIG is much more acurate when

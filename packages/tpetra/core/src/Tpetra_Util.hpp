@@ -49,30 +49,14 @@
   Tpetra_Util contains utility functions macros that are used
   throughout Tpetra, by many classes and functions. They are placed
   here so that they can be updated and maintained in a single spot.
-
-  Here are some of the utility functions found in this file:
-  <ul>
-  <li>An efficientAddOrUpdate for inserting data into an std::map.
-
-  <li>Functions for converting Ordinals to Scalars and for converting
-  Scalars to Ordinals.
-
-  <li>A templated toString function, which is mainly used to easily
-  output the contents of STL containers.
-
-  <li>A multiple-array sort function, similar to the one found in
-  Epetra_Util.
-
-  <li>Macros for reporting efficiency warnings and synchronizing
-  tests for exceptions over a given communicator.
-  </ul>
 */
 
 #include "Tpetra_ConfigDefs.hpp" // for map, vector, string, and iostream
-#include <iterator>
+#include "Kokkos_DualView.hpp"
+#include "Teuchos_Utils.hpp"
+#include "Teuchos_Assert.hpp"
 #include <algorithm>
-#include <Teuchos_Utils.hpp>
-#include <Teuchos_Assert.hpp>
+#include <iterator>
 #include <sstream>
 
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -877,136 +861,74 @@ namespace Tpetra {
     congruent (const Teuchos::Comm<int>& comm1,
                const Teuchos::Comm<int>& comm2);
 
-    /// \brief Search <tt>indsToSearch[0 .. numEnt-1]</tt> for
-    ///   \c indToFind, using equality comparison.
+    /// \brief Get a Teuchos::ArrayView which views the host
+    ///   Kokkos::View of the input 1-D Kokkos::DualView.
     ///
-    /// \return If found, return index of \c indToFind in \c indsToSearch;
-    ///   else, return \c numEnt (by analogy with C++ Standard Library
-    ///   functions like std::find, that return "the end of the sequence"
-    ///   in this case).
+    /// \pre The input DualView must be sync'd to host.
     ///
-    /// \tparam OffsetType Integer type that can be used to represent any
-    ///   valid index in \c indsToSearch, up to and including \c numEnt.
-    /// \tparam IndexViewType 1-D array of equality-comparable entries
-    ///   (generally intended to be column indices).
+    /// \param x [in] A specialization of Kokkos::DualView.
     ///
-    /// \param indsToSearch [in] Array of indices to search.  For a sparse
-    ///   graph or matrix, this is the array of all the column indices for
-    ///   some row of the graph / matrix.
-    /// \param numEnt [in] Number of entries in \c indsToSearch to
-    ///   search.  This is a separate argument, first so that this
-    ///   function works with raw arrays as well as Kokkos::View, and
-    ///   second so that users don't have to incur the overhead of
-    ///   calling Kokkos::subview to limit the length of a View.  The
-    ///   latter may be particularly helpful for the case of the
-    ///   begin/end-pointer variant of CSR graph/matrix storage.
-    /// \param indToFind [in] (Local) column index for which to find the
-    ///   offset.  This has the same type as that of each entry in
-    ///   \c indsToSearch.
-    /// \param hint [in] Hint for where to find \c indToFind in the array.
-    ///   If <tt>indsToSearch[hint] == indToFind</tt>, then the hint is
-    ///   correct.  The hint is ignored if it is out of range (that is,
-    ///   greater than or equal to the number of entries in the given
-    ///   row).
-    /// \param isSorted [in] Whether the input array of indices to search
-    ///   is sorted in increasing order.
-    ///
-    /// The hint optimizes for the case of calling this method several
-    /// times with the same sparse graph / matrix row, when several index
-    /// inputs occur in consecutive sequence.  This may occur (for
-    /// example) when there are multiple degrees of freedom per mesh
-    /// point, and users are handling the assignment of degrees of freedom
-    /// to global indices manually (rather than letting some other class
-    /// take care of it).  In that case, users might choose to assign the
-    /// degrees of freedom for a mesh point to consecutive global indices.
-    /// Epetra implements the hint for this reason.
-    ///
-    /// The hint only costs two comparisons (one to check range, and the
-    /// other to see if the hint was correct), and it can save searching
-    /// for the indices (which may take a lot more than two comparisons).
-    ///
-    /// \note To implementers: We put \c indsToSearch before \c indToFind
-    ///   so that we can derive the type of indToFind directly from that
-    ///   of each entry of \c indsToSearch, without needing
-    ///   \c IndexViewType to be a Kokkos::View.  Thankfully, arguments to
-    ///   a C++ function behave more like LET* than LET (in ANSI Common
-    ///   Lisp terms).
-    template<class OffsetType, class IndexViewType>
-    KOKKOS_INLINE_FUNCTION OffsetType
-    findRelOffset (const IndexViewType& indsToSearch,
-                   const OffsetType numEnt,
-                   /* typename IndexViewType::const_value_type */
-                   const typename std::decay<decltype (indsToSearch[0]) >::type indToFind,
-                   const OffsetType hint,
-                   const bool isSorted)
+    /// \return Teuchos::ArrayView that views the host version of the
+    ///   DualView's data.
+    template<class DualViewType>
+    Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
+    getArrayViewFromDualView (const DualViewType& x)
     {
-      // IndexViewType doesn't have to be a Kokkos::View; it just has to
-      // implement operator[] like a 1-D array.
-      //
-      // static_assert (Kokkos::is_view<IndexViewType>::value,
-      //                 "IndexViewType must be a Kokkos::View");
-      // static_assert (static_cast<int> (IndexViewType::rank) == 1,
-      //                 "IndexViewType must be a rank-1 Kokkos::View");
-      static_assert (std::is_integral<OffsetType>::value,
-                     "OffsetType must be an integer.");
+      static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
+                     "The input DualView must have rank 1.");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+         "input Kokkos::DualView was most recently modified on device, but this "
+         "function needs the host view of the data to be the most recently "
+         "modified.");
 
-      if (hint < numEnt && indsToSearch[hint] == indToFind) {
-        return hint; // hint was correct
+      auto x_host = x.template view<Kokkos::HostSpace> ();
+      typedef typename DualViewType::t_dev::value_type value_type;
+      return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
+                                             x_host.dimension_0 ());
+    }
+
+    /// \brief Get a 1-D Kokkos::DualView which is a deep copy of the
+    ///   input Teuchos::ArrayView (which views host memory).
+    ///
+    /// \tparam T The type of the entries of the input Teuchos::ArrayView.
+    /// \tparam DT The Kokkos Device type.
+    ///
+    /// \param x_av [in] The Teuchos::ArrayView to copy.
+    /// \param label [in] String label for the Kokkos::DualView.
+    /// \param leaveOnHost [in] If true, the host version of the
+    ///   returned Kokkos::DualView is most recently updated (and the
+    ///   DualView may need a sync to device).  If false, the device
+    ///   version is most recently updated (and the DualView may need
+    ///   a sync to host).
+    ///
+    /// \return Kokkos::DualView that is a deep copy of the input
+    ///   Teuchos::ArrayView.
+    template<class T, class DT>
+    Kokkos::DualView<T*, DT>
+    getDualViewCopyFromArrayView (const Teuchos::ArrayView<const T>& x_av,
+                                  const char label[],
+                                  const bool leaveOnHost)
+    {
+      using Kokkos::MemoryUnmanaged;
+      typedef typename DT::memory_space DMS;
+      typedef Kokkos::HostSpace HMS;
+
+      const size_t len = static_cast<size_t> (x_av.size ());
+      Kokkos::View<const T*, HMS, MemoryUnmanaged> x_in (x_av.getRawPtr (), len);
+      Kokkos::DualView<T*, DT> x_out (label, len);
+      if (leaveOnHost) {
+        x_out.template modify<HMS> ();
+        Kokkos::deep_copy (x_out.template view<HMS> (), x_in);
       }
-
-#if 0
-      // Even if the array is sorted, use linear search if the number of
-      // entries is small ("small" is a tuning parameter; feel free to
-      // tune for your architecture).  'constexpr' promises the compiler
-      // that it can bake this constant as a literal into the code.
-      constexpr OffsetType linearSearchThreshold = 16;
-
-      if (! isSorted || numEnt < linearSearchThreshold) {
-#else
-      if (! isSorted) {
-#endif
-        for (OffsetType k = 0; k < numEnt; ++k) {
-          if (indsToSearch[k] == indToFind) {
-            return k;
-          }
-        }
+      else {
+        x_out.template modify<DMS> ();
+        Kokkos::deep_copy (x_out.template view<DMS> (), x_in);
       }
-      else { // use binary search
-        OffsetType start = 0;
-        OffsetType end = numEnt;
-        // Compare epetra/src/Epetra_Util.cpp, Epetra_Util_binary_search.
-        // Unlike that function, I don't use end = numEnt-1, because I
-        // want this code to work also for unsigned OffsetType (signed is
-        // preferred, though).  Thus, in my code, end is always "one past
-        // the last valid index."
-        while (end > start) {
-          // Invariants: 0 <= start < end, thus start + end > 0.
-          const OffsetType mid = (start + end - 1) / 2;
-          // Invariants: 0 <= start <= mid < end.
-          if (indsToSearch[mid] < indToFind) {
-            // Invariant: start < mid+1 (thus, recursion terminates),
-            // and for all k <= mid, indsToSearch[k] < indToFind.
-            start = mid + 1; // Invariant: 0 < mid < start <= end.
-          }
-          else { // indsToSearch[mid] >= indToFind
-            // Invariant: mid < end (thus, recursion terminates),
-            // and for all k <= mid, indsToSearch[k] >= indToFind.
-            end = mid; // Invariant: 0 <= start <= mid <= end.
-          }
-        }
-        // Invariant: 0 <= start == end.
-
-        // Don't check if we've already passed the end.
-        if (start < numEnt && indsToSearch[start] == indToFind) {
-          return start;
-        }
-      }
-
-      return numEnt; // "end of sequence"
+      return x_out;
     }
 
   } // namespace Details
-
 } // namespace Tpetra
 
 #endif // TPETRA_UTIL_HPP

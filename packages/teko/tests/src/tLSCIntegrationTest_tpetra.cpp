@@ -90,7 +90,7 @@ using Teuchos::rcpFromRef;
 
 void tLSCIntegrationTest_tpetra::initializeTest()
 {
-   tolerance_ = 1.0e-7;
+   tolerance_ = 1.0e-6;
 
    velMap_  = rcp(new Tpetra::Map<LO,GO,NT>(5890,0,GetComm_tpetra())); // map of velocity space
    prsMap_  = rcp(new Tpetra::Map<LO,GO,NT>(769,0,GetComm_tpetra())); // map of pressure space
