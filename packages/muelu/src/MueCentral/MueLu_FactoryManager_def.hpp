@@ -152,7 +152,7 @@ namespace MueLu {
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;
         smootherParamList.set("relaxation: type",           "Symmetric Gauss-Seidel");
-        smootherParamList.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
+        smootherParamList.set("relaxation: sweeps",         Teuchos::OrdinalTraits<int>::one());
         smootherParamList.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
         return SetAndReturnDefaultFactory(varName, rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", smootherParamList)))));
       }
