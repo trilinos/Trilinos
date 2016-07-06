@@ -38,10 +38,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
@@ -134,10 +133,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   GlobalOrdinal nrow = 10;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<Node> node = rcp(new Node);
   RCP<const Tpetra_Map> map =
-    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal>(
-      nrow, comm, node);
+    Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(
+      nrow, comm);
   RCP<Tpetra_CrsGraph> graph =
     rcp(new Tpetra_CrsGraph(map, size_t(2), Tpetra::StaticProfile));
   Array<GlobalOrdinal> columnIndices(2);
