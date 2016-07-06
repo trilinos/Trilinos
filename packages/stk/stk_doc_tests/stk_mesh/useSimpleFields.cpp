@@ -129,20 +129,20 @@ TEST(stkMeshHowTo, declareVectorFields_putFieldIgnoresLength)
     stk::mesh::MetaData metaData(SpatialDimension::three, stk::mesh::entity_rank_names());
 
     typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
-    VectorField& velocitiesField = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "velocities");
+    VectorField& velocities = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "velocities");
 
-    typedef stk::mesh::Field<double> badVectorField;
-    badVectorField& displacementsField = metaData.declare_field<badVectorField>(stk::topology::NODE_RANK, "displacements");
+    typedef stk::mesh::Field<double> BadVectorField;
+    BadVectorField& displacements = metaData.declare_field<BadVectorField>(stk::topology::NODE_RANK, "displacements");
 
     unsigned fieldLength = 3;
-    stk::mesh::put_field(velocitiesField, metaData.universal_part(), fieldLength);
-    stk::mesh::put_field(displacementsField, metaData.universal_part(), fieldLength);
+    stk::mesh::put_field(velocities, metaData.universal_part(), fieldLength);
+    stk::mesh::put_field(displacements, metaData.universal_part(), fieldLength);
 
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     create_single_tet_element(mesh);
 
     stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
-    EXPECT_NE(stk::mesh::field_scalars_per_entity(velocitiesField, node1), stk::mesh::field_scalars_per_entity(displacementsField, node1));
+    EXPECT_NE(stk::mesh::field_scalars_per_entity(velocities, node1), stk::mesh::field_scalars_per_entity(displacements, node1));
 }
 //ENDBADFIELD
 
