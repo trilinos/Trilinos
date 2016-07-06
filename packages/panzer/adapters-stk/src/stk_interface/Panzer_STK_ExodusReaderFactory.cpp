@@ -55,6 +55,7 @@
 #include <GetBuckets.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/FieldParallel.hpp>
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -194,6 +195,15 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+
+   if (userMeshScaling_) {
+     stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
+       metaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
+     std::vector< const stk::mesh::FieldBase *> fields;
+     fields.push_back(coord_field);
+
+     stk::mesh::communicate_field_data(bulkData, fields);
+   }
 
    if(restartIndex>0) // process_input_request is a no-op if restartIndex<=0 ... thus there would be no inital time
       mesh.setInitialStateTime(meshData->get_input_io_region()->get_state_time(restartIndex));
