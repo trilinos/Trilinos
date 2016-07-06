@@ -604,11 +604,12 @@ void STK_Interface::getElementsSharingNode(stk::mesh::EntityId nodeId,std::vecto
 }
 
 void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
-                                                                         std::vector<int> & localNodeId) const
+                                                std::vector<int> & relIds) const
 {
    // get all relations for node
    const size_t numElements = bulkData_->num_elements(node);
    stk::mesh::Entity const* relations = bulkData_->begin_elements(node);
+   stk::mesh::ConnectivityOrdinal const* rel_ids = bulkData_->begin_element_ordinals(node);
 
    // extract elements sharing nodes
    for (size_t i = 0; i < numElements; ++i) {
@@ -617,13 +618,13 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::Entity node,std::vect
      // if owned by this processor
       if(bulkData_->parallel_owner_rank(element) == procRank_) {
          elements.push_back(element);
-         localNodeId.push_back(bulkData_->identifier(element));
+         relIds.push_back(rel_ids[i]);
       }
    }
 }
 
 void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements,
-                                                                           std::vector<int> & localNodeId, unsigned int matchType) const
+                                                                           std::vector<int> & relIds, unsigned int matchType) const
 {
    stk::mesh::EntityRank rank;
    if(matchType == 0)
@@ -637,7 +638,7 @@ void STK_Interface::getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::
 
    stk::mesh::Entity node = bulkData_->get_entity(rank,nodeId);
 
-   getOwnedElementsSharingNode(node,elements,localNodeId);
+   getOwnedElementsSharingNode(node,elements,relIds);
 }
 
 void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeIds,std::vector<stk::mesh::Entity> & elements) const

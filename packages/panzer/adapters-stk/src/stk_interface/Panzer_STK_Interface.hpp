@@ -418,12 +418,12 @@ public:
    /** Get set of element sharing a single node and its local node id.
      */
    void getOwnedElementsSharingNode(stk::mesh::Entity node,std::vector<stk::mesh::Entity> & elements,
-                                                        std::vector<int> & localNodeId) const;
+                                    std::vector<int> & relIds) const;
 
    /** Get set of element sharing a single node and its local node id.
      */
    void getOwnedElementsSharingNode(stk::mesh::EntityId nodeId,std::vector<stk::mesh::Entity> & elements,
-                                                          std::vector<int> & localNodeId, unsigned int matchType) const;
+                                    std::vector<int> & relIds, unsigned int matchType) const;
 
 
    //! get a set of elements sharing multiple nodes
