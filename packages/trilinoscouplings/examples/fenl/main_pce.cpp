@@ -210,6 +210,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+    print_memory_usage(std::cout, *comm);
   }
 
   }
@@ -240,7 +241,15 @@ int main( int argc , char ** argv )
               << "not correctly applying the inverse diagonal in the smoother."
               << std::endl;
   }
-
+#ifndef HAVE_TPETRA_EXPLICIT_INSTANTIATION
+  if (cmdline.USE_MUELU && cmdline.USE_MEANBASED &&
+      comm->getRank() == 0) {
+    std::cout << "Warning:  The mean-based preconditioner for PCE requires "
+              << "specializations introduced through ETI, however it is not "
+              << "enabled.  Memory errors are likely!"
+              << std::endl;
+  }
+#endif
   if (rv==CLP_HELP)
     return(EXIT_SUCCESS);
   else if (rv==CLP_ERROR)

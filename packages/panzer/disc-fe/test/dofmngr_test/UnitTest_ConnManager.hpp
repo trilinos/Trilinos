@@ -119,10 +119,11 @@ class ConnCallback { public: virtual void buildConnectivity(const FieldPattern &
        |      |      |      |      |
        +------+------+------+------+
   */
-class ConnManager : public virtual panzer::ConnManager<int,int> {
+template <typename GO>
+class ConnManager : public virtual panzer::ConnManager<int,GO> {
 public:
    typedef int LocalOrdinal;
-   typedef int GlobalOrdinal;
+   typedef GO GlobalOrdinal;
 
    ConnManager(int rank,int procCount);
 
@@ -201,7 +202,7 @@ private:
    
    Teuchos::RCP<ConnCallback> callback_;
    std::map<std::string,std::vector<int> > elements_; // local element IDs
-   std::vector<std::vector<int> > connectivity_;
+   std::vector<std::vector<GlobalOrdinal> > connectivity_;
 };
 
 } // end unit test

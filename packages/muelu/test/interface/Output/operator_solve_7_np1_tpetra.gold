@@ -35,6 +35,7 @@ Level 1
 --------------------------------------------------------------------------------
 Number of levels    = 2
 Operator complexity = 1.30
+Cycle type          = V
 
 level   rows    nnz  nnz/row  c ratio  procs
   0    10000  49600     4.96               1

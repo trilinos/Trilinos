@@ -220,8 +220,6 @@ namespace MueLu {
       MatrixMatrix::TwoMatrixAdd(*V[i], false, y[i], *finalP, one);
 #endif
     }
-
-    IO::Write("finalP.mm", *finalP);
   }
 
 } // namespace MueLu

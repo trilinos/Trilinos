@@ -204,7 +204,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     GO validation = 0;
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
     for (LocalOrdinal row = 0; row < numRows; row++) {
-      auto rowView = localMatrix.template row<LO>(row);
+      auto rowView = localMatrix.row (row);
       auto length  = rowView.length;
 
       validation += length;
@@ -225,7 +225,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc, char *argv[]) {
     GO validation = 0;
     Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
     Kokkos::parallel_reduce("Utils::DetectDirichletRows", numRows, KOKKOS_LAMBDA(const LO row, GlobalOrdinal& r) {
-      auto rowView = localMatrix.template row<LO>(row);
+      auto rowView = localMatrix.row (row);
       auto length  = rowView.length;
 
       r += length;

@@ -707,7 +707,7 @@ main (int argc, char* argv[])
       for (int trial = 0; trial < opts.numTrials; ++trial) {
         const LO lclNumRows = opts.lclNumRows;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-          auto rowView = A_lcl.row<LO> (lclRow);
+          auto rowView = A_lcl.row (lclRow);
           auto len = rowView.length;
 
           (void) rowView;
@@ -745,7 +745,7 @@ main (int argc, char* argv[])
         size_t curTotalLclNumEnt = 0;
         parallel_reduce ("loop", range,
                          KOKKOS_LAMBDA (const LO& lclRow, size_t& count) {
-            auto rowView = A_lcl.row<LO> (lclRow);
+            auto rowView = A_lcl.row (lclRow);
             auto length  = rowView.length;
             count += static_cast<size_t> (length);
           }, curTotalLclNumEnt);

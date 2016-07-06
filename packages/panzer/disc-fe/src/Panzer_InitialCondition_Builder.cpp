@@ -93,7 +93,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     phx_ic_field_managers[blockId] = fm;
     
     if (write_graphviz_file)
-      fm->writeGraphvizFile(graphviz_file_prefix+"IC_"+blockId);
+      fm->writeGraphvizFile(graphviz_file_prefix+"_IC_"+blockId);
   }
 }
 
@@ -121,7 +121,7 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
 
   ped.gedc.addDataObject("Residual Scatter Container",ghostedloc);
   ped.gedc.addDataObject("Dirichlet Counter",localCounter);
-  ped.sensitivities_name = "";
+  ped.first_sensitivities_name = "";
 
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();
       itr!=phx_ic_field_managers.end();++itr) {

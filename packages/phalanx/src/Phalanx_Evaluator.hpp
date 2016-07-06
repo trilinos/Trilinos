@@ -61,6 +61,7 @@
 
 namespace PHX {
 
+  class any;
   template<typename Traits> class FieldManager;
 
   /*! Pure virtual base class that provides field evaluation
@@ -116,13 +117,18 @@ namespace PHX {
     /*!
         Input:
 	@param policy Kokkos task policy object used to create the task/future.
-	@param num_adjacencies The dependenc capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on. 
-	@param d - user defined data object defined by the EvalData typedef in the traits class.
+	@param num_adjacencies The dependence capacity in Kokkos. The maximum number of node adjacencies (task dependencies) that this task directly depends on. 
+	@param work_size The number of parallel work units.
+	@param d User defined data.
     */ 
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
+	       const int& work_size,
 	       typename Traits::EvalData d) = 0;
+
+    //! Returns the size of the kokkos task for AMT.
+    virtual unsigned taskSize() const = 0;
 #endif
 
     /*! \brief This routine is called before each residual/Jacobian fill.
@@ -147,6 +153,17 @@ namespace PHX {
     //! Returns the name/identifier of this provider.
     virtual const std::string& getName() const = 0;
 
+    /*! \brief Binds unmanaged memory to a field.
+
+      WARNING: This is a power user function. It swaps out the field
+      memory for user defined and managed memory. All evaluators that
+      evaluate or depend on this field show be bound to the same
+      memory. Otherwise you will get undefined results. To use this
+      consistently, bind all Unmanaged memory from the
+      PHX::FieldManager class.
+     */
+    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
+                                    const PHX::any& f) = 0;
   };
 
 } 

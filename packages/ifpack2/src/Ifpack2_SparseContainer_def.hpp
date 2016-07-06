@@ -50,6 +50,7 @@
 #else
 #include "Teuchos_DefaultSerialComm.hpp"
 #endif
+#include "Teuchos_TestForException.hpp"
 
 namespace Ifpack2 {
 
@@ -476,17 +477,22 @@ template<class MatrixType, class InverseType>
 std::string SparseContainer<MatrixType,InverseType>::description() const
 {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << "\"Ifpack2::SparseContainer\": {";
   if (isInitialized()) {
     if (isComputed()) {
-      oss << "{status = initialized, computed";
+      oss << "status = initialized, computed";
     }
     else {
-      oss << "{status = initialized, not computed";
+      oss << "status = initialized, not computed";
     }
   }
   else {
-    oss << "{status = not initialized, not computed";
+    oss << "status = not initialized, not computed";
+  }
+  if (Inverse_ != Teuchos::null) {
+    oss << ", \"Inverse\": {";
+    oss << Inverse_->description();
+    oss << "}";
   }
 
   oss << "}";
@@ -588,17 +594,59 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   diagBlock_->fillComplete ();
 }
 
+template<typename MatrixType, typename InverseType>
+std::string SparseContainer<MatrixType, InverseType>::getName()
+{
+  typedef typename MatrixType::scalar_type SC;
+  typedef typename MatrixType::local_ordinal_type LO;
+  typedef typename MatrixType::global_ordinal_type GO;
+  typedef typename MatrixType::node_type NO;
+  typedef ILUT<Tpetra::RowMatrix<SC, LO, GO, NO> > ILUTInverse;
+#ifdef HAVE_IFPACK2_AMESOS2
+  typedef Details::Amesos2Wrapper<Tpetra::RowMatrix<SC, LO, GO, NO>> AmesosInverse;
+  if(std::is_same<InverseType, ILUTInverse>::value)
+  {
+    return "SparseILUT";
+  }
+  else if(std::is_same<InverseType, AmesosInverse>::value)
+  {
+    return "SparseAmesos";
+  }
+  else
+  {
+    throw std::logic_error("InverseType for SparseContainer must be Ifpack2::ILUT or Details::Amesos2Wrapper");
+  }
+#else
+  // Macros can't have commas in their arguments, so we have to
+  // compute the bool first argument separately.
+  constexpr bool inverseTypeIsILUT = std::is_same<InverseType, ILUTInverse>::value;
+  TEUCHOS_TEST_FOR_EXCEPTION(! inverseTypeIsILUT, std::logic_error,
+    "InverseType for SparseContainer must be Ifpack2::ILUT<ROW>");
+  return "SparseILUT";    //the only supported sparse container specialization if no Amesos2
+#endif
+}
+
 } // namespace Ifpack2
 
 // For ETI
 #include "Ifpack2_ILUT.hpp"
+#ifdef HAVE_IFPACK2_AMESOS2
+#include "Ifpack2_Details_Amesos2Wrapper.hpp"
+#endif
 
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
 // more specific than RowMatrix.
 
-#define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
-                                           Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >;
-
+#ifdef HAVE_IFPACK2_AMESOS2
+#  define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >; \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::Details::Amesos2Wrapper<Tpetra::RowMatrix<S,LO,GO,N> > >;
+#else
+#  define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
+    template class Ifpack2::SparseContainer< Tpetra::RowMatrix<S, LO, GO, N>, \
+                                             Ifpack2::ILUT<Tpetra::RowMatrix<S,LO,GO,N> > >;
+#endif
 #endif // IFPACK2_SPARSECONTAINER_HPP

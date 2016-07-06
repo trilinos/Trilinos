@@ -66,8 +66,8 @@ namespace {
           X.dimension_1 () != Y.dimension_1 ()) {
         return false;
       }
-      for (int j = 0; j < X.dimension_1 (); ++j) {
-        for (int i = 0; i < X.dimension_0 (); ++i) {
+      for (int j = 0; j < static_cast<int> (X.dimension_1 ()); ++j) {
+        for (int i = 0; i < static_cast<int> (X.dimension_0 ()); ++i) {
           if (X(i,j) != Y(i,j)) {
             return false;
           }
@@ -85,7 +85,7 @@ namespace {
       if (X.dimension_0 () != Y.dimension_0 ()) {
         return false;
       }
-      for (int i = 0; i < X.dimension_0 (); ++i) {
+      for (int i = 0; i < static_cast<int> (X.dimension_0 ()); ++i) {
         if (X(i) != Y(i)) {
           return false;
         }
@@ -230,7 +230,7 @@ namespace {
     // zero entries, then test.  It's not worth testing the
     // corresponding entries of X_mv yet; we'll do that below.
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_vec_type zeroLittleVector (zeroArray.getRawPtr (), blockSize, 1);
+    little_vec_type zeroLittleVector ( (typename little_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
     TEST_ASSERT( equal (X_5_1, zeroLittleVector) && equal (zeroLittleVector, X_5_1) );
 
     // Put some data in the block.  This will help us test whether the
@@ -362,16 +362,13 @@ namespace {
     const LO colToModify = 1;
     little_vec_type X_overlap =
       X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), colToModify);
-    TEST_ASSERT( X_overlap.getRawPtr () != NULL );
-    TEST_EQUALITY_CONST( X_overlap.getBlockSize (), blockSize );
-    // FIXME (mfh 07 May 2014) May have to fix this if strides change
-    // in the future.
-    TEST_EQUALITY_CONST( X_overlap.getStride (), static_cast<LO> (1) );
+    TEST_ASSERT( X_overlap.ptr_on_device () != NULL );
+    TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.dimension_0 ()), static_cast<size_t> (blockSize) );
 
     // {
     //   std::ostringstream os;
     //   os << "Proc " << myRank
-    //      << ": X_overlap.getRawPtr() = " << X_overlap.getRawPtr ()
+    //      << ": X_overlap.ptr_on_device() = " << X_overlap.ptr_on_device ()
     //      << ", X_overlap.getBlockSize() = " << X_overlap.getBlockSize ()
     //      << ", meshMap.getMinGlobalIndex() = " << meshMap.getMinGlobalIndex ()
     //      << std::endl;
@@ -379,8 +376,8 @@ namespace {
     // }
 
     {
-      const int lclOk = (X_overlap.getRawPtr () != NULL &&
-                         X_overlap.getBlockSize () == blockSize) ? 1 : 0;
+      const int lclOk = (X_overlap.ptr_on_device () != NULL &&
+                         static_cast<size_t> (X_overlap.dimension_0 ()) == static_cast<size_t> (blockSize)) ? 1 : 0;
       int gblOk = 1;
       reduceAll<int, int> (*comm, REDUCE_MIN, lclOk, outArg (gblOk));
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -401,7 +398,7 @@ namespace {
     (void) Y_overlap;
 
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_vec_type zeroLittleVector (zeroArray.getRawPtr (), blockSize, 1);
+    little_vec_type zeroLittleVector ((typename little_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
 
     for (LO col = 0; col < numVecs; ++col) {
       for (LO localMeshRow = meshMap.getMinLocalIndex ();

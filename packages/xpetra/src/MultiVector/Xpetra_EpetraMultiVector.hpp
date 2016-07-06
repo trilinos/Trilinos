@@ -602,6 +602,7 @@ namespace Xpetra {
 
     //! Replace the underlying Map in place.
     void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_MONITOR("EpetraMultiVectorT::replaceMap");
       int err = 0;
       if (!map.is_null()) {
         err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra<GlobalOrdinal,Node>(map));
@@ -1005,6 +1006,7 @@ namespace Xpetra {
 
     //! Replace the underlying Map in place.
     void replaceMap(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &map) {
+      XPETRA_MONITOR("EpetraMultiVectorT::replaceMap");
       int err = 0;
       if (!map.is_null()) {
         err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra<GlobalOrdinal,Node>(map));

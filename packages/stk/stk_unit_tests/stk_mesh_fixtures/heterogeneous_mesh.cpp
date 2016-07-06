@@ -61,7 +61,7 @@ enum { SpatialDim = 3 };
 
 void heterogeneous_mesh_meta_data(
   stk::mesh::MetaData & meta_data ,
-  VectorFieldType & node_coord )
+  const VectorFieldType & node_coord )
 {
   stk::mesh::Part & universal        = meta_data.universal_part();
   stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("hexes", stk::topology::HEX_8));

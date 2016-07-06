@@ -80,7 +80,7 @@ namespace MueLu {
     MergedAFact_ = Teuchos::rcp(new MergedBlockedMatrixFactory());
 
     Teuchos::ParameterList params;
-    s_ = Teuchos::rcp(new DirectSolver("Klu", params));
+    s_ = Teuchos::rcp(new DirectSolver("", params));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -130,6 +130,10 @@ namespace MueLu {
   void BlockedDirectSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector &X, const MultiVector& B, bool InitialGuessIsZero) const {
     TEUCHOS_TEST_FOR_EXCEPTION(this->IsSetup() == false, Exceptions::RuntimeError,
                                "MueLu::BlockedDirectSolver::Apply(): Setup() has not been called");
+    TEUCHOS_TEST_FOR_EXCEPTION(X.getMap()->isSameAs(*(A_->getDomainMap())) == false, Exceptions::RuntimeError,
+                               "MueLu::BlockedDirectSolver::Apply(): Map of solution vector X is not same as domain map of A.");
+    TEUCHOS_TEST_FOR_EXCEPTION(B.getMap()->isSameAs(*(A_->getRangeMap())) == false, Exceptions::RuntimeError,
+                               "MueLu::BlockedDirectSolver::Apply(): Map of rhs vector X is not same as range map of A.");
 
     s_->Apply(X, B, InitialGuessIsZero);
   }

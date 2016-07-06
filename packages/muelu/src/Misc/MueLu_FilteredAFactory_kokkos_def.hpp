@@ -166,13 +166,13 @@ namespace MueLu {
       for (size_t k = 0; k < blkSize; k++) {
         LO row = i*blkSize + k;
 
-        auto rowA = localA.template row<LO>(row);
+        auto rowA = localA.row (row);
         auto nnz = rowA.length;
 
         if (nnz == 0)
           continue;
 
-        auto rowFA = localFA.template row<LO>(row);
+        auto rowFA = localFA.row (row);
 
         for (decltype(nnz) j = 0; j < nnz; j++)
           rowFA.value(j) = rowA.value(j);

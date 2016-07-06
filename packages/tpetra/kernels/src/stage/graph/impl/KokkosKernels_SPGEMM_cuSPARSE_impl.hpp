@@ -30,8 +30,8 @@ namespace Impl{
       in_row_index_view_type row_mapB,
       in_nonzero_index_view_type entriesB,
       bool transposeB,
-      in_row_index_view_type &row_mapC,
-      in_nonzero_index_view_type &entriesC){
+      typename in_row_index_view_type::non_const_type &row_mapC,
+      typename in_nonzero_index_view_type::non_const_type &entriesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
 
@@ -39,7 +39,7 @@ namespace Impl{
     typedef typename in_nonzero_index_view_type::device_type device2;
 
     typedef typename KernelHandle::row_lno_t idx;
-    typedef in_row_index_view_type idx_array_type;
+    typedef typename in_row_index_view_type::non_const_type idx_array_type;
 
 
     if (Kokkos::Impl::is_same<Kokkos::Cuda, device1 >::value){
@@ -53,12 +53,12 @@ namespace Impl{
 
     if (Kokkos::Impl::is_same<idx, int>::value){
       row_mapC = idx_array_type("rowMapC", m + 1);
-      idx *a_xadj = row_mapA.ptr_on_device();
-      idx *b_xadj = row_mapB.ptr_on_device();
+      const idx *a_xadj = row_mapA.ptr_on_device();
+      const idx *b_xadj = row_mapB.ptr_on_device();
       idx *c_xadj = row_mapC.ptr_on_device();
 
-      idx *a_adj = entriesA.ptr_on_device();
-      idx *b_adj = entriesB.ptr_on_device();
+      const idx *a_adj = entriesA.ptr_on_device();
+      const idx *b_adj = entriesB.ptr_on_device();
       handle->create_cuSPARSE_Handle(transposeA, transposeB);
       typename KernelHandle::SPGEMMcuSparseHandleType *h = handle->get_cuSparseHandle();
 
@@ -93,7 +93,7 @@ namespace Impl{
           cudaMemcpy(&baseC, c_xadj, sizeof(int), cudaMemcpyDeviceToHost);
           nnzC -= baseC;
       }
-      entriesC = in_nonzero_index_view_type("entriesC", nnzC);
+      entriesC = in_nonzero_index_view_type(Kokkos::ViewAllocateWithoutInitializing("entriesC"), nnzC);
     }
     else {
       std::cerr << "CUSPARSE requires integer values" << std::endl;
@@ -126,9 +126,9 @@ namespace Impl{
       in_nonzero_index_view_type entriesB,
       in_nonzero_value_view_type valuesB,
       bool transposeB,
-      in_row_index_view_type &row_mapC,
-      in_nonzero_index_view_type &entriesC,
-      in_nonzero_value_view_type &valuesC){
+      typename in_row_index_view_type::non_const_type &row_mapC,
+      typename in_nonzero_index_view_type::non_const_type &entriesC,
+      typename in_nonzero_value_view_type::non_const_type &valuesC){
 
 #ifdef KERNELS_HAVE_CUSPARSE
     typedef typename KernelHandle::row_lno_t idx;
@@ -177,6 +177,7 @@ namespace Impl{
       value_type *c_ew = valuesC.ptr_on_device();
 
       if (Kokkos::Impl::is_same<value_type, float>::value){
+        std::cout << "float" << std::endl;
         cusparseScsrgemm(
             h->handle,
             h->transA,
@@ -200,6 +201,7 @@ namespace Impl{
             c_adj);
       }
       else if (Kokkos::Impl::is_same<value_type, double>::value){
+        std::cout << "double" << std::endl;
         cusparseDcsrgemm(
             h->handle,
             h->transA,

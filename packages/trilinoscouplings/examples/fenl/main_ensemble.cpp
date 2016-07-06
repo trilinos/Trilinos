@@ -536,6 +536,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   if ( cmd.SUMMARIZE  ) {
     Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+     print_memory_usage(std::cout, *comm);
   }
 
   }
@@ -583,6 +584,8 @@ int main( int argc , char ** argv )
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
            cmdline.USE_UQ_ENSEMBLE == 4 )
         run< Kokkos::Serial ,  4 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::Serial ,  8 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Serial , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
@@ -607,6 +610,8 @@ int main( int argc , char ** argv )
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
            cmdline.USE_UQ_ENSEMBLE == 4 )
         run< Kokkos::Threads ,  4 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::Threads ,  8 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::Threads , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
@@ -631,6 +636,8 @@ int main( int argc , char ** argv )
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
            cmdline.USE_UQ_ENSEMBLE == 4 )
         run< Kokkos::OpenMP ,  4 >( comm , cmdline );
+      else if ( cmdline.USE_UQ_ENSEMBLE == 8 )
+        run< Kokkos::OpenMP ,  8 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 16 )
         run< Kokkos::OpenMP , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )

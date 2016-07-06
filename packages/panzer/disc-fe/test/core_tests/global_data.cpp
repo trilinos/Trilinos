@@ -73,7 +73,6 @@ namespace panzer {
   
   TEUCHOS_UNIT_TEST(global_data, builder)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::RCP<panzer::GlobalData> gd;
 
@@ -98,7 +97,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(global_data, accessor_default_impl)
   {
-    PHX::KokkosDeviceSession session;
     
     Teuchos::RCP<panzer::GlobalData> gd = panzer::createGlobalData();
     

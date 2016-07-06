@@ -2,12 +2,14 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Exodus      libraries/exodus        SS  REQUIRED
   Exodus_for  libraries/exodus_for    SS  REQUIRED
+  ExoIIv2for32 libraries/exoIIv2for32 SS  REQUIRED
   Nemesis     libraries/nemesis       SS  REQUIRED
   Ioss        libraries/ioss          SS  REQUIRED
   Chaco       libraries/chaco         SS  REQUIRED
   Aprepro_lib libraries/aprepro_lib   SS  REQUIRED
   Supes       libraries/supes         SS  REQUIRED
   Suplib      libraries/suplib        SS  REQUIRED
+  SuplibC     libraries/suplib_c      SS  REQUIRED
   SuplibCpp   libraries/suplib_cpp    SS  REQUIRED
   SVDI        libraries/svdi          SS  OPTIONAL
   PLT         libraries/plt           SS  OPTIONAL
@@ -42,3 +44,4 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 )
 
 SET(LIB_OPTIONAL_DEP_TPLS MPI)
+

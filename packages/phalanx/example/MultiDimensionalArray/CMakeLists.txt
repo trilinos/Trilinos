@@ -22,7 +22,6 @@ SET(example_SOURCES
   evaluators/Evaluator_FEInterpolation_Def.hpp
   evaluators/Evaluator_NonlinearSource.hpp
   evaluators/Evaluator_NonlinearSource_Def.hpp
-  evaluators/Evaluator_TaskBase.hpp
   )
 
 SET(example_DFAD_SOURCES Example_DFAD.cpp TraitsDFAD.hpp ${example_SOURCES})
@@ -33,6 +32,7 @@ SET(example_SLFAD_SOURCES Example_SLFAD.cpp TraitsSLFAD.hpp ${example_SOURCES})
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_dfad
   SOURCES ${example_DFAD_SOURCES}
+  ARGS --kokkos-threads=1
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Run has completed successfully!"
@@ -41,6 +41,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_sfad
   SOURCES ${example_SFAD_SOURCES}
+  ARGS --kokkos-threads=1
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Run has completed successfully!"
@@ -49,6 +50,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   example_slfad
   SOURCES ${example_SLFAD_SOURCES}
+  ARGS --kokkos-threads=1
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "Run has completed successfully!"

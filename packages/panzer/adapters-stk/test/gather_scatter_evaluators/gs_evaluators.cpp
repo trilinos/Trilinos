@@ -114,7 +114,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(gs_evaluators, gather_constr)
   {
-    PHX::KokkosDeviceSession session;
 
     const std::size_t workset_size = 20;
     Teuchos::RCP<panzer::BasisIRLayout> linBasis = buildLinearBasis(workset_size);
@@ -184,8 +183,9 @@ namespace panzer {
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
     // setup field manager build

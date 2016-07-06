@@ -320,6 +320,79 @@ private:
    Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > tComm_;
 };
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+
+template < >
+class ResponseMESupport_Default<panzer::Traits::Hessian> : public ResponseMESupportBase<panzer::Traits::Hessian> {
+public:
+
+   ResponseMESupport_Default(const std::string & responseName,MPI_Comm comm,
+                             const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & derivVecSpace=Teuchos::null)
+     : ResponseMESupportBase<panzer::Traits::Hessian>(responseName), derivVecSpace_(derivVecSpace)
+   { tComm_ = Teuchos::rcp(new Teuchos::MpiComm<Thyra::Ordinal>(Teuchos::opaqueWrapper(comm))); }
+
+   virtual ~ResponseMESupport_Default() {}
+
+   //! What is the number of values you need locally
+   virtual std::size_t localSizeRequired() const = 0;
+
+   //! Is the vector distributed (or replicated). For derivative assembly this must be false!
+   virtual bool vectorIsDistributed() const = 0;
+
+   //! Does this response support derivative evaluation?
+   bool supportsDerivative() const { return getDerivativeVectorSpace()!=Teuchos::null; }
+
+   /** Get the vector for this response. This must be
+     * constructed from the vector space returned by <code>getMap</code>.
+     */
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > getDerivative() const
+   { return derivative_; }
+
+   //! Get the <code>Epetra_Map</code> for this response, map is constructed lazily.
+   virtual Teuchos::RCP<Thyra::MultiVectorBase<double> > buildDerivative() const
+   {
+     TEUCHOS_ASSERT(!vectorIsDistributed());
+     TEUCHOS_ASSERT(localSizeRequired()==1);
+     TEUCHOS_ASSERT(supportsDerivative());
+     return Thyra::createMember(*getDerivativeVectorSpace());
+   }
+
+   /** Set the vector (to be filled) for this response. This must be
+     * constructed from the vector space returned by <code>getMap</code>.
+     */
+   virtual void setDerivative(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & derivative)
+   {
+     TEUCHOS_ASSERT(!vectorIsDistributed());
+     TEUCHOS_ASSERT(localSizeRequired()==1);
+     TEUCHOS_ASSERT(supportsDerivative());
+     derivative_ = derivative;
+   }
+
+protected:
+   //! Get the teuchos comm object
+   Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > getComm() const { return tComm_; }
+
+   //! Get the derivative vector space
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getDerivativeVectorSpace() const
+   { return derivVecSpace_; }
+
+   //! Set the derivative vector space
+   void setDerivativeVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs)
+   { derivVecSpace_ = vs; }
+
+private:
+   // hide these methods
+   ResponseMESupport_Default();
+   ResponseMESupport_Default(const ResponseMESupport_Default<panzer::Traits::Hessian> &);
+
+   Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > tComm_;
+   Teuchos::RCP<const Thyra::VectorSpaceBase<double> > derivVecSpace_;
+
+   Teuchos::RCP<Thyra::MultiVectorBase<double> > derivative_;
+};
+
+#endif
+
 }
 
 #include "Panzer_ResponseMESupport_Default_impl.hpp"

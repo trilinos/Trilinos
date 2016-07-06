@@ -1,6 +1,8 @@
 #include "apr_builtin.h"
 
 #include <cmath>
+#include <cmath>
+#include <cfenv>
 #include <cctype>
 #include <errno.h>
 #include <cstdlib>
@@ -22,14 +24,25 @@
 #include "apr_util.h"
 #include "apr_tokenize.h"
 
-#ifndef RAND_MAX
-#include <limits.h>
-#define RAND_MAX INT_MAX
-#endif
+#include <random>
 
 #ifndef PI
 #define PI  3.141592653589793238462643
 #endif
+
+namespace {
+    std::mt19937_64 rng;
+
+  void reset_error()
+  {
+    if (math_errhandling & MATH_ERREXCEPT) {
+      std::feclearexcept(FE_ALL_EXCEPT);
+    }
+    if (math_errhandling & MATH_ERRNO) {
+      errno = 0;
+    }
+  }
+}
 
 namespace SEAMS {
 
@@ -59,7 +72,7 @@ extern SEAMS::Aprepro *aprepro;
 double do_int(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = (double) (x < 0 ? -std::floor (-(x)) : std::floor (x));
   SEAMS::math_error ("int");
   return (temp);
@@ -69,7 +82,7 @@ double do_int(double x)
 double do_nint(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = (double) (x < 0 ? -std::floor(0.5-x) : std::floor(x+0.5));
   SEAMS::math_error ("nint");
   return (temp);
@@ -81,7 +94,7 @@ double do_nint(double x)
 double do_dist(double x1, double y1, double x2, double y2)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = HYPOT((x1 - x2), (y1 - y2));
   SEAMS::math_error("hypot");
   return (temp);
@@ -94,7 +107,7 @@ double do_angle(double x1, double y1, double x2, double y2)
 {
   double temp;
   temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
-  errno = 0;
+  reset_error();
   temp = acos(temp);
   SEAMS::math_error("angle");
   return (temp);
@@ -107,7 +120,7 @@ double do_angled(double x1, double y1, double x2, double y2)
 {
   double temp;
   temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
-  errno = 0;
+  reset_error();
   temp = r2d(acos(temp));
   SEAMS::math_error("angled");
   return (temp);
@@ -151,7 +164,7 @@ double
 do_max(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = max(x, y);
   SEAMS::math_error("max");
   return (temp);
@@ -161,7 +174,7 @@ double
 do_min(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = min(x, y);
   SEAMS::math_error("min");
   return (temp);
@@ -183,7 +196,7 @@ double
 do_sind(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = sin(d2r(x));
   SEAMS::math_error("sind");
   return (temp);
@@ -193,7 +206,7 @@ double
 do_sin(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = sin(x);
   SEAMS::math_error("sin");
   return (temp);
@@ -203,7 +216,7 @@ double
 do_cosd(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = cos(d2r(x));
   SEAMS::math_error("cosd");
   return (temp);
@@ -213,7 +226,7 @@ double
 do_cos(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = cos(x);
   SEAMS::math_error("cos");
   return (temp);
@@ -223,7 +236,7 @@ double
 do_tand(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = tan(d2r(x));
   SEAMS::math_error("tand");
   return (temp);
@@ -233,7 +246,7 @@ double
 do_tan(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = tan(x);
   SEAMS::math_error("tan");
   return (temp);
@@ -243,7 +256,7 @@ double
 do_atan2d(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = r2d(atan2(x, y));
   SEAMS::math_error("atan2d");
   return (temp);
@@ -253,7 +266,7 @@ double
 do_atan2(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = atan2(x, y);
   SEAMS::math_error("atan2");
   return (temp);
@@ -263,7 +276,7 @@ double
 do_atand(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = r2d(atan(x));
   SEAMS::math_error("atand");
   return (temp);
@@ -273,7 +286,7 @@ double
 do_atan(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = atan(x);
   SEAMS::math_error("atan");
   return (temp);
@@ -283,7 +296,7 @@ double
 do_asind(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = r2d(asin(x));
   SEAMS::math_error("asind");
   return (temp);
@@ -293,7 +306,7 @@ double
 do_asin(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = asin(x);
   SEAMS::math_error("asin");
   return (temp);
@@ -303,7 +316,7 @@ double
 do_acosd(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = r2d(acos(x));
   SEAMS::math_error("acosd");
   return (temp);
@@ -313,7 +326,7 @@ double
 do_acos(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = acos(x);
   SEAMS::math_error("acos");
   return (temp);
@@ -323,7 +336,7 @@ do_acos(double x)
 double
 do_srand(double seed)
 {
-  srand((unsigned)seed);
+  rng.seed((size_t)seed);
   return (0);
 }
 
@@ -331,74 +344,36 @@ do_srand(double seed)
 double 
 do_rand(double xl, double xh)
 {
-  double temp;
-  errno = 0;
-  temp = xl + (xh - xl) * ((double) rand() / (double) RAND_MAX);
-  SEAMS::math_error("rand");
-  return (temp);
+  std::uniform_real_distribution<double> dist(xl, xh);
+  return dist(rng);
 }
 
 double 
 do_rand_normal(double mean, double stddev)
 {
-  /* boxmuller.c
-     Implements the Polar form of the Box-Muller Transformation
-   
-     (c) Copyright 1994, Everett F. Carter Jr.  Permission is granted by
-     the author to use this software for any application provided this
-     copyright notice is preserved.
-  */
-  double x1, x2, w, y1;
-  static double y2;
-  static int use_last = 0;
-  
-  if (use_last) {
-    y1 = y2;
-    use_last = 0;
-  }
-  else {
-    do {
-      x1 = 2.0 * ((double)rand()/(double)RAND_MAX) - 1.0;
-      x2 = 2.0 * ((double)rand()/(double)RAND_MAX) - 1.0;
-      w = x1 * x1 + x2 * x2;
-    } while ( w >= 1.0 );
-
-    w = std::sqrt( (-2.0 * std::log(w)) / w);
-    y1 = x1 * w;
-    y2 = x2 * w;
-    use_last = 1;
-  }
-  return ( mean + y1 * stddev);
+  std::normal_distribution<> dist(mean, stddev);
+  return dist(rng);
 }
 
 double 
 do_rand_lognormal(double mean, double stddev)
 {
-  double x;
-  double logstd = std::log(1.0 + (stddev/mean)*(stddev/mean));
-  double logmean = std::log(mean) - 0.5 * logstd;
-  logstd = std::sqrt(logstd);
-
-  x = do_rand_normal(logmean, logstd);
-
-  return exp(x);
+  std::lognormal_distribution<> dist(mean, stddev);
+  return dist(rng);
 }
 
 double 
 do_rand_weibull(double alpha, double beta)
 {
-  double temp = (double) rand() / (double) RAND_MAX;
-  errno = 0;
-  temp = pow( (-1.0 / alpha * std::log(1.0 - temp)), (1.0/beta) );
-  SEAMS::math_error("weibull");
-  return (temp);
+  std::weibull_distribution<> dist(alpha, beta);
+  return dist(rng);
 }
 
 double 
 do_sign(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = (y) >= 0 ? fabs(x) : -fabs(x);
   SEAMS::math_error("sign");
   return (temp);
@@ -408,7 +383,7 @@ double
 do_dim(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = x - (min(x, y));
   SEAMS::math_error("dim");
   return (temp);
@@ -418,7 +393,7 @@ double
 do_fabs(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = fabs(x);
   SEAMS::math_error("fabs");
   return (temp);
@@ -428,7 +403,7 @@ double
 do_ceil(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = ceil(x);
   SEAMS::math_error("ceil");
   return (temp);
@@ -438,7 +413,7 @@ double
 do_cosh(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = cosh(x);
   SEAMS::math_error("cosh");
   return (temp);
@@ -448,7 +423,7 @@ double
 do_exp(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = exp(x);
   SEAMS::math_error("exp");
   return (temp);
@@ -458,7 +433,7 @@ double
 do_floor(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = floor(x);
   SEAMS::math_error("floor");
   return (temp);
@@ -468,7 +443,7 @@ double
 do_fmod(double x, double y)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = fmod(x, y);
   SEAMS::math_error("fmod");
   return (temp);
@@ -478,7 +453,7 @@ double
 do_log(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = std::log(x);
   SEAMS::math_error("log");
   return (temp);
@@ -488,7 +463,7 @@ double
 do_log10(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = std::log10(x);
   SEAMS::math_error("log10");
   return (temp);
@@ -498,7 +473,7 @@ double
 do_sinh(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = sinh(x);
   SEAMS::math_error("sinh");
   return (temp);
@@ -508,9 +483,12 @@ double
 do_sqrt(double x)
 {
   double temp;
-  errno = 0;
+  feclearexcept(FE_ALL_EXCEPT);
+  reset_error();
   temp = std::sqrt(x);
-  SEAMS::math_error("sqrt");
+  if(fetestexcept(FE_INVALID|FE_OVERFLOW|FE_DIVBYZERO)) {
+    SEAMS::math_error("sqrt");
+  }
   return (temp);
 }
 
@@ -518,7 +496,7 @@ double
 do_tanh(double x)
 {
   double temp;
-  errno = 0;
+  reset_error();
   temp = tanh(x);
   SEAMS::math_error("tanh");
   return (temp);
@@ -846,7 +824,7 @@ const char *do_getenv(char *env)
 double do_strtod(char *string)
 {
   double x;
-  errno = 0;
+  reset_error();
   x = atof(string);
   SEAMS::math_error("strtod");
   return x;

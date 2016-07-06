@@ -133,10 +133,67 @@ void rpc_test_additive(Epetra_ActiveComm &Comm,
   delete Ms;
 }
 
+/*******************************************************/
+int rpc_test_additive_repeat(Epetra_ActiveComm &Comm,
+                       Teuchos::ParameterList & List,
+                       Epetra_CrsMatrix &SM,
+                       const Epetra_CrsMatrix &M1,
+                       const Epetra_CrsMatrix &M0inv,
+                       const Epetra_CrsMatrix &D0,
+                       const Epetra_Vector &x_exact,
+                       const Epetra_Vector &x0,
+                       const Epetra_Vector &b,
+		       bool run_gmres){
+  // Generate Fake Ms
+  Epetra_CrsMatrix *Ms=0;
+  EpetraExt::MatrixMatrix::Add(M1,false,1.0,M1,false,1.0,Ms);
+  Ms->FillComplete();
+
+  // First solve
+  ML_set_random_seed(24601);
+  RefMaxwellPreconditioner PrecRF(SM,D0,*Ms,M0inv,M1,List);
+  Epetra_Vector x0_(x0);
+
+  Epetra_LinearProblem Problem(&SM, &x0_, (Epetra_MultiVector*)&b);
+  AztecOO solver(Problem);
+  solver.SetPrecOperator(&PrecRF);
+
+  if(run_gmres) solver.SetAztecOption(AZ_solver, AZ_gmres);
+  else solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_conv,AZ_r0);
+  solver.SetAztecOption(AZ_output,1);
+  solver.Iterate(100,1e-9);
+
+  // Second solve
+  ML_set_random_seed(24601);
+  RefMaxwellPreconditioner PrecRF2(SM,D0,*Ms,M0inv,M1,List);
+  Epetra_Vector x0_2(x0);
+
+  Epetra_LinearProblem Problem2(&SM, &x0_2, (Epetra_MultiVector*)&b);
+  AztecOO solver2(Problem2);
+  solver2.SetPrecOperator(&PrecRF2);
+
+  if(run_gmres) solver2.SetAztecOption(AZ_solver, AZ_gmres);
+  else solver2.SetAztecOption(AZ_solver, AZ_cg);
+  solver2.SetAztecOption(AZ_conv,AZ_r0);
+  solver2.SetAztecOption(AZ_output,1);
+  solver2.Iterate(100,1e-9);
+
+  delete Ms;
+
+  if (solver.NumIters() != solver2.NumIters()) {
+    if(!x0.Comm().MyPID()) printf("ERROR: RNG control test failed (iters = %d vs. %d)!\n",solver.NumIters(),solver2.NumIters());
+    return 1;
+  }
+  else return 0;
+}
+
+
+
 
 
 /*******************************************************/
-void matrix_read(Epetra_ActiveComm &Comm){
+bool matrix_read(Epetra_ActiveComm &Comm){
   Epetra_CrsMatrix *SM=0, *S, *Se,*D0,*D0e,*M0,*M1, *M1e;
 
   /* Read Matrices */
@@ -240,15 +297,27 @@ void matrix_read(Epetra_ActiveComm &Comm){
   rpc_test_additive(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
   lhs.PutScalar(0.0);
   rpc_test_additive(Comm,List_Aux,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+
+  // This only works in serial, for reasons which are not entirely obvious
+  if(Comm.NumProc()==1) {
+    lhs.PutScalar(0.0);
+    rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
+  }
+
+  /* Check RNG control */
+  int status1, status2 = 0;
   lhs.PutScalar(0.0);
-  rpc_test_additive(Comm,List_LineSGS,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,false);
-  
+  status1 = rpc_test_additive_repeat(Comm,List_SORa,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
+  lhs.PutScalar(0.0);
+  status2 = rpc_test_additive_repeat(Comm,List_Cheby,*SM,*M1,*M0inv,*D0,x_exact,lhs,rhs,true);
 
 
   delete M0; delete M1e;
   delete D0e;delete Se;
   delete SM;
   delete coords;
+
+  return (status1||status2);
 }
 
 
@@ -264,12 +333,15 @@ int main(int argc, char* argv[]){
   Epetra_SerialComm Comm;
 #endif
 
-  matrix_read(Comm);
+  int status = matrix_read(Comm);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  return 0;
+  if(status==0)
+    return EXIT_SUCCESS;
+  else
+    return EXIT_FAILURE;
 }/*end main*/
 
 

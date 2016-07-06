@@ -124,6 +124,7 @@ namespace panzer {
     std::vector<PHX::index_size_type> ddims_;
 
     void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
+    void getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
     void evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
   };

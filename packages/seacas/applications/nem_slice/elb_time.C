@@ -33,9 +33,9 @@
  *
  */
 
-#include <time.h>
+#include <ctime>
 
-#ifdef  HAS_GETRUSAGE
+#ifdef HAS_GETRUSAGE
 #include <sys/resource.h>
 #endif
 
@@ -44,14 +44,14 @@
  *****************************************************************************/
 double get_time()
 {
-#ifdef  HAS_GETRUSAGE
+#ifdef HAS_GETRUSAGE
   struct rusage timeval;
   getrusage(RUSAGE_SELF, &timeval);
   double timer = ((timeval.ru_utime.tv_sec + timeval.ru_stime.tv_sec) +
-           1.0e-6 * (timeval.ru_utime.tv_usec + timeval.ru_stime.tv_usec));
+                  1.0e-6 * (timeval.ru_utime.tv_usec + timeval.ru_stime.tv_usec));
 #else
   /* ANSI timer, but lower resolution & wraps around after ~36 minutes. */
-  double timer = clock()/((double) CLOCKS_PER_SEC);
+  double timer = clock() / ((double)CLOCKS_PER_SEC);
 #endif
   return timer;
 }

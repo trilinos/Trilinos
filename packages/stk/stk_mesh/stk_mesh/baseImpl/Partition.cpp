@@ -220,6 +220,21 @@ void Partition::overwrite_from_end(Bucket& bucket, unsigned ordinal)
   }
 }
 
+void Partition::delete_bucket(Bucket * bucket)
+{
+    if(bucket == m_buckets.back() && m_buckets.size() > 1)
+    {
+        Bucket *new_last = m_buckets[m_buckets.size() - 2];
+        m_buckets[0]->set_last_bucket_in_partition(new_last);
+    }
+
+    m_size -= bucket->size();
+
+    auto iter = std::find(m_buckets.begin(), m_buckets.end(), bucket);
+    m_repository->deallocate_bucket(bucket);
+    m_buckets.erase(iter, iter+1);
+}
+
 void Partition::remove_impl()
 {
   ThrowAssert(!empty());

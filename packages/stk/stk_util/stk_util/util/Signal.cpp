@@ -139,7 +139,6 @@ private:
   void illHandler();
   void busHandler();
   void termHandler();
-  void intHandler();
 
 private:
   sigjmp_buf		m_sigJmpBuf;			///< setjmp/longjmp buffer
@@ -152,8 +151,6 @@ private:
   Callback<EnvSignal>	illCallback;
   Callback<EnvSignal>	busCallback;
   Callback<EnvSignal>	termCallback;
-//  Callback<EnvSignal>	intCallback;
-
 };
 
 
@@ -217,13 +214,6 @@ EnvSignal::doSignal(
 
 void
 EnvSignal::hupHandler()
-{
-  m_hupReceived = true;
-}
-
-
-void
-EnvSignal::intHandler()
 {
   m_hupReceived = true;
 }

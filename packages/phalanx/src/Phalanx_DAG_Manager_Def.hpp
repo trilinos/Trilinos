@@ -80,9 +80,6 @@ DagManager(const std::string& evaluation_type_name) :
 #else
   allow_multiple_evaluators_for_same_field_(false)
 #endif
-#ifdef PHX_ENABLE_KOKKOS_AMT
-  ,policy_(4,1)
-#endif
 { }
 
 //=======================================================================
@@ -205,6 +202,8 @@ sortAndOrderEvaluators()
     const auto& fields = (nodes_[topoSortEvalIndex[i]]).get()->evaluatedFields();
     fields_.insert(fields_.end(),fields.cbegin(),fields.cend());
   }
+
+  this->createEvalautorBindingFieldMap();
 
   sorting_called_ = true;
 }
@@ -344,7 +343,7 @@ evaluateFields(typename Traits::EvalData d)
 
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
 
-    nodes_[topoSortEvalIndex[n]].setExecutionTime(clock::now()-start);
+    nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
   }
 }
 
@@ -353,32 +352,49 @@ evaluateFields(typename Traits::EvalData d)
 template<typename Traits>
 void PHX::DagManager<Traits>::
 evaluateFieldsTaskParallel(const int& threads_per_task,
+			   const int& work_size,
 			   typename Traits::EvalData d)
 {
   using execution_space = PHX::Device::execution_space;
   using policy_type = Kokkos::Experimental::TaskPolicy<execution_space>;
-  
-  policy_ = policy_type(0,threads_per_task);
 
-  node_futures_.resize(nodes_.size());
+  const unsigned task_max_count = static_cast<unsigned>(topoSortEvalIndex.size());
+  unsigned task_max_size = 0;
+  unsigned task_max_dependencies = 0;
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    const auto& adjacencies = node.adjacencies();
+    task_max_dependencies = ::std::max(task_max_dependencies,static_cast<unsigned>(adjacencies.size()));
+    task_max_size = ::std::max(task_max_size,node.get()->taskSize());
+  }
+  //std::cout << "task_max_deps=" << task_max_dependencies << ", task_max_size=" << task_max_size << std::endl;
+
+  policy_type policy(task_max_count,
+		     task_max_size,
+		     task_max_dependencies,
+		     threads_per_task);
+
+  // Issue in reusing vector. The assign doesn't like the change of policy.
+  //node_futures_.resize(nodes_.size());
+  std::vector<Kokkos::Experimental::Future<void,PHX::Device::execution_space>> node_futures_(nodes_.size());
 
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
     
     auto& node = nodes_[topoSortEvalIndex[n]];
     const auto& adjacencies = node.adjacencies();
-    auto future = node.getNonConst()->createTask(policy_,adjacencies.size(),d);
+    auto future = node.getNonConst()->createTask(policy,adjacencies.size(),work_size,d);
     node_futures_[topoSortEvalIndex[n]] = future;
 
     // Since this is registered in the order of the topological sort,
     // we know all dependent futures of a node are already
     // constructed.
     for (const auto& a : adjacencies)
-      policy_.add_dependence(future,node_futures_[a]);
+      policy.add_dependence(future,node_futures_[a]);
 
-    policy_.spawn(future);
+    policy.spawn(future);
   }
 
-  Kokkos::Experimental::wait(policy_);
+  Kokkos::Experimental::wait(policy);
 }
 #endif
 
@@ -645,6 +661,32 @@ analyzeGraph(double& speedup, double& parallelizability) const
   parallelizability = ( 1.0 - (1.0/speedup) )
     / ( 1.0 - (1.0 / static_cast<double>(topoSortEvalIndex.size())) );
 
+}
+
+//=======================================================================
+template<typename Traits>
+std::vector<Teuchos::RCP<PHX::Evaluator<Traits>>>& 
+PHX::DagManager<Traits>::getEvaluatorsBindingField(const PHX::FieldTag& ft)
+{
+  return field_to_evaluators_binding_[ft.identifier()];
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::createEvalautorBindingFieldMap()
+{
+  field_to_evaluators_binding_.clear();
+  
+  for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
+    const auto& node = nodes_[topoSortEvalIndex[n]];
+    Teuchos::RCP<PHX::Evaluator<Traits>> e = node.getNonConst();
+
+    for (const auto& f : e->evaluatedFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+
+    for (const auto& f : e->dependentFields())
+      field_to_evaluators_binding_[f->identifier()].push_back(e);
+  }
 }
 
 //=======================================================================

@@ -28,8 +28,8 @@ namespace Graph{
       lno_row_view_t_ row_mapB,
       lno_nnz_view_t_ entriesB,
       bool transposeB,
-      lno_row_view_t_ &row_mapC,
-      lno_nnz_view_t_ &entriesC
+      typename lno_row_view_t_::non_const_type &row_mapC,
+      typename lno_nnz_view_t_::non_const_type &entriesC
       ){
 
     typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
@@ -48,7 +48,9 @@ namespace Graph{
 
     case SPGEMM_CUSP:
       break;
-
+    case SPGEMM_KK4:
+    case SPGEMM_KK3:
+    case SPGEMM_KK2:
     case SPGEMM_KK1:
     {
       KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
@@ -90,9 +92,9 @@ namespace Graph{
       lno_nnz_view_t_ entriesB,
       scalar_nnz_view_t_ valuesB,
       bool transposeB,
-      lno_row_view_t_ &row_mapC,
-      lno_nnz_view_t_ &entriesC,
-      scalar_nnz_view_t_ &valuesC
+      typename lno_row_view_t_::non_const_type &row_mapC,
+      typename lno_nnz_view_t_::non_const_type &entriesC,
+      typename scalar_nnz_view_t_::non_const_type &valuesC
       ){
 
 
@@ -107,7 +109,7 @@ namespace Graph{
           );
     }
 
-    valuesC = typename scalar_nnz_view_t_::non_const_type("valC", entriesC.dimension_0());
+    //valuesC = typename scalar_nnz_view_t_::non_const_type("valC", entriesC.dimension_0());
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
         //no op.
@@ -145,9 +147,9 @@ namespace Graph{
       lno_nnz_view_t_ entriesB,
       scalar_nnz_view_t_ valuesB,
       bool transposeB,
-      lno_row_view_t_ &row_mapC,
-      lno_nnz_view_t_ &entriesC,
-      scalar_nnz_view_t_ &valuesC
+      typename lno_row_view_t_::non_const_type &row_mapC,
+      typename lno_nnz_view_t_::non_const_type &entriesC,
+      typename scalar_nnz_view_t_::non_const_type &valuesC
       ){
 
 
@@ -165,9 +167,10 @@ namespace Graph{
           );
     }
 
-    //valuesC = typename KernelHandle::value_array_type("valC", entriesC.dimension_0());
+
     switch (sh->get_algorithm_type()){
     case SPGEMM_CUSPARSE:
+      valuesC = typename scalar_nnz_view_t_::non_const_type(Kokkos::ViewAllocateWithoutInitializing("valC"), entriesC.dimension_0());
       std::cout << "SPGEMM_CUSPARSE" << std::endl;
       Impl::cuSPARSE_apply<spgemmHandleType>(
           sh,
@@ -197,8 +200,19 @@ namespace Graph{
                 row_mapB, entriesB, valuesB, transposeB,
                 row_mapC, entriesC, valuesC);
       break;
-
+    case SPGEMM_KK4:
+    case SPGEMM_KK3:
+    case SPGEMM_KK2:
     case SPGEMM_KK1:
+    {
+      KokkosKernels::Experimental::Graph::Impl::KokkosSPGEMM
+      <KernelHandle,
+      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_,
+      lno_row_view_t_, lno_nnz_view_t_, scalar_nnz_view_t_>
+      kspgemm (handle,m,n,k,row_mapA, entriesA, valuesA, transposeA, row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.KokkosSPGEMM_apply(row_mapC, entriesC, valuesC);
+    }
+
     case SPGEMM_DEFAULT:
     case SPGEMM_SERIAL:
     default:

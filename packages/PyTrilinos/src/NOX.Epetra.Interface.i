@@ -122,7 +122,8 @@ NOX.Epetra.Interface provides the following user-level classes:
 %}
 
 // General ignore directives
-// %ignore *::operator=;   // temp removal
+%ignore *::operator[];
+%ignore *::operator=;
 
 // Include NOX documentation
 %include "NOX_dox.i"
@@ -132,6 +133,36 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 // Trilinos module imports
 %import "Teuchos.i"
+
+// Teuchos::RCPs typemaps
+%teuchos_rcp(NOX::Abstract::Group)
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
+
+// Allow import from the parent directory
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+try:
+    from .. import Abstract
+except ValueError:
+    import Abstract
+%}
+
+// Include typemaps for Abstract base classes
+%ignore *::getXPtr;
+%ignore *::getFPtr;
+%ignore *::getGradientPtr;
+%ignore *::getNewtonPtr;
+%include "NOX.Abstract_typemaps.i"
+%import(module="Abstract" ) "NOX_Abstract_Group.H"
+%import(module="Abstract" ) "NOX_Abstract_PrePostOperator.H"
+%import(module="Abstract" ) "NOX_Abstract_MultiVector.H"
+%import(module="Abstract" ) "NOX_Abstract_Vector.H"
 
 // Epetra module imports
 %import "Epetra.i"
@@ -170,11 +201,6 @@ NOX.Epetra.Interface provides the following user-level classes:
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Teuchos::RCPs typemaps
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
 ///////////////////////
 // NOX_Utils support //

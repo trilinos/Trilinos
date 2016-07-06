@@ -117,9 +117,13 @@ class RKButcherTableauDefaultBase :
     /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& b() const { return b_; }
     /** \brief . */
+    virtual const Teuchos::SerialDenseVector<int,Scalar>& bhat() const { return bhat_ ; }
+    /** \brief . */
     virtual const Teuchos::SerialDenseVector<int,Scalar>& c() const { return c_; }
     /** \brief . */
     virtual int order() const { return order_; }
+    /** \brief . */
+    virtual bool isEmbeddedMethod() const { return isEmbedded_; }  // returns whether the stepper is Embedded or not (Sidafa)
     /** \brief . */
     virtual void setDescription(std::string longDescription) { longDescription_ = longDescription; }
 
@@ -129,7 +133,9 @@ class RKButcherTableauDefaultBase :
         const Teuchos::SerialDenseVector<int,Scalar>& b_in,
         const Teuchos::SerialDenseVector<int,Scalar>& c_in,
         const int order_in,
-        const std::string& longDescription_in
+        const std::string& longDescription_in,
+        bool isEmbedded = false, /* (default) tell the stepper the RK is an embedded method  */
+        const Teuchos::SerialDenseVector<int,Scalar>& bhat_in =  Teuchos::SerialDenseVector<int,Scalar>() /* (default) */
         )
     {
       const int numStages_in = A_in.numRows();
@@ -143,6 +149,13 @@ class RKButcherTableauDefaultBase :
       c_ = c_in;
       order_ = order_in;
       longDescription_ = longDescription_in;
+
+      /* Sidafa */
+      if (isEmbedded) {
+        TEUCHOS_ASSERT_EQUALITY( bhat_in.length(), numStages_in );
+        bhat_ = bhat_in;
+        isEmbedded_ = true;
+      }
     }
 
     /* \brief Redefined from Teuchos::ParameterListAcceptorDefaultBase */
@@ -214,6 +227,10 @@ class RKButcherTableauDefaultBase :
     int order_;
     std::string longDescription_;
     mutable RCP<ParameterList> validPL_;
+
+    /* Sidafa - Embedded method parameters */
+    Teuchos::SerialDenseVector<int,Scalar> bhat_; 
+    bool isEmbedded_ = false;
 };
 
 

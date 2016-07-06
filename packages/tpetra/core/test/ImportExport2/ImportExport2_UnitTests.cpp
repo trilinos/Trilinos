@@ -64,6 +64,27 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 
 namespace {
+
+  // Get a Teuchos::ArrayView which views the host Kokkos::View of the
+  // input 1-D Kokkos::DualView.
+  template<class DualViewType>
+  Teuchos::ArrayView<typename DualViewType::t_dev::value_type>
+  getArrayViewFromDualView (const DualViewType& x)
+  {
+    static_assert (static_cast<int> (DualViewType::t_dev::rank) == 1,
+                   "The input DualView must have rank 1.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (x.template need_sync<Kokkos::HostSpace> (), std::logic_error, "The "
+       "input Kokkos::DualView was most recently modified on device, but this "
+       "function needs the host view of the data to be the most recently "
+       "modified.");
+
+    auto x_host = x.template view<Kokkos::HostSpace> ();
+    typedef typename DualViewType::t_dev::value_type value_type;
+    return Teuchos::ArrayView<value_type> (x_host.ptr_on_device (),
+                                           x_host.dimension_0 ());
+  }
+
   using Teuchos::as;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -1801,12 +1822,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
   RCP<const Comm<int> > Comm = getDefaultComm();
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<double, LO, GO> CrsMatrixType;
+  typedef typename CrsMatrixType::device_type device_type;
   using Teuchos::av_reinterpret_cast;
 
   RCP<CrsMatrixType> A;
   int total_err=0;
   int test_err=0;
-  Teuchos::Array<char> exports1, exports2;
+  Teuchos::Array<char> exports1;
+  Kokkos::DualView<char*, device_type> exports2;
   Teuchos::Array<size_t> numPackets1, numPackets2;
   size_t constantNumPackets1=0, constantNumPackets2=0;
 
@@ -1835,6 +1858,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
     numPackets2.resize(Importer->getExportLIDs().size());
     Tpetra::Import_Util::packAndPrepareWithOwningPIDs<double, LO, GO, Node>(*A,Importer->getExportLIDs(),exports2,numPackets2(),constantNumPackets2,Importer->getDistributor(),pids());
 
+    // This test reads exports2 on the host, so sync there.
+    exports2.template sync<Kokkos::HostSpace> ();
+    Teuchos::ArrayView<char> exports2_av = getArrayViewFromDualView (exports2);
+
     // Loop through the parts that should be the same
     const size_t numExportLIDs = Importer->getExportLIDs().size();
     Teuchos::ArrayView<const LO> exportLIDs = Importer->getExportLIDs();
@@ -1854,9 +1881,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, PackAndPrepareWithOwningPIDs, LO
       ArrayView<GO> gids1  = av_reinterpret_cast<GO>(gidsChar1);
       ArrayView<double>  vals1  = av_reinterpret_cast<double>(valsChar1);
 
-      ArrayView<char> gidsChar2 = exports2(offset2, curNumEntries*sizeof(GO));
-      //      ArrayView<char> pidsChar2 = exports2(offset2+curNumEntries*sizeof(GO), curNumEntries*sizeof(int));
-      ArrayView<char> valsChar2 = exports2(offset2+curNumEntries*(sizeof(GO)+sizeof(int)), curNumEntries*sizeof(double));
+      ArrayView<char> gidsChar2 = exports2_av(offset2, curNumEntries*sizeof(GO));
+      //      ArrayView<char> pidsChar2 = exports2_av(offset2+curNumEntries*sizeof(GO), curNumEntries*sizeof(int));
+      ArrayView<char> valsChar2 = exports2_av(offset2+curNumEntries*(sizeof(GO)+sizeof(int)), curNumEntries*sizeof(double));
       ArrayView<GO> gids2  = av_reinterpret_cast<GO>(gidsChar2);
       ArrayView<double>  vals2  = av_reinterpret_cast<double>(valsChar2);
 
@@ -1882,6 +1909,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef Tpetra::Import<LO, GO> ImportType;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> CrsMatrixType;
   typedef typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type PacketType;
+  typedef typename MapType::device_type device_type;
   typedef Tpetra::global_size_t GST;
 
   RCP<const Comm<int> > Comm = getDefaultComm();
@@ -1890,7 +1918,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   int test_err=0;
   int MyPID = Comm->getRank();
   RCP<const MapType> MapSource, MapTarget;
-  Teuchos::Array<char> exports, imports;
+  Kokkos::DualView<char*, device_type> exports;
+  Teuchos::Array<char> imports;
   Teuchos::Array<size_t> numImportPackets, numExportPackets;
   size_t constantNumPackets=0;
 
@@ -1926,6 +1955,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
     Tpetra::Import_Util::packAndPrepareWithOwningPIDs<Scalar, LO, GO, Node>(*A,Importer->getExportLIDs(),exports,numExportPackets(),constantNumPackets,distor,SourcePids());
 
+    // This test reads exports on the host, so sync there.
+    exports.template sync<Kokkos::HostSpace> ();
+    Teuchos::ArrayView<char> exports_av = getArrayViewFromDualView (exports);
+
     // Do the moral equivalent of doTransfer
     distor.doPostsAndWaits<size_t>(numExportPackets().getConst(), 1,numImportPackets());
     size_t totalImportPackets = 0;
@@ -1933,7 +1966,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
       totalImportPackets += numImportPackets[i];
     }
     imports.resize(totalImportPackets);
-    distor.doPostsAndWaits<PacketType>(exports(),numExportPackets(),imports(),numImportPackets());
+    distor.doPostsAndWaits<PacketType>(exports_av,numExportPackets(),imports(),numImportPackets());
 
     // Run the count... which should get the same NNZ as the traditional import
     using Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount;

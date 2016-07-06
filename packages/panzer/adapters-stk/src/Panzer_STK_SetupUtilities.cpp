@@ -57,7 +57,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   std::vector<std::string> element_blocks;
 
   std::vector<std::size_t> local_cell_ids;
-  Intrepid2::FieldContainer<double> cell_vertex_coordinates;
+  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
 
   getIdsAndVertices(mesh, pb.elementBlockID(), local_cell_ids, cell_vertex_coordinates);
 
@@ -78,7 +78,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   std::vector<std::string> element_blocks;
 
   std::vector<std::size_t> local_cell_ids;
-  Intrepid2::FieldContainer<double> cell_vertex_coordinates;
+  Kokkos::DynRankView<double,PHX::Device> cell_vertex_coordinates;
 
   getIdsAndVertices(mesh, eBlock, local_cell_ids, cell_vertex_coordinates);
 
@@ -184,7 +184,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
       if(itr->second.size()==0)
         continue;
 
-      Intrepid2::FieldContainer<double> vertices;
+      Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(itr->second,pb.elementBlockID(),vertices);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
@@ -303,7 +303,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
       if(itr->second.size()==0)
         continue;
 
-      Intrepid2::FieldContainer<double> vertices;
+      Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(itr->second,eBlock,vertices);
   
       Teuchos::RCP<std::vector<panzer::Workset> > current
@@ -404,7 +404,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
     local_cell_ids_b.push_back(mesh.elementLocalId(element_b));
   }
 
-  Intrepid2::FieldContainer<double> vertex_coordinates_a, vertex_coordinates_b;
+  Kokkos::DynRankView<double,PHX::Device> vertex_coordinates_a, vertex_coordinates_b;
   mesh.getElementVertices(local_cell_ids_a,pb_a.elementBlockID(),vertex_coordinates_a);
   mesh.getElementVertices(local_cell_ids_b,pb_b.elementBlockID(),vertex_coordinates_b);
 
@@ -480,7 +480,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
       Teuchos::RCP<const shards::CellTopology> topo 
          = mesh.getCellTopology(pb.elementBlockID());
 
-      Intrepid2::FieldContainer<double> vertices;
+      Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(local_cell_ids,pb.elementBlockID(),vertices);
   
       return panzer::buildBCWorkset(pb, local_cell_ids, local_side_ids, vertices);
@@ -557,7 +557,7 @@ buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
       Teuchos::RCP<const shards::CellTopology> topo 
          = mesh.getCellTopology(eblockID);
 
-      Intrepid2::FieldContainer<double> vertices;
+      Kokkos::DynRankView<double,PHX::Device> vertices;
       mesh.getElementVertices(local_cell_ids,eblockID,vertices);
   
       return panzer::buildBCWorkset(needs, eblockID, local_cell_ids, local_side_ids, vertices);

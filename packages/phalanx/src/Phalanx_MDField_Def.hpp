@@ -54,9 +54,13 @@
 #include "Phalanx_Print_Utilities.hpp"
 
 #ifdef Phalanx_ENABLE_Intrepid2
+#ifdef PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+// no more intrepid dependencies!
+#else
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
-#endif
+#endif // PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+#endif //Phalanx_ENABLE_Intrepid2
 
 //**********************************************************************
 #ifdef PHX_DEBUG
@@ -450,6 +454,149 @@ print(std::ostream& os,	bool printValues) const
   if (printValues)
     os << "Error - MDField no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;  
 }
+
+//*********************************************************************
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
+Kokkos::DynRankView<DataT,PHX::Device> 
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+get_view() 
+{
+  uint64_t dim_scalar = Kokkos::dimension_scalar(m_field_data);
+  if(dim_scalar == 0)
+    dim_scalar = ~size_t(0);
+  
+  if (m_field_data.Rank == 1) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          dim_scalar);
+  }
+  else if (m_field_data.Rank == 2) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          m_field_data.extent(1),
+                                                                          dim_scalar);
+  }
+  else if (m_field_data.Rank == 3) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          m_field_data.extent(1),
+                                                                          m_field_data.extent(2),
+                                                                          dim_scalar);
+  }
+  else if (m_field_data.Rank == 4) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          m_field_data.extent(1),
+                                                                          m_field_data.extent(2),
+                                                                          m_field_data.extent(3),
+                                                                          dim_scalar);
+  }
+  else if (m_field_data.Rank == 5) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          m_field_data.extent(1),
+                                                                          m_field_data.extent(2),
+                                                                          m_field_data.extent(3),
+                                                                          m_field_data.extent(4),
+                                                                          dim_scalar);
+  }
+  else if (m_field_data.Rank == 6) {
+    return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                          m_field_data.extent(0),
+                                                                          m_field_data.extent(1),
+                                                                          m_field_data.extent(2),
+                                                                          m_field_data.extent(3),
+                                                                          m_field_data.extent(4),
+                                                                          m_field_data.extent(5),
+                                                                          dim_scalar);
+  }
+
+  // Must be rank 7
+  return Kokkos::DynRankView<DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                        m_field_data.extent(0),
+                                                                        m_field_data.extent(1),
+                                                                        m_field_data.extent(2),
+                                                                        m_field_data.extent(3),
+                                                                        m_field_data.extent(4),
+                                                                        m_field_data.extent(5),
+                                                                        m_field_data.extent(6),
+                                                                        dim_scalar);
+}
+
+//*********************************************************************
+template<typename DataT,
+         typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+         typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+KOKKOS_FORCEINLINE_FUNCTION
+const Kokkos::DynRankView<DataT,PHX::Device>
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+get_view() const
+{
+  uint64_t dim_scalar = Kokkos::dimension_scalar(m_field_data);
+  if(dim_scalar == 0)
+    dim_scalar = ~size_t(0);
+  
+  if (m_field_data.Rank == 1) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                dim_scalar);
+  }
+  else if (m_field_data.Rank == 2) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                m_field_data.extent(1),
+                                                                                dim_scalar);
+  }
+  else if (m_field_data.Rank == 3) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                m_field_data.extent(1),
+                                                                                m_field_data.extent(2),
+                                                                                dim_scalar);
+  }
+  else if (m_field_data.Rank == 4) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                m_field_data.extent(1),
+                                                                                m_field_data.extent(2),
+                                                                                m_field_data.extent(3),
+                                                                                dim_scalar);
+  }
+  else if (m_field_data.Rank == 5) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                m_field_data.extent(1),
+                                                                                m_field_data.extent(2),
+                                                                                m_field_data.extent(3),
+                                                                                m_field_data.extent(4),
+                                                                                dim_scalar);
+  }
+  else if (m_field_data.Rank == 6) {
+    return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                                m_field_data.extent(0),
+                                                                                m_field_data.extent(1),
+                                                                                m_field_data.extent(2),
+                                                                                m_field_data.extent(3),
+                                                                                m_field_data.extent(4),
+                                                                                m_field_data.extent(5),
+                                                                                dim_scalar);
+  }
+
+  // Must be rank 7
+  return Kokkos::DynRankView<const DataT,PHX::Device,Kokkos::MemoryUnmanaged>(m_field_data.ptr_on_device(),
+                                                                              m_field_data.extent(0),
+                                                                              m_field_data.extent(1),
+                                                                              m_field_data.extent(2),
+                                                                              m_field_data.extent(3),
+                                                                              m_field_data.extent(4),
+                                                                              m_field_data.extent(5),
+                                                                              m_field_data.extent(6),
+                                                                              dim_scalar);
+}
+
 //*********************************************************************
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -457,10 +604,11 @@ template<typename DataT,
 KOKKOS_FORCEINLINE_FUNCTION
 typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type 
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-get_kokkos_view() 
+get_static_view() 
 {
   return m_field_data;
 }
+
 //*********************************************************************
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -468,21 +616,26 @@ template<typename DataT,
 KOKKOS_FORCEINLINE_FUNCTION
 const typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::array_type
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-get_kokkos_view() const
+get_static_view() const
 {
   return m_field_data;
 }
+
 //*********************************************************************
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
          typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-template<typename MDFieldType>
+template<typename SrcDataT,
+         typename SrcTag0,typename SrcTag1, typename SrcTag2, typename SrcTag3,
+         typename SrcTag4,typename SrcTag5, typename SrcTag6, typename SrcTag7>
 void
 PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-deep_copy(const MDFieldType& source)      
+deep_copy(const PHX::MDField<SrcDataT,SrcTag0,SrcTag1,SrcTag2,SrcTag3,
+          SrcTag4,SrcTag5,SrcTag6,SrcTag7>& source)
 {
-  Kokkos::deep_copy(m_field_data, source);
+  Kokkos::deep_copy(m_field_data, source.get_static_view());
 }
+
 //*************************************************************************
 template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -493,6 +646,7 @@ deep_copy(const DataT source)
 {
   Kokkos::deep_copy(m_field_data, source);
 }
+
 //*********************************************************************
 /*template<typename DataT,
          typename Tag0,typename Tag1, typename Tag2, typename Tag3,
@@ -529,7 +683,11 @@ std::ostream& PHX::operator<<(std::ostream& os,
 //**********************************************************************
 
 
+#ifdef PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
 
+#include "Phalanx_MDField_DynRank_Def.hpp"
+
+#else
 
 //**********************************************************************
 template<typename DataT>
@@ -914,7 +1072,7 @@ setFieldData(const PHX::any& a)
 
     // temporary size calculation to avoid bug in Kokkos 10/22/2014
     typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type sz = 1;
-    for ( size_type i = 0 ; i <  m_dimension_rank_size(7); ++i ) 
+    for ( PHX::index_size_type i = 0 ; i <  m_dimension_rank_size(7); ++i ) 
       sz *= m_dimension_rank_size(i);
 
     m_dimension_rank_size(8) = sz; 
@@ -976,52 +1134,52 @@ PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
 deep_copy(const MDFieldType& source)
 {
   if (m_tag.dataLayout().rank() == 1){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
+   for (int ind1=0; ind1<m_field_data1.extent_int(0); ind1++)
       m_field_data1(ind1) = source(ind1);
   }
   else if (m_tag.dataLayout().rank() == 2){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)   
+   for (int ind1=0; ind1<m_field_data2.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data2.extent_int(1); ind2++)   
         m_field_data2(ind1,ind2) = source(ind1,ind2);
   }
   else if (m_tag.dataLayout().rank() == 3){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
+   for (int ind1=0; ind1<m_field_data3.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data3.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data3.extent_int(2); ind3++)
             m_field_data3(ind1,ind2,ind3) = source(ind1,ind2,ind3);
   }
   else if (m_tag.dataLayout().rank() == 4){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)  
+   for (int ind1=0; ind1<m_field_data4.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data4.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data4.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data4.extent_int(3); ind4++)  
                 m_field_data4(ind1,ind2,ind3,ind4) = source(ind1,ind2,ind3,ind4);   
   }
   else if (m_tag.dataLayout().rank() == 5){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
+   for (int ind1=0; ind1<m_field_data5.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data5.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data5.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data5.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data5.extent_int(4); ind5++)
                    m_field_data5(ind1,ind2,ind3,ind4,ind5) = source(ind1,ind2,ind3,ind4,ind5);
   }
   else if (m_tag.dataLayout().rank() == 6){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
+   for (int ind1=0; ind1<m_field_data6.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data6.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data6.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data6.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data6.extent_int(4); ind5++)
+                   for (int ind6=0; ind6<m_field_data6.extent_int(5); ind6++)
                       m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = source(ind1,ind2,ind3,ind4,ind5,ind6);
   }
   else if (m_tag.dataLayout().rank() == 7){
-   for (int ind1=0; ind1<m_tag.dataLayout().dimension(0); ind1++)
-      for (int ind2=0; ind2<m_tag.dataLayout().dimension(1); ind2++)
-         for (int ind3=0; ind3<m_tag.dataLayout().dimension(2); ind3++)
-            for (int ind4=0; ind4<m_tag.dataLayout().dimension(3); ind4++)
-                for (int ind5=0; ind5<m_tag.dataLayout().dimension(4); ind5++)
-                   for (int ind6=0; ind6<m_tag.dataLayout().dimension(5); ind6++)
-                      for (int ind7=0; ind7<m_tag.dataLayout().dimension(6); ind7++)
+   for (int ind1=0; ind1<m_field_data7.extent_int(0); ind1++)
+      for (int ind2=0; ind2<m_field_data7.extent_int(1); ind2++)
+         for (int ind3=0; ind3<m_field_data7.extent_int(2); ind3++)
+            for (int ind4=0; ind4<m_field_data7.extent_int(3); ind4++)
+                for (int ind5=0; ind5<m_field_data7.extent_int(4); ind5++)
+                   for (int ind6=0; ind6<m_field_data7.extent_int(5); ind6++)
+                      for (int ind7=0; ind7<m_field_data7.extent_int(6); ind7++)
                           m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = source(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
   }
 }
@@ -1038,42 +1196,42 @@ V_MultiplyFunctor<MDFieldTypeA, MDFieldTypeB, RANK>::operator() (const int & ind
     base_.m_field_data1(ind1) = base_.m_field_data1(ind1)*source_(ind1);
   }
   else if (RANK == 2){
-    for (int ind2=0; ind2<base_.m_field_data2.dimension(1); ind2++)
+    for (int ind2=0; ind2<base_.m_field_data2.extent_int(1); ind2++)
       base_.m_field_data2(ind1,ind2) = base_.m_field_data2(ind1,ind2)*source_(ind1,ind2);
   }
    else if (RANK == 3){
-     for (int ind2=0; ind2<base_.m_field_data3.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data3.dimension(2); ind3++)
+     for (int ind2=0; ind2<base_.m_field_data3.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data3.extent_int(2); ind3++)
          base_.m_field_data3(ind1,ind2,ind3) = base_.m_field_data3(ind1,ind2,ind3)*source_(ind1,ind2,ind3);
    }
    else if (RANK == 4){
-     for (int ind2=0; ind2<base_.m_field_data4.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data4.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data4.dimension(3); ind4++)
+     for (int ind2=0; ind2<base_.m_field_data4.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data4.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data4.extent_int(3); ind4++)
            base_.m_field_data4(ind1,ind2,ind3,ind4) = base_.m_field_data4(ind1,ind2,ind3,ind4)*source_(ind1,ind2,ind3,ind4);
    }
    else if (RANK == 5){
-     for (int ind2=0; ind2<base_.m_field_data5.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data5.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data5.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data5.dimension(4); ind5++)
+     for (int ind2=0; ind2<base_.m_field_data5.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data5.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data5.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data5.extent_int(4); ind5++)
              base_.m_field_data5(ind1,ind2,ind3,ind4,ind5) = base_.m_field_data5(ind1,ind2,ind3,ind4,ind5)*source_(ind1,ind2,ind3,ind4,ind5);
    }
    else if (RANK == 6){
-     for (int ind2=0; ind2<base_.m_field_data6.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data6.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data6.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data6.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data6.dimension(5); ind6++)
+     for (int ind2=0; ind2<base_.m_field_data6.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data6.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data6.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data6.extent_int(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data6.extent_int(5); ind6++)
                base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6) = base_.m_field_data6(ind1,ind2,ind3,ind4,ind5,ind6)*source_(ind1,ind2,ind3,ind4,ind5,ind6);
    }
    else if (RANK == 7){
-     for (int ind2=0; ind2<base_.m_field_data7.dimension(1); ind2++)
-       for (int ind3=0; ind3<base_.m_field_data7.dimension(2); ind3++)
-         for (int ind4=0; ind4<base_.m_field_data7.dimension(3); ind4++)
-           for (int ind5=0; ind5<base_.m_field_data7.dimension(4); ind5++)
-             for (int ind6=0; ind6<base_.m_field_data7.dimension(5); ind6++)
-               for (int ind7=0; ind7<base_.m_field_data7.dimension(6); ind7++)
+     for (int ind2=0; ind2<base_.m_field_data7.extent_int(1); ind2++)
+       for (int ind3=0; ind3<base_.m_field_data7.extent_int(2); ind3++)
+         for (int ind4=0; ind4<base_.m_field_data7.extent_int(3); ind4++)
+           for (int ind5=0; ind5<base_.m_field_data7.extent_int(4); ind5++)
+             for (int ind6=0; ind6<base_.m_field_data7.extent_int(5); ind6++)
+               for (int ind7=0; ind7<base_.m_field_data7.extent_int(6); ind7++)
                  base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7) = base_.m_field_data7(ind1,ind2,ind3,ind4,ind5,ind6,ind7)*source_(ind1,ind2,ind3,ind4,ind5,ind6,ind7);
    }
  }
@@ -1149,12 +1307,17 @@ std::ostream& PHX::operator<<(std::ostream& os,
   return os;
 }
 
+#endif // PHX_ENABLE_KOKKOS_DYN_RANK_VIEW
+
 //**********************************************************************
 // For interoperability with Intrepid+Kokkos
 
 //template<class A>
 //struct Rank{static const int value = -1;};
 #ifdef Phalanx_ENABLE_Intrepid2
+#ifdef PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
+// no more intrepid dependencies!
+#else
 
 #include "Intrepid2_config.h" // for HAVE_INTREPID_KOKKOSCORE define
 #include "Intrepid2_KokkosRank.hpp"
@@ -1246,6 +1409,7 @@ static const bool value = true;
 
 }
 
+#endif //PHX_ENABLE_INTREPID2_DYN_RANK_VIEW_REFACTOR
 #endif // Phalanx_ENABLE_IntrepidIntrepid2
 //********************************************************************************************
 #endif

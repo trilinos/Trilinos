@@ -1,0 +1,8 @@
+\contentsline {todo}{\color@box {}{blue!25}{\leavevmode {\color {blue!25}o}}\ \textbf {AP: }Mention Kokkos. Should we talk about nodes, or device types?}{11}{section*.7}
+\contentsline {todo}{\color@box {}{green!25}{\leavevmode {\color {green!25}o}}\ \textbf {AP: }Is the list of provided solvers complete? Probably not: Hiptmair, ...}{11}{section*.8}
+\contentsline {todo}{\color@box {}{red!25}{\leavevmode {\color {red!25}o}}\ \textbf {AP: }Minimum gcc version is now 4.7. Need to check on Intel and clang. In general, there must be a place of required compilers for Tpetra.}{12}{section*.9}
+\contentsline {todo}{\color@box {}{green!25}{\leavevmode {\color {green!25}o}}\ \textbf {AP: }Is ShyLu a dependency now? Need to double check dependencies.}{12}{section*.10}
+\contentsline {todo}{\color@box {}{green!25}{\leavevmode {\color {green!25}o}}\ \textbf {AP: }With deprecation of Ifpack2's Krylov, is Belos still a dependency? Probably not}{12}{section*.11}
+\contentsline {todo}{\color@box {}{blue!25}{\leavevmode {\color {blue!25}o}}\ \textbf {AP: }Add CMake code highlighting. Add more text (steal from MueLu's guide or tutorial).}{12}{section*.12}
+\contentsline {todo}{\color@box {}{red!25}{\leavevmode {\color {red!25}o}}\ \textbf {AP: }B must be based on the range map, not domain}{14}{section*.13}
+\contentsline {todo}{\color@box {}{red!25}{\leavevmode {\color {red!25}o}}\ \textbf {AP: }We should mention LinearSolverFactory, but I am unsure of how it works, and what are the limitations. Should we involve Mark into this?}{15}{section*.14}

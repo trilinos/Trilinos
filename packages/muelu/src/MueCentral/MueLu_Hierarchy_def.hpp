@@ -294,7 +294,7 @@ namespace MueLu {
       level.Request(*coarseFact);
     }
 
-    PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
+    PrintMonitor m0(*this, "Level " +  Teuchos::toString(coarseLevelID), static_cast<MsgType>(Runtime0 | Test));
 
     // Build coarse level hierarchy
     RCP<Operator> Ac = Teuchos::null;
@@ -446,7 +446,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(const FactoryManagerBase& manager, int startLevel, int numDesiredLevels) {
     // Use MueLu::BaseClass::description() to avoid printing "{numLevels = 1}" (numLevels is increasing...)
-    PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")");
+    PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")", Runtime0);
 
     Clear(startLevel);
 
@@ -904,6 +904,16 @@ namespace MueLu {
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
             << GetOperatorComplexity() << std::endl;
+        switch (Cycle_) {
+           case VCYCLE:
+             oss << "Cycle type          = V" << std::endl;
+             break;
+           case WCYCLE:
+             oss << "Cycle type          = W" << std::endl;
+             break;
+           default:
+             break;
+        };
         oss << std::endl;
 
         Xpetra::global_size_t tt = rowsPerLevel[0];
@@ -1027,7 +1037,7 @@ namespace MueLu {
     RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
     RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings0) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
+      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
 
@@ -1036,7 +1046,7 @@ namespace MueLu {
     RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
     if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
-      GetOStream(Warnings0) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
+      GetOStream(Warnings1) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
     }
 

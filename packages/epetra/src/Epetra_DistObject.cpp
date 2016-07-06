@@ -119,8 +119,11 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
                               const Epetra_OffsetIndex * Indexor)
 {
 
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
@@ -144,9 +147,11 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
@@ -170,9 +175,11 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Exporter.NumSameIDs();
   int NumPermuteIDs = Exporter.NumPermuteIDs();
@@ -196,9 +203,11 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
 			      Epetra_CombineMode CombineMode,
                               const Epetra_OffsetIndex * Indexor)
 {
-
+#ifdef HAVE_EPETRA_DEBUG
+  // Only perform the expensive map comparisons in the debug version
   if (!Map_.SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
   if (!A.Map().SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-3);
+#endif
 
   int NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();

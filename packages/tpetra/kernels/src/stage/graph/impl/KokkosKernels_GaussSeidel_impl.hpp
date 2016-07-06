@@ -283,7 +283,7 @@ public:
     {
       if (!is_symmetric){
 
-        if (gchandle->get_coloring_type() == KokkosKernels::Experimental::Graph::COLORING_EB){
+        if (gchandle->get_coloring_algo_type() == KokkosKernels::Experimental::Graph::COLORING_EB){
 	 
           gchandle->symmetrize_and_calculate_lower_diagonal_edge_list(num_rows, xadj, adj);
           graph_color_symbolic <HandleType, const_lno_row_view_t, const_lno_nnz_view_t>

@@ -1,12 +1,15 @@
 #include "gtest/gtest.h"
 #include <mpi.h>
-#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <string>
 #include <sstream>
 #include <vector>
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 
 namespace {
@@ -45,13 +48,38 @@ protected:
     }
 };
 
-TEST_F(TestTextMesh, singlHex)
+TEST_F(TestTextMesh, singleHex)
 {
     std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
     if (get_bulk().parallel_size() == 1)
     {
         stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
         verify_single_element(get_bulk(), 1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1,2,3,4,5,6,7,8});
+    }
+}
+
+void verify_coordinates(const std::vector<double> & coordinates, stk::mesh::BulkData & bulk, unsigned spatialDim)
+{
+    stk::mesh::EntityVector nodes;
+    bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+    stk::unit_test_util::CoordinatesField & coordsField = static_cast<stk::unit_test_util::CoordinatesField&>(*bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates"));
+    for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
+    {
+       double * nodalCoords = stk::mesh::field_data(coordsField, nodes[nodeIndex]);
+       for(unsigned coordIndex=0; coordIndex < spatialDim; coordIndex++)
+           EXPECT_NEAR(coordinates[nodeIndex*spatialDim+coordIndex], nodalCoords[coordIndex], 1.0e-9);
+    }
+}
+
+TEST_F(TestTextMesh, singleHexWithCoordinates)
+{
+    std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8";
+    if (get_bulk().parallel_size() == 1)
+    {
+       std::vector<double> coordinates = { 0,0,0, 1,0,0, 1,1,0, 0,1,0, 0,0,1, 1,0,1, 1,1,1, 0,1,1 };
+       stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+       verify_single_element(get_bulk(), 1u, stk::topology::HEX_8, stk::mesh::EntityIdVector{1, 2, 3, 4, 5, 6, 7, 8});
+       verify_coordinates(coordinates, get_bulk(), 3);
     }
 }
 
@@ -160,6 +188,24 @@ TEST_F(TestTextMesh2d, singleQuad)
     {
         stk::unit_test_util::fill_mesh_using_text_mesh(meshDesc, get_bulk());
         verify_single_element(get_bulk(), 1u, stk::topology::QUAD_4_2D, stk::mesh::EntityIdVector{1,2,3,4});
+    }
+}
+
+TEST_F(TestTextMesh2d, threeQuadsWithCoordinates)
+{
+    std::string meshDesc = "0,1,QUAD_4_2D,1,2,3,4\n\
+                            0,2,QUAD_4_2D,2,3,5,6\n\
+                            0,3,QUAD_4_2D,5,7,8,6";
+    if (get_bulk().parallel_size() == 1)
+    {
+        std::vector<double> coordinates = { 0,0, 1,0, 1,1, 0,1, 2,0, 2,1, 3,0, 3,1, };
+        stk::unit_test_util::fill_mesh_using_text_mesh_with_coordinates(meshDesc, coordinates, get_bulk());
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(get_meta().universal_part(), get_bulk(), counts);
+        EXPECT_EQ(3u, counts[stk::topology::ELEM_RANK]);
+
+        verify_coordinates(coordinates, get_bulk(), 2);
     }
 }
 

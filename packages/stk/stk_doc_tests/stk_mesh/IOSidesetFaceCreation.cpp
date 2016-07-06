@@ -37,6 +37,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Selector.hpp>   // for Selector
+#include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
 #include <vector>                       // for vector
@@ -56,14 +57,11 @@ bool is_positive_permutation(stk::mesh::BulkData & mesh,
                                           unsigned face_ordinal)
 {
     stk::topology faceTopology = mesh.bucket(face).topology();
-    stk::mesh::EntityVector face_node_ids(mesh.num_nodes(face));
+    stk::mesh::EntityVector face_nodes(mesh.num_nodes(face));
     for (unsigned face_node_count=0; face_node_count < mesh.num_nodes(face); ++face_node_count) {
-        face_node_ids[face_node_count] = mesh.begin_nodes(face)[face_node_count];
+        face_nodes[face_node_count] = mesh.begin_nodes(face)[face_node_count];
     }
-    stk::topology connectedElemTopology = mesh.bucket(hex).topology();
-    stk::mesh::EntityVector element_side_nodes(mesh.num_nodes(face));
-    connectedElemTopology.face_nodes(mesh.begin_nodes(hex), face_ordinal, &element_side_nodes[0]);
-    std::pair<bool, unsigned> permutation = faceTopology.equivalent(face_node_ids, element_side_nodes);
+    std::pair<bool, unsigned> permutation = stk::mesh::side_equivalent(mesh, hex, face_ordinal, face_nodes.data());
 
     bool is_a_valid_permutation = permutation.first;
     EXPECT_TRUE(is_a_valid_permutation);

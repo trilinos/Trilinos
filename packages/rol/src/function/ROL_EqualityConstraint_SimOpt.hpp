@@ -136,7 +136,24 @@ public:
                 flag = true if optimization variable is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
+    update_1(u,flag,iter);
+    update_2(z,flag,iter);  
+  }
+
+  /** \brief Update constraint functions with respect to Sim variable.  
+                x is the optimization variable, 
+                flag = true if optimization variable is changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+
+  /** \brief Update constraint functions with respect to Opt variable.
+                x is the optimization variable, 
+                flag = true if optimization variable is changed,
+                iter is the outer algorithm iterations count.
+  */
+  virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
 
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$

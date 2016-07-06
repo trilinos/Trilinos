@@ -491,7 +491,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
         }
       }
 
-      impl::connect_faces_to_edges(mesh, mesh.meta_data().universal_part(), edge_map);
+      impl::connect_faces_to_edges(mesh, mesh.mesh_meta_data().universal_part(), edge_map);
     }
   }
 

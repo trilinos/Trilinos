@@ -2902,6 +2902,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
                 }
 
             }
+            { //This unnecessary bracket works around a compiler bug in NVCC when compiling with OpenMP enabled
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp barrier
 #pragma omp single
@@ -2911,6 +2912,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part(
                 mj_scalar_t *t = temp_cut_coords;
                 temp_cut_coords = this->cut_coordinates_work_array;
                 this->cut_coordinates_work_array = t;
+            }
             }
         }
 
@@ -3862,6 +3864,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                 }
         }
 
+        { // This unnecessary bracket works around a compiler bug in NVCC when enabling OpenMP as well
+
         //communication to determine the ratios of processors for the distribution
         //of coordinates on the cut lines.
 #ifdef HAVE_ZOLTAN2_OMP
@@ -3927,6 +3931,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                         }
                         *rectilinear_cut_count = 0;
                 }
+        }
         }
 }
 

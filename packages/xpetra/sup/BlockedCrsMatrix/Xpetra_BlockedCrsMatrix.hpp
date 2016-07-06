@@ -56,6 +56,7 @@
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_MultiVector.hpp"
+#include "Xpetra_BlockedMultiVector.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_CrsMatrix.hpp"
@@ -64,6 +65,8 @@
 #include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixFactory.hpp"
+#include "Xpetra_CrsMatrixWrap.hpp"
 
 #ifdef HAVE_XPETRA_THYRA
 #include <Thyra_ProductVectorSpaceBase.hpp>
@@ -83,13 +86,10 @@ namespace Xpetra {
 
   typedef std::string viewLabel_t;
 
-  template <class Scalar /*= Matrix<>::scalar_type*/,
-            class LocalOrdinal =
-              typename Matrix<Scalar>::local_ordinal_type,
-            class GlobalOrdinal =
-              typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node =
-              typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,  // = typename Matrix<Scalar>::local_ordinal_type,
+            class GlobalOrdinal, // = typename Matrix<Scalar, LocalOrdinal>::global_ordinal_type,
+            class Node>          // = typename Matrix<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class BlockedCrsMatrix :
     public Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
@@ -127,7 +127,7 @@ namespace Xpetra {
       // add CrsMatrix objects in row,column order
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c)
-          blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
+          blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), npr, pftype));
 
       // Default view
       CreateDefaultView();
@@ -159,7 +159,7 @@ namespace Xpetra {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
-                            Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
+                            Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(const_op);
             subRangeMaps[r] = xop->getRangeMap();
             break;
           }
@@ -210,14 +210,17 @@ namespace Xpetra {
       for (size_t r = 0; r < Rows(); ++r) {
         for (size_t c = 0; c < Cols(); ++c) {
           if(thyraOp->blockExists(r,c)) {
+            // TODO we do not support nested Thyra operators here!
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
             Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
             Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
                 Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(op);
-            blocks_.push_back(xop);
+            Teuchos::RCP<Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node> > xwrap =
+                Teuchos::rcp(new Xpetra::CrsMatrixWrap<Scalar,LO,GO,Node>(xop));
+            blocks_.push_back(xwrap);
           } else {
             // add empty block
-            blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
+            blocks_.push_back(MatrixFactory::Build(getRangeMap(r,bRangeThyraMode_), 0, Xpetra::DynamicProfile));
           }
         }
       }
@@ -272,7 +275,10 @@ namespace Xpetra {
     //@{
 
     //! Insert matrix entries, using global IDs.
-    /** All index values must be in the global space.
+    /**
+      Note: this routine throws for Rows() > 1 and/or Cols() > 1
+
+      All index values must be in the global space.
       \pre \c globalRow exists as an ID in the global row map
       \pre <tt>isLocallyIndexed() == false</tt>
       \pre <tt>isStorageOptimized() == false</tt>
@@ -295,11 +301,19 @@ namespace Xpetra {
       matrix.
       */
     void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal>& cols, const ArrayView<const Scalar>& vals) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::insertGlobalValues");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->insertGlobalValues(globalRow, cols, vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("insertGlobalValues not supported by BlockedCrsMatrix");
     }
 
     //! Insert matrix entries, using local IDs.
-    /** All index values must be in the local space.
+    /**
+       Note: this routine throws if Rows() > 1 and/or Cols() > 1
+
+       All index values must be in the local space.
       \pre \c localRow exists as an ID in the local row map
       \pre <tt>isGloballyIndexed() == false</tt>
       \pre <tt>isStorageOptimized() == false</tt>
@@ -307,10 +321,20 @@ namespace Xpetra {
       \post <tt>isLocallyIndexed() == true</tt>
       */
     void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal>& cols, const ArrayView<const Scalar>& vals) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::insertLocalValues");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->insertLocalValues(localRow, cols, vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("insertLocalValues not supported by BlockedCrsMatrix");
     }
 
     void removeEmptyProcessesInPlace(const Teuchos::RCP<const Map>& newMap) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::removeEmptyProcessesInPlace");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->removeEmptyProcessesInPlace(newMap);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("removeEmptyProcesses not supported by BlockedCrsMatrix");
     }
 
@@ -326,6 +350,11 @@ namespace Xpetra {
     void replaceGlobalValues(GlobalOrdinal globalRow,
                              const ArrayView<const GlobalOrdinal> &cols,
                              const ArrayView<const Scalar>        &vals) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::replaceGlobalValues");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->replaceGlobalValues(globalRow,cols,vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("replaceGlobalValues not supported by BlockedCrsMatrix");
     }
 
@@ -337,17 +366,36 @@ namespace Xpetra {
     void replaceLocalValues(LocalOrdinal localRow,
                             const ArrayView<const LocalOrdinal> &cols,
                             const ArrayView<const Scalar>       &vals) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::replaceLocalValues");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->replaceLocalValues(localRow,cols,vals);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("replaceLocalValues not supported by BlockedCrsMatrix");
     }
 
     //! Set all matrix entries equal to scalar
     virtual void setAllToScalar(const Scalar& alpha) {
-      throw Xpetra::Exceptions::RuntimeError("setAllToScalar not supported by BlockedCrsMatrix");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::setAllToScalar");
+      for (size_t row = 0; row < Rows(); row++) {
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            getMatrix(row,col)->setAllToScalar(alpha);
+          }
+        }
+      }
     }
 
     //! Scale the current values of a matrix, this = alpha*this.
     void scale(const Scalar& alpha) {
-      throw Xpetra::Exceptions::RuntimeError("scale not supported by BlockedCrsMatrix");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::scale");
+      for (size_t row = 0; row < Rows(); row++) {
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            getMatrix(row,col)->scale(alpha);
+          }
+        }
+      }
     }
 
     //@}
@@ -358,30 +406,33 @@ namespace Xpetra {
     /*! Resume fill operations.
       After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
 
-      resumeFill() may be called repeatedly.
+      For BlockedCrsMatrix objects we call the routine iteratively for all sub-blocks.
 
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
+      resumeFill() may be called repeatedly.
       */
     void resumeFill(const RCP< ParameterList >& params = null) {
-      throw Xpetra::Exceptions::RuntimeError("resumeFill not supported for block matrices");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::resumeFill");
+      for (size_t row = 0; row < Rows(); row++) {
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            getMatrix(row,col)->resumeFill(params);
+          }
+        }
+      }
     }
 
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
+    /*! \brief Signal that data entry is complete.
 
-      Off-node indices are distributed (via globalAssemble()), indices are sorted,
-      redundant indices are eliminated, and global indices are transformed to local
-      indices.
-
-      \pre  <tt>isFillActive() == true<tt>
-      \pre <tt>isFillComplete()() == false<tt>
-
-      \post <tt>isFillActive() == false<tt>
-      \post <tt>isFillComplete() == true<tt>
-      \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+      Note: for blocked operators the specified domain and range maps have no meaning.
+            We just call fillComplete for all underlying blocks
       */
     void fillComplete(const RCP<const Map>& domainMap, const RCP<const Map>& rangeMap, const RCP<ParameterList>& params = null) {
-      throw Xpetra::Exceptions::RuntimeError("fillComplete with arguments not supported for block matrices");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::fillComplete");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->fillComplete(domainMap, rangeMap, params);
+        return;
+      }
+      fillComplete(params);
     }
 
     /*! \brief Signal that data entry is complete.
@@ -399,19 +450,24 @@ namespace Xpetra {
       \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
       */
     void fillComplete(const RCP<ParameterList>& params = null) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::fillComplete");
+      TEUCHOS_TEST_FOR_EXCEPTION(rangemaps_==Teuchos::null, Xpetra::Exceptions::RuntimeError,"BlockedCrsMatrix::fillComplete: rangemaps_ is not set. Error.");
+
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
-          Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
+          if(getMatrix(r,c) != Teuchos::null) {
+            Teuchos::RCP<Matrix> Ablock = getMatrix(r,c);
 
-          if (Ablock != Teuchos::null && !Ablock->isFillComplete())
-            Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
+            if (Ablock != Teuchos::null && !Ablock->isFillComplete())
+              Ablock->fillComplete(getDomainMap(c, bDomainThyraMode_), getRangeMap(r, bRangeThyraMode_), params);
+          }
         }
 
+#if 0
       // get full row map
       RCP<const Map> rangeMap = rangemaps_->getFullMap();
       fullrowmap_ = MapFactory::Build(rangeMap()->lib(), rangeMap()->getGlobalNumElements(), rangeMap()->getNodeElementList(), rangeMap()->getIndexBase(), rangeMap()->getComm());
 
-#if 0
       // build full col map
       fullcolmap_ = Teuchos::null; // delete old full column map
 
@@ -454,6 +510,7 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     global_size_t getGlobalNumRows() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumRows");
       global_size_t globalNumRows = 0;
 
       for (size_t row = 0; row < Rows(); row++)
@@ -470,6 +527,7 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     global_size_t getGlobalNumCols() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumCols");
       global_size_t globalNumCols = 0;
 
       for (size_t col = 0; col < Cols(); col++)
@@ -484,6 +542,7 @@ namespace Xpetra {
 
     //! Returns the number of matrix rows owned on the calling node.
     size_t getNodeNumRows() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumRows");
       global_size_t nodeNumRows = 0;
 
       for (size_t row = 0; row < Rows(); ++row)
@@ -498,6 +557,7 @@ namespace Xpetra {
 
     //! Returns the global number of entries in this matrix.
     global_size_t getGlobalNumEntries() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumEntries");
       global_size_t globalNumEntries = 0;
 
       for (size_t row = 0; row < Rows(); ++row)
@@ -510,6 +570,7 @@ namespace Xpetra {
 
     //! Returns the local number of entries in this matrix.
     size_t getNodeNumEntries() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumEntries");
       global_size_t nodeNumEntries = 0;
 
       for (size_t row = 0; row < Rows(); ++row)
@@ -523,6 +584,10 @@ namespace Xpetra {
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
     size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNumEntriesInLocalRow");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNumEntriesInLocalRow(localRow);
+      }
       throw Xpetra::Exceptions::RuntimeError("getNumEntriesInLocalRow not supported by BlockedCrsMatrix");
     }
 
@@ -530,6 +595,10 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     global_size_t getGlobalNumDiags() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalNumDiags");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getGlobalNumDiags();
+      }
       throw Xpetra::Exceptions::RuntimeError("getGlobalNumDiags() not supported by BlockedCrsMatrix");
     }
 
@@ -537,6 +606,10 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getNodeNumDiags() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeNumDiags");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getNodeNumDiags();
+      }
       throw Xpetra::Exceptions::RuntimeError("getNodeNumDiags() not supported by BlockedCrsMatrix");
     }
 
@@ -544,14 +617,40 @@ namespace Xpetra {
     /** Undefined if isFillActive().
     */
     size_t getGlobalMaxNumRowEntries() const {
-      throw Xpetra::Exceptions::RuntimeError("getGlobalMaxNumRowEntries() not supported by BlockedCrsMatrix");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalMaxNumRowEntries");
+      global_size_t globalMaxEntries = 0;
+
+      for (size_t row = 0; row < Rows(); row++) {
+        global_size_t globalMaxEntriesBlockRows = 0;
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            globalMaxEntriesBlockRows += getMatrix(row,col)->getGlobalMaxNumRowEntries();
+          }
+        }
+        if(globalMaxEntriesBlockRows > globalMaxEntries)
+          globalMaxEntries = globalMaxEntriesBlockRows;
+      }
+      return globalMaxEntries;
     }
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
     */
     size_t getNodeMaxNumRowEntries() const {
-      throw Xpetra::Exceptions::RuntimeError("getNodeMaxNumRowEntries() not supported by BlockedCrsMatrix");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getNodeMaxNumRowEntries");
+      size_t localMaxEntries = 0;
+
+      for (size_t row = 0; row < Rows(); row++) {
+        size_t localMaxEntriesBlockRows = 0;
+        for (size_t col = 0; col < Cols(); col++) {
+          if (!getMatrix(row,col).is_null()) {
+            localMaxEntriesBlockRows += getMatrix(row,col)->getNodeMaxNumRowEntries();
+          }
+        }
+        if(localMaxEntriesBlockRows > localMaxEntries)
+          localMaxEntries = localMaxEntriesBlockRows;
+      }
+      return localMaxEntries;
     }
 
     //! \brief If matrix indices of all matrix blocks are in the local range, this function returns true. Otherwise, this function returns false.
@@ -559,6 +658,7 @@ namespace Xpetra {
      * are indexed in the same way (locally or globally). Otherwise the block matrix is not valid...
      */
     bool isLocallyIndexed() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::isLocallyIndexed");
       for (size_t i = 0; i < blocks_.size(); ++i)
         if (blocks_[i] != Teuchos::null && !blocks_[i]->isLocallyIndexed())
           return false;
@@ -570,6 +670,7 @@ namespace Xpetra {
      * are indexed in the same way (locally or globally). Otherwise the block matrix is not valid...
      */
     bool isGloballyIndexed() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::isGloballyIndexed");
       for (size_t i = 0; i < blocks_.size(); i++)
         if (blocks_[i] != Teuchos::null && !blocks_[i]->isGloballyIndexed())
           return false;
@@ -578,6 +679,7 @@ namespace Xpetra {
 
     //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
     bool isFillComplete() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::isFillComplete");
       for (size_t i = 0; i < blocks_.size(); i++)
         if (blocks_[i] != Teuchos::null && !blocks_[i]->isFillComplete())
           return false;
@@ -603,6 +705,11 @@ namespace Xpetra {
                                  const ArrayView<LocalOrdinal>& Indices,
                                  const ArrayView<Scalar>& Values,
                                  size_t &NumEntries) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalRowCopy");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowCopy not supported by BlockedCrsMatrix" );
     }
 
@@ -617,6 +724,11 @@ namespace Xpetra {
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
       */
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal>& indices, ArrayView<const Scalar>& values) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getGlobalRowView");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getGlobalRowView(GlobalRow, indices, values);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getGlobalRowView not supported by BlockedCrsMatrix");
     }
 
@@ -631,20 +743,91 @@ namespace Xpetra {
       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
       */
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal>& indices, ArrayView<const Scalar>& values) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalRowView");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->getLocalRowView(LocalRow, indices, values);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("getLocalRowView not supported by BlockedCrsMatrix");
     }
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
     /*! Returns a distributed Vector object partitioned according to this
       matrix's row map, containing the
       the zero and non-zero diagonals owned by this node. */
     void getLocalDiagCopy(Vector& diag) const {
-      throw Xpetra::Exceptions::RuntimeError("getLocalDiagCopy not supported by BlockedCrsMatrix" );
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getLocalDiagCopy");
+      XPETRA_TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::getLocalDiagCopy(): the map of the vector diag is not compatible with the full map of the blocked operator." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION(Rows() != Cols(), Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::getLocalDiagCopy(): you cannot extract the diagonal of a "<< Rows() << "x"<<Cols()<<" blocked matrix." );
+
+      for (size_t row = 0; row < Rows(); ++row) {
+        if (!getMatrix(row,row).is_null()) {
+          // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+          bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,row)) == Teuchos::null);
+          RCP<Vector> dd = rangemaps_->getVector(row, bThyraMode);
+          getMatrix(row,row)->getLocalDiagCopy(*dd);
+          rangemaps_->InsertVector(*dd,row,diag,bThyraMode);
+        }
+      }
     }
+
+    //! Left scale matrix using the given vector entries
+    void leftScale (const Vector& x) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::leftScale");
+      XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*rangemaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::leftScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
+
+      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+
+      for (size_t row = 0; row < Rows(); ++row) {
+        for (size_t col = 0; col < Cols(); ++col) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+            bool bThyraMode = rangemaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
+            RCP<Vector> xx = rangemaps_->ExtractVector(rcpx,row,bThyraMode);
+            getMatrix(row,col)->leftScale(*xx);
+          }
+        }
+      }
+    }
+
+    //! Right scale matrix using the given vector entries
+    void rightScale (const Vector& x) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::rightScale");
+      XPETRA_TEST_FOR_EXCEPTION(x.getMap()->isSameAs(*domainmaps_->getFullMap()) == false, Xpetra::Exceptions::RuntimeError,
+        "BlockedCrsMatrix::rightScale(): the map of the vector x is not compatible with the full map of the blocked operator." );
+
+      RCP<const Vector> rcpx = Teuchos::rcpFromRef(x);
+
+      for (size_t col = 0; col < Cols(); ++col) {
+        for (size_t row = 0; row < Rows(); ++row) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            // if we are in Thyra mode, but the block (row,row) is again a blocked operator, we have to use (pseudo) Xpetra-style GIDs with offset!
+            bool bThyraMode = domainmaps_->getThyraMode() && (Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(getMatrix(row,col)) == Teuchos::null);
+            RCP<Vector> xx = domainmaps_->ExtractVector(rcpx,col,bThyraMode);
+            getMatrix(row,col)->rightScale(*xx);
+          }
+        }
+      }
+    }
+
 
     //! Get Frobenius norm of the matrix
     virtual typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
-      throw Xpetra::Exceptions::RuntimeError("getFrobeniusNorm() not supported by BlockedCrsMatrix, yet");
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getFrobeniusNorm");
+      typename ScalarTraits<Scalar>::magnitudeType ret = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::zero());
+      for (size_t col = 0; col < Cols(); ++col) {
+        for (size_t row = 0; row < Rows(); ++row) {
+          if(getMatrix(row,col)!=Teuchos::null) {
+            typename ScalarTraits<Scalar>::magnitudeType n = getMatrix(row,col)->getFrobeniusNorm();
+            ret += n * n;
+          }
+        }
+      }
+      return Teuchos::ScalarTraits< typename ScalarTraits<Scalar>::magnitudeType >::squareroot(ret);
     }
 
     //@}
@@ -686,79 +869,181 @@ namespace Xpetra {
                        Scalar alpha = ScalarTraits<Scalar>::one(),
                        Scalar beta  = ScalarTraits<Scalar>::zero()) const
     {
-      using Teuchos::RCP;
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::apply");
+      //using Teuchos::RCP;
 
       TEUCHOS_TEST_FOR_EXCEPTION(mode != Teuchos::NO_TRANS && mode != Teuchos::TRANS, Xpetra::Exceptions::RuntimeError,
                                  "apply() only supports the following modes: NO_TRANS and TRANS." );
 
-      RCP<const MultiVector> refX = rcpFromRef(X);
-      RCP<MultiVector>       tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors());
+      // check whether input parameters are blocked or not
+      RCP<const MultiVector>         refX = rcpFromRef(X);
+      RCP<const BlockedMultiVector> refbX = Teuchos::rcp_dynamic_cast<const BlockedMultiVector>(refX);
+      RCP<MultiVector>               tmpY = rcpFromRef(Y);
+      RCP<BlockedMultiVector>       tmpbY = Teuchos::rcp_dynamic_cast<BlockedMultiVector>(tmpY);
+
+      bool bBlockedX = (refbX != Teuchos::null) ? true : false;
+      bool bBlockedY = (tmpbY != Teuchos::null) ? true : false;
+
+      // create (temporary) vectors for output
+      // In the end we call Y.update(alpha, *tmpY, beta). Therefore we need a new vector storing the temporary results
+      tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors());
+      if (bBlockedY == true) tmpbY = Teuchos::rcp(new BlockedMultiVector(rangemaps_,tmpY));
 
       SC one = ScalarTraits<SC>::one();
 
       if (mode == Teuchos::NO_TRANS) {
+
         for (size_t row = 0; row < Rows(); row++) {
           RCP<MultiVector>    Yblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
-          RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
-
           for (size_t col = 0; col < Cols(); col++) {
-            RCP<const MultiVector> Xblock = domainmaps_->ExtractVector(refX, col, bDomainThyraMode_);
-            RCP<CrsMatrix>         Ablock = getMatrix(row, col);
+
+            // extract matrix block
+            RCP<Matrix>            Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
               continue;
 
+            // check whether Ablock is itself a blocked operator
+            // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
+            bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
+
+            // input/output vectors for local block operation
+            RCP<const MultiVector> Xblock = Teuchos::null; // subpart of X vector to be applied to subblock of A
+#if 1
+            // extract sub part of X using Xpetra or Thyra GIDs
+            // if submatrix is again blocked, we extract it using Xpetra style gids. If it is a single
+            // block matrix we use the Thyra or Xpetra style GIDs that are used to store the matrix
+            if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
+            else          Xblock = domainmaps_->ExtractVector(refX,  col, bBlockedSubMatrix == true ? false : bDomainThyraMode_);
+            RCP<MultiVector> tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bRangeThyraMode_);  // subpart of Y vector containing part of solution of Xblock applied to Ablock
+#else
+            RCP<MultiVector> tmpYblock    = Teuchos::null;
+            if(bBlockedSubMatrix == true) {
+              // extract sub part of X using Xpetra GIDs
+              if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, false);
+              else          Xblock = domainmaps_->ExtractVector(refX , col, false);
+              tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), false);
+            } else {
+              // extract sub part of X using Xpetra or Thyra GIDs
+              if(bBlockedX) Xblock = domainmaps_->ExtractVector(refbX, col, bDomainThyraMode_);
+              else          Xblock = domainmaps_->ExtractVector(refX,  col, bDomainThyraMode_);
+              tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), bRangeThyraMode_);
+            }
+#endif
             Ablock->apply(*Xblock, *tmpYblock);
+
+            // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
+            // that have to be translated to Thyra based GIDs if bRangeThyraMode is set
+            if(bBlockedSubMatrix == true && bRangeThyraMode_ == true) {
+#if 1
+              tmpYblock->replaceMap(rangemaps_->getMap(row, true)); // switch to Thyra maps (compatible to Yblock)
+#else
+              RCP<MultiVector> tmpXpYblock = tmpYblock; // copy RCP pointer containing the result part in Xpetra style GIDs
+              tmpYblock = rangemaps_->getVector(row, Y.getNumVectors(), true); // create a new output vector using Thyra maps (compatible to Yblock)
+              for(size_t k=0; k < tmpXpYblock->getNumVectors(); k++) {
+                Teuchos::ArrayRCP<const Scalar> xpetraVecData  = tmpXpYblock->getData(k);
+                Teuchos::ArrayRCP<Scalar> thyraVecData = tmpYblock->getDataNonConst(k);
+                for(size_t i=0; i < tmpYblock->getLocalLength(); i++) {
+                  thyraVecData[i] = xpetraVecData[i];
+                }
+              }
+#endif
+            }
             Yblock->update(one, *tmpYblock, one);
           }
-          rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
+          if(bBlockedY) rangemaps_->InsertVector(Yblock, row, tmpbY, bRangeThyraMode_);
+          else          rangemaps_->InsertVector(Yblock, row, tmpY, bRangeThyraMode_);
         }
 
       } else if (mode == Teuchos::TRANS) {
         // TODO: test me!
         for (size_t col = 0; col < Cols(); col++) {
           RCP<MultiVector>    Yblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
-          RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
 
           for (size_t row = 0; row<Rows(); row++) {
-            RCP<const MultiVector> Xblock = rangemaps_->ExtractVector(refX, row, bRangeThyraMode_);
-            RCP<CrsMatrix>         Ablock = getMatrix(row, col);
+            RCP<Matrix>            Ablock = getMatrix(row, col);
 
             if (Ablock.is_null())
               continue;
 
+            // check whether Ablock is itself a blocked operator
+            // If it is a blocked operator we have to provide Xpetra style GIDs, i.e. we have to transform GIDs
+            bool bBlockedSubMatrix = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(Ablock) == Teuchos::null ? false : true;
+
+            RCP<const MultiVector> Xblock = Teuchos::null;
+#if 1
+            // extract sub part of X using Xpetra or Thyra GIDs
+            if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
+            else          Xblock = rangemaps_->ExtractVector(refX,  row, bBlockedSubMatrix == true ? false : bRangeThyraMode_);
+            RCP<MultiVector> tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bBlockedSubMatrix == true ? false : bDomainThyraMode_);
+#else
+            RCP<MultiVector> tmpYblock    = Teuchos::null;
+            if(bBlockedSubMatrix == true) {
+              // extract sub part of X using Xpetra GIDs
+              if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, false);
+              else          Xblock = rangemaps_->ExtractVector(refX,  row, false);
+              tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), false);
+            } else {
+              // extract sub part of X using Xpetra or Thyra GIDs
+              if(bBlockedX) Xblock = rangemaps_->ExtractVector(refbX, row, bRangeThyraMode_);
+              else          Xblock = rangemaps_->ExtractVector(refX,  row, bRangeThyraMode_);
+              tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), bDomainThyraMode_);
+            }
+#endif
+
             Ablock->apply(*Xblock, *tmpYblock, Teuchos::TRANS);
+
+            // If Ablock is a blocked operator the local vectors are using (pseudo) Xpetra-style gids
+            // that have to be translated to Thyra based GIDs if bRangeThyraMode is set
+            if(bBlockedSubMatrix == true && bDomainThyraMode_ == true) {
+#if 1
+              tmpYblock->replaceMap(domainmaps_->getMap(col, true)); // switch to Thyra maps (compatible to Yblock)
+#else
+              RCP<MultiVector> tmpXpYblock = tmpYblock; // copy RCP pointer containing the result part in Xpetra style GIDs
+              tmpYblock = domainmaps_->getVector(col, Y.getNumVectors(), true); // create a new output vector using Thyra maps (compatible to Yblock)
+              for(size_t k=0; k < tmpXpYblock->getNumVectors(); k++) {
+                Teuchos::ArrayRCP<const Scalar> xpetraVecData  = tmpXpYblock->getData(k);
+                Teuchos::ArrayRCP<Scalar> thyraVecData = tmpYblock->getDataNonConst(k);
+                for(size_t i=0; i < tmpYblock->getLocalLength(); i++) {
+                  thyraVecData[i] = xpetraVecData[i];
+                }
+              }
+#endif
+            }
 
             Yblock->update(one, *tmpYblock, one);
           }
-          domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
+          if(bBlockedY) domainmaps_->InsertVector(Yblock, col, tmpbY, bDomainThyraMode_);
+          else          domainmaps_->InsertVector(Yblock, col, tmpY, bDomainThyraMode_);
         }
       }
-
-      Y.update(alpha, *tmpY, beta);
+      if(bBlockedY) Y.update(alpha, *tmpbY, beta);
+      else          Y.update(alpha, *tmpY, beta);
     }
 
     //! \brief Returns the Map associated with the full domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getDomainMap() const            { return domainmaps_->getFullMap(); }
+    RCP<const Map > getDomainMap() const            { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap()"); return domainmaps_->getFullMap(); }
 
     //! \brief Returns the Map associated with the i'th block domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getDomainMap(size_t i, bool bThyraMode = false) const    { return domainmaps_->getMap(i, bDomainThyraMode_); }
+    RCP<const Map > getDomainMap(size_t i) const    { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap(size_t)"); return domainmaps_->getMap(i, bDomainThyraMode_); }
+
+    //! \brief Returns the Map associated with the i'th block domain of this operator.
+    RCP<const Map > getDomainMap(size_t i, bool bThyraMode) const    { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMap(size_t,bool)"); return domainmaps_->getMap(i, bThyraMode); }
 
     //! Returns the Map associated with the full range of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getRangeMap() const             { return rangemaps_->getFullMap(); }
+    RCP<const Map > getRangeMap() const             { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap()"); return rangemaps_->getFullMap(); }
 
     //! Returns the Map associated with the i'th block range of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    RCP<const Map > getRangeMap(size_t i, bool bThyraMode = false) const     { return rangemaps_->getMap(i, bRangeThyraMode_); }
+    RCP<const Map > getRangeMap(size_t i) const     { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap(size_t)"); return rangemaps_->getMap(i, bRangeThyraMode_); }
+
+    //! Returns the Map associated with the i'th block range of this operator.
+    RCP<const Map > getRangeMap(size_t i, bool bThyraMode) const     { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMap(size_t,bool)"); return rangemaps_->getMap(i, bThyraMode); }
 
     //! Returns map extractor class for range map
-    RCP<const MapExtractor> getRangeMapExtractor() const { return rangemaps_; }
+    RCP<const MapExtractor> getRangeMapExtractor() const { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getRangeMapExtractor()"); return rangemaps_; }
 
     //! Returns map extractor for domain map
-    RCP<const MapExtractor> getDomainMapExtractor() const { return domainmaps_; }
+    RCP<const MapExtractor> getDomainMapExtractor() const { XPETRA_MONITOR("XpetraBlockedCrsMatrix::getDomainMapExtractor()"); return domainmaps_; }
 
     //@}
 
@@ -767,26 +1052,50 @@ namespace Xpetra {
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
     const Teuchos::RCP< const Map > getMap() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getMap");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getMap();
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getMap(): operation not supported.");
     }
 
     //! Import.
     void doImport(const Matrix &source, const Import& importer, CombineMode CM) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::doImport");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doImport(source, importer, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doImport(): operation not supported.");
     }
 
     //! Export.
     void doExport(const Matrix& dest, const Import& importer, CombineMode CM) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::doExport");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doExport(dest, importer, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doExport(): operation not supported.");
     }
 
     //! Import (using an Exporter).
     void doImport(const Matrix& source, const Export& exporter, CombineMode CM) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::doImport");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doImport(source, exporter, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doImport(): operation not supported.");
     }
 
     //! Export (using an Importer).
     void doExport(const Matrix& dest, const Export& exporter, CombineMode CM) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::doExport");
+      if (Rows() == 1 && Cols () == 1) {
+        getMatrix(0,0)->doExport(dest, exporter, CM);
+        return;
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::doExport(): operation not supported.");
     }
 
@@ -805,8 +1114,12 @@ namespace Xpetra {
       if (isFillComplete()) {
         out << "BlockMatrix is fillComplete" << std::endl;
 
-        out << "fullRowMap" << std::endl;
-        fullrowmap_->describe(out,verbLevel);
+        /*if(fullrowmap_ != Teuchos::null) {
+          out << "fullRowMap" << std::endl;
+          fullrowmap_->describe(out,verbLevel);
+        } else {
+          out << "fullRowMap not set. Check whether block matrix is properly fillCompleted!" << std::endl;
+        }*/
 
         //out << "fullColMap" << std::endl;
         //fullcolmap_->describe(out,verbLevel);
@@ -817,13 +1130,19 @@ namespace Xpetra {
 
       for (size_t r = 0; r < Rows(); ++r)
         for (size_t c = 0; c < Cols(); ++c) {
-          out << "Block(" << r << "," << c << ")" << std::endl;
-          getMatrix(r,c)->describe(out,verbLevel);
+          if(getMatrix(r,c)!=Teuchos::null) {
+            out << "Block(" << r << "," << c << ")" << std::endl;
+            getMatrix(r,c)->describe(out,verbLevel);
+          } else out << "Block(" << r << "," << c << ") = null" << std::endl;
         }
     }
 
     //! Returns the CrsGraph associated with this matrix.
     RCP<const CrsGraph> getCrsGraph() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getCrsGraph");
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getCrsGraph();
+      }
       throw Xpetra::Exceptions::RuntimeError("getCrsGraph() not supported by BlockedCrsMatrix");
     }
 
@@ -833,16 +1152,57 @@ namespace Xpetra {
     //@{
 
     /// number of row blocks
-    virtual size_t Rows() const                                       { return rangemaps_->NumMaps(); }
+    virtual size_t Rows() const                                       { XPETRA_MONITOR("XpetraBlockedCrsMatrix::Rows"); return rangemaps_->NumMaps(); }
 
     /// number of column blocks
-    virtual size_t Cols() const                                       { return domainmaps_->NumMaps(); }
+    virtual size_t Cols() const                                       { XPETRA_MONITOR("XpetraBlockedCrsMatrix::Cols"); return domainmaps_->NumMaps(); }
+
+    /// return unwrap 1x1 blocked operators
+    Teuchos::RCP<Matrix> getCrsMatrix() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getCrsMatrix");
+      TEUCHOS_TEST_FOR_EXCEPTION(Rows()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Rows() << " block rows, though.");
+      TEUCHOS_TEST_FOR_EXCEPTION(Cols()!=1, std::out_of_range, "Can only unwrap a 1x1 blocked matrix. The matrix has " << Cols() << " block columns, though.");
+
+      RCP<Matrix> mat = getMatrix(0,0);
+      RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mat);
+      if (bmat == Teuchos::null) return mat;
+      return bmat->getCrsMatrix();
+    }
+
+    Teuchos::RCP<Matrix> getInnermostCrsMatrix() {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getInnermostCrsMatrix");
+      size_t row = Rows()+1, col = Cols()+1;
+      for (size_t r = 0; r < Rows(); ++r)
+        for(size_t c = 0; c < Cols(); ++c)
+          if (getMatrix(r,c) != Teuchos::null) {
+            row = r;
+            col = c;
+            break;
+          }
+      TEUCHOS_TEST_FOR_EXCEPTION(row == Rows()+1 || col == Cols()+1, Xpetra::Exceptions::Incompatible, "Xpetra::BlockedCrsMatrix::getInnermostCrsMatrix: Could not find a non-zero sub-block in blocked operator.")
+      RCP<Matrix> mm = getMatrix(row,col);
+      RCP<BlockedCrsMatrix> bmat = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(mm);
+      if (bmat == Teuchos::null) return mm;
+      return bmat->getInnermostCrsMatrix();
+    }
 
     /// return block (r,c)
-    Teuchos::RCP<CrsMatrix> getMatrix(size_t r, size_t c) const       { return blocks_[r*Cols()+c]; }
+    Teuchos::RCP<Matrix> getMatrix(size_t r, size_t c) const       {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::getMatrix");
+      TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
+      TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
+
+      // transfer strided/blocked map information
+      if (blocks_[r*Cols()+c] != Teuchos::null &&
+          blocks_[r*Cols()+c]->IsView("stridedMaps") == false)
+        blocks_[r*Cols()+c]->CreateView("stridedMaps", getRangeMap(r,bRangeThyraMode_), getDomainMap(c,bDomainThyraMode_));
+      return blocks_[r*Cols()+c];
+    }
 
     /// set matrix block
-    void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {
+    //void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {
+    void setMatrix(size_t r, size_t c, Teuchos::RCP<Matrix> mat) {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::setMatrix");
       // TODO: if filled -> return error
 
       TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
@@ -855,21 +1215,115 @@ namespace Xpetra {
     /// merge BlockedCrsMatrix blocks in a CrsMatrix
     // NOTE: This is a rather expensive operation, since all blocks are copied
     // into a new big CrsMatrix
-    Teuchos::RCP<CrsMatrix> Merge() const {
+    Teuchos::RCP<Matrix> Merge() const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::Merge");
       using Teuchos::RCP;
       using Teuchos::rcp_dynamic_cast;
       Scalar one = ScalarTraits<SC>::one();
 
-      TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ || bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
-                                 "BlockedCrsMatrix::Merge: only implemented for Xpetra-style numbering. If you need the merge routine for Thyra-style numbering, report this to the Xpetra developers." );
+      TEUCHOS_TEST_FOR_EXCEPTION(bRangeThyraMode_ != bDomainThyraMode_, Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: only implemented for Xpetra-style or Thyra-style numbering. No mixup allowed!" );
 
-      RCP<CrsMatrix> sparse = CrsMatrixFactory::Build(fullrowmap_, 33);
+      TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: BlockMatrix must be fill-completed." );
 
-      for (size_t i = 0; i < blocks_.size(); i++)
-        if (blocks_[i] != Teuchos::null)
-          this->Add(*blocks_[i], one, *sparse, one);
+      RCP<Matrix> sparse = MatrixFactory::Build(getRangeMapExtractor()->getFullMap(), 33);
+
+      if(bRangeThyraMode_ == false) {
+        // Xpetra mode
+        for (size_t i = 0; i < Rows(); i++) {
+          for (size_t j = 0; j < Cols(); j++) {
+            if (getMatrix(i,j) != Teuchos::null) {
+              RCP<const Matrix> mat = getMatrix(i,j);
+
+              // recursively call Merge routine
+              RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              if (bMat != Teuchos::null) mat = bMat->Merge();
+
+              bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
+                                         "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
+
+              // jump over empty blocks
+              if(mat->getNodeNumEntries() == 0) continue;
+
+              this->Add(*mat, one, *sparse, one);
+            }
+          }
+        }
+      } else {
+        // Thyra mode
+        for (size_t i = 0; i < Rows(); i++) {
+          for (size_t j = 0; j < Cols(); j++) {
+            if (getMatrix(i,j) != Teuchos::null) {
+              RCP<const Matrix> mat = getMatrix(i,j);
+              // recursively call Merge routine
+              RCP<const BlockedCrsMatrix> bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              if (bMat != Teuchos::null) mat = bMat->Merge();
+
+              bMat = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(mat);
+              TEUCHOS_TEST_FOR_EXCEPTION(bMat != Teuchos::null, Xpetra::Exceptions::RuntimeError,
+                                         "BlockedCrsMatrix::Merge: Merging of blocked sub-operators failed?!" );
+
+              // jump over empty blocks
+              if(mat->getNodeNumEntries() == 0) continue;
+
+              // check whether we have a CrsMatrix block (no blocked operator)
+              RCP<const CrsMatrixWrap> crsMat = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(mat);
+              TEUCHOS_ASSERT(crsMat != Teuchos::null);
+
+              // these are the thyra style maps of the matrix
+              RCP<const Map> trowMap = mat->getRowMap();
+              RCP<const Map> tcolMap = mat->getColMap();
+              RCP<const Map> tdomMap = mat->getDomainMap();
+
+              // get Xpetra maps
+              RCP<const Map> xrowMap = getRangeMapExtractor()->getMap(i,false);
+              RCP<const Map> xdomMap = getDomainMapExtractor()->getMap(j,false);
+
+              // generate column map with Xpetra GIDs
+              // We have to do this separately for each block since the column
+              // map of each block might be different in the same block column
+              Teuchos::RCP<Map> xcolMap = MapUtils::transformThyra2XpetraGIDs(
+                    *tcolMap,
+                    *tdomMap,
+                    *xdomMap);
+
+              size_t maxNumEntries = mat->getNodeMaxNumRowEntries();
+
+              size_t    numEntries;
+              Array<GO> inds (maxNumEntries);
+              Array<GO> inds2(maxNumEntries);
+              Array<SC> vals (maxNumEntries);
+
+              // loop over all rows and add entries
+              for (size_t k = 0; k < mat->getNodeNumRows(); k++) {
+                GlobalOrdinal rowTGID = trowMap->getGlobalElement(k);
+                crsMat->getCrsMatrix()->getGlobalRowCopy(rowTGID, inds(), vals(), numEntries);
+
+                // create new indices array
+                for (size_t l = 0; l < numEntries; ++l) {
+                  LocalOrdinal lid = tcolMap->getLocalElement(inds[l]);
+                  inds2[l] = xcolMap->getGlobalElement(lid);
+                }
+
+                GlobalOrdinal rowXGID = xrowMap->getGlobalElement(k);
+                sparse->insertGlobalValues(
+                    rowXGID, inds2(0, numEntries),
+                    vals(0, numEntries));
+              }
+            }
+          }
+        }
+      }
 
       sparse->fillComplete(getDomainMap(), getRangeMap());
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getNodeNumEntries() != getNodeNumEntries(), Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: Local number of entries of merged matrix does not coincide with local number of entries of blocked operator." );
+
+      TEUCHOS_TEST_FOR_EXCEPTION(sparse->getGlobalNumEntries() != getGlobalNumEntries(), Xpetra::Exceptions::RuntimeError,
+                                 "BlockedCrsMatrix::Merge: Global number of entries of merged matrix does not coincide with global number of entries of blocked operator." );
 
       return sparse;
     }
@@ -880,6 +1334,9 @@ namespace Xpetra {
 
     /// \brief Access the underlying local Kokkos::CrsMatrix object
     local_matrix_type getLocalMatrix () const {
+      if (Rows() == 1 && Cols () == 1) {
+        return getMatrix(0,0)->getLocalMatrix();
+      }
       throw Xpetra::Exceptions::RuntimeError("BlockedCrsMatrix::getLocalMatrix(): operation not supported.");
     }
 #endif
@@ -913,7 +1370,8 @@ namespace Xpetra {
      * This routine is private and used only by Merge. Since the blocks in BlockedCrsMatrix are seperated,
      * this routine works for merging a BlockedCrsMatrix.
      */
-    void Add(const CrsMatrix& A, const Scalar scalarA, CrsMatrix& B, const Scalar scalarB) const {
+    void Add(const Matrix& A, const Scalar scalarA, Matrix& B, const Scalar scalarB) const {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::Add");
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Xpetra::Exceptions::RuntimeError,
                                  "Matrix A is not completed");
       using Teuchos::Array;
@@ -927,19 +1385,25 @@ namespace Xpetra {
       if (scalarA == zero)
         return;
 
-      size_t maxNumEntries = A.getNodeMaxNumRowEntries();
+      Teuchos::RCP<const Matrix> rcpA = Teuchos::rcpFromRef(A);
+      Teuchos::RCP<const CrsMatrixWrap> rcpAwrap = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(rcpA);
+      TEUCHOS_TEST_FOR_EXCEPTION(rcpAwrap == Teuchos::null, Xpetra::Exceptions::BadCast,
+                                       "BlockedCrsMatrix::Add: matrix A must be of type CrsMatrixWrap.");
+      Teuchos::RCP<const CrsMatrix> crsA = rcpAwrap->getCrsMatrix();
+
+      size_t maxNumEntries = crsA->getNodeMaxNumRowEntries();
 
       size_t    numEntries;
       Array<GO> inds(maxNumEntries);
       Array<SC> vals(maxNumEntries);
 
-      RCP<const Map> rowMap = A.getRowMap();
-      RCP<const Map> colMap = A.getColMap();
+      RCP<const Map> rowMap = crsA->getRowMap();
+      RCP<const Map> colMap = crsA->getColMap();
 
-      ArrayView<const GO> rowGIDs = A.getRowMap()->getNodeElementList();
-      for (size_t i = 0; i < A.getNodeNumRows(); i++) {
+      ArrayView<const GO> rowGIDs = crsA->getRowMap()->getNodeElementList();
+      for (size_t i = 0; i < crsA->getNodeNumRows(); i++) {
         GO row = rowGIDs[i];
-        A.getGlobalRowCopy(row, inds(), vals(), numEntries);
+        crsA->getGlobalRowCopy(row, inds(), vals(), numEntries);
 
         if (scalarA != one)
           for (size_t j = 0; j < numEntries; ++j)
@@ -954,6 +1418,8 @@ namespace Xpetra {
     // Default view is created after fillComplete()
     // Because ColMap might not be available before fillComplete().
     void CreateDefaultView() {
+      XPETRA_MONITOR("XpetraBlockedCrsMatrix::CreateDefaultView");
+
       // Create default view
       this->defaultViewLabel_ = "point";
       this->CreateView(this->GetDefaultViewLabel(), getRangeMap(), getDomainMap());
@@ -965,10 +1431,8 @@ namespace Xpetra {
   private:
     Teuchos::RCP<const MapExtractor>      domainmaps_;        // full        domain map together with all partial domain maps
     Teuchos::RCP<const MapExtractor>      rangemaps_;         // full         range map together with all partial domain maps
-    Teuchos::RCP<Map>                     fullrowmap_;        // full matrix    row map
-    //Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
-    std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
+    std::vector<Teuchos::RCP<Matrix> > blocks_;            // row major matrix block storage
 #ifdef HAVE_XPETRA_THYRA
     Teuchos::RCP<const Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
 #endif

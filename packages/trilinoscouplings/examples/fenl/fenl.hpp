@@ -63,6 +63,14 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+inline
+double maximum( const Teuchos::Comm<int>& comm , double local )
+{
+  double global = 0 ;
+  Teuchos::reduceAll( comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
+  return global ;
+}
+
 // Struct storing performance statistics
 struct Perf {
   size_t uq_count ;
@@ -148,6 +156,42 @@ struct Perf {
       prec_apply_time     = p.prec_apply_time;
       cg_total_time       = p.cg_total_time;
     }
+  }
+
+  void min(const Perf& p) {
+    map_ratio           = std::min( map_ratio , p. map_ratio );
+    fill_node_set       = std::min( fill_node_set , p.fill_node_set );
+    scan_node_count     = std::min( scan_node_count , p.scan_node_count );
+    fill_graph_entries  = std::min( fill_graph_entries , p.fill_graph_entries );
+    sort_graph_entries  = std::min( sort_graph_entries , p.sort_graph_entries );
+    fill_element_graph  = std::min( fill_element_graph , p.fill_element_graph );
+    create_sparse_matrix= std::min( create_sparse_matrix , p.create_sparse_matrix );
+    import_time         = std::min( import_time , p.import_time );
+    fill_time           = std::min( fill_time , p.fill_time );
+    bc_time             = std::min( bc_time , p.bc_time );
+    mat_vec_time        = std::min( mat_vec_time , p.mat_vec_time );
+    cg_iter_time        = std::min( cg_iter_time , p.cg_iter_time );
+    prec_setup_time     = std::min( prec_setup_time , p.prec_setup_time );
+    prec_apply_time     = std::min( prec_apply_time , p.prec_apply_time );
+    cg_total_time       = std::min( cg_total_time , p.cg_total_time );
+  }
+
+  void reduceMax(const Teuchos::Comm<int>& comm) {
+    map_ratio            = maximum( comm , map_ratio);
+    fill_node_set        = maximum( comm , fill_node_set);
+    scan_node_count      = maximum( comm , scan_node_count);
+    fill_graph_entries   = maximum( comm , fill_graph_entries);
+    sort_graph_entries   = maximum( comm , sort_graph_entries);
+    fill_element_graph   = maximum( comm , fill_element_graph);
+    create_sparse_matrix = maximum( comm , create_sparse_matrix);
+    import_time          = maximum( comm , import_time );
+    fill_time            = maximum( comm , fill_time );
+    bc_time              = maximum( comm , bc_time );
+    mat_vec_time         = maximum( comm , mat_vec_time );
+    cg_iter_time         = maximum( comm , cg_iter_time  );
+    prec_setup_time      = maximum( comm , prec_setup_time );
+    prec_apply_time      = maximum( comm , prec_apply_time );
+    cg_total_time        = maximum( comm , cg_total_time );
   }
 };
 

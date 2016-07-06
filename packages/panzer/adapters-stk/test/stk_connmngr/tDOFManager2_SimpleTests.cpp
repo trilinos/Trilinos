@@ -98,7 +98,7 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::rcp;
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 namespace {
 

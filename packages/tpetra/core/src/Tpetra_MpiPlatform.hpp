@@ -361,21 +361,20 @@ namespace Tpetra {
     MpiPlatform& operator= (const MpiPlatform<NodeType>& platform);
   };
 
-  /// \class MpiPlatform<Tpetra::Details::DefaultTypes::node_type>
+  /// \class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type>
   /// \brief MpiPlatform specialization for the default Node type.
   ///
-  /// \note Tpetra::Details::DefaultTypes::node_type is a typedef,
-  ///   and may have a different type, depending on Trilinos' build
-  ///   options.
+  /// \note <tt>::Tpetra::Details::DefaultTypes::node_type</tt> is a
+  ///   typedef.  Its actual type depends on Trilinos' build options.
   template <>
-  class MpiPlatform<Tpetra::Details::DefaultTypes::node_type> :
+  class MpiPlatform< ::Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
 
     //! Kokkos Node type; the template parameter of this class.
-    typedef Tpetra::Details::DefaultTypes::node_type NodeType;
+    typedef ::Tpetra::Details::DefaultTypes::node_type NodeType;
 
     //@}
     //! @name Constructors and destructor

@@ -50,11 +50,12 @@
 /// want the declaration of Tpetra::CrsGraph, include this file
 /// (Tpetra_CrsGraph_decl.hpp).
 
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Exceptions.hpp"
+#include "Tpetra_Util.hpp" // need this here for sort2
 
+#include "Kokkos_Sparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
@@ -259,9 +260,9 @@ namespace Tpetra {
   /// stored in the local graph and communicated to the appropriate
   /// node on the next call to globalAssemble() or fillComplete() (the
   /// latter calls the former).
-  template <class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-            class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-            class Node = Details::DefaultTypes::node_type,
+  template <class LocalOrdinal = ::Tpetra::Details::DefaultTypes::local_ordinal_type,
+            class GlobalOrdinal = ::Tpetra::Details::DefaultTypes::global_ordinal_type,
+            class Node = ::Tpetra::Details::DefaultTypes::node_type,
             const bool classic = Node::classic>
   class CrsGraph :
     public RowGraph<LocalOrdinal, GlobalOrdinal, Node>,
@@ -625,7 +626,7 @@ namespace Tpetra {
     /// Epetra_CrsGraph::InsertGlobalIndices.
     void
     insertGlobalIndices (const GlobalOrdinal globalRow,
-			 const LocalOrdinal numEnt,
+                         const LocalOrdinal numEnt,
                          const GlobalOrdinal inds[]);
 
     //! Insert local indices into the graph.
@@ -655,8 +656,8 @@ namespace Tpetra {
     /// Epetra_CrsGraph::InsertMyIndices.
     void
     insertLocalIndices (const LocalOrdinal localRow,
-			const LocalOrdinal numEnt,
-			const LocalOrdinal inds[]);
+                        const LocalOrdinal numEnt,
+                        const LocalOrdinal inds[]);
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -1274,7 +1275,36 @@ namespace Tpetra {
     void allocateIndices (const ELocalGlobal lg);
 
     template <class T>
-    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const;
+    Teuchos::ArrayRCP<Teuchos::Array<T> > allocateValues2D () const
+    {
+      using Teuchos::arcp;
+      using Teuchos::Array;
+      using Teuchos::ArrayRCP;
+      const char tfecfFuncName[] = "allocateValues2D: ";
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! indicesAreAllocated (), std::runtime_error,
+         "Graph indices must be allocated before values.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (getProfileType () != DynamicProfile, std::runtime_error,
+         "Graph indices must be allocated in a dynamic profile.");
+
+      ArrayRCP<Array<T> > values2D;
+      values2D = arcp<Array<T> > (getNodeNumRows ());
+      if (lclInds2D_ != null) {
+        const size_t numRows = lclInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (lclInds2D_[r].size ());
+        }
+      }
+      else if (gblInds2D_ != null) {
+        const size_t numRows = gblInds2D_.size ();
+        for (size_t r = 0; r < numRows; ++r) {
+          values2D[r].resize (gblInds2D_[r].size ());
+        }
+      }
+      return values2D;
+    }
 
     template <class T>
     RowInfo updateLocalAllocAndValues (const RowInfo rowInfo,
@@ -1540,7 +1570,116 @@ namespace Tpetra {
                             const Teuchos::ArrayView<Scalar>& oldRowVals,
                             const Teuchos::ArrayView<const Scalar>& newRowVals,
                             const ELocalGlobal lg,
-                            const ELocalGlobal I);
+                            const ELocalGlobal I)
+    {
+#ifdef HAVE_TPETRA_DEBUG
+      const char tfecfFuncName[] = "insertIndicesAndValues: ";
+#endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_DEBUG
+      size_t numNewInds = 0;
+      try {
+        numNewInds = insertIndices (rowInfo, newInds, lg, I);
+      } catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "insertIndices threw an exception: "
+           << e.what ());
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "oldRowVals.size() (" << oldRowVals.size () << ".");
+#else
+      const size_t numNewInds = insertIndices (rowInfo, newInds, lg, I);
+#endif // HAVE_TPETRA_DEBUG
+
+      typedef typename Teuchos::ArrayView<Scalar>::size_type size_type;
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (rowInfo.numEntries + numNewInds > static_cast<size_t> (oldRowVals.size ()),
+         std::runtime_error, "rowInfo.numEntries (" << rowInfo.numEntries << ")"
+         " + numNewInds (" << numNewInds << ") > oldRowVals.size() ("
+         << oldRowVals.size () << ").");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_type> (numNewInds) > newRowVals.size (),
+         std::runtime_error, "numNewInds (" << numNewInds << ") > "
+         "newRowVals.size() (" << newRowVals.size () << ").");
+#endif // HAVE_TPETRA_DEBUG
+
+      size_type oldInd = static_cast<size_type> (rowInfo.numEntries);
+
+#ifdef HAVE_TPETRA_DEBUG
+      try {
+#endif // HAVE_TPETRA_DEBUG
+        //NOTE: The code in the else branch fails on GCC 4.9 and newer in the assignement oldRowVals[oldInd] = newRowVals[newInd];
+        //We supply a workaround n as well as other code variants which produce or not produce the error
+#if defined(__GNUC__) && defined(__GNUC_MINOR__) && defined(__GNUC_PATCHLEVEL__)
+#define GCC_VERSION __GNUC__*100+__GNUC_MINOR__*10+__GNUC_PATCHLEVEL__
+#if GCC_VERSION >= 490
+#define GCC_WORKAROUND
+#endif
+#endif
+#ifdef GCC_WORKAROUND
+        size_type nNI = static_cast<size_type>(numNewInds);
+        if (nNI > 0)
+          memcpy(&oldRowVals[oldInd], &newRowVals[0], nNI*sizeof(Scalar));
+        /*
+        //Original Code Fails
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+        ++newInd, ++oldInd) {
+        oldRowVals[oldInd] = newRowVals[newInd];
+        }
+
+        //char cast variant fails
+        char* oldRowValPtr = (char*)&oldRowVals[oldInd];
+        const char* newRowValPtr = (const char*) &newRowVals[0];
+
+        for(size_type newInd = 0; newInd < (nNI * sizeof(Scalar)); newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //Raw ptr variant fails
+        Scalar* oldRowValPtr = &oldRowVals[oldInd];
+        Scalar* newRowValPtr = const_cast<Scalar*>(&newRowVals[0]);
+
+        for(size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowValPtr[newInd] = newRowValPtr[newInd];
+        }
+
+        //memcpy works
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        memcpy( &oldRowVals[oldInd+newInd], &newRowVals[newInd], sizeof(Scalar));
+        }
+
+        //just one loop index fails
+        for (size_type newInd = 0; newInd < nNI; newInd++) {
+        oldRowVals[oldInd+newInd] = newRowVals[newInd];
+        }
+
+        //inline increment fails
+        for (size_type newInd = 0; newInd < numNewInds;) {
+        oldRowVals[oldInd++] = newRowVals[newInd++];
+        }
+
+        */
+
+#else // GCC Workaround above
+        for (size_type newInd = 0; newInd < static_cast<size_type> (numNewInds);
+             ++newInd, ++oldInd) {
+          oldRowVals[oldInd] = newRowVals[newInd];
+        }
+#endif // GCC Workaround
+#ifdef HAVE_TPETRA_DEBUG
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "for loop for copying values threw an "
+           "exception: " << e.what ());
+      }
+#endif // HAVE_TPETRA_DEBUG
+    }
+
     void
     insertGlobalIndicesImpl (const LocalOrdinal myRow,
                              const Teuchos::ArrayView<const GlobalOrdinal> &indices);
@@ -1624,35 +1763,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef typename OutputScalarViewType::non_const_value_type ST;
       typedef LocalOrdinal LO;
@@ -1662,8 +1801,9 @@ namespace Tpetra {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
+      const bool sorted = this->isSorted ();
+
       LO numValid = 0; // number of valid input column indices
       size_t hint = 0; // Guess for the current index k into rowVals
 
@@ -1673,24 +1813,27 @@ namespace Tpetra {
         auto colInds = this->getLocalKokkosRowView (rowInfo);
 
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
               // NOTE (mfh 30 Nov 2015) The commented-out code is
               // wrong because another thread may have changed
-              // rowVals(k) between those two lines of code.
+              // rowVals(offset) between those two lines of code.
               //
-              //const ST newVal = f (rowVals(k), newVals(j));
-              //Kokkos::atomic_assign (&rowVals(k), newVal);
+              //const ST newVal = f (rowVals(offset), newVals(j));
+              //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-              volatile ST* const dest = &rowVals(k);
+              volatile ST* const dest = &rowVals(offset);
               (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
-              rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+              // use binary function f
+              rowVals(offset) = f (rowVals(offset), newVals(j));
             }
-            hint = k+1;
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -1715,24 +1858,26 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = colMap.getGlobalElement (inds(j));
           if (gblColInd != GINV) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
                 // wrong because another thread may have changed
-                // rowVals(k) between those two lines of code.
+                // rowVals(offset) between those two lines of code.
                 //
-                //const ST newVal = f (rowVals(k), newVals(j));
-                //Kokkos::atomic_assign (&rowVals(k), newVal);
+                //const ST newVal = f (rowVals(offset), newVals(j));
+                //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-                volatile ST* const dest = &rowVals(k);
+                volatile ST* const dest = &rowVals(offset);
                 (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {
-                rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+                // use binary function f
+                rowVals(offset) = f (rowVals(offset), newVals(j));
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -1782,35 +1927,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1828,7 +1973,8 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // Guess for the current index k into rowVals
       LO numValid = 0; // number of valid local column indices
 
@@ -1843,15 +1989,18 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
-              Kokkos::atomic_add (&rowVals(k), newVals(j));
+              Kokkos::atomic_add (&rowVals(offset), newVals(j));
             }
             else {
-              rowVals(k) += newVals(j);
+              rowVals(offset) += newVals(j);
             }
-            hint = k+1;
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -1865,16 +2014,17 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
-                Kokkos::atomic_add (&rowVals(k), newVals(j));
+                Kokkos::atomic_add (&rowVals(offset), newVals(j));
               }
               else {
-                rowVals(k) += newVals(j);
+                rowVals(offset) += newVals(j);
               }
-              hint = k+1;
+              hint = offset + 1;
               ++numValid;
             }
           }
@@ -1931,35 +2081,35 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<LocalIndicesViewType>::value, 
-		     "Template parameter LocalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<LocalIndicesViewType>::value,
+                     "Template parameter LocalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (LocalIndicesViewType::rank) == 1,
-		     "Template parameter LocalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter LocalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename LocalIndicesViewType::non_const_value_type,
-		       local_ordinal_type>::value,
-		     "Template parameter LocalIndicesViewType must "
-		     "contain values of type local_ordinal_type.");
+                       typename LocalIndicesViewType::non_const_value_type,
+                       local_ordinal_type>::value,
+                     "Template parameter LocalIndicesViewType must "
+                     "contain values of type local_ordinal_type.");
 
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -1977,7 +2127,8 @@ namespace Tpetra {
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // Guess for the current index k into rowVals
       LO numValid = 0; // number of valid local column indices
 
@@ -1992,10 +2143,13 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k = this->findLocalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
-            rowVals(k) = newVals(j);
-            hint = k+1;
+          const LO lclColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         lclColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            rowVals(offset) = newVals(j);
+            hint = offset + 1;
             ++numValid;
           }
         }
@@ -2009,11 +2163,12 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const GO gblColInd = this->colMap_->getGlobalElement (inds(j));
           if (gblColInd != Teuchos::OrdinalTraits<GO>::invalid ()) {
-            const size_t k =
-              this->findGlobalIndex (rowInfo, gblColInd, colInds, hint);
-            if (k != STINV) {
-              rowVals(k) = newVals(j);
-              hint = k+1;
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           gblColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
+              rowVals(offset) = newVals(j);
+              hint = offset + 1;
               ++numValid;
             }
           }
@@ -2066,13 +2221,15 @@ namespace Tpetra {
                          const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
 
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The dimensions of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // guess at the index's relative offset in the row
       LO numValid = 0; // number of valid input column indices
 
@@ -2099,16 +2256,17 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = this->colMap_->getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k =
-              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
-                Kokkos::atomic_add (&rowVals(k), newVals(j));
+                Kokkos::atomic_add (&rowVals(offset), newVals(j));
               }
               else {
-                rowVals(k) += newVals(j);
+                rowVals(offset) += newVals(j);
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -2121,16 +2279,18 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
-              Kokkos::atomic_add (&rowVals(k), newVals(j));
+              Kokkos::atomic_add (&rowVals(offset), newVals(j));
             }
             else {
-              rowVals(k) += newVals(j);
+              rowVals(offset) += newVals(j);
             }
-            hint = k+1;
+            hint = offset + 1;
             numValid++;
           }
         }
@@ -2171,9 +2331,9 @@ namespace Tpetra {
              class InputScalarViewType>
     LocalOrdinal
     replaceGlobalValues (const RowInfo& rowInfo,
-			 const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
-			 const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
-			 const typename UnmanagedView<InputScalarViewType>::type& newVals) const
+                         const typename UnmanagedView<OutputScalarViewType>::type& rowVals,
+                         const typename UnmanagedView<GlobalIndicesViewType>::type& inds,
+                         const typename UnmanagedView<InputScalarViewType>::type& newVals) const
     {
       // We use static_assert here to check the template parameters,
       // rather than std::enable_if (e.g., on the return value, to
@@ -2181,44 +2341,46 @@ namespace Tpetra {
       // desired attributes).  This turns obscure link errors into
       // clear compilation errors.  It also makes the return value a
       // lot easier to see.
-      static_assert (Kokkos::is_view<OutputScalarViewType>::value, 
-		     "Template parameter OutputScalarViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value, 
-		     "Template parameter GlobalIndicesViewType must be "
-		     "a Kokkos::View.");
-      static_assert (Kokkos::is_view<InputScalarViewType>::value, 
-		     "Template parameter InputScalarViewType must be a "
-		     "Kokkos::View.");
+      static_assert (Kokkos::is_view<OutputScalarViewType>::value,
+                     "Template parameter OutputScalarViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<GlobalIndicesViewType>::value,
+                     "Template parameter GlobalIndicesViewType must be "
+                     "a Kokkos::View.");
+      static_assert (Kokkos::is_view<InputScalarViewType>::value,
+                     "Template parameter InputScalarViewType must be a "
+                     "Kokkos::View.");
       static_assert (static_cast<int> (OutputScalarViewType::rank) == 1,
-		     "Template parameter OutputScalarViewType must "
-		     "have rank 1.");
+                     "Template parameter OutputScalarViewType must "
+                     "have rank 1.");
       static_assert (static_cast<int> (GlobalIndicesViewType::rank) == 1,
-		     "Template parameter GlobalIndicesViewType must "
-		     "have rank 1.");
-      static_assert (static_cast<int> (InputScalarViewType::rank) == 1, 
-		     "Template parameter InputScalarViewType must have "
-		     "rank 1.");
+                     "Template parameter GlobalIndicesViewType must "
+                     "have rank 1.");
+      static_assert (static_cast<int> (InputScalarViewType::rank) == 1,
+                     "Template parameter InputScalarViewType must have "
+                     "rank 1.");
       static_assert (std::is_same<
-		       typename OutputScalarViewType::non_const_value_type,
-		       typename InputScalarViewType::non_const_value_type>::value,
-		     "Template parameters OutputScalarViewType and "
-		     "InputScalarViewType must contain values of the same "
-		     "type.");
+                       typename OutputScalarViewType::non_const_value_type,
+                       typename InputScalarViewType::non_const_value_type>::value,
+                     "Template parameters OutputScalarViewType and "
+                     "InputScalarViewType must contain values of the same "
+                     "type.");
       static_assert (std::is_same<
-		       typename GlobalIndicesViewType::non_const_value_type,
-		       global_ordinal_type>::value,
-		     "Template parameter GlobalIndicesViewType must "
-		     "contain values of type global_ordinal_type.");
+                       typename GlobalIndicesViewType::non_const_value_type,
+                       global_ordinal_type>::value,
+                     "Template parameter GlobalIndicesViewType must "
+                     "contain values of type global_ordinal_type.");
 
       typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
 
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The dimensions of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
 
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+      const bool sorted = this->isSorted ();
+
       size_t hint = 0; // guess at the index's relative offset in the row
       LO numValid = 0; // number of valid input column indices
 
@@ -2245,11 +2407,12 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = this->colMap_->getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k =
-              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
-            if (k != STINV) {
-	      rowVals(k) = newVals(j);
-              hint = k+1;
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
+              rowVals(offset) = newVals(j);
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -2262,11 +2425,13 @@ namespace Tpetra {
 
         const LO numElts = static_cast<LO> (inds.dimension_0 ());
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
-	    rowVals(k) = newVals(j);
-            hint = k+1;
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
+            rowVals(offset) = newVals(j);
+            hint = offset + 1;
             numValid++;
           }
         }
@@ -2322,12 +2487,16 @@ namespace Tpetra {
                            const bool atomic = useAtomicUpdatesByDefault) const
     {
       typedef LocalOrdinal LO;
+      typedef GlobalOrdinal GO;
+
       if (newVals.dimension_0 () != inds.dimension_0 ()) {
         // The sizes of the input arrays must match.
         return Teuchos::OrdinalTraits<LO>::invalid ();
       }
-      const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+
       const LO numElts = static_cast<LO> (inds.dimension_0 ());
+      const bool sorted = this->isSorted ();
+
       LO numValid = 0; // number of valid input column indices
       size_t hint = 0; // guess at the index's relative offset in the row
 
@@ -2350,24 +2519,26 @@ namespace Tpetra {
         for (LO j = 0; j < numElts; ++j) {
           const LO lclColInd = colMap.getLocalElement (inds(j));
           if (lclColInd != LINV) {
-            const size_t k =
-              this->findLocalIndex (rowInfo, lclColInd, colInds, hint);
-            if (k != STINV) {
+            const size_t offset =
+              KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                           lclColInd, hint, sorted);
+            if (offset != rowInfo.numEntries) {
               if (atomic) {
                 // NOTE (mfh 30 Nov 2015) The commented-out code is
                 // wrong because another thread may have changed
-                // rowVals[k] between those two lines of code.
+                // rowVals(offset) between those two lines of code.
                 //
-                //const Scalar newVal = f (rowVals(k), newVals(j));
-                //Kokkos::atomic_assign (&rowVals(k), newVal);
+                //const Scalar newVal = f (rowVals(offset), newVals(j));
+                //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-                volatile Scalar* const dest = &rowVals(k);
+                volatile Scalar* const dest = &rowVals(offset);
                 (void) atomic_binary_function_update (dest, newVals(j), f);
               }
               else {
-                rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+                // use binary function f
+                rowVals(offset) = f (rowVals(offset), newVals(j));
               }
-              hint = k+1;
+              hint = offset + 1;
               numValid++;
             }
           }
@@ -2379,24 +2550,27 @@ namespace Tpetra {
         auto colInds = this->getGlobalKokkosRowView (rowInfo);
 
         for (LO j = 0; j < numElts; ++j) {
-          const size_t k =
-            this->findGlobalIndex (rowInfo, inds(j), colInds, hint);
-          if (k != STINV) {
+          const GO gblColInd = inds(j);
+          const size_t offset =
+            KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,
+                                         gblColInd, hint, sorted);
+          if (offset != rowInfo.numEntries) {
             if (atomic) {
               // NOTE (mfh 30 Nov 2015) The commented-out code is
               // wrong because another thread may have changed
-              // rowVals(k) between those two lines of code.
+              // rowVals(offset) between those two lines of code.
               //
-              //const Scalar newVal = f (rowVals(k), newVals(j));
-              //Kokkos::atomic_assign (&rowVals(k), newVal);
+              //const Scalar newVal = f (rowVals(offset), newVals(j));
+              //Kokkos::atomic_assign (&rowVals(offset), newVal);
 
-              volatile Scalar* const dest = &rowVals(k);
+              volatile Scalar* const dest = &rowVals(offset);
               (void) atomic_binary_function_update (dest, newVals(j), f);
             }
             else {
-              rowVals(k) = f (rowVals(k), newVals(j)); // use binary function f
+              // use binary function f
+              rowVals(offset) = f (rowVals(offset), newVals(j));
             }
-            hint = k+1;
+            hint = offset + 1;
             numValid++;
           }
         }
@@ -2443,8 +2617,17 @@ namespace Tpetra {
     ///   values[k].  On output: the same values, but sorted in the
     ///   same order as the (now sorted) column indices in the row.
     template <class Scalar>
-    void sortRowIndicesAndValues (const RowInfo rowinfo,
-                                  const Teuchos::ArrayView<Scalar>& values);
+    void
+    sortRowIndicesAndValues (const RowInfo rowinfo,
+                             const Teuchos::ArrayView<Scalar>& values)
+    {
+      if (rowinfo.numEntries > 0) {
+        Teuchos::ArrayView<LocalOrdinal> inds_view =
+          this->getLocalViewNonConst (rowinfo);
+        sort2 (inds_view.begin (), inds_view.begin () + rowinfo.numEntries,
+               values.begin ());
+      }
+    }
 
     /// \brief Merge duplicate row indices in all of the rows.
     ///
@@ -2475,7 +2658,62 @@ namespace Tpetra {
     template<class Scalar>
     void
     mergeRowIndicesAndValues (RowInfo rowinfo,
-                              const Teuchos::ArrayView<Scalar>& rowValues);
+                              const Teuchos::ArrayView<Scalar>& rowValues)
+    {
+      using Teuchos::ArrayView;
+      const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isStorageOptimized(), std::logic_error, "It is invalid to call this "
+         "method if the graph's storage has already been optimized.  Please "
+         "report this bug to the Tpetra developers.");
+
+      typedef typename ArrayView<Scalar>::iterator Iter;
+      Iter rowValueIter = rowValues.begin ();
+      ArrayView<LocalOrdinal> inds_view = getLocalViewNonConst (rowinfo);
+      typename ArrayView<LocalOrdinal>::iterator beg, end, newend;
+
+      // beg,end define a half-exclusive interval over which to iterate.
+      beg = inds_view.begin();
+      end = inds_view.begin() + rowinfo.numEntries;
+      newend = beg;
+      if (beg != end) {
+        typename ArrayView<LocalOrdinal>::iterator cur = beg + 1;
+        Iter vcur = rowValueIter + 1;
+        Iter vend = rowValueIter;
+        cur = beg+1;
+        while (cur != end) {
+          if (*cur != *newend) {
+            // new entry; save it
+            ++newend;
+            ++vend;
+            (*newend) = (*cur);
+            (*vend) = (*vcur);
+          }
+          else {
+            // old entry; merge it
+            //(*vend) = f (*vend, *vcur);
+            (*vend) += *vcur;
+          }
+          ++cur;
+          ++vcur;
+        }
+        ++newend; // one past the last entry, per typical [beg,end) semantics
+      }
+      const size_t mergedEntries = newend - beg;
+#ifdef HAVE_TPETRA_DEBUG
+      // merge should not have eliminated any entries; if so, the
+      // assignment below will destroy the packed structure
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (isStorageOptimized() && mergedEntries != rowinfo.numEntries,
+         std::logic_error,
+         "Merge was incorrect; it eliminated entries from the graph.  "
+         << "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+
+      k_numRowEntries_(rowinfo.localRow) = mergedEntries;
+      nodeNumEntries_ -= (rowinfo.numEntries - mergedEntries);
+    }
+
     //@}
 
     /// Set the domain and range Maps, and invalidate the Import
@@ -2599,109 +2837,6 @@ namespace Tpetra {
                            LocalOrdinal& numEnt,
                            const RowInfo& rowinfo) const;
 
-    /// \brief Find the column offset corresponding to the given
-    ///   (local) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a local
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the given row.
-    /// \param ind [in] (Local) column index for which to find the offset.
-    /// \param hint [in] Hint for where to find \c ind in the column
-    ///   indices for the given row.  If colInds is the ArrayView of
-    ///   the (local) column indices for the given row, and if
-    ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
-    ///   The hint is ignored if it is out of range (that is,
-    ///   greater than or equal to the number of entries in the
-    ///   given row).
-    ///
-    /// The hint optimizes for the case of calling this method several
-    /// times with the same row (as it would be in
-    /// transformLocalValues) when several index inputs occur in
-    /// consecutive sequence.  This may occur (for example) when there
-    /// are multiple degrees of freedom per mesh point, and users are
-    /// handling the assignment of degrees of freedom to global
-    /// indices manually (rather than letting some other class take
-    /// care of it).  In that case, users might choose to assign the
-    /// degrees of freedom for a mesh point to consecutive global
-    /// indices.  Epetra implements the hint for this reason.
-    ///
-    /// The hint only costs two comparisons (one to check range, and
-    /// the other to see if the hint was correct), and it can save
-    /// searching for the indices (which may take a lot more than
-    /// two comparisons).
-    size_t
-    findLocalIndex (const RowInfo& rowinfo,
-                    const LocalOrdinal ind,
-                    const size_t hint = 0) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (local) column index, given a view of the (local) column
-    ///   indices.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a local
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    ///
-    /// It is best to use this method if you plan to call it several
-    /// times for the same row, like in transformLocalValues().  In
-    /// that case, it amortizes the overhead of calling
-    /// getLocalKokkosRowView().
-    ///
-    /// \param rowinfo [in] Result of getRowInfo() for the given row.
-    /// \param ind [in] (Local) column index for which to find the offset.
-    /// \param colInds [in] View of all the (local) column indices
-    ///   for the given row.
-    /// \param hint [in] Hint for where to find \c ind in the column
-    ///   indices for the given row.  If colInds is the ArrayView of
-    ///   the (local) column indices for the given row, and if
-    ///   <tt>colInds[hint] == ind</tt>, then the hint is correct.
-    ///   The hint is ignored if it is out of range (that is,
-    ///   greater than or equal to the number of entries in the
-    ///   given row).
-    ///
-    /// See the documentation of the three-argument version of this
-    /// method for an explanation and justification of the hint.
-    size_t
-    findLocalIndex (const RowInfo& rowinfo,
-                    const LocalOrdinal ind,
-                    const Kokkos::View<const LocalOrdinal*, device_type,
-                      Kokkos::MemoryUnmanaged>& colInds,
-                    const size_t hint) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const size_t hint = 0) const;
-
-    /// \brief Find the column offset corresponding to the given
-    ///   (global) column index.
-    ///
-    /// The name of this method is a bit misleading.  It does not
-    /// actually find the column index.  Instead, it takes a global
-    /// column index \c ind, and returns the corresponding offset
-    /// into the raw array of column indices (whether that be 1-D or
-    /// 2-D storage).
-    size_t
-    findGlobalIndex (const RowInfo& rowinfo,
-                     const GlobalOrdinal ind,
-                     const Kokkos::View<const GlobalOrdinal*,
-                       device_type, Kokkos::MemoryUnmanaged>& colInds,
-                     const size_t hint = 0) const;
-
   public:
     /// \brief Get the local graph.
     ///
@@ -2713,9 +2848,6 @@ namespace Tpetra {
     local_graph_type getLocalGraph () const;
 
   protected:
-    //! Get the local graph (DEPRECATED: call getLocalGraph() instead).
-    TPETRA_DEPRECATED local_graph_type getLocalGraph_Kokkos () const;
-
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Whether it is correct to call getRowInfo().
@@ -2894,13 +3026,9 @@ namespace Tpetra {
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
-    /// This is a host View because it is only ever read or modified
-    /// on the host.
-    ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, execution_space>::HostMirror
-    k_numRowEntries_;
-
+    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror
+      k_numRowEntries_;
     //@}
 
     /// \brief Status of the graph's storage, when not in a

@@ -254,6 +254,10 @@ public:
             Teuchos::Describable::verbLevel_default) const;
 
   //@}
+
+  /// \brief Get the name of this container type for Details::constructContainer()
+  static std::string getName();
+
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   BandedContainer (const BandedContainer<MatrixType, LocalScalarType>& rhs);
@@ -457,8 +461,11 @@ public:
   describe (Teuchos::FancyOStream &out,
             const Teuchos::EVerbosityLevel verbLevel =
             Teuchos::Describable::verbLevel_default) const;
-
   //@}
+
+  /// \brief Get the name of this container type for Details::constructContainer()
+  static std::string getName();
+
 private:
   //! Copy constructor: Declared but not implemented, to forbid copy construction.
   BandedContainer (const BandedContainer<MatrixType, LocalScalarType>& rhs);

@@ -253,6 +253,10 @@ namespace MueLu {
         this->prolongatorsToPrint_ = Teuchos::getArrayFromStringParameter<int>(printList, "P");
       if (printList.isParameter("R"))
         this->restrictorsToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "R");
+      if (printList.isParameter("Nullspace"))
+        this->nullspaceToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Nullspace");
+      if (printList.isParameter("Coordinates"))
+        this->coordinatesToPrint_  = Teuchos::getArrayFromStringParameter<int>(printList, "Coordinates");
     }
 
     // Set verbosity parameter
@@ -481,7 +485,7 @@ namespace MueLu {
       int overlap = 0;
       ParameterList defaultSmootherParams;
       defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
-      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<int>::one());
+      defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
       defaultSmootherParams.set("relaxation: damping factor", Teuchos::ScalarTraits<Scalar>::one());
 
       RCP<SmootherFactory> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
@@ -920,6 +924,20 @@ namespace MueLu {
       RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+      try {
+        if (paramList  .isParameter("aggregation: allow empty prolongator columns")) {
+          RAPparams.set("CheckMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
+          RAPparams.set("RepairMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
+        }
+        else if (defaultList.isParameter("aggregation: allow empty prolongator columns")) {
+          RAPparams.set("CheckMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+          RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+        }
+      }
+      catch(Teuchos::Exceptions::InvalidParameterType) {
+        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
+                                            "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
+      }
       RAP->SetParameterList(RAPparams);
       RAP->SetFactory("P", manager.GetFactory("P"));
       if (!this->implicitTranspose_)
@@ -1455,8 +1473,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupHierarchy(Hierarchy& H) const {
-    HierarchyManager::SetupHierarchy(H);
     H.SetCycle(Cycle_);
+    HierarchyManager::SetupHierarchy(H);
   }
 
   static bool compare(const ParameterList& list1, const ParameterList& list2) {

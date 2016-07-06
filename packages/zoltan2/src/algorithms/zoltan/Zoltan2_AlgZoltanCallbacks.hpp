@@ -212,7 +212,10 @@ static void zoltanHGSizeCS_withMatrixAdapter(void *data, int *nLists, int *nPins
   }
   else {
     // Need either CRSView or CCSView.
-    // Also, not yet implemented for matrix nonzeros; may need a hypergraph model.
+    // Also, not yet implemented for matrix nonzeros; 
+    // may need a hypergraph model.
+    std::cout << "For hypergraph partitioning, "
+              << "CRSView or CCSView is needed in MatrixAdapter" << std::endl;
     *ierr = ZOLTAN_FATAL;
   }
 }
@@ -315,6 +318,9 @@ static void zoltanHGSizeCS_withMeshAdapter(void *data, int *nLists, int *nPins,
     *format = ZOLTAN_COMPRESSED_EDGE;
   }
   else {
+    std::cout << "For hypergraph partitioning, need first adjacencies "
+              << "(availAdjs, getLocalNumAdjs, getAdjsView) "
+              << "in MeshAdapter."  << std::endl;
     *nLists = 0;
     *nPins = 0;
     *format = -1*ZOLTAN_COMPRESSED_VERTEX;

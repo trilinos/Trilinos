@@ -46,10 +46,7 @@ public:
 
     virtual void finished_modification_end_notification()
     {
-        size_t numLocalElementsAdded = elementsAdded.size();
-        size_t numGlobalElementsAdded = 0;
-        stk::all_reduce_sum(bulkData.parallel(), &numLocalElementsAdded, &numGlobalElementsAdded, 1);
-        if (numGlobalElementsAdded > 0) {
+        if (maxNumAdded > 0) {
             elemGraph.add_elements(elementsAdded);
             elementsAdded.clear();
         }
@@ -57,19 +54,25 @@ public:
 
     virtual void started_modification_end_notification()
     {
-        elemGraph.delete_elements(elementsDeleted);
-        elementsDeleted.clear();
+        if (get_global_sum(bulkData.parallel(), elementsDeleted.size()) > 0) {
+            elemGraph.delete_elements(elementsDeleted);
+            elementsDeleted.clear();
+        }
     }
 
-    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void fill_values_to_reduce(std::vector<size_t> &valuesToReduce)
     {
-//        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
+        valuesToReduce.clear();
+        valuesToReduce.push_back(elementsAdded.size());
+    }
+
+    virtual void set_reduced_values(const std::vector<size_t> &reducedValues)
+    {
+        maxNumAdded = reducedValues[0];
     }
 
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
-//        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
-//        newParallelGraphEntries.clear();
         elemGraph.fill_from_mesh();
     }
 private:
@@ -78,6 +81,7 @@ private:
     stk::mesh::impl::ParallelGraphInfo newParallelGraphEntries;
     stk::mesh::EntityVector elementsAdded;
     stk::mesh::impl::DeletedElementInfoVector elementsDeleted;
+    size_t maxNumAdded = 0;
 };
 
 }} // end stk mesh namespaces

@@ -47,6 +47,7 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Kokkos_ViewFactory.hpp"
 
 namespace panzer {
 
@@ -110,7 +111,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
-  tmp = Intrepid2::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
+  tmp = Kokkos::createDynRankView(residual.get_static_view(),"tmp",scalar.dimension(0), num_qp); 
 }
 
 //**********************************************************************
@@ -121,7 +122,7 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
    // for (int i=0; i < residual.size(); ++i)
    //   residual[i] = 0.0;
     
-   Kokkos::deep_copy (residual.get_kokkos_view(), ScalarT(0.0));
+   Kokkos::deep_copy (residual.get_static_view(), ScalarT(0.0));
 
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {

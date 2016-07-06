@@ -70,9 +70,6 @@ using Teuchos::rcp;
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Phalanx_KokkosUtilities.hpp"
 
-#include "Epetra_Comm.h"
-#include "Epetra_MpiComm.h"
-
 #include <vector>
 #include <map>
 #include <string>
@@ -86,7 +83,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::InitializeKokkosDevice();
 
     panzer_stk_classic::STK_ExodusReaderFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -164,9 +160,10 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 
@@ -223,7 +220,6 @@ namespace panzer {
     for (int i=0; i < x->MyLength(); ++i)
       TEST_FLOATING_EQUALITY((*x)[i], 3.0, 1.0e-10);
 
-    PHX::FinalizeKokkosDevice();
   }
 
   void testInitialzation_blockStructure(const Teuchos::RCP<Teuchos::ParameterList>& ipb,

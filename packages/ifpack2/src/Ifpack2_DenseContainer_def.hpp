@@ -931,7 +931,7 @@ DenseContainer<MatrixType, LocalScalarType, true>::
 description () const
 {
   std::ostringstream oss;
-  oss << Teuchos::Describable::description();
+  oss << "Ifpack::DenseContainer: ";
   if (isInitialized()) {
     if (isComputed()) {
       oss << "{status = initialized, computed";
@@ -1310,6 +1310,12 @@ void
 DenseContainer<MatrixType, LocalScalarType, false>::
 extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
 {}
+
+template<class MatrixType, class LocalScalarType>
+std::string DenseContainer<MatrixType, LocalScalarType, true>::getName()
+{
+  return "Dense";
+}
 
 } // namespace Ifpack2
 

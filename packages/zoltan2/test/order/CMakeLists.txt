@@ -57,27 +57,29 @@ IF (${PROJECT_NAME}_ENABLE_Galeri)
   )
 ENDIF()
 
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  OrderingAMD
-  SOURCES orderingAMD.cpp
-  NUM_MPI_PROCS 4
-  COMM serial mpi
-  ARGS
-   "--inputFile=simple"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
+# Always run AMD test 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    OrderingAMD
+    SOURCES orderingAMD.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+     "--inputFile=simple"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  OrderingScotch
-  SOURCES orderingScotch.cpp
-  COMM serial mpi
-  ARGS
-   "--inputFile=simple"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
+IF (${PACKAGE_NAME}_ENABLE_Scotch)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    OrderingScotch
+    SOURCES orderingScotch.cpp
+    COMM serial mpi
+    ARGS
+     "--inputFile=simple"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
   )
+ENDIF()
 
 ##########################################
 IF (${PACKAGE_NAME}_ENABLE_Experimental)

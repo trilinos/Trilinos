@@ -72,7 +72,7 @@ MDComm::MDComm(const Teuchos::ArrayView< const int > & commDims,
                                        commLayout)),
   _commIndex(computeCommIndexes(_teuchosComm->getRank(),
                                 _commStrides)),
-  _periodic(computePeriodic(commDims.size(), periodic))
+  _periodic(createArrayOfInts(commDims.size(), periodic))
 {
 }
 
@@ -89,7 +89,7 @@ MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                                        commLayout)),
   _commIndex(computeCommIndexes(teuchosComm->getRank(),
                                 _commStrides)),
-  _periodic(computePeriodic(commDims.size(), periodic))
+  _periodic(createArrayOfInts(commDims.size(), periodic))
 {
 }
 
@@ -118,7 +118,7 @@ MDComm::MDComm(Teuchos::ParameterList & plist) :
   // Set the periodic flags along each axis
   Teuchos::Array< int > periodic =
     plist.get("periodic", Teuchos::Array< int >());
-  _periodic = computePeriodic(numDims, periodic);
+  _periodic = createArrayOfInts(numDims, periodic);
 
   // Set the axis strides
   _commStrides = computeStrides<int,int>(_commDims,
@@ -155,7 +155,7 @@ MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   // Set the periodic flags along each axis
   Teuchos::Array< int > periodic =
     plist.get("periodic", Teuchos::Array< int >());
-  _periodic = computePeriodic(numDims, periodic);
+  _periodic = createArrayOfInts(numDims, periodic);
 
   // Set the axis strides
   _commStrides = computeStrides<int,int>(_commDims,
@@ -210,7 +210,7 @@ MDComm::MDComm(int numDims,
                                        commLayout)),
   _commIndex(computeCommIndexes(_teuchosComm->getRank(),
                                 _commStrides)),
-  _periodic(computePeriodic(numDims, periodic))
+  _periodic(createArrayOfInts(numDims, periodic))
 {
 }
 
@@ -228,7 +228,7 @@ MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                                        commLayout)),
   _commIndex(computeCommIndexes(teuchosComm->getRank(),
                                 _commStrides)),
-  _periodic(computePeriodic(numDims, periodic))
+  _periodic(createArrayOfInts(numDims, periodic))
 {
 }
 

@@ -56,6 +56,28 @@ scatterResponse()
   uniqueContainer_ = Teuchos::null;
 }
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template < >
+void Response_Functional<panzer::Traits::Hessian>::
+scatterResponse()
+{
+  using Teuchos::rcp_dynamic_cast;
+
+  Teuchos::RCP<Thyra::MultiVectorBase<double> > dgdx_unique = getDerivative();
+
+  // if its null, don't do anything
+  if(dgdx_unique==Teuchos::null)
+    return;
+
+  uniqueContainer_ = linObjFactory_->buildLinearObjContainer();
+  Teuchos::rcp_dynamic_cast<ThyraObjContainer<double> >(uniqueContainer_)->set_x_th(dgdx_unique->col(0));
+
+  linObjFactory_->ghostToGlobalContainer(*ghostedContainer_,*uniqueContainer_,LinearObjContainer::X);
+
+  uniqueContainer_ = Teuchos::null;
+}
+#endif
+
 template < >
 void Response_Functional<panzer::Traits::Tangent>::
 scatterResponse()
@@ -103,6 +125,16 @@ setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & s
   setDerivativeVectorSpace(soln_vs);
 }
 
+// derivatives are required for
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+template < >
+void Response_Functional<panzer::Traits::Hessian>::
+setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs)
+{
+  setDerivativeVectorSpace(soln_vs);
+}
+#endif
+
 // Do nothing unless derivatives are required
 template <typename EvalT>
 void Response_Functional<EvalT>::
@@ -117,6 +149,18 @@ adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const Glob
                                                Teuchos::dyn_cast<const LinearObjContainer>(globalBCRows),
                                                *ghostedContainer_,true,true);
 }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+// Do nothing unless derivatives are required
+template < >
+void Response_Functional<panzer::Traits::Hessian>::
+adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows)
+{
+  linObjFactory_->adjustForDirichletConditions(Teuchos::dyn_cast<const LinearObjContainer>(localBCRows),
+                                               Teuchos::dyn_cast<const LinearObjContainer>(globalBCRows),
+                                               *ghostedContainer_,true,true);
+}
+#endif
 
 }
 

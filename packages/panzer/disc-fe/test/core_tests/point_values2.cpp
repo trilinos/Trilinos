@@ -51,14 +51,13 @@
 #include "Panzer_PointValues2.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Phalanx_KokkosUtilities.hpp"
 #include "Phalanx_KokkosViewFactory.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Intrepid2::FieldContainer;
 
 namespace panzer {
 
@@ -67,7 +66,6 @@ namespace panzer {
     typedef PHX::KokkosViewFactory<double,PHX::Device> ViewFactory;
     typedef PHX::MDField<double>::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
@@ -140,7 +138,6 @@ namespace panzer {
     typedef PHX::KokkosViewFactory<ScalarType,PHX::Device> ViewFactory;
     typedef PHX::MDField<double>::size_type size_type;
 
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));

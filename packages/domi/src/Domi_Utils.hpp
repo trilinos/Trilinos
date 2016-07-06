@@ -330,19 +330,18 @@ computeCommIndexes(int rank,
 
 ////////////////////////////////////////////////////////////////////////
 
-/** \brief Compute the array of periodic flags, given the user input.
+/** \brief Compute an array of integers, given the user input.
  *
  * If the input array is shorter than the number of dimensions, fill
  * the remainder of the result with zeros.
  *
  * \param numDims [in] the number of dimensions
  *
- * \param periodic [in] an array of flags indicating whether each axis
- *        is periodic
+ * \param source [in] the source array of ints
  */
 Teuchos::Array< int >
-computePeriodic(int numDims,
-                const Teuchos::ArrayView< const int > & periodic);
+createArrayOfInts(int numDims,
+                  const Teuchos::ArrayView< const int > & source);
 
 ////////////////////////////////////////////////////////////////////////
 

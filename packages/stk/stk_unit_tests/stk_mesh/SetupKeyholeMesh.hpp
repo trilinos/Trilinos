@@ -201,7 +201,7 @@ inline
 void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
 {
     ThrowRequire(bulk.parallel_size() == 3);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk, bulk.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk);
 
     stk::mesh::EntityProcVec elementProcChanges;
     if (bulk.parallel_rank() == 1) {
@@ -231,7 +231,7 @@ inline
 void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
 {
     ThrowRequire(bulk.parallel_size() == 3);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk, bulk.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk);
 
     stk::mesh::EntityProcVec elementProcChanges;
     if (bulk.parallel_rank() == 1) {

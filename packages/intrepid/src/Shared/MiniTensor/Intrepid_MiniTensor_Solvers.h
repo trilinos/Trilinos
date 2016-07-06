@@ -143,6 +143,12 @@ public:
   Index
   min_num_iter{0};
 
+  Index
+  num_iter{0};
+
+  T
+  initial_norm{1.0};
+
   T
   rel_tol{1.0e-12};
 
@@ -157,6 +163,15 @@ public:
 
   T
   growth_limit{1.0};
+
+  T
+  initial_value{0.0};
+
+  T
+  previous_value{0.0};
+
+  T
+  final_value{0.0};
 
   bool
   failed{false};
@@ -176,33 +191,17 @@ public:
   bool
   enforce_boundedness{false};
 
-  T
-  initial_value{0.0};
+  Vector<T, N>
+  initial_guess;
 
-  T
-  previous_value{0.0};
-
-  T
-  final_value{0.0};
+  Vector<T, N>
+  final_soln;
 
   Vector<T, N>
   final_gradient;
 
   Tensor<T, N>
   final_hessian;
-
-private:
-  T
-  initial_norm{1.0};
-
-  Index
-  num_iter{0};
-
-  Vector<T, N>
-  initial_guess;
-
-  Vector<T, N>
-  final_soln;
 
   char const *
   step_method_name{nullptr};
@@ -223,6 +222,35 @@ struct NewtonLineSearch
 
   Index
   max_num_iter{16};
+
+  T
+  tolerance{1.0e-6};
+};
+
+///
+/// Back-track line search
+///
+template<typename T, Index N>
+struct BacktrackingLineSearch
+{
+  template<typename FN>
+  Vector<T, N>
+  step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln);
+
+  Index
+  max_num_iter{100};
+
+  Index
+  max_line_iter{10};
+
+  T
+  search_parameter{0.5};
+
+  T
+  search_increment{0.1};
+
+  T
+  alpha{1.0};
 
   T
   tolerance{1.0e-6};
@@ -282,7 +310,12 @@ struct StepBase
 ///
 enum class StepType
 {
-  UNDEFINED = 0, NEWTON = 1, TRUST_REGION = 2, CG = 3, LINE_SEARCH_REG = 4
+  UNDEFINED = 0,
+  NEWTON = 1,
+  NEWTON_LS = 2,
+  TRUST_REGION = 3,
+  CG = 4,
+  LINE_SEARCH_REG = 5
 };
 
 ///
@@ -319,6 +352,36 @@ struct NewtonStep final : public StepBase<FN, T, N>
 
   virtual
   ~NewtonStep() {}
+};
+
+
+///
+/// Newton Step with line search
+///
+template<typename FN, typename T, Index N>
+struct NewtonWithLineSearchStep final : public StepBase<FN, T, N>
+{
+  static constexpr
+  char const * const
+  NAME{"Newton with Line Search"};
+
+  virtual
+  char const * const
+  name()
+  {
+    return NAME;
+  }
+
+  virtual
+  void
+  initialize(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
+
+  virtual
+  Vector<T, N>
+  step(FN & fn, Vector<T, N> const & x, Vector<T, N> const & r);
+
+  virtual
+  ~NewtonWithLineSearchStep() {}
 };
 
 ///

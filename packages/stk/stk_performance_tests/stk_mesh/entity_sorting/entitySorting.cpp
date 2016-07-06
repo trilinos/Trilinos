@@ -59,7 +59,7 @@ TEST_F(SortEntitiesCustomLess, test_entity_sorting_performance)
 {
     stk::mesh::MetaData meta;
     stk::unit_test_util::BulkDataTester bulk(meta, MPI_COMM_WORLD);
-    stk::unit_test_util::fill_mesh_using_stk_io("generated:100x100x100",bulk,bulk.parallel());
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:100x100x100",bulk);
     run_entity_sort_performance_test(bulk);
 }
 

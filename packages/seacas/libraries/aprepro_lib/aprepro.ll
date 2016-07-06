@@ -1078,7 +1078,7 @@ namespace SEAMS {
 #endif
 int SEAMSFlexLexer::yylex()
 {
-    std::cerr << "in ExampleFlexLexer::yylex() !" << std::endl;
+    std::cerr << "in ExampleFlexLexer::yylex() !" << '\n';
     return 0;
 }
 

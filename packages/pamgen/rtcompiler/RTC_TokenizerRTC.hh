@@ -34,9 +34,9 @@ class Tokenizer {
   void previousToken();
 
   Token token() {assert(!eol()); return *_currToken;}
-  
+
   bool eof() { return _currLine == _tokenizedLines.end();}
-  
+
   bool eol() { return _currToken == _currLine->end();}
 
   bool isArg() { return _tokenizedLines.size() == 1 && _currLine->size() == 1;}
@@ -47,8 +47,8 @@ private:
   bool checkStack(const std::string& op);
 
   bool check(const std::string& testName, const std::string& errs,
-             unsigned int expectedNumLines, 
-             unsigned int* expectedNumTokens, 
+             unsigned int expectedNumLines,
+             unsigned int* expectedNumTokens,
              Token** expectedTokens);
 
   std::vector<std::vector<Token> >           _tokenizedLines;

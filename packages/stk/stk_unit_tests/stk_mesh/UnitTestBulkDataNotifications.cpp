@@ -63,7 +63,7 @@ TEST(BulkDataNotifications, test_listener_buckets_changed)
         stk::unit_test_util::BulkDataTester mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
 
         const std::string generatedMeshSpec = "generated:1x1x2";
-        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh);
 
         TestListener listener(comm);
         mesh.register_observer(&listener);

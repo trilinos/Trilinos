@@ -7,6 +7,12 @@
 /* Define this macro if the quadmath TPL is enabled */
 #cmakedefine HAVE_TPETRAKERNELS_QUADMATH
 
+/* Define this macro if the MKL TPL is enabled.  This is different
+   than just linking against the MKL to get the BLAS and LAPACK; it
+   requires (a) header file(s) as well, and may use functions other
+   than just BLAS and LAPACK functions.  */
+#cmakedefine HAVE_TPETRAKERNELS_MKL
+
 /* Define this macro if experimental features of Kokkoskernels are enabled */
 #cmakedefine HAVE_TPETRAKERNELS_EXPERIMENTAL
 

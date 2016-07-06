@@ -47,7 +47,7 @@
 #include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Panzer_Evaluator_Macros.hpp"
 
@@ -76,7 +76,7 @@ PANZER_EVALUATOR_CLASS(Integrator_DivBasisTimesScalar)
 
   bool useScalarField;
 
-  Intrepid2::FieldContainer<ScalarT> tmp;
+  Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
 
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;

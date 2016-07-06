@@ -42,7 +42,7 @@
 #ifndef BELOS_TYPES_HPP
 #define BELOS_TYPES_HPP
 
-/*!	
+/*!
   \file BelosTypes.hpp
   \brief Collection of types and exceptions used within the Belos solvers.
 */
@@ -51,20 +51,20 @@
 #include "Teuchos_Assert.hpp"
 
 namespace Belos {
- 
+
   //! @name Belos Exceptions
   //@{
 
-  /// \class BelosError 
+  /// \class BelosError
   /// \brief Parent class to all Belos exceptions.
   class BelosError : public std::logic_error {
-  public: 
+  public:
     BelosError (const std::string& what_arg) : std::logic_error(what_arg) {}
   };
 
   //@}
 
- 
+
   /// \enum ETrans
   /// \brief Whether to apply the (conjugate) transpose of an operator.
   ///
@@ -82,7 +82,7 @@ namespace Belos {
 			TRANS = 1,    /*!< Apply the transpose of the operator. */
 			CONJTRANS = 2 /*!< Apply the conjugate transpose of the operator. */
   };
-  
+
   /// \enum NormType
   /// \brief The type of vector norm to compute.
   ///
@@ -98,21 +98,21 @@ namespace Belos {
 		    TwoNorm,       /*!< Compute the two-norm \f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2))\f$ for each vector. */
 		    InfNorm        /*!< Compute the infinity-norm \f$\max_{i=1}^{n}\{|x_i w_i|\}\f$ for each vector. */
   };
-  
-  /// \enum ScaleType 
+
+  /// \enum ScaleType
   /// \brief The type of scaling to use on the residual norm value.
   ///
   /// For residual norm convergence tests, the residual norm is scaled
   /// (divided) by some value.  This enum specifies which value to use
   /// -- for example, the norm of the right-hand side, the initial
   /// residual vector norm (preconditioned or not), a user-specified
-  /// value, or no scaling at all.  
+  /// value, or no scaling at all.
   ///
   /// A user-specified value is useful when invoking an iterative
   /// solver as the inner loop of a nonlinear solver or iterative
   /// optimization method.  These may require special scaling factors
   /// (for example, that include the dimension of the linear system
-  /// \f$N\f$).  
+  /// \f$N\f$).
   ///
   /// \note This enum is part of the public interface of many Belos
   ///   solvers, via the input list of parameters.
@@ -120,10 +120,14 @@ namespace Belos {
                   NormOfInitRes, /*!< Use the initial residual vector. */
                   NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector. */
                   None,          /*!< Use unscaled residual. */
-                  UserProvided   /*!< User provides an explicit value by which the residual norm will be divided. */
+                  UserProvided,  /*!< User provides an explicit value by which the residual norm will be divided. */
+                  NormOfFullInitRes, /*!< Use the full initial residual vector. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
+                  NormOfFullPrecInitRes, /*!< Use the full preconditioned initial residual vector. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfPrecInitRes. */
+                  NormOfFullScaledInitRes, /*!< Use the full initial residual vector scaled by the inverse of the length of the subvector compared to the overall residual vector length. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
+                  NormOfFullScaledPrecInitRes /*!< Use the full initial residual vector scaled by the inverse of the length of the subvector compared to the overall residual vector length. Only interesting for partial subnorms. For singular fields this is equivalent with NormOfInitRes. */
   };
- 
-  /// \enum OutputType 
+
+  /// \enum OutputType
   /// \brief Style of output used to display status test information.
   ///
   /// Belos solvers optionally display intermediate status output
@@ -134,7 +138,8 @@ namespace Belos {
   /// \note This enum is part of the public interface of many Belos
   ///   solvers, via the input list of parameters.
   enum OutputType {General,     /*!< Extensive output of status test information. */
-                   Brief        /*!< Simple output of current residual information. */
+                   Brief,       /*!< Simple output of current residual information. */
+                   User         /*!< Simple output of user-specified status tests tagged by user */
   };
 
   /// \enum ReturnType
@@ -146,18 +151,18 @@ namespace Belos {
   ///
   /// \note This enum is part of the public interface of all Belos
   ///   solvers.
-  enum ReturnType { 
+  enum ReturnType {
     Converged,  /*!< Convergence was reached for all linear systems. */
     Unconverged /*!< Convergence was not reached for some or all linear systems. */
   };
 
   //! Convert the given \c ReturnType enum value to its corresponding string.
-  std::string 
+  std::string
   convertReturnTypeToString (const ReturnType result);
-  
-  /// \enum StatusType 
+
+  /// \enum StatusType
   /// \brief Whether the \c StatusTest wants iteration to stop.
-  /// 
+  ///
   /// \note Only Belos developers and advanced users need this.
   ///
   /// Belos solvers use subclasses of \c StatusTest as iteration
@@ -180,9 +185,9 @@ namespace Belos {
   ///
   /// This enum is useful to you only if you are implementing a
   /// subclass of StatusTest, Iteration, or SolverManager.
-  enum StatusType { 	Passed = 0x1,      /*!< Some event occured, the iteration needs to stop. */
+  enum StatusType {     Passed = 0x1,      /*!< Some event occured, the iteration needs to stop. */
                         Failed = 0x2,      /*!< No event has occurred requiring the iteration to stop. */
-			Undefined = 0x4    /*!< Status test has not been checked yet. */
+                        Undefined = 0x4    /*!< Status test has not been checked yet. */
   };
 
   /// \enum ResetType
@@ -218,13 +223,13 @@ namespace Belos {
   convertStringToStatusType (const std::string& status);
 
   //! Convert the given string to its \c ScaleType enum value.
-  ScaleType 
+  ScaleType
   convertStringToScaleType (const std::string& scaleType);
 
   //! Convert the given \c ScaleType enum value to its corresponding string.
   std::string
   convertScaleTypeToString (const ScaleType scaleType);
-  
+
   /// \enum ConjType
   /// \brief Whether or not to conjugate the transpose for block inner products.
   ///
@@ -237,10 +242,10 @@ namespace Belos {
     NO_CONJ,      /*!< Not conjugated */
     CONJ          /*!< Conjugated */
   };
-  
+
   /// \enum MsgType
   /// \brief Available message types recognized by the linear solvers.
-  /// 
+  ///
   /// This enum allows users to control the kinds of output that
   /// Belos' solvers generate.  MsgType is not an enum in the
   /// strictest sense, because the values are not exclusive.  Rather,
@@ -270,7 +275,7 @@ namespace Belos {
   /// C-style bit sets as int rather than MsgType) as a
   /// comma-delimited, human-readable list of names.  This is useful
   /// for debugging.
-  std::string 
+  std::string
   convertMsgTypeToString (const MsgType msgType);
 
 } // end Belos namespace

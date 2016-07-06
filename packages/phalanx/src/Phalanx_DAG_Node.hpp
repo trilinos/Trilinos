@@ -71,6 +71,8 @@ namespace PHX {
     {return adjacencies_;}
     void setExecutionTime(const std::chrono::duration<double>& exec_time)
     {exec_time_ = exec_time;}
+    void sumIntoExecutionTime(const std::chrono::duration<double>& exec_time)
+    {exec_time_ += exec_time;}
     const std::chrono::duration<double>& executionTime() const
     {return exec_time_;}
     void setStartTime(const std::chrono::duration<double>& t)

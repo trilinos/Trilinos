@@ -1,7 +1,28 @@
 #ifndef INCLUDE_SHYLU_HTS_IMPL_DEF_HPP
 #define INCLUDE_SHYLU_HTS_IMPL_DEF_HPP
 
-#include <omp.h>
+#ifdef _OPENMP
+# include <omp.h>
+#else
+namespace Experimental {
+namespace htsimpl {
+// Protect against a header that has #define'd replacements for OpenMP
+// functions.
+#ifndef omp_get_max_threads
+inline int omp_get_max_threads () { return 1; }
+#endif
+#ifndef omp_set_num_threads
+inline void omp_set_num_threads (const int&) {}
+#endif
+#ifndef omp_get_num_threads
+inline int omp_get_num_threads () { return 1; }
+#endif
+#ifndef omp_get_thread_num
+inline int omp_get_thread_num () { return 0; }
+#endif
+}
+}
+#endif
 
 #include <cstdio>
 #include <cmath>
@@ -17,8 +38,12 @@
 #endif
 #ifdef HAVE_SHYLUHTS_MKL
 # ifdef HAVE_SHYLUHTS_COMPLEX
-#  define MKL_Complex8 std::complex<float>
-#  define MKL_Complex16 std::complex<double>
+#  ifndef MKL_Complex8
+#   define MKL_Complex8 std::complex<float>
+#  endif
+#  ifndef MKL_Complex16
+#   define MKL_Complex16 std::complex<double>
+#  endif
 # endif
 # include <mkl.h>
 #endif
@@ -46,6 +71,7 @@ extern "C" {
   void F77_BLAS_MANGLE(dgemm,DGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, double*, double*, blas_int*,
     double*, blas_int*, double*, double*, blas_int*);
+#ifdef HAVE_SHYLUHTS_COMPLEX
   void F77_BLAS_MANGLE(cgemm,CGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, std::complex<float>*,
     std::complex<float>*, blas_int*, std::complex<float>*, blas_int*,
@@ -54,6 +80,7 @@ extern "C" {
     char*, char*, blas_int*, blas_int*, blas_int*, std::complex<double>*,
     std::complex<double>*, blas_int*, std::complex<double>*, blas_int*,
     std::complex<double>*, std::complex<double>*, blas_int*);
+#endif
 }
 
 template<> inline void gemm<float> (
@@ -1005,9 +1032,9 @@ get_idxs (const Int n, const LevelSetter& lstr, Array<Int>& lsis,
 template<typename Int, typename Size, typename Sclr>
 typename Impl<Int, Size, Sclr>::Shape Impl<Int, Size, Sclr>::
 determine_shape (const ConstCrsMatrix& A) {
-  int red_is_lower = 0, red_is_tri = 0, red_has_full_diag = 0, red_nthreads = 0;
+  int red_is_lower = 0, red_is_upper = 0, red_has_full_diag = 0, red_nthreads = 0;
 # pragma omp parallel \
-         reduction(+: red_is_lower, red_is_tri, red_has_full_diag, red_nthreads)
+         reduction(+: red_is_lower, red_is_upper, red_has_full_diag, red_nthreads)
   {
     bool tid_used = false, has_full_diag = true, is_lower = false,
       is_upper = false;
@@ -1029,20 +1056,17 @@ determine_shape (const ConstCrsMatrix& A) {
     if (tid_used) {
       ++red_nthreads;
       if (has_full_diag) ++red_has_full_diag;
-      if ( ! (is_lower && is_upper)) ++red_is_tri;
-      if ( ! is_upper) ++red_is_lower;
+      if (is_upper) ++red_is_upper;
+      if (is_lower) ++red_is_lower;
     }
   }
   const bool
-    is_tri = ((// Each thread saw a triangle.
-                red_is_tri == red_nthreads)
-              &&
-              (// Each thread saw the same orientation.
-                red_is_lower == 0 || red_is_lower == red_nthreads)),
+    // Each thread saw a triangle having the same orientation.
+    is_tri = ! (red_is_lower > 0 && red_is_upper > 0),
     // Every thread saw a full diagonal.
     has_full_diag = red_has_full_diag == red_nthreads,
     // Valid only if is_tri.
-    is_lower = red_is_lower;
+    is_lower = red_is_upper == 0;
   // If ! tri_determined, then T must be a diag matrix. Can treat as lower,
   // which is is_lower's default value.
   return Shape(is_lower, is_tri, has_full_diag);
@@ -2799,7 +2823,7 @@ fill_graph (const p2p_Pair* const pairs, Size* const g, Size* const gp,
 //pre b is sorted.
 //pre len(mark) == an.
 //pre mark can == a.
-// O(max(an, bn)).
+// O(an log bn)
 template<typename Int, typename Size> inline Int
 mark_intersection (const Size* a, const Int an, const Size* b, Int bn,
                    Size* mark /* len(mark) == an */, const Size marker) {
@@ -2822,8 +2846,7 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::LevelSetTri::
 prune_graph (const Size* const gc, const Size* const gp, Size* const g,
              Int* const gsz, Size* const wrk, const Int max_gelen) {
-  // Time complexity is a little complicated. See Park et al 2014. Space is
-  // O(#threads max |g(e)|).
+  // Space is O(#threads max |g(e)|).
   const int tid = omp_get_thread_num();
   const Size n = nlvls_*t_.size();
   const Size& me = n; // marker

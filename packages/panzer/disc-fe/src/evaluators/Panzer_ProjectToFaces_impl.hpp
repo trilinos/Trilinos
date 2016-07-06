@@ -113,8 +113,8 @@ evaluateFields(typename Traits::EvalData workset)
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   const int intDegree = basis->order();
   TEUCHOS_ASSERT(intDegree == 1);
-  Intrepid2::DefaultCubatureFactory<double> quadFactory;
-  Teuchos::RCP< Intrepid2::Cubature<double> > faceQuad;
+  Intrepid2::DefaultCubatureFactory<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> quadFactory;
+  Teuchos::RCP< Intrepid2::Cubature<double,Kokkos::DynRankView<double,PHX::Device>,Kokkos::DynRankView<double,PHX::Device>> > faceQuad;
 
   // Collect the reference face information. For now, do nothing with the quadPts.
   const unsigned num_faces = parentCell.getFaceCount();
@@ -122,8 +122,8 @@ evaluateFields(typename Traits::EvalData workset)
   for (unsigned f=0; f<num_faces; f++) {
     faceQuad = quadFactory.create(parentCell.getCellTopologyData(2,f), intDegree);
     const int numQPoints = faceQuad->getNumPoints();
-    Intrepid2::FieldContainer<double> quadWts(numQPoints);
-    Intrepid2::FieldContainer<double> quadPts(numQPoints,num_dim);
+    Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
+    Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
     faceQuad->getCubature(quadPts,quadWts);
     for (int q=0; q<numQPoints; q++)
       refFaceWt[f] += quadWts(q);

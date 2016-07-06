@@ -47,7 +47,7 @@
 
 #include "Phalanx_config.hpp"
 #ifdef  PHX_ENABLE_KOKKOS_AMT
-#include "Evaluator_TaskBase.hpp"
+#include "Phalanx_Evaluator_TaskBase.hpp"
 #else
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #endif
@@ -82,8 +82,9 @@ public:
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
   Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
+	       const int& work_size,
 	       typename Traits::EvalData d) override;
 #endif
   

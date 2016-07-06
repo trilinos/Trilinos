@@ -66,7 +66,6 @@ namespace stk {
       m_checkSubCycle(false),
       m_checkSmRegion(false),
       m_isZapotec(false),
-      m_usingDiffingTool(false),
       m_worldComm(MPI_COMM_NULL),
       m_parallelComm(MPI_COMM_NULL),
       m_parallelSize(-1),

@@ -413,6 +413,89 @@ step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
 }
 
 //
+// Back-tracking line search
+//
+template<typename T, Index N>
+template<typename FN>
+Vector<T, N>
+BacktrackingLineSearch<T, N>::
+step(FN & fn, Vector<T, N> const & direction, Vector<T, N> const & soln)
+{
+  Index const
+  dimension = soln.get_dimension();
+
+  Vector <T, N>
+  step = direction;
+
+  Vector<T, N>
+  step_line_search(dimension, ZEROS);
+
+  Vector<T, N> const
+  resid = fn.gradient(soln);
+
+  Vector<T, N> const
+  resid_newton = fn.gradient(soln + step);
+
+  Index
+  line_iter{0};
+
+  T const
+  resid_norm = dot(resid, resid);
+
+  T const
+  resid_newton_norm = dot(resid_newton, resid_newton);
+
+  T
+  resid_line_norm = resid_newton_norm;
+
+  for (Index i{0}; i < max_num_iter; i++) {
+
+    if (line_iter == max_line_iter) {
+
+      alpha = 1.0;
+      line_iter = 0;
+      search_parameter += search_increment;
+    }
+
+    if (search_parameter >= 1.0) break;
+
+    step_line_search = alpha * step;
+
+    Vector<T, N> const
+    soln_line_search = soln + step_line_search;
+
+    Vector<T, N> const
+    gradient_line_search = fn.gradient(soln_line_search);
+
+    T const
+    resid_line_norm_old = resid_line_norm;
+
+    resid_line_norm = dot(gradient_line_search, gradient_line_search);
+
+    T const
+    num = 0.25 * alpha * alpha * resid_line_norm_old;
+
+    T const
+    den = resid_line_norm + resid_line_norm_old * (0.5 * alpha - 1.0);
+
+    T const
+    quad_approx = num / den;
+
+    alpha = std::max(0.5 * alpha, quad_approx);
+
+    line_iter++;
+
+    if (resid_line_norm <= (search_parameter * resid_norm)) {
+      step = step_line_search;
+      break;
+    }
+
+  } //Index i
+
+  return step;
+}
+
+//
 //
 //
 template<typename FN, typename T, Index N>
@@ -440,6 +523,42 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   return step;
 }
 
+
+//
+//
+//
+template<typename FN, typename T, Index N>
+void
+NewtonWithLineSearchStep<FN, T, N>::
+initialize(FN &, Vector<T, N> const &, Vector<T, N> const &)
+{
+  return;
+}
+
+//
+// Plain Newton step with line search
+//
+template<typename FN, typename T, Index N>
+Vector<T, N>
+NewtonWithLineSearchStep<FN, T, N>::
+step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
+{
+  Tensor<T, N> const
+  Hessian = fn.hessian(soln);
+
+  Vector<T, N> const
+  step = - Intrepid::solve(Hessian, resi);
+
+  // Newton back-tracking line search.
+  BacktrackingLineSearch<T, N>
+  newton_backtrack_ls;
+
+  Vector<T, N> const
+  ls_step = newton_backtrack_ls.step(fn, step, soln);
+
+  return ls_step;
+}
+
 //
 //
 //
@@ -464,6 +583,16 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   Tensor<T, N> const
   Hessian = fn.hessian(soln);
 
+  // Compute full Newton step first.
+  Vector<T, N>
+  step = - Intrepid::solve(Hessian, resi);
+
+  T const
+  norm_step = Intrepid::norm(step);
+
+  // Take full Newton step if inside trust region.
+  if (norm_step < region_size) return step;
+
   // Trust region subproblem. Exact algorithm, Nocedal 2nd Ed 4.3
   TrustRegionExact<T, N>
   tr_exact;
@@ -471,7 +600,6 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   tr_exact.initial_lambda = 0.0;
   tr_exact.region_size = region_size;
 
-  Vector<T, N>
   step = tr_exact.step(Hessian, resi);
 
   Vector<T, N> const
@@ -505,10 +633,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & resi)
   } else {
 
     bool const
-    at_boundary = std::abs(computed_size / region_size - 1.0) <= 1.0e-8;
-
-    bool const
-    increase_region_size = reduction > 0.75 && at_boundary;
+    increase_region_size = reduction > 0.75;
 
     if (increase_region_size == true) {
       region_size = std::min(2.0 * region_size, max_region_size);
@@ -661,7 +786,7 @@ step(FN & fn, Vector<T, N> const & soln, Vector<T, N> const & gradient)
 
   }
 
-  // Newton line search.
+
   NewtonLineSearch<T, N>
   newton_ls;
 
@@ -703,6 +828,10 @@ stepFactory(StepType step_type)
   case StepType::LINE_SEARCH_REG:
     return STUP(new LineSearchRegularizedStep<FN, T, N>());
     break;
+
+  case StepType::NEWTON_LS:
+    return STUP(new NewtonWithLineSearchStep<FN, T, N>());
+    break;    
   }
 
   return STUP(nullptr);

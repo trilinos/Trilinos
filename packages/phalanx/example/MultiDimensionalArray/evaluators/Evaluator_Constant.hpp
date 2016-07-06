@@ -46,7 +46,7 @@
 
 #include "Phalanx_config.hpp"
 #ifdef  PHX_ENABLE_KOKKOS_AMT
-#include "Evaluator_TaskBase.hpp"
+#include "Phalanx_Evaluator_TaskBase.hpp"
 #else
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #endif

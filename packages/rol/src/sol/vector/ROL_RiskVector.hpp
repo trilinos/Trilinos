@@ -156,7 +156,7 @@ public:
     return stat_[i];
   }
 
-  const void getStatistic(std::vector<Real> &stat) const {
+  void getStatistic(std::vector<Real> &stat) const {
     stat.clear();
     stat.assign(stat_.begin(),stat_.end());
   }

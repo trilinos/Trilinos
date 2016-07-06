@@ -49,6 +49,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Details_ContainerFactory.hpp"
 #include "Teuchos_Time.hpp"
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include <type_traits>
@@ -77,7 +78,7 @@ namespace Ifpack2 {
 ///
 /// For a list of supported parameters, please refer to the
 /// documentation of setParameters().
-template<class MatrixType, class ContainerType>
+template<class MatrixType, class ContainerType = Container<MatrixType> >
 class BlockRelaxation :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
@@ -100,7 +101,6 @@ public:
 
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
-
   //! Node type of the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 

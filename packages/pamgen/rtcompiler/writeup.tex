@@ -6,7 +6,7 @@
 \begin{document}
 \thispagestyle{empty}
 \begin{center}
-  \large\bf Runtime Compiler(RTC) \\ 
+  \large\bf Runtime Compiler(RTC) \\
   \large\bf By Rich Drake and James Foucar \\
   \bigskip
 \end{center}
@@ -41,7 +41,7 @@
       \item 2.4 Using RTC and APREPRO
       \item 2.5 Adding Runtime-bound functions
       \item 2.6 Recent Changes
-      \item 2.7 Troubleshooting 
+      \item 2.7 Troubleshooting
     \end{itemize}
 \end{itemize}
 
@@ -50,32 +50,32 @@
 \subsection{What is RTC?}
 
 RTC is an independent, self-contained library that compiles a string into
-a set of in-memory data structures that can be executed. This gives users the 
-ability to runtime-compile a small program, pass in arguments to the program, 
-and execute this code all during runtime. If the client of RTC is getting this 
-string from a file, the file can be changed, potentially causing different 
+a set of in-memory data structures that can be executed. This gives users the
+ability to runtime-compile a small program, pass in arguments to the program,
+and execute this code all during runtime. If the client of RTC is getting this
+string from a file, the file can be changed, potentially causing different
 behavior in the client without the client having to be recompiled.
 
 \subsection{Motivation for RTC}
 
 RTC was created in order to provide users a way to express methods in the
 input decks for physics codes. One common way which this ability is used
-is for users to define the initial conditions for variables (density, 
-temperature, etc) as a function of the x,y, and/or z coordinates of the 
+is for users to define the initial conditions for variables (density,
+temperature, etc) as a function of the x,y, and/or z coordinates of the
 entity (node, element, etc) whose property is being defined. This gives users
 a more powerful way to define their initial conditions without requiring a
 significant increase in the complexity of the input file parser. \\
 
 \noindent
 RTC is also useful for describing boundary conditions, source terms,
-material properties, and any other independent variable. 
+material properties, and any other independent variable.
 
 \subsection{Abilities of RTC}
 
 RTC allows users to set up a function with any number of arguments. Argments
 may be of the type int, float, double, or char. Arguments may be arrays or
 scalars. Arguments can be passed in by reference or by value (one caveat is
-that arrays must be passed by reference). Once RTC is notified of the names 
+that arrays must be passed by reference). Once RTC is notified of the names
 and types of a function's arguments, the body of a function (C-code packed into
 a string) can be passed in and it will be compiled. The compiler will detect
 any errors and provide the exact line at which the error occured. Errors are
@@ -83,7 +83,7 @@ returned to the user as a string. If the empty string is returned, then there
 were no errors. At any point in time, the user can provide values for the
 arguments they intend to pass into their RTC function. Once all the argument
 values have been provided, the function can be executed. The function can
-be indefinately re-executed with different argument values. 
+be indefinately re-executed with different argument values.
 
 \subsection{Implementation of RTC}
 
@@ -102,10 +102,10 @@ entities found in a line are organized.
 The RTC library has many classes, but only a few of them are interesting.\\
 
 \noindent
-The Function class provides the user interface to the library. It also 
-maintains the argument collection and ensure that all arguments are specified 
-before compiled and that their values are filled before execution. When a 
-function body is given to Function for compilation, it gets sent to 
+The Function class provides the user interface to the library. It also
+maintains the argument collection and ensure that all arguments are specified
+before compiled and that their values are filled before execution. When a
+function body is given to Function for compilation, it gets sent to
 Tokenizer for tokenization and the tokens are then given to NormalBlock so
 it can create its subcomponents (lines and sub-blocks). Execution is simple;
 the top NormalBlock is told to execute. See below for more on blocks.\\
@@ -126,13 +126,13 @@ class also provides convenient ways of iterating through its tokens. \\
 \noindent
 The Block class is a parent to the many types of sub-blocks (WhileBlock,
 ConditionalBlock, ForBlock, etc). A block represents all the executable
-items (lines and subblocks) within a \{ and \}. A block knows all the 
+items (lines and subblocks) within a \{ and \}. A block knows all the
 varaibles that are available within its scope. During compilation, a block
-creates its executable items by looking at the tokens it is given. For 
+creates its executable items by looking at the tokens it is given. For
 example, say the following string was given to library to compile:
 {\ttfamily \begin{verbatim}
-int i = 0;                      \\1 
-int j = 0;                      \\2 
+int i = 0;                      \\1
+int j = 0;                      \\2
 if (i == j) {                   \\3
   int a = 2;                    \\4
   print(j);                     \\5
@@ -144,7 +144,7 @@ print(j);                       \\10
 \end{verbatim} }
 \noindent
 The top block would be a NormalBlock that would contain the entire function.
-Its list of executable items would be \{line 1, line 2, a ConditionalBlock 
+Its list of executable items would be \{line 1, line 2, a ConditionalBlock
 beginning at line 3, and line 10\}. The ConditionalBlock would contain its
 condition statement $(i == j)$ and the executable items \{line 4, line 5,
 and a ForBlock beginning at line 6\}. The ForBlock will contain its three
@@ -152,51 +152,51 @@ special statements: the initialization statement $i = 0$, the conditional
 statement $i < 10$, and its post-processing statement $i=i+1$ and, of course,
 its executable items: \{line 7\}. \\
 
-\noindent 
-During compilation, a block will iterate through the tokens. If it sees a 
+\noindent
+During compilation, a block will iterate through the tokens. If it sees a
 block-opening statement (if, while, etc), it will create the appropriate
 block and let the new block takeover. Once the new block returns, the original
 block can assume that the new block iterated until it encountered a \} that
 matched with its opening \{. This means that all executable items that follow
 once again will belong to the original block. \\
 
-\noindent 
+\noindent
 Execution is different for each type of block. A NormalBlock simply executes
 all its executable items in order. A ConditionalBlock executes its condition
 statement first. If the result is non-zero, it then executes all its executable
 items. \\
 
 \noindent
-The Line class is responsible for taking a collection of tokens and finding 
+The Line class is responsible for taking a collection of tokens and finding
 the meaning of the tokens. In other words, it converts a collection of tokens
 into a postfix stack of operators and operands. The line class is able to find
 any errors that the Tokenizer may have missed. A Line executes by processing
-its postfix stack in a well known manner 
-(see http://academics.tjhsst.edu/compsci/apcs/january/node3.html). 
+its postfix stack in a well known manner
+(see http://academics.tjhsst.edu/compsci/apcs/january/node3.html).
 
 \section{Usage}
 
 \subsection{Using RTC as a user-defined initial condition}
 
-To create a user-defined initial condition, somewhere in the definition of 
+To create a user-defined initial condition, somewhere in the definition of
 your physics, you'll need to do the following:
 
 {\ttfamily \begin{verbatim}
 user defined initial condition, varName [, block n m z ...]
 "
- Function goes here. 
+ Function goes here.
 "
 end
 \end{verbatim} }
 
 \noindent
 The above will initial the variable corresponing to varName for blocks n,m,z.
-If the block specification is left out, all blocks will be affected. 
-Use coord[0,1,2] to access coordinates of the object whose initial condition 
+If the block specification is left out, all blocks will be affected.
+Use coord[0,1,2] to access coordinates of the object whose initial condition
 is being defined. coord[0] gives the x-coord, coord[1] gives the y-coord, and
-coord[2] gives the z-coord. For 2d, only coord[0,1] will work. Store the 
+coord[2] gives the z-coord. For 2d, only coord[0,1] will work. Store the
 values for varName in the field array. If varName is scalar, use only field[0].
-If varName is 3-dimensional, use field[0,1,2]. In other works, the coord array 
+If varName is 3-dimensional, use field[0,1,2]. In other works, the coord array
 is your input and the field array is your output.\\
 
 \noindent
@@ -205,7 +205,7 @@ compiled functions:
 
 {\ttfamily \begin{verbatim}
 user defined initial condition, density, block 5
-" 
+"
   field[0] = 100.0;
   if(coord[0] > 0.0){
     double distance = sqrt ((coord[0]^2) + (coord[1]^2) + (coord[2]^2));
@@ -215,22 +215,22 @@ user defined initial condition, density, block 5
 end
 \end{verbatim} }
 \noindent
-The above function first sets \texttt{field[0]} to a value of 100.0, then in 
-the region of the domain where \texttt{coord[0]} exceeds 0.0 field is 
-incremented by the distance from the origin. In this context \texttt{coord[0]} 
+The above function first sets \texttt{field[0]} to a value of 100.0, then in
+the region of the domain where \texttt{coord[0]} exceeds 0.0 field is
+incremented by the distance from the origin. In this context \texttt{coord[0]}
 is the \texttt{X} coordinate, and the resulting evaluation will calculate a
 constant value of \texttt{field[0]} in the negative half plane and a
 monotonically increasing value of \texttt{field[0]} in the positive half plane.\\
 
 \noindent
-See section 2.3.7 for additional examples. 
+See section 2.3.7 for additional examples.
 
 \subsection{Using RTC as a library}
 
 This section will describe how to use RTC in general. \\
 
 \noindent
-There is only one Function constructor and it takes a string and an integer 
+There is only one Function constructor and it takes a string and an integer
 argument. The string is the name of the Function, the integer is the number of
 arguments the Function will take. For example:
 {\ttfamily \begin{verbatim}
@@ -248,7 +248,7 @@ sampleFunc.addVar("int", "myint");
 \end{verbatim} }
 \noindent
 This adds an integer named myint to the arg list for sampleFunc. It will return
-false if it fails. Note: having whitespace in these arguments will cause an 
+false if it fails. Note: having whitespace in these arguments will cause an
 error to be generated. \\
 
 \noindent
@@ -273,13 +273,13 @@ sampleFunc.varValueFill(0, 10);
 This call would fill the first argument in the argument list with the value
 10. Some things to note: notice that the first argument passed to varValueFill
 is an integer. This integer is an index to the argument list of sampleFunc.
-Also, varValueFill is only for arguments that you want to pass by value. If 
+Also, varValueFill is only for arguments that you want to pass by value. If
 you want to pass by-reference, use the varAddrFill method. If you want to pass
 in an array, use the arrayAddrFill method. \\
 
 \noindent
 Once you have added all the arguments, compiled the body, and filled all the
-arguments, you are ready to execute the function. You do this using the 
+arguments, you are ready to execute the function. You do this using the
 execute() method. For example:
 {\ttfamily \begin{verbatim}
 sampleFunc.execute();
@@ -312,7 +312,7 @@ highly recommend checking for errors after calling methods.
 
 	string s = "for (int i = 0; i < 5; i=i+1) { \
 		 	fac = fac * intarray[i]; \
-		    }"; 
+		    }";
 
 	factorial.addBody(s);
 
@@ -329,18 +329,18 @@ highly recommend checking for errors after calling methods.
 
 \subsection{Adding Runtime-bound functions}
 
-Runtime-bound functions are essentially a library of functions that are 
+Runtime-bound functions are essentially a library of functions that are
 available to RTC functions. This library can be expanded or two ways. \\
 
 \noindent
 First, one could edit the Registrar.cc and RTC\_RegistrarRTC.hh files
-directly. In RTC\_RegistrarRTC.hh you would declare a new class that is a 
+directly. In RTC\_RegistrarRTC.hh you would declare a new class that is a
 sub-class of the RTBoundFunc class. You need the contructor of this class
 to contruct the parent class (RTBoundFunc) with the name of the function
 and the number of arguments the function will expect. An optional third
 argument specifies whether this function should be optimized. The compiler
 will try to optimize functions that have constands for all their arguments.
-For example, $\sin(4.5)$, would be replaced at compile time with the result 
+For example, $\sin(4.5)$, would be replaced at compile time with the result
 of this call. However, certain functions, like print(x) should not be
 optimized. This is what the optimization argument is for. Here is an example
 of what the declaration of a new Runtime-bound function should look like:
@@ -349,14 +349,14 @@ class Example : public RTBoundFunc
 {
   public:
     Example() : RTBoundFunc("my_func", 2) {}
- 
+
     double execute(Value**);
 };
 \end{verbatim} }
 \noindent
 Once you have your new Runtime-bound declared, you must provide the definition
 of its execute method and register it with the Registrar class, the class that
-contains all callable Runtime-bound functions. To achieve this, open the 
+contains all callable Runtime-bound functions. To achieve this, open the
 Registrar.cc file. Go to the Registrar::setup\_standard\_functions() method.
 In this method, somewhere inside the ISINIT if-block, add the following
 line:
@@ -372,31 +372,31 @@ rtbound function to assume its first argument is an array and to fill this
 array with the value of the second argument and to return the value of the
 second argument. Here is what that definition would look like:
 {\ttfamily \begin{verbatim}
-double Example::execute(Value** args) 
+double Example::execute(Value** args)
 {
   assert(args[0]->getObjectType() == ArrayVarOT);
 
   //fills the array in args[0] with the value of args[1]
-  for (int i = 0; i < args[0]->getSize(); ++i) 
+  for (int i = 0; i < args[0]->getSize(); ++i)
     args[0]->setArrayValue(args[1]->getValue(), i);
 
   return args[1]->getValue();
 }
 \end{verbatim} }
 \noindent
-Notice that it might be wise to do some type checking at the top of the 
+Notice that it might be wise to do some type checking at the top of the
 method. As far as I could tell, there was no simple way of doing argument
 type-checking at compile time. \\
 
 \noindent
 The second way to expand the library is create a new RTBoundFunc subclass in
-your own source file. During initialization time, you can call 
+your own source file. During initialization time, you can call
 Register::register\_function(...) and add your new RTBoundFunc without having
 to modify the RTC code. This approach is probably better if your RTBoundFunc
-would cause dependencies if it relied on special function calls. 
+would cause dependencies if it relied on special function calls.
 
 \noindent
-Once you've registered your RTBoundFunc, you should be able to call it just 
+Once you've registered your RTBoundFunc, you should be able to call it just
 like any other function ($\sin$, $\cos$, etc).
 
 \noindent
@@ -411,7 +411,7 @@ Registrar.cc for an example.
 \begin{itemize}
   \item printf - See printf subsection (Added 3/8/06)
   \item comments - See comments subsection (Added 3/8/06)
-  \item variable signature runtime-bound functions - See end of runtime-bound 
+  \item variable signature runtime-bound functions - See end of runtime-bound
         function section. (Added 3/8/06)
 \end{itemize}
 
@@ -419,13 +419,13 @@ Registrar.cc for an example.
 
 The easiest way to figure out why your function is not running is to look at
 the error messages if any are generated. Most error messages will tell you the
-line of the problem. In general, most of the methods on a Function object that 
+line of the problem. In general, most of the methods on a Function object that
 the user would be calling will return a bool. If the bool is false, that means
-there was an error. Error messages can be retrieved by calling the getErrors() 
-method. So, the general form of your usage of the program should resemble the 
+there was an error. Error messages can be retrieved by calling the getErrors()
+method. So, the general form of your usage of the program should resemble the
 following:
 {\ttfamily \begin{verbatim}
-if (!someFunctionObject.someMethod()) 
+if (!someFunctionObject.someMethod())
   cout << functionObject.getErrors();
 \end{verbatim} }
 

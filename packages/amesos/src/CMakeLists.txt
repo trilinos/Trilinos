@@ -248,6 +248,8 @@ IF (${PACKAGE_NAME}_ENABLE_KLU)
     SuiteSparse/BTF/Include/amesos_btf_decl.h
     SuiteSparse/BTF/Include/amesos_btf_internal.h
     SuiteSparse/CCOLAMD/Include/amesos_ccolamd.h
+    SuiteSparse/CAMD/Include/amesos_camd.h
+    SuiteSparse/CAMD/Include/amesos_camd_internal.h
     Amesos_Klu.h
     )
 
@@ -334,8 +336,6 @@ IF (${PACKAGE_NAME}_ENABLE_PARAKLETE)
     SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_solve.c
     SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_lsolve.c
     SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_ltsolve.c
-    SuiteSparse/CAMD/Include/amesos_camd.h
-    SuiteSparse/CAMD/Include/amesos_camd_internal.h
     )
 
 

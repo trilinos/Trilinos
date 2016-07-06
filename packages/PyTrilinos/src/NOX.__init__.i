@@ -112,8 +112,6 @@ script in the example subdirectory of the PyTrilinos package:
 
 // Trilinos interface import
 %import "Teuchos.i"
-// Note: Teuchos.i turns off warnings for nested classes, so we do not
-// have to do it again.
 
 //////////////////////////////////////
 // PyTrilinos configuration support //

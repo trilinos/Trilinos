@@ -63,7 +63,7 @@
 // 2D basis 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 
-#include "Intrepid2_FieldContainer.hpp"
+#include "Kokkos_DynRankView.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
@@ -73,7 +73,7 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 #ifdef PANZER_HAVE_FEI
 
@@ -91,7 +91,6 @@ Teuchos::RCP<const panzer::FieldPattern> buildFieldPattern()
 // this just excercises a bunch of functions
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -107,7 +106,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManager = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManager,MPI_COMM_WORLD);
@@ -142,7 +141,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,assortedTests)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -158,7 +156,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -272,7 +270,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,registerFields)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -290,7 +287,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -387,7 +384,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,buildGlobalUnknowns)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 {
-   PHX::KokkosDeviceSession session;
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -405,7 +401,7 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
    int myRank = eComm->MyPID();
    int numProc = eComm->NumProc();
 
-   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager(myRank,numProc));
+   RCP<ConnManager<int,int> > connManger = rcp(new unit_test::ConnManager<int>(myRank,numProc));
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);
    dofManager.setConnManager(connManger,MPI_COMM_WORLD);
@@ -564,7 +560,6 @@ TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,getElement_gids_fieldoffsets)
 
 TEUCHOS_UNIT_TEST(tBlockedDOFManager_SimpleTests,validFieldOrder)
 {
-   PHX::KokkosDeviceSession session;
 
    BlockedDOFManager<int,int> dofManager; 
    dofManager.setUseDOFManagerFEI(true);

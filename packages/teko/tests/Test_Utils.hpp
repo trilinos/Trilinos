@@ -124,6 +124,8 @@ public:
    static void SetComm(const Teuchos::RCP<const Epetra_Comm > & c);
    static void SetComm_tpetra(const Teuchos::RCP<const Teuchos::Comm<int> > & c);
 
+   static void ClearTests();
+
 protected:
    static std::list<std::pair<Teuchos::RCP<UnitTest>,std::string> > testList;
    static Teuchos::RCP<const Epetra_Comm > comm;

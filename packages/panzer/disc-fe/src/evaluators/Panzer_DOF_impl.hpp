@@ -218,7 +218,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   // if sensitivities were requrested for this field enable accelerated
   // jacobian calculations
   accelerate_jacobian = false;
-  if(accelerate_jacobian_enabled && d.sensitivities_name==sensitivities_name) {
+  if(accelerate_jacobian_enabled && d.first_sensitivities_name==sensitivities_name) {
     accelerate_jacobian = true;
   }
 }

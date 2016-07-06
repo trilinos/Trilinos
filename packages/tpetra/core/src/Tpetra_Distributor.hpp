@@ -475,9 +475,9 @@ namespace Tpetra {
     template <class Packet>
     void
     doPostsAndWaits (const ArrayView<const Packet> &exports,
-                     const ArrayView<size_t> &numExportPacketsPerLID,
+                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                      const ArrayView<Packet> &imports,
-                     const ArrayView<size_t> &numImportPacketsPerLID);
+                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -517,22 +517,22 @@ namespace Tpetra {
     /// \tparam Packet The type of data to send and receive.
     ///
     /// \param exports [in] Same as in the three-argument version of
-    ///   \c doPosts().
+    ///   doPosts().
     ///
     /// \param numExportPacketsPerLID [in] Same as in the
-    ///   four-argument version of \c doPostsAndWaits().
+    ///   four-argument version of doPostsAndWaits().
     ///
     /// \param imports [out] Same as in the three-argument version of
-    ///   \c doPosts().
+    ///   doPosts().
     ///
     /// \param numImportPacketsPerLID [in] Same as in the
-    ///   four-argument version of \c doPostsAndWaits().
+    ///   four-argument version of doPostsAndWaits().
     template <class Packet>
     void
     doPosts (const ArrayRCP<const Packet> &exports,
-             const ArrayView<size_t> &numExportPacketsPerLID,
+             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
              const ArrayRCP<Packet> &imports,
-             const ArrayView<size_t> &numImportPacketsPerLID);
+             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
@@ -545,7 +545,7 @@ namespace Tpetra {
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the three-argument
-    /// version of \c doPostsAndWaits().
+    /// version of doPostsAndWaits().
     template <class Packet>
     void
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
@@ -555,18 +555,18 @@ namespace Tpetra {
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the four-argument
-    /// version of \c doPostsAndWaits().
+    /// version of doPostsAndWaits().
     template <class Packet>
     void
     doReversePostsAndWaits (const ArrayView<const Packet> &exports,
-                            const ArrayView<size_t> &numExportPacketsPerLID,
+                            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                             const ArrayView<Packet> &imports,
-                            const ArrayView<size_t> &numImportPacketsPerLID);
+                            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the three-argument
-    /// version of \c doPosts().
+    /// version of doPosts().
     template <class Packet>
     void
     doReversePosts (const ArrayRCP<const Packet> &exports,
@@ -576,13 +576,13 @@ namespace Tpetra {
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the four-argument
-    /// version of \c doPosts().
+    /// version of doPosts().
     template <class Packet>
     void
     doReversePosts (const ArrayRCP<const Packet> &exports,
-                    const ArrayView<size_t> &numExportPacketsPerLID,
+                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const ArrayRCP<Packet> &imports,
-                    const ArrayView<size_t> &numImportPacketsPerLID);
+                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// Wait on any outstanding nonblocking message requests to complete.
     ///
@@ -643,9 +643,9 @@ namespace Tpetra {
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doPostsAndWaits (const ExpView &exports,
-                     const ArrayView<size_t> &numExportPacketsPerLID,
+                     const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                      const ImpView &imports,
-                     const ArrayView<size_t> &numImportPacketsPerLID);
+                     const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a forward plan, but do not execute the waits yet.
     ///
@@ -685,27 +685,27 @@ namespace Tpetra {
     /// \tparam Packet The type of data to send and receive.
     ///
     /// \param exports [in] Same as in the three-argument version of
-    ///   \c doPosts().
+    ///   doPosts().
     ///
     /// \param numExportPacketsPerLID [in] Same as in the
-    ///   four-argument version of \c doPostsAndWaits().
+    ///   four-argument version of doPostsAndWaits().
     ///
     /// \param imports [out] Same as in the three-argument version of
-    ///   \c doPosts().
+    ///   doPosts().
     ///
     /// \param numImportPacketsPerLID [in] Same as in the
-    ///   four-argument version of \c doPostsAndWaits().
+    ///   four-argument version of doPostsAndWaits().
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doPosts (const ExpView &exports,
-             const ArrayView<size_t> &numExportPacketsPerLID,
+             const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
              const ImpView &imports,
-             const ArrayView<size_t> &numImportPacketsPerLID);
+             const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the three-argument
-    /// version of \c doPostsAndWaits().
+    /// version of doPostsAndWaits().
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doReversePostsAndWaits (const ExpView &exports,
@@ -715,18 +715,18 @@ namespace Tpetra {
     /// \brief Execute the reverse communication plan.
     ///
     /// This method takes the same arguments as the four-argument
-    /// version of \c doPostsAndWaits().
+    /// version of doPostsAndWaits().
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doReversePostsAndWaits (const ExpView &exports,
-                            const ArrayView<size_t> &numExportPacketsPerLID,
+                            const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                             const ImpView &imports,
-                            const ArrayView<size_t> &numImportPacketsPerLID);
+                            const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the three-argument
-    /// version of \c doPosts().
+    /// version of doPosts().
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doReversePosts (const ExpView &exports,
@@ -736,13 +736,13 @@ namespace Tpetra {
     /// \brief Post the data for a reverse plan, but do not execute the waits yet.
     ///
     /// This method takes the same arguments as the four-argument
-    /// version of \c doPosts().
+    /// version of doPosts().
     template <class ExpView, class ImpView>
     typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
     doReversePosts (const ExpView &exports,
-                    const ArrayView<size_t> &numExportPacketsPerLID,
+                    const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                     const ImpView &imports,
-                    const ArrayView<size_t> &numImportPacketsPerLID);
+                    const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID);
 
     /// \brief Information on the last call to do/doReverse
     ///
@@ -752,17 +752,38 @@ namespace Tpetra {
       bytes_recvd = lastRoundBytesRecv_;
     }
 
-
     //@}
     //! @name Implementation of Teuchos::Describable
     //@{
 
-    //! A simple one-line description of this object.
+    //! Return a one-line description of this object.
     std::string description() const;
 
-    //! Print the object with some verbosity level to an \c FancyOStream.
-    void describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
+    /// \brief Describe this object in a human-readable way to the
+    ///   given output stream.
+    ///
+    /// You must call this method as a collective over all processes
+    /// in this object's communicator.
+    ///
+    /// \param out [out] Output stream to which to write.  Only
+    ///   Process 0 in this object's communicator may write to the
+    ///   output stream.
+    ///
+    /// \param verbLevel [in] Verbosity level.  This also controls
+    ///   whether this method does any communication.  At verbosity
+    ///   levels higher (greater) than Teuchos::VERB_LOW, this method
+    ///   behaves as a collective over the object's communicator.
+    ///
+    /// Teuchos::FancyOStream wraps std::ostream.  It adds features
+    /// like tab levels.  If you just want to wrap std::cout, try
+    /// this:
+    /// \code
+    /// auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::out));
+    /// \endcode
+    void
+    describe (Teuchos::FancyOStream& out,
+              const Teuchos::EVerbosityLevel verbLevel =
+                Teuchos::Describable::verbLevel_default) const;
     //@}
 
   private:
@@ -786,19 +807,6 @@ namespace Tpetra {
 
     //! Whether to print copious debug output to stderr on all processes.
     bool debug_;
-
-    //! Whether to use RDMA for MPI communication between CUDA GPUs.
-    /*!
-     * This is only relevant if Tpetra was configured to support the new
-     * experimental DistObject and Distributor implementation using
-     * Kokkos::View.  The default for this parameter is determined by the
-     * configuration parameter Tpetra_ENABLE_MPI_CUDA_RDMA, which is off
-     * by default.  Thus regardless of how Tpetra was configured, you can
-     * turn this on/off at run-time by setting the parameter list option
-     * "Enable MPI CUDA RDMA support" to true.
-     */
-    bool enable_cuda_rdma_;
-
     //@}
 
     /// \brief Whether I am supposed to send a message to myself.
@@ -1019,6 +1027,13 @@ namespace Tpetra {
     //! Create a distributor for the reverse communication pattern.
     void createReverseDistributor() const;
 
+
+    /// \brief Print the calling process' verbose describe()
+    ///   information to the given output string.
+    ///
+    /// This is an implementation detail of describe().
+    std::string
+    localDescribeToString (const Teuchos::EVerbosityLevel vl) const;
   }; // class Distributor
 
 
@@ -1075,9 +1090,9 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::
   doPostsAndWaits (const ArrayView<const Packet>& exports,
-                   const ArrayView<size_t> &numExportPacketsPerLID,
+                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                    const ArrayView<Packet> &imports,
-                   const ArrayView<size_t> &numImportPacketsPerLID)
+                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::arcp;
     using Teuchos::ArrayRCP;
@@ -1509,9 +1524,9 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::
   doPosts (const ArrayRCP<const Packet>& exports,
-           const ArrayView<size_t>& numExportPacketsPerLID,
+           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
            const ArrayRCP<Packet>& imports,
-           const ArrayView<size_t>& numImportPacketsPerLID)
+           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::Array;
     using Teuchos::as;
@@ -1575,7 +1590,7 @@ namespace Tpetra {
 #ifdef HAVE_TEUCHOS_DEBUG
     // Different messages may have different numbers of packets.
     size_t totalNumImportPackets = 0;
-    for (int ii = 0; ii < numImportPacketsPerLID.size(); ++ii) {
+    for (size_t ii = 0; ii < static_cast<size_t> (numImportPacketsPerLID.size ()); ++ii) {
       totalNumImportPackets += numImportPacketsPerLID[ii];
     }
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1897,9 +1912,9 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::
   doReversePostsAndWaits (const ArrayView<const Packet>& exports,
-                          const ArrayView<size_t> &numExportPacketsPerLID,
+                          const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                           const ArrayView<Packet> &imports,
-                          const ArrayView<size_t> &numImportPacketsPerLID)
+                          const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::as;
     using Teuchos::arcp;
@@ -1955,9 +1970,9 @@ namespace Tpetra {
   template <class Packet>
   void Distributor::
   doReversePosts (const ArrayRCP<const Packet>& exports,
-                  const ArrayView<size_t>& numExportPacketsPerLID,
+                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                   const ArrayRCP<Packet>& imports,
-                  const ArrayView<size_t>& numImportPacketsPerLID)
+                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1974,14 +1989,17 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doPostsAndWaits (const ExpView &exports,
+  doPostsAndWaits (const ExpView& exports,
                    size_t numPackets,
-                   const ImpView &imports)
+                   const ImpView& imports)
   {
+    using Teuchos::RCP;
+    using Teuchos::rcp;
     using std::endl;
 
-    Teuchos::OSTab tab0 (out_);
+    RCP<Teuchos::OSTab> tab0, tab1;
     if (debug_) {
+      tab0 = rcp (new Teuchos::OSTab (out_));
       const int myRank = comm_->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank
@@ -1989,42 +2007,7 @@ namespace Tpetra {
          << "{sendType: " << DistributorSendTypeEnumToString (sendType_)
          << ", barrierBetween: " << barrierBetween_ << "}" << endl;
       *out_ << os.str ();
-    }
-    Teuchos::OSTab tab1 (out_);
-
-    // If the MPI library doesn't support RDMA for communication
-    // directly to or from the GPU's memory, we must transfer exports
-    // to the host, do the communication, then transfer imports back
-    // to the GPU.
-    //
-    // We need to do this here instead of doPosts() because the copy
-    // back to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use a
-    // memory space, rather than an execution space, as the first
-    // argument of VerifyExecutionCanAccessMemorySpace.
-    const bool can_access_from_host =
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace,
-      typename exports_view::memory_space >::value;
-    if (! enable_cuda_rdma_ && ! can_access_from_host) {
-      if (debug_) {
-        const int myRank = comm_->getRank ();
-        std::ostringstream os;
-        os << "Proc " << myRank
-           << ": Distributor::doPostsAndWaits: Call host version" << endl;
-        *out_ << os.str ();
-      }
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view (exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view (imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits (Kokkos::Compat::create_const_view (host_exports),
-                       numPackets,
-                       host_imports);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
+      tab1 = rcp (new Teuchos::OSTab (out_));
     }
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2054,33 +2037,11 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doPostsAndWaits (const ExpView &exports,
-                   const ArrayView<size_t> &numExportPacketsPerLID,
-                   const ImpView &imports,
-                   const ArrayView<size_t> &numImportPacketsPerLID)
+  doPostsAndWaits (const ExpView& exports,
+                   const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                   const ImpView& imports,
+                   const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numExportPacketsPerLID,
-                      host_imports,
-                      numImportPacketsPerLID);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       requests_.size () != 0, std::runtime_error,
       "Tpetra::Distributor::doPostsAndWaits(4 args): There are "
@@ -2527,9 +2488,9 @@ namespace Tpetra {
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
   doPosts (const ExpView &exports,
-           const ArrayView<size_t> &numExportPacketsPerLID,
+           const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
            const ImpView &imports,
-           const ArrayView<size_t> &numImportPacketsPerLID)
+           const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     using Teuchos::Array;
     using Teuchos::as;
@@ -2887,31 +2848,10 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doReversePostsAndWaits (const ExpView &exports,
+  doReversePostsAndWaits (const ExpView& exports,
                           size_t numPackets,
-                          const ImpView &imports)
+                          const ImpView& imports)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numPackets,
-                      host_imports);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     doReversePosts (exports, numPackets, imports);
     doReverseWaits ();
   }
@@ -2919,33 +2859,11 @@ namespace Tpetra {
   template <class ExpView, class ImpView>
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
-  doReversePostsAndWaits (const ExpView &exports,
-                          const ArrayView<size_t> &numExportPacketsPerLID,
-                          const ImpView &imports,
-                          const ArrayView<size_t> &numImportPacketsPerLID)
+  doReversePostsAndWaits (const ExpView& exports,
+                          const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
+                          const ImpView& imports,
+                          const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
-    // If MPI library doesn't support RDMA for communication directly
-    // to/from GPU, transfer exports to the host, do the communication, then
-    // transfer imports back to the GPU
-    //
-    // We need to do this here instead of doPosts() because the copy back
-    // to the GPU must occur after the waits.
-    typedef ExpView exports_view;
-    typedef ImpView imports_view;
-    if (!enable_cuda_rdma_ && !exports_view::is_hostspace) {
-      typename exports_view::HostMirror host_exports =
-        Kokkos::create_mirror_view(exports);
-      typename imports_view::HostMirror host_imports =
-        Kokkos::create_mirror_view(imports);
-      Kokkos::deep_copy (host_exports, exports);
-      doPostsAndWaits(Kokkos::Compat::create_const_view(host_exports),
-                      numExportPacketsPerLID,
-                      host_imports,
-                      numImportPacketsPerLID);
-      Kokkos::deep_copy (imports, host_imports);
-      return;
-    }
-
     TEUCHOS_TEST_FOR_EXCEPTION(requests_.size() != 0, std::runtime_error,
       "Tpetra::Distributor::doReversePostsAndWaits(4 args): There are "
       << requests_.size() << " outstanding nonblocking messages pending.  It "
@@ -2978,9 +2896,9 @@ namespace Tpetra {
   typename std::enable_if<(Kokkos::Impl::is_view<ExpView>::value && Kokkos::Impl::is_view<ImpView>::value)>::type
   Distributor::
   doReversePosts (const ExpView &exports,
-                  const ArrayView<size_t> &numExportPacketsPerLID,
+                  const Teuchos::ArrayView<const size_t>& numExportPacketsPerLID,
                   const ImpView &imports,
-                  const ArrayView<size_t> &numImportPacketsPerLID)
+                  const Teuchos::ArrayView<const size_t>& numImportPacketsPerLID)
   {
     // FIXME (mfh 29 Mar 2012) WHY?
     TEUCHOS_TEST_FOR_EXCEPTION(

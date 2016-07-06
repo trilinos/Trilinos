@@ -53,44 +53,71 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+bool is_in_list(Entity entity, const Entity* begin, const Entity* end)
 {
-  entity_vector.clear();
-  std::vector<Entity> tmp;
-  std::vector<Entity> intersect;
-  for(unsigned i=0; i<numNodes; ++i) {
-    const Entity* entities = mesh.begin(nodes[i],rank);
-    unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
-    tmp.assign(entities, entities+numEntities);
-    std::sort(tmp.begin(), tmp.end());
-    if (i==0) {
-      entity_vector.assign(tmp.begin(), tmp.end());
-    }
-    else {
-       intersect.clear();
-       std::back_insert_iterator<std::vector<Entity> > intersect_itr(intersect);
-       std::set_intersection(entity_vector.begin(), entity_vector.end(),
-                             tmp.begin(), tmp.end(),
-                             intersect_itr);
-       entity_vector.swap(intersect);
-    }
-  }
+    return std::find(begin, end, entity) != end;
 }
 
-void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void remove_index_from_list(size_t index, std::vector<Entity>& elementsInCommon)
 {
-    find_entities_these_nodes_have_in_common(mesh,stk::topology::ELEMENT_RANK,numNodes,nodes,entity_vector);
+    std::swap(elementsInCommon[index], elementsInCommon.back());
+    elementsInCommon.resize(elementsInCommon.size() - 1);
 }
 
-void find_faces_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void remove_entities_not_in_list(const Entity* begin, const Entity* end, std::vector<Entity>& elementsInCommon)
 {
-    find_entities_these_nodes_have_in_common(mesh,stk::topology::FACE_RANK,numNodes,nodes,entity_vector);
+    for(size_t j = elementsInCommon.size(); j > 0; j--)
+        if(!is_in_list(elementsInCommon[j-1], begin, end))
+            remove_index_from_list(j-1, elementsInCommon);
 }
+
+void remove_entities_not_connected_to_other_nodes(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
+{
+    for(unsigned i = 1; i < numNodes; ++i)
+        remove_entities_not_in_list(mesh.begin(nodes[i], rank), mesh.end(nodes[i], rank), elementsInCommon);
+}
+
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
+{
+    elementsInCommon.clear();
+    if(numNodes > 0)
+    {
+        elementsInCommon.assign(mesh.begin(nodes[0], rank), mesh.end(nodes[0], rank));
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+    }
+}
+
+
+void fill_owned_entities_with_larger_ids_connected_to_node(const BulkData& mesh,
+                                   Entity node,
+                                   stk::mesh::EntityRank rank,
+                                   stk::mesh::EntityId id,
+                                   std::vector<Entity>& elemsWithLargerIds)
+{
+    unsigned numElems = mesh.num_connectivity(node, rank);
+    elemsWithLargerIds.reserve(numElems);
+
+    const Entity* elems = mesh.begin(node, rank);
+    for(unsigned j = 0; j < numElems; ++j)
+        if(mesh.identifier(elems[j]) > id && mesh.bucket(elems[j]).owned())
+            elemsWithLargerIds.push_back(elems[j]);
+}
+
+void find_entities_with_larger_ids_these_nodes_have_in_common_and_locally_owned(stk::mesh::EntityId id, const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elementsInCommon)
+{
+    elementsInCommon.clear();
+    if(numNodes > 0)
+    {
+        fill_owned_entities_with_larger_ids_connected_to_node(mesh, nodes[0], rank, id, elementsInCommon);
+        remove_entities_not_connected_to_other_nodes(mesh, rank, numNodes, nodes, elementsInCommon);
+    }
+}
+
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes)
 {
   std::vector<Entity> elems;
-  find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
+  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
   bool found_shell = false;
   for (unsigned count = 0; count < elems.size(); ++count) {
       if (mesh.bucket(elems[count]).topology().is_shell()) {
@@ -100,10 +127,9 @@ bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned n
   return found_shell;
 }
 
-
 void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
-  find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
+  find_entities_these_nodes_have_in_common(mesh, stk::topology::ELEMENT_RANK, numNodes, nodes, elems);
 
   for(int i=elems.size()-1; i>=0; --i) {
     if (!mesh.bucket(elems[i]).owned()) {
@@ -115,14 +141,13 @@ void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes)
 {
   stk::topology elemTopology = mesh.bucket(element).topology();
-  stk::topology edgeTopology = elemTopology.edge_topology();
   const Entity* elemNodes = mesh.begin_nodes(element);
   ThrowAssertMsg(mesh.num_nodes(element) == elemTopology.num_nodes(), "findElementEdgeOrdinalAndNodes ERROR, element (id="<<mesh.identifier(element)<<") has wrong number of connected nodes ("<<mesh.num_nodes(element)<<"), expected elemTopology.num_nodes()="<<elemTopology.num_nodes());
 
   unsigned numEdgesPerElem = elemTopology.num_edges();
   for(elemEdgeOrdinal=0; elemEdgeOrdinal<numEdgesPerElem; ++elemEdgeOrdinal) {
     elemTopology.edge_nodes(elemNodes, elemEdgeOrdinal, elemEdgeNodes);
-    if (edgeTopology.equivalent(edgeNodes, elemEdgeNodes).first) {
+    if (stk::mesh::is_edge_equivalent(mesh, element, elemEdgeOrdinal, edgeNodes)) {
       //found element edge equivalent to edgeNodes.
       //output arguments elemEdgeOrdinal and elemEdgeNodes are set, let's get out of here.
       return true;
@@ -434,6 +459,13 @@ void internal_generate_parallel_change_lists( const BulkData & mesh ,
   std::sort( ghosted_change.begin() , ghosted_change.end() , EntityLess(mesh) );
 }
 
+stk::mesh::EntityVector convert_keys_to_entities(stk::mesh::BulkData &bulk, const std::vector<stk::mesh::EntityKey>& node_keys)
+{
+    stk::mesh::EntityVector nodes(node_keys.size());
+    for (size_t i=0;i<nodes.size();++i)
+        nodes[i] = bulk.get_entity(node_keys[i]);
+    return nodes;
+}
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector )
 {
@@ -687,7 +719,7 @@ void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
     std::vector<stk::mesh::Entity> side_nodes(num_side_nodes);
     elem_topology.face_nodes(bulk.begin_nodes(elem_with_face),elem_with_face_side_ordinal,&side_nodes[0]);
     std::vector<stk::mesh::Entity> common_elements;
-    stk::mesh::impl::find_elements_these_nodes_have_in_common(bulk,num_side_nodes,&side_nodes[0],common_elements);
+    stk::mesh::impl::find_entities_these_nodes_have_in_common(bulk,stk::topology::ELEMENT_RANK,num_side_nodes,&side_nodes[0],common_elements);
 
     std::vector<stk::topology> element_topology_touching_surface_vector(common_elements.size());
     for (size_t i=0 ; i<common_elements.size() ; ++i) {
@@ -1041,6 +1073,17 @@ void move_unowned_entities_for_owner_to_ghost(
     }
 }
 
+void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta,
+                                    const OrdinalVector& input_ordinals,
+                                    stk::mesh::PartVector& output_parts)
+{
+    output_parts.clear();
+    output_parts.reserve(input_ordinals.size());
+    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
+    {
+        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
+    }
+}
 
 
 } // namespace impl

@@ -75,7 +75,7 @@ std::string note = "***   NOTE: UNIT TEST BASED ON SEPT 2010   ***\n"
                    "***   INTREPID AND SHARDS Trilinos-dev     ***\n"
                    "***   DOXYGEN WEBSITE                      ***\n";
 
-typedef Intrepid2::FieldContainer<double> FieldContainer;
+typedef Kokkos::DynRankView<double,PHX::Device> FieldContainer;
 
 /////////////////////////////////////////////
 // 2D tests
@@ -91,7 +91,6 @@ bool intrepid_same_geom(const RCP<Intrepid2::Basis<double,FieldContainer> > & ba
 // triangle tests
 TEUCHOS_UNIT_TEST(tFieldPattern, test_equals)
 {
-   PHX::KokkosDeviceSession session;
 
    out << note << std::endl;
 

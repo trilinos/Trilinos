@@ -46,7 +46,8 @@
 #define PHX_EVALUATOR_WITHBASEIMPL_H
 
 #include <vector>
-
+#include <functional>
+#include <unordered_map>
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
@@ -123,9 +124,12 @@ namespace PHX {
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     virtual Kokkos::Experimental::Future<void,PHX::Device::execution_space>
-    createTask(const Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
+    createTask(Kokkos::Experimental::TaskPolicy<PHX::Device::execution_space>& policy,
 	       const std::size_t& num_adjacencies,
+	       const int& work_size,
 	       typename Traits::EvalData d);
+
+    virtual unsigned taskSize() const;
 #endif
 
     virtual void preEvaluate(typename Traits::PreEvalData d) override;
@@ -134,6 +138,9 @@ namespace PHX {
 
     virtual const std::string& getName() const override;
 
+    virtual void bindUnmanagedField(const PHX::FieldTag& ft,
+                                    const PHX::any& f) override;
+
   private:
 
     std::vector< Teuchos::RCP<FieldTag> > evaluated_;
@@ -141,6 +148,9 @@ namespace PHX {
     std::vector< Teuchos::RCP<FieldTag> > required_;
 
     std::string name_;
+
+    //! binds memory for an unmanaged field
+    std::unordered_map<std::string,std::function<void(const PHX::any& f)>> unmanaged_field_binders_;
   };
 
 }

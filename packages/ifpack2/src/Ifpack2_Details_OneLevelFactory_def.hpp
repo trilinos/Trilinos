@@ -54,6 +54,7 @@
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
@@ -131,6 +132,23 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     // now, we default to use dense blocks.
     typedef DenseContainer<row_matrix_type, scalar_type> container_type;
     prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
+  }
+  else if (precTypeUpper == "SPARSE_BLOCK_RELAXATION" ||
+           precTypeUpper == "SPARSE BLOCK RELAXATION" ||
+           precTypeUpper == "SPARSEBLOCKRELAXATION" ) {
+    // FIXME (mfh 22 May 2014) We would prefer to have the choice of
+    // dense or sparse blocks (the "container type") be a run-time
+    // decision.  This will require refactoring BlockRelaxation so
+    // that the "container type" is not a template parameter.  For
+    // now, we default to use dense blocks.
+    //typedef SparseContainer<row_matrix_type, ILUT<row_matrix_type>> container_type;
+#ifdef HAVE_IFPACK2_AMESOS2
+    typedef SparseContainer<row_matrix_type, Details::Amesos2Wrapper<row_matrix_type>> container_type;
+    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
+      "\"SPARSE BLOCK RELAXATION\" requires building Trilinos with Amesos2 enabled.");
+#endif
   }
   else if (precTypeUpper == "TRIDI_RELAXATION" ||
            precTypeUpper == "TRIDI RELAXATION" ||

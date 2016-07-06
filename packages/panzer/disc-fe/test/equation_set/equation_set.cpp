@@ -54,7 +54,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, steady_state)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Type","Energy");
@@ -76,7 +75,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(equation_set, transient)
   {
-    PHX::KokkosDeviceSession session;
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::parameterList();
     p->set("Type","Energy");

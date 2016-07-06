@@ -180,6 +180,8 @@ namespace MueLu {
     */
     static Teuchos::ArrayRCP<SC> GetLumpedMatrixDiagonal(const Matrix& A); // FIXME
 
+    static Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > GetLumpedMatrixDiagonal(Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A); }
+
     /*! @brief Extract Overlapped Matrix Diagonal
 
     Returns overlapped Matrix diagonal in ArrayRCP.
@@ -188,6 +190,15 @@ namespace MueLu {
     NOTE -- it's assumed that A has been fillComplete'd.
     */
     static RCP<Vector> GetMatrixOverlappedDiagonal(const Matrix& A); // FIXME
+
+    /*! @brief Return vector containing inverse of input vector
+     *
+     * @param[in] v: input vector
+     * @param[in] tol: tolerance. If entries of input vector are smaller than tolerance they are replaced by tolReplacement (see below). The default value for tol is 100*eps (machine precision)
+     * @param[in] tolReplacement: Value put in for undefined entries in output vector (default: 0.0)
+     * @ret: vector containing inverse values of input vector v
+    */
+    static Teuchos::RCP<Vector> GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(v,tol,tolReplacement); }
 
     // TODO: should NOT return an Array. Definition must be changed to:
     // - ArrayRCP<> ResidualNorm(Matrix const &Op, MultiVector const &X, MultiVector const &RHS)
@@ -548,7 +559,9 @@ namespace MueLu {
     static Teuchos::ArrayRCP<Scalar>                                         GetMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonal(A); }
     static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      GetMatrixDiagonalInverse(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixDiagonalInverse(A,tol); }
     static Teuchos::ArrayRCP<Scalar>                                         GetLumpedMatrixDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A); }
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      GetLumpedMatrixDiagonal(Teuchos::RCP<const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetLumpedMatrixDiagonal(A); }
     static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      GetMatrixOverlappedDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetMatrixOverlappedDiagonal(A); }
+    static RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      GetInverse(Teuchos::RCP<const Vector> v, Magnitude tol = Teuchos::ScalarTraits<Scalar>::eps()*100, Scalar tolReplacement = Teuchos::ScalarTraits<Scalar>::zero()) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetInverse(v,tol,tolReplacement); }
     static Teuchos::Array<Magnitude>                                         ResidualNorm(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ResidualNorm(Op,X,RHS); }
     static RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Residual(const Xpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS) { return MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Residual(Op,X,RHS); }
     static void                                                              PauseForDebugger() { MueLu::UtilitiesBase<Scalar,LocalOrdinal,GlobalOrdinal,Node>::PauseForDebugger(); }
@@ -836,43 +849,21 @@ namespace MueLu {
     // static_assert(false, "Error: NOT a Kokkos::View");
   };
 
-  // Arg3 == MemoryTraits
-  template < class DataType, class Arg1, class Arg2, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U> >, T> {
-    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<U|T> >;
+  template < class MT, unsigned T >
+  struct CombineMemoryTraits {
+    // empty
   };
 
-  // Arg2 == MemoryTraits
-  template < class DataType, class Arg1, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U>, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<U|T>, void >;
+  template < unsigned U, unsigned T>
+  struct CombineMemoryTraits<Kokkos::MemoryTraits<U>, T> {
+    typedef Kokkos::MemoryTraits<U|T> type;
   };
 
-
-  // Arg1 == MemoryTraits
-  template < class DataType, unsigned U, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Kokkos::MemoryTraits<U>, void, void >, T> {
-    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<U|T>, void, void >;
+  template < class DataType, unsigned T, class... Pack >
+  struct AppendTrait< Kokkos::View< DataType, Pack... >, T> {
+    typedef Kokkos::View< DataType, Pack... > view_type;
+    using type = Kokkos::View< DataType, typename view_type::array_layout, typename view_type::device_type, typename CombineMemoryTraits<typename view_type::memory_traits,T>::type >;
   };
-
-  // 2 arguments -- no traits
-  template < class DataType, class Arg1, class Arg2, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, Arg2, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Arg2, Kokkos::MemoryTraits<T> >;
-  };
-
-  // 1 arguments -- no traits
-  template < class DataType, class Arg1, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, Arg1, void, void >, T> {
-    using type = Kokkos::View< DataType, Arg1, Kokkos::MemoryTraits<T>, void >;
-  };
-
-  // 0 arguments
-  template < class DataType, unsigned T >
-  struct AppendTrait< Kokkos::View< DataType, void, void, void >, T> {
-    using type = Kokkos::View< DataType, Kokkos::MemoryTraits<T>, void, void >;
-  };
-
 
 } //namespace MueLu
 

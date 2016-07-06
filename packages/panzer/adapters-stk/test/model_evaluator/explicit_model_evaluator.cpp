@@ -104,7 +104,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     bool parameter_on = true;
     Teuchos::RCP<panzer::FieldManagerBuilder> fmb;  

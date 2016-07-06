@@ -20,6 +20,7 @@ endif()
 
 SET(HEADERS "")
 SET(SOURCES
+  ap_getline_int.c
   ap_builtin.c
   ap_stat.c
   ${BISON_SOURCE}

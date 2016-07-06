@@ -94,8 +94,8 @@ private:
 
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<const PointRule> pointRule;
-  Intrepid2::FieldContainer<ScalarT> faceNormal; // face normals
-  Intrepid2::FieldContainer<ScalarT> refFaceNormal; // reference face normals
+  Kokkos::DynRankView<ScalarT,PHX::Device> faceNormal; // face normals
+  Kokkos::DynRankView<ScalarT,PHX::Device> refFaceNormal; // reference face normals
 
   PointValues2<ScalarT,PHX::MDField> pointValues;
 

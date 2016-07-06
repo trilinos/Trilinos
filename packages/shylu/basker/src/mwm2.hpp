@@ -519,15 +519,10 @@ namespace mwm_order
    Int &num, Entry &bv
    )
   {
-    //Int i,ii,i0,j,jj, k, k1, k2;
     Int i,ii,i0,j,jj, k;
     Int kk, kk1, kk2;
-    //Entry a0, ai, av;
     Entry a0, ai;
-    //bn value, b0 = min(maxr,maxc)
-    //bv  = (Entry) 0;
     bv = (Entry) INF;
-    //printf("bv: %f \n", bv);
 
     //Init used values
     i0 = -1;
@@ -545,13 +540,11 @@ namespace mwm_order
     for(j=0; j<n; j++)
       {
 	a0 = (Entry) -1.0;
-	//printf("col: %d \n", j);
         //For each column node, 
 	for(k=col_ptr[j]; k<col_ptr[j+1]; k++)
 	  {
 	    i  = row_idx[k];
 	    ai = abs(val[k]);
-            // printf("row: %d %f \n", i, ai);
 	   
 	    if(ai > d[i])
 	      {
@@ -571,14 +564,6 @@ namespace mwm_order
 		jperm[j] = i;
 		iperm[i] = j;
 		
-		//printf("assign1 iperm: %d %d \n",
-		//i, iperm[i]);
-                //We should not need this check anymore
-		//if(iperm[i] <= -1)
-		//  {
-		//    printf("Error iperm: %d %d \n", 
-                //		   i, iperm[i]);
-                // }
 		num++;
 	      }
 	    else
@@ -594,8 +579,6 @@ namespace mwm_order
 	if((a0 != ((Entry)(-1.0))) && 
 	   (a0 < bv))
 	  {
-            //Does this ever get called?
-            //printf("question called\n");
 	    bv = a0;
 	    if(iperm[i0] != -1)
 	      {
@@ -604,16 +587,6 @@ namespace mwm_order
 	    iperm[i0] = j;
 	    jperm[j]  = i0;
 	    
-	    //printf("assign2 iperm: %d %d \n",
-	    //i0, iperm[i0])
-            
-            //Do we need this anymore
-	    //if(iperm[i0] <=-1)
-	    //  {
-		//printf("Error 2: iperm: %d %d \n",
-		//i0, iperm[i0]);
-            //}
-
 	    num++;
 	  }
       }//for-j
@@ -624,12 +597,8 @@ namespace mwm_order
 	bv = min(bv,d[i]);
       }
 
-
-    //printf("first init: %d iperm: %d bv : %f\n", num, iperm[1], bv);
-    //Check if good
     if(num == n)
       {
-	//printf("returning without shifting \n");
 	return 0;
       }
 
@@ -657,18 +626,9 @@ namespace mwm_order
 		jperm[j] = i;
 		iperm[i] = j;
 		pr[j]    = k+1;
-
-		//if(iperm[j] <= -1)
-		//  {
-                //printf("E3 iperm: %d %d \n",
-                //j, i);
-                // }
-
-	
 		break;
 	      }
 	    jj  = iperm[i];
-
 	 
 	    kk1 = pr[jj];
 	    kk2 = col_ptr[jj+1];
@@ -695,28 +655,18 @@ namespace mwm_order
 		    iperm[i] = j;
 		    pr[j] = k+1;
 		    
-		    //if(iperm[i] <=-1)
-		    //  {
-			//printf("E4 iperm: %d %d \n",
-			//     i, iperm[i]);
-                    // }
-
-		    //no nice way in C to do 
-		    //double break
 		    d_break = true;
 		    break;
 		  }//if- 
 	      }//for-kk
 	    if(d_break == true)
 	      {
-		//printf("double break called \n");
 		d_break = false;
 		break;
 	      }
 	    pr[jj] = kk2 +1;
 	  }//for-k
       }//for-j
-    
     //DONE
     return 0;
   }//end mwm_bn_init
@@ -735,19 +685,12 @@ namespace mwm_order
    )
   {
 
-    //Int i, ii, i0, i1;
     Int i, i0;
-    //Int j, jj, j0, j1;
     Int j, jj;
-    //Int k, kk, k0, k1
     Int k, kk;;
-    
     Int jord, jdum, idum;
-
     Int qlen, low, up;
-
     Int q0;
-    //Entry qi, dq0;
     Entry dq0;
 
     Entry dnew, di;
@@ -755,10 +698,6 @@ namespace mwm_order
     Int isp, jsp;
     
     Int lpos;
-
-    //Need to get this from the init
-    //Entry bv = 0;
-    
 
     Entry MINONE = (Entry) -1.0;
 
@@ -809,16 +748,13 @@ namespace mwm_order
 	  {
 	    i    = row_idx[k];
 	    dnew = abs(val[k]);
-	    //printf("col: %d row: %d val: %f \n", 
-	    //	   j, i, dnew);
+
 	    if(csp >= dnew)
 	      {
-		//printf("continued \n");
 		continue;
 	      }
 	    if(iperm[i] == -1)
 	      {
-		//printf("add \n");
 		csp = dnew;
 		isp = i;
 		jsp = j;
@@ -826,23 +762,18 @@ namespace mwm_order
 		if(csp >= bv)
 		  {
 		    goto L160;
-		    //break;
 		  }//if-csp>=bv
 	      }
 	    else
 	      {
-		//printf("fix up \n");
 		d[i] = dnew;
 		if(dnew >= bv)
 		  {
-		    //printf("add low q[%d]=%d \n",
-		    //	   low-1, i);
 		    low--;
 		    Q[low] = i;
 		  }
 		else
 		  {
-		    //printf("push down\n");
 		    L[i] = qlen;
 		    qlen++;
 		    mwm_heap_down2(i,n,Q,d,L);
@@ -850,30 +781,22 @@ namespace mwm_order
 		jj = iperm[i];
 		pr[jj] = j;
 	      }//
-	    //printf("???\n");
 	  }//for-k
 	
-
 	for(jdum = 0; jdum < num; jdum++)
 	  {
-	    //printf("second \n");
 	    bool d_break = false;
 
 	    if(low == up)
 	      {
-		//printf("low == up \n");
 		if(qlen == 0)
 		  {
 		    goto L160;
-		    //goto 160
-		    //break;
 		  }
 		i = Q[0];
 		if(csp >= d[i])
 		  {
 		    goto L160;
-		    //goto 160
-		    //break;
 		  }
 		bv = d[i];
 		for(idum = 0; idum < n; idum++)
@@ -893,22 +816,17 @@ namespace mwm_order
 		      }
 		  }//for-idum
 	      }//if-low==up
-
 	   
 	    up--;
 	    q0   = Q[up];
 	    dq0  = d[q0];
 	    L[q0] = up;
-	    //printf("assing start  L[%d] = %d \n",
-	    //	   q0, up);
-
 	    
 	    j = iperm[q0];
 	    for(k = col_ptr[j]; k < col_ptr[j+1]; k++)
 	      {
 		i = row_idx[k];
-		//printf("consider col: %d row: %d \n",
-		//     j, i);
+
 		if(L[i] >= up)
 		  {
 		    continue;
@@ -926,14 +844,10 @@ namespace mwm_order
 		    if(csp >= bv)
 		      {
 			goto L160;
-			//no nice way to do a double break
-			//d_break = true;
-			//break;
 		      }
 		  }
 		else
 		  {
-		    //printf("HERE1\n");
 		    di = d[i];
 		    if((di >= bv) || (di>=dnew))
 		      {
@@ -942,7 +856,6 @@ namespace mwm_order
 		    d[i] = dnew;
 		    if(dnew >= bv)
 		      {
-			//printf("HERE2\n");
 			if(di != MINONE)
 			  {
 			    lpos = L[i];
@@ -956,11 +869,8 @@ namespace mwm_order
 		      }
 		    else
 		      {
-			//printf("HERE3\n");
 			if(di == MINONE)
 			  {
-			    //printf("L[%d] = %d \n",
-			    //i, qlen);
 			    L[i] = qlen;
 			    qlen++;
 			  }
@@ -970,10 +880,7 @@ namespace mwm_order
 		    
 		    jj = iperm[i];
 		    pr[jj] = j;
-		    //printf("Update tree pr[%d] = %d \n",
-		    //jj, pr[jj]);
-		  }//elws
-			 
+		  }//elws			 
 	      }//for-k
 	    if(d_break == true)
 	      {
@@ -990,7 +897,6 @@ namespace mwm_order
 	    i = isp;
 	    j = jsp;
 	    
-	    //num or num+1??
 	    for(jdum = 0; jdum < num+1; jdum++)
 	      {
 		i0 = jperm[j];
@@ -1426,7 +1332,7 @@ namespace mwm_order
   {
 
 
-    printf("-------MWM col: %d -----------\n", num); 
+    //printf("-------MWM col: %d -----------\n", num); 
 
     Int k, i,ii,j,jj;
     Int k0,k1, k2;
@@ -1667,9 +1573,6 @@ namespace mwm_order
 		    return -1;
 		  }
 		  
-
-
-
 		if(dnew >= csp)
 		  {
 		    continue;

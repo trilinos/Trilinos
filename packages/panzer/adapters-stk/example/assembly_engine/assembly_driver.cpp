@@ -77,8 +77,6 @@ using Teuchos::rcp;
 #include "user_app_ClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Epetra_MpiComm.h"
-
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MultiVectorOut.h"
@@ -105,7 +103,6 @@ int main(int argc,char * argv[])
    PHX::InitializeKokkosDevice();
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-   RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
    out.setShowProcRank(true);
@@ -229,8 +226,9 @@ int main(int argc,char * argv[])
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
    // construct some linear algebra object, build object to pass to evaluators
+   Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+         = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
    // setup field manager build

@@ -54,6 +54,9 @@
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_AlgZoltan.hpp>
 
+#include <Zoltan2_MatcherHelper.hpp>
+
+
 #include <sstream>
 #include <string>
 #include <bitset>
@@ -107,11 +110,13 @@ private:
   //const RCP<const Adapter> mInputAdapter;
   const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;                                                                                                                                 
 
-  void getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
-			const part_t * parts, 
-			std::vector<int> &boundVerts,
-			std::vector<std::vector<int> > &boundVertsST,
-			const std::set<int> &sepVerts);
+  void getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
+		     const part_t * parts, 
+		     const std::set<int> &excVerts,
+		     int &bigraphNumS, int &bigraphNumT, int &bigraphNumE,
+		     std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
+	             std::vector<int> &bigraphVMapU, std::vector<int> &bigraphVMapV);
+
 
 public:
   // Constructor
@@ -266,36 +271,85 @@ int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
     //    1. Build boundary layer between parts
     //    2. Build vertex separator from boundary layer
     //////////////////////////////////////////////////////////////////////
-       std::cout << "HERE8" << std::endl;
-
+    std::cout << "HERE8" << std::endl;
 
     for(unsigned int level=0;level<numLevels;level++)
     {
       for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
       {
-
-    	std::vector<int> boundVerts;
-    	std::vector<std::vector<int> > boundVertsST(2);
-
         ///////////////////////////////////////////////////////////////
         // Build boundary layer between parts (edge separator)
         ///////////////////////////////////////////////////////////////
 	std::cout << "HERE9" << std::endl;
-        getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
-    			 boundVertsST, sepVerts);
+
+        int bigraphNumU=0, bigraphNumV=0, bigraphNumE=0;
+	std::vector<int> bigraphVMapU; 
+        std::vector<int> bigraphVMapV;
+
+	std::vector<int> bigraphCRSRowPtr;
+	std::vector<int> bigraphCRSCols;
+
+
+        getBoundLayer(levIndx, partLevelMap[level], parts, sepVerts,
+		      bigraphNumU,bigraphNumV,bigraphNumE,
+		      bigraphCRSRowPtr, bigraphCRSCols,
+		      bigraphVMapU,bigraphVMapV);
+
+	std::cout << "Bipartite graph: " << bigraphNumU << " " << bigraphNumV << " " 
+		  << bigraphNumE << std::endl;
+
+        for (unsigned int i=0;i<bigraphVMapU.size();i++)
+	{
+	  std::cout << "boundVertU: " << bigraphVMapU[i] << std::endl;
+        }
+
+        for (unsigned int i=0;i<bigraphVMapV.size();i++)
+	{
+	  std::cout << "boundVertV: " << bigraphVMapV[i] << std::endl;
+        }
+
+
+
+        for (int rownum=0;rownum<bigraphNumU;rownum++)
+	{
+
+           for (int eIdx=bigraphCRSRowPtr[rownum];eIdx<bigraphCRSRowPtr[rownum+1];eIdx++)
+	   {          
+	      std::cout << "bipartite E: " << bigraphVMapU[rownum] << ", " << bigraphVMapV[ bigraphCRSCols[eIdx]]
+			<< " ( "  << rownum << "," << bigraphCRSCols[eIdx] << " )" << std::endl;
+           }
+
+	}
 	std::cout << "HERE10" << std::endl;
         ///////////////////////////////////////////////////////////////
 
         ///////////////////////////////////////////////////////////////
-        // Calculate vertex separator from boundary layer
+        // Calculate bipartite matching from boundary layer
+        ///////////////////////////////////////////////////////////////
+	Matcher bpMatch(bigraphCRSRowPtr.data(), bigraphCRSCols.data(), bigraphNumU, bigraphNumV, bigraphNumE);
+        bpMatch.match();
+
+	const std::vector<int> &vertUMatches = bpMatch.getVertexUMatches();
+	const std::vector<int> &vertVMatches = bpMatch.getVertexVMatches();
         ///////////////////////////////////////////////////////////////
 
-    	//VCOfBoundLayer
+        ///////////////////////////////////////////////////////////////
+        // Calculate vertex cover (which is vertex separator) from matching
+        ///////////////////////////////////////////////////////////////
+	std::vector<int> VC;
 
+        getVCfromMatching(bigraphCRSRowPtr,bigraphCRSCols,vertUMatches,vertVMatches,
+			  bigraphVMapU,bigraphVMapV,VC);
+
+        for(unsigned int i=0;i<VC.size();i++)
+	{
+	  std::cout << "VC: " << VC[i] << std::endl;
+	}        
         ///////////////////////////////////////////////////////////////
 
 
-    	}
+
+      }
     }
 
        std::cout << "HERE20" << std::endl;
@@ -313,13 +367,17 @@ int AlgND<Adapter>::order(const RCP<OrderingSolution<lno_t, gno_t> > &solution_)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Create boundary layer of vertices between 2 partitions
+//
+// Could improve the efficiency here by first creating a boundary layer graph
+// between all parts
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
-				      const part_t * parts, 
-				      std::vector<int> &boundVerts,
-				      std::vector<std::vector<int> > &boundVertsST,
-				      const std::set<int> &sepVerts)
+void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
+				   const part_t * parts,
+				   const std::set<int> &excVerts,
+				   int &bigraphNumS, int &bigraphNumT, int &bigraphNumE,
+				   std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
+				   std::vector<int> &bigraphVMapS, std::vector<int> &bigraphVMapT)
 {
   std::cout << "HI1" << std::endl;
 
@@ -329,8 +387,6 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
 
   int numVerts = mGraphModel->getLocalNumVertices();
 
-  std::cout << "NumVerts: " << numVerts << std::endl;
-
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
   ArrayView< const lno_t > vOffsets;
@@ -339,15 +395,16 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
   // For some reason getLocalEdgeList seems to be returning empty eIDs
   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
 
-  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
+  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
+  ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
-//   size_t Zoltan2::GraphModel< Adapter >::getEdgeList(ArrayView< const gno_t > & edgeIds,
-// 						     ArrayView< const int > & procIds,
-// 						     ArrayView< const lno_t > & offsets,
-// 						     ArrayView< input_t > & wgts 
-//						     )
 
-  //  for(int v1=0;v1<numEdges;v1++)
+  std::map<int,std::set<int> > bigraphEs;
+  std::set<int> vSetS;
+  std::set<int> vSetT;
+
+  bigraphNumE=0;
+
   for(int v1=0;v1<numVerts;v1++)
   {
 
@@ -362,9 +419,8 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
       continue;
     }
 
-    // If this vertex belongs to a previous separator, it cannot belong to this
-    // separator
-    if(sepVerts.find(v1)!=sepVerts.end())
+    // Ignore vertices that belong to set of vertices to exclude
+    if(excVerts.find(v1)!=excVerts.end())
     {
       continue;
     }
@@ -387,35 +443,202 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
         continue;
       }
 
-      // If this vertex belongs to a previous separator, it cannot belong to this
-      // separator
-      if(sepVerts.find(v2)!=sepVerts.end())
+      // Ignore vertices that belong to set of vertices to exclude
+      if(excVerts.find(v2)!=excVerts.end())
       {
         continue;
       }
 
       if ( vpart1 !=  vpart2  )
       {
-        // Vertex added to set of all boundary vertices
-        boundVerts.push_back(v1);
-
         // Vertex added to 1st set of boundary vertices
 	if(vpart1<vpart2)
         {
-	  boundVertsST[0].push_back(v1);
+          vSetS.insert(v1);
+
+          // v1, v2          
+          if(bigraphEs.find(v1)==bigraphEs.end())
+	  {
+            bigraphEs[v1] = std::set<int>();
+	  }
+          bigraphEs[v1].insert(v2);
+          bigraphNumE++;
+
 	}
         // Vertex added to 2nd set of boundary vertices
 	else
 	{
-	  boundVertsST[1].push_back(v1);
+          vSetT.insert(v1);
 	}
-	break;
       }
 
     }
   }
 
+  /////////////////////////////////////////////////////////////////////////
+  // Set size of two vertex sets for bipartite graph
+  /////////////////////////////////////////////////////////////////////////
+  bigraphNumS = vSetS.size();
+  bigraphNumT = vSetT.size();
+  /////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////
+
+  bigraphVMapS.resize(bigraphNumS);
+
+  std::map<int,int> glob2LocTMap;
+
+  unsigned int indx=0;
+  for(std::set<int>::const_iterator iter=vSetS.begin(); iter!=vSetS.end(); ++iter)
+  {
+    bigraphVMapS[indx] = *iter;
+    indx++;
+  }
+
+
+  bigraphVMapT.resize(bigraphNumT);
+  indx=0;
+  for(std::set<int>::const_iterator iter=vSetT.begin();iter!=vSetT.end();++iter)
+  {
+    bigraphVMapT[indx] = *iter;
+    glob2LocTMap[*iter]=indx;
+    indx++;
+  }
+  /////////////////////////////////////////////////////////////////////////
+
+
+  /////////////////////////////////////////////////////////////////////////
+  // Set sizes for bipartite graph data structures
+  /////////////////////////////////////////////////////////////////////////
+  bigraphCRSRowPtr.resize(bigraphNumS+1);
+  bigraphCRSCols.resize(bigraphNumE);
+  /////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////////////////
+  // Copy bipartite graph edges into CRS format
+  /////////////////////////////////////////////////////////////////////////
+  bigraphCRSRowPtr[0]=0;
+
+  unsigned int rownum=0;
+  unsigned int nzIndx=0;
+  std::map<int,std::set<int> >::const_iterator iterM;
+  for (iterM=bigraphEs.begin();iterM!=bigraphEs.end();++iterM)
+  {
+    bigraphCRSRowPtr[rownum+1] = bigraphCRSRowPtr[rownum] + (*iterM).second.size();
+
+    for(std::set<int>::const_iterator iter=(*iterM).second.begin(); iter!=(*iterM).second.end(); ++iter)
+    {
+      bigraphCRSCols[nzIndx] = glob2LocTMap[(*iter)];
+
+      nzIndx++;
+    }
+ 
+    rownum++;
+  }
+  /////////////////////////////////////////////////////////////////////////
+
 }
+//////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Create boundary layer of vertices between 2 partitions
+////////////////////////////////////////////////////////////////////////////////
+// template <typename Adapter>
+// void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
+// 				      const part_t * parts,
+// 				      const std::set<int> &excVerts,
+// 				      std::vector<int> &boundVerts,
+// 				      std::vector<std::vector<int> > &boundVertsST)
+
+// {
+//   std::cout << "HI1" << std::endl;
+
+//   typedef typename Adapter::lno_t lno_t;         // local ids
+//   typedef typename Adapter::scalar_t scalar_t;   // scalars
+//   typedef StridedData<lno_t, scalar_t> input_t;
+
+//   int numVerts = mGraphModel->getLocalNumVertices();
+
+//   std::cout << "NumVerts: " << numVerts << std::endl;
+
+//   //Teuchos ArrayView
+//   ArrayView< const lno_t > eIDs;
+//   ArrayView< const lno_t > vOffsets;
+//   ArrayView< input_t > wgts;
+
+//   // For some reason getLocalEdgeList seems to be returning empty eIDs
+//   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
+
+//   size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
+
+//   for(int v1=0;v1<numVerts;v1++)
+//   {
+
+//     part_t vpart1 = partMap[parts[v1]];
+
+//     bool correctBL = (vpart1 >= 2*levelIndx && vpart1 < 2*(levelIndx+1) );
+
+//     // if vertex is not in the correct range of parts, it cannot be a member of 
+//     // this boundary layer
+//     if(!correctBL)
+//     {
+//       continue;
+//     }
+
+//     // Ignore vertices that belong to set of vertices to exclude
+//     if(excVerts.find(v1)!=excVerts.end())
+//     {
+//       continue;
+//     }
+
+//     //Loop over edges connected to v1
+//     //MMW figure out how to get this from Zoltan2
+//     for(int j=vOffsets[v1];j<vOffsets[v1+1];j++)
+//     {
+
+//       int v2 = eIDs[j];
+
+//       part_t vpart2 = partMap[parts[v2]];
+
+//       correctBL = (vpart2 >= 2*levelIndx && vpart2 < 2*(levelIndx+1) );
+
+//       // if vertex is not in the correct range of parts, it cannot be a member of 
+//       // this boundary layer
+//       if(!correctBL)
+//       {
+//         continue;
+//       }
+
+//       // Ignore vertices that belong to set of vertices to exclude
+//       if(excVerts.find(v2)!=excVerts.end())
+//       {
+//         continue;
+//       }
+
+//       if ( vpart1 !=  vpart2  )
+//       {
+//         // Vertex added to set of all boundary vertices
+//         boundVerts.push_back(v1);
+
+//         // Vertex added to 1st set of boundary vertices
+// 	if(vpart1<vpart2)
+//         {
+// 	  boundVertsST[0].push_back(v1);
+// 	}
+//         // Vertex added to 2nd set of boundary vertices
+// 	else
+// 	{
+// 	  boundVertsST[1].push_back(v1);
+// 	}
+// 	break;
+//       }
+
+//     }
+//   }
+
+// }
 //////////////////////////////////////////////////////////////////////////////
 
 }   // namespace Zoltan2

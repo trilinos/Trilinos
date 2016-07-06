@@ -103,7 +103,7 @@ TEST(StkMeshHowTo, add_element_to_ghosting_using_specialized_modification_for_pe
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulk(meta, communicator);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x4", bulk, communicator);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x4", bulk);
 
         stk::mesh::EntityId elementId = 1;
         stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, elementId);

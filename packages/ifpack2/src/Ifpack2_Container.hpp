@@ -246,6 +246,11 @@ public:
   //! Print basic information about the container to \c os.
   virtual std::ostream& print (std::ostream& os) const = 0;
 
+  static std::string getName()
+  {
+    return "Generic";
+  }
+
 private:
   //! The input matrix to the constructor.
   Teuchos::RCP<const row_matrix_type> inputMatrix_;

@@ -101,6 +101,9 @@ bool ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::handlesReq
          return false;
        }
      }
+     if(pl->isType<std::string>("Coordinates")){
+       field = pl->get<std::string>("Coordinates");
+     }
 
      return isHandled;
    }
@@ -123,6 +126,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::preRequest
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldByKey(const std::string & key,const std::string & field,Teuchos::ParameterList & pl) const
 {
+   // x-, y-, z-coordinates needed for ML, Coordinates needed for MueLu
    if(key=="x-coordinates") {
       double * x = const_cast<double *>(&getCoordinateByField(0,field)[0]);
       pl.set<double*>(key,x);
@@ -134,6 +138,8 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::setFieldBy
    else if(key=="z-coordinates") {
       double * z = const_cast<double *>(&getCoordinateByField(2,field)[0]);
       pl.set<double*>(key,z);
+   } else if(key == "Coordinates") {
+      pl.set<Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > >("Coordinates",coordsVec_);
    }
    else
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
@@ -152,7 +158,7 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildArray
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(const std::string & field)
 {
-   std::map<std::string,Intrepid2::FieldContainer<double> > data;
+   std::map<std::string,Kokkos::DynRankView<double,PHX::Device> > data;
 
    Teuchos::RCP<const panzer::Intrepid2FieldPattern> fieldPattern = getFieldPattern(field);
 
@@ -163,8 +169,8 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       std::vector<std::size_t> localCellIds;
 
       // allocate block of data to store coordinates
-      Intrepid2::FieldContainer<double> & fieldData = data[blockId];
-      fieldData.resize(connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
+      Kokkos::DynRankView<double,PHX::Device> & fieldData = data[blockId];
+      fieldData = Kokkos::DynRankView<double,PHX::Device>("fieldData",connManager_->getElementBlock(blockId).size(),fieldPattern->numberIds());
 
       if(fieldPattern->supportsInterpolatoryCoordinates()) {
          // get degree of freedom coordiantes
@@ -182,19 +188,18 @@ void ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoord
       }
    }
 
-   Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 
-      = arrayToVector_[field]->template getDataVector<double>(field,data);
+   coordsVec_ = arrayToVector_[field]->template getDataVector<double>(field,data);
 
-   switch(resultVec->getNumVectors()) {
+   switch(coordsVec_->getNumVectors()) {
    case 3:
-      zcoords_[field].resize(resultVec->getLocalLength()); 
-      resultVec->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
+      zcoords_[field].resize(coordsVec_->getLocalLength()); 
+      coordsVec_->getVector(2)->get1dCopy(Teuchos::arrayViewFromVector(zcoords_[field]));
    case 2:
-      ycoords_[field].resize(resultVec->getLocalLength()); 
-      resultVec->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
+      ycoords_[field].resize(coordsVec_->getLocalLength()); 
+      coordsVec_->getVector(1)->get1dCopy(Teuchos::arrayViewFromVector(ycoords_[field]));
    case 1:
-      xcoords_[field].resize(resultVec->getLocalLength()); 
-      resultVec->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));
+      xcoords_[field].resize(coordsVec_->getLocalLength()); 
+      coordsVec_->getVector(0)->get1dCopy(Teuchos::arrayViewFromVector(xcoords_[field]));
       break;
    default:
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
@@ -208,7 +213,13 @@ std::string ParameterListCallbackBlocked<LocalOrdinalT,GlobalOrdinalT,Node>::
 getHandledField(const Teuchos::ParameterList & pl) const
 {
   // because this method assumes handlesRequest is true, this call will succeed
-  return pl.get<std::string>("x-coordinates");
+  if(pl.isType<std::string>("x-coordinates"))
+    return pl.get<std::string>("x-coordinates");
+  else if(pl.isType<std::string>("Coordinates"))
+    return pl.get<std::string>("Coordinates");
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Neither x-coordinates not Coordinates field provided.");
+    
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>

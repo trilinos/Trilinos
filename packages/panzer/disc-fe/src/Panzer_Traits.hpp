@@ -88,7 +88,8 @@ namespace panzer {
     typedef PANZER_FADTYPE FadType;
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
-    typedef Sacado::Fad::SFad<FadType,1> HessianType;
+    // typedef Sacado::Fad::SFad<FadType,1> HessianType;
+    typedef Sacado::Fad::DFad<Sacado::Fad::SFad<RealType,1> > HessianType;
 #endif
     
     // ******************************************************************
@@ -123,9 +124,10 @@ namespace panzer {
 
     typedef struct {
       GlobalEvaluationDataContainer gedc;
-      std::string sensitivities_name;
+
+      std::string first_sensitivities_name;
+      std::string second_sensitivities_name;
     } PreEvalData;
-    // typedef GlobalEvaluationDataContainer& PreEvalData;
 
     typedef void* PostEvalData;
 
@@ -145,7 +147,7 @@ namespace PHX {
 
   template<>
   struct eval_scalar_types<panzer::Traits::Tangent> 
-  { typedef Sacado::mpl::vector<panzer::Traits::FadType,bool> type; };
+  { typedef Sacado::mpl::vector<panzer::Traits::FadType,panzer::Traits::RealType,bool> type; };
 
 #ifdef Panzer_BUILD_HESSIAN_SUPPORT
   template<>

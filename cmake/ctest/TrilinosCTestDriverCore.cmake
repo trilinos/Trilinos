@@ -19,6 +19,9 @@ SET(CTEST_DROP_SITE_COVERAGE_DEFAULT
 SET(CTEST_DROP_LOCATION_COVERAGE_DEFAULT
   "/extended/cdash/submit.php?project=Trilinos")
 
+SET(Trilinos_REPOS_URL_BASE  https://github.com/trilinos/
+  CACHE STRING "Set in TrilinosCTestDriverCore.cmake")
+
 # Many of the existing scripts use the variable TRILINOS_CMAKE_DIR, so we set
 # it here.
 SET(TRILINOS_CMAKE_DIR ${CMAKE_CURRENT_LIST_DIR}/../)

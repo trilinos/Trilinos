@@ -46,6 +46,7 @@ APPEND_SET(HEADERS
   Phalanx_Evaluator_Factory_UFO.hpp
   Phalanx_Evaluator.hpp
   Phalanx_Evaluator_Macros.hpp
+  Phalanx_Evaluator_TaskBase.hpp
   Phalanx_Evaluator_TemplateBuilder.hpp
   Phalanx_Evaluator_TemplateManager.hpp
   Phalanx_Evaluator_Utilities.hpp
@@ -66,6 +67,8 @@ APPEND_SET(HEADERS
   Phalanx_KokkosViewFactoryFunctor.hpp
   Phalanx_MDField_Def.hpp
   Phalanx_MDField.hpp
+  Phalanx_MDField_DynRank_Def.hpp
+  Phalanx_MDField_DynRank.hpp
   Phalanx_MDField_TypeTraits.hpp
   Phalanx_MDFieldToKokkos.hpp
   Phalanx_Print_Utilities.hpp

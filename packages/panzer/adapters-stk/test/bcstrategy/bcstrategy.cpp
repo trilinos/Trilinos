@@ -83,7 +83,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, basic_construction)
   {
-    PHX::KokkosDeviceSession session;
 
     std::size_t bc_id = 0;
     panzer::BCType dirichlet = BCT_Dirichlet;
@@ -108,7 +107,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(bcstrategy, constant_bc_strategy)
   {
-    PHX::KokkosDeviceSession session;
 
     using std::cout;
     using std::endl;
@@ -179,8 +177,9 @@ namespace panzer {
     RCP<panzer::UniqueGlobalIndexer<int,int> > dofManager 
          = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
  
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
     Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > eLinObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(Comm.getConst(),dofManager));
+          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = eLinObjFactory;
 
     // setup field manager build

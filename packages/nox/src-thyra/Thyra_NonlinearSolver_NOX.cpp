@@ -59,7 +59,8 @@
 // ****************************************************************
 Thyra::NOXNonlinearSolver::NOXNonlinearSolver():
   do_row_sum_scaling_(false),
-  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve)
+  when_to_update_(NOX::RowSumScaling::UpdateInvRowSumVectorAtBeginningOfSolve),
+  rebuild_solver_(true)
 {
   param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
   valid_param_list_ = Teuchos::rcp(new Teuchos::ParameterList);
@@ -75,7 +76,8 @@ Thyra::NOXNonlinearSolver::~NOXNonlinearSolver()
 void Thyra::NOXNonlinearSolver::
 setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& p)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(p));
+  //TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(p));
+  rebuild_solver_ = true;
   param_list_ = p;
   this->resetSolver();
 }
@@ -119,7 +121,8 @@ Thyra::NOXNonlinearSolver::getValidParameters() const
 void Thyra::NOXNonlinearSolver::
 setModel(const Teuchos::RCP<const ModelEvaluator<double> >& model)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
+  //TEUCHOS_TEST_FOR_EXCEPT(model.get()==NULL);
+  rebuild_solver_ = true;
   model_ = model;
   basePoint_ = model_->createInArgs();
 }
@@ -158,23 +161,30 @@ solve(VectorBase<double> *x,
 
   NOX::Thyra::Vector initial_guess(Teuchos::rcp(x, false));  // View of x
 
-  if (Teuchos::is_null(solver_)) {
+  if (Teuchos::is_null(solver_) || rebuild_solver_) {
 
+    rebuild_solver_ = false;
 
     this->validateAndParseThyraGroupOptions(param_list_->sublist("Thyra Group Options"));
 
     if (function_scaling_ != "None") {
 
       if (function_scaling_ == "Row Sum")
-    this->setupRowSumScalingObjects();
-
+	this->setupRowSumScalingObjects();
+      
       TEUCHOS_ASSERT(nonnull(scaling_vector_));
     }
     else {
       TEUCHOS_ASSERT(is_null(scaling_vector_));
     }
 
-    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_));
+    right_scaling_vector_ = Teuchos::null;
+    if(param_list_->isParameter("Right Scaling Vector")){
+      Teuchos::RCP<NOX::Abstract::Vector> abstract_vec = param_list_->get<RCP<NOX::Abstract::Vector> >("Right Scaling Vector");
+      right_scaling_vector_ = Teuchos::rcp_dynamic_cast<NOX::Thyra::Vector>(abstract_vec)->getThyraRCPVector();
+    }    
+
+    nox_group_ = Teuchos::rcp(new NOX::Thyra::Group(initial_guess, model_, scaling_vector_, right_scaling_vector_));
     nox_group_->getNonconstInArgs() = this->basePoint_;
 
     status_test_ = this->buildStatusTests(*param_list_);
@@ -187,7 +197,7 @@ solve(VectorBase<double> *x,
   }
 
   NOX::StatusTest::StatusType solvStatus = solver_->solve();
-
+  
   Thyra::SolveStatus<double> t_status;
 
   if (solvStatus == NOX::StatusTest::Converged)
@@ -437,7 +447,10 @@ void Thyra::NOXNonlinearSolver::setupRowSumScalingObjects()
 
   // Set the weighted merit function.  Throw error if a user defined
   // merit funciton is present.
-  TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
+  // ETP 5/23/16 -- Commenting this out because the parameter list may have
+  // been reused from previous solves, and so the merit function that has been
+  // set below from previous solves may still be there.
+  //TEUCHOS_ASSERT( !(nox_parameters.sublist("Solver Options").isType<RCP<NOX::MeritFunction::Generic> >("User Defined Merit Function")));
 
   RCP<NOX::MeritFunction::Generic> mf = rcp(new NOX::Thyra::WeightedMeritFunction(scaling_vector_));
 

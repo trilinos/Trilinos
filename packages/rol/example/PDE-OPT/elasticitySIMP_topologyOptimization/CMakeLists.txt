@@ -1,5 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
-
 IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
    ${PROJECT_NAME}_ENABLE_Epetra   AND
    ${PROJECT_NAME}_ENABLE_Amesos   AND
@@ -17,6 +15,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     NUM_MPI_PROCS 1
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
+    CATEGORIES HEAVY  # Currently tasks 18m to run (see #442)!
   )
 
   TRIBITS_ADD_EXECUTABLE(
@@ -28,7 +27,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     ElasticitySIMPOperatorsCopy
     SOURCE_FILES
-      input.xml stochastic.xml plotdensity.m plotstate.m
+      input.xml stochastic.xml plotdensity.m plotstate.m plotnodaldensity.m
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

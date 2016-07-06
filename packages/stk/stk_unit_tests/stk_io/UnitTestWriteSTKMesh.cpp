@@ -61,7 +61,7 @@ TEST(StkIo, write_stk_mesh_to_file)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x2|sideset:xX|nodeset:x", bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:2x2x2|sideset:xX|nodeset:x", bulkData);
 
         const stk::mesh::PartVector & all_parts = meta.get_parts();
 
@@ -207,7 +207,7 @@ TEST(StkIo, write_stk_mesh_to_file)
     {
         stk::mesh::MetaData meta;
         stk::mesh::BulkData bulkData(meta, comm);
-        stk::unit_test_util::fill_mesh_using_stk_io(file_written, bulkData, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io(file_written, bulkData);
 
         std::vector<size_t> entity_counts;
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);

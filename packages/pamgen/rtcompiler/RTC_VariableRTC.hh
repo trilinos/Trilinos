@@ -10,7 +10,7 @@
 namespace PG_RuntimeCompiler {
 
 /**
- * A Varaible object represents the variables in the code the user gives us. 
+ * A Varaible object represents the variables in the code the user gives us.
  */
 
 class Variable: public Value
@@ -24,22 +24,22 @@ class Variable: public Value
    * @param type    - The data type of the variable
    * @param objType - The object type of the variable
    */
-  Variable(const std::string& name, Type type, ObjectType objType) 
+  Variable(const std::string& name, Type type, ObjectType objType)
     : Value(type, objType) {
     _name    = name;
     _address = NULL;
 
     _willBeInitAtTimeOfUse = false;
   }
-  
+
   /**
    * getName -> This method returns the name of the variable
    */
   std::string getName() const {return _name;}
 
-  /** 
-   * setAddress -> This method sets the memory address of a variable. This 
-   *               only applies to Variables that have been passed in to 
+  /**
+   * setAddress -> This method sets the memory address of a variable. This
+   *               only applies to Variables that have been passed in to
    *               Function by-reference.
    *
    * @param addr - The new address
@@ -49,28 +49,28 @@ class Variable: public Value
   /**
    * setSize - Applies to arrays only, no-op here
    */
-  virtual void setSize(int size) {}
-  
+  virtual void setSize(long size) {}
+
   /**
    * evaluateSizeExpr - Applies to arrays only, no-op here
    */
   virtual void evaluateSizeExpr() {}
 
-  /** 
+  /**
    * init -> This method sets _willBeInitAtTimeOfUse to true
-   */ 
+   */
   void init() { _willBeInitAtTimeOfUse = true;}
 
-  /** 
+  /**
    * isInit -> This method returns _willBeInitAtTimeOfUse
-   */ 
+   */
   bool isInit() const { return _willBeInitAtTimeOfUse;}
 
  protected:
 
   std::string _name; //!< The name of the variable
 
-  bool _willBeInitAtTimeOfUse; /**!< helps us find errors where the user is 
+  bool _willBeInitAtTimeOfUse; /**!< helps us find errors where the user is
                                 *    trying to use an uninitialized variable.
                                 */
 

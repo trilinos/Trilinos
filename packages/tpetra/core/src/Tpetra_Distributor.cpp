@@ -39,9 +39,9 @@
 // @HEADER
 
 #include "Tpetra_Distributor.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
 
 namespace Tpetra {
   namespace Details {
@@ -108,12 +108,6 @@ namespace Tpetra {
     const bool barrierBetween_default = false;
     // Default value of the "Use distinct tags" parameter.
     const bool useDistinctTags_default = true;
-    // Default value of the "Enable MPI CUDA RDMA support"
-#ifdef TPETRA_ENABLE_MPI_CUDA_RDMA
-    const bool enable_cuda_rdma_default = true;
-#else
-    const bool enable_cuda_rdma_default = false;
-#endif
   } // namespace (anonymous)
 
   int Distributor::getTag (const int pathTag) const {
@@ -179,7 +173,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -199,7 +192,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -219,7 +211,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -240,7 +231,6 @@ namespace Tpetra {
     , sendType_ (Details::DISTRIBUTOR_SEND)
     , barrierBetween_ (barrierBetween_default)
     , debug_ (tpetraDistributorDebugDefault)
-    , enable_cuda_rdma_ (enable_cuda_rdma_default)
     , selfMessage_ (false)
     , numSends_ (0)
     , maxSendLength_ (0)
@@ -260,7 +250,6 @@ namespace Tpetra {
     , sendType_ (distributor.sendType_)
     , barrierBetween_ (distributor.barrierBetween_)
     , debug_ (distributor.debug_)
-    , enable_cuda_rdma_ (distributor.enable_cuda_rdma_)
     , selfMessage_ (distributor.selfMessage_)
     , numSends_ (distributor.numSends_)
     , imagesTo_ (distributor.imagesTo_)
@@ -323,7 +312,6 @@ namespace Tpetra {
     std::swap (sendType_, rhs.sendType_);
     std::swap (barrierBetween_, rhs.barrierBetween_);
     std::swap (debug_, rhs.debug_);
-    std::swap (enable_cuda_rdma_, rhs.enable_cuda_rdma_);
     std::swap (selfMessage_, rhs.selfMessage_);
     std::swap (numSends_, rhs.numSends_);
     std::swap (imagesTo_, rhs.imagesTo_);
@@ -392,7 +380,22 @@ namespace Tpetra {
       getIntegralValue<Details::EDistributorSendType> (*plist, "Send type");
     const bool useDistinctTags = plist->get<bool> ("Use distinct tags");
     const bool debug = plist->get<bool> ("Debug");
-    const bool enable_cuda_rdma = plist->get<bool> ("Enable MPI CUDA RDMA support");
+    {
+      // mfh 03 May 2016: We keep this option only for backwards
+      // compatibility, but it must always be true.  See discussion of
+      // Github Issue #227.
+      const bool enable_cuda_rdma =
+        plist->get<bool> ("Enable MPI CUDA RDMA support");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! enable_cuda_rdma, std::invalid_argument, "Tpetra::Distributor::"
+         "setParameterList: " << "You specified \"Enable MPI CUDA RDMA "
+         "support\" = false.  This is no longer valid.  You don't need to "
+         "specify this option any more; Tpetra assumes it is always true.  "
+         "This is a very light assumption on the MPI implementation, and in "
+         "fact does not actually involve hardware or system RDMA support.  "
+         "Tpetra just assumes that the MPI implementation can tell whether a "
+         "pointer points to host memory or CUDA device memory.");
+    }
 
     // We check this property explicitly, since we haven't yet learned
     // how to make a validator that can cross-check properties.
@@ -412,7 +415,6 @@ namespace Tpetra {
     barrierBetween_ = barrierBetween;
     useDistinctTags_ = useDistinctTags;
     debug_ = debug;
-    enable_cuda_rdma_ = enable_cuda_rdma;
 
     // ParameterListAcceptor semantics require pointer identity of the
     // sublist passed to setParameterList(), so we save the pointer.
@@ -431,7 +433,6 @@ namespace Tpetra {
     const bool barrierBetween = barrierBetween_default;
     const bool useDistinctTags = useDistinctTags_default;
     const bool debug = tpetraDistributorDebugDefault;
-    const bool enable_cuda_rdma = enable_cuda_rdma_default;
 
     Array<std::string> sendTypes = distributorSendTypes ();
     const std::string defaultSendType ("Send");
@@ -450,13 +451,16 @@ namespace Tpetra {
       defaultSendType, "When using MPI, the variant of send to use in "
       "do[Reverse]Posts()", sendTypes(), sendTypeEnums(), plist.getRawPtr());
     plist->set ("Use distinct tags", useDistinctTags, "Whether to use distinct "
-                "MPI message tags for different code paths.");
+                "MPI message tags for different code paths.  Highly recommended"
+                " to avoid message collisions.");
     plist->set ("Debug", debug, "Whether to print copious debugging output on "
                 "all processes.");
-    plist->set ("Enable MPI CUDA RDMA support", enable_cuda_rdma,
-                "Whether to enable RDMA support for MPI communication between "
-                "CUDA GPUs.  Only enable this if you know for sure your MPI "
-                "library supports it.");
+    plist->set ("Enable MPI CUDA RDMA support", true, "Assume that MPI can "
+                "tell whether a pointer points to host memory or CUDA device "
+                "memory.  You don't need to specify this option any more; "
+                "Tpetra assumes it is always true.  This is a very light "
+                "assumption on the MPI implementation, and in fact does not "
+                "actually involve hardware or system RDMA support.");
 
     // mfh 24 Dec 2015: Tpetra no longer inherits from
     // Teuchos::VerboseObject, so it doesn't need the "VerboseObject"
@@ -501,6 +505,10 @@ namespace Tpetra {
     if (reverseDistributor_.is_null ()) {
       createReverseDistributor ();
     }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (reverseDistributor_.is_null (), std::logic_error, "The reverse "
+       "Distributor is null after createReverseDistributor returned.  "
+       "Please report this bug to the Tpetra developers.");
     return reverseDistributor_;
   }
 
@@ -513,7 +521,6 @@ namespace Tpetra {
     reverseDistributor_->sendType_ = sendType_;
     reverseDistributor_->barrierBetween_ = barrierBetween_;
     reverseDistributor_->debug_ = debug_;
-    reverseDistributor_->enable_cuda_rdma_ = enable_cuda_rdma_;
 
     // The total length of all the sends of this Distributor.  We
     // calculate it because it's the total length of all the receives
@@ -565,9 +572,18 @@ namespace Tpetra {
 
     reverseDistributor_->useDistinctTags_ = useDistinctTags_;
 
-    // Note: technically, I am my reverse distributor's reverse distributor, but
-    //       we will not set this up, as it gives us an opportunity to test
-    //       that reverseDistributor is an inverse operation w.r.t. value semantics of distributors
+    // I am my reverse Distributor's reverse Distributor.
+    // Thus, it would be legit to do the following:
+    //
+    // reverseDistributor_->reverseDistributor_ = Teuchos::rcp (this, false);
+    //
+    // (Note use of a "weak reference" to avoid a circular RCP
+    // dependency.)  The only issue is that if users hold on to the
+    // reverse Distributor but let go of the forward one, this
+    // reference won't be valid anymore.  However, the reverse
+    // Distributor is really an implementation detail of Distributor
+    // and not meant to be used directly, so we don't need to do this.
+    reverseDistributor_->reverseDistributor_ = Teuchos::null;
   }
 
 
@@ -663,103 +679,138 @@ namespace Tpetra {
         << ", Use distinct tags: "
         << (useDistinctTags_ ? "true" : "false")
         << ", Debug: " << (debug_ ? "true" : "false")
-        << ", Enable MPI CUDA RDMA support: "
-        << (enable_cuda_rdma_ ? "true" : "false")
         << "}}";
     return out.str ();
   }
 
+  std::string
+  Distributor::
+  localDescribeToString (const Teuchos::EVerbosityLevel vl) const
+  {
+    using Teuchos::toString;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    using std::endl;
+
+    // This preserves current behavior of Distributor.
+    if (vl <= Teuchos::VERB_LOW || comm_.is_null ()) {
+      return std::string ();
+    }
+
+    auto outStringP = Teuchos::rcp (new std::ostringstream ());
+    auto outp = Teuchos::getFancyOStream (outStringP); // returns RCP
+    Teuchos::FancyOStream& out = *outp;
+
+    const int myRank = comm_->getRank ();
+    const int numProcs = comm_->getSize ();
+    out << "Process " << myRank << " of " << numProcs << ":" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    out << "selfMessage: " << hasSelfMessage () << endl;
+    out << "numSends: " << getNumSends () << endl;
+    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      out << "imagesTo: " << toString (imagesTo_) << endl;
+      out << "lengthsTo: " << toString (lengthsTo_) << endl;
+      out << "maxSendLength: " << getMaxSendLength () << endl;
+    }
+    if (vl == VERB_EXTREME) {
+      out << "startsTo: " << toString (startsTo_) << endl;
+      out << "indicesTo: " << toString (indicesTo_) << endl;
+    }
+    if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+      out << "numReceives: " << getNumReceives () << endl;
+      out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
+      out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
+      out << "startsFrom: " << toString (startsFrom_) << endl;
+      out << "imagesFrom: " << toString (imagesFrom_) << endl;
+    }
+
+    out.flush (); // make sure the ostringstream got everything
+    return outStringP->str ();
+  }
+
   void
-  Distributor::describe (Teuchos::FancyOStream &out,
-                         const Teuchos::EVerbosityLevel verbLevel) const
+  Distributor::
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel) const
   {
     using std::endl;
-    using std::setw;
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
     using Teuchos::VERB_MEDIUM;
     using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
-    Teuchos::EVerbosityLevel vl = verbLevel;
-    if (vl == VERB_DEFAULT) vl = VERB_LOW;
-    const int myImageID = comm_->getRank();
-    const int numImages = comm_->getSize();
-    Teuchos::OSTab tab (out);
+    const Teuchos::EVerbosityLevel vl =
+      (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
     if (vl == VERB_NONE) {
+      return; // don't print anything
+    }
+    // If this Distributor's Comm is null, then the the calling
+    // process does not participate in Distributor-related collective
+    // operations with the other processes.  In that case, it is not
+    // even legal to call this method.  The reasonable thing to do in
+    // that case is nothing.
+    if (comm_.is_null ()) {
       return;
-    } else {
-      if (myImageID == 0) {
-        // VERB_LOW and higher prints description() (on Proc 0 only).
-        // We quote the class name because it contains colons:
-        // quoting makes the output valid YAML.
-        out << "\"Tpetra::Distributor\":" << endl;
-        Teuchos::OSTab tab2 (out);
-        const std::string label = this->getObjectLabel ();
-        if (label != "") {
-          out << "Label: " << label << endl;
-        }
-        out << "How initialized: "
-            << Details::DistributorHowInitializedEnumToString (howInitialized_)
-            << endl << "Parameters: " << endl;
-        {
-          Teuchos::OSTab tab3 (out);
-          out << "\"Send type\": "
-              << DistributorSendTypeEnumToString (sendType_) << endl
-              << "\"Barrier between receives and sends\": "
-              << (barrierBetween_ ? "true" : "false") << endl;
-          out << "\"Use distinct tags\": "
-              << (useDistinctTags_ ? "true" : "false") << endl;
-          out << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
-          out << "\"Enable MPI CUDA RDMA support\": " <<
-            (enable_cuda_rdma_ ? "true" : "false") << endl;
-        }
+    }
+    const int myRank = comm_->getRank ();
+    const int numProcs = comm_->getSize ();
+
+    // Only Process 0 should touch the output stream, but this method
+    // in general may need to do communication.  Thus, we may need to
+    // preserve the current tab level across multiple "if (myRank ==
+    // 0) { ... }" inner scopes.  This is why we sometimes create
+    // OSTab instances by pointer, instead of by value.  We only need
+    // to create them by pointer if the tab level must persist through
+    // multiple inner scopes.
+    Teuchos::RCP<Teuchos::OSTab> tab0, tab1;
+
+    if (myRank == 0) {
+      // At every verbosity level but VERB_NONE, Process 0 prints.
+      // By convention, describe() always begins with a tab before
+      // printing.
+      tab0 = Teuchos::rcp (new Teuchos::OSTab (out));
+      // We quote the class name because it contains colons.
+      // This makes the output valid YAML.
+      out << "\"Tpetra::Distributor\":" << endl;
+      tab1 = Teuchos::rcp (new Teuchos::OSTab (out));
+
+      const std::string label = this->getObjectLabel ();
+      if (label != "") {
+        out << "Label: " << label << endl;
       }
-      if (vl == VERB_LOW) {
-        return;
-      } else {
+      out << "Number of processes: " << numProcs << endl
+          << "How initialized: "
+          << Details::DistributorHowInitializedEnumToString (howInitialized_)
+          << endl;
+      {
+        out << "Parameters: " << endl;
         Teuchos::OSTab tab2 (out);
-        // vl > VERB_LOW lets each image print its data.  We assume
-        // that all images can print to the given output stream, and
-        // execute barriers to make it more likely that the output
-        // will be in the right order.
-        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-          if (myImageID == imageCtr) {
-            if (myImageID == 0) {
-              out << "Number of processes: " << numImages << endl;
-            }
-            out << "Process: " << myImageID << endl;
-            Teuchos::OSTab tab3 (out);
-            out << "selfMessage: " << hasSelfMessage () << endl;
-            out << "numSends: " << getNumSends () << endl;
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << "imagesTo: " << toString (imagesTo_) << endl;
-              out << "lengthsTo: " << toString (lengthsTo_) << endl;
-              out << "maxSendLength: " << getMaxSendLength () << endl;
-            }
-            if (vl == VERB_EXTREME) {
-              out << "startsTo: " << toString (startsTo_) << endl;
-              out << "indicesTo: " << toString (indicesTo_) << endl;
-            }
-            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
-              out << "numReceives: " << getNumReceives () << endl;
-              out << "totalReceiveLength: " << getTotalReceiveLength () << endl;
-              out << "lengthsFrom: " << toString (lengthsFrom_) << endl;
-              out << "startsFrom: " << toString (startsFrom_) << endl;
-              out << "imagesFrom: " << toString (imagesFrom_) << endl;
-            }
-            // Last output is a flush; it leaves a space and also
-            // helps synchronize output.
-            out << std::flush;
-          } // if it's my image's turn to print
-          // Execute barriers to give output time to synchronize.
-          // One barrier generally isn't enough.
-          comm_->barrier();
-          comm_->barrier();
-          comm_->barrier();
-        } // for each image
+        out << "\"Send type\": "
+            << DistributorSendTypeEnumToString (sendType_) << endl
+            << "\"Barrier between receives and sends\": "
+            << (barrierBetween_ ? "true" : "false") << endl
+            << "\"Use distinct tags\": "
+            << (useDistinctTags_ ? "true" : "false") << endl
+            << "\"Debug\": " << (debug_ ? "true" : "false") << endl;
       }
+    } // if myRank == 0
+
+    // This is collective over the Map's communicator.
+    if (vl > VERB_LOW) {
+      const std::string lclStr = this->localDescribeToString (vl);
+      Tpetra::Details::gathervPrint (out, lclStr, *comm_);
+    }
+
+    out << "Reverse Distributor:";
+    if (reverseDistributor_.is_null ()) {
+      out << " null" << endl;
+    }
+    else {
+      out << endl;
+      reverseDistributor_->describe (out, vl);
     }
   }
 

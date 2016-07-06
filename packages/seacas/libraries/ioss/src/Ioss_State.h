@@ -2,14 +2,14 @@
 // Sandia Corporation. Under the terms of Contract
 // DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
 // certain rights in this software.
-//         
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
@@ -17,7 +17,7 @@
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -33,15 +33,28 @@
 #ifndef IOSS_Ioss_State_h
 #define IOSS_Ioss_State_h
 namespace Ioss {
+
+  /** \brief Access states for a database.
+   *
+   *  All access states except STATE_INVALID, STATE_UNKNOWN, and STATE_READONLY are only
+   *  for output databases.
+   */
   enum State {
-    STATE_INVALID = -1,
-    STATE_UNKNOWN,
-    STATE_READONLY,
-    STATE_CLOSED,
-    STATE_DEFINE_MODEL,
-    STATE_MODEL,
-    STATE_DEFINE_TRANSIENT,
-    STATE_TRANSIENT,
+    STATE_INVALID = -1, /**< Error state if something goes wrong. */
+    STATE_UNKNOWN,      /**< Typically used at the very beginning of the database's existence
+                             when the class has been created, but no reading or writing has
+                             occurred. */
+    STATE_READONLY,     /**< An input database that is not in STATE_UNKNOWN is in this
+                             state, which means that it cannot be written to or changed. */
+    STATE_CLOSED,       /**< The sates are not nested, so each state must end with a transition
+                             to this state prior to entering the next state. */
+    STATE_DEFINE_MODEL, /**< Defining the metadata, which defines the topology of the model
+                             (nontransient, geometry and topology). */
+    STATE_MODEL,        /**< Outputting the bulk data (mesh_model_coordinates, ids, connectivity)
+                             relating to the model portion. */
+    STATE_DEFINE_TRANSIENT, /**< Defining the metadata relating to the transient data. For example,
+                                 the element or nodal fields. */
+    STATE_TRANSIENT,        /**< Outputting the transient bulk data. */
     STATE_LAST_ENTRY
   };
 }

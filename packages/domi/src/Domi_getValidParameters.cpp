@@ -117,7 +117,6 @@ RCP< const ParameterList > getValidParameters()
 
     RCP< const ParameterEntryValidator > periodicValidator =
       rcp< const ParameterEntryValidator >
-      //(new ScalarOrArrayNumberValidator< int >(constPeriodicNumber));
       (new ArrayNumberValidator< int >(constPeriodicNumber));
 
     //int periodic = 0;
@@ -132,6 +131,34 @@ RCP< const ParameterList > getValidParameters()
                "entries are given a default value of zero (not "
                "periodic).",
                periodicValidator);
+
+    ////////////////////////////////////////////////////////////////
+    // "replicated boundary" parameter applies to MDMap and MDVector
+    ////////////////////////////////////////////////////////////////
+    RCP< EnhancedNumberValidator< int > > repBndryNumber =
+      rcp(new EnhancedNumberValidator< int >());
+    periodicNumber->setMin(0);
+    periodicNumber->setMax(1);
+
+    RCP< const EnhancedNumberValidator< int > > constRepBndryNumber =
+      rcp_const_cast< EnhancedNumberValidator< int > >(repBndryNumber);
+
+    RCP< const ParameterEntryValidator > repBndryValidator =
+      rcp< const ParameterEntryValidator >
+      (new ArrayNumberValidator< int >(constRepBndryNumber));
+
+    Array< int > repBndry(1);
+    periodic[0] = 0;
+    plist->set("replicated boundary",
+               periodic,
+               "A scalar or an array of int flags specifying whether periodic "
+               "boundaries have a replicated boundary (true) or unique grid "
+               "points (false). If a scalar is given, then all axes share that "
+               "replicated boundary flag.  If an array is given and it is "
+               "shorter than the length of commDims array, then the "
+               "unspecified entries are given a default value of zero (no "
+               "replicating boundaries).",
+               repBndryValidator);
 
     ////////////////////////////////////////////////////////////////
     // "dimensions" parameter applies to MDComm, MDMap and MDVector

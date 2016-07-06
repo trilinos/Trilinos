@@ -83,11 +83,14 @@ private:
       state_->set(*state_storage_[this->getParameter()]);
     }
     else {
+      // Update equality constraint
+      con_->update_2(x,flag,iter);
+      // Solve state
       con_->solve(*dualadjoint_,*state_,x,tol);
+      // Update equality constraint
+      con_->update_1(*state_,flag,iter);
       // Update full objective function
       obj_->update(*state_,x,flag,iter);
-      // Update equality constraint
-      con_->update(*state_,x,flag,iter);
       // Store state
       if ( storage_ ) {
         state_storage_.insert(
@@ -213,7 +216,7 @@ public:
   void setParameter(const std::vector<Real> &param) {
     ParametrizedObjective<Real>::setParameter(param);
     con_->setParameter(param);
-    obj_->setParameter(param); 
+    obj_->setParameter(param);
   }
 
   /** \brief Update the SimOpt objective function and equality constraint.

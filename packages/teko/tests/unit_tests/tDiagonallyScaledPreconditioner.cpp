@@ -49,8 +49,6 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include "Kokkos_Core.hpp"
-
 #include <string>
 #include <iostream>
 
@@ -202,8 +200,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -232,8 +228,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test_tpetra)
    }
    else
       out << "Apply 0: SUCCESS" << std::endl;
-
-   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
@@ -293,8 +287,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -342,8 +334,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row_tpetra)
    }
    else
       out << "Apply 0: SUCCESS" << std::endl;
-
-   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
@@ -401,8 +391,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetra)
 {
-   Kokkos::initialize();
-
    // build global (or serial communicator)
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
@@ -448,8 +436,6 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column_tpetr
    }
    else
       out << "Apply 0: SUCCESS" << std::endl;
-
-   Kokkos::finalize();
 }
 
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
@@ -469,8 +455,6 @@ TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues)
 
 TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues_tpetra)
 {
-   Kokkos::initialize();
-
    RCP<const Teuchos::Comm<int> > Comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
    RCP<Thyra::LinearOpBase<ST> > A =  buildSystem(Comm,50);
@@ -478,6 +462,4 @@ TEUCHOS_UNIT_TEST(tDiagonalOperator, replaceValues_tpetra)
    Teko::MultiVector diag = Teko::getDiagonal(A,Teko::AbsRowSum);
    Teko::replaceValue(diag,0.0,1.0);
    Teko::LinearOp invDiagOp = Teko::buildInvDiagonal(diag);
-
-   Kokkos::finalize();
 }

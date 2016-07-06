@@ -63,11 +63,11 @@ class GatherSolution_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>
 
 public:
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer)
-     : gidIndexer_(indexer) {}
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers)
+     : indexers_(indexers) {}
 
-   GatherSolution_BlockedEpetra(const Teuchos::RCP<const BlockedDOFManager<LO,int> > & indexer,
-                                const Teuchos::ParameterList& p) {}
+  GatherSolution_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & indexers,
+                               const Teuchos::ParameterList& p) {}
 
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& vm) {}
@@ -77,18 +77,17 @@ public:
   void evaluateFields(typename TRAITS::EvalData d) {}
 
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(gidIndexer_,pl)); }
+  { return Teuchos::rcp(new GatherSolution_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>(indexers_,pl)); }
 
 
 private:
 
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
 
-  // maps the local (field,element,basis) triplet to a global ID
-  // for scattering
-  Teuchos::RCP<const BlockedDOFManager<LO,int> > gidIndexer_;
+  std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > indexers_;
 
-  std::vector<int> fieldIds_; // field IDs needing mapping
+  std::vector<int> indexerIds_;   // block index
+  std::vector<int> subFieldIds_; // sub field numbers
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
 

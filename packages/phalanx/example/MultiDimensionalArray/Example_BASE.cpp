@@ -53,6 +53,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Kokkos_Core.hpp"
+
 // User defined objects
 #include "Cell.hpp"
 #include "Workset.hpp"
@@ -70,7 +72,7 @@ int main(int argc, char *argv[])
 
   try {
 
-    PHX::InitializeKokkosDevice();
+    Kokkos::initialize(argc,argv);
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
@@ -84,6 +86,8 @@ int main(int argc, char *argv[])
       typedef PHX::Device::size_type size_type;
       const size_type num_local_cells = 102;
       const size_type workset_size = 20;
+      // const size_type num_local_cells = 80000;
+      // const size_type workset_size = 100;
 
       RCP<DataLayout> qp_scalar = 
 	rcp(new MDALayout<Cell,Node>(workset_size,4));
@@ -267,10 +271,20 @@ int main(int argc, char *argv[])
       fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
 
       // Get host arrays to copy from device back to host
-      auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_kokkos_view());
-      auto host_source = Kokkos::create_mirror_view(source.get_kokkos_view());
+      auto host_energy_flux = Kokkos::create_mirror_view(energy_flux.get_static_view());
+      auto host_source = Kokkos::create_mirror_view(source.get_static_view());
 
-      RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
+      RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time Residual");
+
+#ifdef PHX_ENABLE_KOKKOS_AMT
+      std::cout << "tps(0)=" << Kokkos::Threads::thread_pool_size(0) << std::endl;
+      std::cout << "tps(1)=" << Kokkos::Threads::thread_pool_size(1) << std::endl;
+      std::cout << "tps(2)=" << Kokkos::Threads::thread_pool_size(2) << std::endl;
+      const int threads_per_task = 1;
+      // const int threads_per_task = Kokkos::Threads::thread_pool_size(1);
+      // const int threads_per_task = Kokkos::Threads::thread_pool_size(2);
+      std::cout << "threads_per_task = " << threads_per_task << std::endl;
+#endif
 
       fm.preEvaluate<MyTraits::Residual>(NULL);
       {
@@ -278,13 +292,13 @@ int main(int argc, char *argv[])
 
 	for (std::size_t i = 0; i < worksets.size(); ++i) {
 #ifdef PHX_ENABLE_KOKKOS_AMT
-	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(1,worksets[i]);
+	  fm.evaluateFieldsTaskParallel<MyTraits::Residual>(threads_per_task,worksets[i].num_cells,worksets[i]);
 #else
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
 #endif	  
 	  // Use values: in this example, move values into local host arrays
-	  Kokkos::deep_copy(host_energy_flux,energy_flux.get_kokkos_view());
-	  Kokkos::deep_copy(host_source,source.get_kokkos_view());
+	  Kokkos::deep_copy(host_energy_flux,energy_flux.get_static_view());
+	  Kokkos::deep_copy(host_source,source.get_static_view());
 
 	  for (size_type cell = 0; cell < energy_flux.dimension(0); ++cell) {
 	    for (size_type ip = 0; ip < energy_flux.dimension(1); ++ip) {
@@ -332,8 +346,8 @@ int main(int argc, char *argv[])
       fm.getFieldData<JacScalarT,MyTraits::Jacobian,Cell,QuadPoint>(j_source);
       RCP<Time> eval_time2 = TimeMonitor::getNewTimer("Evaluation Time Jacobian");
 
-      auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_kokkos_view());
-      auto host_j_source = Kokkos::create_mirror_view(j_source.get_kokkos_view());
+      auto host_j_energy_flux = Kokkos::create_mirror_view(j_energy_flux.get_static_view());
+      auto host_j_source = Kokkos::create_mirror_view(j_source.get_static_view());
 
       fm.preEvaluate<MyTraits::Jacobian>(NULL);
       {
@@ -341,12 +355,12 @@ int main(int argc, char *argv[])
 
         for (std::size_t i = 0; i < worksets.size(); ++i) {
 #ifdef PHX_ENABLE_KOKKOS_AMT
-	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(1,worksets[i]);
+	  fm.evaluateFieldsTaskParallel<MyTraits::Jacobian>(threads_per_task,worksets[i].num_cells,worksets[i]);
 #else
           fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
 #endif
-	  Kokkos::deep_copy(host_j_energy_flux,j_energy_flux.get_kokkos_view());
-	  Kokkos::deep_copy(host_j_source,j_source.get_kokkos_view());
+	  Kokkos::deep_copy(host_j_energy_flux,j_energy_flux.get_static_view());
+	  Kokkos::deep_copy(host_j_source,j_source.get_static_view());
 
            for (size_type cell = 0; cell < j_energy_flux.dimension(0); ++cell) {
             for (size_type ip = 0; ip < j_energy_flux.dimension(1); ++ip) {
@@ -380,6 +394,8 @@ int main(int argc, char *argv[])
       std::cout << "Residual Parallelizability = " 
 		<< parallelizability << std::endl;
     }
+
+    Kokkos::finalize();
     
     // *********************************************************************
     // Finished all testing
@@ -387,8 +403,6 @@ int main(int argc, char *argv[])
     std::cout << "\nRun has completed successfully!\n" << std::endl; 
     // *********************************************************************
     // *********************************************************************
-
-    PHX::FinalizeKokkosDevice();
 
   }
   catch (const std::exception& e) {

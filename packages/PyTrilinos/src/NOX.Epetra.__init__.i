@@ -167,21 +167,52 @@ using namespace NOX::Epetra;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
 %ignore *::operator<<;
+%ignore *::operator[];
 
 // SWIG library includes
 %include "stl.i"
 
 // Trilinos interface import
 %import "Teuchos.i"
+%teuchos_rcp(NOX::Abstract::Group)
+// %teuchos_rcp(NOX::Abstract::MultiVector)
+// %teuchos_rcp(NOX::Abstract::Vector)
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
+
+// Allow import from the parent directory
+%pythoncode
+%{
+import sys, os.path as op
+parentDir = op.normpath(op.join(op.dirname(op.abspath(__file__)),".."))
+if not parentDir in sys.path: sys.path.append(parentDir)
+del sys, op
+from .. import Abstract
+%}
+
+// Include typemaps for Abstract base classes
+%ignore *::getXPtr;
+%ignore *::getFPtr;
+%ignore *::getGradientPtr;
+%ignore *::getNewtonPtr;
+%include "NOX.Abstract_typemaps.i"
+%import(module="Abstract" ) "NOX_Abstract_Group.H"
+%import(module="Abstract" ) "NOX_Abstract_PrePostOperator.H"
+%import(module="Abstract" ) "NOX_Abstract_MultiVector.H"
+%import(module="Abstract" ) "NOX_Abstract_Vector.H"
+%import(module="Interface") "NOX_Epetra_Interface_Required.H"
+%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
+%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
 
 // Support for Teuchos::RCPs
+%teuchos_rcp(NOX::Epetra::Group)
+%teuchos_rcp(NOX::Epetra::FiniteDifference)
+%teuchos_rcp(NOX::Epetra::MatrixFree)
 %teuchos_rcp(NOX::Epetra::LinearSystem)
 %teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
 %teuchos_rcp(NOX::Epetra::Scaling)
 %teuchos_rcp(NOX::Epetra::VectorSpace)
-
-// Include typemaps for converting raw types to NOX.Abstract types
-%include "NOX.Abstract_typemaps.i"
 
 // Epetra import
 %import "Epetra.i"
@@ -239,33 +270,9 @@ if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 %}
 
-// NOX base classes
-// %ignore *::getX;
-// %ignore *::getF;
-// %ignore *::getGradient;
-// %ignore *::getNewton;
-// %rename(getX       ) *::getXPtr;
-// %rename(getF       ) *::getFPtr;
-// %rename(getGradient) *::getGradientPtr;
-// %rename(getNewton  ) *::getNewtonPtr;
-%teuchos_rcp(NOX::Abstract::Group)
-%import(module="Abstract") "NOX_Abstract_Group.H"
-%import(module="Abstract") "NOX_Abstract_PrePostOperator.H"
-%import(module="Abstract") "NOX_Abstract_MultiVector.H"
-%import(module="Abstract") "NOX_Abstract_Vector.H"
-
-// NOX::Epetra::Interface imports
-%teuchos_rcp(NOX::Epetra::Interface::Required)
-%import(module="Interface") "NOX_Epetra_Interface_Required.H"
-%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
-%import(module="Interface") "NOX_Epetra_Interface_Jacobian.H"
-%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
-%import(module="Interface") "NOX_Epetra_Interface_Preconditioner.H"
-
 //////////////////////////////
 // NOX.Epetra.Group support //
 //////////////////////////////
-%teuchos_rcp(NOX::Epetra::Group)
 %rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
 
@@ -279,7 +286,6 @@ del sys, op
 /////////////////////////////////////////
 // NOX.Epetra.FiniteDifference support //
 /////////////////////////////////////////
-%teuchos_rcp(NOX::Epetra::FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
 
 /////////////////////////////////////////////////
@@ -330,7 +336,6 @@ namespace Epetra
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
 ///////////////////////////////////
-%teuchos_rcp(NOX::Epetra::MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
 ////////////////////////////////

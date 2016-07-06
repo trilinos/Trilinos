@@ -59,7 +59,6 @@ namespace panzer {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    PHX::KokkosDeviceSession session;
 
     // Residual
     { 
@@ -120,7 +119,6 @@ namespace panzer {
     using Teuchos::rcp;
     using panzer::ParamLib;
 
-    PHX::KokkosDeviceSession session;
     
     RCP<ParamLib> pl = rcp(new ParamLib);
     

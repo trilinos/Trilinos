@@ -75,6 +75,7 @@ PANZER_EVALUATOR_CLASS(ScatterVectorFields)
   std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> > scatterFields_;
   PHX::MDField<const ScalarT,panzer::Cell,panzer::IP,panzer::Dim> pointField_;
   Teuchos::RCP<STK_Interface> mesh_;
+  std::vector<double> scaling_;
 
   int spatialDimension_;
 
@@ -83,7 +84,8 @@ public:
   ScatterVectorFields(const std::string & scatterName,
                       const Teuchos::RCP<STK_Interface> mesh,
                       const Teuchos::RCP<const panzer::PointRule> & pointRule,
-                      const std::vector<std::string> & names);
+                      const std::vector<std::string> & names,
+                      const std::vector<double> & scaling = std::vector<double>());
  
 PANZER_EVALUATOR_CLASS_END
 

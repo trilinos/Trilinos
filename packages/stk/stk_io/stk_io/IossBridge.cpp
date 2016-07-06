@@ -463,7 +463,6 @@ namespace stk {
       std::string apn = get_alternate_part_name(part);
       if (apn.length())
         {
-          std::cout << "apn= " << apn << " part= " << part.name() << std::endl;
           return apn;
         }
       else

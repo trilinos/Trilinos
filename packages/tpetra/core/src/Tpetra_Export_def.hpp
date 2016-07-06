@@ -385,68 +385,23 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Export<LocalOrdinal,GlobalOrdinal,Node>::
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    // Call the base class' method.  It does all the work.
+    this->describeImpl (out, "Tpetra::Export", verbLevel);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void Export<LocalOrdinal,GlobalOrdinal,Node>::
   print (std::ostream& os) const
   {
-    using Teuchos::Comm;
-    using Teuchos::getFancyOStream;
-    using Teuchos::RCP;
-    using Teuchos::rcpFromRef;
-    using Teuchos::toString;
-    using std::endl;
-
-    RCP<const Comm<int> > comm = getSourceMap ()->getComm ();
-    const int myImageID = comm->getRank ();
-    const int numImages = comm->getSize ();
-    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-      if (myImageID == imageCtr) {
-        os << endl;
-        if (myImageID == 0) { // I'm the root node (only output this info once)
-          os << "Export Data Members:" << endl;
-        }
-        os << "Image ID       : " << myImageID << endl;
-
-        os << "permuteFromLIDs: " << toString (getPermuteFromLIDs ()) << endl;
-        os << "permuteToLIDs  : " << toString (getPermuteToLIDs ()) << endl;
-        os << "remoteLIDs     : " << toString (getRemoteLIDs ()) << endl;
-        os << "exportLIDs     : " << toString (getExportLIDs ()) << endl;
-        os << "exportPIDs     : " << toString (getExportPIDs ()) << endl;
-
-        os << "numSameIDs     : " << getNumSameIDs () << endl;
-        os << "numPermuteIDs  : " << getNumPermuteIDs () << endl;
-        os << "numRemoteIDs   : " << getNumRemoteIDs () << endl;
-        os << "numExportIDs   : " << getNumExportIDs () << endl;
-      }
-      // A few global barriers give output a chance to complete.
-      comm->barrier();
-      comm->barrier();
-      comm->barrier();
-    }
-    if (myImageID == 0) {
-      os << endl << endl << "Source Map:" << endl << std::flush;
-    }
-    comm->barrier();
-    os << *getSourceMap();
-    comm->barrier();
-
-    if (myImageID == 0) {
-      os << endl << endl << "Target Map:" << endl << std::flush;
-    }
-    comm->barrier();
-    os << *getTargetMap();
-    comm->barrier();
-
-    // It's also helpful for debugging to print the Distributor
-    // object.  Epetra_Export::Print() does this, so we can do a
-    // side-by-side comparison.
-    if (myImageID == 0) {
-      os << endl << endl << "Distributor:" << endl << std::flush;
-    }
-    comm->barrier();
-    getDistributor().describe (*(getFancyOStream (rcpFromRef (os))),
-                               Teuchos::VERB_EXTREME);
+    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (os));
+    // "Print" traditionally meant "everything."
+    this->describe (*out, Teuchos::VERB_EXTREME);
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void

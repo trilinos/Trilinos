@@ -86,7 +86,6 @@ namespace panzer {
   {
     using Teuchos::RCP;
 
-    PHX::KokkosDeviceSession session;
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
@@ -157,8 +156,8 @@ namespace panzer {
           = indexerFactory->buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physics_blocks,conn_manager);
 
     // and linear object factory
-    Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(comm.getConst(),dofManager);
+    Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(tComm.getConst(),dofManager);
 
     // setup field manager builder
     /////////////////////////////////////////////
@@ -180,7 +179,10 @@ namespace panzer {
 
     // run tests
     /////////////////////////////////
-    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test_", physics_blocks);
+    fmb.writeVolumeGraphvizDependencyFiles("FMB_Test", physics_blocks);
+    fmb.writeBCGraphvizDependencyFiles("FMB_Test");
+    fmb.writeVolumeTextDependencyFiles("FMB_Test", physics_blocks);
+    fmb.writeBCTextDependencyFiles("FMB_Test");
 
     const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
       fmb.getVolumeFieldManagers();

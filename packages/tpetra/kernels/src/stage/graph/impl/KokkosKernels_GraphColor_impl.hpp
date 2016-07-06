@@ -166,6 +166,75 @@ public:
     Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
   }
 
+
+  /** \brief Function to distance-2 color the vertices of the graphs. This is the base class,
+   * therefore, it only performs sequential coloring on the host device, ignoring the execution space.
+   * \param colors is the output array corresponding the color of each vertex. Size is this->nv.
+   *   Attn: Color array must be nonnegative numbers. If there is no initial colors,
+   *   it should be all initialized with zeros. Any positive value in the given array, will make the
+   *   algorithm to assume that the color is fixed for the corresponding vertex.
+   * \param num_phases: The number of iterations (phases) that algorithm takes to converge.
+   */
+  virtual void d2_color_graph(
+      color_view_t d_colors,
+      int &num_phases){
+
+    num_phases = 1;
+    color_host_view_type colors = Kokkos::create_mirror_view (d_colors);
+    row_host_view_type h_xadj = Kokkos::create_mirror_view (this->xadj);
+    nonzero_index_host_view_type h_adj = Kokkos::create_mirror_view (this->adj);
+    Kokkos::deep_copy (h_xadj, this->xadj);
+    Kokkos::deep_copy (h_adj, this->adj);
+    MyExecSpace::fence();
+
+    //create a ban color array to keep track of
+    //which colors have been taking by the neighbor vertices.
+    row_index_type *banned_colors = new row_index_type[this->nv];
+
+
+    for (row_index_type i = 0; i < this->nv; ++i) banned_colors[i] = 0;
+
+    std::cout << "coloring now" << std::endl;
+    color_type max_color = 0;
+    //traverse vertices greedily
+    for (row_index_type i = 0; i < this->nv; ++i){
+
+      row_index_type nbegin = h_xadj(i);
+      row_index_type nend = h_xadj(i + 1);
+      //std::cout << "nb:" << nbegin << " ne:" << nend << std::endl;
+      //check the colors of neighbors
+      for (row_index_type j = nbegin; j < nend; ++j){
+        row_index_type n = h_adj(j);
+        if (n >= nv || n == i) continue;
+        //set the banned_color of the color of the neighbor vertex to my vertex index.
+        //the entries in the banned_color array that has my vertex index will be the set of prohibeted colors.
+        banned_colors[colors(n)] = i;
+
+
+        row_index_type d2nbegin = h_xadj(n);
+        row_index_type d2nend = h_xadj(n + 1);
+
+        for (row_index_type j2 = d2nbegin; j2 < d2nend; ++j2){
+          row_index_type n2 = h_adj(j2);
+          if (n2 >= nv || n2 == i) continue;
+          banned_colors[colors(n2)] = i;
+        }
+      }
+      //check the prohibeted colors, and pick the first available one.
+      for (color_type j = 1; j <= max_color; ++j) {
+        if(banned_colors[j] != i){
+          colors(i) = j;
+          break;
+        }
+      }
+      //if no color is available, pick a new color.
+      if (colors(i) == 0) colors(i) = ++max_color;
+    }
+    delete [] banned_colors;
+
+    Kokkos::deep_copy (d_colors, colors); // Copy from host to device.
+  }
+
 };
 
 
@@ -284,7 +353,7 @@ public:
     _use_color_set(),
     _max_num_iterations(coloring_handle->get_max_number_of_iterations())
     {
-      switch (coloring_handle->get_coloring_type()){
+      switch (coloring_handle->get_coloring_algo_type()){
       case COLORING_VB:
         this->_use_color_set = 0;
         break;

@@ -356,7 +356,7 @@ namespace Thyra {
     RCP<CrsMatrix> A_22_crs     = rcp_dynamic_cast<CrsMatrixWrap>(A_22)    ->getCrsMatrix();
 
     // FIXME: why do we need to perturb A_22?
-    Array<SC> smallVal(1, 1.0e-9);
+    Array<SC> smallVal(1, 1.0e-10);
 
     // FIXME: could this be sped up using expertStaticFillComplete?
     // There was an attempt on doing it, but it did not do the proper thing
@@ -425,10 +425,10 @@ namespace Thyra {
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
-    RCP<CrsMatrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA)->getCrsMatrix();
-    RCP<CrsMatrix> fA_12_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_21_crs = Teuchos::null;
-    RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB)->getCrsMatrix();
+    RCP<Matrix> fA_11_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredA);
+    RCP<Matrix> fA_12_crs = Teuchos::null;
+    RCP<Matrix> fA_21_crs = Teuchos::null;
+    RCP<Matrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB);
 
     // Build the large filtered matrix which requires strided maps
     std::vector<size_t> stridingInfo(1, 1);
@@ -485,10 +485,8 @@ namespace Thyra {
     for (int i = 1; i < H->GetNumLevels(); i++) {
       RCP<Matrix>           P     = H->GetLevel(i)->template Get<RCP<Matrix> >("P");
       RCP<BlockedCrsMatrix> Pcrs  = rcp_dynamic_cast<BlockedCrsMatrix>(P);
-      RCP<CrsMatrix>        Ppcrs = Pcrs->getMatrix(1,1);
-      RCP<Matrix>           Pp    = rcp(new CrsMatrixWrap(Ppcrs));
-      RCP<CrsMatrix>        Pvcrs = Pcrs->getMatrix(0,0);
-      RCP<Matrix>           Pv    = rcp(new CrsMatrixWrap(Pvcrs));
+      RCP<Matrix>           Pp    = Pcrs->getMatrix(1,1);
+      RCP<Matrix>           Pv    = Pcrs->getMatrix(0,0);
 
       Xpetra::IO<SC,LO,GO,NO>::Write("Pp_l" + MueLu::toString(i) + ".mm", *Pp);
       Xpetra::IO<SC,LO,GO,NO>::Write("Pv_l" + MueLu::toString(i) + ".mm", *Pv);
@@ -515,10 +513,10 @@ namespace Thyra {
 #endif
 
     RCP<BlockedCrsMatrix> A = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-    A->setMatrix(0, 0, A_11_crs);
-    A->setMatrix(0, 1, A_12_crs);
-    A->setMatrix(1, 0, A_21_crs);
-    A->setMatrix(1, 1, A_22_crs);
+    A->setMatrix(0, 0, A_11);
+    A->setMatrix(0, 1, A_12);
+    A->setMatrix(1, 0, A_21);
+    A->setMatrix(1, 1, A_22);
     A->fillComplete();
 
     H->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
@@ -746,7 +744,8 @@ namespace Thyra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<MueLu::FactoryBase>
-  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
+  MueLuTpetraQ2Q1PreconditionerFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  GetSmoother(const std::string& type, const ParameterList& paramList, bool coarseSolver) const {
     typedef Teuchos::ParameterEntry                   ParameterEntry;
 
     typedef MueLu::BlockedDirectSolver   <SC,LO,GO,NO> BlockedDirectSolver;
@@ -782,8 +781,11 @@ namespace Thyra {
 
       smootherPrototype = rcp(new TrilinosSmoother(ifpackType, schwarzList));
 
-    } else if (type == "direct") {
-      smootherPrototype = rcp(new BlockedDirectSolver());
+    } else if (type == "schwarz") {
+
+      std::string ifpackType = "SCHWARZ";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
@@ -823,6 +825,14 @@ namespace Thyra {
       smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       smootherPrototype->SetParameter("q2q1 mode",      ParameterEntry(true));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
+
+    } else if (type == "ilu") {
+      std::string ifpackType = "RILUK";
+
+      smootherPrototype = rcp(new TrilinosSmoother(ifpackType, paramList));
+
+    } else if (type == "direct") {
+      smootherPrototype = rcp(new BlockedDirectSolver());
 
     } else {
       throw MueLu::Exceptions::RuntimeError("Unknown smoother type: \"" + type + "\"");

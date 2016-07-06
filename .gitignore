@@ -137,3 +137,7 @@ rsync.*
 
 # Ignore Panassas temp files
 .panfs.*
+
+# Ignore files generated from INSTALL.rst
+/INSTALL.html
+/INSTALL.pdf

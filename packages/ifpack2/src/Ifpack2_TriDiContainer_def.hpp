@@ -879,6 +879,12 @@ extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
 {
 }
 
+template<class MatrixType, class LocalScalarType>
+std::string TriDiContainer<MatrixType, LocalScalarType, true>::getName()
+{
+  return "TriDi";
+}
+
 } // namespace Ifpack2
 
 #define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \

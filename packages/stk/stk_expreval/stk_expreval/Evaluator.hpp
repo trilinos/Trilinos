@@ -79,7 +79,6 @@ private:
 public:
   /**
    * Destroys a <b>Eval</b> instance.
-   *
    */
   ~Eval();
 

@@ -83,14 +83,16 @@ private:
 
 public:
   StochasticProblem(void)
-    : parlist_(Teuchos::null),
+    : OptimizationProblem<Real>(),
+      parlist_(Teuchos::null),
       ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null), ORIGINAL_bnd_(Teuchos::null),
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {}
 
   StochasticProblem(Teuchos::ParameterList &parlist)
-    : ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null), ORIGINAL_bnd_(Teuchos::null),
+    : OptimizationProblem<Real>(),
+      ORIGINAL_obj_(Teuchos::null), ORIGINAL_vec_(Teuchos::null), ORIGINAL_bnd_(Teuchos::null),
       obj_(Teuchos::null), vec_(Teuchos::null), bnd_(Teuchos::null),
       vsampler_(Teuchos::null), gsampler_(Teuchos::null), hsampler_(Teuchos::null),
       setVector_(false) {

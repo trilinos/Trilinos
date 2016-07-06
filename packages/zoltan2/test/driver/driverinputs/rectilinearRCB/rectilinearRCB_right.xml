@@ -26,11 +26,14 @@
     </ParameterList>
 
     <ParameterList name="Metrics">
-      <ParameterList name="object count">
+        <ParameterList name="metriccheck1">
+        <Parameter name="check" type="string" value="imbalance"/>
         <Parameter name="lower" type="double" value="1.49"/>
         <Parameter name="upper" type="double" value="1.51"/>
       </ParameterList>
-      <ParameterList name="weight 0">
+      <ParameterList name="metriccheck2">
+        <Parameter name="check" type="string" value="imbalance"/>
+        <Parameter name="weight" type="int" value="0"/>
         <Parameter name="lower" type="double" value="0.99"/>
         <Parameter name="upper" type="double" value="1.01"/>
       </ParameterList>

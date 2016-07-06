@@ -172,13 +172,19 @@ private:
 public:
   // Constructor
   ScalarMinimizationLineSearch( Teuchos::ParameterList &parlist, 
-    const Teuchos::RCP<ScalarMinimization<Real> > &sm = Teuchos::null  )
+    const Teuchos::RCP<ScalarMinimization<Real> > &sm = Teuchos::null,
+    const Teuchos::RCP<Bracketing<Real> > &br = Teuchos::null )
     : LineSearch<Real>(parlist) {
     Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
     Teuchos::ParameterList &list0 = parlist.sublist("Step").sublist("Line Search");
     Teuchos::ParameterList &list  = list0.sublist("Line-Search Method");
     // Get Bracketing Method
-    br_ = Teuchos::rcp(new Bracketing<Real>());
+    if( br == Teuchos::null ) {
+      br_ = Teuchos::rcp(new Bracketing<Real>());
+    }
+    else {
+      br_ = br;
+    }
     // Get ScalarMinimization Method
     std::string type = list.get("Type","Brent's");
     Real tol         = list.sublist(type).get("Tolerance",oem10);

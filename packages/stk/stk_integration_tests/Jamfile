@@ -96,6 +96,7 @@ exe stk_mesh_integration_tests
     /sierra/stk_mesh//stk_mesh_fixtures
     /sierra/stk_io//stk_io
     /sierra/stk_unit_test_utils//stk_unit_test_utils
+    /sierra/penso//penso
     /tpl/trilinos//teuchos
     /tpl/gtest//gtest
     /mpi//mpi

@@ -47,6 +47,7 @@
 
 
 #include "ROL_ScaledTpetraMultiVector.hpp"
+#include "ROL_StdVector.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -93,8 +94,10 @@ int main(int argc, char *argv[]) {
     VP W_rcp = Teuchos::rcp( new V(map,true) );
 
     // Random elements
-    x_rcp->randomize();
-    y_rcp->randomize();
+    //x_rcp->randomize();
+    //y_rcp->randomize();
+    x_rcp->putScalar(1.0);
+    y_rcp->putScalar(1.0);
 
     // Set all values to 2
     W_rcp->putScalar(2.0);
@@ -103,10 +106,15 @@ int main(int argc, char *argv[]) {
     ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x(x_rcp,W_rcp);
     ROL::DualScaledTpetraMultiVector<RealT,LO,GO,Node>   y(y_rcp,W_rcp);
 
+    const ROL::Vector<RealT> &g = x.dual();
+    const ROL::Vector<RealT> &h = x.dual();
+    RealT hnorm = h.norm();
+    RealT gnorm = g.norm();
+
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
 
-    outStream << "\nAbsolution error between x.dot(y.dual()) and y.dot(x.dual()): "
+    outStream << "\nAbsolute error between x.dot(y.dual()) and y.dot(x.dual()): "
               << std::abs(xy-yx) << "\n";
     outStream << "x.dot(y.dual()): " << xy << "\n";
     outStream << "y.dot(x.dual()): " << yx << "\n";
@@ -115,10 +123,31 @@ int main(int argc, char *argv[]) {
       errorFlag++;
     }
 
+    RealT xx = std::sqrt(x.dot(x)), xnorm = x.norm();
+    RealT yy = std::sqrt(y.dot(y)), ynorm = y.norm();
+
+    outStream << "\nAbsolute error between sqrt(x.dot(x)) and x.norm(): "
+              << std::abs(xx-xnorm) << "\n";
+    outStream << "sqrt(x.dot(x)): " << xx << "\n";
+    outStream << "x.norm():       " << xnorm << "\n";
+    if ( std::abs(xx-xnorm) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
+    outStream << "\nAbsolute error between sqrt(y.dot(y)) and y.norm(): "
+              << std::abs(yy-ynorm) << "\n";
+    outStream << "sqrt(y.dot(y)): " << yy << "\n";
+    outStream << "y.norm():       " << ynorm << "\n";
+    if ( std::abs(yy-ynorm) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
     // clone z from x, deep copy x into z, norm of z
     Teuchos::RCP<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
-    RealT znorm = z->norm(), xnorm = x.norm();
+    RealT znorm = z->norm();
     outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
     if ( std::abs(xnorm - znorm) > errtol ) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
@@ -127,12 +156,31 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
-    RealT wnorm = w->norm(), ynorm = y.norm();
+    RealT wnorm = w->norm();
     outStream << "\nNorm of ROL::Vector w (clone of y): " << wnorm << "\n";
     if ( std::abs(ynorm - wnorm) > errtol ) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
+
+    // Standard tests.
+    // Create Tpetra::MultiVectors (single vectors) 
+    MVP x1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    MVP y1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    MVP z1_rcp = Teuchos::rcp( new MV(map,1,true) ); 
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_rcp,W_rcp);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_rcp,W_rcp);
+    ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_rcp,W_rcp);
+    x1_rcp->randomize();
+    y1_rcp->randomize();
+    z1_rcp->randomize();
+
+    std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
+    ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
+    if (checkvec.norm() > std::sqrt(errtol)) {
+      errorFlag++;
+    }
+
   }
 
   catch (std::logic_error err) {
