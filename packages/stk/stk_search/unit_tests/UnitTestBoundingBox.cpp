@@ -100,7 +100,7 @@ TEST( stk_search_bounding_box, Box)
   {
     std::ostringstream out;
     out << b;
-    EXPECT_EQ( out.str(), std::string("{(1,1,1)->(0,0,0)}"));
+    EXPECT_EQ( out.str(), std::string("{(1.79769e+308,1.79769e+308,1.79769e+308)->(-1.79769e+308,-1.79769e+308,-1.79769e+308)}"));
   }
 
   b = Box(Point(0,0,0),Point(1,1,1));

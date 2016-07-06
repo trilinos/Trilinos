@@ -46,7 +46,8 @@ public:
   typedef Point<value_type> point_type;
   static const int Dim = 3;
 
-  Box( point_type const& x_min_corner = point_type(1,1,1), point_type const& x_max_corner = point_type(0,0,0))
+  Box( point_type const& x_min_corner = point_type(std::numeric_limits<T>::max(),std::numeric_limits<T>::max(),std::numeric_limits<T>::max()), 
+       point_type const& x_max_corner = point_type(std::numeric_limits<T>::lowest(),std::numeric_limits<T>::lowest(),std::numeric_limits<T>::lowest()))
     : m_min_corner(x_min_corner)
     , m_max_corner(x_max_corner)
   {}
