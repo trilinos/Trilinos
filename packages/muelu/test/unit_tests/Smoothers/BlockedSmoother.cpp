@@ -5225,6 +5225,75 @@ namespace MueLuTests {
     } // end UseTpetra
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlockedSmoother, SplitReorder, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    // TODO test only Tpetra because of Ifpack2 smoother!
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+      RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+      Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+      Teuchos::RCP<const Matrix> Aconst = TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build2DPoisson(comm->getSize() * 3,-1,lib);
+      Teuchos::RCP<Matrix> A = Teuchos::rcp_const_cast<Matrix>(Aconst);
+
+      // split local parts of row map
+      Teuchos::RCP<const Map> map = A->getRowMap();
+
+
+      Teuchos::Array<GlobalOrdinal> myGids1;
+      Teuchos::Array<GlobalOrdinal> myGids2;
+      GlobalOrdinal count1 = 0;
+      GlobalOrdinal count2 = 0;
+      for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+        const GlobalOrdinal gid = map->getGlobalElement(i);
+        if (gid % 2 == 0) { myGids1.push_back(gid); count1++; }
+        else              { myGids2.push_back(gid); count2++; }
+      }
+      GlobalOrdinal gcount1 = 0;
+      GlobalOrdinal gcount2 = 0;
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &count1, &gcount1);
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 1, &count2, &gcount2);
+      Teuchos::RCP<const Map> map1 = MapFactory::Build(lib,gcount1,myGids1(),0,comm);
+      Teuchos::RCP<const Map> map2 = MapFactory::Build(lib,gcount2,myGids2(),0,comm);
+
+      //I don't use the testApply infrastructure because it has no provision for an initial guess.
+      Level level; TestHelpers::TestFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::createSingleLevelHierarchy(level);
+      level.Set("A", A);
+      level.Set("Map1", map1);
+      level.Set("Map2", map2);
+
+      // Test ReorderBlockAFactory
+      Teuchos::RCP<ReorderBlockAFactory> rAFact = Teuchos::rcp(new ReorderBlockAFactory());
+      rAFact->SetFactory("A",MueLu::NoFactory::getRCP());
+      rAFact->SetFactory("Map1",MueLu::NoFactory::getRCP());
+      rAFact->SetFactory("Map2",MueLu::NoFactory::getRCP());
+      rAFact->SetParameter(std::string("Reorder Type"), Teuchos::ParameterEntry(std::string("[ 0 1 ]")));
+
+      // request BGS smoother (and all dependencies) on level
+      level.Request("A", rAFact.get());
+
+      //smootherFact->DeclareInput(level);
+      rAFact->Build(level);
+
+      level.print(std::cout, Teuchos::VERB_EXTREME);
+
+      RCP<Matrix> reorderedA = level.Get<RCP<Matrix> >("A", rAFact.get());
+      RCP<BlockedCrsMatrix> reorderedbA = Teuchos::rcp_dynamic_cast<BlockedCrsMatrix>(reorderedA);
+
+      TEST_EQUALITY(reorderedbA->Rows(), 2);
+      TEST_EQUALITY(reorderedbA->Cols(), 2);
+
+      TEST_EQUALITY(reorderedbA->getRangeMapExtractor()->getFullMap()->isSameAs(*(A->getRowMap())),false);
+      TEST_EQUALITY(reorderedbA->getDomainMapExtractor()->getFullMap()->isSameAs(*(A->getDomainMap())),false);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedA->getFrobeniusNorm()), <, 1e-12, out, success);
+      TEUCHOS_TEST_COMPARE(std::abs(A->getFrobeniusNorm()-reorderedbA->getFrobeniusNorm()), <, 1e-12, out, success);
+    } // end UseTpetra
+  }
+
+
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,BGS_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,Reordered_BGS_Setup_Apply,SC,LO,GO,NO) \
@@ -5256,7 +5325,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Indef_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI2I01II_Thyra_Indef_Setup_Apply,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedII01I2I_Thyra_Indef_Setup_Apply2,SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI0I21II_Thyra_Indef_Setup_Apply3,SC,LO,GO,NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,NestedI0I21II_Thyra_Indef_Setup_Apply3,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlockedSmoother,SplitReorder,SC,LO,GO,NO)
 
 #include <MueLu_ETI_4arg.hpp>
 
