@@ -811,8 +811,32 @@ blockJacobiUpdate (const ViewY& Y,
   static_assert (static_cast<int> (ViewD::rank) == 3, "D must have rank 3.");
 
   const auto lclNumMeshRows = D.dimension_0 ();
+
+#ifdef HAVE_TPETRA_DEBUG
+  // D.dimension_0() is the (local) number of mesh rows.
+  // D.dimension_1() is the block size.  Thus, their product should be
+  // the local number of point rows, that is, the number of rows in Y.
+  const auto blkSize = D.dimension_1 ();
+  const auto lclNumPtRows = lclNumMeshRows * blkSize;
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_0 () != lclNumPtRows, std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
+     "D.dimension_0()*D.dimension_1() = " << lclNumMeshRows << " * " << blkSize
+     << " = " << lclNumPtRows << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_0 () != Z.dimension_0 (), std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_0() = " << Y.dimension_0 () << " != "
+     "Z.dimension_0() = " << Z.dimension_0 () << ".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (Y.dimension_1 () != Z.dimension_1 (), std::invalid_argument,
+     "blockJacobiUpdate: Y.dimension_1() = " << Y.dimension_1 () << " != "
+     "Z.dimension_1() = " << Z.dimension_1 () << ".");
+#endif // HAVE_TPETRA_DEBUG
+
   BlockJacobiUpdate<ViewY, Scalar, ViewD, ViewZ, LO> functor (Y, alpha, D, Z, beta);
-  Kokkos::RangePolicy<typename ViewY::execution_space, LO> range (0, lclNumMeshRows);
+  typedef Kokkos::RangePolicy<typename ViewY::execution_space, LO> range_type;
+  // lclNumMeshRows must fit in LO, else the Map would not be correct.
+  range_type range (0, static_cast<LO> (lclNumMeshRows));
   Kokkos::parallel_for (range, functor);
 }
 
@@ -868,7 +892,6 @@ blockJacobiUpdate (const Scalar& alpha,
   const IST one = Kokkos::Details::ArithTraits<IST>::one ();
   const IST alphaImpl = static_cast<IST> (alpha);
   const IST betaImpl = static_cast<IST> (beta);
-  const LO lclNumMeshRows = meshMap_.getNodeNumElements ();
   const LO numVecs = mv_.getNumVectors ();
 
   auto X_lcl = X.mv_.template getLocalView<memory_space> ();
