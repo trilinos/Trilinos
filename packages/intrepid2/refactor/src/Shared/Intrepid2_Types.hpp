@@ -59,8 +59,6 @@ namespace Intrepid2 {
   typedef int    ordinal_type;
   typedef size_t size_type;
 
-  typedef Kokkos::Serial DeviceStackSpace;
-
   template<typename ValueType>
   KOKKOS_FORCEINLINE_FUNCTION
   ValueType epsilon() {

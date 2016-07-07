@@ -150,7 +150,7 @@ namespace Intrepid2 {
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
       Serial::JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -184,7 +184,7 @@ namespace Intrepid2 {
       Serial::JacobiZeros(z, np-1, alpha+1, beta);
       z(np-1) = one;
 
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -221,7 +221,7 @@ namespace Intrepid2 {
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
       JacobiZeros(z_plus_1, np-2, alpha+one, beta+one);
 
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb + 1)*GammaFunction(alpha + np)*GammaFunction(beta + np);
@@ -257,7 +257,7 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0;
 
       ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np, z, pd, np, alpha, beta);
 
@@ -290,7 +290,7 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0;
 
       ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       pd(0) = pow(-one,np-1)*GammaFunction((ValueType)np+beta+one);
       pd(0) /= GammaFunction((ValueType)np)*GammaFunction(beta+two);
@@ -334,7 +334,7 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0;
 
       ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       JacobiPolynomialDerivative(np-1, z, pd, np-1, alpha+1, beta);
       for (auto i = 0; i < np-1; ++i)
@@ -375,7 +375,7 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0;
 
       ValueType pd_buf[MaxPolylibPoint];
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> pd(&pd_buf[0], MaxPolylibPoint);
 
       pd(0)  = two*pow(-one,np)*GammaFunction((ValueType)np + beta);
       pd(0) /= GammaFunction((ValueType)np - one)*GammaFunction(beta + two);
@@ -424,7 +424,7 @@ namespace Intrepid2 {
     const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgj(i);
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
       p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
       zv(const_cast<ValueType*>(&z), 1), null;
 
@@ -455,7 +455,7 @@ namespace Intrepid2 {
     const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
       p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
       zv(const_cast<ValueType*>(&z), 1), null;
     
@@ -491,7 +491,7 @@ namespace Intrepid2 {
     const ValueType tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zgrj(i);
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
       p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
       zv(const_cast<ValueType*>(&z), 1), null;
 
@@ -527,7 +527,7 @@ namespace Intrepid2 {
     const ValueType one = 1.0, two = 2.0, tol = tolerence();
 
     ValueType h, p_buf, pd_buf, zi_buf = zglj(i);
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
       p(&p_buf, 1), pd(&pd_buf, 1), zi(&zi_buf, 1), 
       zv(const_cast<ValueType*>(&z), 1), null;
 
@@ -679,7 +679,7 @@ namespace Intrepid2 {
       for(auto i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
-      Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
       for(auto i = 0; i < np; ++i)
         polyd(i) *= 0.5*(alpha + beta + (ValueType)n + one);
@@ -721,7 +721,7 @@ namespace Intrepid2 {
     const ValueType tol = tolerence();
 
     ValueType r_buf, poly_buf, pder_buf;
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> 
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
       poly(&poly_buf, 1), pder(&pder_buf, 1), r(&r_buf, 1); 
 
     ValueType rlast = 0.0;
@@ -761,7 +761,7 @@ namespace Intrepid2 {
       return;
 
     ValueType b_buf[MaxPolylibPoint];
-    Kokkos::View<ValueType*,DeviceStackSpace,Kokkos::MemoryUnmanaged> b(&b_buf[0], MaxPolylibPoint);
+    Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> b(&b_buf[0], MaxPolylibPoint);
 
     // generate normalised terms
     auto apb  = alpha + beta;
