@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 
+#
+# Pieces of the --help documentation
+#
+
+
 distRepoStatusLegend = r"""Legend:
 * ID: Repository ID, zero based (order git commands are run)
 * Repo Dir: Relative to base repo (base repo shown first with '(Base)')
@@ -11,194 +16,342 @@ distRepoStatusLegend = r"""Legend:
 * ?: Number of untracked, non-ignored files (empty if zero)
 """
 
-usageHelp = r"""gitdist [gitdist arguments] [git arguments]
+
+helpTopics = [
+  'overview',
+  'repo-selection-and-setup',
+  'dist-repo-status',
+  'repo-versions',
+  'aliases', 
+  'usage-tips',
+  'script-dependencies'
+  ]
+
+ 
+def getHelpTopicsStr():
+  helpTopicStr = "" 
+  for helpTopic in helpTopics:
+    helpTopicStr += "* '" + helpTopic + "'\n"
+  return helpTopicStr
+
+
+# Look up help help string given keys from helpTopics array.
+helpTopicDefaultIdx = 0;
+
+
+helpTopicsDict = {}
+
+
+helpUsageHeader = r"""gitdist [gitdist arguments] [git arguments]
        gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over set of git repos in a multi-repository git project.
-This script also includes other tools like printing a repo status table and
-tracking versions through RepoVersion.txt files.
+Run git recursively over a set of git repos in a multi-repository git project
+(see --dist-help=overview --help).  This script also includes other tools like
+printing a compact repo status table (see --dist-help=dist-repo-status) and
+tracking versions through multi-repository SHA1 version files (see
+--dist-help=repo-versions).
 
-Instead of typing:
+The options in [gitdist options] are prefixed with '--dist-' and are pulled
+out before running 'git [git arguments]' in each local git repo that is
+processed (see --dist-help=repo-selection-and-setup).
+"""
 
-  $ git [git arguments]
 
-type:
+overviewHelp = r"""
+OVERVIEW:
+
+Running:
 
   $ gitdist [gitdist options] [git arguments]
 
-This will distribute git commands across all the listed git repos, including
-the base git repo.  The options in [gitdist options] are prefixed with
-'--dist-' and are pulled out before passing the remaining arguments in [git
-arguments] to git for each processed git repo.  See --help to see [gitdist
-options].
+will distribute git commands specified by [git arguments] across the current
+base git repo and the set of git repos listed in the file ./.gitdist (or the
+file ./.gitdist.default, or the argument
+--dist-extra-repos=<repo0>,<repo1>,..., see
+--dist-help=repo-selection-and-setup).
 
-For example, consider the following base git repo 'BaseRepo' with other git
-repos cloned under it:
+For example, consider the following base git repo 'BaseRepo' with three other
+"extra" git repos cloned under it:
 
   BaseRepo/
     .git/
+    .gitdist
     ExtraRepo1/
       .git/
-    ExtraRep2/
+      ExtraRepo2/
+        .git/
+    ExtraRepo3/
       .git/
 
-The gitdist command is run in the base git repo 'BaseRepo' which runs the git
-command in the base repo as the git repos 'ExtraRepo1' and 'ExtraRepo2'.  For
-example, running:
+The file .gitdist shown above is created by the user and in this example
+should have the contents:
 
+  ExtraRepo1
+  ExtraRepo1/ExtraRepo2
+  ExtraRepo3
+
+For this example, running the command:
+
+  $ cd BaseRepo/
   $ gitdist status
 
-in 'BaseRepo/' produces the equivalent commands:
+results in the following commands:
 
   $ git status
-  $ cd ExtraRepo1/ ; git status ; ../
-  $ cd ExtraRepo2/ ; git status ; ../
+  $ cd ExtraRepo1/ ; git status ; ..
+  $ cd ExtraRepo1/ExtraRepo2/ ; git status ; ../..
+  $ cd ExtraRepo3/ ; git status ; ..
 
-The gitdist tool allows managing a set of git repos like one big continuously
-integrated git repo.  For example, after cloning a set of git repos like the
-structure shown above, one can perform basic operations like for single git
-repos like, for example, creating a new release branch and pushing it:
+which produces output like:
+
+  *** Base Git Repo: BaseRepo
+  On branch master
+  Your branch is up-to-date with 'origin/master'.
+  nothing to commit, working directory clean
+  
+  *** Git Repo: ExtraRepo1
+  On branch master
+  Your branch is up-to-date with 'origin/master'.
+  nothing to commit, working directory clean
+  
+  *** Git Repo: ExtraRepo1/ExtraRepo2
+  On branch master
+  Your branch is up-to-date with 'origin/master'.
+  nothing to commit, working directory clean
+  
+  *** Git Repo: ExtraRepo3
+  On branch master
+  Your branch is up-to-date with 'origin/master'.
+  nothing to commit, working directory clean
+
+The gitdist tool allows managing a set of git repos like one big integrated
+git repo.  For example, after cloning a set of git repos, one can perform
+basic operations like for single git repos such as creating a new release
+branch and pushing it with:
 
   $ gitdist checkout master
   $ gitdist pull
-  $ gitdist checkout -b release-2.3
+  $ gitdist tag -a -m "Start of the 2.3 release" release-2.3-start
+  $ gitdist checkout -b release-2.3 release-2.3-start
+  $ gitdist push origin release-2.3-start
   $ gitdist push origin -u release 2.3
   $ gitdist checkout master
 
-The above command creates the same branch 'release-2.3' in all of the git
-repos and pushes them to their 'origin' git repo.
+The above gitdist commands create the same tag 'release-2.3-start' and the
+same branch 'release-2.3' in all of the local git repos and pushes these to
+the remote 'origin' for each git repo.
 
-The set of repos processed by gitdist is determined by the argument
---dist-extra-repos or the files .gitdist or .gitdist.default.  If
---dist-extra-repos="", then the list of extra repos will be read from the file
-'.gitdist' in the current working directory.  If the file '.gitdist' does not
-exist, then the list of extra repos will be read from the file
-'.gitdist.default' in the current working directory.  The format of this files
-'.gitdist' and '.gitdist.default' is to have one repo directory/name per line
-as in the 'BaseRepo' example:
+For more information about a certain topic, use '--dist-help=<topic-name>
+[--help]' for <topic-name>:
 
-  ExtraRepo1
-  ExtraRepo2
-
-where each repo is the relative path to the repo under the base git repo
-(e.g. under 'BaseRepo/').  The file .gitdist.default is meant to be committed
-to the base git repo so that gitdist is ready to use right away after the
-extra repos are cloned (see the tool clone_extra_repos.py for example).
-
-If a specified extra repository directory (i.e. listed --dist-extra-repos,
-.gitdist, or .gitdist.default) does not exist, then it will be ignored by the
-script.  Therefore, be careful to manually verify that the script recognizes
-the repositories that you list.  The best way to do that is to run 'gitdist
-dist-repo-status' and see which repos are listed.
+"""+getHelpTopicsStr()+r"""
+To see full help with all topics, use '--dist-help=all [--help]'.
 
 This script is self-contained and has no dependencies other than standard
-python 2.6 packages so it can be copied to anywhere and used.
+python 2.6+ packages so it can be copied to anywhere and used.
+"""
+helpTopicsDict.update( { 'overview' : overviewHelp } )
 
-TIPS:
 
- - To see the status of all repos in a compact way, use the special
-   'dist-repo-status' command (see below and the 'gitdist-status' alias
-   below).
+repoSelectionAndSetupHelp = r"""
+REPO SELECTION AND SETUP:
 
- - To process only repos that are changed w.r.t. their tracking branch, run
-   'gitdist --dist-mod-only [git arguments]'.  For example, to see the status
-   of only changed repos use 'gitdist --dist-mod-only status' (see the
-   'gitdist-mod' alias below).
+Before using the gitdist tool, one must first add the gitdist script to one's
+default path.  This can be done, for example, by copying the gitdist script to
+one's ~/bin/ directory:
 
- - 'gitdist --help' will run gitdist help, not git help.  If you want raw git
-   help, run 'git --help'.
+  $ cp <some-base-dir>/TriBITS/tribits/python_utils/gitdist ~/bin/
+  $ chmod a+x ~/bin/gitdist
 
- - By default, gitdist will use 'git' in the environment.  If it can't find
-   'git' in the environment, it will require that the user specify the git
-   command to run with --dist-use-git=<git command> (which is typically only
-   used in automated testing).
+and then adding $HOME/bin to one's 'PATH' env var with:
 
- - Pass in --dist-not-base-repo and/or
-   --dist-not-extra-repos=RepoX,RepoZ,... to exclude the processing of either
-   the base git repo and/or other git repos, respectively.
+  $ export PATH=$HOME/bin:$PATH
 
+(i.e. in one's ~/.bash_profile file).  Then, one will want to set up some
+useful shell aliases like 'gitdist-status', 'gitdist-mod', and
+'gitdist-mod-status' (see --dist-help=aliases).
+
+The set of git repos processed by gitdist is determined by the argument:
+
+  --dist-extra-repos=<repo0>,<repo1>,...
+
+or the files .gitdist or .gitdist.default.  If --dist-extra-repos="", then the
+list of extra repos to process will be read from the file '.gitdist' in the
+current directory.  If the file '.gitdist' does not exist, then the list of
+extra repos to process will be read from the file '.gitdist.default' in the
+current directory.  The format of this files '.gitdist' and '.gitdist.default'
+is to have one repo relative directory per line, for example:
+
+  ExtraRepo1
+  ExtraRepo1/ExtraRepo2
+  ExtraRepo3
+
+where each line is the relative path under the base git repo (i.e. under
+'BaseRepo/').  The file .gitdist.default is meant to be committed to the base
+git repo (i.e. 'BaseRepo') so that gitdist is ready to use right away after
+the base repo and the extra repos are cloned.
+
+If an extra repository directory (i.e. listed in
+--dist-extra-repos=<repo0>,<repo1>,..., .gitdist, or .gitdist.default) does
+not exist, then it will be ignored by the script.  Therefore, be careful to
+manually verify that the script recognizes the repositories that you list.
+The best way to do that is to run 'gitdist-status' and see which repos are
+listed.
+
+Certain git repos can also be selectively excluded using the options
+'--dist-not-base-repo' and '--dist-not-extra-repos=<repox>,<repoy>,...'.
+
+Setting up to use gitdist on a specific set of local git repos first requires
+cloning and organizing the local git repo. For the example listed here, one
+would clone the base repo 'BaseRepo' and the three extra git repos, set up a
+.gitdist file, and then add ignores for the extra cloned repos like:
+
+  # Clone and organize the git repos
+  $ git clone git@some.url:BaseRepo.git
+  $ cd BaseRepo/
+  $ git clone git@some.url:ExtraRepo1.git
+  $ cd ExtraRepo1/
+  $ git clone git@some.url:ExtraRepo2.git
+  $ cd ..
+  $ git clone git@some.url:ExtraRepo3.git
+
+  # Create .gitdist
+  $ echo ExtraRepo1 > .gitdist
+  $ echo ExtraRepo1/ExtraRepo2 >> .gitdist
+  $ echo ExtraRepo3 >> .gitdist
+
+  # Add ignores in base repo
+  $ echo /ExtraRepo1/ >> .git/info/exclude
+  $ echo /ExtraRepo3/ >> .git/info/exclude
+
+  # Add ignore in nexted extra repo
+  $ echo /ExtraRepo2/ >> ExtraRepo1/.git/info/exclude
+
+(Note that one may instead add the above ignores to the version-controlled
+files BaseRepo/.gitignore and ExtraRepo1/.gitignore instead.)
+
+This produces the local repo structure:
+
+  BaseRepo/
+    .git/
+    .gitdist
+    ExtraRepo1/
+      .git/
+      ExtraRepo2/
+        .git/
+    ExtraRepo3/
+      .git/
+
+After this setup, running:
+
+  $ gitdist [git command and options]
+
+in the 'BaseRepo/ 'directory will automatically distribute a given command
+across the base repo 'BaseRepo/ and the extra repos ExtraRepo1/,
+ExtraRepo1/ExtraRepo2/, and ExtraRepo3/, in order.
+
+To simplify the setup for the usage of gitdist for a given set of local git
+repos, one may choose to instead create the file .gitdist.default in the base
+repo (i.e. `BaseRepo/`') and add the ignores for the extra repos to the
+.gitignore files and commit the files to the repo(s).  That way, one does not
+have to manually do any extra setup for every new set of local clones of the
+repos.  But if the file .gitdist is present, then it will override the file
+.gitdist.default as described above (which allows customization of what git
+repos are processed at any time).
+"""
+helpTopicsDict.update( { 'repo-selection-and-setup' : repoSelectionAndSetupHelp } )
+
+
+distRepoStatusHelp = r"""
 SUMMARY OF REPO STATUS:
 
-This script supports the special command 'dist-repo-status' which prints a
-table showing the current status of all the repos (see alias 'gitdist-status'
-below).  For the example set of repos shown above, running:
+Th script gitdist also supports the special command 'dist-repo-status' which
+prints a compact table showing the current status of all the repos (see alias
+'gitdist-status' in --dist-help=aliases).  For the example set of repos shown
+in OVERVIEW (see --dist-help=overview), running:
 
-  $ gitdist dist-repo-status
+  $ gitdist dist-repo-status    # alias 'gitdist-status'
 
-prints a table like:
+outputs a table like:
 
-  ----------------------------------------------------------------
-  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
-  |----|-----------------|--------|-----------------|---|----|---|
-  |  0 | BaseRepo (Base) | dummy  |                 |   |    |   |
-  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
-  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
-  ----------------------------------------------------------------
+  ----------------------------------------------------------------------
+  | ID | Repo Dir              | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------------|--------|-----------------|---|----|---|
+  |  0 | BaseRepo (Base)       | dummy  |                 |   |    |   |
+  |  1 | ExtraRepo1            | master | origin/master   | 1 |  2 |   |
+  |  2 | ExtraRepo1/ExtraRepo2 | HEAD   |                 |   | 25 | 4 |
+  |  3 | ExtraRepo3            | master | origin/master   |   |    |   |
+  ----------------------------------------------------------------------
 
-If the option --dist-legend is passed in, it will print the legend:
+If the option --dist-legend is also passed in, the output will include:
 
 """+distRepoStatusLegend+\
 r"""
 One can also show the status of only changed repos with the command:
 
-  $ gitdist dist-repo-status --dist-mod-only
+  $ gitdist dist-repo-status --dist-mod-only  # alias 'gitdist-mod-status'
 
-which prints a table like:
+which produces a table like:
 
-  ----------------------------------------------------------------
-  | ID | Repo Dir        | Branch | Tracking Branch | C | M  | ? |
-  |----|-----------------|--------|-----------------|---|----|---|
-  |  1 | ExtraRepo1      | master | origin/master   | 1 |  2 |   |
-  |  2 | ExtraRepo2      | HEAD   |                 |   | 25 | 4 |
-  ----------------------------------------------------------------
+  ----------------------------------------------------------------------
+  | ID | Repo Dir              | Branch | Tracking Branch | C | M  | ? |
+  |----|-----------------------|--------|-----------------|---|----|---|
+  |  1 | ExtraRepo1            | master | origin/master   | 1 |  2 |   |
+  |  2 | ExtraRepo1/ExtraRepo2 | HEAD   |                 |   | 25 | 4 |
+  ----------------------------------------------------------------------
 
-(se the alias 'gitdist-mod-status' below).
+(see the alias 'gitdist-mod-status' in --dist-help=aliases).
 
-Note the base repo was left out but the repo indexes are the same.  This
-allows one to effectively show the status of changes in multiple repos even
-when there are many git repos by filtering out rows for repos that have no
-changes w.r.t. their tracking branches.  This allows one to get the status on
-a few repos with changes out of a large number of repos (i.e. 10s to 100s of
-repos).
+Note that rows for the repos BaseRepo and ExtraRepo2 were left out but the
+repo indexes for the remaining repos are preserved.  This allows one to
+compactly show the status of the changed local repos even when there are many
+local git repos by filtering out rows for repos that have no changes
+w.r.t. their tracking branches.  This allows one to get the status on a few
+repos with changes out of a large number of local repos (i.e. 10s and even
+100s of local git repos).
+"""
+helpTopicsDict.update( { 'dist-repo-status' : distRepoStatusHelp } )
 
+
+repoVersionFilesHelp = r"""
 REPO VERSION FILES:
 
-This script supports the options --dist-version-file=<versionFile> and
---dist-version-file2=<versionFile2> which are used to provide different SHA1
-versions for each repo.  Each of these version files is expected to represent
-a compatible set of versions of the repos.
+The script gitdist also supports the options --dist-version-file=<versionFile>
+and --dist-version-file2=<versionFile2> which are used to provide different
+SHA1 versions for each local git repo.  Each of these version files is
+expected to represent a compatible set of versions of the repos (e.g. in the
+same style as .gitmodule files used by the 'git submodule' command).
 
 The format of these repo version files is shown in the following example:
 
------------------------------------------------------
-*** Base Git Repo: BaseRepo
-e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author1@someurl.com>
-First summary message
-*** Git Repo: ExtraRepo1
-b894b9c [Fri Aug 30 09:55:07 2013 -0400] <author2@someurl.com>
-Second summary message
-*** Git Repo: ExtraRepo2
-97cf1ac [Thu Dec 1 23:34:06 2011 -0500] <author3@someurl.com>
-Third summary message
------------------------------------------------------
-
-(the lines '---------' are *not* included in the file.)
+  *** Base Git Repo: BaseRepo
+  e102e27 [Mon Sep 23 11:34:59 2013 -0400] <author0@someurl.com>
+  First summary message
+  *** Git Repo: ExtraRepo1
+  b894b9c [Fri Aug 30 09:55:07 2013 -0400] <author1@someurl.com>
+  Second summary message
+  *** Git Repo: ExtraRepo1/ExtraRepo2
+  97cf1ac [Thu Dec 1 23:34:06 2011 -0500] <author2@someurl.com>
+  Third summary message
+  *** Git Repo: ExtraRepo3
+  6facf33 [Fri May 6 15:28:35 2013 -0400] <author3@someurl.com>
+  Fourth summary message
 
 Each repository entry can have a summary message or not (i.e. use two or three
 lines per repo in the file).  A compatible repo version file can be generated
-with this script listing three lines per repo (as shown above) using, for
-example:
+with this script listing three lines per repo (e.g. as shown above) using (for
+example):
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>%n%s" \
     | grep -v "^$" &> RepoVersion.txt
 
-or two lines per repo using, for example:
+or two lines per repo using (for example):
 
   $ gitdist --dist-no-color log -1 --pretty=format:"%h [%ad] <%ae>" \
     | grep -v "^$" &> RepoVersion.txt
 
-This allows checking out consistent versions of the repos, diffing two
-consistent versions of the repos, etc.
+This allows checking out consistent versions of the set git repos, diffing two
+consistent versions of the set of git repos, etc.
 
 To checkout an older set of consistent versions of the set of repos
 represented by the set of versions given in a file RepoVersion.<date>.txt,
@@ -207,62 +360,73 @@ use:
   $ gitdist fetch origin
   $ gitdist --dist-version-file=RepoVersion.<date>.txt checkout _VERSION_
 
-The '_VERSION_' string will be replaced with the SHA1 for each of the repos
-listed in the file RepoVersion.<date>.txt.  (NOTE: this puts the repos into a
+The string '_VERSION_' is replaced with the SHA1 for each of the repos listed
+in the file 'RepoVersion.<date>.txt'.  (NOTE: this puts the repos into a
 detached head state so one has to know what that means.)
 
-To tag a set of repos using a consistent set of versions, use, for example:
+To tag a set of repos using a consistent set of versions, use (for example):
 
   $ gitdist --dist-version-file=RepoVersion.<date>.txt \
-      tag -a <some_tag> _VERSION_
+      tag -a -m "<message>" <some_tag> _VERSION_
 
-To create a branch off of a consistent set of versions, use, for example:
+To create a branch off of a consistent set of versions, use (for example):
 
   $ gitdist --dist-version-file=RepoVersion.<date>.txt \
       checkout -b some-branch _VERSION_
 
-To diff two sets of versions of the repos, for example, use:
+To diff two sets of versions of the repos, use (for example):
 
-  $ gitdist --dist-version-file=RepoVersion.<new-date>.txt \
+  $ gitdist \
+      --dist-version-file=RepoVersion.<new-date>.txt \
       --dist-version-file2=RepoVersion.<old-date>.txt \
       diff _VERSION_ ^_VERSION2_
 
-Here, _VERSION_ is replaced by the SHA1s listed in RepoVersion.<new-date>.txt
-and _VERSION2_ is replaced by the SHA1s listed in RepoVersion.<old-date>.txt.
+Here, _VERSION_ is replaced by the SHA1s listed in the file
+'RepoVersion.<new-date>.txt' and _VERSION2_ is replaced by the SHA1s listed in
+'RepoVersion.<old-date>.txt'.
 
 One can construct any git command taking one or two different repo version
-arguments (SHA1s) using this approach.
+arguments (SHA1s) using this approach (which covers a huge number of different
+git operations).
 
-Note that the set of repos listed in the RepoVersion.txt file must be a
+Note that the set of git repos listed in the 'RepoVersion.txt' file must be a
 super-set of those processed by this script or an error will occur and the
-script will stop.  If there are additional repos RepoX, RepoY, ... not listed
-in the RepVersion.txt file one can exclude them with:
+script will abort (before running any git commands).  If there are additional
+repos RepoX, RepoY, etc. not listed in the 'RepVersion'.txt file, then one can
+exclude them with:
 
   $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
     --dist-version-file=RepoVersion.txt \
-    [other arguments]
+    [git arguments]
+"""
+helpTopicsDict.update( { 'repo-versions' : repoVersionFilesHelp } )
 
+
+usefulAliasesHelp =r"""
 USEFUL ALIASES:
 
-A few very useful Linux/Unix aliases are:
+A few very useful (bash) shell aliases to use along with the gitdist script
+are:
 
   $ alias gitdist-status="gitdist dist-repo-status"
   $ alias gitdist-mod="gitdist --dist-mod-only"
   $ alias gitdist-mod-status="gitdist dist-repo-status --dist-mod-only"
 
-This avoids lots of extra typing as these arguments are used a lot when working with
-many git repos.  For example, to see the status table of all your repos, do:
+(i.e. add these to your ~/.bash_profile file.)
+
+This avoids lots of extra typing as these gitdist arguments are used a lot.
+For example, to see the compact status table of all your local git repos, do:
 
   $ gitdist-status
 
-To just see the status table of changed repos only, do:
+To just see a compact status table of only changed repos, do:
 
   $ gitdist-mod-status
 
 To process only repos that have changes and see commits in these repos
-w.r.t. their tracking branches, use:
+w.r.t. their tracking branches, do (for example):
 
-  $ gitdist-mod log --name-status HEAD ^origin/master
+  $ gitdist-mod log --name-status HEAD ^@{u}
 
 or
 
@@ -270,25 +434,157 @@ or
 
 (where 'local-stat' is a useful git alias defined in the script
 'git-config-alias.sh').
+"""
+helpTopicsDict.update( { 'aliases' : usefulAliasesHelp } )
 
+
+usageTipsHelp = r"""
+USAGE TIPS:
+
+Since gitdist allows treating a set of git repos as one big git repo, almost
+any git workflow that is used for a single git repo can be used for a set of
+repos using gitdist.  The main difference is that one will typically need to
+create commits individually for each repo.  Also, pulls and pushes are no
+longer atomic like is guaranteed for a single git repo.
+
+In general, the mapping between the commands for a single-repo git workflow
+using raw git vs. a multi-repo git workflow using gitdist (using the shell
+aliases 'gitdist-status', 'gitdist-mod-status', and 'gitdist-mod'; see
+--dist-help=aliases) is given by:
+
+  git pull                          =>  gitdist pull
+  git checkout -b <branch> [<ref>]  =>  gitdist checkout -b <branch> [<ref>]
+  git checkout <branch>             =>  gitdist checkout <branch>
+  git tag -a -m "<message>" <tag>   =>  gitdist tag -a -m "<message>" <tag>
+  git status                        =>  gitdist-mod status  # status details
+                                    =>  gitdist-status      # table for all
+                                    =>  gitdist-mod-status  # table for mod.
+  git commit                        =>  gitdist-mod commit
+  git log HEAD ^@{u}                =>  gitdist-mod log HEAD ^@{u} 
+  git push                          =>  gitdist-mod push
+  git push [-u] <remote> <branch>   =>  gitdist push [-u] <remote> <branch>
+  git push <remote> <tag>           =>  gitdist push <remote> <tag>
+
+NOTE: The usage of 'gitdist-mod' can be replaced with just 'gitdist' in all of
+the above commands.  It is just that in these cases gitdist-mod produces more
+compact output and avoids do-nothing commands for repos that have no changes
+with respect to their tracking branch.  But when it doubt, just use raw
+'gitdist' if you are not sure.
+
+A typical development iteration of the centralized workflow using using
+multiple git repos looks like the following:
+
+1) Update the local branches from the remote tracking branches:
+
+    $ cd BaseRepo/
+    $ gitdist pull
+
+2) Make local modifications for each repo:
+
+    $ emacs <base-files>
+    $ cd ExtraRepo1/
+    $ emacs <files-in-extra-repo1>
+    $ cd ..
+    $ cd ExtraRepo1/ExtraRepo2/
+    $ emacs <files-in-extra-repo2>
+    $ cd ../..
+    $ cd ExtraRepo3/
+    $ emacs <files-in-extra-repo3>
+    $ cd ..
+
+3) Build and test local modifications:
+
+    $ cd BUILD/
+    $ make -j16
+    $ make test  # hopefully all pass!
+    $ cd ..
+
+4) View the modifications before committing:
+
+    $ gitdist-mod-status   # Produces a summary table
+    $ gitdist-mod status   # See status details
+
+5) Make commits to each repo:
+
+    $ gitdist-mod commit -a  # Opens editor for each repo in order
+
+  or use the same commit message for all repos:
+
+    $ emacs commitmsg.txt
+    $ echo /commitmsg.txt >> .git/info/exclude
+    $ gitdist-mod commit -a -F $PWD/commitmsg.txt
+
+  or manually create the commits in each repo separately with raw git:
+
+    $ cd BaseRepo/
+    $ git commit -a
+    $ cd ExtraRepo1/
+    $ git commit -a
+    $ cd ..
+    $ cd ExtraRepo1/ExtraRepo2/
+    $ git commit -a
+    $ cd ../..
+    $ cd ExtraRepo3/
+    $ git commit -a
+    $ cd ..
+
+6) Examine the local commits that are about to be pushed:
+
+    $ gitdist-mod-status  # Should be no unmodified or untracked files!
+    $ gitdist-mod log --name-status HEAD ^@{u}  # or ...
+    $ gitdist-mod local-stat    # alias defined in 'git-config-alias.sh'
+
+7) Rebase and push local commits to remote tracking branch:
+
+    $ gitdist pull --rebase
+    $ gitdist-mod push
+    $ gitdist-mod-status   # Make sure all the pushes occurred!
+
+Another example workflow is creating a new release branch as shown in the
+OVERVIEW section (--dist-help=overview).
+
+Other usage tips:
+
+ - 'gitdist --help' will run gitdist help, not git help.  If you want raw git
+   help, then run 'git --help'.
+
+ - Be sure to run 'gitdist-status' to make sure that each repo is on the
+   correct local branch and is tracking the correct remote branch.
+
+ - In general, for most workflows, one should use the same local branch name,
+   remote repo name, and remote tracking branch name in each local git repo.
+   That allows commands like 'gitdist checkout --track <remote>/<branch>' and
+   'gitdist checkout <branch>' to work correctly.
+
+ - For many git commands, it is better to process only repos that are changed
+   w.r.t. their tracking branch with 'gitdist-mod [git arguments]'.  For
+   example, to see the status of only changed repos use 'gitdist-mod status'.
+   This allows the usage of gitdist to scale well when there are even 100s of
+   git repos.
+
+ - As an exception to the last item, a few different types of git commands
+    tend to be run on all the git repos like 'gitdist pull', 'gitdist
+    checkout', and 'gitdist tag'.
+
+  - If one is not sure whether to run 'gitdist' or 'gitdist-mod', then just
+    run 'gitdist' to be safe.
+"""
+helpTopicsDict.update( { 'usage-tips' : usageTipsHelp } )
+
+
+scriptDependenciesHelp = r"""
 SCRIPT DEPENDENCIES:
 
-This Python script only depends on the Python 2.6+ standard modules 'sys',
-'os', 'subprocess', and 're'. Also, of course, it requires some compatible
-version of 'git' in your path.
-
+The Python script gitdist only depends on the Python 2.6+ standard modules
+'sys', 'os', 'subprocess', and 're'. Also, of course, it requires some
+compatible version of 'git' in your path (but gitdist works with several
+versions of git starting as far back as git 1.6+).
 """
-
-import sys
-import os
-import subprocess
-import re
-
-from optparse import OptionParser
+helpTopicsDict.update( { 'script-dependencies' : scriptDependenciesHelp } )
 
 
 #
-# Format an ASCII table
+# Functions to help Format an ASCII table
 #
 
 
@@ -365,6 +661,69 @@ def createAsciiTable(tableData):
 # Helper functions for gitdist
 #
 
+import sys
+import os
+import subprocess
+import re
+
+from optparse import OptionParser
+
+def addOptionParserChoiceOption(
+  optionName,
+  optionDest,
+  choiceOptions,
+  defaultChoiceIndex,
+  helpStr,
+  optionParser
+  ):
+  """ Add a general choice option to a optparse.OptionParser object"""
+  defaultOptionValue = choiceOptions[defaultChoiceIndex]
+  optionParser.add_option(
+    optionName,
+    dest=optionDest,
+    type="choice",
+    choices=choiceOptions,
+    default=defaultOptionValue,
+    help='%s Choices = (\'%s\').  [default = \'%s\']'
+    % (helpStr, '\', \''.join(choiceOptions), defaultOptionValue)
+    )
+
+
+def getDistHelpTopicStr(helpTopicVal):
+  helpTopicStr = ""
+  if helpTopicVal == "":
+    return "" # Don't add any text
+  elif helpTopicVal == "all":
+    for helpTopic in helpTopics:
+      helpTopicStr += helpTopicsDict.get(helpTopic)
+  else:
+    helpTopicHelpStr = helpTopicsDict.get(helpTopicVal, None)
+    if helpTopicHelpStr:
+      helpTopicStr += helpTopicHelpStr
+    else:
+      # Invalid help topic so return nonthing and help error handler deal!
+      return ""
+  return helpTopicStr
+
+
+def getUsageHelpStr(helpTopicArg):
+  #print "helpTopicArg =", helpTopicArg
+  usageHelpStr = helpUsageHeader
+  if helpTopicArg == "":
+    # No help topic option so just use the standard help header
+    None
+  else:
+    helpTopicArgArray = helpTopicArg.split("=")
+    if len(helpTopicArgArray) == 1:
+      # Option not formatted correctly, set let error handler get it."
+      return ""
+    (helpTopicArgName, helpTopicVal) = helpTopicArg.split("=")
+    #print "helpTopicArgName =", helpTopicArgName
+    #print "helpTopicVal =", helpTopicVal
+    usageHelpStr += getDistHelpTopicStr(helpTopicVal)
+  return usageHelpStr
+
+
 def filterWarningsGen(lines): 
   for line in lines:
     if not line.startswith('warning') and not line.startswith('error'): yield line
@@ -440,8 +799,7 @@ def getCommandlineOps():
   # A) Define the native gitdist command-line arguments
   #
 
-  clp = OptionParser(usage=usageHelp)
-
+  distHelpArgName = "--dist-help" # Must match --dist-help before --help!
   helpArgName = "--help"
   withGitArgName = "--dist-use-git"
   extraRepoArgName = "--dist-extra-repos"
@@ -455,7 +813,7 @@ def getCommandlineOps():
   modifiedOnlyName = "--dist-mod-only"
   legendName = "--dist-legend"
 
-  nativeArgNames = [ helpArgName, withGitArgName, \
+  nativeArgNames = [ distHelpArgName, helpArgName, withGitArgName, \
     extraRepoArgName, notExtraRepoArgName, notBaseRepoArgName, \
     versionFileName, versionFile2Name, noColorArgName, debugArgName, noOptName, \
     modifiedOnlyName, legendName ]
@@ -463,84 +821,10 @@ def getCommandlineOps():
   distRepoStatus = "dist-repo-status"
   nativeCmndNames = [ distRepoStatus ]
 
-  # Find a default git to use
-
   # Select a version of git (see above help documentation)
-
   defaultGit = "git" # Try system git
   if not commandExists(defaultGit):
     defaultGit = "" # Give up and make the user specify
-
-  clp.add_option(
-    withGitArgName, dest="useGit", type="string",
-    default=defaultGit,
-    help="The (path) to the git executable to use for each git repo command (default='"+defaultGit+"')"
-    )
-
-  clp.add_option(
-    extraRepoArgName, dest="extraRepos", type="string",
-    default="",
-    help="Comma-separated list of extra repos to forward git commands to."
-    +"  If the list is empty, it will look for a file called .gitdist to"
-    +" get the list of extra repos separated by newlines."
-    )
-
-  clp.add_option(
-    notExtraRepoArgName, dest="notExtraRepos", type="string",
-    default="",
-    help="Comma separated list of extra repos to *not* forward git commands to."
-    +"  This removes any repos from being processed that would otherwise be."
-    )
-
-  clp.add_option(
-    notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't pass the git command on to the base git repo.",
-    default=True )
-
-  clp.add_option(
-    versionFileName, dest="versionFile", type="string",
-    default="",
-    help="Path to a file contains a list of extra repo directories and git versions (replaces _VERSION_)."
-    )
-
-  clp.add_option(
-    versionFile2Name, dest="versionFile2", type="string",
-    default="",
-    help="Path to a second file contains a list of extra repo directories and git versions (replaces _VERSION2_)."
-    )
-
-  clp.add_option(
-    noColorArgName, dest="useColor", action="store_false",
-    help="If set, don't use color in the output for gitdist (better for output to a file).",
-    default=True )
-
-  clp.add_option(
-    debugArgName, dest="debug", action="store_true",
-    help="If set, then debugging info is printed.",
-    default=False )
-
-  clp.add_option(
-    noOptName, dest="noOpt", action="store_true",
-    help="If set, then no git commands will be run but instead will just be printed.",
-    default=False )
-
-  clp.add_option(
-    modifiedOnlyName, dest="modifiedOnly", action="store_true",
-    help="If set, then the listed git command will be only be run and output for the" \
-      " repo will only be produced if the command 'git diff --name-only ^<tracking-branch>'"
-      " returns non-empty output where <tracking-branch> is returned" \
-      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u}'.  In order words," \
-      " if a git repo is unchanged w.r.t. its tracking branch, then the git command is" \
-      " skipped for that repo.  If a repo does not have a tracking branch, then the repo will" \
-      " be skipped as well.  Therefore, be careful to first run with dist-local-stat to see the" \
-      " status of each local repo to know which repos don't have tracking branches.",
-    default=False )
-
-  clp.add_option(
-    legendName, dest="printLegend", action="store_true",
-    help="If set, then a legend will be printed below the repo summary table"\
-      " for the special dist-repo-status command.  Only applicable with dist-repo-status.",
-    default=False )
 
   #
   # B) Pull the native commandline arguments out of the commandline
@@ -550,6 +834,7 @@ def getCommandlineOps():
   nativeArgs = []
   nativeCmnds = []
   otherArgs = []
+  helpTopicArg = "" 
 
   for arg in argv:
     #print "\narg = '"+arg+"'"
@@ -562,6 +847,8 @@ def getCommandlineOps():
         #print "\nMatches native arg!"
         nativeArgs.append(arg)
         matchedNativeArg = True
+        if currentArgName == distHelpArgName:
+          helpTopicArg = arg
         break
     matchedNativeCmnd = False
     for nativeCmndName in nativeCmndNames:
@@ -588,13 +875,123 @@ def getCommandlineOps():
     raise Exception("Error: Can't have more than one dist-xxx command "+\
       " but was passed in "+str(nativeCmnds))
 
+  #
+  # C) Set up the commandline parser and parse the native args
+  #
+
+  usageHelp = getUsageHelpStr(helpTopicArg)
+
+  clp = OptionParser(usage=usageHelp)
+
+  addOptionParserChoiceOption(
+    distHelpArgName, "helpTopic", [""]+helpTopics+["all"], 0,
+    "Print a gitdist help topic with -dist-help=HELPTOPIC.  Using" \
+    +" --dist-help=all prints all help topics.  If" \
+    +" --help is also specified, then the help usage header and" \
+    +" command-line 'options' are also printed." ,
+    clp )
+
+  clp.add_option(
+    withGitArgName, dest="useGit", type="string",
+    default=defaultGit,
+    help="The (path) to the git executable to use for each git repo command."
+    +"  By default, gitdist will use 'git' in the environment.  If it can't find"
+    +" 'git' in the environment, then it will require setting"
+    +" --dist-use-git=<git command> (which is typically only  used in automated"
+    +" testing). (default='"+defaultGit+"')"
+    )
+
+  clp.add_option(
+    extraRepoArgName, dest="extraRepos", type="string",
+    default="",
+    help="Comma-separated list of extra repo relative paths '<repo0>,<repo1>,...'."
+    +" If left empty '', then the list of extra repos to process is taken from"
+    +" the file ./.gitdist (which lists the relative path of each extra git repo"
+    +" separated by newlines).  If the file"
+    +" ./.gitdist does not exist, then the exgtra repos listed in the file"
+    +" ./.gitdist.default are processed.  If the file"
+    +" the file ./.gitdist.default is missing, then no extra repos are"
+    +" processed.  Also, any git repos listed that don't exist are ignored."
+    +" See --dist-help=repo-selection-and-setup."
+    +" (default='')"
+    )
+
+  clp.add_option(
+    notExtraRepoArgName, dest="notExtraRepos", type="string",
+    default="",
+    help="Comma-separated list of extra repo relative paths" \
+    +" '<repoX>,<repoY>,...' to *not* to process. (default='')"
+    )
+
+  clp.add_option(
+    notBaseRepoArgName, dest="processBaseRepo", action="store_false",
+    help="If set, don't process or run the git command in the base git repo.",
+    default=True )
+
+  clp.add_option(
+    modifiedOnlyName, dest="modifiedOnly", action="store_true",
+    help="If set, then only git repos where the command" \
+      " 'git diff --name-only ^<tracking-branch>' returns non-empty output" \
+      " will be processed (where <tracking-branch> is returned" \
+      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u})'.  In order words," \
+      " if a git repo is unchanged w.r.t. its tracking branch, then that local git" \
+      " is skipped.  If a repo does not have a tracking branch, then the repo will" \
+      " be skipped as well.  Therefore, be careful to first run 'gitdist-status'" \
+      " (see --dist-help=dist-repo-status) to see the" \
+      " status of each local git repo to know which repos don't have tracking branches.",
+    default=False )
+
+  clp.add_option(
+    legendName, dest="printLegend", action="store_true",
+    help="If set, then a legend will be printed below the repo summary table"\
+      " for the special dist-repo-status command.  Only applicable with" \
+      " dist-repo-status (see --dist-help=dist-repo-status).",
+    default=False )
+
+  clp.add_option(
+    versionFileName, dest="versionFile", type="string",
+    default="",
+    help="Path to a file which contains a list of extra repo relative directories"
+    +" and git versions (replaces _VERSION_)." \
+    +" (See --dist-help=repo-versions.) (default='')"
+    )
+
+  clp.add_option(
+    versionFile2Name, dest="versionFile2", type="string",
+    default="",
+    help="Path to a second file contains a list of extra repo relative"
+    +" directories and git versions (replaces _VERSION2_)."
+    +" (See --dist-help=repo-versions.) (default='')"
+    )
+
+  clp.add_option(
+    noColorArgName, dest="useColor", action="store_false",
+    help="If set, don't use color in the output for gitdist (better for output to a file).",
+    default=True )
+
+  clp.add_option(
+    debugArgName, dest="debug", action="store_true",
+    help="If set, then debugging info is printed.",
+    default=False )
+
+  clp.add_option(
+    noOptName, dest="noOpt", action="store_true",
+    help="If set, then no git commands will be run but instead will just be printed.",
+    default=False )
+
   (options, args) = clp.parse_args(nativeArgs)
 
   debugFromEnv = os.environ.get("GITDIST_DEBUG_OVERRIDE")
   if debugFromEnv:
     options.debug = True
 
-  # Check for valid usage
+  #
+  # D) Print --dist-topic=<topic-name>, check for valid usage
+  #
+
+  if options.helpTopic:
+    print getDistHelpTopicStr(options.helpTopic)
+    sys.exit(0)
 
   if not nativeCmnd and len(otherArgs) == 0:
     print addColorToErrorMsg(options.useColor,
@@ -606,7 +1003,9 @@ def getCommandlineOps():
       "Can't find git, please set --dist-use-git")
     sys.exit(1)
 
-  # Get the list of extra repos
+  #
+  # E) Get the list of extra repos
+  #
 
   if options.extraRepos:
     extraReposFullList = options.extraRepos.split(",")
@@ -628,6 +1027,10 @@ def getCommandlineOps():
     notExtraReposFullList = options.notExtraRepos.split(",")
   else:
     notExtraReposFullList = []
+
+  #
+  # F) Return
+  #
 
   return (options, nativeCmnd, otherArgs, extraReposFullList,
     notExtraReposFullList)

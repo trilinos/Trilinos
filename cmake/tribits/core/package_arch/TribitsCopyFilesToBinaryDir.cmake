@@ -67,6 +67,11 @@ INCLUDE(ParseVariableArguments)
 # files in the destination directory are always up to date just by building
 # the ``ALL`` target.
 #
+# **NOTE:** The target name ``<targetName>`` must be unique from all other
+# targets in the same TriBITS SE Package.  Otherwise, one will get a configure
+# failure complaining that a target name has already been defined.  Therefore,
+# be sure to pick long and unique target names!
+#
 # This function has a few valid calling modes:
 #
 # **1) Source files and destination files have the same name**::
