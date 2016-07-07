@@ -110,6 +110,9 @@
 /* Define if you have LAPACK library. */
 #cmakedefine HAVE_LAPACK
 
+/* Define if you have new LAPACK dgssvd3 and fgssvd3 functions which added a new parameter */
+#cmakedefine HAVE_LAPACK_GSSVD3
+
 /* Define if want to build libcheck */
 #cmakedefine HAVE_LIBCHECK
 
