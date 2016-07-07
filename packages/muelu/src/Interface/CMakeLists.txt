@@ -53,6 +53,9 @@ IF (TPL_ENABLE_yaml-cpp AND TPL_ENABLE_Boost)
   INCLUDE_DIRECTORIES(YamlParameterList)
 ENDIF()
 
+INCLUDE_DIRECTORIES(FacadeClasses)
+
+
 ###############################################
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
 SET(HEADERS "")
@@ -79,6 +82,9 @@ IF (${PACKAGE_NAME}_ENABLE_SPLIT_ETI_CPP_FILES)
   # new ETI system which autogenerates splitted cpp files
   # not used by default since it might slow down the compilation process
   SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES )
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeClassFactory)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeClassBase)
+  APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FacadeSimple)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::ParameterListInterpreter)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::MLParameterListInterpreter)
   APPEND_SET(MUELUINTERFACE_SC_LO_GO_NO_ETI_CLASSES MueLu::FactoryFactory)
@@ -98,6 +104,9 @@ ELSE()
 
 # Cpp file
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassFactory.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeClassBase.cpp)
+  APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FacadeSimple.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_ParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_MLParameterListInterpreter.cpp)
   APPEND_SET(SOURCES ${DIR}/../Utils/ExplicitInstantiation/MueLu_FactoryFactory.cpp)

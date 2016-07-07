@@ -71,6 +71,7 @@
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_ParameterListInterpreter.hpp> // TODO: move into MueLu.hpp
 #include <MueLu_VisualizationHelpers.hpp>
+#include <MueLu_FacadeClassFactory.hpp>
 
 #include <MueLu_Utilities.hpp>
 
@@ -186,6 +187,7 @@ int main(int argc, char *argv[]) {
     Teuchos::FancyOStream& fancyout = *fancy;
     fancyout.setOutputToRootOnly(0);
 
+    MueLu::FacadeClassFactory<SC,LO,GO,NO> test();
 
     // =========================================================================
     // Parameters initialization

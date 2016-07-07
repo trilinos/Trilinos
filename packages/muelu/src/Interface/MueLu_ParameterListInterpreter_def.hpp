@@ -69,6 +69,7 @@
 #include "MueLu_DirectSolver.hpp"
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_FacadeClassFactory.hpp"
 #include "MueLu_FactoryFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
@@ -150,8 +151,17 @@ namespace MueLu {
 
     if (paramList.isSublist("Hierarchy")) {
       SetFactoryParameterList(paramList);
+    } else if (paramList.isParameter("MueLu preconditioner") == true) {
+      //Teuchos::ParameterList pp;
+      MueLu::FacadeClassFactory<SC,LO,GO,NO> test;
+      Teuchos::RCP<ParameterList> pp = test.SetParameterList(paramList);
 
-    } else {
+      std::cout << "generated parameters:" << std::endl;
+      std::cout << *pp << std::endl;
+
+      SetFactoryParameterList(*pp);
+
+    }  else {
       // The validator doesn't work correctly for non-serializable data (Hint: template parameters), so strip it out
       ParameterList serialList, nonSerialList;
 

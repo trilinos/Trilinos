@@ -109,6 +109,16 @@ namespace MueLu {
     //! @name Constructors/Destructors
     //@{
 
+  protected:
+    /*! @brief Empty constructor
+     *
+     *  Constructor for derived classes
+     */
+    ParameterListInterpreter() {
+      factFact_ = Teuchos::null;
+    }
+
+  public:
     /*! @brief Constructor that accepts a user-provided ParameterList.
 
         Constructor for parameter list interpreter which directly interprets Teuchos::ParameterLists
