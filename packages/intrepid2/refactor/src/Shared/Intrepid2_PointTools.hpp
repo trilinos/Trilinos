@@ -50,10 +50,17 @@
 #ifndef __INTREPID2_POINTTOOLS_HPP__
 #define __INTREPID2_POINTTOOLS_HPP__
 
+#include "Intrepid2_ConfigDefs.hpp"
+
+#include "Intrepid2_Types.hpp"
+#include "Intrepid2_Utils.hpp"
+
 #include "Shards_CellTopology.hpp"
 
 #include "Intrepid2_Polylib.hpp"
 #include "Intrepid2_CellTools.hpp"
+
+#include "Kokkos_Core.hpp"
 
 namespace Intrepid2 {
   

@@ -104,6 +104,7 @@ namespace Intrepid2 {
               const ordinal_type         order,
               const ordinal_type         offset,
               const EPointType           pointType ) {
+    std::cout << "getLattice =  " << EPointTypeToString(pointType) << std::endl;
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( points.rank() != 2,
                                   std::invalid_argument ,
@@ -111,21 +112,28 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( order < 0 || offset < 0,
                                   std::invalid_argument ,
                                   ">>> ERROR (PointTools::getLattice): order and offset must be positive values." );
-#endif
 
     const auto latticeSize = getLatticeSize( cell, order, offset );
     const auto spaceDim = cell.getDimension();
     
-    // the interface assumes that the input array follows the cell definition
-    // so, let's match all dimensions according to the cell specification
-    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-    auto pts = Kokkos::subdynrankview( points, 
-                                       range_type(0, latticeSize), 
-                                       range_type(0, spaceDim) );
+    INTREPID2_TEST_FOR_EXCEPTION( points.dimension(0) != latticeSize ||
+                                  points.dimension(1) != spaceDim,
+                                  std::invalid_argument ,
+                                  ">>> ERROR (PointTools::getLattice): dimension does not match to lattice size." );
+#endif
+
+    // const auto latticeSize = getLatticeSize( cell, order, offset );
+    // const auto spaceDim = cell.getDimension();
     
+    // // the interface assumes that the input array follows the cell definition
+    // // so, let's match all dimensions according to the cell specification
+    // typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+    // auto pts = Kokkos::subdynrankview( points, 
+    //                                    range_type(0, latticeSize), 
+    //                                    range_type(0, spaceDim) );   
     switch (pointType) {
-    case POINTTYPE_EQUISPACED:  getEquispacedLattice( pts, cell, order, offset ); break;
-    case POINTTYPE_WARPBLEND:   getWarpBlendLattice ( pts, cell, order, offset ); break;
+    case POINTTYPE_EQUISPACED:  getEquispacedLattice( points, cell, order, offset ); break;
+    case POINTTYPE_WARPBLEND:   getWarpBlendLattice ( points, cell, order, offset ); break;
     default: {
       INTREPID2_TEST_FOR_EXCEPTION( true ,
                                     std::invalid_argument ,
@@ -151,7 +159,7 @@ namespace Intrepid2 {
     const double alpha = 0.0, beta = 0.0;
     
     // until view and dynrankview inter-operatible, we use views in a consistent way
-    Kokkos::DynRankView<pointValueType*,Kokkos::HostSpace> 
+    Kokkos::View<pointValueType*,Kokkos::HostSpace> 
       zHost("PointTools::getGaussPoints::z", np), 
       wHost("PointTools::getGaussPoints::w", np);
     
@@ -162,7 +170,9 @@ namespace Intrepid2 {
 
     typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
     auto pts = Kokkos::subdynrankview( points, range_type(0,np), 0 );
-    Kokkos::deep_copy(pts, zHost);
+    // should be fixed after view and dynrankview are inter-operatible
+    auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data(), np);
+    Kokkos::deep_copy(pts, z);
   }
 
   // -----------------------------------------------------------------------------------------  
@@ -173,7 +183,7 @@ namespace Intrepid2 {
   void PointTools::
   getEquispacedLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
                         const shards::CellTopology cell,
-                        const ordinal_type order ,
+                        const ordinal_type order,
                         const ordinal_type offset ) {
     switch (cell.getKey()) {
     // case shards::Tetrahedron<4>::key:
@@ -196,7 +206,7 @@ namespace Intrepid2 {
   void PointTools::
   getWarpBlendLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
                        const shards::CellTopology cell,
-                       const ordinal_type order ,
+                       const ordinal_type order,
                        const ordinal_type offset ) {
     switch (cell.getKey()) {
     // case shards::Tetrahedron<4>::key:
@@ -222,7 +232,7 @@ namespace Intrepid2 {
   getEquispacedLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
                             const ordinal_type order,
                             const ordinal_type offset ) {
-    auto pointsHost = Kokkos::create_mirror_view(Kokkos::HostSpace, points);
+    auto pointsHost = Kokkos::create_mirror_view(Kokkos::HostSpace::memory_space(), points);
     
     if (order == 0) 
       pointsHost(0,0) = 0.0;
@@ -230,7 +240,7 @@ namespace Intrepid2 {
       const pointValueType h = 2.0 / order;
       const ordinal_type ibeg = offset, iend = order-offset+1;
       for (auto i=ibeg;i<iend;++i) 
-	pointsHost(i-offset,0) = -1.0 + h * (pointValueType) i;
+	pointsHost(i-ibeg, 0) = -1.0 + h * (pointValueType) i;
     }
 
     Kokkos::deep_copy(points, pointsHost);
@@ -248,7 +258,7 @@ namespace Intrepid2 {
     const double alpha = 0.0, beta = 0.0;
     
     // until view and dynrankview inter-operatible, we use views in a consistent way
-    Kokkos::DynRankView<pointValueType*,Kokkos::HostSpace> 
+    Kokkos::View<pointValueType*,Kokkos::HostSpace> 
       zHost("PointTools::getGaussPoints::z", np), 
       wHost("PointTools::getGaussPoints::w", np);
     
@@ -259,7 +269,10 @@ namespace Intrepid2 {
     
     typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
     auto pts = Kokkos::subdynrankview( points, range_type(0,     np-offset), 0 );
-    auto z   = Kokkos::subdynrankview( zHost,  range_type(offset,np       )    );
+
+    // this should be fixed after view and dynrankview is interoperatable
+    auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);
+
     Kokkos::deep_copy(pts, z);
   }
 
