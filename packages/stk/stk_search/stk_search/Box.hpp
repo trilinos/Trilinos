@@ -80,6 +80,19 @@ public:
   bool operator!=(Box<value_type> const& b) const
   { return !(*this == b); }
 
+  //  NKC, keeping track of things may need to put here to support usage of this box in GTK search
+  /*
+  Box<value_type>& operator = (const Box<value_type>& box1) {
+    m_min_corner[0] = box1.m_min_corner[0];
+    m_min_corner[1] = box1.m_min_corner[1];
+    m_min_corner[2] = box1.m_min_corner[2];
+    m_max_corner[0] = box1.m_max_corner[0];
+    m_max_corner[1] = box1.m_max_corner[1];
+    m_max_corner[2] = box1.m_max_corner[2];
+    return *this;
+  }
+  */
+
   friend std::ostream& operator<<(std::ostream & out, Box<value_type> const& b)
   {
     out << "{" << b.min_corner() << "->" << b.max_corner() << "}";
@@ -108,6 +121,9 @@ struct indexed_access< stk::search::Box<T>, min_corner, Index >
   BOOST_STATIC_ASSERT((Index < 3));
   static inline T const& get( stk::search::Box<T> const& s) { return s.min_corner()[Index]; }
 };
+
+
+
 
 template <typename T, size_t Index>
 struct indexed_access< stk::search::Box<T>, max_corner, Index >
