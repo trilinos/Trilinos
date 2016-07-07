@@ -333,10 +333,25 @@ int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
   if (ml_prec_ != NULL) {
     delete ml_prec_; ml_prec_ = NULL;
   }
-
-  ml_prec_ = new ML_Epetra::MultiLevelPreconditioner(*A, *paramlist_, true);
+  const bool variableDof = paramlist_->get("ML variable DOF",false);
+  if (variableDof)
+  {
+    bool * dofPresent = paramlist_->get("DOF present",(bool*)0);
+    assert(nullptr != dofPresent);
+    int nOwnedEntities = paramlist_->get("num owned entities", 0);
+    int maxDofPerEntity = paramlist_->get("max DOF per entity", 0);
+    
+    Epetra_Vector *dummy = nullptr;
+    ml_prec_ = new ML_Epetra::MultiLevelPreconditioner(*A, *paramlist_,
+                                       nOwnedEntities,maxDofPerEntity, dofPresent,
+                                       *dummy, *dummy, false,true);
+  }
+  else
+  {
+    ml_prec_ = new ML_Epetra::MultiLevelPreconditioner(*A, *paramlist_, true);
+  }
+  
   azoo_->SetPrecOperator(ml_prec_);
-
 #endif
 
   return(0);
