@@ -95,8 +95,12 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-#if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__) && !defined(__INTEL_COMPILER)
+#if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__)
+#if defined(__INTEL_COMPILER)
+    std::string linux_name("bool ()()");
+#else
     std::string linux_name("bool ()");
+#endif
 #else
     std::string linux_name("bool ()()");
 #endif
