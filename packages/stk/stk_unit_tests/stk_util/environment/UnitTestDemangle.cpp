@@ -96,13 +96,13 @@ TEST(UnitTestDemangle, UnitTest)
 
   {
 #if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__)
-#if defined(__INTEL_COMPILER)
-    std::string linux_name("bool ()()");
-#else
     std::string linux_name("bool ()");
-#endif
+#else
+#if defined(__INTEL_COMPILER)
+    std::string linux_name("bool ()");
 #else
     std::string linux_name("bool ()()");
+#endif
 #endif
     std::string demangled_name = sierra::demangle(typeid(utest_demangle).name());
     ASSERT_EQ(linux_name, demangled_name);
