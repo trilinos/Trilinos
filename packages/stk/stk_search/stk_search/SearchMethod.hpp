@@ -39,7 +39,7 @@ namespace stk { namespace search {
 enum SearchMethod {
     BOOST_RTREE,
     OCTREE,
-    GTK_SEARCH,            // Coming soon!
+    KDTREE,                // Coming soon!
     MORTON_LINEARIZED_BVH  // Coming soon!
 };
 

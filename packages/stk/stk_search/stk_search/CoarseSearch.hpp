@@ -52,7 +52,7 @@ std::ostream& operator<<(std::ostream &out, SearchMethod method)
   switch( method )   {
   case BOOST_RTREE:            out << "BOOST_RTREE"; break;
   case OCTREE:                 out << "OCTREE"; break;
-  case GTK_SEARCH:             out << "GTK_SEARCH"; break;
+  case KDTREE:                 out << "KDTREE"; break;
   case MORTON_LINEARIZED_BVH:  out << "MORTON_LINEARIZED_BVH"; break;
   }
   return out;
