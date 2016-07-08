@@ -1,5 +1,3 @@
-#ifndef INTREPID2_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
-#define INTREPID2_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -45,78 +43,166 @@
 /** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
     \brief  Definition file for FEM basis functions of degree n for H(grad) orthogonal on LINE.
     \author Created by P. Bochev and D. Ridzal and R. Kirby
- */
+            Kokkorized by Kyungjoo Kim
+*/
+
+
+#ifndef __INTREPID2_HGRAD_LINE_CN_FEM_JACOBI_DEF_HPP__
+#define __INTREPID2_HGRAD_LINE_CN_FEM_JACOBI_DEF_HPP__
 
 namespace Intrepid2 {
+  // -------------------------------------------------------------------------------------
 
+  template<typename SpT, typename OT, typename PT>
+  template<EOperator opType>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  KOKKOS_INLINE_FUNCTION
+  void
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI<SpT,OT,PT>::Serial<opType>::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input,
+             const ordinal_type order,
+             const double alpha,
+             const double beta,
+             const ordinal_type opDn ) {
+    switch (opType) {
+    case OPERATOR_VALUE: {
+      const auto np = input.dimension(0);
+      const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
 
-template<class Scalar, class ArrayScalar>
-Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar,ArrayScalar>::Basis_HGRAD_LINE_Cn_FEM_JACOBI(int order, Scalar alpha, Scalar beta) {
-    this -> basisCardinality_  = order+1;
-    this -> basisDegree_       = order;    
-    this -> jacobiAlpha_       = alpha;    
-    this -> jacobiBeta_        = beta;    
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    this -> basisType_         = BASIS_FEM_HIERARCHICAL;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+      Polylib::JacobiPolynomial(np, input, output, null, order, alpha, beta);
+      break;
+    }
+    case OPERATOR_GRAD: {
+      const auto np = input.dimension(0);
+      const auto polyd = Kokkos::subdynrankview( output, Kokkos::ALL(), 0 );
 
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-}
+      Polylib::JacobiPolynomialDerivative(np, input, polyd, order, alpha, beta);      
+      break;
+    }
+    case OPERATOR_MAX: {
+      if (order < opDn) {
+        const auto jend = output.dimension(1);
+        const auto iend = output.dimension(0);
+        
+        for (auto j=0;j<jend;++j)
+          for (auto i=0;i<iend;++i)
+            output(i, j) = 0.0;
+      } else {
+        double scaleFactor = 1.0;
+        for (auto i=1;i<=opDn;++i) 
+          scaleFactor *= 0.5*(order + alpha + beta + i);
 
+        const auto np = input.dimension(0);
+        const auto poly = Kokkos::subdynrankview( output, Kokkos::ALL(), 0 );        
+        const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
 
-
-template<class Scalar, class ArrayScalar> 
-void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar &        outputValues,
-                                                                    const ArrayScalar &  inputPoints,
-                                                                    const EOperator      operatorType) const {
-  
-  // Verify arguments
-#ifdef HAVE_INTREPID2_DEBUG
-  Intrepid2::getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-                                                      inputPoints,
-                                                      operatorType,
-                                                      this -> getBaseCellTopology(),
-                                                      this -> getCardinality() );
-#endif
-  
-  // Number of evaluation points = dimension 0 of inputPoints
-  int numPoints = inputPoints.dimension(0);  
-  
-  Teuchos::Array<Scalar> tmpPoints(numPoints);
-  Teuchos::Array<Scalar> jacobiPolyAtPoints(numPoints);
-
-  // Copy inputPoints into tmpPoints, to prepare for call to jacobfd
-  for (int i=0; i<numPoints; i++) {
-    tmpPoints[i] = inputPoints(i, 0);
+        Polylib::JacobiPolynomial(np, input, poly, null, order-opDn, alpha+opDn, beta+opDn);
+        for (auto i=0;i<np;++i) 
+          poly(i) = scaleFactor*poly(i);
+      }
+      break;
+    }
+    default: {
+      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
+                                opType != OPERATOR_GRAD &&
+                                opType != OPERATOR_MAX,
+                                ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
+    }
+    }
   }
 
-  try {
+
+  // -------------------------------------------------------------------------------------
+
+  template<typename SpT, typename OT, typename PT>
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI<SpT,OT,PT>::
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order, 
+                                  const double alpha, 
+                                  const double beta ) {
+    this->basisCardinality_  = order+1;
+    this->basisDegree_       = order;    
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+    this->basisType_         = BASIS_FEM_HIERARCHICAL;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    // jacobi 
+    this->alpha_ = alpha;    
+    this->beta_  = beta;    
+
+    // initialize tags
+    {
+      // Basis-dependent intializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+      
+      ordinal_type tags[MaxOrder+1][4];
+      const auto card = this->basisCardinality_;
+      for (auto i=0;i<card;++i) {
+        tags[i][0] = 1;     // these are all "internal" i.e. "volume" DoFs
+        tags[i][1] = 0;     // there is only one line
+        tags[i][2] = i;     // local DoF id 
+        tags[i][3] = card;  // total number of DoFs 
+      }
+     
+      ordinal_type_array_1d_host tagView(&tag[0][0], card*4);
+ 
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      // tags are constructed on host 
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
+    }
+
+    // dof coords is not applicable to hierarchical functions
+  }
+
+  template<typename SpT, typename OT, typename PT>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  void 
+  Basis_HGRAD_LINE_Cn_FEM_JACOBI<SpT,OT,PT>::Internal::
+  getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+              const EOperator operatorType ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    Intrepid2::getValues_HGRAD_Args(outputValues,
+                                    inputPoints,
+                                    operatorType,
+                                    obj_->getBaseCellTopology(),
+                                    obj_->getCardinality() );
+#endif
+    
+    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+    // loopSize corresponds to cardinality
+    const auto loopSize = outputValues.dimension(0);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
     switch (operatorType) {
     case OPERATOR_VALUE: {
-      for (int ord = 0; ord < this -> basisCardinality_; ord++) {
-        IntrepidPolylib::jacobfd(numPoints, &tmpPoints[0], &jacobiPolyAtPoints[0], (Scalar*)0, ord, jacobiAlpha_, jacobiBeta_);
-        for (int pt = 0; pt < numPoints; pt++) {
-          // outputValues is a rank-2 array with dimensions (basisCardinality_, numPoints)
-          outputValues(ord, pt) = jacobiPolyAtPoints[pt];
-        }
-      }
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                obj_->alpha_, obj_->beta_) );
+      break;
     }
-    break;
-      
     case OPERATOR_GRAD:
     case OPERATOR_D1: {
-      for (int ord = 0; ord < this -> basisCardinality_; ord++) {
-        IntrepidPolylib::jacobd(numPoints, &tmpPoints[0], &jacobiPolyAtPoints[0], ord, jacobiAlpha_, jacobiBeta_);
-        for (int pt = 0; pt < numPoints; pt++) {
-          // outputValues is a rank-2 array with dimensions (basisCardinality_, numPoints)
-          outputValues(ord, pt, 0) = jacobiPolyAtPoints[pt];
-        }
-      }
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                obj_->alpha_, obj_->beta_) );
+      break;
     }
-    break;
-
     case OPERATOR_D2:
     case OPERATOR_D3:
     case OPERATOR_D4:
@@ -126,114 +212,26 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10: {
-      int d_order = getOperatorOrder( operatorType );
-      // fill in derivatives of polynomials of degree 0 through d_order - 1  with 0
-      // e.g. D2 annhialates linears.
-      int stop_order;
-      if (d_order > this->getDegree()) {
-	stop_order = this->getDegree();
-      }
-      else {
-	stop_order = d_order;
-      }
-      for (int p_order=0;p_order<stop_order;p_order++) {
-	for (int pt=0;pt<numPoints;pt++) {
-	  outputValues(p_order,pt,0) = 0.0;
-	}
-      }
-      // fill in rest of derivatives with the differentiation rule for Jacobi polynomials
-      for (int p_order=d_order;p_order<=this->getDegree();p_order++) {
-	// calculate the scaling factor with a little loop.
-	Scalar scalefactor = 1.0;
-	for (int d=1;d<=d_order;d++) {
-	  scalefactor *= 0.5 * ( p_order + jacobiAlpha_ + jacobiBeta_ + d );
-	}
-
-	// put in the right call to IntrepidPolyLib
-        IntrepidPolylib::jacobfd(numPoints, &tmpPoints[0], 
-				 &jacobiPolyAtPoints[0], 
-				 (Scalar*)0, p_order-d_order, 
-				 jacobiAlpha_ + d_order, 
-				 jacobiBeta_ + d_order);
-        for (int pt = 0; pt < numPoints; pt++) {
-          // outputValues is a rank-3 array with dimensions (basisCardinality_, numPoints)
-          outputValues(p_order, pt,0) = scalefactor *jacobiPolyAtPoints[pt];
-        }
-	
-      }
-      
+      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
+      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                obj_->alpha_, obj_->beta_, 
+                                                getOperatorOrder(operatorType)) );
+      break;
     }
-    break;
     case OPERATOR_DIV:
-    case OPERATOR_CURL:
-	TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-			    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
-      break;
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION( !( Intrepid2::isValidOperator(operatorType) ), std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
+    case OPERATOR_CURL: {
+      INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
+                                    operatorType == OPERATOR_CURL, std::invalid_argument,
+                                    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type (div and curl).");
       break;
     }
-  }
-  catch (std::invalid_argument &exception){
-    TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-			">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Operator failed");    
-  }
-}
-
-
-
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-                                                                    const ArrayScalar &    inputPoints,
-                                                                    const ArrayScalar &    cellVertices,
-                                                                    const EOperator        operatorType) const {
-  TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): FEM Basis calling an FVD member function");
-}
-
-
-
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::setBasisParameters(int n, Scalar alpha, Scalar beta) {
-  this -> basisCardinality_  = n+1;
-  this -> basisDegree_       = n;
-  this -> jacobiAlpha_       = alpha;
-  this -> jacobiBeta_        = beta;
-  this -> initializeTags();
-}
-
-
-
-template<class Scalar, class ArrayScalar>
-void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::initializeTags() {
-
-  // Basis-dependent initializations
-
-  int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-  int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-  int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-  int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-
-  FieldContainer<int> tags(this->basisCardinality_, 4);
-
-  for (int i=0; i < this->basisCardinality_; i++) {
-    tags(i, 0) = 1;                        // these are all "internal" i.e. "volume" DoFs
-    tags(i, 1) = 0;                        // there is only one line
-    tags(i, 2) = i;                        // local DoF id 
-    tags(i, 3) = this->basisCardinality_;  // total number of DoFs 
+    default: {
+      INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
+                                    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type");
+    }
+    }
   }
 
-  // Basis-independent function, sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
-  Intrepid2::setOrdinalTagData(this -> tagToOrdinal_,
-                              this -> ordinalToTag_,
-                               &tags(0,0),
-                              this -> basisCardinality_,
-                              tagSize,
-                              posScDim,
-                              posScOrd,
-                              posDfOrd);
 }
 
-}// namespace Intrepid2
 #endif
