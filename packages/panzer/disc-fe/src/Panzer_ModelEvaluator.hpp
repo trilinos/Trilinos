@@ -439,6 +439,59 @@ public:
                          const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
                          const Teuchos::RCP<Thyra::VectorBase<Scalar> > & D2gDxDp) const;
 
+  /** Compute second (x) derivative of the residual in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2fDx2 Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDx2) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2fDp2 Result vector allocated by <code>get_p_space(pIndex)</code>.
+    */
+  void evalModel_D2fDp2(int rIndex,
+                        int pIndex,
+                        const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                        const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                        const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDp2) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_x</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_x Direction to take the derivative with respect to.
+    * \param[out] D2fDpDx Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDpDx(int rIndex,
+                         int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                         const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDpDx) const;
+
+  /** Compute second (p) derivative of the residual in the direction <code>delta_p</code>.
+    *
+    * \param[in] rIndex Response to differentiate
+    * \param[in] pIndex Parameter to differentiate with respect to
+    * \param[in] inArgs Input arguments that sets the state
+    * \param[in] delta_p Direction to take the derivative with respect to.
+    * \param[out] D2fDxDp Result vector allocated by <code>get_x_space()</code>.
+    */
+  void evalModel_D2fDxDp(int rIndex,
+                         int pIndex,
+                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                         const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDxDp) const;
+
 private:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */

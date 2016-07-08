@@ -233,14 +233,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   ////////////////////////////////////////////////////////////
  
   // now parse the second derivative direction
-  if(d.gedc.containsDataObject(sensitivities2ndPrefix_+globalDataKey_+post)) {
-    ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_+post);
-
-    RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
-
-    dx_ = ro_ged->getGhostedVector_Epetra();
-  }
-  else if(d.gedc.containsDataObject(sensitivities2ndPrefix_+globalDataKey_)) {
+  if(d.gedc.containsDataObject(sensitivities2ndPrefix_+globalDataKey_)) {
     ged = d.gedc.getDataObject(sensitivities2ndPrefix_+globalDataKey_);
 
     RCP<EpetraVector_ReadOnly_GlobalEvaluationData> ro_ged = rcp_dynamic_cast<EpetraVector_ReadOnly_GlobalEvaluationData>(ged,true);
@@ -249,7 +242,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
   }
 
   // post conditions
-  TEUCHOS_ASSERT(dx_!=Teuchos::null); // someone has to find the dx_ vector
+  TEUCHOS_TEST_FOR_EXCEPTION(dx_==Teuchos::null,std::logic_error,
+                             "Cannot find sensitivity vector associated with \""+sensitivities2ndPrefix_+globalDataKey_+"\" and \""+post+"\""); // someone has to find the dx_ vector
 }
 
 // **********************************************************************

@@ -63,7 +63,7 @@ class ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>
 public:
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null)
-     : globalIndexer_(indexer) {}
+     : globalIndexer_(indexer), colGlobalIndexer_(cIndexer) {}
   
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
                                   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer,
@@ -77,7 +77,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,colGlobalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
@@ -90,7 +90,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
+  Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_, colGlobalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field
@@ -100,25 +100,25 @@ private:
   Teuchos::RCP<const std::map<std::string,std::string> > fieldMap_;
 
   std::size_t num_nodes;
+  std::size_t num_eq;
 
   std::size_t side_subcell_dim_;
   std::size_t local_side_id_;
-
-  ScatterDirichletResidual_Epetra() {}
 
   Teuchos::RCP<Epetra_Vector> dirichletCounter_;
 
   std::string globalDataKey_; // what global data does this fill?
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
+  bool preserveDiagonal_;
+
   //! If set to true, allows runtime disabling of dirichlet BCs on node-by-node basis
   bool checkApplyBC_;
 
-  // If set to true, scattering an initial condition
-  bool scatterIC_;
-
   // Allows runtime disabling of dirichlet BCs on node-by-node basis
   std::vector< PHX::MDField<const bool,Cell,NODE> > applyBC_;
+
+  ScatterDirichletResidual_Epetra();
 };
 
 }
