@@ -191,7 +191,7 @@ namespace Intrepid2 {
         }
         default: {
           INTREPID2_TEST_FOR_ABORT( true, 
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
 
         }
         }
@@ -228,7 +228,6 @@ namespace Intrepid2 {
 
     /** \brief  Constructor.
      */
-    Basis_HGRAD_LINE_Cn_FEM_JACOBI();
     Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order, 
                                     const double alpha = 0, 
                                     const double beta = 0 );  

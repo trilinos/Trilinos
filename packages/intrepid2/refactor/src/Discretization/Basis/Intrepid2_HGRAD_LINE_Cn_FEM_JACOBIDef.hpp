@@ -105,9 +105,7 @@ namespace Intrepid2 {
       break;
     }
     default: {
-      INTREPID2_TEST_FOR_ABORT( opType != OPERATOR_VALUE &&
-                                opType != OPERATOR_GRAD &&
-                                opType != OPERATOR_MAX,
+      INTREPID2_TEST_FOR_ABORT( true,
                                 ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
     }
     }
@@ -123,7 +121,7 @@ namespace Intrepid2 {
                                   const double beta ) {
     this->basisCardinality_  = order+1;
     this->basisDegree_       = order;    
-    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
     this->basisType_         = BASIS_FEM_HIERARCHICAL;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
 

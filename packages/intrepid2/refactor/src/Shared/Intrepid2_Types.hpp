@@ -398,7 +398,7 @@ namespace Intrepid2 {
   bool isValidDiscreteSpace(const EDiscreteSpace spaceType){
     return ( spaceType == DISCRETE_SPACE_COMPLETE   ||
              spaceType == DISCRETE_SPACE_INCOMPLETE ||
-             spaceType ==DISCRETE_SPACE_BROKEN );
+             spaceType == DISCRETE_SPACE_BROKEN );
   }
 
   /** \enum   Intrepid2::EPointType
@@ -406,9 +406,8 @@ namespace Intrepid2 {
   */
   enum EPointType {
     POINTTYPE_EQUISPACED = 0,             // value = 0
-    POINTTYPE_SPECTRAL,
-    POINTTYPE_SPECTRAL_OPEN,
-    POINTTYPE_WARPBLEND
+    POINTTYPE_WARPBLEND,
+    POINTTYPE_GAUSS
   };
 
   KOKKOS_INLINE_FUNCTION
@@ -416,8 +415,7 @@ namespace Intrepid2 {
     switch (pointType) {
     case POINTTYPE_EQUISPACED:     return "Equispaced Points";
     case POINTTYPE_WARPBLEND:      return "WarpBlend Points";
-    case POINTTYPE_SPECTRAL:       return "Spectral Points";
-    case POINTTYPE_SPECTRAL_OPEN:  return "Open Spectral Points";
+    case POINTTYPE_GAUSS:          return "Gauss Points";
     default:                       return "INVALID EPointType";
     }
     return "Error";
@@ -430,7 +428,8 @@ namespace Intrepid2 {
   KOKKOS_FORCEINLINE_FUNCTION
   bool isValidPointType(const EPointType pointType) {
     return ( pointType == POINTTYPE_EQUISPACED ||
-             pointType == POINTTYPE_WARPBLEND );
+             pointType == POINTTYPE_WARPBLEND ||
+             pointType == POINTTYPE_GAUSS );
   }
 
   /** \enum   Intrepid2::EBasis
