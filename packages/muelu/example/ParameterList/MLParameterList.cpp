@@ -227,7 +227,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
       if (xpetraParameters.GetLib() == Xpetra::UseEpetra) { //TODO: should be doable with Tpetra too
 
         // AMG as a preconditioner
@@ -337,9 +337,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       if (comm->getRank() == 0)
         std::cout << "||Residual|| = " << residualNorms << std::endl;
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO)
-
-#if 0
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
       // TODO TAW: 4/8/2016
       // temporarely deactivate this due to runtime error on perseus:
       // Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed
@@ -394,11 +392,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
         // TODO: AMG as a preconditioner (AZ_cg)
       }
-#endif // if 0 // we should not run this with PTHREADS
 #endif // HAVE_MUELU_AZTECOO
     } // if (translatedmuelu)
 
-#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_ML) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AZTECOO) && !defined(HAVE_MUELU_CUDA) && !defined(HAVE_MUELU_PTHREAD)
     if (ml) {
 
       std::cout << std::endl << std::endl << std::endl << std::endl << "**** ML ml ML ml ML" << std::endl << std::endl << std::endl << std::endl;
@@ -422,8 +419,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       }
 
       RCP<ML_Epetra::MultiLevelPreconditioner> mlPrec = rcp(new ML_Epetra::MultiLevelPreconditioner(*eA, *params));
-
-#ifdef HAVE_MUELU_AZTECOO
 
       //
       // Solve Ax = b
@@ -454,19 +449,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
           std::cout << "||Residual|| = " << residualNorms << std::endl;
       }
 
-      // TODO: AMG as a preconditioner (AZ_cg)
-#else
-      std::cout << "Enable AztecOO to see solution" << std::endl;
-#endif // HAVE_MUELU_AZTECOO
-
       std::cout << "Parameter list after ML run" << std::endl;
       const Teuchos::ParameterList & paramsAfterML = mlPrec->GetList();
       std::cout << paramsAfterML << std::endl;
 
     } // if (ml)
 
-
 #endif // HAVE_MUELU_ML && HAVE_MUELU_EPETRA
+
 
     success = true;
   }
