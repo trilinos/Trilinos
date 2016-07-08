@@ -59,29 +59,7 @@
 
 namespace { // (anonymous)
 
-
-
-using Teuchos::ArrayView;
-
-  // Return a pointer (RCP is like std::shared_ptr) to an output
-  // stream.  It prints on Process 0 of the given MPI communicator,
-  // but ignores all output on other MPI processes.
-  Teuchos::RCP<Teuchos::FancyOStream>
-  getOutputStream (const Teuchos::Comm<int>& comm)
-  {
-    using Teuchos::getFancyOStream;
-
-    const int myRank = comm.getRank ();
-    if (myRank == 0) {
-      // Process 0 of the given communicator prints to std::cout.
-      return getFancyOStream (Teuchos::rcpFromRef (std::cout));
-    }
-    else {
-      // A "black hole output stream" ignores all output directed to it.
-      return getFancyOStream (Teuchos::rcp (new Teuchos::oblackholestream ()));
-    }
-  }
-
+  using Teuchos::ArrayView;
 
   Teuchos::RCP<Tpetra::CrsGraph<> >
   getTpetraGraph (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
@@ -94,7 +72,7 @@ using Teuchos::ArrayView;
     typedef Tpetra::Map<>::global_ordinal_type GO;
     typedef Tpetra::global_size_t GST;
 
-    const LO lclNumRows = 101; // prime 
+    const LO lclNumRows = 101; // prime
     const GST gblNumRows = static_cast<GST> ( 101 * comm->getSize ());
     const GO indexBase = 0;
     const size_t numEntPerRow = 33;
@@ -186,37 +164,67 @@ using Teuchos::ArrayView;
 } // namespace (anonymous)
 
 
- TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
+TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
 {
+  using Teuchos::outArg;
   using Teuchos::RCP;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
-  using Teuchos::outArg;
   using Teuchos::TimeMonitor;
   using std::endl;
-  typedef Tpetra::Vector<>::scalar_type SC;
+  //typedef Tpetra::Vector<>::scalar_type SC;
 
   auto comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
   int my_proc = comm->getRank();
-  int nprocs = comm->getSize();
+  //int nprocs = comm->getSize(); // unused
 
+  // Set debug = true if you want immediate debug output to stderr.
+  const bool debug = true;
+  Teuchos::RCP<Teuchos::FancyOStream> outPtr =
+    debug ?
+    Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr)) :
+    Teuchos::rcpFromRef (out);
+  Teuchos::FancyOStream& myOut = *outPtr;
+
+  myOut << "Distributor createfromsendsandrecvs" << endl;
+  Teuchos::OSTab tab1 (myOut);
+
+  myOut << "Create CrsGraph, BlockCrsMatrix, and Vectors" << endl;
   auto G = getTpetraGraph (comm);
   auto A = getTpetraBlockCrsMatrix (G);
   Tpetra::Vector<> X (A->getDomainMap ());
   Tpetra::Vector<> Y (A->getRangeMap ());
 
-  auto dist = G->getImporter()->getDistributor();
-  
+  myOut << "Get the CrsGraph's Import object" << endl;
+  RCP<const Tpetra::Import<> > importer = G->getImporter ();
+  if (importer.is_null ()) {
+    TEST_EQUALITY_CONST( comm->getSize (), 1 );
+    myOut << "The CrsGraph's Import object is null";
+    if (success) {
+      myOut << ".  This is to be expected when the communicator only has 1 "
+        "process.  We'll say this test succeeded and be done with it." << endl;
+    }
+    else {
+      myOut << ", but the communicator has " << comm->getSize () << " != 1 "
+        "processes.  That means we didn't construct the test graph correctly.  "
+        "It makes no sense to continue this test beyond this point." << endl;
+    }
+    return;
+  }
+  auto dist = importer->getDistributor();
+
+  myOut << "Build up arrays to construct equivalent Distributor" << endl;
+
   const ArrayView<const int> procF = dist.getProcsFrom();
   const ArrayView<const int> procT = dist.getProcsTo();
   const ArrayView<const size_t> lenF = dist.getLengthsFrom();
   const ArrayView<const size_t> lenT = dist.getLengthsTo();
   // This section takes the consolidated procF and procT with the length and re-builds
-  // the un-consolidated lists of processors from and to that 
-  // This is needed because in Tpetra::constructExpert, the unconsolidated procsFrom and ProcsTo 
+  // the un-consolidated lists of processors from and to that
+  // This is needed because in Tpetra::constructExpert, the unconsolidated procsFrom and ProcsTo
   // will be used.
 
-  Teuchos::Array<int> nuF;   
+  Teuchos::Array<int> nuF;
   Teuchos::Array<int> nuT;
   int sumLenF=0;
   for ( ArrayView<const size_t>::iterator b = lenF.begin(); b!=lenF.end(); ++b)
@@ -240,94 +248,103 @@ using Teuchos::ArrayView;
     for (size_t i = p ; i < lend ; ++i)
       nuT[i]=procT[j];
     p+=lenT[j];
-  } 
-  
+  }
 
-  decltype(dist) newdist(comm);
-  
-  newdist.createFromSendsAndRecvs(nuT,nuF);
-   
-  // NOTE: cout is used as all errors on all processors need to be printed out, not just proc 0
+  myOut << "Create a new Distributor using createFromSendsAndRecvs" << endl;
+
+  Tpetra::Distributor newdist(comm);
+  TEST_NOTHROW( newdist.createFromSendsAndRecvs(nuT,nuF) );
+  {
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess) );
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      myOut << "Test FAILED on some process; giving up early" << endl;
+    }
+  }
+
+  myOut << "Test resulting Distributor" << endl;
 
   if(dist.getNumReceives()!=newdist.getNumReceives()) {
-    std::cout<<"ProcID "<<my_proc <<" getNumReceives does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getNumReceives does not match " << endl;
     success = false;
   }
   if(dist.getNumSends()!=newdist.getNumSends()) {
-    std::cout<<"ProcID "<<my_proc <<" getNumSends does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getNumSends does not match " << endl;
     success = false;
   }
   if(dist.hasSelfMessage()!=newdist.hasSelfMessage()) {
-    std::cout<<"ProcID "<<my_proc <<" hasSelfMessage does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" hasSelfMessage does not match " << endl;
     success = false;
   }
   if(dist.getMaxSendLength()!=newdist.getMaxSendLength()) {
-    std::cout<<"ProcID "<<my_proc <<" getMaxSendLength does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getMaxSendLength does not match " << endl;
     success = false;
   }
   if(dist.getTotalReceiveLength()!=newdist.getTotalReceiveLength()) {
-    std::cout<<"ProcID "<<my_proc <<" getTotalReceiveLength does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getTotalReceiveLength does not match " << endl;
     success = false;
   }
   ArrayView<const int> a = dist.getProcsFrom();
   ArrayView<const int> b = newdist.getProcsFrom();
   if(a.size()!=b.size()) {
-    std::cout<<"ProcID "<<my_proc <<" getProcsFrom size does not match "<<std::endl;
-  
+    myOut << "ProcID "<<my_proc <<" getProcsFrom size does not match " << endl;
+
     success = false;
   }
   for(unsigned ui = 0;ui<a.size();++ui)
     if(a[ui]!=b[ui]) {
-      std::cout<<"ProcID "<<my_proc <<" old getProcsFrom"<<a<<std::endl;
-      std::cout<<"ProcID "<<my_proc <<" new getProcsFrom"<<b<<std::endl;      
+      myOut << "ProcID "<<my_proc <<" old getProcsFrom"<<a<<endl;
+      myOut << "ProcID "<<my_proc <<" new getProcsFrom"<<b<<endl;
       success = false;
       break;
     }
   ArrayView<const int> at = dist.getProcsTo();
   ArrayView<const int> bt = newdist.getProcsTo();
   if(at.size()!=bt.size()) {
-    std::cout<<"ProcID "<<my_proc <<" getProcsTo size does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getProcsTo size does not match " << endl;
     success = false;
   }
   for(unsigned ui = 0;ui<at.size();++ui)
     if(at[ui]!=bt[ui]) {
-      std::cout<<"ProcID "<<my_proc <<" getProcsTo old "<<at<<std::endl;
-      std::cout<<"ProcID "<<my_proc <<" getProcsTo new "<<bt<<std::endl;      
+      myOut << "ProcID "<<my_proc <<" getProcsTo old "<<at<<endl;
+      myOut << "ProcID "<<my_proc <<" getProcsTo new "<<bt<<endl;
       success = false;
     }
   ArrayView<const long unsigned int> c = dist.getLengthsFrom();
   ArrayView<const long unsigned int> d = newdist.getLengthsFrom();
   if(c.size()!=d.size()) {
-    std::cout<<"ProcID "<<my_proc <<" getLengthsFrom does not match "<<b<<std::endl;      
+    myOut << "ProcID "<<my_proc <<" getLengthsFrom does not match "<<b<<endl;
     success = false;
   }
   for(unsigned ui = 0;ui<c.size();++ui)
     if(c[ui]!=d[ui]) {
-      std::cout<<"ProcID "<<my_proc <<" lengthfrom old "<<c<<std::endl;
-      std::cout<<"ProcID "<<my_proc <<" lengthsfrom new "<<d<<std::endl;
+      myOut << "ProcID "<<my_proc <<" lengthfrom old "<<c<<endl;
+      myOut << "ProcID "<<my_proc <<" lengthsfrom new "<<d<<endl;
       success = false;
       break;
     }
   ArrayView<const long unsigned int> ct = dist.getLengthsTo();
   ArrayView<const long unsigned int> dt = newdist.getLengthsTo();
   if(ct.size()!=dt.size()) {
-    std::cout<<"ProcID "<<my_proc <<" getLengthsTo size does not match "<<std::endl;
+    myOut << "ProcID "<<my_proc <<" getLengthsTo size does not match " << endl;
     success = false;
   }
   for(unsigned ui = 0;ui<ct.size();++ui)
     if(ct[ui]!=dt[ui]) {
-      std::cout<<"ProcID "<<my_proc <<" lengthTo old "<<ct<<std::endl;
-      std::cout<<"ProcID "<<my_proc <<" lengthsTo new "<<dt<<std::endl;
+      myOut << "ProcID "<<my_proc <<" lengthTo old "<<ct<<endl;
+      myOut << "ProcID "<<my_proc <<" lengthsTo new "<<dt<<endl;
       success = false;
       break;
     }
 
   if(newdist.howInitialized()!=Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS)
     {
-      std::cout<<"ProcID "<<my_proc <<"howInitialized() from distributor initalized with createFromSendsAndRecvs is incorrect"<<std::endl;
+      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initalized with createFromSendsAndRecvs is incorrect" << endl;
       success = false;
     }
-  
+
   int globalSuccess_int = -1;
   Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
