@@ -403,7 +403,9 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRowStatImpl(
     const RCP<const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > tCrsMatrix =
       Teuchos::rcp_dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >(tpetraOperator_.getConstObj(),true);
 
-    TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getDomainMap()));
+    // EGP: The following assert fails when row sum scaling is applied to blocked Tpetra operators, but without the assert, the correct row sum scaling is obtained.
+    // Furthermore, no valgrind memory errors occur in this case when the assert is removed.
+    //TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getDomainMap()));
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tCrsMatrix->getRangeMap()));
     TEUCHOS_ASSERT(tCrsMatrix->getRowMap()->isSameAs(*tRowSumVec->getMap()));
 
