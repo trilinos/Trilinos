@@ -15,7 +15,7 @@ typedef double wt;
 
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
-    crsMat_t crsmat, crsMat_t crsmat2, int algorithm, int repeat , int chunksize, int multi_color_scale, int shmemsize, int teamsize);
+    crsMat_t crsmat, crsMat_t crsmat2, int algorithm, int repeat , int chunksize, int multi_color_scale, int shmemsize, int teamsize, int use_dynamic_scheduling);
 template <typename v1>
 struct compare{
   v1 f,s;
@@ -46,6 +46,7 @@ enum { CMD_USE_THREADS = 0
   , CMD_MULTICOLORSCALE
   , CMD_SHMEMSIZE
   , CMD_TEAMSIZE
+  , CMD_DYNAMIC_SCHEDULE
   , CMD_ERROR
   , CMD_COUNT };
 
@@ -111,6 +112,9 @@ int main (int argc, char ** argv){
     }
     else if ( 0 == strcasecmp( argv[i] , "pmtx" ) ) {
       p_mtx_bin_file = argv[++i];
+    }
+    else if ( 0 == strcasecmp( argv[i] , "dynamic" ) ) {
+      cmdline[ CMD_DYNAMIC_SCHEDULE ]  = 1;
     }
     else if ( 0 == strcasecmp( argv[i] , "algorithm" ) ) {
       ++i;
@@ -236,8 +240,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
-
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
       {
@@ -265,7 +268,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
       {
         std::cout << "MULTIPLYING R*(AP)" << std::endl;
@@ -292,7 +295,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -321,7 +324,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -349,7 +352,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
     }
 
@@ -408,12 +411,12 @@ int main (int argc, char ** argv){
 
 
     std::cout << "STARTUP MULTIPLYING A*A" << std::endl;
-    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+    run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ], cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
     std::cout << "STARTUP DONE  A*A\n\n\n\n\n" << std::endl;
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+      run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat,  cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
     }else if (cmdline[ CMD_MM_MODE ] == 1){
       {
         std::cout << "MULTIPLYING A*P" << std::endl;
@@ -440,7 +443,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
 
         /*
         char *file = "AP.mtx";
@@ -481,7 +484,7 @@ int main (int argc, char ** argv){
         delete [] ew;
 
         //cmdline[ CMD_SPGEMM_ALGO ] = 1;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ], cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
 
     }
@@ -511,7 +514,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
       {
         std::cout << "MULTIPLYING (RA)*P" << std::endl;
@@ -538,7 +541,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 3){
@@ -586,7 +589,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
 
 
         if (0)
@@ -675,7 +678,7 @@ int main (int argc, char ** argv){
 
     if (cmdline[ CMD_MM_MODE ] == 0){
       std::cout << "MULTIPLYING A*A" << std::endl;
-      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+      run_experiment<Kokkos::Cuda, crsMat_t>(crsmat, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
     }
     else if (cmdline[ CMD_MM_MODE ] == 1){
 
@@ -718,7 +721,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
 
       }
       {
@@ -761,7 +764,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
     }
     else if (cmdline[ CMD_MM_MODE ] == 2){
@@ -811,7 +814,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat2, crsmat, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
 
       }
       {
@@ -862,7 +865,7 @@ int main (int argc, char ** argv){
         delete [] xadj;
         delete [] adj;
         delete [] ew;
-        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ]);
+        crsmat = run_experiment<myExecSpace, crsMat_t>(crsmat, crsmat2, cmdline[ CMD_SPGEMM_ALGO ],cmdline[ CMD_REPEAT ],cmdline[ CMD_CHUNKSIZE ], cmdline[ CMD_MULTICOLORSCALE ], cmdline[ CMD_SHMEMSIZE ], cmdline[ CMD_TEAMSIZE ], cmdline[ CMD_DYNAMIC_SCHEDULE ]);
       }
     }
 
@@ -884,7 +887,7 @@ int main (int argc, char ** argv){
 template <typename ExecSpace, typename crsMat_t>
 crsMat_t run_experiment(
     crsMat_t crsMat, crsMat_t crsMat2,
-    int algorithm, int repeat, int chunk_size ,int multi_color_scale, int shmemsize, int team_size){
+    int algorithm, int repeat, int chunk_size ,int multi_color_scale, int shmemsize, int team_size, int use_dynamic_scheduling){
 
 
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
@@ -903,6 +906,10 @@ crsMat_t run_experiment(
   kh.set_team_work_size(chunk_size);
   kh.set_shmem_size(shmemsize);
   kh.set_suggested_team_size(team_size);
+
+  if (use_dynamic_scheduling){
+    kh.set_dynamic_scheduling(true);
+  }
 
   const size_t m = crsMat.numRows();
   const size_t n = crsMat2.numRows();

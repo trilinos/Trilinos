@@ -1507,6 +1507,50 @@ void view_reduce_max(size_t num_elements, view_type view_to_reduce, typename vie
 }
 
 
+template<typename view_type>
+struct ReduceMaxRowFunctor{
+
+  view_type rowmap_view;
+  typedef typename view_type::non_const_value_type value_type;
+  const value_type min_val;
+  ReduceMaxRowFunctor(
+      view_type rowmap_view_): rowmap_view(rowmap_view_),
+          min_val(KOKKOSKERNELS_MACRO_MIN (-std::numeric_limits<value_type>::max(), 0)){
+  }
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const size_t &i, value_type &max_reduction) const {
+    value_type val = rowmap_view(i+1) - rowmap_view(i) ;
+    if (max_reduction < val) { max_reduction = val;}
+
+  }
+  KOKKOS_INLINE_FUNCTION
+  void join (volatile value_type& dst,const volatile value_type& src) const {
+    if (dst < src) { dst = src;}
+  }
+
+
+  KOKKOS_INLINE_FUNCTION
+  void init (value_type& dst) const
+  {
+    // The identity under max is -Inf.
+    // Kokkos does not come with a portable way to access
+    // floating -point Inf and NaN. Trilinos does , however;
+    // see Kokkos :: ArithTraits in the Tpetra package.
+    dst = min_val;
+  }
+
+};
+
+//view has num_rows+1 elements.
+template <typename view_type , typename MyExecSpace>
+void view_reduce_maxsizerow(size_t num_rows, view_type rowmap_view, typename view_type::non_const_value_type &max_reduction){
+  typedef Kokkos::RangePolicy<MyExecSpace> my_exec_space;
+  Kokkos::parallel_reduce( my_exec_space(0,num_rows), ReduceMaxRowFunctor<view_type>(rowmap_view), max_reduction);
+}
+
+
+
+
 template<typename view_type1, typename view_type2>
 struct IsEqualFunctor{
   view_type1 view1;
@@ -1871,7 +1915,7 @@ void transpose_graph(
   if (suggested_team_size == -1)
     Kokkos::parallel_for(  tfp_t(num_rows / team_row_chunk_size + 1 , Kokkos::AUTO_t(), vector_size), tm);
   else
-    Kokkos::parallel_for(  tfp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
+    Kokkos::parallel_for(  tcp_t(num_rows  / team_row_chunk_size + 1 , suggested_team_size, vector_size), tm);
 
   MyExecSpace::fence();
 
@@ -1927,6 +1971,58 @@ void transpose_graph2(
 
 
 }
+
+
+template <typename in_view_t,
+          typename MyExecSpace>
+struct InitScalar{
+  typedef Kokkos::TeamPolicy<MyExecSpace> team_policy_t ;
+  typedef typename team_policy_t::member_type team_member_t ;
+
+  typedef typename in_view_t::non_const_value_type nnz_lno_t;
+  typedef typename in_view_t::size_type size_type;
+
+  in_view_t view_to_init;
+  size_type num_elements;
+  size_type team_row_chunk_size;
+  nnz_lno_t init_val;
+
+  InitScalar(
+      size_type num_elements_,
+      in_view_t view_to_init_,
+      size_type chunk_size_,
+      nnz_lno_t init_val_):
+        num_elements(num_elements_),
+        view_to_init(view_to_init_), team_row_chunk_size(chunk_size_), init_val (init_val_){}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(const team_member_t & teamMember) const {
+
+    //const nnz_lno_t row_index = teamMember.league_rank() * team_row_chunk_size;
+
+    const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+    const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, num_elements);
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_ind){
+      view_to_init [row_ind] = init_val;
+    });
+  }
+};
+template <typename in_row_view_t, typename MyExecSpace>
+void init_view_withscalar(typename in_row_view_t::size_type num_elements, in_row_view_t arr,
+    typename in_row_view_t::size_type team_size,
+    typename in_row_view_t::non_const_value_type init_val){
+
+  typename in_row_view_t::size_type chunk_size =  num_elements / team_size;
+  typedef InitScalar <in_row_view_t, MyExecSpace>  InitScalar_t;
+  InitScalar_t tm (num_elements, arr, chunk_size, init_val);
+  typedef typename InitScalar_t::team_policy_t tcp_t;
+  int vector_size = 1;
+
+  Kokkos::Impl::Timer timer1;
+  Kokkos::parallel_for(  tcp_t(num_elements / chunk_size + 1 , team_size, vector_size), tm);
+  MyExecSpace::fence();
+}
+
 
 }
 }

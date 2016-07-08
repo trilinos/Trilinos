@@ -101,57 +101,37 @@ public:
   typedef typename team_policy_t::member_type team_member_t ;
 
   struct CountTag{};
-  struct CountandFillTag{};
 
-  struct SortedCountTag{};
-  struct SortedFillTag{};
-  struct SortedFillExtraTag{};
+
+
 
   struct FillTag{};
-  struct FillExtraTag{};
-
-  struct MultiCoreTag{};
-  struct MultiCoreTag2{};
-  struct MultiCoreTag3{};
-
-  struct GPUTag{};
-  struct GPUTag2{};
-  struct GPUTag3{};
-
-  struct MultiCoreTagCount{};
-  struct MultiCoreMultiHashTag{};
   struct MultiCoreDenseAccumulatorTag{};
-
+  struct MultiCoreTag{};
+  struct GPUTag{};
 
   struct Numeric1Tag{};
   struct Numeric2Tag{};
   struct Numeric3Tag{};
 
-  //typedef Kokkos::RangePolicy<MultiCoreTag, MyExecSpace> my_count_multicore_space;
-  typedef Kokkos::TeamPolicy<MultiCoreTagCount, MyExecSpace> multicore_team_count_policy_t ;
   typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace> multicore_dense_team_count_policy_t ;
-
   typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace> multicore_team_policy_t ;
-  typedef Kokkos::TeamPolicy<MultiCoreTag2, MyExecSpace> multicore2_team_policy_t ;
-  typedef Kokkos::TeamPolicy<MultiCoreTag3, MyExecSpace> multicore3_team_policy_t ;
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
-  typedef Kokkos::TeamPolicy<GPUTag2, MyExecSpace> gpu2_team_policy_t ;
-  typedef Kokkos::TeamPolicy<GPUTag3, MyExecSpace> gpu3_team_policy_t ;
-
-
-  typedef Kokkos::RangePolicy<CountTag, MyExecSpace> my_count_exec_space;
-  typedef Kokkos::RangePolicy<FillTag, MyExecSpace> my_fill_exec_space;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
-  typedef Kokkos::TeamPolicy<CountandFillTag, MyExecSpace> team_countandfill_policy_t ;
-
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-  typedef Kokkos::TeamPolicy<FillExtraTag, MyExecSpace> team_fillextra_policy_t ;
-  typedef Kokkos::RangePolicy<FillExtraTag, MyExecSpace> my_fillextra_exec_space;
-
-
   typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace> team_numeric1_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace> team_numeric3_policy_t ;
+
+
+  typedef Kokkos::TeamPolicy<MultiCoreDenseAccumulatorTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_dense_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<MultiCoreTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_multicore_team_policy_t ;
+  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_count_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_fill_policy_t ;
+  typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric1_policy_t ;
+  typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric2_policy_t ;
+  typedef Kokkos::TeamPolicy<Numeric3Tag, MyExecSpace, Kokkos::Schedule<Kokkos::Dynamic> > dynamic_team_numeric3_policy_t ;
+
 
 private:
   HandleType *handle;
@@ -172,6 +152,7 @@ private:
 
   const size_t shmem_size;
   const int concurrency;
+  bool use_dynamic_schedule;
   //const int KOKKOSKERNELS_VERBOSE = 1;
 public:
   KokkosSPGEMM(
@@ -187,7 +168,8 @@ public:
       bool transposeB_):handle (handle_), a_row_cnt(m_), b_row_cnt(n_), b_col_cnt(k_),
           row_mapA(row_mapA_), entriesA(entriesA_), valsA(), transposeA(transposeA_),
           row_mapB(row_mapB_), entriesB(entriesB_), valsB(), transposeB(transposeB_),
-          shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency())
+          shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency()),
+          use_dynamic_schedule(handle_->is_dynamic_scheduling())
           //,row_mapC(), entriesC(), valsC()
           {}
 
@@ -206,12 +188,13 @@ public:
         bool transposeB_):handle (handle_), a_row_cnt(m_), b_row_cnt(n_), b_col_cnt(k_),
             row_mapA(row_mapA_), entriesA(entriesA_), valsA(valsA_), transposeA(transposeA_),
             row_mapB(row_mapB_), entriesB(entriesB_), valsB(valsB_), transposeB(transposeB_),
-            shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency())
+            shmem_size(handle_->get_shmem_size()), concurrency(MyExecSpace::concurrency()),
+            use_dynamic_schedule(handle_->is_dynamic_scheduling())
             //,row_mapB(), entriesC(), valsC()
             {}
 
   template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_row_view_t, typename c_row_view_t>
+            typename b_oldrow_view_t, typename b_row_view_t, typename c_row_view_t>
   struct PredicMaxRowNNZ{
 
     //typedef typename a_row_view_t::non_const_value_type size_type;
@@ -221,44 +204,57 @@ public:
     nnz_lno_t m;
     a_row_view_t row_mapA;
     a_nnz_view_t entriesA;
+    b_oldrow_view_t oldrow_mapB;
     b_row_view_t row_mapB;
     c_row_view_t rough_row_mapC;
 
     const size_type min_val;
+    nnz_lno_t team_row_chunk_size;
 
     PredicMaxRowNNZ(
         nnz_lno_t m_,
         a_row_view_t row_mapA_,
         a_nnz_view_t entriesA_,
 
+        b_oldrow_view_t oldrow_mapB_,
         b_row_view_t row_mapB_,
-        c_row_view_t rough_row_mapC_):
+        c_row_view_t rough_row_mapC_,
+        nnz_lno_t team_row_chunk_size_):
           m(m_),
           row_mapA(row_mapA_), entriesA(entriesA_),
+          oldrow_mapB(oldrow_mapB_),
           row_mapB(row_mapB_), rough_row_mapC(rough_row_mapC_),
-          min_val(KOKKOSKERNELS_MACRO_MIN(-std::numeric_limits<size_type>::max(), 0)) {}
+          min_val(KOKKOSKERNELS_MACRO_MIN(-std::numeric_limits<size_type>::max(), 0)),
+          team_row_chunk_size(team_row_chunk_size_){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember, size_type &overal_max) const {
-      nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
-      //check ii is out of range. if it is, just return.
-      if (row_index >= m) return;
-      const size_type col_begin = row_mapA[row_index];
-      const size_type col_end = row_mapA[row_index + 1];
-      const nnz_lno_t left_work = col_end - col_begin;
 
-      size_type max_num_results_in_row = 0;
+      const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+      const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, m);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index)
+      {
+        //nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+        //check ii is out of range. if it is, just return.
+        //if (row_index >= m) return;
+        const size_type col_begin = row_mapA[row_index];
+        const size_type col_end = row_mapA[row_index + 1];
+        const nnz_lno_t left_work = col_end - col_begin;
 
-      Kokkos::parallel_reduce(
-          Kokkos::ThreadVectorRange(teamMember, left_work),
-          [&] (nnz_lno_t i, size_type & valueToUpdate) {
-        const size_type adjind = i + col_begin;
-        const nnz_lno_t colIndex = entriesA[adjind];
-        valueToUpdate += row_mapB [colIndex + 1] - row_mapB[colIndex];
-      },
-      max_num_results_in_row);
-      if (overal_max < max_num_results_in_row) { overal_max = max_num_results_in_row;}
-      rough_row_mapC(row_index)  = max_num_results_in_row;
+        size_type max_num_results_in_row = 0;
+
+        Kokkos::parallel_reduce(
+            Kokkos::ThreadVectorRange(teamMember, left_work),
+            [&] (nnz_lno_t i, size_type & valueToUpdate) {
+          const size_type adjind = i + col_begin;
+          const nnz_lno_t colIndex = entriesA[adjind];
+          //valueToUpdate += row_mapB [colIndex + 1] - row_mapB[colIndex];
+          valueToUpdate += row_mapB [colIndex] - oldrow_mapB[colIndex];
+        },
+        max_num_results_in_row);
+        if (overal_max < max_num_results_in_row) { overal_max = max_num_results_in_row;}
+        rough_row_mapC(row_index)  = max_num_results_in_row;
+      });
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -287,6 +283,7 @@ public:
     new_row_view_t new_row_map;
     new_nnz_view_t out_set_index_entries;
     new_nnz_view_t out_set_entries;
+    nnz_lno_t team_row_chunk_size;
 
     copyMatrix(
         row_view_t row_map_,
@@ -295,7 +292,8 @@ public:
 
         new_row_view_t new_row_map_,
         new_row_view_t out_set_index_entries_,
-        new_row_view_t out_set_entries_
+        new_row_view_t out_set_entries_,
+        nnz_lno_t team_row_chunk_size_
         ):
       row_map(row_map_),
 
@@ -305,31 +303,37 @@ public:
 
       out_set_index_entries(out_set_index_entries_),
       out_set_entries(out_set_entries_),
-      numrows(row_map_.dimension_0() - 1)
+      numrows(row_map_.dimension_0() - 1),
+      team_row_chunk_size(team_row_chunk_size_)
       {}
 
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const team_member_t & teamMember) const {
 
-      nnz_lno_t i = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
-      if (i >= numrows) return;
 
 
-      size_type rowBegin = new_row_map(i);
-      nnz_lno_t left_work = new_row_map(i + 1) - rowBegin;
-      size_type oldRowBegin= row_map(i);
+      const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+      const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& i)
+      {
 
-      Kokkos::parallel_for(
-          Kokkos::ThreadVectorRange(teamMember, left_work),
-          [&] (nnz_lno_t i) {
-        const size_type adjind = i + rowBegin;
-        const size_type oldadjind = i + oldRowBegin;
+        size_type rowBegin = new_row_map(i);
+        nnz_lno_t left_work = new_row_map(i + 1) - rowBegin;
+        size_type oldRowBegin= row_map(i);
 
-        out_set_index_entries(adjind) = set_index_entries(oldadjind);
-        out_set_entries (adjind) =  set_entries(oldadjind);
+        Kokkos::parallel_for(
+            Kokkos::ThreadVectorRange(teamMember, left_work),
+            [&] (nnz_lno_t i) {
+          const size_type adjind = i + rowBegin;
+          const size_type oldadjind = i + oldRowBegin;
+
+          out_set_index_entries(adjind) = set_index_entries(oldadjind);
+          out_set_entries (adjind) =  set_entries(oldadjind);
+        });
       });
     }
+
   };
 
   template <typename row_view_t, typename nnz_view_t, typename new_row_view_t, typename new_nnz_view_t>
@@ -363,6 +367,7 @@ public:
 
     //pool_memory_space m_space;
     const int shared_memory_size;
+    nnz_lno_t team_row_chunk_size;
 
     SingleStepZipMatrix(
         row_view_t row_map_,
@@ -376,7 +381,8 @@ public:
         new_nnz_view_t set_index_nexts_,
         new_nnz_view_t set_index_entries_,
         new_nnz_view_t set_entries_,
-        int shared_mem
+        int shared_mem,
+        nnz_lno_t team_row_chunk_size_
         ):
       row_map(row_map_),
       entries(entries_),
@@ -396,36 +402,66 @@ public:
       pset_index_entries(set_index_entries_.ptr_on_device()),
       pset_entries(set_entries_.ptr_on_device()),
       numrows(row_map_.dimension_0() - 1),
-      shared_memory_size(shared_mem)
+      shared_memory_size(shared_mem),
+      team_row_chunk_size(team_row_chunk_size_)
       {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
-      nnz_lno_t row_ind = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
-      //std::cout << "i:" << i << std::endl;
-      if (row_ind >= numrows) return;
-      size_type rowBegin = row_map(row_ind);
 
+      const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
+      const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
+      Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_ind)
+      {
+
+      //nnz_lno_t row_ind = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+      //std::cout << "i:" << i << std::endl;
+      //if (row_ind >= numrows) return;
+      size_type rowBegin = row_map(row_ind);
       nnz_lno_t left_work = row_map(row_ind + 1) - rowBegin;
 
       //same as second level hash map.
       //second level hashmap.
-      KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-        hm2(left_work, left_work, pset_index_begins + rowBegin, pset_index_nexts+ rowBegin, pset_index_entries+ rowBegin, pset_entries+ rowBegin);
+      //KokkosKernels::Experimental::UnorderedHashmap::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+      //  hm2(left_work, left_work, pset_index_begins + rowBegin, pset_index_nexts+ rowBegin, pset_index_entries+ rowBegin, pset_entries+ rowBegin);
 
       nnz_lno_t used_size = 0;
-      for (nnz_lno_t i = 0; i < left_work; ++i){
+
+      const nnz_lno_t n = entries[rowBegin];
+      nnz_lno_t prev_nset_ind = n >> compression_bit_divide_shift;
+      nnz_lno_t prev_nset = 1;
+      prev_nset = prev_nset << (n & compression_bit_mask);
+
+
+
+
+      for (nnz_lno_t i = 1; i < left_work; ++i){
         nnz_lno_t n_set = 1;
         const size_type adjind = i + rowBegin;
         const nnz_lno_t n = entries[adjind];
         nnz_lno_t n_set_index = n >> compression_bit_divide_shift;
         n_set = n_set << (n & compression_bit_mask);
-        nnz_lno_t hash = n_set_index % left_work;
+        if (prev_nset_ind == n_set_index){
+          prev_nset = prev_nset | n_set;
+        } else {
+          pset_index_entries[used_size + rowBegin] = prev_nset_ind ;
+          pset_entries[used_size + rowBegin] = prev_nset;
+          ++used_size;
+          prev_nset_ind = n_set_index;
+          prev_nset = n_set;
+        }
+        //nnz_lno_t hash = n_set_index % left_work;
+        //nnz_lno_t hash = 0;
 
-        int insertion = hm2.sequential_insert_into_hash_mergeOr(
-            hash, n_set_index,n_set, &used_size, hm2.max_value_size);
+        //int insertion = hm2.sequential_insert_into_hash_mergeOr(
+        //    hash, n_set_index,n_set, &used_size, hm2.max_value_size);
       }
-      new_row_map(row_ind) = used_size;
+      pset_index_entries[used_size + rowBegin] = prev_nset_ind ;
+      pset_entries[used_size + rowBegin] = prev_nset;
+      ++used_size;
+      new_row_map(row_ind) = rowBegin + used_size;
+
+      });
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -575,7 +611,7 @@ public:
 
       Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
         if (used_hash_sizes[0] > shared_memory_hash_size) used_hash_sizes[0] = shared_memory_hash_size;
-        new_row_map(row_ind) = used_hash_sizes[0] + used_hash_sizes[1];
+        new_row_map(row_ind) = rowBeginP + used_hash_sizes[0] + used_hash_sizes[1];
       });
 
 
@@ -597,25 +633,28 @@ public:
 
 
   template <typename a_row_view_t, typename a_nnz_view_t,
-            typename b_row_view_t,typename c_row_view_t>
+            typename b_oldrow_view_t, typename b_row_view_t,typename c_row_view_t>
   size_t getMaxRoughRowNNZ(
       nnz_lno_t m,
       a_row_view_t row_mapA,
       a_nnz_view_t entriesA,
+      b_oldrow_view_t oldrow_mapB,
       b_row_view_t row_mapB,
       c_row_view_t row_mapC){
 
     KokkosKernels::Experimental::Util::ExecSpaceType my_exec_space = KokkosKernels::Experimental::Util::get_exec_space_type<MyExecSpace>();
     int suggested_vector_size = get_suggested_vector__size(m, entriesA.dimension_0(), my_exec_space);
     int suggested_team_size = this->handle->get_suggested_team_size(suggested_vector_size);
-    //nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, n);
+    nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, m);
 
-    PredicMaxRowNNZ<a_row_view_t, a_nnz_view_t, b_row_view_t, c_row_view_t> pcnnnz(
+    PredicMaxRowNNZ<a_row_view_t, a_nnz_view_t, b_oldrow_view_t, b_row_view_t, c_row_view_t> pcnnnz(
         m,
         row_mapA,
         entriesA,
+        oldrow_mapB,
         row_mapB,
-        row_mapC);
+        row_mapC,
+        team_row_chunk_size );
 
     /*
     int max_allowed_team_size = team_policy_t::team_size_max(pcnnnz);
@@ -624,16 +663,16 @@ public:
         */
 
     typename c_row_view_t::non_const_value_type rough_size = 0;
-    Kokkos::parallel_reduce( team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
+    Kokkos::parallel_reduce( team_policy_t(m / team_row_chunk_size  + 1 , suggested_team_size, suggested_vector_size), pcnnnz, rough_size);
     MyExecSpace::fence();
 
+    /*
     size_t flops = 0;
     for (int i = 0; i < a_row_cnt; ++i){
       flops += row_mapC(i);
     }
-
-
     std::cout << "\tFLOPS:" << flops << std::endl;
+    */
 
     return rough_size;
   }
@@ -1836,6 +1875,7 @@ public:
 
 
   template <typename a_row_view_t, typename a_nnz_view_t,
+            typename b_oldrow_view_t,
             typename b_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t, typename c_nnz_view_t,
             typename pool_memory_space>
@@ -1845,6 +1885,7 @@ public:
     a_row_view_t row_mapA;
     a_nnz_view_t entriesA;
 
+    b_oldrow_view_t oldrow_mapB;
     b_row_view_t row_mapB;
     b_nnz_view_t entriesSetIndicesB;
     b_nnz_view_t entriesSetsB;
@@ -1878,6 +1919,7 @@ public:
         a_row_view_t row_mapA_,
         a_nnz_view_t entriesA_,
 
+        b_oldrow_view_t oldrow_mapB_,
         b_row_view_t row_mapB_,
         b_nnz_view_t entriesSetIndicesB_,
         b_nnz_view_t entriesSetsB_,
@@ -1893,6 +1935,7 @@ public:
           row_mapA (row_mapA_),
           entriesA(entriesA_),
 
+          oldrow_mapB(oldrow_mapB_),
           row_mapB(row_mapB_),
           entriesSetIndicesB(entriesSetIndicesB_),
           entriesSetsB(entriesSetsB_),
@@ -1995,9 +2038,9 @@ public:
           size_type a_col = colind + col_begin;
 
           nnz_lno_t rowB = entriesA[a_col];
-          size_type rowBegin = row_mapB(rowB);
+          size_type rowBegin = oldrow_mapB(rowB);
 
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work = row_mapB(rowB ) - rowBegin;
 
           for (nnz_lno_t i = 0; i < left_work; ++i){
 
@@ -2078,9 +2121,9 @@ public:
           size_type a_col = colind + col_begin;
 
           nnz_lno_t rowB = entriesA[a_col];
-          size_type rowBegin = row_mapB(rowB);
+          size_type rowBegin = oldrow_mapB(rowB);
 
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work = row_mapB(rowB ) - rowBegin;
 
           for (nnz_lno_t i = 0; i < left_work; ++i){
 
@@ -2108,6 +2151,7 @@ public:
           for (; c_rows; num_el++) {
             c_rows &= c_rows - 1; // clear the least significant bit set
           }
+
         }
         for (int i = 0; i < globally_used_hash_count; ++i){
           nnz_lno_t dirty_hash = globally_used_hash_indices[i];
@@ -2195,9 +2239,9 @@ public:
         size_type a_col = colind + col_begin;
 
         nnz_lno_t rowB = entriesA[a_col];
-        size_type rowBegin = row_mapB(rowB);
+        size_type rowBegin = oldrow_mapB(rowB);
 
-        nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+        nnz_lno_t left_work = row_mapB(rowB) - rowBegin;
 
         while (left_work){
           nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
@@ -2345,6 +2389,7 @@ public:
 
 
   template <typename a_row_view_t, typename a_nnz_view_t,
+            typename b_oldrow_view_t,
             typename b_row_view_t, typename b_nnz_view_t,
             typename c_row_view_t, typename c_nnz_view_t,
             typename pool_memory_space>
@@ -2354,6 +2399,7 @@ public:
     a_row_view_t row_mapA;
     a_nnz_view_t entriesA;
 
+    b_oldrow_view_t old_row_mapB;
     b_row_view_t row_mapB;
     b_nnz_view_t entriesSetIndicesB;
     b_nnz_view_t entriesSetsB;
@@ -2377,6 +2423,7 @@ public:
         a_row_view_t row_mapA_,
         a_nnz_view_t entriesA_,
 
+        b_oldrow_view_t old_row_mapB_,
         b_row_view_t row_mapB_,
         b_nnz_view_t entriesSetIndicesB_,
         b_nnz_view_t entriesSetsB_,
@@ -2393,6 +2440,7 @@ public:
           row_mapA (row_mapA_),
           entriesA(entriesA_),
 
+          old_row_mapB(old_row_mapB_),
           row_mapB(row_mapB_),
           entriesSetIndicesB(entriesSetIndicesB_),
           entriesSetsB(entriesSetsB_),
@@ -2489,9 +2537,9 @@ public:
           size_type a_col = colind + col_begin;
 
           nnz_lno_t rowB = entriesA[a_col];
-          size_type rowBegin = row_mapB(rowB);
+          size_type rowBegin = old_row_mapB(rowB);
 
-          nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+          nnz_lno_t left_work = row_mapB(rowB ) - rowBegin;
 
           for (nnz_lno_t i = 0; i < left_work; ++i){
 
@@ -2612,9 +2660,9 @@ public:
         size_type a_col = colind + col_begin;
 
         nnz_lno_t rowB = entriesA[a_col];
-        size_type rowBegin = row_mapB(rowB);
+        size_type rowBegin = old_row_mapB(rowB);
 
-        nnz_lno_t left_work = row_mapB(rowB + 1) - rowBegin;
+        nnz_lno_t left_work = row_mapB(rowB ) - rowBegin;
 
         while (left_work){
           nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
@@ -2777,6 +2825,7 @@ public:
   };
 
   template <typename a_row_view_t, typename a_nnz_view_t,
+              typename b_oldrow_view_t,
               typename b_row_view_t, typename b_nnz_view_t,
               typename c_row_view_t, typename c_nnz_view_t>
   void symbolic_c(
@@ -2784,6 +2833,7 @@ public:
       a_row_view_t row_mapA,
       a_nnz_view_t entriesA,
 
+      b_oldrow_view_t old_row_mapB,
       b_row_view_t row_mapB,
       b_nnz_view_t entriesSetIndex,
       b_nnz_view_t entriesSets,
@@ -2813,6 +2863,7 @@ public:
     while (maxNumRoughNonzeros > min_hash_size){
       min_hash_size *= 2;
     }
+    //min_hash_size *= 2;
 
     size_t chunksize = min_hash_size ; //this is for used hash indices
     chunksize += min_hash_size ; //this is for the hash begins
@@ -2823,11 +2874,12 @@ public:
     int pool_init_val = -1;
     //std::cout << "concurrency:" << concurrency << " sizeof (nnz_lno_t) * 2:" << sizeof (nnz_lno_t) * 2 << std::endl;
     if (
-        ( !(spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
+        ( 0 &&
+          !(spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
             spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
-            spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2 ) &&
-            concurrency <=  sizeof (nnz_lno_t) * 16)
-            ||
+            spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2
+           ) && concurrency <=  sizeof (nnz_lno_t) * 16
+         )||
         (spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED &&
         my_exec_space != KokkosKernels::Experimental::Util::Exec_CUDA)){
       //if speed is set, and exec space is cpu, then  we use dense accumulators.
@@ -2836,11 +2888,12 @@ public:
       pool_init_val = 0;
     }
 
-    StructureC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
+    StructureC<a_row_view_t, a_nnz_view_t, b_oldrow_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
       sc(
         m,
         row_mapA,
         entriesA,
+        old_row_mapB,
         row_mapB,
         entriesSetIndex,
         entriesSets,
@@ -2886,14 +2939,27 @@ public:
     }
     else {
 
-      if (( !(spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
-          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2 ) &&
-          concurrency <=  sizeof (nnz_lno_t) * 16)  || spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED){
-        Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      if (( 0 &&
+          !(  spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR ||
+              spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR ||
+              spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2
+            ) && concurrency <=  sizeof (nnz_lno_t)
+          )  ||
+          spgemm_algorithm == KokkosKernels::Experimental::Graph::SPGEMM_KK_SPEED){
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
+        else {
+          Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
       }
       else {
-        Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
+        else {
+          Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
       }
     }
     MyExecSpace::fence();
@@ -2927,10 +2993,11 @@ public:
       typename c_row_view_t::non_const_value_type c_nnz_size = h_c_nnz_size();
 
       entryIndicesC_ = c_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("entryIndicesC_"), c_nnz_size);
-      NonzeroesC<a_row_view_t, a_nnz_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
+      NonzeroesC<a_row_view_t, a_nnz_view_t,b_oldrow_view_t, b_row_view_t, b_nnz_view_t, c_row_view_t, c_nnz_view_t, pool_memory_space>
       sc( m,
           row_mapA,
           entriesA,
+          old_row_mapB,
           row_mapB,
           entriesSetIndex,
           entriesSets,
@@ -2948,7 +3015,12 @@ public:
         Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
       else {
-        Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        if (use_dynamic_schedule){
+          Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
+        else {
+          Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        }
       }
 
 
@@ -3059,23 +3131,42 @@ public:
       nnz_lno_t team_row_chunk_size = this->handle->get_team_work_size(suggested_team_size,concurrency, color_end - color_begin);
       sc.team_work_size = team_row_chunk_size;
 
-      switch (spgemm_algorithm){
-      default:
-      case KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR:
-        Kokkos::parallel_for( team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            suggested_team_size, suggested_vector_size), sc);
-        break;
-      case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2:
-        Kokkos::parallel_for( team_numeric2_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            suggested_team_size, suggested_vector_size), sc);
-        break;
-      case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR:
-        Kokkos::parallel_for( team_numeric3_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
-            suggested_team_size, suggested_vector_size), sc);
-        break;
+
+      if (use_dynamic_schedule){
+        switch (spgemm_algorithm){
+        default:
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR:
+          Kokkos::parallel_for( dynamic_team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2:
+          Kokkos::parallel_for( dynamic_team_numeric2_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR:
+          Kokkos::parallel_for( dynamic_team_numeric3_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        }
+      }
+      else {
+        switch (spgemm_algorithm){
+        default:
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_COLOR:
+          Kokkos::parallel_for( team_numeric1_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR2:
+          Kokkos::parallel_for( team_numeric2_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        case KokkosKernels::Experimental::Graph::SPGEMM_KK_MULTICOLOR:
+          Kokkos::parallel_for( team_numeric3_policy_t((color_end - color_begin) / team_row_chunk_size + 1 ,
+              suggested_team_size, suggested_vector_size), sc);
+          break;
+        }
       }
       MyExecSpace::fence();
-
     }
 
     if (KOKKOSKERNELS_VERBOSE){
@@ -3182,7 +3273,14 @@ public:
             suggested_vector_size << " team_row_chunk_size:" << team_row_chunk_size << std::endl;
       }
       timer1.reset();
-      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+
+      if (use_dynamic_schedule){
+        Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      }
+      else {
+        Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      }
+
       MyExecSpace::fence();
 
       if (KOKKOSKERNELS_VERBOSE){
@@ -3230,9 +3328,9 @@ public:
     nnz_lno_t max_nnz = this->handle->get_spgemm_handle()->get_max_result_nnz();
     nnz_lno_t min_hash_size = 1;
     while (max_nnz > min_hash_size){
-      min_hash_size *= 2;
+      min_hash_size *= 4;
     }
-
+   
     size_t chunksize = min_hash_size; //this is for used hash indices
     chunksize += min_hash_size ; //this is for the hash begins
     chunksize += max_nnz; //this is for hash nexts
@@ -3274,8 +3372,12 @@ public:
       MyExecSpace::fence();
     }
     else {
-
-      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      if (use_dynamic_schedule){
+        Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      }
+      else {
+        Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      }
       MyExecSpace::fence();
     }
 
@@ -3397,7 +3499,7 @@ public:
     nonconst_c_nnz_view_t entrySetsC;
 
     //First get a rough count.
-    nnz_lno_t maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, new_row_mapB, rowmapC);
+    nnz_lno_t maxNumRoughZeros = this->getMaxRoughRowNNZ(a_row_cnt, row_mapA, entriesA, row_mapB, new_row_mapB, rowmapC);
 
 
     if (KOKKOSKERNELS_VERBOSE){
@@ -3408,7 +3510,7 @@ public:
     }
 
     this->symbolic_c(a_row_cnt, row_mapA, entriesA,
-                        new_row_mapB, set_index_entries, set_entries,
+                        row_mapB, new_row_mapB, set_index_entries, set_entries,
                         rowmapC, entryIndicesC, entrySetsC,
                         maxNumRoughZeros);
 
@@ -3456,19 +3558,27 @@ public:
 
     Kokkos::Impl::Timer timer1;
 
+    //typename in_row_view_t::non_const_value_type max_row_nnz;
+    //KokkosKernels::Experimental::Util::view_reduce_maxsizerow<in_row_view_t, MyExecSpace>(n, in_row_map, max_row_nnz);
+
+
     size_type new_nnz_cnt = 0;
     out_row_map = out_rowmap_view_t (Kokkos::ViewAllocateWithoutInitializing("new row map"), n+1);
     out_nnz_view_t set_entries_ (Kokkos::ViewAllocateWithoutInitializing("set_entries_"), nnz);
     out_nnz_view_t set_indices_ (Kokkos::ViewAllocateWithoutInitializing("set_indices_"), nnz);
-
-    out_nnz_view_t set_begins_ (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     out_nnz_view_t set_nexts_ (Kokkos::ViewAllocateWithoutInitializing("set_nexts_"), nnz);
 
-    Kokkos::deep_copy (set_begins_, -1);
-
+    out_nnz_view_t set_begins_ (Kokkos::ViewAllocateWithoutInitializing("set_begins_"), nnz);
     MyExecSpace::fence();
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tCompression Allocations :" <<  timer1.seconds() << std::endl;
+    }
+    Kokkos::deep_copy (set_begins_, -1);
+    //KokkosKernels::Experimental::Util::init_view_withscalar <out_nnz_view_t, MyExecSpace>(nnz, set_begins_, suggested_team_size, -1);
+
+    MyExecSpace::fence();
+    if (KOKKOSKERNELS_VERBOSE){
+      std::cout << "\t\tCompression Init:" <<  timer1.seconds() << std::endl;
     }
 
     SingleStepZipMatrix <in_row_view_t, in_nnz_view_t, out_rowmap_view_t, out_nnz_view_t>
@@ -3477,7 +3587,7 @@ public:
         compression_bit_mask_, compression_bit_divide_shift_, suggested_vector_size, //divisor, shifter, vector size.
         out_row_map, //output row map
         set_begins_, set_nexts_, set_indices_, set_entries_ //global hash memory space.
-        , shmem_size
+        , shmem_size, team_row_chunk_size
     );
     sszm_compressMatrix.vector_size = suggested_vector_size;
 
@@ -3492,15 +3602,27 @@ public:
       Kokkos::parallel_for( gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     }
     else {
-      Kokkos::parallel_for( multicore_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      if (use_dynamic_schedule){
+        Kokkos::parallel_for( dynamic_multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      }
+      else {
+        Kokkos::parallel_for( multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      }
+
     }
     MyExecSpace::fence();
+
 
 
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tFirst Step of Zip Matrix:" <<  timer1.seconds() << std::endl;
     }
+
+    out_nnz_indices = set_indices_;
+    out_nnz_sets = set_entries_;
+    /*
     timer1.reset();
+
     KokkosKernels::Experimental::Util::exclusive_parallel_prefix_sum <out_rowmap_view_t, MyExecSpace> (n+1, out_row_map);
     MyExecSpace::fence();
 
@@ -3527,13 +3649,14 @@ public:
     copyMatrix <in_row_view_t, out_rowmap_view_t, out_nnz_view_t>
               matrixCopy(
                   in_row_map, set_indices_, set_entries_,
-                  out_row_map, out_nnz_indices, out_nnz_sets);
+                  out_row_map, out_nnz_indices, out_nnz_sets, team_row_chunk_size);
     timer1.reset();
-    Kokkos::parallel_for( team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), matrixCopy/*, new_nnz_cnt*/);
+    Kokkos::parallel_for( team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), matrixCopy);
     MyExecSpace::fence();
     if (KOKKOSKERNELS_VERBOSE){
       std::cout << "\t\tCompression Copy Compressed Matrix:" <<  timer1.seconds() << std::endl;
     }
+    */
   }
 
   template <typename out_row_view_t, typename out_nnz_view_t, typename in_row_view_t, typename in_nnz_view_t>
@@ -3564,8 +3687,13 @@ public:
 
 
 
+    if (use_dynamic_schedule){
+      Kokkos::parallel_for( dynamic_team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+    }
+    else {
+      Kokkos::parallel_for( team_count_policy_t(n / teamSizeMax + 1 , teamSizeMax, vector_size), ucc);
+    }
 
-    Kokkos::parallel_for( team_count_policy_t(n / teamSizeMax + 1 , teamSizeMax, vector_size), ucc);
     MyExecSpace::fence();
 
 
@@ -3583,7 +3711,13 @@ public:
     MyExecSpace::fence();
     ucc.out_entries = out_entries;
 
-    Kokkos::parallel_for( team_fill_policy_t(n / teamSizeMax + 1 , teamSizeMax, vector_size), ucc);
+    if (use_dynamic_schedule){
+      Kokkos::parallel_for( dynamic_team_fill_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+    }
+    else {
+      Kokkos::parallel_for( team_fill_policy_t(n / teamSizeMax + 1 , teamSizeMax, vector_size), ucc);
+    }
+
     MyExecSpace::fence();
 
   }

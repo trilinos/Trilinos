@@ -195,6 +195,7 @@ private:
   nnz_lno_t team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
+  bool use_dynamic_scheduling;
   //idx_array_type row_map;
   //idx_edge_array_type entries;
   //value_array_type values;
@@ -206,7 +207,8 @@ public:
   KokkosKernelsHandle():
       gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),
       team_work_size (-1), shared_memory_size(KOKKOSKERNELS_SPGEMM_SHMEMSIZE),
-      suggested_team_size(-1), my_exec_space(KokkosKernels::Experimental::Util::get_exec_space_type<HandleExecSpace>()) {}
+      suggested_team_size(-1), my_exec_space(KokkosKernels::Experimental::Util::get_exec_space_type<HandleExecSpace>()),
+      use_dynamic_scheduling(false){}
   ~KokkosKernelsHandle(){
 
     this->destroy_gs_handle();
@@ -229,6 +231,15 @@ public:
     }
 
   }
+
+  void set_dynamic_scheduling(bool is_dynamic){
+    this->use_dynamic_scheduling = is_dynamic;
+  }
+
+  bool is_dynamic_scheduling(){
+    return this->use_dynamic_scheduling;
+  }
+
   void set_team_work_size(nnz_lno_t team_work_size_){
     this->team_work_size = team_work_size_;
   }
