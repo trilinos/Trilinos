@@ -139,7 +139,7 @@ namespace Intrepid2 {
     
     // -------------------------------------------------------------------------------------
     
-    template<typename SpT,
+    template<typename SpT, ordinal_type numPtsPerEval,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void 
@@ -154,10 +154,10 @@ namespace Intrepid2 {
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
 
-      constexpr ordinal_type numPtsPerEval = 1;
-
       // loopSize corresponds to the # of points
-      const auto loopSize = inputPoints.dimension(0);
+      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
       
       switch (operatorType) {

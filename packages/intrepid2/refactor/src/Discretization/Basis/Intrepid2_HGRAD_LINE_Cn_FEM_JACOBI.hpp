@@ -147,7 +147,7 @@ namespace Intrepid2 {
                    const ordinal_type   opDn = 0 );
       };
 
-      template<typename ExecSpaceType,
+      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
@@ -161,7 +161,7 @@ namespace Intrepid2 {
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType,
-               ordinal_type numPts>
+               ordinal_type numPtsEval>
       struct Functor {
         /**/  outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
@@ -181,8 +181,8 @@ namespace Intrepid2 {
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
-          const auto ptBegin = Util::min(iter*numPts,    _inputPoints.dimension(0));
-          const auto ptEnd   = Util::min(ptBegin+numPts, _inputPoints.dimension(0));
+          const auto ptBegin = Util::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
@@ -248,13 +248,14 @@ namespace Intrepid2 {
                                       this->getBaseCellTopology(),
                                       this->getCardinality() );
 #endif
+      constexpr ordinal_type numPtsPerEval = 1;
       Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
-        getValues<ExecSpaceType>( outputValues, 
-                                  inputPoints, 
-                                  this->getDegree(),
-                                  this->alpha_, 
-                                  this->beta_,
-                                  operatorType );
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues, 
+                                                inputPoints, 
+                                                this->getDegree(),
+                                                this->alpha_, 
+                                                this->beta_,
+                                                operatorType );
     }
     
   private:
