@@ -205,8 +205,7 @@ namespace Intrepid2 {
 
   private:
 
-    /** \brief Holds the points defining the Lagrange basis */
-    Kokkos::DynRankView<pointValueType,ExecSpaceType> latticePts_;
+    // latticepts should be used by dofCoords
 
     /** \brief orthogonal basis */
     Basis_HGRAD_LINE_Cn_FEM_JACOBI<ExecSpaceType,outputValueType,pointValueType> phis_;

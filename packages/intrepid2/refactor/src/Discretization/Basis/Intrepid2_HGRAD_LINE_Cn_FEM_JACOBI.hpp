@@ -127,6 +127,74 @@ namespace Intrepid2 {
       <td align="char" char=":"> and: \f$ \frac{1}{128} (46189x^{10}-109395x^8+90090x^6-30030x^4+3465x^2-63) \f$ </tr>
       </table>
   */
+
+  namespace Impl {
+    class Basis_HGRAD_LINE_Cn_FEM_JACOBI {
+    public:
+      // this is specialized for each operator type
+      template<EOperator opType, ordinal_type numPtsPerEval>
+      struct Serial {
+        template<typename outputValueViewType,
+                 typename inputPointViewType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getValues( /**/  outputValueViewType outputValues,
+                   const inputPointViewType  inputPoints,
+                   const ordinal_type        order,
+                   const double              alpha,
+                   const double              beta,
+                   const ordinal_type        opDn = 0 );
+      };
+      
+      template<typename outputValueViewType,
+               typename inputPointViewType,
+               EOperator opType,
+               ordinal_type numPtsPerEval>
+      struct Functor {
+        /**/  outputValueViewType _outputValues;
+        const inputPointViewType  _inputPoints;
+        const double              _alpha, _beta;
+        const ordinal_type        _opDn;
+        
+        KOKKOS_INLINE_FUNCTION
+        Functor( /**/  outputValueViewType outputValues_,
+                 /**/  inputPointViewType  inputPoints_,
+                 const double              alpha_,
+                 const double              beta_,
+                 const ordinal_type        opDn_ = 0 )
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), 
+            _alpha(alpha_), _beta(beta_), _opDn(opDn_) {}
+        
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const ordinal_type ord) const {
+          switch (opType) {
+          case OPERATOR_VALUE : {
+            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL() );
+            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
+            break;
+          }
+          case OPERATOR_GRAD : {
+            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
+            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
+            break;
+          }
+          case OPERATOR_MAX: {
+            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
+            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta, _opDn );
+            break;
+          }
+          default: {
+            INTREPID2_TEST_FOR_ABORT( true, 
+                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
+            
+          }
+          }
+        }
+      };
+      
+    };
+  }
+
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
@@ -138,66 +206,6 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
     
-    // this is specialized for each operator type
-    template<EOperator opType>
-    struct Serial {
-      template<typename outputValueViewType,
-               typename inputPointViewType>
-      KOKKOS_INLINE_FUNCTION
-      static void
-      getValues( /**/  outputValueViewType outputValues,
-                 const inputPointViewType  inputPoints,
-                 const ordinal_type        order,
-                 const double              alpha,
-                 const double              beta,
-                 const ordinal_type        opDn = 0 );
-    };
-    
-    template<typename outputValueViewType,
-             typename inputPointViewType,
-             EOperator opType>
-    struct Functor {
-      /**/  outputValueViewType _outputValues;
-      const inputPointViewType  _inputPoints;
-      const double              _alpha, _beta;
-      const ordinal_type        _opDn;
-
-      KOKKOS_INLINE_FUNCTION
-      Functor( /**/  outputValueViewType outputValues_,
-               /**/  inputPointViewType  inputPoints_,
-               const double              alpha_,
-               const double              beta_,
-               const ordinal_type        opDn_ = 0 )
-        : _outputValues(outputValues_), _inputPoints(inputPoints_), 
-          _alpha(alpha_), _beta(beta_), _opDn(opDn_) {}
-
-      KOKKOS_INLINE_FUNCTION
-      void operator()(const ordinal_type ord) const {
-        switch (opType) {
-        case OPERATOR_VALUE : {
-          auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL() );
-          Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
-          break;
-        }
-        case OPERATOR_GRAD : {
-          auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
-          Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
-          break;
-        }
-        case OPERATOR_MAX: {
-          auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
-          Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta, _opDn );
-          break;
-        }
-        default: {
-          INTREPID2_TEST_FOR_ABORT( true, 
-                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
-
-        }
-        }
-      }
-    };
-
     class Internal {
     private:
       Basis_HGRAD_LINE_Cn_FEM_JACOBI *obj_;

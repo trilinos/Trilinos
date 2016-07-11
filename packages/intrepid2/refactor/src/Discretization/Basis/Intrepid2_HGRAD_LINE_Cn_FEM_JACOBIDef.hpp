@@ -53,54 +53,62 @@
 namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  template<EOperator opType>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  KOKKOS_INLINE_FUNCTION
-  void
-  Basis_HGRAD_LINE_Cn_FEM_JACOBI<SpT,OT,PT>::Serial<opType>::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input,
-             const ordinal_type order,
-             const double alpha,
-             const double beta,
-             const ordinal_type opDn ) {
-    switch (opType) {
-    case OPERATOR_VALUE: {
-      const auto np = input.dimension(0);
-      const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
-
-      Polylib::JacobiPolynomial(np, input, output, null, order, alpha, beta);
+  namespace Impl {
+    template<EOperator opType>
+    template<typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType,numPtsPerEval>::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input,
+               const ordinal_type order,
+               const double alpha,
+               const double beta,
+               const ordinal_type opDn ) {
+      const auto card = order + 1;
+      switch (opType) {
+      case OPERATOR_VALUE: {
+        const auto np = input.dimension(0);
+        const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+        for (auto p=0;p<card;++p) {
+          auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL() );
+          Polylib::JacobiPolynomial(np, input, poly, null, p, alpha, beta);
+        }
       break;
     }
     case OPERATOR_GRAD: {
       const auto np = input.dimension(0);
       const auto polyd = Kokkos::subdynrankview( output, Kokkos::ALL(), 0 );
-
-      Polylib::JacobiPolynomialDerivative(np, input, polyd, order, alpha, beta);      
+      for (auto p=0;p<card;++p) {
+        auto polyd = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );
+        Polylib::JacobiPolynomialDerivative(np, input, polyd, order, alpha, beta);      
+      }
       break;
     }
     case OPERATOR_MAX: {
       if (order < opDn) {
+        const auto pend = output.dimension(0);
         const auto jend = output.dimension(1);
-        const auto iend = output.dimension(0);
-        
-        for (auto j=0;j<jend;++j)
-          for (auto i=0;i<iend;++i)
-            output(i, j) = 0.0;
+        const auto iend = output.dimension(2);
+       
+        for (auto p=0;p<pend;++p)
+          for (auto j=0;j<jend;++j)
+            for (auto i=0;i<iend;++i)
+              output(p, i, j) = 0.0;
       } else {
         double scaleFactor = 1.0;
-        for (auto i=1;i<=opDn;++i) 
-          scaleFactor *= 0.5*(order + alpha + beta + i);
-
         const auto np = input.dimension(0);
-        const auto poly = Kokkos::subdynrankview( output, Kokkos::ALL(), 0 );        
         const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+        for (auto p=0;p<card;++p) {
+          for (auto i=1;i<=opDn;++i) 
+            scaleFactor *= 0.5*(order + alpha + beta + i);
 
-        Polylib::JacobiPolynomial(np, input, poly, null, order-opDn, alpha+opDn, beta+opDn);
-        for (auto i=0;i<np;++i) 
-          poly(i) = scaleFactor*poly(i);
+          const auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );        
+          Polylib::JacobiPolynomial(np, input, poly, null, order-opDn, alpha+opDn, beta+opDn);
+          for (auto i=0;i<np;++i) 
+            poly(i) = scaleFactor*poly(i);
+        }
       }
       break;
     }

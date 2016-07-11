@@ -43,74 +43,159 @@
 /** \file   Intrepid_HGRAD_QUAD_Cn_FEM.hpp
     \brief  Header file for the Intrepid2::HGRAD_QUAD_Cn_FEM class.
     \author Created by R. Kirby.
- */
+            Kokkorized by Kyungjoo Kim
+*/
 
-#ifndef INTREPID2_HGRAD_QUAD_Cn_FEM_HPP
-#define INTREPID2_HGRAD_QUAD_Cn_FEM_HPP
+#ifndef __INTREPID2_HGRAD_QUAD_CN_FEM_HPP__
+#define __INTREPID2_HGRAD_QUAD_CN_FEM_HPP__
+
 #include "Intrepid2_Basis.hpp"
-#include "Intrepid2_ProductTopology.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
-#include "Teuchos_Array.hpp"
-#include "Intrepid2_TensorBasis.hpp"
-#include "Intrepid2_Utils.hpp"
 
 namespace Intrepid2 {
   
-/** \class  Intrepid2::Basis_HGRAD_QUAD_C1_FEM
-    \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Quadrilateral cell
-            Implements Lagrangian basis of degree n on the reference Quadrilateral cell using
-	    a tensor product of points
-*/
-template<class Scalar, class ArrayScalar> 
-class Basis_HGRAD_QUAD_Cn_FEM : 
-    public TensorBasis<Scalar,ArrayScalar>,
-    public DofCoordsInterface<ArrayScalar> 
-{
-private:
-  ArrayScalar ptsx_;
-  ArrayScalar ptsy_;
-
-  /** \brief Initializes <var>tagToOrdinal_</var> and <var>ordinalToTag_</var> lookup arrays.
-   */
-  void initializeTags();
-  
-public:
-  virtual ~Basis_HGRAD_QUAD_Cn_FEM() {;}
-  /** \brief Constructor.
+  /** \class  Intrepid2::Basis_HGRAD_QUAD_C1_FEM
+      \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Quadrilateral cell
+      Implements Lagrangian basis of degree n on the reference Quadrilateral cell using
+      a tensor product of points
   */
-  Basis_HGRAD_QUAD_Cn_FEM( const int orderx , const int ordery,
-			   const ArrayScalar &pts_x ,
-			   const ArrayScalar &pts_y );
+  template<typename ExecSpaceType = void,
+           typename outputValueType = double,
+           typename pointValueType = double>
+  class Basis_HGRAD_QUAD_Cn_FEM
+    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  public:
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
-  /** \brief Constructor giving a PointType switch for equispaced or spectral (i.e. Gauss-Lobatto) points */
-  Basis_HGRAD_QUAD_Cn_FEM( const int order ,
-			   const EPointType &pointType );
-  
-    
-  /** \brief  FEM basis evaluation on a <strong>reference Quadrilateral</strong> cell. 
-    
-              Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-              points in the <strong>reference Quadrilateral</strong> cell. For rank and dimensions of 
-              I/O array arguments see Section \ref basis_md_array_sec .
-  
-      \param  outputValues      [out] - rank-2 or 3 array with the computed basis values
-      \param  inputPoints       [in]  - rank-2 array with dimensions (P,D) containing reference points  
-      \param  operatorType      [in]  - operator applied to basis functions        
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const EOperator        operatorType) const;
-  
-  
-  /**  \brief  FVD basis evaluation: invocation of this method throws an exception.
-   */
-  void getValues(ArrayScalar &          outputValues,
-                 const ArrayScalar &    inputPoints,
-                 const ArrayScalar &    cellVertices,
-                 const EOperator        operatorType = OPERATOR_VALUE) const;
+    // // this is specialized for each operator type
+    // template<EOperator opType>
+    // struct Serial {
+    //   template<typename outputValueViewType,
+    //            typename inputPointViewType,
+    //            typename phisValueViewType>
+    //   KOKKOS_INLINE_FUNCTION
+    //   static void
+    //   getValues( /**/  outputValueViewType outputValues,
+    //              const inputPointViewType  inputPoints,
+    //              const phisValueViewType   phisValues );
+    // };
 
-  virtual void getDofCoords( ArrayScalar & dofCoords ) const;
-};
+    // template<typename outputValueViewType,
+    //          typename inputPointViewType,
+    //          typename phisValueViewType,
+    //          EOperator opType>
+    // struct Functor {
+    //   /**/  outputValueViewType _outputValues;
+    //   const inputPointViewType  _inputPoints;
+    //   const phisValueViewType   _phisValues;
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   Functor( /**/  outputValueViewType outputValues_,
+    //            /**/  inputPointViewType  inputPoints_,
+    //            /**/  phisValueViewType   phisValues_ )
+    //     : _outputValues(outputValues_), _inputPoints(inputPoints_), _phisValues(phisValues_) {}
+
+    //   KOKKOS_INLINE_FUNCTION
+    //   void operator()(const ordinal_type ord) const {
+    //     switch (opType) {
+    //     case OPERATOR_VALUE : {
+    //       auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL() );
+    //       Serial<opType>::getValues( output, _inputPoints, _phisValues );
+    //       break;
+    //     }
+    //     case OPERATOR_MAX : {
+    //       auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
+    //       Serial<opType>::getValues( output, _inputPoints, _phisValues );
+    //       break;
+    //     }
+    //     default: {
+    //       INTREPID2_TEST_FOR_ABORT( true,
+    //                                 ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::Functor) operator is not supported");
+
+    //     }
+    //     }
+    //   }
+    // };
+
+    class Internal {
+    private:
+      Basis_HGRAD_QUAD_Cn_FEM *obj_;
+
+    public:
+      Internal(Basis_HGRAD_QUAD_Cn_FEM *obj)
+        : obj_(obj) {}
+
+      /** \brief  Evaluation of a FEM basis on a <strong>reference Line</strong> cell.
+
+          Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
+          points in the <strong>reference Line</strong> cell. For rank and dimensions of
+          I/O array arguments see Section \ref basis_md_array_sec .
+
+          \param  outputValues      [out] - variable rank array with the basis values
+          \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
+          \param  operatorType      [in]  - the operator acting on the basis functions
+      */
+      template<typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      void
+      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                 const EOperator operatorType  = OPERATOR_VALUE ) const;
+
+
+      /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+          <strong>reference Quadrilateral</strong>.
+
+          \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+          dimensioned (F,D)
+      */
+      template<typename dofCoordValueType, class ...dofCoordProperties>
+      void
+      getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
+    };
+    Internal impl_;
+
+    /** \brief  Constructor.
+     */
+    Basis_HGRAD_QUAD_Cn_FEM(const ordinal_type order,
+                            const EPointType   pointType);
+    Basis_HGRAD_QUAD_Cn_FEM(const Basis_HGRAD_QUAD_Cn_FEM &b)
+      : Basis<ExecSpaceType,outputValueType,pointValueType>(b),
+        impl_(this) {}
+
+    Basis_HGRAD_QUAD_Cn_FEM& operator=(const Basis_HGRAD_QUAD_Cn_FEM &b) {
+      if (this != &b) {
+        Basis<ExecSpaceType,outputValueType,pointValueType>::operator= (b);
+        // do not copy impl
+      }
+      return *this;
+    }
+
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+
+    virtual
+    void
+    getValues( /**/  outputViewType outputValues,
+               const pointViewType  inputPoints,
+               const EOperator operatorType = OPERATOR_VALUE ) const {
+      impl_.getValues( outputValues, inputPoints, operatorType );
+    }
+
+    virtual
+    void
+    getDofCoords( pointViewType dofCoords ) const {
+      impl_.getDofCoords( dofCoords );
+    }
+
+  private:
+
+    /** \brief orthogonal basis */
+    Basis_HGRAD_QUAD_Cn_FEM<ExecSpaceType,outputValueType,pointValueType> lineX_, lineY;
+  };
+
 }// namespace Intrepid2
 
 #include "Intrepid2_HGRAD_QUAD_Cn_FEMDef.hpp"

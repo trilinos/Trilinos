@@ -1,5 +1,3 @@
-#ifndef INTREPID2_HGRAD_QUAD_CN_FEMDEF_HPP
-#define INTREPID2_HGRAD_QUAD_CN_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //
@@ -45,203 +43,172 @@
 /** \file   Intrepid_HGRAD_QUAD_Cn_FEMDef.hpp
     \brief  Definition file for the Intrepid2::HGRAD_QUAD_Cn_FEM class.
     \author Created by R. Kirby.
- */
+            Kokkorized by Kyungjoo Kim
+*/
 
-using Teuchos::Array;
-using Teuchos::RCP;
+#ifndef __INTREPID2_HGRAD_QUAD_CN_FEM_DEF_HPP__
+#define __INTREPID2_HGRAD_QUAD_CN_FEM_DEF_HPP__
 
 namespace Intrepid2 {
-  template<class Scalar, class ArrayScalar>
-  Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_QUAD_Cn_FEM( const int orderx , const int ordery,
-									const ArrayScalar &pts_x ,
-									const ArrayScalar &pts_y ): 
-    ptsx_( pts_x.dimension(0) , 1 ) ,
-    ptsy_( pts_y.dimension(0) , 1 )
-  {
-    Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
-    bases[0].resize(2);
-    bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( orderx , pts_x ) );
-    bases[0][1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( ordery , pts_y ) );
-    this->setBases( bases );
 
-    this->basisCardinality_ = (orderx+1)*(ordery+1);
-    if (orderx > ordery) {
-      this->basisDegree_ = orderx;
-    }
-    else {
-      this->basisDegree_ = ordery;
-    }
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
+  // -------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------
+  template<typename SpT, typename OT, typename PT>
+  Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
+  Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
+                           const EPointType   pointType )
+    : lineX_(order, pointType),
+      lineY_(order, pointType) {
 
-    for (int i=0;i<pts_x.dimension(0);i++)
-      {
-	ptsx_(i,0) = pts_x(i,0);
+    this->basisCardinality_  = linX_.getCardinality()*linY_.getCardinality();
+    this->basisDegree_       = order;
+    this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this->basisType_         = BASIS_FEM_FIAT;
+    this->basisCoordinates_  = COORDINATES_CARTESIAN;
+
+    const auto card = this->basisCardinality_;
+
+    // initialize tags
+    {
+      // Basis-dependent initializations
+      const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+      const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
+      const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+      const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+      
+      // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
+      ordinal_type tags[(MaxOrder+1)*(MaxOrder+1)][4];
+      
+      // four vertices
+      ordinal_type idx = 0;
+      for (auto i=0;i<4;++i,++idx) {
+        tags[idx][0] = 0; // vertex dof
+        tags[idx][1] = i; // vertex id
+        tags[idx][2] = 0; // local dof id
+        tags[idx][3] = 1; // total number of dofs in this vertex
       }
 
-    for (int i=0;i<pts_y.dimension(0);i++)
-      {
-	ptsy_(i,0) = pts_y(i,0);
+      // four edges
+      ordinal_type dofs[4] = {};
+      dofs[0] = linX_.getCardinality();
+      dofs[1] = linY_.getCardinality();
+      dofs[2] = linX_.getCardinality();
+      dofs[3] = linY_.getCardinality();
+      for (auto i=0;i<4;++i) 
+        for (auto j=0;j<dofs[i];++j,++idx) {
+          tags[idx][0] = 1; // edge dof
+          tags[idx][1] = i; // edge id
+          tags[idx][2] = j; // local dof id
+          tags[idx][3] = dofs[i]; // total number of dofs in this edge
+        }
+      
+      // interior
+      const auto intr = card - idx;
+      for (auto i=0;i<intr;++i,++idx) {
+        tags[idx][0] = 2; // face dof
+        tags[idx][1] = 0; // edge id
+        tags[idx][2] = i; // local dof id
+        tags[idx][3] = intr; // total number of dofs in this interior
       }
 
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-  }
+      ordinal_type_array_1d_host tagView(&tag[0][0], card*4);
 
-  template<class Scalar, class ArrayScalar>
-  Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_QUAD_Cn_FEM( const int order,
-									const EPointType &pointType ):
-    ptsx_( order+1 , 1 ) ,
-    ptsy_( order+1 , 1 )
-  {
-    Array<Array<RCP<Basis<Scalar,ArrayScalar> > > > bases(1);
-    bases[0].resize(2);
-    bases[0][0] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
-    bases[0][1] = Teuchos::rcp( new Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>( order , pointType ) );
-    this->setBases( bases );
-
-    this->basisCardinality_ = (order+1)*(order+1);
-    this->basisDegree_ = order;
-    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
-    this -> basisType_         = BASIS_FEM_FIAT;
-    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
-    this -> basisTagsAreSet_   = false;
-
-    // fill up the pt arrays with calls to the lattice
-    EPointType pt = (pointType==POINTTYPE_EQUISPACED)?pointType:POINTTYPE_WARPBLEND;
-    PointTools::getLattice<Scalar,ArrayScalar >( ptsx_ ,
-							    shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >()) ,
-							    order ,
-							    0 ,
-							    pt );
-	  
-    for (int i=0;i<order+1;i++)
-      {
-	ptsy_(i,0) = ptsx_(i,0);
-      }
-
-    initializeTags();
-    this->basisTagsAreSet_ = true;
-  }
-
-  template<class Scalar, class ArrayScalar>
-  void Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::initializeTags()
-  {
-    // Basis-dependent initializations
-    int tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-    int posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
-    int posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-    int posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-  
-    // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
-
-    std::vector<int> tags( tagSize * this->getCardinality() );
-
-    // temporarily just put everything on the cell itself
-    for (int i=0;i<this->getCardinality();i++) {
-       tags[tagSize*i] = 2;
-       tags[tagSize*i+1] = 0;
-       tags[tagSize*i+2] = i;
-       tags[tagSize*i+3] = this->getCardinality();
-     }
-
-    Basis<Scalar,ArrayScalar> &xBasis_ = *this->getBases()[0][0];
-    Basis<Scalar,ArrayScalar> &yBasis_ = *this->getBases()[0][1];
-
-    // now let's try to do it "right"
-    // let's get the x and y bases and their dof
-    const std::vector<std::vector<int> >& xdoftags = xBasis_.getAllDofTags();
-    const std::vector<std::vector<int> >& ydoftags = yBasis_.getAllDofTags();
-
-    std::map<int,std::map<int,int> > total_dof_per_entity;
-    std::map<int,std::map<int,int> > current_dof_per_entity;
-
-    for (int i=0;i<4;i++) {
-      total_dof_per_entity[0][i] = 0;
-      current_dof_per_entity[0][i] = 0;
+      // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
+      // tags are constructed on host
+      this->setOrdinalTagData(this->tagToOrdinal_,
+                              this->ordinalToTag_,
+                              tagView,
+                              this->basisCardinality_,
+                              tagSize,
+                              posScDim,
+                              posScOrd,
+                              posDfOrd);
     }
-    for (int i=0;i<4;i++) {
-      total_dof_per_entity[1][i] = 0;
-      current_dof_per_entity[1][i] = 0;
+
+    // dofCoords on host and create its mirror view to device
+    Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
+    lineX_.impl_.getDofCoords(dofCoordsLinX);
+    lineY_.impl_.getDofCoords(dofCoordsLinY);
+
+    // four vertices
+    begin = 0; end = 4;
+    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0;
+    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0;
+    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0;
+    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0;
+
+    // four edges
+    begin = end; end += lineX_.getCardinality() - 2;
+    {
+      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
+      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
+      Kokkos::deep_copy(dofCoordsEdge0, internalDofCoordsX);
+      Kokkos::deep_copy(dofCoordsEdge1, -1.0);
     }
-    total_dof_per_entity[2][0] = 0;
-    current_dof_per_entity[2][0] = 0;
+    begin = end; end += lineY_.getCardinality() - 2;
+    {
+      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
+      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
+      Kokkos::deep_copy(dofCoordsEdge0, 1.0);
+      Kokkos::deep_copy(dofCoordsEdge1, internalDofCoordsY);
+    }
+    begin = end; end += lineX_.getCardinality() - 2;
+    {
+      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
+      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
+      Kokkos::deep_copy(dofCoordsEdge0, internalDofCoordsX);
+      Kokkos::deep_copy(dofCoordsEdge1, 1.0);
+    }
+    begin = end; end += lineY_.getCardinality() - 2;
+    {
+      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
+      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
+      Kokkos::deep_copy(dofCoordsEdge0, -1.0);
+      Kokkos::deep_copy(dofCoordsEdge1, internalDofCoordsY);
+    }
+
+    // interior
+    begin = end; end += edgeDofX*edgeDofY;
+    auto dofCoordsIntr = Kokkos::subdynrankview(dofCoords, range_type(begin, end), Kokkos::ALL());
     
-    // let's tally the total degrees of freedom on each entity
-    for (int j=0;j<yBasis_.getCardinality();j++) {
-      const int ydim = ydoftags[j][0];
-      const int yent = ydoftags[j][1];
-      for (int i=0;i<xBasis_.getCardinality();i++) {
-	const int xdim = xdoftags[i][0];
-	const int xent = xdoftags[i][1];
-	int dofdim;
-	int dofent;
-	ProductTopology::lineProduct2d( xdim , xent , ydim , yent , dofdim , dofent );
-	total_dof_per_entity[dofdim][dofent] += 1;
+    for (auto j=0;j<edgeDofY;++j)  {
+      for (auto i=0;i<edgeDofX;++i,++idx)
+        dofCoordsIntr(idx, 0) = internalDofCoordsX(i);
+        dofCoordsIntr(idx, 1) = internalDofCoordsY(j);
       }
-    }
-
-    int tagcur = 0;
-    for (int j=0;j<yBasis_.getCardinality();j++) {
-      const int ydim = ydoftags[j][0];
-      const int yent = ydoftags[j][1];
-      for (int i=0;i<xBasis_.getCardinality();i++) {
-	const int xdim = xdoftags[i][0];
-	const int xent = xdoftags[i][1];
-	int dofdim;
-	int dofent;
-	ProductTopology::lineProduct2d( xdim , xent , ydim , yent , dofdim , dofent );
-	tags[4*tagcur] = dofdim;
-	tags[4*tagcur+1] = dofent;
-	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
-	current_dof_per_entity[dofdim][dofent]++;
-	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
-	tagcur++;
-      }
-    }
-
-    setOrdinalTagData(this -> tagToOrdinal_,
-		      this -> ordinalToTag_,
-		      &(tags[0]),
-		      this -> basisCardinality_,
-		      tagSize,
-		      posScDim,
-		      posScOrd,
-		      posDfOrd);
-
+    
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
 
-  template<class Scalar, class ArrayScalar>
-  void Basis_HGRAD_QUAD_Cn_FEM<Scalar,ArrayScalar>::getValues( ArrayScalar &outputValues ,
-							       const ArrayScalar &inputPoints ,
-							       const EOperator operatorType ) const 
-  {
+  template<typename SpT, typename OT, typename PT>
+  template<typename outputValueValueType, class ...outputValueProperties,
+           typename inputPointValueType,  class ...inputPointProperties>
+  void
+  Basis_HGRAD_QUAD_C1_FEM<SpT,OT,PT>::Internal::
+  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+             const EOperator operatorType ) const {
 #ifdef HAVE_INTREPID2_DEBUG
     getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
 					      inputPoints,
 					      operatorType,
-					      this -> getBaseCellTopology(),
-					      this -> getCardinality() );
+					      obj_->getBaseCellTopology(),
+					      obj_->getCardinality() );
 #endif
 
     ArrayScalar xInputPoints(inputPoints.dimension(0),1);
     ArrayScalar yInputPoints(inputPoints.dimension(0),1);
-
-    const Basis<Scalar,ArrayScalar> &xBasis_ = *this->bases_[0][0];
-    const Basis<Scalar,ArrayScalar> &yBasis_ = *this->bases_[0][1];
-
-    for (int i=0;i<inputPoints.dimension(0);i++) {
-      xInputPoints(i,0) = inputPoints(i,0);
-      yInputPoints(i,0) = inputPoints(i,1);
-    }
 
     switch (operatorType) {
     case OPERATOR_VALUE:
       {
 	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
 	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
+
+
 
 	xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
 	yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
