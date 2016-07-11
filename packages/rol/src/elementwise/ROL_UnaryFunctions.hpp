@@ -76,6 +76,16 @@ public:
   }  
 }; // class Reciprocal
 
+// Get the elementwise absolute value of a vector
+template<class Real>
+class AbsoluteValue : public UnaryFunction<Real> {
+public:
+  Real apply( const Real &x ) const {
+    return std::abs(x); 
+  }
+
+};
+
 
 // Compute the elementwise power of a vector
 template<class Real> 
