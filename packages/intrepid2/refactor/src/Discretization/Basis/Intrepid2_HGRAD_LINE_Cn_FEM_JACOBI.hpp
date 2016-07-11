@@ -146,7 +146,7 @@ namespace Intrepid2 {
                    const double         beta,
                    const ordinal_type   opDn = 0 );
       };
-
+      
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
@@ -199,7 +199,7 @@ namespace Intrepid2 {
               Serial<opType>::getValues( output, input, _order, _alpha, _beta );
               break;
             }
-            case OPERATOR_MAX: {
+            case OPERATOR_Dn: {
               auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
               Serial<opType>::getValues( output, input, _order, _alpha, _beta, _opDn );
               break;

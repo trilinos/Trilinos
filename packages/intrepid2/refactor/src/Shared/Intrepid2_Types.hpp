@@ -111,6 +111,7 @@ namespace Intrepid2 {
   /// define constants
   class Parameters {
   public:
+    static constexpr unsigned int MaxNumPtsPerBasisEval= 16;      /// The maximum number of points to eval in serial mode
     static constexpr unsigned int MaxOrder             = 10;      /// The maximum reconstruction order.
     static constexpr unsigned int MaxIntegrationPoints = 1001;    /// The maximum number of integration points for direct cubature rules.
     static constexpr unsigned int MaxCubatureDegreeEdge= 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.
@@ -269,7 +270,8 @@ namespace Intrepid2 {
     OPERATOR_D8,        // 11
     OPERATOR_D9,        // 12
     OPERATOR_D10,       // 13
-    OPERATOR_MAX        // 14
+    OPERATOR_Dn,        // 14
+    OPERATOR_MAX = OPERATOR_Dn // 14
   };
 
   KOKKOS_INLINE_FUNCTION
@@ -289,7 +291,7 @@ namespace Intrepid2 {
     case OPERATOR_D8:    return "D8";
     case OPERATOR_D9:    return "D9";
     case OPERATOR_D10:   return "D10";
-    case OPERATOR_MAX:   return "Max. Operator";
+    case OPERATOR_MAX:   return "Dn Operator";
     default:             return "INVALID EOperator";
     }
     return "Error";

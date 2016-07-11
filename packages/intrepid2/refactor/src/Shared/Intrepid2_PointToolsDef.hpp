@@ -104,7 +104,6 @@ namespace Intrepid2 {
               const ordinal_type         order,
               const ordinal_type         offset,
               const EPointType           pointType ) {
-    std::cout << "getLattice =  " << EPointTypeToString(pointType) << std::endl;
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( points.rank() != 2,
                                   std::invalid_argument ,
@@ -256,24 +255,27 @@ namespace Intrepid2 {
     // up to degree 2*i-1
     const ordinal_type np = order + 1;
     const double alpha = 0.0, beta = 0.0;
+    const ordinal_type s = np - 2*offset;
     
-    // until view and dynrankview inter-operatible, we use views in a consistent way
-    Kokkos::View<pointValueType*,Kokkos::HostSpace> 
-      zHost("PointTools::getGaussPoints::z", np), 
-      wHost("PointTools::getGaussPoints::w", np);
-    
-    // sequential means that the code is decorated with KOKKOS_INLINE_FUNCTION 
-    // and it does not invoke parallel for inside (cheap operation), which means 
-    // that gpu memory is not accessible unless this is called inside of functor.
-    Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>::getValues(zHost, wHost, np, alpha, beta);
-    
-    typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-    auto pts = Kokkos::subdynrankview( points, range_type(0,     np-offset), 0 );
-
-    // this should be fixed after view and dynrankview is interoperatable
-    auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);
-
-    Kokkos::deep_copy(pts, z);
+    if (s > 0) {
+      // until view and dynrankview inter-operatible, we use views in a consistent way
+      Kokkos::View<pointValueType*,Kokkos::HostSpace> 
+        zHost("PointTools::getGaussPoints::z", np), 
+        wHost("PointTools::getGaussPoints::w", np);
+      
+      // sequential means that the code is decorated with KOKKOS_INLINE_FUNCTION 
+      // and it does not invoke parallel for inside (cheap operation), which means 
+      // that gpu memory is not accessible unless this is called inside of functor.
+      Polylib::Serial::Cubature<POLYTYPE_GAUSS_LOBATTO>::getValues(zHost, wHost, np, alpha, beta);
+      
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      auto pts = Kokkos::subdynrankview( points, range_type(0, s), 0 );
+      
+      // this should be fixed after view and dynrankview is interoperatable
+      auto z   = Kokkos::DynRankView<pointValueType,Kokkos::HostSpace>(zHost.data() + offset, np-offset);
+      
+      Kokkos::deep_copy(pts, z);
+    } 
   }
 
   // template<class Scalar, class ArrayType>

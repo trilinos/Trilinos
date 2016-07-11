@@ -68,10 +68,10 @@ namespace Intrepid2 {
                const ordinal_type   order,
                const double         alpha,
                const double         beta,
-               const ordinal_type   opDn ) {
+               const ordinal_type   operatorDn ) {
       // cardinality of the evaluation order
       const auto card = order + 1;
-      
+      ordinal_type opDn = operatorDn;
       switch (opType) {
       case OPERATOR_VALUE: {
         const auto np = input.dimension(0);
@@ -101,7 +101,8 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10:
-      case OPERATOR_MAX: {
+        opDn = getOperatorOrder(opType);
+      case OPERATOR_Dn: {
         {
           const auto pend = output.dimension(0);
           const auto jend = output.dimension(1);
@@ -183,7 +184,7 @@ namespace Intrepid2 {
       case OPERATOR_D8:
       case OPERATOR_D9:
       case OPERATOR_D10: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX,numPtsPerEval> FunctorType;
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_Dn,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
                                                   order, alpha, beta,
                                                   getOperatorOrder(operatorType)) );
