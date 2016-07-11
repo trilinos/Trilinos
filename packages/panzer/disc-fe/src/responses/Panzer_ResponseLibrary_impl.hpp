@@ -699,7 +699,35 @@ addResidualResponsesToInArgs(Overloader<typename TraitsT::Hessian>,panzer::Assem
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
-  TEUCHOS_ASSERT(false);
+  typedef typename TraitsT::Hessian EvalT;
+  typedef typename TraitsT::RealType ScalarT;
+
+  // extract the residual response
+  RCP<Response_Residual<EvalT> > resp = rcp_dynamic_cast<Response_Residual<EvalT> >(getResponse<EvalT>("RESIDUAL"));
+  resp->initializeResponse();
+
+  // setup the local ghosted container
+  if(ghostedContainer_==Teuchos::null)
+    ghostedContainer_ = linObjFactory_->buildGhostedLinearObjContainer();
+
+  // replace ghosted container with local one
+  const RCP<ThyraObjContainer<ScalarT> > thGhostedContainer =
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(ghostedContainer_);
+  input_args.ghostedContainer_ = ghostedContainer_;
+
+  // convert responses into thyra object
+  const RCP<ThyraObjContainer<ScalarT> > thGlobalContainer =
+    Teuchos::rcp_dynamic_cast<ThyraObjContainer<ScalarT> >(input_args.container_);
+
+  // set the ghosted and unique residual
+  thGhostedContainer->set_A_th(resp->getGhostedHessian());
+
+  RCP<Thyra::VectorBase<ScalarT> > dummy_f = Thyra::createMember(resp->getHessian()->range());
+  thGlobalContainer->set_f_th(dummy_f);
+  thGlobalContainer->set_A_th(resp->getHessian());
+
+  // Zero values in ghosted container objects
+  thGhostedContainer->initializeMatrix(0.0);
 }
 #endif
 

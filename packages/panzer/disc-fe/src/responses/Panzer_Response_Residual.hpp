@@ -123,6 +123,55 @@ public:
   virtual void scatterResponse() {}
 };
 
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+/** This is the response object used for calculation of the 
+  * Hessian. This class uses the LOF to construct a ghosted Hessian
+  * object. A user can uses class members to construct a compatible
+  * Hessian object and then set it as the Hessian for this response to
+  * fill.
+  */
+template < >
+class Response_Residual<panzer::Traits::Hessian> : public ResponseBase {
+private:
+  Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory_;
+
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > hessian_;
+  mutable Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > ghostedHessian_;
+      // mutable because of lazy construction (as needed)
+
+public:
+  Response_Residual(const std::string & responseName,
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) 
+     : ResponseBase(responseName) 
+     , linObjFactory_(lof) {}
+  virtual ~Response_Residual() {}
+
+  /** Access the ghosted Hessian object. Note that this method will not return null.
+    * When called for the first time this will use the LOF to construct a ghosted Hessian.
+    */
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getGhostedHessian() const; 
+
+  /** Access the Hessian. This method can return null, but will only return the Hessian
+    * class set by setHessian.
+    */
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > getHessian() const; 
+
+  /** Set the Hessian to use. If set to null, the internal Hessian will be lost. This
+    * is assumed to be correctly sized.
+    */
+  void setHessian(const Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > & res);
+
+  /** Build a correctly sized Hessian. This is a conenience, it wraps the 
+    * linear object factory.
+    */
+  Teuchos::RCP<Thyra::LinearOpBase<panzer::Traits::RealType> > allocateHessian() const; 
+
+  // Functions inherited from ResponseBase
+  virtual void initializeResponse() {}
+  virtual void scatterResponse() {}
+};
+#endif
+
 }
 
 #endif
