@@ -42,16 +42,22 @@
 // @HEADER
 
 /*! \file  test_05.cpp
-    \brief Test vector norms.
+    \brief Shows how to use the nonlinear least squares interface
+           to find a feasible point for the equality constrained NLP
+           from Nocedal/Wright, 2nd edition, page 574, example 18.2.
 */
 
-//#define USE_HESSVEC 0
-
+#include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_StdVector.hpp"
-#include "ROL_VectorNorms.hpp"
+#include "ROL_NonlinearLeastSquaresObjective.hpp"
+#include "ROL_Algorithm.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
 #include <iostream>
 
 typedef double RealT;
+
 
 int main(int argc, char *argv[]) {
 
@@ -66,55 +72,80 @@ int main(int argc, char *argv[]) {
   else
     outStream = Teuchos::rcp(&bhs, false);
 
-  // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
-
   int errorFlag  = 0;
-  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
 
-  // *** Test body.
+  // *** Example body.
 
   try {
 
-    typedef typename std::vector<RealT>::size_type uint;
+    Teuchos::RCP<ROL::Objective<RealT> > obj;
+    Teuchos::RCP<ROL::EqualityConstraint<RealT> > constr;
+    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > sol_rcp = Teuchos::rcp( new std::vector<RealT> (0, 0.0) );
+    ROL::StdVector<RealT> x(x_rcp);      // Iteration vector.
+    ROL::StdVector<RealT> sol(sol_rcp);  // Reference solution vector.
 
-    uint dim = 10;
-    RealT sum = 0;
+    // Retrieve objective, constraint, iteration vector, solution vector.
+    ROL::ZOO::getSimpleEqConstrained <RealT, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT>, ROL::StdVector<RealT> > (obj, constr, x, sol);
 
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT>(dim) );
- 
-    ROL::StdVector<RealT> x(x_rcp);
-
-    *outStream << "x = [";
-    for(uint k=0; k<dim-1; ++k) {
-     sum += static_cast<RealT>(k);
-     (*x_rcp)[k] = static_cast<RealT>(k);
-     *outStream << k << ",";
+    // Inititalize vectors
+    int dim = 5;
+    int nc = 3;
+    RealT left = -1e0, right = 1e0;
+    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > g_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vc_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
+    Teuchos::RCP<std::vector<RealT> > vl_rcp = Teuchos::rcp( new std::vector<RealT> (nc, 0.0) );
+    ROL::StdVector<RealT> xtest(xtest_rcp);
+    ROL::StdVector<RealT> g(g_rcp);
+    ROL::StdVector<RealT> d(d_rcp);
+    ROL::StdVector<RealT> v(v_rcp);
+    ROL::StdVector<RealT> vc(vc_rcp);
+    ROL::StdVector<RealT> vl(vl_rcp);
+    // set xtest, d, v
+    for (int i=0; i<dim; i++) {
+      (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
+    // set vc, vl
+    for (int i=0; i<nc; i++) {
+      (*vc_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+      (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
+    }
+
+    // Initialize nonlinear least squares objectives
+    ROL::NonlinearLeastSquaresObjective<RealT> nlls(constr,x,vc,false);
+    ROL::NonlinearLeastSquaresObjective<RealT> gnnlls(constr,x,vc,true);
+
+    // Check derivatives
+    constr->checkApplyJacobian(xtest, v, vc, true, *outStream);                 *outStream << "\n";
+    constr->checkApplyAdjointJacobian(xtest, vl, vc, xtest, true, *outStream);  *outStream << "\n";
+    constr->checkApplyAdjointHessian(xtest, vl, d, xtest, true, *outStream);    *outStream << "\n";
+    nlls.checkGradient(xtest, d, true, *outStream);                             *outStream << "\n"; 
+    nlls.checkHessVec(xtest, v, true, *outStream);                              *outStream << "\n";
+    nlls.checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
     
-    sum += static_cast<RealT>(dim-1);
-    (*x_rcp)[dim-1] = static_cast<RealT>(dim-1);
-    *outStream << dim-1 << "]" << std::endl;
+    // Define algorithm.
+    Teuchos::ParameterList parlist;
+    std::string stepname = "Trust Region";
+    parlist.sublist("Step").sublist(stepname).set("Subproblem Solver","Truncated CG");
+    parlist.sublist("Status Test").set("Gradient Tolerance",1.e-10);
+    parlist.sublist("Status Test").set("Constraint Tolerance",1.e-10);
+    parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
+    parlist.sublist("Status Test").set("Iteration Limit",100);
 
-    RealT l1norm   = ROL::normL1(x);
-    RealT l2norm   = ROL::normLp(x,2);
-    RealT linfnorm = ROL::normLinf(x);
-
-    *outStream << "||x||_1   = " << l1norm << std::endl;
-    *outStream << "||x||_2   = " << l2norm << std::endl;
-    *outStream << "||x||_inf = " << linfnorm << std::endl;
-   
-    if( std::abs(l1norm-45) > errtol ) {
-      ++errorFlag;
-    }
-    if( std::abs(l2norm-x.norm()) > errtol ) {
-      ++errorFlag;
-    }
-    if( std::abs(linfnorm-(*x_rcp)[dim-1])> errtol ) { 
-      ++errorFlag;
-    }
-
+    // Run Algorithm
+    *outStream << "SOLVE USING FULL HESSIAN\n";
+    x.set(xtest);
+    ROL::Algorithm<RealT> algo1(stepname, parlist);
+    algo1.run(x, nlls, true, *outStream);
+    *outStream << "SOLVE USING GAUSS-NEWTON HESSIAN\n";
+    x.set(xtest);
+    ROL::Algorithm<RealT> algo2(stepname, parlist);
+    algo2.run(x, gnnlls, true, *outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
