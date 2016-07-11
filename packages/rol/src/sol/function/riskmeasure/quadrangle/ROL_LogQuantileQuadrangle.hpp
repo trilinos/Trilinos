@@ -84,7 +84,7 @@ private:
 
   void checkInputs(void) const {
     Real zero(0), one(1);
-    TEUCHOS_TEST_FOR_EXCEPTION((alpha_ <= zero) || (alpha_ >= one), std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION((alpha_ < zero) || (alpha_ >= one), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Linear growth rate must be between 0 and 1!");
     TEUCHOS_TEST_FOR_EXCEPTION((rate_ <= zero), std::invalid_argument,
       ">>> ERROR (ROL::LogQuantileQuadrangle): Exponential growth rate must be positive!");

@@ -54,7 +54,7 @@ namespace ROL {
 template<class Real, class Ordinal>
 class TeuchosBatchManager : public BatchManager<Real> {
 private:
-  Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
 
 public:
   TeuchosBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)

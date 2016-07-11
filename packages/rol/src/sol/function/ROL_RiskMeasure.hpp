@@ -105,7 +105,7 @@ protected:
 public:
   virtual ~RiskMeasure() {}
 
-  RiskMeasure(void) : firstReset_(true) {}
+  RiskMeasure(void) : val_(0), gv_(0), firstReset_(true) {}
 
   /** \brief Reset internal risk measure storage.
              Called for value and gradient computation.
@@ -117,8 +117,8 @@ public:
              associated with the risk measure. 
   */
   virtual void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    x0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
+    x0 = Teuchos::rcp_const_cast<Vector<Real> >(
+         Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector());
     // Create memory for class members
     if ( firstReset_ ) {
       g_  = (x0->dual()).clone();
@@ -127,7 +127,8 @@ public:
       firstReset_ = false;
     }
     // Zero member variables
-    val_ = 0.0; gv_ = 0.0;
+    const Real zero(0);
+    val_ = zero; gv_ = zero;
     g_->zero(); hv_->zero(); dualVector_->zero();
   }
 
@@ -148,8 +149,8 @@ public:
                      Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
     // Get vector component of v.  This is important for CVaR.
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
+    v0 = Teuchos::rcp_const_cast<Vector<Real> >(
+         Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
   }
 
   /** \brief Update internal risk measure storage for value computation.
@@ -205,7 +206,7 @@ public:
       denotes the random variable objective function evaluated at \f$x_0\f$.
   */
   virtual Real getValue(SampleGenerator<Real> &sampler) {
-    Real val = 0.0;
+    Real val(0);
     sampler.sumAll(&val_,&val,1);
     return val;
   }
