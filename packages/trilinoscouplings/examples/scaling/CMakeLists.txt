@@ -17,12 +17,29 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     Example_Poisson_BlockMaterials
     SOURCES example_Poisson_BlockMaterials.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
-    NUM_MPI_PROCS 1
+    COMM serial mpi
     )
+
+  TRIBITS_ADD_TEST(
+   Example_Poisson_BlockMaterials
+   NAME "Poisson2D_BlockMaterials"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+  TRIBITS_ADD_TEST(
+   Example_Poisson_BlockMaterials
+   NAME "Poisson_BlockMaterials_RTC"
+   ARGS "--meshfile=Poisson_RTC.xml"
+   COMM serial mpi
+   NUM_MPI_PROCS 1
+   )
+
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     Example_Poisson2D
     SOURCES example_Poisson2D.cpp
@@ -108,7 +125,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 
   
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyPoissonFiles
-  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml
+  SOURCE_FILES Poisson.xml Poisson2D.xml Poisson2D_p3.xml Poisson2D_p4.xml Maxwell.xml CVFEM.xml ML_ho.xml muelu_ho.xml Poisson_RTC.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
