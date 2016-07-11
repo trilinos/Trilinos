@@ -65,6 +65,7 @@
 #include "ROL_MeanVarianceQuadrangle.hpp"
 #include "ROL_MixedQuantileQuadrangle.hpp"
 #include "ROL_SuperQuantileQuadrangle.hpp"
+#include "ROL_Chebyshev1Kusuoka.hpp"
 #include "ROL_QuantileQuadrangle.hpp"
 #include "ROL_QuantileRadiusQuadrangle.hpp"
 #include "ROL_SmoothedWorstCaseQuadrangle.hpp"
@@ -94,6 +95,7 @@ namespace ROL {
     RISKMEASURE_QUANTILERADIUSQUADRANGLE,
     RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE,
     RISKMEASURE_SUPERQUANTILEQUADRANGLE,
+    RISKMEASURE_CHEBYSHEV1KUSUOKA,
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_CHI2DIVERGENCE,
     RISKMEASURE_KLDIVERGENCE,
@@ -131,6 +133,8 @@ namespace ROL {
              retString = "Mixed-Quantile Quadrangle";               break;
       case RISKMEASURE_SUPERQUANTILEQUADRANGLE:
              retString = "Super Quantile Quadrangle";               break;
+      case RISKMEASURE_CHEBYSHEV1KUSUOKA:
+             retString = "Chebyshev 1 Kusuoka";                     break;
       case RISKMEASURE_QUANTILEQUADRANGLE:
              retString = "Quantile-Based Quadrangle";               break;
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
@@ -166,6 +170,7 @@ namespace ROL {
             (ed == RISKMEASURE_MEANVARIANCEQUADRANGLE) ||
             (ed == RISKMEASURE_MIXEDQUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_SUPERQUANTILEQUADRANGLE) ||
+            (ed == RISKMEASURE_CHEBYSHEV1KUSUOKA) ||
             (ed == RISKMEASURE_QUANTILEQUADRANGLE) ||
             (ed == RISKMEASURE_QUANTILERADIUSQUADRANGLE) ||
             (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
@@ -237,6 +242,8 @@ namespace ROL {
              return Teuchos::rcp(new MixedQuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_SUPERQUANTILEQUADRANGLE:
              return Teuchos::rcp(new SuperQuantileQuadrangle<Real>(parlist));
+      case RISKMEASURE_CHEBYSHEV1KUSUOKA:
+             return Teuchos::rcp(new Chebyshev1Kusuoka<Real>(parlist));
       case RISKMEASURE_QUANTILEQUADRANGLE:
              return Teuchos::rcp(new QuantileQuadrangle<Real>(parlist));
       case RISKMEASURE_QUANTILERADIUSQUADRANGLE:
