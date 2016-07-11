@@ -1,4 +1,3 @@
-INCLUDE(TribitsAddExecutableAndTest)
 
 IF(${PROJECT_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
