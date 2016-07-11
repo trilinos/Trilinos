@@ -35,7 +35,7 @@
 #include <iostream>
 #include <limits>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 
 #include <gtest/gtest.h>
 
