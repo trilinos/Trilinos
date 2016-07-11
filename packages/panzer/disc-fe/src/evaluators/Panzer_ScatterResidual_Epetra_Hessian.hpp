@@ -78,7 +78,7 @@ public:
   void evaluateFields(typename TRAITS::EvalData workset);
   
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
-  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,Teuchos::null,pl)); }
+  { return Teuchos::rcp(new ScatterResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>(globalIndexer_,colGlobalIndexer_,pl)); }
 
 private:
   typedef typename panzer::Traits::Hessian::ScalarT ScalarT;
