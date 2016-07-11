@@ -1181,6 +1181,204 @@ evalModel_D2fDx2(const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
 
 template <typename Scalar>
 void panzer::ModelEvaluator<Scalar>::
+evalModel_D2fDxDp(int pIndex,
+                  const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                  const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDxDp) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+
+  using Teuchos::RCP;
+  using Teuchos::ArrayRCP;
+  using Teuchos::Array;
+  using Teuchos::tuple;
+  using Teuchos::rcp_dynamic_cast;
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // Transient or steady-state evaluation is determined by the x_dot
+  // vector.  If this RCP is null, then we are doing a steady-state
+  // fill.
+  bool is_transient = false;
+  if (inArgs.supports(MEB::IN_ARG_x_dot ))
+    is_transient = !Teuchos::is_null(inArgs.get_x_dot());
+
+  // Make sure construction built in transient support
+  TEUCHOS_TEST_FOR_EXCEPTION(is_transient && !build_transient_support_, std::runtime_error,
+                     "ModelEvaluator was not built with transient support enabled!");
+
+  //
+  // Get the output arguments
+  //
+  const RCP<Thyra::LinearOpBase<Scalar> > W_out = D2fDxDp;
+
+  // setup all the assembly in arguments (this is parameters and
+  // x/x_dot). At this point with the exception of the one time dirichlet
+  // beta that is all thats neccessary.
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  deltaPContainer->setUniqueVector(delta_p);
+  ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
+
+  // set model parameters from supplied inArgs
+  setParameters(inArgs);
+
+  // handle application of the one time dirichlet beta in the
+  // assembly engine. Note that this has to be set explicitly
+  // each time because this badly breaks encapsulation. Essentially
+  // we must work around the model evaluator abstraction!
+  if(oneTimeDirichletBeta_on_) {
+    ae_inargs.dirichlet_beta = oneTimeDirichletBeta_;
+    ae_inargs.apply_dirichlet_beta = true;
+
+    oneTimeDirichletBeta_on_ = false;
+  }
+
+  // here we are building a container, this operation is fast, simply allocating a struct
+  const RCP<panzer::ThyraObjContainer<Scalar> > thGlobalContainer =
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.container_);
+  const RCP<panzer::ThyraObjContainer<Scalar> > thGhostedContainer =
+    Teuchos::rcp_dynamic_cast<panzer::ThyraObjContainer<Scalar> >(ae_inargs.ghostedContainer_);
+
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::ModelEvaluator::evalModel(D2fDxDp)");
+
+    // this dummy nonsense is needed only for scattering dirichlet conditions
+    RCP<Thyra::VectorBase<Scalar> > dummy_f = Thyra::createMember(f_space_);
+    thGlobalContainer->set_f_th(dummy_f);
+    thGlobalContainer->set_A_th(W_out);
+
+    // Zero values in ghosted container objects
+    thGhostedContainer->initializeMatrix(0.0);
+
+    ae_tm_.template getAsObject<panzer::Traits::Hessian>()->evaluate(ae_inargs);
+  }
+
+  // HACK: set A to null before calling responses to avoid touching the
+  // the Jacobian after it has been properly assembled.  Should be fixed
+  // by using a modified version of ae_inargs instead.
+  thGlobalContainer->set_A_th(Teuchos::null);
+
+  // Holding a rcp to f produces a seg fault in Rythmos when the next
+  // f comes in and the resulting dtor is called.  Need to discuss
+  // with Ross.  Clearing all references here works!
+
+  thGlobalContainer->set_x_th(Teuchos::null);
+  thGlobalContainer->set_dxdt_th(Teuchos::null);
+  thGlobalContainer->set_f_th(Teuchos::null);
+  thGlobalContainer->set_A_th(Teuchos::null);
+
+  // reset parameters back to nominal values
+  resetParameters();
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+evalModel_D2fDpDx(int pIndex,
+                  const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
+                  const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDpDx) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::null;
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // parameter is not distributed 
+  TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);
+
+  // parameter is distributed but has no global indexer.
+  // thus the user doesn't want sensitivities!
+  TEUCHOS_ASSERT(parameters_[pIndex]->dfdp_rl!=null);
+
+  ResponseLibrary<Traits> & rLibrary = *parameters_[pIndex]->dfdp_rl;
+
+  // get the response and tell it to fill the derivative operator
+  RCP<Response_Residual<Traits::Hessian> > response_hessian =
+    rcp_dynamic_cast<Response_Residual<Traits::Hessian> >(rLibrary.getResponse<Traits::Hessian>("RESIDUAL"));
+  response_hessian->setHessian(D2fDpDx);
+
+  // setup all the assembly in arguments (this is parameters and x/x_dot).
+  // make sure the correct seeding is performed
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  auto deltaXContainer = lof_->buildDomainContainer();
+  deltaXContainer->setUniqueVector(delta_x);
+  ae_inargs.addGlobalEvaluationData("DELTA_Solution Gather Container",deltaXContainer);
+
+  ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
+                                         // gather seeds
+  ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+  ae_inargs.second_sensitivities_name  = "";
+                                         
+  rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
+  rLibrary.evaluate<Traits::Hessian>(ae_inargs);
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
+evalModel_D2fDp2(int pIndex,
+                 const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
+                 const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
+                 const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDp2) const
+{
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::null;
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  // parameter is not distributed 
+  TEUCHOS_ASSERT(parameters_[pIndex]->is_distributed);
+
+  // parameter is distributed but has no global indexer.
+  // thus the user doesn't want sensitivities!
+  TEUCHOS_ASSERT(parameters_[pIndex]->dfdp_rl!=null);
+
+  ResponseLibrary<Traits> & rLibrary = *parameters_[pIndex]->dfdp_rl;
+
+  // get the response and tell it to fill the derivative operator
+  RCP<Response_Residual<Traits::Hessian> > response_hessian =
+    rcp_dynamic_cast<Response_Residual<Traits::Hessian> >(rLibrary.getResponse<Traits::Hessian>("RESIDUAL"));
+  response_hessian->setHessian(D2fDp2);
+
+  // setup all the assembly in arguments (this is parameters and x/x_dot).
+  // make sure the correct seeding is performed
+  panzer::AssemblyEngineInArgs ae_inargs;
+  setupAssemblyInArgs(inArgs,ae_inargs);
+
+  auto deltaPContainer = parameters_[pIndex]->dfdp_rl->getLinearObjFactory()->buildDomainContainer();
+  deltaPContainer->setUniqueVector(delta_p);
+  ae_inargs.addGlobalEvaluationData("DELTA_"+(*parameters_[pIndex]->names)[0],deltaPContainer);
+
+  ae_inargs.gather_seeds.push_back(1.0); // this assumes that gather point is always the zero index of
+                                         // gather seeds
+  ae_inargs.first_sensitivities_name  = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+  ae_inargs.second_sensitivities_name = (*parameters_[pIndex]->names)[0]; // distributed parameters have one name!
+                                         
+  rLibrary.addResponsesToInArgs<Traits::Hessian>(ae_inargs);
+  rLibrary.evaluate<Traits::Hessian>(ae_inargs);
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+}
+
+template <typename Scalar>
+void panzer::ModelEvaluator<Scalar>::
 evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
               const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const
 {

@@ -458,8 +458,7 @@ public:
     * \param[in] delta_p Direction to take the derivative with respect to.
     * \param[out] D2fDp2 Result vector allocated by <code>get_p_space(pIndex)</code>.
     */
-  void evalModel_D2fDp2(int rIndex,
-                        int pIndex,
+  void evalModel_D2fDp2(int pIndex,
                         const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
                         const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDp2) const;
@@ -472,8 +471,7 @@ public:
     * \param[in] delta_x Direction to take the derivative with respect to.
     * \param[out] D2fDpDx Result vector allocated by <code>get_x_space()</code>.
     */
-  void evalModel_D2fDpDx(int rIndex,
-                         int pIndex,
+  void evalModel_D2fDpDx(int pIndex,
                          const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                          const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_x,
                          const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDpDx) const;
@@ -486,8 +484,7 @@ public:
     * \param[in] delta_p Direction to take the derivative with respect to.
     * \param[out] D2fDxDp Result vector allocated by <code>get_x_space()</code>.
     */
-  void evalModel_D2fDxDp(int rIndex,
-                         int pIndex,
+  void evalModel_D2fDxDp(int pIndex,
                          const Thyra::ModelEvaluatorBase::InArgs<Scalar> & inArgs,
                          const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
                          const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDxDp) const;
