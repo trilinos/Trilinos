@@ -303,6 +303,10 @@ namespace Tacho {
                                block.setRowViewArray(Kokkos::subview(rows, range_type(ap(k), ap(k+1))));
                              } );
         CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
+
+        for (auto k=0;k<HA_factor_host.NumNonZeros();++k) {
+          HA_factor_host.Value(k).showMe(std::cout) << std::endl;
+        }
       }
       { // nblocks is changed as empty blocks are filtered out
         const size_type nblocks = HA_factor_host.NumNonZeros();
