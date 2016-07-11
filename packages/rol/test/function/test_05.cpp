@@ -116,6 +116,8 @@ int main(int argc, char *argv[]) {
       (*vl_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
+    xtest.set(x);
+
     // Initialize nonlinear least squares objectives
     ROL::NonlinearLeastSquaresObjective<RealT> nlls(constr,x,vc,false);
     ROL::NonlinearLeastSquaresObjective<RealT> gnnlls(constr,x,vc,true);
@@ -136,16 +138,16 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-10);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
     parlist.sublist("Status Test").set("Iteration Limit",100);
+    ROL::Algorithm<RealT> algo(stepname, parlist);
 
     // Run Algorithm
-    *outStream << "SOLVE USING FULL HESSIAN\n";
+    *outStream << "\nSOLVE USING FULL HESSIAN\n";
     x.set(xtest);
-    ROL::Algorithm<RealT> algo1(stepname, parlist);
-    algo1.run(x, nlls, true, *outStream);
-    *outStream << "SOLVE USING GAUSS-NEWTON HESSIAN\n";
+    algo.run(x, nlls, true, *outStream);
+    algo.reset();
+    *outStream << "\nSOLVE USING GAUSS-NEWTON HESSIAN\n";
     x.set(xtest);
-    ROL::Algorithm<RealT> algo2(stepname, parlist);
-    algo2.run(x, gnnlls, true, *outStream);
+    algo.run(x, gnnlls, true, *outStream);
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
