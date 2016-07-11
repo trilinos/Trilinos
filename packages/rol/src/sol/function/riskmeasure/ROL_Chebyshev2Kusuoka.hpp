@@ -41,17 +41,17 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_CHEBYSHEV1KUSUOKA_HPP
-#define ROL_CHEBYSHEV1KUSUOKA_HPP
+#ifndef ROL_CHEBYSHEV2KUSUOKA_HPP
+#define ROL_CHEBYSHEV2KUSUOKA_HPP
 
 #include "ROL_SingletonKusuoka.hpp"
-#include "ROL_GaussChebyshev1Quadrature.hpp"
+#include "ROL_GaussChebyshev2Quadrature.hpp"
 
 /** @ingroup risk_group
-    \class ROL::Chebyshev1Kusuoka
-    \brief Provides an interface for the Chebyshev 1 Kusuoka risk measure.
+    \class ROL::Chebyshev2Kusuoka
+    \brief Provides an interface for the Chebyshev 2 Kusuoka risk measure.
 
-    The Chebyshev 1 Kusuoka risk measure is defined as
+    The Chebyshev 2 Kusuoka risk measure is defined as
     \f[
        \mathcal{R}(X) = \int_0^1 w(\alpha) \mathrm{CVaR}_{\alpha}(X)
           \,\mathrm{d}\alpha
@@ -65,7 +65,7 @@
     \f]
     and the weight function \f$w\f$ is
     \f[
-       w(x) = \frac{1}{\sqrt{1-x^2}}.
+       w(x) = \sqrt{1-x^2}.
     \f]
     If the distribution of \f$X\f$ is continuous, then
     \f$\mathrm{CVaR}_{\alpha}(X)\f$ is the conditional
@@ -74,8 +74,8 @@
     Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
 
     ROL implements \f$\mathcal{R}\f$ by approximating the integral with
-    Gauss-Chebyshev quadrature of the first kind.  The corresponding quadrature
-    points and weights are then used to construct a
+    Gauss-Chebyshev quadrature of the second kind.  The corresponding
+    quadrature points and weights are then used to construct a
     ROL::MixedQuantileQuadrangle risk measure.
     When using derivative-based optimization, the user can provide a smooth
     approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
@@ -84,7 +84,7 @@
 namespace ROL {
 
 template<class Real>
-class Chebyshev1Kusuoka : public SingletonKusuoka<Real> {
+class Chebyshev2Kusuoka : public SingletonKusuoka<Real> {
 private:
   Teuchos::RCP<PlusFunction<Real> > plusFunction_;
 
@@ -96,17 +96,17 @@ private:
 
   void checkInputs(void) const {
     TEUCHOS_TEST_FOR_EXCEPTION(lower_ > upper_, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Lower bound exceeds upper!");
+      ">>> ERROR (ROL::Chebyshev2Kusuoka): Lower bound exceeds upper!");
     TEUCHOS_TEST_FOR_EXCEPTION(lower_ < static_cast<Real>(0), std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Lower bound is less than zero!");
+      ">>> ERROR (ROL::Chebyshev2Kusuoka): Lower bound is less than zero!");
     TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Real>(1) < upper_, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Upper bound is greater than one!");
+      ">>> ERROR (ROL::Chebyshev2Kusuoka): Upper bound is greater than one!");
     TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): PlusFunction pointer is null!");
+      ">>> ERROR (ROL::Chebyshev2Kusuoka): PlusFunction pointer is null!");
   }
 
   void initialize(void) {
-     GaussChebyshev1Quadrature<Real> quad(nQuad_); // quad.test();
+     GaussChebyshev2Quadrature<Real> quad(nQuad_); // quad.test();
      quad.get(pts_,wts_);
      Real sum(0), half(0.5), one(1);
      for (int i = 0; i < nQuad_; ++i) {
@@ -120,10 +120,10 @@ private:
   }
 
 public:
-  Chebyshev1Kusuoka( Teuchos::ParameterList &parlist )
+  Chebyshev2Kusuoka( Teuchos::ParameterList &parlist )
     : SingletonKusuoka<Real>() {
     Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 1 Kusuoka");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 2 Kusuoka");
     // Grab confidence level and quadrature order
     lower_ = list.get("Lower Bound",0.0);
     upper_ = list.get("Upper Bound",1.0);
@@ -134,7 +134,7 @@ public:
     initialize();
   }
 
-  Chebyshev1Kusuoka(const Real lower, const Real upper,
+  Chebyshev2Kusuoka(const Real lower, const Real upper,
                     const int nQuad,
                     const Teuchos::RCP<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>(), plusFunction_(pf), lower_(lower), upper_(upper), nQuad_(nQuad) {

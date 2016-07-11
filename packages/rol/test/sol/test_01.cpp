@@ -342,6 +342,15 @@ int main(int argc, char* argv[]) {
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
     /**********************************************************************************************/
+    /************************* CHEBYSHEV 2 KUSUOKA ************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nCHEBYSHEV 2 KUSUOKA RISK MEASURE\n";
+    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","Chebyshev 2 Kusuoka");
+    setRandomVector(*x_rcp);
+    setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
+    printSolution(*x_rcp,*outStream);
+    /**********************************************************************************************/
     /************************* MIXED-QUANTILE QUADRANGLE ******************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN-VARIANCE QUADRANGLE RISK MEASURE\n";
