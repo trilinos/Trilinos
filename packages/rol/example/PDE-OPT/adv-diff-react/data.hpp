@@ -166,7 +166,7 @@ public:
     /*************************************/
     /*** Retrieve parameter list data. ***/
     /*************************************/
-    alpha_ = parlist->sublist("Problem").get("Penalty", 1e-2);
+    alpha_ = parlist->sublist("Problem").get("Penalty Parameter", 1e-2);
     basisOrder_ = parlist->sublist("Problem").get("Order of FE discretization", 1);
     int cellSplit = parlist->sublist("Geometry").get("Partition type", 1);
     diffusivity_ = parlist->sublist("Problem").get("Diffusivity", 1e0);

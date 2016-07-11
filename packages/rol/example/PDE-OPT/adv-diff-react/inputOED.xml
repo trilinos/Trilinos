@@ -1,23 +1,14 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Penalty parameter"             type="double"  value="1e-2" />
-    <Parameter name="Diffusivity"                   type="double"  value="1e-1" />
-    <Parameter name="Advection Horizontal"          type="double"  value="1e+0" />
-    <Parameter name="Advection Vertical"            type="double"  value="3e-1" />
-    <Parameter name="Order of FE discretization"    type="int"     value="1"    />
-    <Parameter name="Fraction of nonzero weights"   type="double"  value="1.0" />
-  </ParameterList>
-
-  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
-  <ParameterList name="Geometry">
-    <Parameter name="Width"             type="double"  value="1.0"  />
-    <Parameter name="Height"            type="double"  value="1.0"  />
-    <Parameter name="X0"                type="double"  value="0.0"  />
-    <Parameter name="Y0"                type="double"  value="0.0"  />
-    <Parameter name="NX"                type="int"     value="32"   />
-    <Parameter name="NY"                type="int"     value="32"   />
-    <Parameter name="Partition type"    type="int"     value="1"    />
+    <Parameter name="OED CG Iteration Limit"	    type="int"     value="2000" />
+    <Parameter name="OED CG Relative Tolerance"     type="double"  value="1e-10" />
+    <Parameter name="OED CG Absolute Tolerance"     type="double"  value="1e10" />
+    <Parameter name="OED Noise Standard Deviation"  type="double"  value="1e-6" />
+    <Parameter name="OED Sparsity Regularization"   type="double"  value="3e-1" />
+    <Parameter name="OED Number of random vectors"  type="int"     value="1" />
+    <!-- Parameter name="OED Sparsity Regularization"   type="double"  value="1.3e-0" -->
+    <!-- Parameter name="OED Number of random vectors"  type="int"     value="5" -->
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -34,9 +25,9 @@
     <!-- ===========  SECANT INPUTS  =========== -->
     <ParameterList name="Secant">
       <Parameter name="Type"                   type="string" value="Limited-Memory BFGS" />
-      <Parameter name="Use as Preconditioner"  type="bool"   value="false"               />
-      <Parameter name="Use as Hessian"         type="bool"   value="false"               />
-      <Parameter name="Maximum Storage"        type="int"    value="10"                  />
+      <Parameter name="Use as Preconditioner"  type="bool"   value="false"                />
+      <Parameter name="Use as Hessian"         type="bool"   value="true"               />
+      <Parameter name="Maximum Storage"        type="int"    value="20"                  />
       <Parameter name="Barzilai-Borwein Type"  type="int"    value="1"                   />
     </ParameterList>
 
@@ -62,8 +53,8 @@
 
       <!-- ===========  DESCENT ALGORITHM SPECIFICATION  =========== -->
       <ParameterList name="Descent Method">
-        <Parameter name="Type"              type="string" value="Newton-Krylov"    /> 
-        <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel" />
+        <Parameter name="Type"              type="string" value="Newton-Krylov"  /> 
+        <Parameter name="Nonlinear CG Type" type="string" value="Hestenes-Stiefel"     />
       </ParameterList>
 
       <!-- ===========  CURVATURE CONDITION SPECIFICATION  =========== -->
@@ -89,8 +80,8 @@
 
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
-      <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
-      <Parameter name="Initial Radius"                       type="double" value="10.0"         />
+      <Parameter name="Subproblem Solver"                    type="string" value="Dogleg"       />
+      <Parameter name="Initial Radius"                       type="double" value="100.0"        />
       <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
@@ -98,7 +89,7 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
-      <Parameter name="Safeguard Size"                       type="double" value="1.e8"         />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -202,7 +193,7 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-2"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="200"    />

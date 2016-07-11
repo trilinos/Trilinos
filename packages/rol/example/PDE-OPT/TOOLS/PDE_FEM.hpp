@@ -756,6 +756,7 @@ public:
     // Construct solver using Amesos2 factory.
     try {
       solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", matA_dirichlet_);
+      //solverA_ = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("PardisoMKL", matA_dirichlet_);
     }
     catch (std::invalid_argument e) {
       std::cout << e.what() << std::endl;
