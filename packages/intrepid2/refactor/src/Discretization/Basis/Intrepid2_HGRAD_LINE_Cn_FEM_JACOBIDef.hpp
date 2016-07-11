@@ -54,71 +54,155 @@ namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
   namespace Impl {
+    
+    // output (N,P,D)
+    // input  (P,D) - assumes that it has a set of points to amortize the function call cost for jacobi polynomial.
     template<EOperator opType>
-    template<typename outputValueValueType, class ...outputValueProperties,
-             typename inputPointValueType,  class ...inputPointProperties>
+    template<typename outputViewType,
+             typename inputViewType>
     KOKKOS_INLINE_FUNCTION
     void
-    Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType,numPtsPerEval>::
-    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> output,
-               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  input,
-               const ordinal_type order,
-               const double alpha,
-               const double beta,
-               const ordinal_type opDn ) {
+    Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType  input,
+               const ordinal_type   order,
+               const double         alpha,
+               const double         beta,
+               const ordinal_type   opDn ) {
+      // cardinality of the evaluation order
       const auto card = order + 1;
+      
       switch (opType) {
       case OPERATOR_VALUE: {
         const auto np = input.dimension(0);
-        const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+        const Kokkos::View<typename outputViewType::value_type*,
+            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
         for (auto p=0;p<card;++p) {
           auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL() );
-          Polylib::JacobiPolynomial(np, input, poly, null, p, alpha, beta);
+          Polylib::Serial::JacobiPolynomial(np, input, poly, null, p, alpha, beta);
         }
-      break;
-    }
-    case OPERATOR_GRAD: {
-      const auto np = input.dimension(0);
-      const auto polyd = Kokkos::subdynrankview( output, Kokkos::ALL(), 0 );
-      for (auto p=0;p<card;++p) {
-        auto polyd = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );
-        Polylib::JacobiPolynomialDerivative(np, input, polyd, order, alpha, beta);      
+        break;
       }
-      break;
-    }
-    case OPERATOR_MAX: {
-      if (order < opDn) {
-        const auto pend = output.dimension(0);
-        const auto jend = output.dimension(1);
-        const auto iend = output.dimension(2);
-       
-        for (auto p=0;p<pend;++p)
-          for (auto j=0;j<jend;++j)
-            for (auto i=0;i<iend;++i)
-              output(p, i, j) = 0.0;
-      } else {
-        double scaleFactor = 1.0;
+      case OPERATOR_GRAD: 
+      case OPERATOR_D1: {
         const auto np = input.dimension(0);
-        const Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
         for (auto p=0;p<card;++p) {
-          for (auto i=1;i<=opDn;++i) 
-            scaleFactor *= 0.5*(order + alpha + beta + i);
-
-          const auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );        
-          Polylib::JacobiPolynomial(np, input, poly, null, order-opDn, alpha+opDn, beta+opDn);
-          for (auto i=0;i<np;++i) 
-            poly(i) = scaleFactor*poly(i);
+          auto polyd = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );
+          Polylib::Serial::JacobiPolynomialDerivative(np, input, polyd, p, alpha, beta);      
         }
+        break;
       }
-      break;
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+      case OPERATOR_MAX: {
+        {
+          const auto pend = output.dimension(0);
+          const auto jend = output.dimension(1);
+          const auto iend = output.dimension(2);
+          
+          for (auto p=0;p<pend;++p)
+            for (auto j=0;j<jend;++j)
+              for (auto i=0;i<iend;++i)
+                output(p, i, j) = 0.0;
+        }
+        {
+          const auto np = input.dimension(0);
+          const Kokkos::View<typename outputViewType::value_type*,
+            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+
+          for (auto p=opDn;p<card;++p) {
+            double scaleFactor = 1.0;
+            for (auto i=1;i<=opDn;++i) 
+              scaleFactor *= 0.5*(p + alpha + beta + i);
+            
+            const auto poly = Kokkos::subdynrankview( output, p, Kokkos::ALL(), 0 );        
+            Polylib::Serial::JacobiPolynomial(np, input, poly, null, p-opDn, alpha+opDn, beta+opDn);
+            for (auto i=0;i<np;++i) 
+              poly(i) = scaleFactor*poly(i);
+          }
+        }
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
+      }
+      }
     }
-    default: {
-      INTREPID2_TEST_FOR_ABORT( true,
-                                ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Serial::getValues) operator is not supported");
-    }
+    
+    // -------------------------------------------------------------------------------------
+    
+    template<typename SpT,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties>
+    void 
+    Basis_HGRAD_LINE_Cn_FEM_JACOBI::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const ordinal_type order,
+               const double alpha,
+               const double beta,
+               const EOperator operatorType ) {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+      constexpr ordinal_type numPtsPerEval = 1;
+
+      // loopSize corresponds to the # of points
+      const auto loopSize = inputPoints.dimension(0);
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+      
+      switch (operatorType) {
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                  order, alpha, beta) );
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                  order, alpha, beta) );
+        break;
+      }
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10: {
+        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
+                                                  order, alpha, beta,
+                                                  getOperatorOrder(operatorType)) );
+        break;
+      }
+      case OPERATOR_DIV:
+      case OPERATOR_CURL: {
+        INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
+                                      operatorType == OPERATOR_CURL, std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type (div and curl).");
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type");
+      }
+      }
     }
   }
-
 
   // -------------------------------------------------------------------------------------
 
@@ -145,7 +229,7 @@ namespace Intrepid2 {
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
-      ordinal_type tags[MaxOrder+1][4];
+      ordinal_type tags[Parameters::MaxOrder+1][4];
       const auto card = this->basisCardinality_;
       for (auto i=0;i<card;++i) {
         tags[i][0] = 1;     // these are all "internal" i.e. "volume" DoFs
@@ -154,7 +238,7 @@ namespace Intrepid2 {
         tags[i][3] = card;  // total number of DoFs 
       }
      
-      ordinal_type_array_1d_host tagView(&tag[0][0], card*4);
+      ordinal_type_array_1d_host tagView(&tags[0][0], card*4);
  
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host 
@@ -171,72 +255,6 @@ namespace Intrepid2 {
     // dof coords is not applicable to hierarchical functions
   }
 
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  void 
-  Basis_HGRAD_LINE_Cn_FEM_JACOBI<SpT,OT,PT>::Internal::
-  getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-              const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-              const EOperator operatorType ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    Intrepid2::getValues_HGRAD_Args(outputValues,
-                                    inputPoints,
-                                    operatorType,
-                                    obj_->getBaseCellTopology(),
-                                    obj_->getCardinality() );
-#endif
-    
-    typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
-    typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-    typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
-
-    // loopSize corresponds to cardinality
-    const auto loopSize = outputValues.dimension(0);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
-
-    switch (operatorType) {
-    case OPERATOR_VALUE: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
-                                                obj_->alpha_, obj_->beta_) );
-      break;
-    }
-    case OPERATOR_GRAD:
-    case OPERATOR_D1: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_GRAD> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
-                                                obj_->alpha_, obj_->beta_) );
-      break;
-    }
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10: {
-      typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_MAX> FunctorType;
-      Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, 
-                                                obj_->alpha_, obj_->beta_, 
-                                                getOperatorOrder(operatorType)) );
-      break;
-    }
-    case OPERATOR_DIV:
-    case OPERATOR_CURL: {
-      INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
-                                    operatorType == OPERATOR_CURL, std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type (div and curl).");
-      break;
-    }
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
-                                    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): invalid operator type");
-    }
-    }
-  }
 
 }
 

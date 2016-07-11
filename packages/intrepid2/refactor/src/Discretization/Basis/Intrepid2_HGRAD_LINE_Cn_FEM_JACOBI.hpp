@@ -129,69 +129,90 @@ namespace Intrepid2 {
   */
 
   namespace Impl {
+
     class Basis_HGRAD_LINE_Cn_FEM_JACOBI {
     public:
-      // this is specialized for each operator type
-      template<EOperator opType, ordinal_type numPtsPerEval>
+
+      template<EOperator opType>
       struct Serial {
-        template<typename outputValueViewType,
-                 typename inputPointViewType>
+        template<typename outputViewType,
+                 typename inputViewType>
         KOKKOS_INLINE_FUNCTION
         static void
-        getValues( /**/  outputValueViewType outputValues,
-                   const inputPointViewType  inputPoints,
-                   const ordinal_type        order,
-                   const double              alpha,
-                   const double              beta,
-                   const ordinal_type        opDn = 0 );
+        getValues( /**/  outputViewType output,
+                   const inputViewType  input,
+                   const ordinal_type   order,
+                   const double         alpha,
+                   const double         beta,
+                   const ordinal_type   opDn = 0 );
       };
+
+      template<typename ExecSpaceType,
+               typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties>
+      static void
+      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                  const ordinal_type order,
+                  const double alpha,
+                  const double beta,
+                  const EOperator operatorType );
       
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType,
-               ordinal_type numPtsPerEval>
+               ordinal_type numPts>
       struct Functor {
         /**/  outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
+        const ordinal_type        _order;
         const double              _alpha, _beta;
         const ordinal_type        _opDn;
         
         KOKKOS_INLINE_FUNCTION
         Functor( /**/  outputValueViewType outputValues_,
                  /**/  inputPointViewType  inputPoints_,
+                 const ordinal_type        order_,
                  const double              alpha_,
                  const double              beta_,
                  const ordinal_type        opDn_ = 0 )
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
-            _alpha(alpha_), _beta(beta_), _opDn(opDn_) {}
+            _order(order_), _alpha(alpha_), _beta(beta_), _opDn(opDn_) {}
         
         KOKKOS_INLINE_FUNCTION
-        void operator()(const ordinal_type ord) const {
-          switch (opType) {
-          case OPERATOR_VALUE : {
-            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL() );
-            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
-            break;
-          }
-          case OPERATOR_GRAD : {
-            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
-            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta );
-            break;
-          }
-          case OPERATOR_MAX: {
-            auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
-            Serial<opType>::getValues( output, _inputPoints, ord, _alpha, _beta, _opDn );
-            break;
-          }
-          default: {
-            INTREPID2_TEST_FOR_ABORT( true, 
-                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
-            
-          }
+        void operator()(const size_type iter) const {
+          const auto ptBegin = Util::min(iter*numPts,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util::min(ptBegin+numPts, _inputPoints.dimension(0));
+
+          const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
+          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+
+          if (input.dimension(0)) {
+            switch (opType) {
+            case OPERATOR_VALUE : {
+              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+              Serial<opType>::getValues( output, input, _order, _alpha, _beta );
+              break;
+            }
+            case OPERATOR_GRAD : {
+              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+              Serial<opType>::getValues( output, input, _order, _alpha, _beta );
+              break;
+            }
+            case OPERATOR_MAX: {
+              auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+              Serial<opType>::getValues( output, input, _order, _alpha, _beta, _opDn );
+              break;
+            }
+            default: {
+              INTREPID2_TEST_FOR_ABORT( true, 
+                                        ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI::Functor) operator is not supported");
+              
+            }
+            }
           }
         }
       };
-      
     };
   }
 
@@ -206,50 +227,11 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
     
-    class Internal {
-    private:
-      Basis_HGRAD_LINE_Cn_FEM_JACOBI *obj_;
-
-    public:
-      Internal(Basis_HGRAD_LINE_Cn_FEM_JACOBI *obj)
-        : obj_(obj) {}
-
-      /** \brief  Evaluation of a FEM basis on a <strong>reference Line</strong> cell.
-
-          Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-          points in the <strong>reference Line</strong> cell. For rank and dimensions of
-          I/O array arguments see Section \ref basis_md_array_sec .
-
-          \param  outputValues      [out] - variable rank array with the basis values
-          \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
-          \param  operatorType      [in]  - the operator acting on the basis functions
-      */
-      template<typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties>
-      void
-      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                 const EOperator operatorType  = OPERATOR_VALUE ) const;
-    };
-    Internal impl_;
-
-
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_Cn_FEM_JACOBI( const ordinal_type order, 
                                     const double alpha = 0, 
                                     const double beta = 0 );  
-    Basis_HGRAD_LINE_Cn_FEM_JACOBI( const Basis_HGRAD_LINE_Cn_FEM_JACOBI &b )
-      : Basis<ExecSpaceType,outputValueType,pointValueType>(b),
-        impl_(this) {}
-
-    Basis_HGRAD_LINE_Cn_FEM_JACOBI& operator=( const Basis_HGRAD_LINE_Cn_FEM_JACOBI &b ) {
-      if (this != &b) {
-        Basis<ExecSpaceType,outputValueType,pointValueType>::operator= (b);
-        // do not copy impl
-      }
-      return *this;
-    }
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
@@ -259,9 +241,22 @@ namespace Intrepid2 {
     getValues( /**/  outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
-      impl_.getValues( outputValues, inputPoints, operatorType );
+#ifdef HAVE_INTREPID2_DEBUG
+      Intrepid2::getValues_HGRAD_Args(outputValues,
+                                      inputPoints,
+                                      operatorType,
+                                      this->getBaseCellTopology(),
+                                      this->getCardinality() );
+#endif
+      Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
+        getValues<ExecSpaceType>( outputValues, 
+                                  inputPoints, 
+                                  this->getDegree(),
+                                  this->alpha_, 
+                                  this->beta_,
+                                  operatorType );
     }
-
+    
   private:
     double alpha_, beta_;
 

@@ -116,8 +116,8 @@ namespace Intrepid2 {
     const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
     ValueType fac;
 
-    Serial::JacobiZeros(z, np, alpha, beta);
-    Serial::JacobiPolynomialDerivative(np, z, w, np, alpha, beta);
+    JacobiZeros(z, np, alpha, beta);
+    JacobiPolynomialDerivative(np, z, w, np, alpha, beta);
     
     fac  = pow(two, apb + one)*GammaFunction(alpha + np + one)*GammaFunction(beta + np + one);
     fac /= GammaFunction((ValueType)(np + one))*GammaFunction(apb + np + one);
@@ -148,10 +148,10 @@ namespace Intrepid2 {
       z(0) = -one;
 
       auto z_plus_1 = Kokkos::subview(z, Kokkos::pair<ordinal_type,ordinal_type>(1, z.dimension(0)));      
-      Serial::JacobiZeros(z_plus_1, np-1, alpha, beta+1);
+      JacobiZeros(z_plus_1, np-1, alpha, beta+1);
 
       Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
-      Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
+      JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two, apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= GammaFunction((ValueType)np)*(beta + np)*GammaFunction(apb + np + 1);
@@ -181,11 +181,11 @@ namespace Intrepid2 {
       const ValueType one = 1.0, two = 2.0, apb = alpha + beta;
       ValueType fac;
 
-      Serial::JacobiZeros(z, np-1, alpha+1, beta);
+      JacobiZeros(z, np-1, alpha+1, beta);
       z(np-1) = one;
 
       Kokkos::View<ValueType*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
-      Serial::JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
+      JacobiPolynomial(np, z, w, null, np-1, alpha, beta);
 
       fac  = pow(two,apb)*GammaFunction(alpha + np)*GammaFunction(beta + np);
       fac /= GammaFunction((ValueType)np)*(alpha + np)*GammaFunction(apb + np + 1);
@@ -569,7 +569,7 @@ namespace Intrepid2 {
     for (ordinal_type i = 0; i < mz; ++i) {
       const auto zp = zm(i);
       for (ordinal_type j = 0; j < nz; ++j)
-        im(i, j) = Serial::LagrangianInterpolant<polyType>::getValue(j, zp, zgrj, nz, alpha, beta);
+        im(i, j) = LagrangianInterpolant<polyType>::getValue(j, zp, zgrj, nz, alpha, beta);
     }
   }
 
