@@ -44,7 +44,7 @@
 #ifndef ROL_SUPERQUANTILEQUADRANGLE_HPP
 #define ROL_SUPERQUANTILEQUADRANGLE_HPP
 
-#include "ROL_MixedQuantileQuadrangle.hpp"
+#include "ROL_SingletonKusuoka.hpp"
 #include "ROL_GaussLegendreQuadrature.hpp"
 
 /** @ingroup risk_group
@@ -81,9 +81,8 @@
 namespace ROL {
 
 template<class Real>
-class SuperQuantileQuadrangle : public RiskMeasure<Real> {
+class SuperQuantileQuadrangle : public SingletonKusuoka<Real> {
 private:
-  Teuchos::RCP<MixedQuantileQuadrangle<Real> > mqq_;
   Teuchos::RCP<PlusFunction<Real> > plusFunction_;
 
   Real alpha_;
@@ -100,23 +99,23 @@ private:
   }
 
   void initialize(void) {
-     GaussLegendreQuadrature<Real> quad(nQuad_); // quad.test();
-     quad.get(pts_,wts_);
-     Real sum(0), half(0.5), one(1);
-     for (int i = 0; i < nQuad_; ++i) {
-       sum += wts_[i];
-     }
-     for (int i = 0; i < nQuad_; ++i) {
-       wts_[i] /= sum;
-       pts_[i] = one - alpha_*(half*(pts_[i] + one));
-     }
-     mqq_ = Teuchos::rcp(new MixedQuantileQuadrangle<Real>(pts_,wts_,plusFunction_));
+    GaussLegendreQuadrature<Real> quad(nQuad_); // quad.test();
+    quad.get(pts_,wts_);
+    Real sum(0), half(0.5), one(1);
+    for (int i = 0; i < nQuad_; ++i) {
+      sum += wts_[i];
+    }
+    for (int i = 0; i < nQuad_; ++i) {
+      wts_[i] /= sum;
+      pts_[i] = one - alpha_*(half*(pts_[i] + one));
+    }
+    SingletonKusuoka<Real>::buildMixedQuantile(pts_,wts_,plusFunction_);
   }
 
 public:
 
   SuperQuantileQuadrangle( Teuchos::ParameterList &parlist )
-    : RiskMeasure<Real>() {
+    : SingletonKusuoka<Real>() {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Super Quantile Quadrangle");
     // Grab confidence level and quadrature order
@@ -131,54 +130,10 @@ public:
   SuperQuantileQuadrangle(const Real alpha,
                           const int nQuad,
                           const Teuchos::RCP<PlusFunction<Real> > &pf)
-    : RiskMeasure<Real>(), plusFunction_(pf), alpha_(alpha), nQuad_(nQuad) {
+    : SingletonKusuoka<Real>(), plusFunction_(pf), alpha_(alpha), nQuad_(nQuad) {
     // Check inputs
     checkInputs();
     initialize();
-  }
-
-  Real computeStatistic(const Vector<Real> &x) const {
-    std::vector<Real> xstat;
-    Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(xstat);
-    Real stat(0);
-    for (int i = 0; i < nQuad_; ++i) {
-      stat += wts_[i] * xstat[i];
-    }
-    return stat;
-  }
-
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    mqq_->reset(x0,x);
-  }
-
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-             Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    mqq_->reset(x0,x,v0,v);
-  }
-
-  void update(const Real val, const Real weight) {
-    mqq_->update(val,weight);
-  }
-
-  void update(const Real val, const Vector<Real> &g, const Real weight) {
-    mqq_->update(val,g,weight);
-  }
-
-  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
-              const Real weight) {
-    mqq_->update(val,g,gv,hv,weight);
-  }
-
-  Real getValue(SampleGenerator<Real> &sampler) {
-    return mqq_->getValue(sampler);
-  }
-
-  void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
-    mqq_->getGradient(g,sampler);
-  }
-
-  void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
-    mqq_->getHessVec(hv,sampler);
   }
 };
 
