@@ -216,25 +216,22 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
     sti.region->end_state(step);
   }
   else if (m_timeMatch == LINEAR_INTERPOLATION) {
-    std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
-    while (I != m_fieldParts.end()) {
+    // Interpolation only handles single-state fields with state StateNew
+    size_t state_count = m_field->number_of_states();
+    stk::mesh::FieldState state = m_field->state();
+    STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
 
+    for (auto &field_part : m_fieldParts) {
       // Get data at beginning of interval...
       std::vector<double> values;
-      (*I).get_interpolated_field_data(sti, values);
+      field_part.get_interpolated_field_data(sti, values);
       
-      size_t state_count = m_field->number_of_states();
-      stk::mesh::FieldState state = m_field->state();
-
-      // Interpolation only handles single-state fields currently.
-      STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
-
-      Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
+      Ioss::GroupingEntity *io_entity = field_part.get_io_entity();
       const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);
       size_t field_component_count = io_field.transformed_storage()->component_count();
 
       std::vector<stk::mesh::Entity> entity_list;
-      const stk::mesh::EntityRank rank = (*I).get_entity_rank();
+      const stk::mesh::EntityRank rank = field_part.get_entity_rank();
       stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
       
       for (size_t i=0; i < entity_list.size(); ++i) {
@@ -248,9 +245,8 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 	}
       }
       if (m_oneTimeOnly) {
-	(*I).release_field_data();
+	field_part.release_field_data();
       }
-      ++I;
     }
     time_read = sti.t_analysis;
   }
