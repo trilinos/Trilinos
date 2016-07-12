@@ -457,10 +457,17 @@ void MapvBase::WarnOptimize()
 
 MapvBase::~MapvBase()
 {
-  if ( Count || nRoot() != 0 ) {
-    std::string msg("MapvBase destructor, container is not empty");
-    throw std::logic_error( msg );
-  }
+  // KHP: Ask Alan about this?
+  // triggers warning on gcc 6.1, 
+  //
+//TPLs_src/Trilinos/packages/stk/stk_util/stk_util/diag/Mapv.cpp:462:33: error: throw will always call terminate() [-Werror=terminate]
+//     throw std::logic_error( msg );
+//
+
+  //if ( Count || nRoot() != 0 ) {
+  //  std::string msg("MapvBase destructor, container is not empty");
+  //  throw std::logic_error( msg );
+  //}
 }
 
 }

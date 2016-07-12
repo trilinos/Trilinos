@@ -440,11 +440,14 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
         part2Nodes[2] = 7;
         part2Nodes[3] = 8;
 
-        stk::mesh::Part &part1 = *meshMetaData.get_part("part1");
-        stk::mesh::Part &part2 = *meshMetaData.get_part("part2");
+        stk::mesh::Part *part1_ptr = meshMetaData.get_part("part1");
+        stk::mesh::Part *part2_ptr = meshMetaData.get_part("part2");
 
-        EXPECT_TRUE(&part1 != NULL);
-        EXPECT_TRUE(&part2 != NULL);
+        EXPECT_TRUE(part1_ptr != NULL);
+        EXPECT_TRUE(part2_ptr != NULL);
+
+        stk::mesh::Part &part1 = *part1_ptr;
+        stk::mesh::Part &part2 = *part2_ptr;
 
         bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[0], part1);
         bulkData.declare_entity(stk::topology::NODE_RANK, part1Nodes[1], part1);

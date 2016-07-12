@@ -488,13 +488,17 @@ TEST(PartToBucket, hexWithThreeSidesets)
     stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
     stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-    stk::mesh::Part &surface1Part = *stkMeshMetaData.get_part("surface_1");
-    stk::mesh::Part &surface2Part = *stkMeshMetaData.get_part("surface_2");
-    stk::mesh::Part &surface3Part = *stkMeshMetaData.get_part("surface_3");
+    stk::mesh::Part *surface1PartPtr = stkMeshMetaData.get_part("surface_1");
+    stk::mesh::Part *surface2PartPtr = stkMeshMetaData.get_part("surface_2");
+    stk::mesh::Part *surface3PartPtr = stkMeshMetaData.get_part("surface_3");
 
-    EXPECT_TRUE(&surface1Part != NULL);
-    EXPECT_TRUE(&surface2Part != NULL);
-    EXPECT_TRUE(&surface3Part != NULL);
+    EXPECT_TRUE(surface1PartPtr != NULL);
+    EXPECT_TRUE(surface2PartPtr != NULL);
+    EXPECT_TRUE(surface3PartPtr != NULL);
+
+    stk::mesh::Part &surface1Part = *surface1PartPtr;
+    stk::mesh::Part &surface2Part = *surface2PartPtr;
+    stk::mesh::Part &surface3Part = *surface3PartPtr;
 
     stk::mesh::Selector surface1Selector(surface1Part);
     const stk::mesh::BucketVector &surface1NodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, surface1Selector);
@@ -521,8 +525,9 @@ TEST(PartToBucket, hexWithThreeSidesets)
     expectedGlobalId = 5;
     checkNodeInSelectedBucket(selectNode5, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Part &block1Part = *stkMeshMetaData.get_part("block_1");
-    EXPECT_TRUE(&block1Part != NULL);
+    stk::mesh::Part block1PartPtr = *stkMeshMetaData.get_part("block_1");
+    EXPECT_TRUE(&block1PartPtr != NULL);
+    stk::mesh::Part &block1Part = *block1PartPtr;
     stk::mesh::Selector selectNode6 = block1Part & (!surface1Part) & (!surface2Part) & (!surface3Part);
     expectedGlobalId = 6;
     checkNodeInSelectedBucket(selectNode6, expectedGlobalId, stkMeshBulkData);

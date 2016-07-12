@@ -51,8 +51,8 @@ typedef std::pair< const std::type_info * , DeleteFunction > Manager ;
 struct less_cset {
   bool operator()( const Manager        & lhs ,
                    const std::type_info & rhs ) const ;
-  bool operator()( const std::type_info & lhs ,
-                   const Manager        & rhs ) const ;
+  //bool operator()( const std::type_info & lhs ,
+  //                 const Manager        & rhs ) const ;
 };
 
 // On some systems, namely AIX, std::type_info::before(...)
@@ -64,9 +64,9 @@ bool less_cset::operator()( const Manager        & lhs ,
                             const std::type_info & rhs ) const
 { return lhs.first->before( rhs ) && * lhs.first != rhs ; }
 
-bool less_cset::operator()( const std::type_info & lhs ,
-                            const Manager        & rhs ) const
-{ return lhs.before( *rhs.first ) && lhs != *rhs.first ; }
+//bool less_cset::operator()( const std::type_info & lhs ,
+//                            const Manager        & rhs ) const
+//{ return lhs.before( *rhs.first ) && lhs != *rhs.first ; }
 
 
 std::vector< Manager >::iterator
