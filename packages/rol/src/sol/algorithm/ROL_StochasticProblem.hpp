@@ -378,16 +378,20 @@ public:
               val += coeff[i]*x.getStatistic(i);
             }
           }
-          if ( risk == "Super Quantile Quadrangle" ) {
+          else if ( risk == "Super Quantile Quadrangle" ) {
             SuperQuantileQuadrangle<Real> sqq(*parlist_);
             val = sqq.computeStatistic(*vec_);
           }
-          if ( risk == "Chebyshev 1 Kusuoka" ) {
+          else if ( risk == "Chebyshev 1 Kusuoka" ) {
             Chebyshev1Kusuoka<Real> sqq(*parlist_);
             val = static_cast<SingletonKusuoka<Real> >(sqq).computeStatistic(*vec_);
           }
-          if ( risk == "Chebyshev 2 Kusuoka" ) {
+          else if ( risk == "Chebyshev 2 Kusuoka" ) {
             Chebyshev2Kusuoka<Real> sqq(*parlist_);
+            val = static_cast<SingletonKusuoka<Real> >(sqq).computeStatistic(*vec_);
+          }
+          else if ( risk == "Chebyshev 3 Kusuoka" ) {
+            Chebyshev3Kusuoka<Real> sqq(*parlist_);
             val = static_cast<SingletonKusuoka<Real> >(sqq).computeStatistic(*vec_);
           }
           else if ( risk == "Quantile-Radius Quadrangle" ) {

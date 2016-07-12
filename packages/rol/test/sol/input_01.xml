@@ -239,6 +239,21 @@
         </ParameterList>
       </ParameterList>
 
+      <!-- ===========  CHEBYSHEV 3 KUSUOKA  =========== -->
+      <ParameterList name="Chebyshev 3 Kusuoka">
+        <Parameter name="Lower Bound"                 type="double" value="0.55"  />
+        <Parameter name="Upper Bound"                 type="double" value="0.95"  />
+        <Parameter name="Number of Quadrature Points" type="int"    value="10"    />
+        <Parameter name="Smoothing Parameter"         type="double" value="1.e-2" />
+        <ParameterList name="Distribution">
+          <Parameter name="Name" type="string" value="Parabolic" />
+          <ParameterList name="Parabolic">
+            <Parameter name="Lower Bound" type="double" value="0.0" />
+            <Parameter name="Upper Bound" type="double" value="1.0" />
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+
       <!-- ===========  CVAR SUBLIST  =========== -->
       <ParameterList name="Quantile-Radius Quadrangle">
         <Parameter name="Confidence Level"    type="double" value="0.8"   />
