@@ -106,23 +106,9 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
   }
-  else if ( name == "Chebyshev 1 Kusuoka" ) {
+  else if ( name == "Chebyshev-Kusuoka" ) {
     Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 1 Kusuoka");
-    nStatistic = list.get("Number of Quadrature Points",5);
-    lower.resize(nStatistic,ROL_NINF<Real>());
-    upper.resize(nStatistic,ROL_INF<Real>());
-  }
-  else if ( name == "Chebyshev 2 Kusuoka" ) {
-    Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 2 Kusuoka");
-    nStatistic = list.get("Number of Quadrature Points",5);
-    lower.resize(nStatistic,ROL_NINF<Real>());
-    upper.resize(nStatistic,ROL_INF<Real>());
-  }
-  else if ( name == "Chebyshev 3 Kusuoka" ) {
-    Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 3 Kusuoka");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka");
     nStatistic = list.get("Number of Quadrature Points",5);
     lower.resize(nStatistic,ROL_NINF<Real>());
     upper.resize(nStatistic,ROL_INF<Real>());
@@ -201,26 +187,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
           upper.push_back(ROL_INF<Real>());
         }
       }
-      else if ( riskString[i] == "Chebyshev 1 Kusuoka" ) {
-        Teuchos::ParameterList &SQlist = list.sublist("Chebyshev 1 Kusuoka");
-        int nSQQstat = SQlist.get("Number of Quadrature Points",5);
-        nStatistic += nSQQstat;
-        for (int j = 0; j < nSQQstat; ++j) {
-          lower.push_back(ROL_NINF<Real>());
-          upper.push_back(ROL_INF<Real>());
-        }
-      }
-      else if ( riskString[i] == "Chebyshev 2 Kusuoka" ) {
-        Teuchos::ParameterList &SQlist = list.sublist("Chebyshev 2 Kusuoka");
-        int nSQQstat = SQlist.get("Number of Quadrature Points",5);
-        nStatistic += nSQQstat;
-        for (int j = 0; j < nSQQstat; ++j) {
-          lower.push_back(ROL_NINF<Real>());
-          upper.push_back(ROL_INF<Real>());
-        }
-      }
-      else if ( riskString[i] == "Chebyshev 3 Kusuoka" ) {
-        Teuchos::ParameterList &SQlist = list.sublist("Chebyshev 3 Kusuoka");
+      else if ( riskString[i] == "Chebyshev-Kusuoka" ) {
+        Teuchos::ParameterList &SQlist = list.sublist("Chebyshev-Kusuoka");
         int nSQQstat = SQlist.get("Number of Quadrature Points",5);
         nStatistic += nSQQstat;
         for (int j = 0; j < nSQQstat; ++j) {

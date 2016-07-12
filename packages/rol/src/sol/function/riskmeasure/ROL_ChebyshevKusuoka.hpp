@@ -41,41 +41,51 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_CHEBYSHEV1KUSUOKA_HPP
-#define ROL_CHEBYSHEV1KUSUOKA_HPP
+#ifndef ROL_CHEBYSHEVKUSUOKA_HPP
+#define ROL_CHEBYSHEVKUSUOKA_HPP
 
 #include "ROL_SingletonKusuoka.hpp"
 #include "ROL_GaussChebyshev1Quadrature.hpp"
+#include "ROL_GaussChebyshev2Quadrature.hpp"
+#include "ROL_GaussChebyshev3Quadrature.hpp"
 
 /** @ingroup risk_group
-    \class ROL::Chebyshev1Kusuoka
-    \brief Provides an interface for the Chebyshev 1 Kusuoka risk measure.
+    \class ROL::ChebyshevKusuoka
+    \brief Provides an interface for the Chebyshev-Kusuoka risk measure.
 
-    The Chebyshev 1 Kusuoka risk measure is defined as
+    The Chebyshev-Kusuoka risk measure is defined as
     \f[
-       \mathcal{R}(X) = \int_0^1 w(\alpha) \mathrm{CVaR}_{\alpha}(X)
-          \,\mathrm{d}\alpha
+       \mathcal{R}(X) = \int_{\alpha_0}^{\alpha_1} w(\alpha)
+          \mathrm{CVaR}_{\alpha}(X) \,\mathrm{d}\alpha
     \f]
-    where the conditional value-at-risk (CVaR) with confidence level
-    \f$0\le \alpha < 1\f$ is
+    where \f$0\le \alpha_0 < \alpha_1 < 1\f$ and the conditional value-at-risk
+    (CVaR) with confidence level \f$0\le \alpha < 1\f$ is
     \f[
        \mathrm{CVaR}_\alpha(X) = \inf_{t\in\mathbb{R}} \left\{
          t + \frac{1}{1-\alpha} \mathbb{E}\left[(X-t)_+\right]
-         \right\}, \quad (x)_+ = \max\{0,x\},
+         \right\}, \quad (x)_+ = \max\{0,x\}.
     \f]
-    and the weight function \f$w\f$ is
+    There are three choices of weight functions \f$w\f$: (i) the first weight
+    function generates the Chebyshev polynomials of the first kind and has
+    the specific form
     \f[
-       w(x) = \frac{1}{\sqrt{1-x^2}}.
+       w(x) = \frac{1}{\sqrt{(x-\alpha_0)(\alpha_1-x)}};
     \f]
-    If the distribution of \f$X\f$ is continuous, then
-    \f$\mathrm{CVaR}_{\alpha}(X)\f$ is the conditional
-    expectation of \f$X\f$ exceeding the \f$\alpha\f$-quantile of \f$X\f$ and
-    the optimal \f$t\f$ is the \f$\alpha\f$-quantile.
-    Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
+    (ii) the second weight function generates the Chebyshev polynomials of the
+    second kind and has the specific form
+    \f[
+       w(x) = \sqrt{(x-\alpha_0)(\alpha_1-x)};
+    \f]
+    and (iii) the third weight function is related again to the Chebyshev
+    polynomials of the first kind and has the specific form
+    \f[
+       w(x) = \sqrt{\frac{x-\alpha_0}{\alpha_1-x}}.
+    \f]
+    As defined, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
 
     ROL implements \f$\mathcal{R}\f$ by approximating the integral with
-    Gauss-Chebyshev quadrature of the first kind.  The corresponding quadrature
-    points and weights are then used to construct a
+    the appropriate Gauss-Chebyshev quadrature rule.  The corresponding
+    quadrature points and weights are then used to construct a
     ROL::MixedQuantileQuadrangle risk measure.
     When using derivative-based optimization, the user can provide a smooth
     approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
@@ -84,30 +94,43 @@
 namespace ROL {
 
 template<class Real>
-class Chebyshev1Kusuoka : public SingletonKusuoka<Real> {
+class ChebyshevKusuoka : public SingletonKusuoka<Real> {
 private:
   Teuchos::RCP<PlusFunction<Real> > plusFunction_;
 
   Real lower_, upper_;
   int nQuad_; 
+  int wType_;
 
   std::vector<Real> wts_;
   std::vector<Real> pts_;
 
   void checkInputs(void) const {
     TEUCHOS_TEST_FOR_EXCEPTION(lower_ > upper_, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Lower bound exceeds upper!");
+      ">>> ERROR (ROL::ChebyshevKusuoka): Lower bound exceeds upper!");
     TEUCHOS_TEST_FOR_EXCEPTION(lower_ < static_cast<Real>(0), std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Lower bound is less than zero!");
+      ">>> ERROR (ROL::ChebyshevKusuoka): Lower bound is less than zero!");
     TEUCHOS_TEST_FOR_EXCEPTION(static_cast<Real>(1) < upper_, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): Upper bound is greater than one!");
+      ">>> ERROR (ROL::ChebyshevKusuoka): Upper bound is greater than one!");
+    TEUCHOS_TEST_FOR_EXCEPTION((wType_ < 1 || wType_ > 3), std::invalid_argument,
+      ">>> ERROR (ROL::ChebyshevKusuoka): Weight must be 1, 2 or 3!");
     TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
-      ">>> ERROR (ROL::Chebyshev1Kusuoka): PlusFunction pointer is null!");
+      ">>> ERROR (ROL::ChebyshevKusuoka): PlusFunction pointer is null!");
   }
 
   void initialize(void) {
-     GaussChebyshev1Quadrature<Real> quad(nQuad_); // quad.test();
-     quad.get(pts_,wts_);
+     Teuchos::RCP<Quadrature1D<Real> > quad;
+     if ( wType_ == 1 ) {
+       quad = Teuchos::rcp(new GaussChebyshev1Quadrature<Real>(nQuad_));
+     }
+     else if ( wType_ == 2 ) {
+       quad = Teuchos::rcp(new GaussChebyshev2Quadrature<Real>(nQuad_));
+     }
+     else if ( wType_ == 3 ) {
+       quad = Teuchos::rcp(new GaussChebyshev3Quadrature<Real>(nQuad_));
+     }
+     // quad->test();
+     quad->get(pts_,wts_);
      Real sum(0), half(0.5), one(1);
      for (int i = 0; i < nQuad_; ++i) {
        sum += wts_[i];
@@ -120,24 +143,46 @@ private:
   }
 
 public:
-  Chebyshev1Kusuoka( Teuchos::ParameterList &parlist )
+  /** \brief Constructor.
+
+      @param[in]     parlist is a parameter list specifying inputs
+
+      parlist should contain sublists "SOL"->"Risk Measure"->"Chebyshev-Kusuoka"
+      and the "Chebyshev-Kusuoka" sublist should have the following parameters
+      \li "Lower Bound" (between 0 and 1)
+      \li "Upper Bound" (between 0 and 1, greater than "Lower Bound")
+      \li "Weight Type" (either 1, 2, or 3)
+      \li "Number of Quadrature Points"
+      \li A sublist for plus function information.
+  */
+  ChebyshevKusuoka( Teuchos::ParameterList &parlist )
     : SingletonKusuoka<Real>() {
     Teuchos::ParameterList &list
-      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev 1 Kusuoka");
+      = parlist.sublist("SOL").sublist("Risk Measure").sublist("Chebyshev-Kusuoka");
     // Grab confidence level and quadrature order
     lower_ = list.get("Lower Bound",0.0);
     upper_ = list.get("Upper Bound",1.0);
     nQuad_ = list.get("Number of Quadrature Points",5);
+    wType_ = list.get("Weight Type",1);
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     // Check inputs
     checkInputs();
     initialize();
   }
 
-  Chebyshev1Kusuoka(const Real lower, const Real upper,
-                    const int nQuad,
-                    const Teuchos::RCP<PlusFunction<Real> > &pf)
-    : RiskMeasure<Real>(), plusFunction_(pf), lower_(lower), upper_(upper), nQuad_(nQuad) {
+  /** \brief Constructor.
+
+      @param[in]     lower   is the lower confidence level (between 0 and 1)
+      @param[in]     upper   is the upper confidence level (between 0 and 1, greater than lower)
+      @param[in]     nQuad   is the number of quadrature points
+      @param[in]     wType   is the weight type (either 1, 2, or 3)
+      @param[in]     pf      is the plus function or an approximation
+  */
+  ChebyshevKusuoka(const Real lower, const Real upper,
+                   const int nQuad, const int wType,
+                   const Teuchos::RCP<PlusFunction<Real> > &pf)
+    : RiskMeasure<Real>(), plusFunction_(pf),
+      lower_(lower), upper_(upper), nQuad_(nQuad), wType_(wType) {
     // Check inputs
     checkInputs();
     initialize();
