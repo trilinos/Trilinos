@@ -59,7 +59,7 @@
        \mathcal{R}(X) = \frac{1}{1-\beta}\int_\beta^1\mathrm{CVaR}_{\alpha}(X)
           \,\mathrm{d}\alpha
     \f]
-    where \f$0 \le \beta_n < 1\f$ and the conditional value-at-risk (CVaR) with
+    where \f$0 \le \beta < 1\f$ and the conditional value-at-risk (CVaR) with
     confidence level \f$0\le \alpha < 1\f$ is
     \f[
        \mathrm{CVaR}_\alpha(X) = \inf_{t\in\mathbb{R}} \left\{
