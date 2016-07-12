@@ -42,7 +42,6 @@
 #include <map>                          // for map, multimap
 #include <memory>                       //
 #include <set>                          // for multiset, set
-#include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
 #include <stk_util/diag/String.hpp>     // for String, Identifier
 #include <stk_util/diag/StringUtil.hpp>  // for demangle
 #include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
@@ -801,36 +800,6 @@ operator<<(Writer &dout, const sierra::FArrayContainer<ElementType, Dimension> &
 }
 
 /**
- * @brief Template function <b>dump</b> writes a Mapv_no_delete object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv_no_delete to.
- *
- * @param t		a <b>sierra::String</b> const reference to the Mapv_no_delete to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::Mapv_no_delete<T> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::Mapv_no_delete<T>::const_iterator it = t.begin(); it != t.end(); ++it) {
-      dout << "[" << (*it).mapv_key() << "] " << (*it) << dendl;
-    }
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
  * @brief Template function <b>dump</b> writes the vecmap object to the
  * diagnostic writer.
  *
@@ -978,58 +947,6 @@ dump(
 }
 
 /**
- * @brief Template <b>dump</b> writes a MapvNode object to the diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			Mapvnod to.
- *
- * @param t		a <b>MapvNode</b> const reference to the MapvNode to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::MapvNode<T, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", " << t.mapv_key();
-  }
-
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> writes a Mapv object to the diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to write the
- *			Mapv to.
- *
- * @param t		a <b>std::vector</b> const reference to the Mapv to write.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &
-dump(
-  Writer &		dout,
-  const sierra::Mapv<T, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::Mapv<T, U>::const_iterator it = t.begin(); it != t.end(); ++it) {
-      dout << "[" << (*it).mapv_key() << "] " << (*it) << dendl;
-    }
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
  * @brief Member function <b>operator<<</b> writer a vecset object the
  * diagnostic writer.
  *
@@ -1090,54 +1007,6 @@ Writer &operator<<(Writer &dout, const sierra::vecset<T *, U> &t) {
  */
 template <class Key, class T, class U>
 Writer &operator<<(Writer &dout, const sierra::vecmap<Key *, T *, U> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Template function <b>operator<<</b> writes a Mpav_no_delete object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv_no_delete to.
- *
- * @param t		a <b>vecmap</b> const reference to the Mapv_no_delete.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &operator<<(Writer &dout, const sierra::Mapv_no_delete<T> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Member function <b>operator<<</b> writes a Mapv object to the diagnostic
- * writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the Mapv to.
- *
- * @param t		a <b>vecmap</b> const reference to the Mapv.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &operator<<(Writer &dout, const sierra::Mapv<T, U> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Template function <b>operator<<</b> writes a MapvNode object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the MapvNode to.
- *
- * @param t		a <b>MapvNode</b> const reference to the MapvNode.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class T, class U>
-Writer &operator<<(Writer &dout, const sierra::MapvNode<T, U> &t) {
   return dump(dout, t);
 }
 

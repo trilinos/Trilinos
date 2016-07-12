@@ -525,8 +525,9 @@ TEST(PartToBucket, hexWithThreeSidesets)
     expectedGlobalId = 5;
     checkNodeInSelectedBucket(selectNode5, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Part block1PartPtr = *stkMeshMetaData.get_part("block_1");
-    EXPECT_TRUE(&block1PartPtr != NULL);
+    stk::mesh::Part *block1PartPtr = stkMeshMetaData.get_part("block_1");
+    EXPECT_TRUE(block1PartPtr != NULL);
+
     stk::mesh::Part &block1Part = *block1PartPtr;
     stk::mesh::Selector selectNode6 = block1Part & (!surface1Part) & (!surface2Part) & (!surface3Part);
     expectedGlobalId = 6;
