@@ -82,11 +82,13 @@ namespace Intrepid2 {
       struct Serial {
         template<typename outputValueViewType,
                  typename inputPointViewType,
+                 typename workViewType,
                  typename vinvViewType>
         KOKKOS_INLINE_FUNCTION
         static void
         getValues( /**/  outputValueViewType outputValues,
                    const inputPointViewType  inputPoints,
+                   /**/  workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
       };
@@ -126,16 +128,22 @@ namespace Intrepid2 {
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+
+          typedef typename outputValueViewType::value_type outputValueType;
+          outputValueType buf[Parameters::MaxOrder+1][numPtsEval];
+
+          Kokkos::DynRankView<outputValueType,
+            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0][0], (Parameters::MaxOrder+1)*numPtsEval);
           
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
-            Serial<opType>::getValues( output, input, _vinv );
+            Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
           case OPERATOR_Dn : {
             auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-            Serial<opType>::getValues( output, input, _vinv, _opDn );
+            Serial<opType>::getValues( output, input, work, _vinv, _opDn );
             break;
           }
           default: {
@@ -202,6 +210,12 @@ namespace Intrepid2 {
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_LINE_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    }
+
+    void
+    getVandermondeInverse( outputViewType vinv ) const {
+      // has to be same rank and dimensions
+      Kokkos::deep_copy(vinv, this->vinv_);      
     }
     
   private:

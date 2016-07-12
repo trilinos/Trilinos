@@ -57,17 +57,16 @@ namespace Intrepid2 {
     template<EOperator opType>
     template<typename outputViewType,
              typename inputViewType,
+             typename workViewType,
              typename vinvViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_LINE_Cn_FEM::Serial<opType>::
     getValues( /**/  outputViewType output,
                const inputViewType  input,
+               /**/  workViewType   work,
                const vinvViewType   vinv,
                const ordinal_type   operatorDn ) {    
-      typedef typename outputViewType::value_type outputValueType;
-      outputValueType buf_phis[Parameters::MaxOrder+1][Parameters::MaxNumPtsPerBasisEval];
-
       ordinal_type opDn = operatorDn;
 
       const auto card = vinv.dimension(0);
@@ -78,8 +77,8 @@ namespace Intrepid2 {
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        Kokkos::DynRankView<outputValueType,
-          Kokkos::Impl::ActiveExecutionMemorySpace> phis(&buf_phis[0][0], card, npts);
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> phis(work.data(), card, npts);
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
@@ -107,9 +106,9 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const auto dkcard = 1;
-        Kokkos::DynRankView<outputValueType,
-          Kokkos::Impl::ActiveExecutionMemorySpace> phis(&buf_phis[0][0], card, npts, dkcard);
-
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> phis(work.data(), card, npts, dkcard);
+        
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 
@@ -206,19 +205,31 @@ namespace Intrepid2 {
     switch (pointType) {
     case POINTTYPE_EQUISPACED:
     case POINTTYPE_WARPBLEND: {
-      // two vertices
-      dofCoords(0,0) = -1.0;
-      dofCoords(1,0) =  1.0;
-
-      // internal points
-      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-      auto pts = Kokkos::subdynrankview(dofCoords, range_type(2, card), Kokkos::ALL());
-      
-      const auto offset = 1;
-      PointTools::getLattice( pts,
-                              this->basisCellTopology_, 
-                              order, offset, 
-                              pointType );
+      // lattice ordering 
+      {
+        const auto offset = 0;
+        PointTools::getLattice( dofCoords,
+                                this->basisCellTopology_, 
+                                order, offset, 
+                                pointType );
+        
+      }
+      // topological order
+      // { 
+      //   // two vertices
+      //   dofCoords(0,0) = -1.0;
+      //   dofCoords(1,0) =  1.0;
+        
+      //   // internal points
+      //   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      //   auto pts = Kokkos::subdynrankview(dofCoords, range_type(2, card), Kokkos::ALL());
+        
+      //   const auto offset = 1;
+      //   PointTools::getLattice( pts,
+      //                           this->basisCellTopology_, 
+      //                           order, offset, 
+      //                           pointType );
+      // }
       break;
     }
     case POINTTYPE_GAUSS: {
@@ -295,24 +306,51 @@ namespace Intrepid2 {
 
       // now we check the points for association 
       if (is_vertex_included) {
-        tags[0][0] = 0; // vertex dof
-        tags[0][1] = 0; // vertex id
-        tags[0][2] = 0; // local dof id
-        tags[0][3] = 1; // total number of dofs in this vertex
+        // lattice order
+        {
+          const auto v0 = 0;
+          tags[v0][0] = 0; // vertex dof
+          tags[v0][1] = 0; // vertex id
+          tags[v0][2] = 0; // local dof id
+          tags[v0][3] = 1; // total number of dofs in this vertex
+          
+          const auto iend = card - 2;
+          for (auto i=0;i<iend;++i) {
+            const auto e = i + 1;
+            tags[e][0] = 1;    // edge dof
+            tags[e][1] = 0;    // edge id
+            tags[e][2] = i;    // local dof id
+            tags[e][3] = iend; // total number of dofs in this edge
+          }
 
-        tags[1][0] = 0; // vertex dof
-        tags[1][1] = 1; // vertex id
-        tags[1][2] = 0; // local dof id
-        tags[1][3] = 1; // total number of dofs in this vertex
-
-        const auto iend = card - 2;
-        for (auto i=0;i<iend;++i) {
-          const auto ii = i + 2;
-          tags[ii][0] = 1;    // edge dof
-          tags[ii][1] = 0;    // edge id
-          tags[ii][2] = i;    // local dof id
-          tags[ii][3] = iend; // total number of dofs in this edge
+          const auto v1 = card -1;
+          tags[v1][0] = 0; // vertex dof
+          tags[v1][1] = 1; // vertex id
+          tags[v1][2] = 0; // local dof id
+          tags[v1][3] = 1; // total number of dofs in this vertex
         }
+
+        // topological order
+        // {
+        //   tags[0][0] = 0; // vertex dof
+        //   tags[0][1] = 0; // vertex id
+        //   tags[0][2] = 0; // local dof id
+        //   tags[0][3] = 1; // total number of dofs in this vertex
+          
+        //   tags[1][0] = 0; // vertex dof
+        //   tags[1][1] = 1; // vertex id
+        //   tags[1][2] = 0; // local dof id
+        //   tags[1][3] = 1; // total number of dofs in this vertex
+          
+        //   const auto iend = card - 2;
+        //   for (auto i=0;i<iend;++i) {
+        //     const auto ii = i + 2;
+        //     tags[ii][0] = 1;    // edge dof
+        //     tags[ii][1] = 0;    // edge id
+        //     tags[ii][2] = i;    // local dof id
+        //     tags[ii][3] = iend; // total number of dofs in this edge
+        //   }
+        // }
       } else {
         for (auto i=0;i<card;++i) {
           tags[i][0] = 1;    // edge dof
