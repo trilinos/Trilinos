@@ -46,6 +46,7 @@
 
 #include "ROL_SingletonKusuoka.hpp"
 #include "ROL_GaussLegendreQuadrature.hpp"
+#include "ROL_Fejer2Quadrature.hpp"
 
 /** @ingroup risk_group
     \class ROL::SuperQuantileQuadrangle
@@ -72,10 +73,10 @@
     Additionally, \f$\mathcal{R}\f$ is a law-invariant coherent risk measure.
 
     ROL implements \f$\mathcal{R}\f$ by approximating the integral with
-    Gauss-Legendre quadrature.  The corresponding quadrature points and weights
-    are then used to construct a ROL::MixedQuantileQuadrangle risk measure.
-    When using derivative-based optimization, the user can provide a smooth
-    approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
+    Gauss-Legendre or Fejer 2 quadrature.  The corresponding quadrature points
+    and weights are then used to construct a ROL::MixedQuantileQuadrangle risk
+    measure.  When using derivative-based optimization, the user can provide a
+    smooth approximation of \f$(\cdot)_+\f$ using the ROL::PlusFunction class.
 */
 
 namespace ROL {
@@ -87,6 +88,7 @@ private:
 
   Real alpha_;
   int nQuad_;
+  bool useGauss_;
 
   std::vector<Real> wts_;
   std::vector<Real> pts_;
@@ -99,8 +101,15 @@ private:
   }
 
   void initialize(void) {
-    GaussLegendreQuadrature<Real> quad(nQuad_); // quad.test();
-    quad.get(pts_,wts_);
+    Teuchos::RCP<Quadrature1D<Real> > quad;
+    if ( useGauss_ ) {
+      quad = Teuchos::rcp(new GaussLegendreQuadrature<Real>(nQuad_));
+    }
+    else {
+      quad = Teuchos::rcp(new Fejer2Quadrature<Real>(nQuad_));
+    }
+    // quad->test();
+    quad->get(pts_,wts_);
     Real sum(0), half(0.5), one(1);
     for (int i = 0; i < nQuad_; ++i) {
       sum += wts_[i];
@@ -121,6 +130,7 @@ public:
     // Grab confidence level and quadrature order
     alpha_ = list.get<Real>("Confidence Level");
     nQuad_ = list.get("Number of Quadrature Points",5);
+    useGauss_ = list.get("Use Gauss-Legendre Quadrature",true);
     plusFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
     // Check inputs
     checkInputs();
@@ -129,8 +139,10 @@ public:
 
   SuperQuantileQuadrangle(const Real alpha,
                           const int nQuad,
-                          const Teuchos::RCP<PlusFunction<Real> > &pf)
-    : SingletonKusuoka<Real>(), plusFunction_(pf), alpha_(alpha), nQuad_(nQuad) {
+                          const Teuchos::RCP<PlusFunction<Real> > &pf,
+                          const bool useGauss = true)
+    : SingletonKusuoka<Real>(), plusFunction_(pf),
+      alpha_(alpha), nQuad_(nQuad), useGauss_(useGauss) {
     // Check inputs
     checkInputs();
     initialize();
