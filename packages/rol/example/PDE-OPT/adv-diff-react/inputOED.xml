@@ -5,10 +5,10 @@
     <Parameter name="OED CG Relative Tolerance"     type="double"  value="1e-10" />
     <Parameter name="OED CG Absolute Tolerance"     type="double"  value="1e10" />
     <Parameter name="OED Noise Standard Deviation"  type="double"  value="1e-6" />
-    <Parameter name="OED Sparsity Regularization"   type="double"  value="3e-1" />
+    <Parameter name="OED Sparsity Regularization"   type="double"  value="4e-2" />
+    <Parameter name="OED Number of random vectors"  type="int"     value="5" />
+    <Parameter name="OED Sparsity Regularization"   type="double"  value="0.7e-2" />
     <Parameter name="OED Number of random vectors"  type="int"     value="1" />
-    <!-- Parameter name="OED Sparsity Regularization"   type="double"  value="1.3e-0" -->
-    <!-- Parameter name="OED Number of random vectors"  type="int"     value="5" -->
   </ParameterList>
 
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
@@ -193,7 +193,7 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-2"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-4"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
     <Parameter name="Iteration Limit"      type="int"    value="200"    />

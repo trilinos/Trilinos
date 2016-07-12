@@ -1,10 +1,10 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Penalty parameter"             type="double"  value="1e-2" />
+    <Parameter name="Penalty parameter"             type="double"  value="1e-1" />
     <Parameter name="Diffusivity"                   type="double"  value="1e-1" />
     <Parameter name="Advection Horizontal"          type="double"  value="1e+0" />
-    <Parameter name="Advection Vertical"            type="double"  value="3e-1" />
+    <Parameter name="Advection Vertical"            type="double"  value="1e+0" />
     <Parameter name="Order of FE discretization"    type="int"     value="1"    />
     <Parameter name="Fraction of nonzero weights"   type="double"  value="1.0" />
   </ParameterList>

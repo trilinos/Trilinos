@@ -9,11 +9,16 @@ axsize = 400;
 figure('Position', [100 100 3.3*axsize 1.6*axsize])
 localplot('state.txt', 'control.txt', 'weights.txt', 'All sensors', adj, nodes, publish_results, axsize);
 
-figure('Position', [150 150 3.3*axsize 1.6*axsize])
-localplot('stateOED.txt', 'controlOED.txt', 'weightsOED.txt', 'OED sensors', adj, nodes, publish_results, axsize);
+if exist('weightsOED.txt', 'file') == 2
+  figure('Position', [150 150 3.3*axsize 1.6*axsize])
+  localplot('stateOED.txt', 'controlOED.txt', 'weightsOED.txt', 'OED sensors', adj, nodes, publish_results, axsize);
+end
 
-figure('Position', [200 200 3.3*axsize 1.6*axsize])
-localplot('stateRandom.txt', 'controlRandom.txt', 'weightsRandom.txt', 'Random sensors', adj, nodes, publish_results, axsize);
+
+if exist('weightsRandom.txt', 'file') == 2
+  figure('Position', [200 200 3.3*axsize 1.6*axsize])
+  localplot('stateRandom.txt', 'controlRandom.txt', 'weightsRandom.txt', 'Random sensors', adj, nodes, publish_results, axsize);
+end
 
 end % plotresults
 

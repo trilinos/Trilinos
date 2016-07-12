@@ -542,7 +542,7 @@ public:
     mySortedCellIds_.erase( std::unique(mySortedCellIds_.begin(), mySortedCellIds_.end()), mySortedCellIds_.end() );
     std::vector<Teuchos::Array<int> > myDirichletCellIds_(dss[0].size());
     for (int i=0; i<static_cast<int>(dss[0].size()); ++i) {
-      if (i != 1) {  // exclude right boundary of the square domain (pure Neumann)
+      if ((i == 0) || (i == 3)) {  // include only bottom and left boundary of the square domain (others pure Neumann)
         for (int j=0; j<dss[0][i].dimension(0); ++j) {
           if (std::binary_search(mySortedCellIds_.begin(), mySortedCellIds_.end(), dss[0][i](j))) {
             myDirichletCellIds_[i].push_back(dss[0][i](j));
