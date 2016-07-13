@@ -54,8 +54,8 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-#include "Intrepid2_CubatureDirectLineGauss.hpp"
-#include "Intrepid2_FunctionSpaceTools.hpp"
+//#include "Intrepid2_CubatureDirectLineGauss.hpp"
+//#include "Intrepid2_FunctionSpaceTools.hpp"
 
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"
@@ -128,12 +128,11 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      typedef ValueType weightValueType;
+      //typedef ValueType weightValueType;
 
       typedef Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
-      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
+      //typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
+      //typedef FunctionSpaceTools<DeviceSpaceType> fst;
 
       *outStream
         << "\n"

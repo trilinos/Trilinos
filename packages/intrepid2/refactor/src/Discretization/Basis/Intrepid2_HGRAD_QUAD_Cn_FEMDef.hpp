@@ -52,21 +52,261 @@
 namespace Intrepid2 {
 
   // -------------------------------------------------------------------------------------
+  namespace Impl {
+
+    template<EOperator opType>
+    template<typename outputViewType,
+             typename inputViewType,
+             typename workViewType,
+             typename vinvViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    Basis_HGRAD_QUAD_Cn_FEM::Serial<opType>::
+    getValues( /**/  outputViewType output,
+               const inputViewType  input,
+               /**/  workViewType   work,
+               const vinvViewType   vinv,
+               const ordinal_type   operatorDn ) {
+      ordinal_type opDn = operatorDn;
+      
+      const auto card = vinv.dimension(0);
+      const auto npts = input.dimension(0);
+
+      typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+      const auto input_x = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(0,1));
+      const auto input_y = Kokkos::subdynrankview(input, Kokkos::ALL(), range_type(1,2));
+      
+      switch (opType) {
+      case OPERATOR_VALUE: {
+        auto ptr = work.data();
+        
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> work_line(ptr, card, npts);
+        ptr += (card*npts);
+
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_x(ptr, card, npts);
+        ptr += (card*npts);
+
+        Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> output_y(ptr, card, npts);
+        ptr += (card*npts);
+        
+        Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+          getValues(output_x, input_x, work_line, vinv);
+
+        Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+          getValues(output_y, input_y, work_line, vinv);
+
+        // tensor product
+        ordinal_type idx = 0;
+        for (auto j=0;j<card;++j) // y
+          for (auto i=0;i<card;++i,++idx)  // x
+            for (auto k=0;k<npts;++k) 
+              output(idx,k) = output_x(i,k)*output_y(j,k);
+        break;
+      }
+      case OPERATOR_CURL: {
+        for (auto l=0;l<2;++l) {
+          auto ptr = work.data();
+          
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> work_line(ptr, card, npts);
+          ptr += (card*npts);
+          
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space,Kokkos::MemoryUnmanaged> output_x, output_y;
+          
+          typename workViewType::value_type s = 0.0;
+          if (l) {
+            // l = 1
+            output_x = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts, 1);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+              getValues(output_x, input_x, work_line, vinv, 1);                           
+
+            output_y = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(output_y, input_y, work_line, vinv);                           
+
+            s = -1.0;
+          } else {
+            // l = 0
+            output_x = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(output_x, input_x, work_line, vinv);                           
+
+            output_y = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts, 1);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+              getValues(output_y, input_y, work_line, vinv, 1);                           
+
+            s = 1.0;
+          }
+
+          // tensor product (extra dimension of ouput x and y are ignored)
+          ordinal_type idx = 0;
+          for (auto j=0;j<card;++j) // y
+            for (auto i=0;i<card;++i,++idx)  // x
+              for (auto k=0;k<npts;++k) 
+                output(idx,k,l) = s*output_x(i,k,0)*output_y(j,k,0);
+        }
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: 
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        opDn = getOperatorOrder(opType);
+      case OPERATOR_Dn: {
+        const auto dkcard = opDn + 1;
+        for (auto l=0;l<dkcard;++l) {
+          auto ptr = work.data();
+          
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space> work_line(ptr, card, npts);
+          ptr += (card*npts);
+          
+          Kokkos::DynRankView<typename workViewType::value_type,
+            typename workViewType::memory_space,Kokkos::MemoryUnmanaged> output_x, output_y;
+          
+          const auto mult_x = opDn - l;
+          const auto mult_y = l;
+          
+          if (mult_x) {
+            output_x = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts, 1);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+              getValues(output_x, input_x, work_line, vinv, mult_x);                           
+          } else {
+            output_x = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(output_x, input_x, work_line, vinv);                           
+          }
+
+          if (mult_y) {
+            output_y = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts, 1);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
+              getValues(output_y, input_y, work_line, vinv, mult_y);                           
+          } else {
+            output_y = Kokkos::DynRankView<typename workViewType::value_type,
+              typename workViewType::memory_space>(ptr, card, npts);
+            ptr += (card*npts);
+            Impl::Basis_HGRAD_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
+              getValues(output_y, input_y, work_line, vinv);                           
+          }
+
+          // tensor product (extra dimension of ouput x and y are ignored)
+          ordinal_type idx = 0;
+          for (auto j=0;j<card;++j) // y
+            for (auto i=0;i<card;++i,++idx)  // x
+              for (auto k=0;k<npts;++k) 
+                output(idx,k,l) = output_x(i,k,0)*output_y(j,k,0);
+        }
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_ABORT( true,
+                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::Serial::getValues) operator is not supported" );
+      }
+      }
+    }
+    
+    template<typename SpT, ordinal_type numPtsPerEval,
+             typename outputValueValueType, class ...outputValueProperties,
+             typename inputPointValueType,  class ...inputPointProperties,
+             typename vinvValueType,        class ...vinvProperties>
+    void
+    Basis_HGRAD_QUAD_Cn_FEM::
+    getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+               const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+               const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+               const EOperator operatorType ) {
+      typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
+      typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
+      typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+
+      // loopSize corresponds to cardinality
+      const auto loopSizeTmp1 = (inputPoints.dimension(0)/numPtsPerEval);
+      const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
+      const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
+      Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+      switch (operatorType) {
+      case OPERATOR_VALUE: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_VALUE,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        break;
+      }
+      case OPERATOR_CURL: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_CURL,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv) );
+        break;
+      }
+      case OPERATOR_GRAD:
+      case OPERATOR_D1: 
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10: {
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+            OPERATOR_Dn,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinv,
+                                                  getOperatorOrder(operatorType)) );
+        break;
+      }
+      default: {
+        INTREPID2_TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                                      ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): Operator type not implemented" );
+        break;
+      }
+      }
+    }
+  }
+
   // -------------------------------------------------------------------------------------
   template<typename SpT, typename OT, typename PT>
   Basis_HGRAD_QUAD_Cn_FEM<SpT,OT,PT>::
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
-                           const EPointType   pointType )
-    : lineX_(order, pointType),
-      lineY_(order, pointType) {
+                           const EPointType   pointType ) {
+    // this should be in host
+    Basis_HGRAD_LINE_Cn_FEM<Kokkos::HostSpace::execution_space,OT,PT> lineBasis( order, pointType );
+    const auto cardLine = lineBasis.getCardinality();
+    
+    this->vinv_ = Kokkos::DynRankView<PT,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
+    lineBasis.getVandermondeInverse(this->vinv_);
 
-    this->basisCardinality_  = linX_.getCardinality()*linY_.getCardinality();
+    this->basisCardinality_  = cardLine*cardLine;
     this->basisDegree_       = order;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
     this->basisType_         = BASIS_FEM_FIAT;
     this->basisCoordinates_  = COORDINATES_CARTESIAN;
-
-    const auto card = this->basisCardinality_;
 
     // initialize tags
     {
@@ -77,41 +317,47 @@ namespace Intrepid2 {
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
       
       // An array with local DoF tags assigned to the basis functions, in the order of their local enumeration 
-      ordinal_type tags[(MaxOrder+1)*(MaxOrder+1)][4];
-      
-      // four vertices
-      ordinal_type idx = 0;
-      for (auto i=0;i<4;++i,++idx) {
-        tags[idx][0] = 0; // vertex dof
-        tags[idx][1] = i; // vertex id
-        tags[idx][2] = 0; // local dof id
-        tags[idx][3] = 1; // total number of dofs in this vertex
-      }
+      constexpr ordinal_type maxCardLine = Parameters::MaxOrder + 1;
+      ordinal_type tags[maxCardLine*maxCardLine][4];
 
-      // four edges
-      ordinal_type dofs[4] = {};
-      dofs[0] = linX_.getCardinality();
-      dofs[1] = linY_.getCardinality();
-      dofs[2] = linX_.getCardinality();
-      dofs[3] = linY_.getCardinality();
-      for (auto i=0;i<4;++i) 
-        for (auto j=0;j<dofs[i];++j,++idx) {
-          tags[idx][0] = 1; // edge dof
-          tags[idx][1] = i; // edge id
-          tags[idx][2] = j; // local dof id
-          tags[idx][3] = dofs[i]; // total number of dofs in this edge
+      const ordinal_type vert[2][2] = { {0,1}, {3,2} }; //[y][x]
+      {
+        ordinal_type idx = 0;
+        for (auto j=0;j<cardLine;++j) { // y      
+          const auto tag_y = lineBasis.getDofTag(j);
+          for (auto i=0;i<cardLine;++i,++idx) { // x
+            const auto tag_x = lineBasis.getDofTag(i);          
+            
+            if (tag_x(0) == 0 && tag_y(0) == 0) {
+              // vertices
+              tags[idx][0] = 0; // vertex dof
+              tags[idx][1] = vert[tag_y(1)][tag_x(1)]; // vertex id
+              tags[idx][2] = 0; // local dof id
+              tags[idx][3] = 1; // total number of dofs in this vertex
+            } else if (tag_x(0) == 1 && tag_y(0) == 0) {
+              // horizontal edge 
+              tags[idx][0] = 1; // edge dof
+              tags[idx][1] = (tag_y(1) == 0 ? 1 : 3);
+              tags[idx][2] = tag_x(2); // local dof id
+              tags[idx][3] = tag_x(3); // total number of dofs in this vertex
+            } else if (tag_x(0) == 0 && tag_y(0) == 1) {
+              // vertical edge 
+              tags[idx][0] = 1; // edge dof
+              tags[idx][1] = (tag_x(1) == 0 ? 4 : 2);
+              tags[idx][2] = tag_y(2); // local dof id
+              tags[idx][3] = tag_y(3); // total number of dofs in this vertex
+            } else {
+              // interior
+              tags[idx][0] = 2; // interior dof
+              tags[idx][1] = 0;
+              tags[idx][2] = tag_x(2) + tag_x(3)*tag_y(2); // local dof id
+              tags[idx][3] = tag_x(3)*tag_y(3); // total number of dofs in this vertex
+            }
+          }
         }
-      
-      // interior
-      const auto intr = card - idx;
-      for (auto i=0;i<intr;++i,++idx) {
-        tags[idx][0] = 2; // face dof
-        tags[idx][1] = 0; // edge id
-        tags[idx][2] = i; // local dof id
-        tags[idx][3] = intr; // total number of dofs in this interior
       }
-
-      ordinal_type_array_1d_host tagView(&tag[0][0], card*4);
+      
+      ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
 
       // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
       // tags are constructed on host
@@ -127,239 +373,24 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+      dofCoords("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension()),
+      dofCoordsLine("dofCoordsLine", cardLine, 1);
 
-    lineX_.impl_.getDofCoords(dofCoordsLinX);
-    lineY_.impl_.getDofCoords(dofCoordsLinY);
-
-    // four vertices
-    begin = 0; end = 4;
-    dofCoords(0,0) = -1.0;   dofCoords(0,1) = -1.0;
-    dofCoords(1,0) =  1.0;   dofCoords(1,1) = -1.0;
-    dofCoords(2,0) =  1.0;   dofCoords(2,1) =  1.0;
-    dofCoords(3,0) = -1.0;   dofCoords(3,1) =  1.0;
-
-    // four edges
-    begin = end; end += lineX_.getCardinality() - 2;
+    lineBasis.getDofCoords(dofCoordsLine);
     {
-      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
-      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
-      Kokkos::deep_copy(dofCoordsEdge0, internalDofCoordsX);
-      Kokkos::deep_copy(dofCoordsEdge1, -1.0);
-    }
-    begin = end; end += lineY_.getCardinality() - 2;
-    {
-      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
-      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
-      Kokkos::deep_copy(dofCoordsEdge0, 1.0);
-      Kokkos::deep_copy(dofCoordsEdge1, internalDofCoordsY);
-    }
-    begin = end; end += lineX_.getCardinality() - 2;
-    {
-      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
-      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
-      Kokkos::deep_copy(dofCoordsEdge0, internalDofCoordsX);
-      Kokkos::deep_copy(dofCoordsEdge1, 1.0);
-    }
-    begin = end; end += lineY_.getCardinality() - 2;
-    {
-      auto dofCoordsEdge0 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 0);
-      auto dofCoordsEdge1 = Kokkos::subdynrankview(dofCoords, range_type(begin, end), 1);
-      Kokkos::deep_copy(dofCoordsEdge0, -1.0);
-      Kokkos::deep_copy(dofCoordsEdge1, internalDofCoordsY);
-    }
-
-    // interior
-    begin = end; end += edgeDofX*edgeDofY;
-    auto dofCoordsIntr = Kokkos::subdynrankview(dofCoords, range_type(begin, end), Kokkos::ALL());
-    
-    for (auto j=0;j<edgeDofY;++j)  {
-      for (auto i=0;i<edgeDofX;++i,++idx)
-        dofCoordsIntr(idx, 0) = internalDofCoordsX(i);
-        dofCoordsIntr(idx, 1) = internalDofCoordsY(j);
+      ordinal_type idx = 0;
+      for (auto j=0;j<cardLine;++j) { // y      
+        for (auto i=0;i<cardLine;++i,++idx) { // x
+          dofCoords(idx,0) = dofCoordsLine(i,0);
+          dofCoords(idx,1) = dofCoordsLine(j,0);
+        }
       }
-    
+    }
+
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
   }
-
-  template<typename SpT, typename OT, typename PT>
-  template<typename outputValueValueType, class ...outputValueProperties,
-           typename inputPointValueType,  class ...inputPointProperties>
-  void
-  Basis_HGRAD_QUAD_C1_FEM<SpT,OT,PT>::Internal::
-  getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-             const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-             const EOperator operatorType ) const {
-#ifdef HAVE_INTREPID2_DEBUG
-    getValues_HGRAD_Args<Scalar, ArrayScalar>(outputValues,
-					      inputPoints,
-					      operatorType,
-					      obj_->getBaseCellTopology(),
-					      obj_->getCardinality() );
-#endif
-
-    ArrayScalar xInputPoints(inputPoints.dimension(0),1);
-    ArrayScalar yInputPoints(inputPoints.dimension(0),1);
-
-    switch (operatorType) {
-    case OPERATOR_VALUE:
-      {
-	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-
-
-
-	xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
-	yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
-
-	int bfcur = 0;
-	for (int j=0;j<yBasis_.getCardinality();j++) {
-	  for (int i=0;i<xBasis_.getCardinality();i++) {
-	    for (int k=0;k<inputPoints.dimension(0);k++) {
-	      outputValues(bfcur,k) = xBasisValues(i,k) * yBasisValues(j,k);
-	    }
-	    bfcur++;
-	  }
-	}
-      }
-      break;
-    case OPERATOR_GRAD:
-    case OPERATOR_D1:
-      {
-	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-	ArrayScalar xBasisDerivs(xBasis_.getCardinality(),xInputPoints.dimension(0),1);
-	ArrayScalar yBasisDerivs(yBasis_.getCardinality(),yInputPoints.dimension(0),1);
-
-	xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
-	yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
-	xBasis_.getValues(xBasisDerivs,xInputPoints,OPERATOR_D1);
-	yBasis_.getValues(yBasisDerivs,yInputPoints,OPERATOR_D1);	
-
-	// there are two multiindices: I need the (1,0) and (0,1) derivatives
-	int bfcur = 0;
-
-	for (int j=0;j<yBasis_.getCardinality();j++) {
-	  for (int i=0;i<xBasis_.getCardinality();i++) {
-	    for (int k=0;k<inputPoints.dimension(0);k++) {
-	      outputValues(bfcur,k,0) = xBasisDerivs(i,k,0) * yBasisValues(j,k);
-	      outputValues(bfcur,k,1) = xBasisValues(i,k) * yBasisDerivs(j,k,0);
-	    }
-	    bfcur++;
-	  }
-	}
-      }
-      break;
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5: 
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10:
-      {
-	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-
-	Teuchos::Array<int> partialMult;
-
-	for (int d=0;d<getDkCardinality(operatorType,2);d++) {
-	  getDkMultiplicities( partialMult , d , operatorType , 2 );
-	  if (partialMult[0] == 0) {
-	    xBasisValues.resize(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	    xBasis_.getValues( xBasisValues , xInputPoints, OPERATOR_VALUE );
-	  }
-	  else {
-	    xBasisValues.resize(xBasis_.getCardinality(),xInputPoints.dimension(0),1);
-	    EOperator xop = (EOperator) ( (int) OPERATOR_D1 + partialMult[0] - 1 );
-	    xBasis_.getValues( xBasisValues , xInputPoints, xop );
-	    xBasisValues.resize(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	  }
-	  if (partialMult[1] == 0) {
-	    yBasisValues.resize(yBasis_.getCardinality(),yInputPoints.dimension(0));
-	    yBasis_.getValues( yBasisValues , yInputPoints, OPERATOR_VALUE );
-	  }
-	  else {
-	    yBasisValues.resize(yBasis_.getCardinality(),yInputPoints.dimension(0),1);
-	    EOperator yop = (EOperator) ( (int) OPERATOR_D1 + partialMult[1] - 1 );
-	    yBasis_.getValues( yBasisValues , yInputPoints, yop );
-	    yBasisValues.resize(yBasis_.getCardinality(),yInputPoints.dimension(0));
-	  }
-
-
-	  int bfcur = 0;
-	  for (int j=0;j<yBasis_.getCardinality();j++) {
-	    for (int i=0;i<xBasis_.getCardinality();i++) {
-	      for (int k=0;k<inputPoints.dimension(0);k++) {
-		outputValues(bfcur,k,d) = xBasisValues(i,k) * yBasisValues(j,k);
-	      }
-	      bfcur++;
-	    }
-	  }
-	}
-      }
-      break;
-    case OPERATOR_CURL:
-      {
-	ArrayScalar xBasisValues(xBasis_.getCardinality(),xInputPoints.dimension(0));
-	ArrayScalar yBasisValues(yBasis_.getCardinality(),yInputPoints.dimension(0));
-	ArrayScalar xBasisDerivs(xBasis_.getCardinality(),xInputPoints.dimension(0),1);
-	ArrayScalar yBasisDerivs(yBasis_.getCardinality(),yInputPoints.dimension(0),1);
-
-	xBasis_.getValues(xBasisValues,xInputPoints,OPERATOR_VALUE);
-	yBasis_.getValues(yBasisValues,yInputPoints,OPERATOR_VALUE);
-	xBasis_.getValues(xBasisDerivs,xInputPoints,OPERATOR_D1);
-	yBasis_.getValues(yBasisDerivs,yInputPoints,OPERATOR_D1);	
-
-	// there are two multiindices: I need the (1,0) and (0,1) derivatives
-	int bfcur = 0;
-
-	for (int j=0;j<yBasis_.getCardinality();j++) {
-	  for (int i=0;i<xBasis_.getCardinality();i++) {
-	    for (int k=0;k<inputPoints.dimension(0);k++) {
-	      outputValues(bfcur,k,0) = xBasisValues(i,k) * yBasisDerivs(j,k,0);
-	      outputValues(bfcur,k,1) = -xBasisDerivs(i,k,0) * yBasisValues(j,k);
-	    }
-	    bfcur++;
-	  }
-	}
-      }
-      break;      
-    default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                            ">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): Operator type not implemented");
-        break;
-    }
-  }
-
-  template<class Scalar,class ArrayScalar>
-  void Basis_HGRAD_QUAD_Cn_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
-							       const ArrayScalar &    inputPoints,
-							       const ArrayScalar &    cellVertices,
-							       const EOperator        operatorType) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
-			">>> ERROR (Basis_HGRAD_QUAD_Cn_FEM): FEM Basis calling an FVD member function");
-  }
-
-  template<class Scalar,class ArrayScalar>
-  void Basis_HGRAD_QUAD_Cn_FEM<Scalar, ArrayScalar>::getDofCoords( ArrayScalar & dofCoords ) const
-  {
-    int cur = 0;
-    for (int j=0;j<ptsy_.dimension(0);j++)
-      {
-	for (int i=0;i<ptsx_.dimension(0);i++)
-	  {
-	    dofCoords(cur,0) = ptsx_(i,0);
-	    dofCoords(cur,1) = ptsy_(j,0);
-	    cur++;
-	  }
-      }
-  }
-
   
-}// namespace Intrepid2
+}
 
 #endif

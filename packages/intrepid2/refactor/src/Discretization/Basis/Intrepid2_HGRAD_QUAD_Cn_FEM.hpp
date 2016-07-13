@@ -54,10 +54,97 @@
 
 namespace Intrepid2 {
   
+  namespace Impl {
+
+    class Basis_HGRAD_QUAD_Cn_FEM {
+    public:
+      
+      template<EOperator opType>
+      struct Serial {
+        template<typename outputValueViewType,
+                 typename inputPointViewType,
+                 typename workViewType,
+                 typename vinvViewType>
+        KOKKOS_INLINE_FUNCTION
+        static void
+        getValues( /**/  outputValueViewType outputValues,
+                   const inputPointViewType  inputPoints,
+                   /**/  workViewType        work,
+                   const vinvViewType        vinv,
+                   const ordinal_type        operatorDn = 0 );
+      };
+      
+      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+               typename outputValueValueType, class ...outputValueProperties,
+               typename inputPointValueType,  class ...inputPointProperties,
+               typename vinvValueType,        class ...vinvProperties>
+      static void
+      getValues(  /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
+                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
+                  const EOperator operatorType );
+      
+      template<typename outputValueViewType,
+               typename inputPointViewType,
+               typename vinvViewType,
+               EOperator opType,
+               ordinal_type numPtsEval>
+      struct Functor {
+        /**/  outputValueViewType _outputValues;
+        const inputPointViewType  _inputPoints;
+        const vinvViewType        _vinv;
+        const ordinal_type        _opDn;
+        
+        KOKKOS_INLINE_FUNCTION
+        Functor( /**/  outputValueViewType outputValues_,
+                 /**/  inputPointViewType  inputPoints_,
+                 /**/  vinvViewType        vinv_,
+                 const ordinal_type        opDn_ = 0 )
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), 
+            _vinv(vinv_), _opDn(opDn_) {}
+        
+        KOKKOS_INLINE_FUNCTION
+        void operator()(const size_type iter) const {
+          const auto ptBegin = Util::min(iter*numPtsEval,    _inputPoints.dimension(0));
+          const auto ptEnd   = Util::min(ptBegin+numPtsEval, _inputPoints.dimension(0));
+          
+          const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
+          const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
+
+          typedef typename outputValueViewType::value_type outputValueType;
+          constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
+          outputValueType buf[bufSize];
+          
+          Kokkos::DynRankView<outputValueType,
+            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+
+          switch (opType) {
+          case OPERATOR_VALUE : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange );
+            Serial<opType>::getValues( output, input, work, _vinv );
+            break;
+          }
+          case OPERATOR_CURL :
+          case OPERATOR_Dn : {
+            auto output = Kokkos::subdynrankview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            Serial<opType>::getValues( output, input, work, _vinv, _opDn );
+            break;
+          }
+          default: {
+            INTREPID2_TEST_FOR_ABORT( true,
+                                      ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::Functor) operator is not supported");
+            
+          }
+          }
+        }
+      };
+    };
+  }
+  
   /** \class  Intrepid2::Basis_HGRAD_QUAD_C1_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Quadrilateral cell
-      Implements Lagrangian basis of degree n on the reference Quadrilateral cell using
-      a tensor product of points
+              Implements Lagrangian basis of degree n on the reference Quadrilateral cell using
+              a tensor product of points
   */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
@@ -69,109 +156,10 @@ namespace Intrepid2 {
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
-    // // this is specialized for each operator type
-    // template<EOperator opType>
-    // struct Serial {
-    //   template<typename outputValueViewType,
-    //            typename inputPointViewType,
-    //            typename phisValueViewType>
-    //   KOKKOS_INLINE_FUNCTION
-    //   static void
-    //   getValues( /**/  outputValueViewType outputValues,
-    //              const inputPointViewType  inputPoints,
-    //              const phisValueViewType   phisValues );
-    // };
-
-    // template<typename outputValueViewType,
-    //          typename inputPointViewType,
-    //          typename phisValueViewType,
-    //          EOperator opType>
-    // struct Functor {
-    //   /**/  outputValueViewType _outputValues;
-    //   const inputPointViewType  _inputPoints;
-    //   const phisValueViewType   _phisValues;
-
-    //   KOKKOS_INLINE_FUNCTION
-    //   Functor( /**/  outputValueViewType outputValues_,
-    //            /**/  inputPointViewType  inputPoints_,
-    //            /**/  phisValueViewType   phisValues_ )
-    //     : _outputValues(outputValues_), _inputPoints(inputPoints_), _phisValues(phisValues_) {}
-
-    //   KOKKOS_INLINE_FUNCTION
-    //   void operator()(const ordinal_type ord) const {
-    //     switch (opType) {
-    //     case OPERATOR_VALUE : {
-    //       auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL() );
-    //       Serial<opType>::getValues( output, _inputPoints, _phisValues );
-    //       break;
-    //     }
-    //     case OPERATOR_MAX : {
-    //       auto output = Kokkos::subdynrankview( _outputValues, ord, Kokkos::ALL(), Kokkos::ALL() );
-    //       Serial<opType>::getValues( output, _inputPoints, _phisValues );
-    //       break;
-    //     }
-    //     default: {
-    //       INTREPID2_TEST_FOR_ABORT( true,
-    //                                 ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::Functor) operator is not supported");
-
-    //     }
-    //     }
-    //   }
-    // };
-
-    class Internal {
-    private:
-      Basis_HGRAD_QUAD_Cn_FEM *obj_;
-
-    public:
-      Internal(Basis_HGRAD_QUAD_Cn_FEM *obj)
-        : obj_(obj) {}
-
-      /** \brief  Evaluation of a FEM basis on a <strong>reference Line</strong> cell.
-
-          Returns values of <var>operatorType</var> acting on FEM basis functions for a set of
-          points in the <strong>reference Line</strong> cell. For rank and dimensions of
-          I/O array arguments see Section \ref basis_md_array_sec .
-
-          \param  outputValues      [out] - variable rank array with the basis values
-          \param  inputPoints       [in]  - rank-2 array (P,D) with the evaluation points
-          \param  operatorType      [in]  - the operator acting on the basis functions
-      */
-      template<typename outputValueValueType, class ...outputValueProperties,
-               typename inputPointValueType,  class ...inputPointProperties>
-      void
-      getValues( /**/  Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
-                 const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
-                 const EOperator operatorType  = OPERATOR_VALUE ) const;
-
-
-      /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-          <strong>reference Quadrilateral</strong>.
-
-          \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-          dimensioned (F,D)
-      */
-      template<typename dofCoordValueType, class ...dofCoordProperties>
-      void
-      getDofCoords( Kokkos::DynRankView<dofCoordValueType,dofCoordProperties...> dofCoords ) const;
-    };
-    Internal impl_;
-
     /** \brief  Constructor.
      */
     Basis_HGRAD_QUAD_Cn_FEM(const ordinal_type order,
-                            const EPointType   pointType);
-    Basis_HGRAD_QUAD_Cn_FEM(const Basis_HGRAD_QUAD_Cn_FEM &b)
-      : Basis<ExecSpaceType,outputValueType,pointValueType>(b),
-        impl_(this) {}
-
-    Basis_HGRAD_QUAD_Cn_FEM& operator=(const Basis_HGRAD_QUAD_Cn_FEM &b) {
-      if (this != &b) {
-        Basis<ExecSpaceType,outputValueType,pointValueType>::operator= (b);
-        // do not copy impl
-      }
-      return *this;
-    }
+                            const EPointType   pointType = POINTTYPE_EQUISPACED);
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
@@ -181,19 +169,41 @@ namespace Intrepid2 {
     getValues( /**/  outputViewType outputValues,
                const pointViewType  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
-      impl_.getValues( outputValues, inputPoints, operatorType );
+#ifdef HAVE_INTREPID2_DEBUG
+      Intrepid2::getValues_HGRAD_Args(outputValues,
+                                      inputPoints,
+                                      operatorType,
+                                      this->getBaseCellTopology(),
+                                      this->getCardinality() );
+#endif
+      constexpr ordinal_type numPtsPerEval = 1;
+      Impl::Basis_HGRAD_QUAD_Cn_FEM::
+        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+                                                inputPoints,
+                                                this->vinv_,
+                                                operatorType );
     }
 
     virtual
     void
     getDofCoords( pointViewType dofCoords ) const {
-      impl_.getDofCoords( dofCoords );
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.rank() != 2, std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) rank = 2 required for dofCoords array");
+      // Verify 0th dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(0) != this->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) mismatch in number of dof and 0th dimension of dofCoords array");
+      // Verify 1st dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoords.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
+#endif
+      Kokkos::deep_copy(dofCoords, this->dofCoords_);
     }
-
   private:
 
-    /** \brief orthogonal basis */
-    Basis_HGRAD_QUAD_Cn_FEM<ExecSpaceType,outputValueType,pointValueType> lineX_, lineY;
+    /** \brief inverse of Generalized Vandermonde matrix (isotropic order */
+    Kokkos::DynRankView<outputValueType,ExecSpaceType> vinv_;
   };
 
 }// namespace Intrepid2

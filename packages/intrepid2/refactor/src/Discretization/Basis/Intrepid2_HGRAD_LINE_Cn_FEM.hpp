@@ -130,10 +130,11 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subdynrankview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
-          outputValueType buf[Parameters::MaxOrder+1][numPtsEval];
+          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
+          outputValueType buf[bufSize];
 
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0][0], (Parameters::MaxOrder+1)*numPtsEval);
+            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
           
           switch (opType) {
           case OPERATOR_VALUE : {

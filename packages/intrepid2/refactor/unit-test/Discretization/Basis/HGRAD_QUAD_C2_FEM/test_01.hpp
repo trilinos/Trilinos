@@ -217,7 +217,7 @@ namespace Intrepid2 {
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
         }
-      } catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << '\n';
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
@@ -573,7 +573,6 @@ namespace Intrepid2 {
             }
           }
         }
-
         { 
           // Check D1 of basis function (do not resize vals because it has the correct size: D1 = GRAD)
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
@@ -600,7 +599,6 @@ namespace Intrepid2 {
             }
           }
         }
-
         {
           // Check CURL of basis function: resize vals just for illustration! 
           DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
@@ -636,7 +634,6 @@ namespace Intrepid2 {
             }
           }
         }
-    
         {
           // Check D2 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D2Cardin);
@@ -663,7 +660,6 @@ namespace Intrepid2 {
             }
           }
         }
-
         { 
           // Check D3 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D3Cardin);
@@ -691,7 +687,6 @@ namespace Intrepid2 {
             }
           }
         }
-
         { 
           // Check D4 of basis function
           DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
@@ -719,8 +714,6 @@ namespace Intrepid2 {
             }
           }
         }
-    
-
         // Check all higher derivatives - must be zero. 
         {
           const EOperator ops[] = { OPERATOR_D5,
@@ -756,9 +749,7 @@ namespace Intrepid2 {
                 }
           }
         }    
-      }
-      // Catch unexpected errors
-      catch (std::logic_error err) {
+      } catch (std::exception err) {
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       };
@@ -826,7 +817,7 @@ namespace Intrepid2 {
           }
         }
 
-      } catch (std::logic_error err){
+      } catch (std::exception err){
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       };
