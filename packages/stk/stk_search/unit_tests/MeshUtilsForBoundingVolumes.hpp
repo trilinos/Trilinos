@@ -449,7 +449,7 @@ inline void gtk_search(std::vector< std::pair<GtkBox, Identifier> >& local_domai
     }
 
     ACME::Parallel_Data_Exchange_T(send_indices, recv_indices, comm );
-    ACME::Parallel_Data_Exchange(send_list, recv_list, comm);
+    ACME::Parallel_Data_Exchange_T(send_list, recv_list, comm);
 
     for (size_t i=0;i<recv_list.size();i++)
     {
