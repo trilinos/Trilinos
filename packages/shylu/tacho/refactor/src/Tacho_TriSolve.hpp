@@ -114,4 +114,6 @@ namespace Tacho {
 #include "Tacho_TriSolve_Upper_ConjTrans_ByBlocks.hpp"
 #include "Tacho_TriSolve_Upper_NoTrans_ByBlocks.hpp"
 
+#include "Tacho_TriSolve_Upper_NoTrans_ByBlocksSerial.hpp"
+
 #endif

@@ -85,7 +85,12 @@ namespace Tacho {
                 const ordinal_type col_at_j = j;
                 dense_value_type &bb = B2.Value(row_at_i, col_at_j);
                 dense_value_type &cc = B1.Value(0, col_at_j);
-                
+ 
+#ifdef TACHO_EXECUTE_TASKS_SERIAL
+                Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                  CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                  ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+#else
                 const future_type f = factory.create<future_type>
                   (policy,
                    Gemm<Trans::NoTranspose,Trans::NoTranspose,
@@ -103,6 +108,8 @@ namespace Tacho {
                 // spawn a task
                 factory.spawn(policy, f);
                 ++ntasks_spawned;
+#endif
+
               }
             }
           }
@@ -111,10 +118,15 @@ namespace Tacho {
           {
             row_view_type a(A11,0);
             crs_value_type &aa = a.Value(0);
-            
+
             for (ordinal_type j=0;j<B1.NumCols();++j) {
               dense_value_type &bb = B1.Value(0, j);
-              
+
+#ifdef TACHO_EXECUTE_TASKS_SERIAL              
+              Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                ::invoke(policy, member, diagA, 1.0, aa, bb);
+#else
               const future_type f = factory.create<future_type>
                 (policy,
                  Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
@@ -131,6 +143,7 @@ namespace Tacho {
               // spawn a task
               factory.spawn(policy, f);
               ++ntasks_spawned;
+#endif
             }
           }
           

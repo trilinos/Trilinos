@@ -326,6 +326,11 @@ namespace Tacho {
     static constexpr int Two   = 2;
     static constexpr int Three = 3;
     static constexpr int Four  = 4;
+    static constexpr int Five  = 5;
+    static constexpr int Six   = 6;
+    static constexpr int Seven = 7;
+    static constexpr int Eight = 8;
+    static constexpr int Nine  = 9;
   };
 
   /// \class AlgoChol
@@ -364,8 +369,11 @@ namespace Tacho {
     static constexpr int ByBlocks               = 1501;
 
     // - Flat sparse with nested dense matrices
-    static constexpr int SuperNodes             = 1701;
-    static constexpr int SuperNodesByBlocks     = 1702;
+    static constexpr int SuperNodes             = 1601;
+    static constexpr int SuperNodesByBlocks     = 1602;
+
+    // - Flat sparse with nested dense matrices
+    static constexpr int ByBlocksSerial         = 1701;
   };
 
   /// \class AlgoBlas

@@ -147,7 +147,7 @@ namespace Tacho {
       typedef typename CrsMatrixType::size_type    size_type;
 
       std::streamsize prec = file.precision();
-      file.precision(8);
+      file.precision(16);
       file << std::scientific;
       
       file << "%%MatrixMarket matrix coordinate "

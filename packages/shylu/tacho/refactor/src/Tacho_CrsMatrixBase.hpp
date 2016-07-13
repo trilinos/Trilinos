@@ -378,7 +378,7 @@ namespace Tacho {
     /// \brief print out to stream
     std::ostream& showMe(std::ostream &os) const {
       std::streamsize prec = os.precision();
-      os.precision(8);
+      os.precision(16);
       os << std::scientific;
 
       os << " -- " << _label << " -- " << std::endl

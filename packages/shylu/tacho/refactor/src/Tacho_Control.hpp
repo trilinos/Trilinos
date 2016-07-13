@@ -102,6 +102,13 @@ namespace Tacho {
     static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodesByBlocks, Variant::One };
   };
 
+
+  // - ByBlocksSerial (test only)
+  template<> struct Control<AlgoTriSolve::ByBlocksSerial,Variant::One> {
+    static constexpr int Trsm[2] = { AlgoTrsm::SparseDenseSuperNodes, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::SparseDenseSuperNodes, Variant::One };
+  };
+
   // // ----------------------------------------------------------------------------------
 
 }
