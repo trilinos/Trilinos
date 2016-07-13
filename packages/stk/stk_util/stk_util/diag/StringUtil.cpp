@@ -40,7 +40,7 @@
 #include <string>                       // for basic_string, string, etc
 #include "stk_util/diag/String.hpp"     // for String
 
-#if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
+#if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5 || __GNUC__ == 6
 #include <cxxabi.h>
 #endif
 
@@ -341,6 +341,31 @@ word_wrap(
       }
 
     #elif (__GNUC__ == 5)
+      std::string
+      demangle(const char * symbol)
+      {
+      #ifdef PURIFY_BUILD
+        return symbol;
+      #else
+        std::string s;
+
+        int status = -1;
+
+        char *demangled_symbol = abi::__cxa_demangle(symbol, 0, 0, &status);
+
+        if (demangled_symbol) {
+          s = std::string(demangled_symbol);
+          free(demangled_symbol);
+        }
+
+        if (status != 0)
+          s = std::string(symbol);
+
+        return s;
+      #endif
+      }
+      
+    #elif (__GNUC__ == 6)
       std::string
       demangle(const char * symbol)
       {
