@@ -151,7 +151,7 @@ void get_suggested_vector_team_size(
 }
 
 
-int get_suggested_vector__size(
+inline int get_suggested_vector__size(
     size_t nr, size_t nnz, ExecSpaceType exec_space){
   int suggested_vector_size_ = 1;
   switch (exec_space){
