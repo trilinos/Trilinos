@@ -14,6 +14,16 @@
 #include "stk_mesh/base/Bucket.hpp"
 #include "stk_mesh/base/Field.hpp"
 
+namespace stk {
+namespace mesh {
+struct ConstMeshIndex
+{
+    const stk::mesh::Bucket *bucket;
+    size_t bucketOrd;
+};
+}
+}
+
 #ifdef KOKKOS_HAVE_OPENMP
 #include <Kokkos_OpenMP.hpp>
 #endif
@@ -58,11 +68,202 @@ typedef Kokkos::LayoutLeft   Layout ;
 typedef Kokkos::LayoutRight   Layout ;
 #endif
 
+typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
+
+template <typename Mesh, typename AlgorithmPerEntity>
+struct ThreadFunctor
+{
+    STK_FUNCTION
+    ThreadFunctor(const typename Mesh::BucketType *b, const AlgorithmPerEntity &f) :
+        bucket(b),
+        functor(f)
+    {}
+    STK_FUNCTION
+    void operator()(const int& i) const
+    {
+        functor(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)});
+    }
+    const typename Mesh::BucketType *bucket;
+    const AlgorithmPerEntity &functor;
+};
+
+template <typename Mesh, typename AlgorithmPerEntity>
+struct TeamFunctor
+{
+    STK_FUNCTION
+    TeamFunctor(const Mesh m, const stk::mesh::EntityRank r, const AlgorithmPerEntity f) :
+        mesh(m),
+        rank(r),
+        functor(f)
+    {}
+    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
+    STK_FUNCTION
+    void operator()(const TeamHandleType& team) const
+    {
+        const int bucketIndex = team.league_rank();
+        const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
+        unsigned numElements = bucket.size();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements),
+                             ThreadFunctor<Mesh, AlgorithmPerEntity>(&bucket, functor));
+    }
+    const Mesh mesh;
+    const stk::mesh::EntityRank rank;
+    const AlgorithmPerEntity functor;
+};
+
+template <typename Mesh, typename AlgorithmPerEntity>
+void for_each_entity_run(Mesh &mesh, stk::topology::rank_t rank, const AlgorithmPerEntity &functor)
+{
+    unsigned numBuckets = mesh.num_buckets(rank);
+    Kokkos::parallel_for(Kokkos::TeamPolicy<typename Mesh::MeshExecSpace>(numBuckets, Kokkos::AUTO),
+                         TeamFunctor<Mesh, AlgorithmPerEntity>(mesh, rank, functor));
+}
+
+//    typedef typename Kokkos::TeamPolicy<typename Mesh::MeshExecSpace, ScheduleType>::member_type TeamHandleType;
+//    unsigned numBuckets = mesh.num_buckets(rank);
+//    Kokkos::parallel_for(Kokkos::TeamPolicy<MyExecSpace>(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA(const TeamHandleType& team)
+//    {
+//        const int bucketIndex = team.league_rank();
+//        const typename Mesh::BucketType &bucket = mesh.get_bucket(rank, bucketIndex);
+//        unsigned numElements = bucket.size();
+//        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&](const int& i)
+//        {
+//            functor(typename Mesh::MeshIndex{&bucket, static_cast<unsigned>(i)});
+//        });
+//    });
+
+template <typename Mesh, typename AlgorithmPerEntity>
+void for_each_entity_run_stkmesh(Mesh &mesh, stk::topology::rank_t rank, const AlgorithmPerEntity &functor)
+{
+    typedef typename Kokkos::TeamPolicy<HostExecSpace, ScheduleType>::member_type TeamHandleType;
+    const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
+    unsigned numBuckets = elemBuckets.size();
+    Kokkos::parallel_for(Kokkos::TeamPolicy<HostExecSpace>(numBuckets, Kokkos::AUTO), [&](const TeamHandleType& team)
+    {
+        const int bucketIndex = team.league_rank();
+        const stk::mesh::Bucket &bucket = *elemBuckets[bucketIndex];
+        unsigned numElements = bucket.size();
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
+        {
+            functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(i)});
+        });
+    });
+}
+
+template <typename T>
+class Entities
+{
+public:
+    STK_FUNCTION
+    Entities(T e, unsigned n) : entities(e), num(n)
+    {
+    }
+    STK_FUNCTION
+    stk::mesh::Entity operator[](unsigned i) const
+    {
+        return entities[i];
+    }
+    STK_FUNCTION
+    unsigned size() const
+    {
+        return num;
+    }
+private:
+    T entities;
+    unsigned num;
+};
+
+
+template<typename T>
+class WrapperField
+{
+public:
+    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(f)
+    {
+    }
+
+    template <typename Mesh> STK_FUNCTION
+    T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        return data[component];
+    }
+
+    template <typename Mesh> STK_FUNCTION
+    const T& const_get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        return data[component];
+    }
+
+    T& get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        return data[component];
+    }
+
+    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        return data[component];
+    }
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    {
+    }
+
+private:
+    const stk::mesh::FieldBase& field;
+};
+
+class WrapperMesh
+{
+public:
+    typedef HostExecSpace MeshExecSpace;
+
+    typedef stk::mesh::ConstMeshIndex MeshIndex;
+    typedef stk::mesh::Bucket BucketType;
+    typedef Entities<const stk::mesh::Entity *> ConnectedNodes;
+
+    WrapperMesh(const stk::mesh::BulkData& b) : bulk(b)
+    {
+    }
+
+    ConnectedNodes get_nodes(const stk::mesh::ConstMeshIndex &elem) const
+    {
+        return ConnectedNodes(elem.bucket->begin_nodes(elem.bucketOrd), elem.bucket->num_nodes(elem.bucketOrd));
+    }
+
+    stk::mesh::FastMeshIndex fast_mesh_index(stk::mesh::Entity entity) const
+    {
+        const stk::mesh::MeshIndex &meshIndex = bulk.mesh_index(entity);
+        return stk::mesh::FastMeshIndex{meshIndex.bucket->bucket_id(), static_cast<unsigned>(meshIndex.bucket_ordinal)};
+    }
+
+    unsigned num_buckets(stk::mesh::EntityRank rank) const
+    {
+        return bulk.buckets(rank).size();
+    }
+
+    const stk::mesh::Bucket & get_bucket(stk::mesh::EntityRank rank, unsigned i) const
+    {
+        return *bulk.buckets(rank)[i];
+    }
+
+private:
+    const stk::mesh::BulkData &bulk;
+};
+
+
+
+
+
 typedef Kokkos::View<stk::mesh::Entity*, Kokkos::LayoutStride, MemSpace> ConnectedNodesType;
 typedef Kokkos::View<stk::mesh::Entity*, MemSpace> EntityViewType;
 typedef Kokkos::View<stk::mesh::Entity**, Layout, MemSpace> BucketConnectivityType;
 
 struct StaticBucket {
+    STK_FUNCTION
     StaticBucket()
      : bucketId(0), entityRank(stk::topology::NODE_RANK), entities(), connectivity() {}
 
@@ -117,57 +318,21 @@ struct StaticBucket {
     BucketConnectivityType::HostMirror hostConnectivity;
 };
 
-typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketsType;
-
 struct StaticMeshIndex
 {
-    const ngp::StaticBucket &bucket;
-    int bucketOrd;
-    STK_FUNCTION StaticMeshIndex(const ngp::StaticBucket &bucketIn, int ordinal) : bucket(bucketIn), bucketOrd(ordinal) {}
+    const StaticBucket *bucket;
+    size_t bucketOrd;
 };
-
-typedef Kokkos::Schedule<Kokkos::Dynamic> ScheduleType;
-typedef Kokkos::TeamPolicy<ExecSpace, ScheduleType> TeamPolicyType;
-typedef TeamPolicyType::member_type TeamHandleType;
-typedef Kokkos::TeamPolicy<HostExecSpace, ScheduleType> HostTeamPolicyType;
-typedef HostTeamPolicyType::member_type HostTeamHandleType;
-
-template <typename MESH, typename ALGORITHM_PER_ENTITY>
-void for_each_entity_run(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
-{
-    unsigned numBuckets = mesh.num_buckets(rank);
-    Kokkos::parallel_for(Kokkos::TeamPolicy<ExecSpace>(numBuckets, Kokkos::AUTO), KOKKOS_LAMBDA(const TeamHandleType& team)
-    {
-        const int bucketIndex = team.league_rank();
-        const ngp::StaticBucket &bucket = mesh.get_bucket(rank, bucketIndex);
-        unsigned numElements = bucket.size();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
-        {
-            functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(i)});
-        });
-    });
-}
-
-template <typename MESH, typename ALGORITHM_PER_ENTITY>
-void for_each_entity_run_stkmesh(MESH &mesh, stk::topology::rank_t rank, const ALGORITHM_PER_ENTITY &functor)
-{
-    const stk::mesh::BucketVector& elemBuckets = mesh.get_buckets(stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part());
-    unsigned numBuckets = elemBuckets.size();
-    Kokkos::parallel_for(Kokkos::TeamPolicy<HostExecSpace>(numBuckets, Kokkos::AUTO), [&](const HostTeamHandleType& team)
-    {
-        const int bucketIndex = team.league_rank();
-        const stk::mesh::Bucket &bucket = *elemBuckets[bucketIndex];
-        unsigned numElements = bucket.size();
-        Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 0u, numElements), [&] (const int& i)
-        {
-            functor(stk::mesh::FastMeshIndex{bucket.bucket_id(), static_cast<unsigned>(i)});
-        });
-    });
-}
 
 class StaticMesh
 {
 public:
+    typedef ExecSpace MeshExecSpace;
+
+    typedef StaticMeshIndex MeshIndex;
+    typedef StaticBucket BucketType;
+    typedef Entities<ConnectedNodesType> ConnectedNodes;
+
     StaticMesh(const stk::mesh::BulkData& bulk)
     {
         hostMeshIndices = Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror("host_mesh_indices", bulk.get_size_of_entity_index_space());
@@ -182,9 +347,16 @@ public:
     }
 
     STK_FUNCTION
-    ConnectedNodesType get_nodes(const stk::mesh::FastMeshIndex &meshIndex) const
+    ConnectedNodes get_nodes(const StaticMeshIndex &elem) const
     {
-        return buckets(meshIndex.bucket_id).get_nodes(meshIndex.bucket_ord);
+        ConnectedNodesType nodes = buckets(elem.bucket->bucket_id()).get_nodes(elem.bucketOrd);
+        return ConnectedNodes(nodes, nodes.size());
+    }
+
+    STK_FUNCTION
+    stk::mesh::FastMeshIndex fast_mesh_index(stk::mesh::Entity entity) const
+    {
+        return device_mesh_index(entity);
     }
 
     STK_FUNCTION
@@ -212,8 +384,9 @@ public:
 
     void clear()
     {
-        buckets = BucketsType();
+        buckets = BucketView();
     }
+
 
 private:
 
@@ -222,7 +395,7 @@ private:
         const stk::mesh::BucketVector& elemBuckets = bulk.get_buckets(stk::topology::ELEM_RANK, selector);
         unsigned numElementBuckets = elemBuckets.size();
 
-        buckets = BucketsType("ElementNodeConnectivity", numElementBuckets);
+        buckets = BucketView("ElementNodeConnectivity", numElementBuckets);
 
         for (unsigned elemBucketIndex = 0; elemBucketIndex < numElementBuckets; ++elemBucketIndex)
         {
@@ -257,7 +430,7 @@ private:
             const stk::mesh::Bucket& bkt = *bktptr;
             for(size_t i = 0; i < bkt.size(); ++i)
             {
-                hostMeshIndices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex(bkt.bucket_id(), i);
+                hostMeshIndices[bkt[i].local_offset()] = stk::mesh::FastMeshIndex{bkt.bucket_id(), static_cast<unsigned>(i)};
             }
         }
     }
@@ -270,11 +443,14 @@ private:
         deviceMeshIndices = tmp_device_mesh_indices;
     }
 
-    BucketsType buckets;
+    typedef Kokkos::View<StaticBucket*, UVMMemSpace> BucketView;
+    BucketView buckets;
     Kokkos::View<stk::mesh::FastMeshIndex*>::HostMirror hostMeshIndices;
     Kokkos::View<const stk::mesh::FastMeshIndex*, Kokkos::MemoryTraits<Kokkos::RandomAccess> > deviceMeshIndices;
     //    Kokkos::View<const stk::mesh::FastMeshIndex*> device_mesh_indices;
 };
+
+
 
 template<typename T>
 class StaticField {
@@ -349,30 +525,45 @@ public:
 
     ~StaticField(){}
 
-    STK_FUNCTION
-    unsigned get_index(const StaticMesh& ngpMesh, stk::mesh::Entity entity) const
-    {
-        unsigned bkt_id = ngpMesh.device_mesh_index(entity).bucket_id;
-        unsigned bkt_ord = ngpMesh.device_mesh_index(entity).bucket_ord;
-        unsigned idx = bkt_id*512*numPerEntity + bkt_ord*numPerEntity;
-        return idx;
-    }
-
-    STK_FUNCTION
-    T& get(const StaticMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    template <typename Mesh> STK_FUNCTION
+    T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         unsigned idx = get_index(ngpMesh, entity);
         return deviceData(idx+component);
     }
 
-    STK_FUNCTION
-    const T& const_get(const StaticMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    template <typename Mesh> STK_FUNCTION
+    const T& const_get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
     {
         unsigned idx = get_index(ngpMesh, entity);
         return constDeviceData(idx+component);
     }
 
+    STK_FUNCTION
+    T& get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        return deviceData(get_index(entity)+component);
+    }
+
+    STK_FUNCTION
+    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        return constDeviceData(get_index(entity)+component);
+    }
+
 private:
+    template <typename Mesh> STK_FUNCTION
+    unsigned get_index(const Mesh& ngpMesh, stk::mesh::Entity entity) const
+    {
+        return get_index(ngpMesh.fast_mesh_index(entity));
+    }
+
+    STK_FUNCTION
+    unsigned get_index(stk::mesh::FastMeshIndex entity) const
+    {
+        return entity.bucket_id*512*numPerEntity + entity.bucket_ord*numPerEntity;
+    }
+
     unsigned compute_alloc_size(stk::mesh::EntityRank rank, const stk::mesh::BulkData& bulk, stk::mesh::Selector selector)
     {
         const stk::mesh::BucketVector& bkts = bulk.get_buckets(rank, selector);
@@ -400,6 +591,16 @@ private:
     ConstFieldDataType constDeviceData;
     unsigned numPerEntity;
 };
+
+
+#ifdef KOKKOS_HAVE_CUDA
+typedef ngp::StaticMesh StkNgpMesh;
+typedef ngp::StaticField<double> StkNgpField;
+#else
+typedef ngp::WrapperMesh StkNgpMesh;
+//typedef ngp::StaticField<double> StkNgpField;
+typedef ngp::WrapperField<double> StkNgpField;
+#endif
 
 }
 

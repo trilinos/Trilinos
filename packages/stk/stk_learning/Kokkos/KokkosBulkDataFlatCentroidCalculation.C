@@ -97,7 +97,7 @@ struct GpuGatherFlatScratchData
             for(unsigned nodeIndex = 0; nodeIndex < bucket.size(); ++nodeIndex)
             {
                 stk::mesh::Entity node = bucket[nodeIndex];
-                stk::mesh::FastMeshIndex meshIndex(bucket.bucket_id(), nodeIndex);
+                stk::mesh::FastMeshIndex meshIndex{bucket.bucket_id(), nodeIndex};
                 hostMeshIndices(node.local_offset()) = meshIndex;
             }
         }
@@ -110,7 +110,7 @@ struct GpuGatherFlatScratchData
             for(unsigned elemIndex = 0; elemIndex < bucket.size(); ++elemIndex)
             {
                 stk::mesh::Entity elem = bucket[elemIndex];
-                stk::mesh::FastMeshIndex meshIndex(bucket.bucket_id(), elemIndex);
+                stk::mesh::FastMeshIndex meshIndex{bucket.bucket_id(), elemIndex};
                 hostMeshIndices(elem.local_offset()) = meshIndex;
             }
         }
