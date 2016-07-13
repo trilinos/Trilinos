@@ -45,7 +45,7 @@
 #include <search/ContactRangeSearch.h>
 #include <search/ContactCommunication.h>
 
-#include <temp_move_to_stk_search/gtkTraitsForStkSearch.hpp>
+#include <gtkTraitsForStkSearch.hpp>
 #include <stk_search/CoarseSearch.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
