@@ -560,9 +560,9 @@ namespace stk {
 	// of the last field.  For example, if one field is CLOSEST, one is SPECFIED,
 	// and one is TIME_INTERPOLATION, then the time value to return is
 	// ambiguous.  Also an issue if some of the fields are inactive.
-	double time = (*I).restore_field_data(bulk, sti, ignore_missing_fields);
+	double time_t = (*I).restore_field_data(bulk, sti, ignore_missing_fields);
 	if ((*I).is_active()) {
-	  time_read = time > time_read ? time : time_read;
+	  time_read = time_t > time_read ? time_t : time_read;
 	}
 	++I;
       }
