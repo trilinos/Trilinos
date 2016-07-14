@@ -1571,8 +1571,10 @@ reasons, configure with::
 
   -D <Project>_TRACE_ADD_TEST=ON
 
-That will print one line per show that the test got added and if not then why
-the test was not added (i.e. due to the test's ``COMM``, ``NUM_MPI_PROCS``,
+That will print one line per test and will show if the test got added or not.
+If the test is added, it shows some of the key test properties.  If the test
+did not get added, then this line will show why the test was not added
+(i.e. due to criteria related to the test's ``COMM``, ``NUM_MPI_PROCS``,
 ``CATEGORIES``, ``HOST``, ``XHOST``, ``HOSTTYPE``, or ``XHOSTTYPE``
 arguments).
 

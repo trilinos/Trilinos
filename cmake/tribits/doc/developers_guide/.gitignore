@@ -19,6 +19,8 @@
 /checkin-test-help.txt.tmp
 /gitdist-help.txt
 /gitdist-help.txt.tmp
+/gitdist-dist-help-*.txt
+/gitdist-dist-help-*.txt.tmp
 /snapshot-dir-help.txt
 /snapshot-dir-help.txt.tmp
 /clone_extra_repos-help.txt

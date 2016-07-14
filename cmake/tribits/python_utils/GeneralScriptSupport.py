@@ -162,7 +162,33 @@ def extractLinesAfterRegex(string_in, regex_in):
     if foundRegex:
       linesExtracted += line + "\n"
   return linesExtracted
-  
+
+
+def extractLinesMatchingRegex(string_in, regex_in):
+  #print "regex_in =", regex_in
+  reMatch = re.compile(regex_in)
+  linesExtracted = ""
+  for line in string_in.strip().splitlines():
+    #print "line = '" + line + "'"
+    matchObj = reMatch.match(line)
+    #print "matchObj =", matchObj
+    if matchObj:
+      linesExtracted += line + "\n"
+  return linesExtracted
+# NOTE: ABove is *NOT* using tested!
+
+
+def extractLinesMatchingSubstr(string_in, substr_in):
+  #print "substr_in = '"+substr_in+"'"
+  linesExtracted = ""
+  for line in string_in.strip().splitlines():
+    #print "line = '" + line + "'"
+    if substr_in in line:
+      #print "matched '"+substr_in+"'"
+      linesExtracted += line + "\n"
+  return linesExtracted
+# NOTE: Above is *NOT* unit tested!
+ 
 
 ##############################################
 # System command unit testing utiltities
@@ -701,27 +727,6 @@ class TeeOutput(object):
 
 
 reCmndLineArg = re.compile(r"(--.+=)(.+)")
-
-
-def addOptionParserChoiceOption(
-  optionName,
-  optionDest,
-  choiceOptions,
-  defaultChoiceIndex,
-  helpStr,
-  optionParser
-  ):
-  """ Add a general choice option to a optparse.OptionParser object"""
-  defaultOptionValue = choiceOptions[defaultChoiceIndex]
-  optionParser.add_option(
-    optionName,
-    dest=optionDest,
-    type="choice",
-    choices=choiceOptions,
-    default=defaultOptionValue,
-    help='%s Choices = (\'%s\').  [default = \'%s\']'
-    % (helpStr, '\', \''.join(choiceOptions), defaultOptionValue)
-    )
 
 
 def requoteCmndLineArgs(inArgs):

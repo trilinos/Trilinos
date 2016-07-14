@@ -1570,6 +1570,10 @@ which contains:
 .. include:: ../../examples/TribitsHelloWorld/hello_world/cmake/Dependencies.cmake
    :literal:
 
+Other TriBITS macros/functions that can be called in this file include
+`TRIBITS_TPL_TENTATIVELY_ENABLE()`_ and
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
+
 .. _<packageDir>/cmake/<packageName>_config.h.in:
 
 **<packageDir>/cmake/<packageName>_config.h.in**: [Optional] The package's
@@ -1777,19 +1781,17 @@ defined before a (SE) Package's ``CMakeLists.txt`` file is processed:
   ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}``
 
     Set to ``ON`` if support for the optional `upstream`_ dependent TPL
-    ``${OPTIONAL_DEP_TPL_NAME}`` is enabled in package
-    ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_TPL_NAME}`` corresponds
-    each to the optional upstream TPL listed in the ``LIB_OPTIONAL_TPLS`` and
-    ``TEST_OPTIONAL_TPLS`` arguments to the
-    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro.  **NOTE:** It is important
-    that the CMake code in the package ``${PACKAGE_NAME}`` key off of this
-    variable and **not** the global
+    ``${OPTIONAL_DEP_TPL_NAME}`` is enabled in package ``${PACKAGE_NAME}``.
+    Here ``${OPTIONAL_DEP_TPL_NAME}`` corresponds to each optional upstream
+    TPL listed in the ``LIB_OPTIONAL_TPLS`` and ``TEST_OPTIONAL_TPLS``
+    arguments to the `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro.
+    **NOTE:** It is important that the CMake code in the package
+    ``${PACKAGE_NAME}`` key off of this variable and **not** the global
     ``TPL_ENABLE_${OPTIONAL_DEP_TPL_NAME}`` variable because
-    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}`` can be
-    explicitly turned off by the user even through the package
-    ``${PACKAGE_NAME}`` and the TPL ``${OPTIONAL_DEP_TPL_NAME}`` are
-    both enabled (see `Support for optional SE package/TPL can be explicitly
-    disabled`_).
+    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}`` can be explicitly
+    turned off by the user even through the package ``${PACKAGE_NAME}`` and
+    the TPL ``${OPTIONAL_DEP_TPL_NAME}`` are both enabled (see `Support for
+    optional SE package/TPL can be explicitly disabled`_).
 
   .. _${PACKAGE_NAME}_ENABLE_TESTS:
 
@@ -5044,11 +5046,11 @@ Once cloned, one needs to work with the multiple repositories to perform basic
 VC operations.  For this, TriBITS provides the tool **gitdist** which is a
 simple stand-alone Python script that distributes a git command across a set
 of git repos.  This tool is not specific to TriBITS but it is very useful for
-dealing with TriBITS projects with multiple repositories.  It only requires
-that a base git repo and a set of zero or more git repos cloned under it.
+dealing with TriBITS projects with multiple repositories.  It only requires a
+local base git repo and a set of zero or more git repos cloned under it.
 
 To use ``gitdist`` with this aggregate meta-project, one would first set up
-the file ``MetaProject/.gitdist`` (or a version controlled
+the file ``MetaProject/.gitdist`` (or a version-controlled
 ``MetaProject.gitdist.default`` file) which would contain the lines::
 
   ExtraRepo1
@@ -5064,7 +5066,7 @@ contains the lines::
 
 To use ``gitdist``, one would put ``gitdist`` into their path and also set up
 the command-line shell aliases ``gitdist-status`` and ``gitdist-mod`` (see
-`gitdist --help`_).
+`gitdist --dist-help=aliases`_).
 
 Some of the aggregate commands that one would typically run under the base
 ``MetaProject/`` directory are::
@@ -5083,7 +5085,7 @@ The script ``gitdist`` is provided under TriBITS directory::
   cmake/tribits/python_utils/gitidst   
 
 and can be installed by the `install_devtools.py`_ script (see `TriBITS
-Development Toolset`_).  See `gitdist --help`_ for more details.
+Development Toolset`_).  See `gitdist documentation`_ for more details.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
@@ -5117,7 +5119,7 @@ output, gets installed into the install directory, and get added to the source
 distributions tarball.  It also gets pushed up to CDash for all automated
 builds.  The tool `gitdist`_ can then use this file to checkout and tag
 compatible versions, difference two versions of the meta-project, etc. (see
-`gitdist --help`_ for more details on git operations).
+`gitdist documentation`_ for more details on git operations).
 
 The TriBITS approach to managing multiple VC repos described above works well
 for around 20 or 30 VC repos but is likely not a good solution for many more
@@ -5173,7 +5175,9 @@ repos (as used in the CASL VERA project).  The `checkin-test.py`_ script
 automatically handles all of the details of pulling, diffing, pushing etc. to
 all the VC repos.
 
-.. ToDo: Discuss usage of 'gitdist' and the rep clone script.
+
+
+.. ToDo: Discuss usage of 'gitdist' and the repo clone script.
 
 
 Howtos
@@ -5437,6 +5441,7 @@ specialized ``FindTPL<tplName>.cmake`` file and can't use the
 find modules cannot completely adhere to the standard behavior described in
 `Enabling support for an optional Third-Party Library (TPL)`_.
 
+
 How to add a new TriBITS Repository
 -----------------------------------
 
@@ -5529,6 +5534,20 @@ as follows:
      #  include "<upstreamPackageName>_<fileName>"
      #endif 
 
+4) **For an optional dependency, use CMake IF() statements based on
+   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}:** When a package
+   ``PACKAGE_NAME`` has an optional dependency on an upstream package
+   ``OPTIONAL_DEP_PACKAGE_NAME`` and needs to put in optional logic in a
+   CMakeLists.txt file, then the IF() statements should use the variable
+   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`_ and **not** the
+   variable ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}``.  For
+   example, to optionally enable a test that depends on the enable of the
+   optional upstream dep package, one would use::
+
+     IF (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME})
+       TRIBITS_ADD_TEST( ... )
+     ENDIF()
+
   .. ToDo: Find an example to point to in TribitsExampleProject.
   
 NOTE: TriBITS will automatically add the include directories for the upstream
@@ -5595,6 +5614,20 @@ follows:
      #  include "<upstreamPackageName>_<fileName>"
      #endif 
 
+4) **For an optional dependency, use CMake IF() statements based on
+   ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}:** When a package
+   ``PACKAGE_NAME`` has an optional dependency on TPL
+   ``OPTIONAL_DEP_TPL_NAME`` and needs to put in optional logic in a
+   CMakeLists.txt file, then the IF() statements should use the variable
+   `${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}`_ and **not** the variable
+   ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME}``.  For example, to
+   optionally enable a test that depends on the enable of the optional TPL,
+   one would use::
+
+     IF (${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL_NAME})
+       TRIBITS_ADD_TEST( ... )
+     ENDIF()
+
   .. ToDo: Find an example to point to in TribitsExampleProject.
   
 NOTE: TriBITS will automatically add the include directories for the upstream
@@ -5603,6 +5636,26 @@ the libraries for the upstream TPL to the link lines to the downstream package
 library and executable links.  See documentation in the functions
 `TRIBITS_ADD_LIBRARY()`_ and `TRIBITS_ADD_EXECUTABLE()`_, and the ``DEPLIBS``
 argument to these functions, for more details.
+
+How to tentatively enable a TPL
+-------------------------------
+
+A TriBITS package can request the tentative enable of any of its optional TPLs
+(see `How to add a new TriBITS TPL dependency`_).  This is done by calling
+`TRIBITS_TPL_TENTATIVELY_ENABLE()`_ in the SE package's
+`<packageDir>/cmake/Dependencies.cmake`_ file.  For example::
+
+  TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+    ...
+    LIB_OPTIONAL_TPLS  SomeTpl
+    ...
+    )
+
+  TRIBITS_TPL_TENTATIVELY_ENABLE(SomeTpl)
+
+This will result is an attempt to find the components for the TPL ``SomeTpl``.
+But if that attempt fails, then the TPL will be disabled and
+``${PACKAGE_NAME}_ENABLE_SomeTpl`` will be set to ``OFF``.
 
 
 How to insert a package into an upstream repo
@@ -6456,11 +6509,11 @@ This gives the remotes::
   origin	        url4.gov:/git/ExtraRepo2 (fetch)
 
 The remote ``public`` is used by the ``checkin-test.py`` wrapper script (see
-below) to pull and merge in additional changes that will be tested and pushed
-to the 'origin' repos on ``url4.gov``.  In this case, the ``ExtraRepo1``
-remote ``public`` will result in updates being pulled from the main
-development repo on ``url2.gov``, thereby facilitating the update of
-``ExtraRepo1`` in the integrated meta-project.
+`ACI Sync Driver Script`_ below) to pull and merge in additional changes that
+will be tested and pushed to the 'origin' repos on ``url4.gov``.  In this
+case, the ``ExtraRepo1`` remote ``public`` will result in updates being pulled
+from the main development repo on ``url2.gov``, thereby facilitating the
+update of ``ExtraRepo1`` in the integrated meta-project.
 
 
 ACI Integration Build Directory Setup
@@ -8061,15 +8114,78 @@ Support`_ and `Multi-Repository Development Workflow`_.
 .. include:: clone_extra_repos-help.txt
    :literal:
 
+gitdist documentation
+---------------------
+
+The sections below show snapshots of the output from the `gitdist`_ script
+from `gitdist --help`_ and ``gitdist --dist-help=<topic>``:
+
+* `gitdist --help`_
+* `gitdist --dist-help=overview`_
+* `gitdist --dist-help=repo-selection-and-setup`_
+* `gitdist --dist-help=dist-repo-status`_
+* `gitdist --dist-help=repo-versions`_
+* `gitdist --dist-help=aliases`_
+* `gitdist --dist-help=usage-tips`_
+* `gitdist --dist-help=script-dependencies`_
+* `gitdist --dist-help=all`_
+
+For more details on the usage of ``gitdist``, see `Multi-Repository Support`_
+and `Multi-Repository Development Workflow`_.
+
 
 gitdist --help
---------------
-
-Below is a snapshot of the output from ``gitdist --help``.  For more details
-on the usage of ``gitdist``, see `Multi-Repository Support`_ and
-`Multi-Repository Development Workflow`_.
+++++++++++++++
 
 .. include:: gitdist-help.txt
+   :literal:
+
+gitdist --dist-help=overview
+++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-overview.txt
+   :literal:
+
+gitdist --dist-help=repo-selection-and-setup
+++++++++++++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-repo-selection-and-setup.txt
+   :literal:
+
+gitdist --dist-help=dist-repo-status
+++++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-dist-repo-status.txt
+   :literal:
+
+gitdist --dist-help=repo-versions
++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-repo-versions.txt
+   :literal:
+
+gitdist --dist-help=aliases
++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-aliases.txt
+   :literal:
+
+gitdist --dist-help=usage-tips
+++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-usage-tips.txt
+   :literal:
+
+gitdist --dist-help=script-dependencies
++++++++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-script-dependencies.txt
+   :literal:
+
+gitdist --dist-help=all
++++++++++++++++++++++++++++++++++++++++
+
+.. include:: gitdist-dist-help-all.txt
    :literal:
 
 

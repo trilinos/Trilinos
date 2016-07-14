@@ -671,24 +671,32 @@ ENDFUNCTION()
 #   TRIBITS_TPL_TENTATIVELY_ENABLE(<tplName>)
 # 
 # This function can be called from any CMakeLists.txt file to put a TPL in
-# tentative enable mode.
+# tentative enable mode.  But typically, it is called from an SE Pakcage's
+# `<packageDir>/cmake/Dependencies.cmake`_ file (see `How to tentatively
+# enable a TPL`_).
 #
 # This should only be used for optional TPLs.  It will not work correctly for
 # required TPLs because any enabled packages that require this TPL will not be
 # disabled and instead will fail to configure or fail to build.
 #
 # All this function does is to force set ``TPL_ENABLE_<tplName>=ON`` if it has
-# not already been set. and ``TPL_TENTATIVE_ENABLE_<tplName>`` in the cache.
+# not already been set, and sets ``TPL_TENTATIVE_ENABLE_<tplName>=ON`` in the
+# cache.
 #
 # NOTE: This function will only tentatively enable a TPL it its enable has not
-# be explicitly set on input, i.e. if ``TPL_ENABLE_<tplName>=""``.
+# be explicitly set on input, i.e. if ``-D TPL_ENABLE_<tplName>=""``.  If the
+# TPL has been explicitly enabled (i.e. ``-D TPL_ENABLE_<tplName>=ON``) or
+# disabled (i.e. ``-D TPL_ENABLE_<tplName>=OFF``), then this function has no
+# effect and the TPL will be unconditionally enabled or disabled.
 #
 FUNCTION(TRIBITS_TPL_TENTATIVELY_ENABLE  TPL_NAME)
 
   IF ("${TPL_ENABLE_${TPL_NAME}}" STREQUAL "")
     # The TPL's enable status has not been set so tentatively enable it.
-    SET(TPL_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
-    ADVANCED_SET(TPL_TENTATIVE_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
+    SET(TPL_ENABLE_${TPL_NAME} ON CACHE STRING
+      "Set by TRIBITS_TPL_TENTATIVELY_ENABLE()" FORCE)
+    ADVANCED_SET(TPL_TENTATIVE_ENABLE_${TPL_NAME} ON CACHE STRING
+      "Set by TRIBITS_TPL_TENTATIVELY_ENABLE()" FORCE)
   ELSE()
     # The TPL's enable status has already be hard set to be ON or OFF so we
     # will leave it alone.

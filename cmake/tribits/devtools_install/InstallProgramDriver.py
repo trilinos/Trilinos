@@ -38,6 +38,7 @@
 # @HEADER
 
 from FindGeneralScriptSupport import *
+from gitdist import addOptionParserChoiceOption
 
 from optparse import OptionParser
 
