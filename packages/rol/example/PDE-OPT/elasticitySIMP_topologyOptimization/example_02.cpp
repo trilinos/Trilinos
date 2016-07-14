@@ -255,11 +255,41 @@ int main(int argc, char *argv[]) {
     ROL::AugmentedLagrangian<RealT> augLag(opt.getObjective(),volcon,*vc_lamp,1.0,
                                           *opt.getSolutionVector(),*vcp,*parlist);
     ROL::Algorithm<RealT> algo("Augmented Lagrangian",*parlist,false);
-    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*opt.getBoundConstraint(),true,*outStream);    
+    std::clock_t timer = std::clock();
+    algo.run(*opt.getSolutionVector(),*vc_lamp,augLag,*volcon,*opt.getBoundConstraint(),true,*outStream);
+    *outStream << "Optimization time: "
+               << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl;
 
     data->outputTpetraVector(z_rcp, "density.txt");
     data->outputTpetraVector(u_rcp, "state.txt");
     data->outputTpetraVector(zscale_rcp, "weights.txt");
+
+    // Build objective function distribution
+    RealT val(0);
+    int nSamp = stoch_parlist->sublist("Problem").get("Number of Output Samples",10);
+    stoch_parlist->sublist("Problem").set("Number of Samples",nSamp);
+    BuildSampler<RealT> buildSampler_dist(comm,*stoch_parlist,*parlist);
+    std::stringstream name;
+    name << "samples_" << buildSampler_dist.getBatchManager()->batchID() << ".txt";
+    std::ofstream file;
+    file.open(name.str());
+    std::vector<RealT> sample;
+    RealT tol = 1.e-8;
+    std::clock_t timer_print = std::clock();
+    for (int i = 0; i < buildSampler_dist.get()->numMySamples(); ++i) {
+      sample = buildSampler_dist.get()->getMyPoint(i);
+      objReduced->setParameter(sample);
+      val = objReduced->value(*zp,tol);
+      for (int j = 0; j < static_cast<int>(sample.size()); ++j) {
+        file << sample[j] << "  ";
+      }
+      file << val << "\n";
+    }
+    file.close();
+    *outStream << "Output time: "
+               << static_cast<RealT>(std::clock()-timer_print)/static_cast<RealT>(CLOCKS_PER_SEC)
+               << " seconds." << std::endl;
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
