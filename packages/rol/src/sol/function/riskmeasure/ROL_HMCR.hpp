@@ -102,7 +102,7 @@ private:
   Real coeff2_;
 
   // Flag to initialized vector storage
-  bool firstReset_;
+  bool HMCR_firstReset_;
 
   void checkInputs(void) const {
     const Real zero(0), one(1);
@@ -131,7 +131,7 @@ public:
     : RiskMeasure<Real>(),
       plusFunction_(pf), prob_(prob), lambda_(lambda), order_(order),
       xvar_(0), vvar_(0), pnorm_(0), coeff0_(0), coeff1_(0), coeff2_(0),
-      firstReset_(true) {
+      HMCR_firstReset_(true) {
     checkInputs();
     const Real one(1);
     coeff_ = one/(one-prob_);
@@ -151,7 +151,7 @@ public:
   HMCR( Teuchos::ParameterList &parlist )
     : RiskMeasure<Real>(),
       xvar_(0), vvar_(0), pnorm_(0), coeff0_(0), coeff1_(0), coeff2_(0),
-      firstReset_(true) {
+      HMCR_firstReset_(true) {
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("HMCR");
     // Check HMCR inputs
@@ -170,12 +170,12 @@ public:
     RiskMeasure<Real>::reset(x0,x);
     xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic();
     // Initialize additional vector storage
-    if ( firstReset_ ) {
+    if ( HMCR_firstReset_ ) {
       mDualVector0_ = (x0->dual()).clone();
       gDualVector0_ = (x0->dual()).clone();
       mDualVector1_ = (x0->dual()).clone();
       gDualVector1_ = (x0->dual()).clone();
-      firstReset_  = false;
+      HMCR_firstReset_  = false;
     }
     // Zero temporary storage
     const Real zero(0);
@@ -236,24 +236,23 @@ public:
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     const Real zero(0), one(1);
-    std::vector<Real> val_in(3), val_out(3);
-    val_in[0] = RiskMeasure<Real>::val_;
-    val_in[1] = pnorm_; val_in[2] = coeff0_;
+    std::vector<Real> val_in(2), val_out(2);
+    val_in[0] = pnorm_; val_in[1] = coeff0_;
 
-    sampler.sumAll(&val_in[0],&val_out[0],3);
+    sampler.sumAll(&val_in[0],&val_out[0],2);
     sampler.sumAll(*(RiskMeasure<Real>::g_),*(RiskMeasure<Real>::dualVector_));
     RiskMeasure<Real>::dualVector_->scale(one-lambda_);
     Real var = lambda_;
     // If the higher moment term is positive then compute gradient
-    if ( val_in[1] > zero ) {
+    if ( val_in[0] > zero ) {
       const Real rorder0 = static_cast<Real>(order_);
       const Real rorder1 = rorder0 - one;
-      Real denom = std::pow(val_out[1],rorder1/rorder0);
+      Real denom = std::pow(val_out[0],rorder1/rorder0);
       // Sum higher moment contribution
       sampler.sumAll(*mDualVector0_,*gDualVector0_);
       RiskMeasure<Real>::dualVector_->axpy(lambda_*coeff_/denom,*gDualVector0_);
       // Compute statistic gradient
-      var -= lambda_*coeff_*((denom > zero) ? val_out[2]/denom : zero);
+      var -= lambda_*coeff_*((denom > zero) ? val_out[1]/denom : zero);
     }
     // Set gradients
     (Teuchos::dyn_cast<RiskVector<Real> >(g)).setStatistic(var);
