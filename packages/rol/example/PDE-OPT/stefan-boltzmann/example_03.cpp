@@ -163,6 +163,7 @@ int main(int argc, char *argv[]) {
 
     /*** Check functional interface. ***/
     std::vector<RealT> par(sdim,1.0);
+/*
     obj->setParameter(par);
     con->setParameter(par);
     objReduced->setParameter(par);
@@ -177,6 +178,7 @@ int main(int argc, char *argv[]) {
     objReduced->checkHessVec(*zp,*dzp,true,*outStream);
     opt.checkObjectiveGradient(*dzp,true,*outStream);
     opt.checkObjectiveHessVec(*dzp,true,*outStream);
+*/
 
     /*** Solve optimization problem. ***/
     ROL::Algorithm<RealT> algo_tr("Trust Region",*parlist,false);
@@ -204,8 +206,8 @@ int main(int argc, char *argv[]) {
       up2->set(*up); up2->applyUnary(sqr);
       pVup->axpy(w,*up2);
     }
-    sampler->sumAll(*Eup,*pEup);
-    sampler->sumAll(*Vup,*pVup);
+    sampler->sumAll(*pEup,*Eup);
+    sampler->sumAll(*pVup,*Vup);
 
     up2->set(*Eup); up2->applyUnary(sqr);
     Vup->axpy(-1.0,*up2);
@@ -215,20 +217,38 @@ int main(int argc, char *argv[]) {
     data->outputTpetraVector(Eu_rcp, "expected_value_state.txt");
     data->outputTpetraVector(Vu_rcp, "variance_state.txt");
 
-    int nsampCDF = parlist->sublist("Problem").get("Number of Samples for CDF Computation",10*nsamp);
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > samplerCDF
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsampCDF,bounds,bman,false,false,100));
+    // Build new sampler to evaluate random variable objective
+    //int nsampCDF = parlist->sublist("Problem").get("Number of Samples for CDF Computation",10*nsamp);
+    //Teuchos::RCP<ROL::SampleGenerator<RealT> > samplerCDF
+    //  = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsampCDF,bounds,bman,false,false,100));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > samplerCDF = sampler;
+    // Temporary vector storage to evaluate objective
+    Teuchos::RCP<Tpetra::MultiVector<> > diff_rcp
+      = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    Teuchos::RCP<Tpetra::MultiVector<> > Mdiff_rcp
+      = Teuchos::rcp(new Tpetra::MultiVector<>(vecmap_u, 1, true));
+    // Open file
     std::stringstream name;
     name << "objective_samples." << comm->getRank() << ".txt";
     std::ofstream file;
     file.open(name.str().c_str());
-    RealT fval = 0.0;
+    // Sample objective
+    std::vector<RealT> fval(1,0.0);
     for (int i = 0; i < samplerCDF->numMySamples(); i++) {
+      // Get sample and weight
       par = samplerCDF->getMyPoint(i);
       w   = samplerCDF->getMyWeight(i);
-      objReduced->setParameter(par);
-      fval = objReduced->value(*zp,tol);
-      file << w << "  " << fval << "\n"; 
+      // Solve PDE at sample
+      con->setParameter(par);
+      con->solve(*cp,*up,*zp,tol);
+      // Compute tracking term
+      diff_rcp->scale(1.0,*u_rcp);
+      diff_rcp->update(-1.0,*(data->getVecUd()),1.0);
+      data->getMatM()->apply(*diff_rcp,*Mdiff_rcp);
+      diff_rcp->dot(*Mdiff_rcp,fval);
+      fval[0] *= 0.5;
+      // Print to file
+      file << w << "  " << fval[0] << "\n"; 
     }
     file.close();
   }
