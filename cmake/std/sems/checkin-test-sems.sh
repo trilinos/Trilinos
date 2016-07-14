@@ -67,6 +67,7 @@ echo "
 -DTrilinos_ENABLE_DEBUG=ON
 -DBUILD_SHARED_LIBS=ON
 -DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
+-DPiro_EpetraSolver_MPI_4_DISABLE=ON
 " > MPI_RELEASE_DEBUG_SHARED_ST.config
 
 echo "
@@ -83,6 +84,7 @@ echo "
 -DTPL_FIND_SHARED_LIBS=OFF
 -DTrilinos_LINK_SEARCH_START_STATIC=ON
 -DIfpack2_Cheby_belos_MPI_1_DISABLE=ON
+-DPiro_EpetraSolver_MPI_4_DISABLE=ON
 " > MPI_RELEASE_DEBUG_STATIC_ST.config
 
 echo "
