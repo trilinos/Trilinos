@@ -130,7 +130,8 @@ public:
     F.clear();
     F.resize(x.size()-2,0.0);
     Real pt = 0.0;
-    for (int i = 0; i < x.size()-2; i++) {
+    int size = static_cast<int>(x.size());
+    for (int i = 0; i < size-2; i++) {
       for (int j = 0; j < 5; j++) {
         // Integrate over [xl,x0]
         pt = (x[i+1]-x[i])*pts_[j] + x[i];
@@ -149,9 +150,10 @@ public:
     std::vector<Real> x(nu()+2,0.0);
     build_mesh(x,param);
     // Fill diagonal
+    int xsize = static_cast<int>(x.size());
     d.clear();
-    d.resize(x.size()-2,0.0);
-    for ( int i = 0; i < x.size()-2; i++ ) {
+    d.resize(xsize-2,0.0);
+    for ( int i = 0; i < xsize-2; i++ ) {
       if ( x[i+1] < 0.1*param[0] ) {
         d[i] = kl_/(x[i+1]-x[i]) + kl_/(x[i+2]-x[i+1]);
       }
@@ -165,8 +167,8 @@ public:
     }
     // Fill off-diagonal
     dl.clear();
-    dl.resize(x.size()-3,0.0);
-    for ( int i = 0; i < x.size()-3; i++ ) {
+    dl.resize(xsize-3,0.0);
+    for ( int i = 0; i < xsize-3; i++ ) {
       if ( x[i+2] <= 0.1*param[0] ) {
         dl[i] = -kl_/(x[i+2]-x[i+1]);
       }
@@ -189,10 +191,11 @@ public:
     // Apply Jacobian
     jv.clear();
     jv.resize(d.size(),0.0);
-    for ( int i = 0; i < d.size(); i++ ) {
+    int size = static_cast<int>(d.size());
+    for ( int i = 0; i < size; ++i ) {
       jv[i]  = d[i]*v[i];
       jv[i] += ((i>0) ? dl[i]*v[i-1] : 0.0);
-      jv[i] += ((i<d.size()-1) ? du[i]*v[i+1] : 0.0);
+      jv[i] += ((i<size-1) ? du[i]*v[i+1] : 0.0);
     }
   }
 
@@ -210,25 +213,28 @@ public:
     x.resize(it-x.begin());
     // Interpolate v onto x basis
     std::vector<Real> vi;
+    int xzsize = static_cast<int>(xz.size());
     for (it=x.begin(); it!=x.end(); it++) {
-      for (int i = 0; i < xz.size()-1; i++) {
+      for (int i = 0; i < xzsize-1; i++) {
         if ( *it >= xz[i] && *it <= xz[i+1] ) {
           vi.push_back(v[i+1]*(*it-xz[i])/(xz[i+1]-xz[i]) + v[i]*(xz[i+1]-*it)/(xz[i+1]-xz[i]));
           break;
         }
       }
     }
+    int xsize = static_cast<int>(x.size());
     // Apply x basis mass matrix to interpolated v
-    std::vector<Real> Mv(x.size(),0.0);
-    for (int i = 0; i < x.size(); i++) {
+    std::vector<Real> Mv(xsize,0.0);
+    for (int i = 0; i < xsize; i++) {
       Mv[i] += ((i>0) ? (x[i]-x[i-1])/6.0*vi[i-1] + (x[i]-x[i-1])/3.0*vi[i] : 0.0);
-      Mv[i] += ((i<x.size()-1) ? (x[i+1]-x[i])/3.0*vi[i] + (x[i+1]-x[i])/6.0*vi[i+1] : 0.0);
+      Mv[i] += ((i<xsize-1) ? (x[i+1]-x[i])/3.0*vi[i] + (x[i+1]-x[i])/6.0*vi[i+1] : 0.0);
     }
     // Reduced mass times v to u basis
+    int xusize = static_cast<int>(xu.size());
     jv.clear();
-    jv.resize(xu.size()-2,0.0);
-    for (int i = 0; i < xu.size()-2; i++) {
-      for (int j = 0; j < x.size()-1; j++) {
+    jv.resize(xusize-2,0.0);
+    for (int i = 0; i < xusize-2; i++) {
+      for (int j = 0; j < xsize-1; j++) {
         jv[i] += (((x[j]>=xu[i  ]) && (x[j]< xu[i+1])) ? Mv[j]*(x[j]-xu[i  ])/(xu[i+1]-xu[i  ]) : 0.0);
         jv[i] += (((x[j]>=xu[i+1]) && (x[j]<=xu[i+2])) ? Mv[j]*(xu[i+2]-x[j])/(xu[i+2]-xu[i+1]) : 0.0);
         if ( x[j] > xu[i+2] ) { break; }
@@ -252,33 +258,36 @@ public:
     // Interpolate v onto x basis
     std::vector<Real> vi;
     Real val = 0.0;
+    int xusize = static_cast<int>(xu.size());
     for (it=x.begin(); it!=x.end(); it++) {
-      for (int i = 0; i < xu.size()-1; i++) {
+      for (int i = 0; i < xusize-1; i++) {
         if ( *it >= xu[i] && *it <= xu[i+1] ) {
           val = 0.0;
-          val += ((i!=0          ) ? v[i-1]*(xu[i+1]-*it)/(xu[i+1]-xu[i]) : 0.0);
-          val += ((i!=xu.size()-2) ? v[i  ]*(*it-xu[i  ])/(xu[i+1]-xu[i]) : 0.0);
+          val += ((i!=0       ) ? v[i-1]*(xu[i+1]-*it)/(xu[i+1]-xu[i]) : 0.0);
+          val += ((i!=xusize-2) ? v[i  ]*(*it-xu[i  ])/(xu[i+1]-xu[i]) : 0.0);
           vi.push_back(val);
           break;
         }
       }
     }
     // Apply x basis mass matrix to interpolated v
-    std::vector<Real> Mv(x.size(),0.0);
-    for (int i = 0; i < x.size(); i++) {
+    int xsize = static_cast<int>(x.size());
+    std::vector<Real> Mv(xsize,0.0);
+    for (int i = 0; i < xsize; i++) {
       Mv[i] += ((i>0) ? (x[i]-x[i-1])/6.0*vi[i-1] + (x[i]-x[i-1])/3.0*vi[i] : 0.0);
-      Mv[i] += ((i<x.size()-1) ? (x[i+1]-x[i])/3.0*vi[i] + (x[i+1]-x[i])/6.0*vi[i+1] : 0.0);
+      Mv[i] += ((i<xsize-1) ? (x[i+1]-x[i])/3.0*vi[i] + (x[i+1]-x[i])/6.0*vi[i+1] : 0.0);
     }
     // Reduced mass times v to u basis
     jv.clear();
     jv.resize(nz(),0.0);
-    for (int i = 0; i < xz.size(); i++) {
-      for (int j = 0; j < x.size(); j++) {
+    int xzsize = static_cast<int>(xz.size());
+    for (int i = 0; i < xzsize; i++) {
+      for (int j = 0; j < xsize; j++) {
         if ( i==0 ) {
           jv[i] += (((x[j]>=xz[i  ]) && (x[j]<=xz[i+1])) ? Mv[j]*(xz[i+1]-x[j])/(xz[i+1]-xz[i  ]) : 0.0);
           if ( x[j] > xz[i+1] ) { break; }
         }
-        else if ( i == xz.size()-1 ) {
+        else if ( i == xzsize-1 ) {
           jv[i] += (((x[j]>=xz[i-1]) && (x[j]<=xz[i  ])) ? Mv[j]*(x[j]-xz[i-1])/(xz[i  ]-xz[i-1]) : 0.0);
         }
         else { 
@@ -295,14 +304,15 @@ public:
     std::vector<Real> x;
     build_mesh(x,param);
     // Apply mass matrix
+    int size = static_cast<int>(x.size());
     Mv.clear();
-    Mv.resize(x.size()-2,0.0);
-    for (int i = 0; i < x.size()-2; i++) {
+    Mv.resize(size-2,0.0);
+    for (int i = 0; i < size-2; i++) {
       Mv[i] = (x[i+2]-x[i])/3.0*v[i];
       if ( i > 0 ) {
         Mv[i] += (x[i+1]-x[i])/6.0*v[i-1];
       }
-      if ( i < x.size()-3 ) {
+      if ( i < size-3 ) {
         Mv[i] += (x[i+2]-x[i+1])/6.0*v[i+1];
       }
     }
@@ -313,13 +323,14 @@ public:
     std::vector<Real> x(nz(),0.0);
     build_mesh(x);
     // Apply mass matrix
+    int xsize = static_cast<Real>(x.size());
     Mv.clear();
-    Mv.resize(x.size(),0.0);
-    for (int i = 0; i < x.size(); i++) {
+    Mv.resize(xsize,0.0);
+    for (int i = 0; i < xsize; i++) {
       if ( i > 0 ) {
         Mv[i] += (x[i]-x[i-1])/6.0*v[i-1] + (x[i]-x[i-1])/3.0*v[i];
       }
-      if ( i < x.size()-1 ) {
+      if ( i < xsize-1 ) {
         Mv[i] += (x[i+1]-x[i])/3.0*v[i] + (x[i+1]-x[i])/6.0*v[i+1];
       }
     }
@@ -400,14 +411,16 @@ private:
   // Returns u <- (u + alpha*s) where u, s are vectors and 
   // alpha is a scalar.
   void plus(std::vector<Real> &u, const std::vector<Real> &s, const Real alpha=1.0) {
-    for (int i=0; i<u.size(); i++) {
+    int size = static_cast<int>(u.size());
+    for (int i=0; i<size; i++) {
       u[i] += alpha*s[i];
     }
   }
 
   // Returns u <- alpha*u where u is a vector and alpha is a scalar
   void scale(std::vector<Real> &u, const Real alpha=0.0) {
-    for (int i=0; i<u.size(); i++) {
+    int size = static_cast<int>(u.size());
+    for (int i=0; i<size; i++) {
       u[i] *= alpha;
     }
   }
@@ -542,7 +555,8 @@ private:
   // Evaluates the discretized L2 inner product of two vectors.
   Real dot(const std::vector<Real> &x, const std::vector<Real> &y) {
     Real ip = 0.0;
-    for (int i=0; i<x.size(); i++) {
+    int size = static_cast<int>(x.size());
+    for (int i=0; i<size; i++) {
       ip += x[i]*y[i];
     }
     return ip;
@@ -550,7 +564,8 @@ private:
 
   // Returns u <- alpha*u where u is a vector and alpha is a scalar
   void scale(std::vector<Real> &u, const Real alpha=0.0) {
-    for (int i=0; i<u.size(); i++) {
+    int size = static_cast<int>(u.size());
+    for (int i=0; i<size; i++) {
       u[i] *= alpha;
     }
   }
