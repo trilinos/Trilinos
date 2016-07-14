@@ -42,18 +42,18 @@ helpTopicDefaultIdx = 0;
 helpTopicsDict = {}
 
 
-helpUsageHeader = r"""gitdist [gitdist arguments] [git arguments]
+helpUsageHeader = r"""gitdist [gitdist arguments] <raw-git-command> [git arguments]
        gitdist [gitdist arguments] dist-repo-status
 
-Run git recursively over a set of git repos in a multi-repository git project
-(see --dist-help=overview --help).  This script also includes other tools like
+Run git over a set of git repos in a multi-repository git project (see
+--dist-help=overview --help).  This script also includes other tools like
 printing a compact repo status table (see --dist-help=dist-repo-status) and
-tracking versions through multi-repository SHA1 version files (see
+tracking compatible versions through multi-repository SHA1 version files (see
 --dist-help=repo-versions).
 
 The options in [gitdist options] are prefixed with '--dist-' and are pulled
-out before running 'git [git arguments]' in each local git repo that is
-processed (see --dist-help=repo-selection-and-setup).
+out before running 'git <raw-git-command> [git arguments]' in each local git
+repo that is processed (see --dist-help=repo-selection-and-setup).
 """
 
 
@@ -62,11 +62,11 @@ OVERVIEW:
 
 Running:
 
-  $ gitdist [gitdist options] [git arguments]
+  $ gitdist [gitdist options] <raw-git-command> [git arguments]
 
-will distribute git commands specified by [git arguments] across the current
-base git repo and the set of git repos listed in the file ./.gitdist (or the
-file ./.gitdist.default, or the argument
+will distribute git commands specified by '<raw-git-command> [git arguments]'
+across the current base git repo and the set of git repos listed in the file
+./.gitdist (or the file ./.gitdist.default, or the argument
 --dist-extra-repos=<repo0>,<repo1>,..., see
 --dist-help=repo-selection-and-setup).
 
@@ -244,7 +244,7 @@ This produces the local repo structure:
 
 After this setup, running:
 
-  $ gitdist [git command and options]
+  $ gitdist <raw-git-command> [git arguments]
 
 in the 'BaseRepo/ 'directory will automatically distribute a given command
 across the base repo 'BaseRepo/ and the extra repos ExtraRepo1/,
@@ -397,7 +397,7 @@ exclude them with:
 
   $ gitdist --dist-not-extra-repos=RepoX,RepoY,... \
     --dist-version-file=RepoVersion.txt \
-    [git arguments]
+    <raw-git-comand> [git arguments]
 """
 helpTopicsDict.update( { 'repo-versions' : repoVersionFilesHelp } )
 
@@ -557,10 +557,10 @@ Other usage tips:
    'gitdist checkout <branch>' to work correctly.
 
  - For many git commands, it is better to process only repos that are changed
-   w.r.t. their tracking branch with 'gitdist-mod [git arguments]'.  For
-   example, to see the status of only changed repos use 'gitdist-mod status'.
-   This allows the usage of gitdist to scale well when there are even 100s of
-   git repos.
+   w.r.t. their tracking branch with 'gitdist-mod <raw-git-command> [git
+   arguments]'.  For example, to see the status of only changed repos use
+   'gitdist-mod status'.  This allows the usage of gitdist to scale well when
+   there are even 100s of git repos.
 
  - As an exception to the last item, a few different types of git commands
     tend to be run on all the git repos like 'gitdist pull', 'gitdist
@@ -885,7 +885,7 @@ def getCommandlineOps():
 
   addOptionParserChoiceOption(
     distHelpArgName, "helpTopic", [""]+helpTopics+["all"], 0,
-    "Print a gitdist help topic with -dist-help=HELPTOPIC.  Using" \
+    "Print a gitdist help topic.  Using" \
     +" --dist-help=all prints all help topics.  If" \
     +" --help is also specified, then the help usage header and" \
     +" command-line 'options' are also printed." ,
@@ -894,11 +894,11 @@ def getCommandlineOps():
   clp.add_option(
     withGitArgName, dest="useGit", type="string",
     default=defaultGit,
-    help="The (path) to the git executable to use for each git repo command."
+    help="Path to the git executable to use for each git repo command."
     +"  By default, gitdist will use 'git' in the environment.  If it can't find"
     +" 'git' in the environment, then it will require setting"
-    +" --dist-use-git=<git command> (which is typically only  used in automated"
-    +" testing). (default='"+defaultGit+"')"
+    +" --dist-use-git=<path-to-git>.  (Typically only  used in automated"
+    +" testing.) (default='"+defaultGit+"')"
     )
 
   clp.add_option(
@@ -908,7 +908,7 @@ def getCommandlineOps():
     +" If left empty '', then the list of extra repos to process is taken from"
     +" the file ./.gitdist (which lists the relative path of each extra git repo"
     +" separated by newlines).  If the file"
-    +" ./.gitdist does not exist, then the exgtra repos listed in the file"
+    +" ./.gitdist does not exist, then the extra repos listed in the file"
     +" ./.gitdist.default are processed.  If the file"
     +" the file ./.gitdist.default is missing, then no extra repos are"
     +" processed.  Also, any git repos listed that don't exist are ignored."
@@ -920,22 +920,23 @@ def getCommandlineOps():
     notExtraRepoArgName, dest="notExtraRepos", type="string",
     default="",
     help="Comma-separated list of extra repo relative paths" \
-    +" '<repoX>,<repoY>,...' to *not* to process. (default='')"
+    +" '<repoX>,<repoY>,...' to *not* process. (default='')"
     )
 
   clp.add_option(
     notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't process or run the git command in the base git repo.",
+    help="If set, don't process the base git repo.",
     default=True )
 
   clp.add_option(
     modifiedOnlyName, dest="modifiedOnly", action="store_true",
-    help="If set, then only git repos where the command" \
+    help="If set, then only git repos that have changes w.r.t." \
+      " their tracking branches will be processed.  That is, only repos" \
+      " that have modified or untracked files or where" \
       " 'git diff --name-only ^<tracking-branch>' returns non-empty output" \
       " will be processed (where <tracking-branch> is returned" \
-      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u})'.  In order words," \
-      " if a git repo is unchanged w.r.t. its tracking branch, then that local git" \
-      " is skipped.  If a repo does not have a tracking branch, then the repo will" \
+      " from 'rev-parse --abbrev-ref --symbolic-full-name @{u})'." \
+      "  If a local repo does not have a tracking branch, then the repo will" \
       " be skipped as well.  Therefore, be careful to first run 'gitdist-status'" \
       " (see --dist-help=dist-repo-status) to see the" \
       " status of each local git repo to know which repos don't have tracking branches.",
