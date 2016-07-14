@@ -174,47 +174,6 @@ private:
 };
 
 
-template<typename T>
-class WrapperField
-{
-public:
-    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(f)
-    {
-    }
-
-    template <typename Mesh> STK_FUNCTION
-    T& get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
-    {
-        T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
-        return data[component];
-    }
-
-    template <typename Mesh> STK_FUNCTION
-    const T& const_get(const Mesh& ngpMesh, stk::mesh::Entity entity, int component) const
-    {
-        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
-        return data[component];
-    }
-
-    T& get(stk::mesh::FastMeshIndex entity, int component) const
-    {
-        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
-        return data[component];
-    }
-
-    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
-    {
-        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
-        return data[component];
-    }
-
-    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
-    {
-    }
-
-private:
-    const stk::mesh::FieldBase& field;
-};
 
 class WrapperMesh
 {
@@ -254,6 +213,57 @@ private:
     const stk::mesh::BulkData &bulk;
 };
 
+template<typename T>
+class WrapperField
+{
+public:
+    WrapperField(const stk::mesh::BulkData& b, const stk::mesh::FieldBase& f) : field(f)
+    {
+    }
+
+    T& get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        return data[component];
+    }
+
+    const T& const_get(const WrapperMesh& ngpMesh, stk::mesh::Entity entity, int component) const
+    {
+        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity));
+        return data[component];
+    }
+
+    T& get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        return data[component];
+    }
+
+    const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
+    {
+        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket_id, entity.bucket_ord));
+        return data[component];
+    }
+
+    T& get(WrapperMesh::MeshIndex entity, int component) const
+    {
+        T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket->bucket_id(), entity.bucketOrd));
+        return data[component];
+    }
+
+    const T& const_get(WrapperMesh::MeshIndex entity, int component) const
+    {
+        const T *data = static_cast<T *>(stk::mesh::field_data(field, entity.bucket->bucket_id(), entity.bucketOrd));
+        return data[component];
+    }
+
+    void copy_device_to_host(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase &field)
+    {
+    }
+
+private:
+    const stk::mesh::FieldBase& field;
+};
 
 
 
@@ -549,6 +559,20 @@ public:
     const T& const_get(stk::mesh::FastMeshIndex entity, int component) const
     {
         return constDeviceData(get_index(entity)+component);
+    }
+
+    template <typename MeshIndex> STK_FUNCTION
+    T& get(MeshIndex entity, int component) const
+    {
+        stk::mesh::FastMeshIndex fast{entity.bucket->bucket_id(), entity.bucketOrd};
+        return deviceData(get_index(fast)+component);
+    }
+
+    template <typename MeshIndex> STK_FUNCTION
+    const T& const_get(MeshIndex entity, int component) const
+    {
+        stk::mesh::FastMeshIndex fast{entity.bucket->bucket_id(), entity.bucketOrd};
+        return constDeviceData(get_index(fast)+component);
     }
 
 private:
