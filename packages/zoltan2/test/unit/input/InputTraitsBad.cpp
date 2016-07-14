@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_long_long_t, user_int_t, user_long_t>                                         END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_int64_t, user_int_t, user_long_t>                                             END_CHECK
 
-  // local ordinal (second slot) must always be signed 
+  // local ordinal (second slot) must always be signed
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_int_t, user_long_t>                                    END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_unsigned_long_t, user_long_t>                                   END_CHECK
   BEGIN_CHECK    Zoltan2::BasicUserTypes<user_float_t, user_uint32_t, user_long_t>                                          END_CHECK
