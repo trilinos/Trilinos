@@ -62,7 +62,7 @@ void printGoldResults(const GtkBoxVector &domainBoxes, const GtkBoxVector &spher
     {
         for (size_t j=0;j<spheres.size();++j)
         {
-            if ( stk::search::intersects(domainBoxes[i].first, spheres[j].first) )
+            if ( gtk::intersects(domainBoxes[i].first, spheres[j].first) )
             {
                 boxIdPairResults.push_back(std::make_pair(domainBoxes[i].second, spheres[j].second));
             }
@@ -335,7 +335,7 @@ TEST(stkSearch, boxSphereIntersection)
     EXPECT_FALSE(stk::search::intersects(box, sphere5));
     EXPECT_FALSE(stk::search::intersects(sphere5, box));
     GtkBox box1(1,1,1,2,2,2);
-    EXPECT_TRUE(stk::search::intersects(box1,box));
+    EXPECT_TRUE(gtk::intersects(box1,box));
 }
 
 }
