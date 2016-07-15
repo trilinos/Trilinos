@@ -5,8 +5,8 @@
     <Parameter name="State Cost"                 type="double"  value="1e5"   />
     <Parameter name="Statistic Initial Guess"    type="double"  value="5.0"   />
     <Parameter name="Is problem nonsmooth?"      type="bool"    value="false" />
-    <Parameter name="Number of Samples"          type="int"     value="2"     />
-    <Parameter name="Number of Output Samples"   type="int"     value="2"     />
+    <Parameter name="Number of Samples"          type="int"     value="4"     />
+    <Parameter name="Number of Output Samples"   type="int"     value="4"     />
     <Parameter name="Order of FE discretization" type="int"     value="1"     />
     <Parameter name="Check Derivatives"          type="bool"    value="false" />
     <Parameter name="Print Mean Value State"     type="bool"    value="false" />
