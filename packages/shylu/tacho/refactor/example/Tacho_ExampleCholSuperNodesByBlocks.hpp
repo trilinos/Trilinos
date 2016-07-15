@@ -4,7 +4,7 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#define TACHO_EXECUTE_TASKS_SERIAL
+//#define TACHO_EXECUTE_TASKS_SERIAL
 
 #include "Tacho_Util.hpp"
 
