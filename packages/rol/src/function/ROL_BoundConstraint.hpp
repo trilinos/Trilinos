@@ -127,7 +127,7 @@ public:
 
   BoundConstraint(void)
     : x_lo_(Teuchos::null), x_up_(Teuchos::null), scale_(1),
-      mask_(Teuchos::null), activated_(true), min_diff_(0) {}
+      mask_(Teuchos::null), activated_(false), min_diff_(0) {}
 
   /** \brief Default constructor.
 

@@ -1,7 +1,11 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Penalty"                     type="double"  value="1e-2" />
+    <Parameter name="Control penalty parameter"   type="double"  value="1e-5" />
+    <Parameter name="Control lower bound"         type="double"  value="0"    />
+    <Parameter name="Control upper bound"         type="double"  value="10"   />
+    <!--Parameter name="State lower bound"           type="double"  value="0"    -->
+    <!--Parameter name="State upper bound"           type="double"  value="0.9"  -->
     <Parameter name="Order of FE discretization"  type="int"     value="1"    />
   </ParameterList>
 
@@ -94,7 +98,7 @@
       <Parameter name="Radius Shrinking Rate (Negative rho)" type="double" value="0.0625"       />
       <Parameter name="Radius Shrinking Rate (Positive rho)" type="double" value="0.25"         />
       <Parameter name="Radius Growing Rate"                  type="double" value="2.5"          />
-      <Parameter name="Safeguard Size"                       type="double" value="1.e8"         />
+      <Parameter name="Safeguard Size"                       type="double" value="1.e1"         />
 
       <!-- ===========  CONTROLS FOR INEXACTNESS  =========== -->
       <ParameterList name="Inexact">
@@ -129,7 +133,7 @@
       <Parameter name="Output Level" type="int" value="0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
-        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-8"  />
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-10"  />
         <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->
@@ -162,15 +166,15 @@
     <!-- ===========  MOREAU-YOSIDA PENALTY  =========== -->
     <ParameterList name="Moreau-Yosida Penalty">
       <!-- ===========  PENALTY PARAMETER UPDATE  =========== -->
-      <Parameter name="Initial Penalty Parameter"       type="double" value="1e2"    />
-      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.0"    />
+      <Parameter name="Initial Penalty Parameter"       type="double" value="1e-9"    />
+      <Parameter name="Penalty Parameter Growth Factor" type="double" value="1.5"     />
 
       <!-- ===========  SUBPROBLEM SOLVER  =========== -->
       <ParameterList name="Subproblem">
-        <Parameter name="Optimality Tolerance"          type="double" value="1.e-12" />
-        <Parameter name="Feasibility Tolerance"         type="double" value="1.e-12" />
-        <Parameter name="Print History"                 type="bool"   value="false"  />
-        <Parameter name="Iteration Limit"               type="int"    value="200"    />
+        <Parameter name="Optimality Tolerance"          type="double" value="1e-12" />
+        <Parameter name="Feasibility Tolerance"         type="double" value="1e-12" />
+        <Parameter name="Print History"                 type="bool"   value="true"  />
+        <Parameter name="Iteration Limit"               type="int"    value="200"   />
       </ParameterList>
     </ParameterList>
 
@@ -198,9 +202,9 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-8"  />
-    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
-    <Parameter name="Step Tolerance"       type="double" value="1.e-14" />
-    <Parameter name="Iteration Limit"      type="int"    value="200"    />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-10"  />
+    <Parameter name="Constraint Tolerance" type="double" value="1.e-8"   />
+    <Parameter name="Step Tolerance"       type="double" value="1.e-14"  />
+    <Parameter name="Iteration Limit"      type="int"    value="2000"     />
   </ParameterList>
 </ParameterList>
