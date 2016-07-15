@@ -371,9 +371,6 @@ namespace Tacho {
     // - Flat sparse with nested dense matrices
     static constexpr int SuperNodes             = 1601;
     static constexpr int SuperNodesByBlocks     = 1602;
-
-    // - Flat sparse with nested dense matrices
-    static constexpr int ByBlocksSerial         = 1701;
   };
 
   /// \class AlgoBlas
