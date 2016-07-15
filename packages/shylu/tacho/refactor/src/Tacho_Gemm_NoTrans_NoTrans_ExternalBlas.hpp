@@ -61,13 +61,14 @@ namespace Tacho {
       const ordinal_type n = C.NumCols();
       const ordinal_type k = B.NumRows();
 
-      blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
-                m, n, k,
-                value_type(alpha),
-                A.ValuePtr(), A.BaseObject().ColStride(),
-                B.ValuePtr(), B.BaseObject().ColStride(),
-                value_type(beta),
-                C.ValuePtr(), C.BaseObject().ColStride());
+      if (m > 0 && n > 0 && k > 0)
+        blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+                  m, n, k,
+                  value_type(alpha),
+                  A.ValuePtr(), A.BaseObject().ColStride(),
+                  B.ValuePtr(), B.BaseObject().ColStride(),
+                  value_type(beta),
+                  C.ValuePtr(), C.BaseObject().ColStride());
 #else
     TACHO_TEST_FOR_ABORT( true, MSG_NOT_HAVE_PACKAGE("Teuchos") );        
 #endif
