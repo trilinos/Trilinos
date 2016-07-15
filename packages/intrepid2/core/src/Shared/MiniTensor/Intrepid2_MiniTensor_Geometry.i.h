@@ -571,14 +571,14 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
   Index const
   number_parameters = lower_.get_dimension();
 
-  LongCount
+  LongIndex
   total_number_points = 1;
 
   for (Index dimension = 0; dimension < number_parameters; ++dimension) {
     total_number_points *= points_per_dimension_(dimension);
   }
 
-  Vector<LongCount, N, ES> steps(number_parameters, ONES);
+  Vector<LongIndex, N, ES> steps(number_parameters, ONES);
 
   for (Index dimension = 1; dimension < number_parameters; ++dimension) {
     steps(dimension) =
@@ -594,7 +594,7 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
   Vector<T, N, ES> const
   span = upper_ - lower_;
 
-  for (LongCount point = 1;  point <= total_number_points; ++point) {
+  for (LongIndex point = 1;  point <= total_number_points; ++point) {
 
     //std::cout << "Indices : ";
 

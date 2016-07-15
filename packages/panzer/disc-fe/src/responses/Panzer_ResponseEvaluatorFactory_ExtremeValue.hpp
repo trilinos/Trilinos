@@ -139,6 +139,14 @@ struct ExtremeValueResponse_Builder : public ResponseMESupportBuilderBase {
 
   virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildTangentFactory() const
   { return build<panzer::Traits::Tangent>(); }
+
+#ifdef Panzer_BUILD_HESSIAN_SUPPORT
+  /** Using a panzer::Tangent evaluation type build the REFB for this
+    * response.
+    */
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildHessianFactory() const 
+  { return build<panzer::Traits::Hessian>(); }
+#endif
   
 private:
   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;

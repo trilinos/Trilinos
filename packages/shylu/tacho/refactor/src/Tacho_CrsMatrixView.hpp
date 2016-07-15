@@ -267,9 +267,9 @@ namespace Tacho {
         //const double density_1 = (nnz == -1 ? double(0) : double(nnz)/(_br-_tr+1)/(_rc-_lc+1));
         //const double density_2 = (nnz == -1 ? double(0) : double(nnz)/_m/_n);
         os << _base.Label() << "::View, "
-           << " Offs ( " << std::setw(w) << _offm << ", " << std::setw(w) << _offn << " ); "
-           << " Dims ( " << std::setw(w) << _m    << ", " << std::setw(w) << _n    << " ); "
-           << " NumNonZeros = " << std::setw(w) << nnz << ";";
+           << " Offs ( " << std::setw(w) << _offm << " , " << std::setw(w) << _offn << " ); "
+           << " Dims ( " << std::setw(w) << _m    << " , " << std::setw(w) << _n    << " ); "
+           << " NumNonZeros = " << std::setw(w) << nnz << " ;";
           //<< " Density (nnz/data) = " << std::setw(w) << density_1 << ";"
           //<< " Density (nnz/view) = " << std::setw(w) << density_2 << ";";
         

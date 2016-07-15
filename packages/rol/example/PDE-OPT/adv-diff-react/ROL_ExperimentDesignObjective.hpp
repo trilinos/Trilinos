@@ -155,7 +155,9 @@ public:
   */
   virtual void applyWeightOp(Vector<Real> &weightv, const Vector<Real> &v, const Vector<Real> &w) const {
     weightv.set(v.dual());
-    weightv.applyBinary(Elementwise::Multiply<Real>(), w);
+    Teuchos::RCP<ROL::Vector<Real> > wDual = weightv.clone();
+    wDual->set(w.dual());
+    weightv.applyBinary(Elementwise::Multiply<Real>(), *wDual);
   }
 
   // Access functions.
@@ -275,7 +277,7 @@ public:
 
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<Vector<Real> > v = (edi_->getObservationDualVec())->clone();
+    Teuchos::RCP<Vector<Real> > v = (edi_->getControlDualVec())->clone();
     Teuchos::RCP<Vector<Real> > Civ = (edi_->getControlVec())->clone();
     Teuchos::RCP<Vector<Real> > BCiv = (edi_->getConstraintVec())->clone();
     Teuchos::RCP<Vector<Real> > AiBCiv = (edi_->getStateVec())->clone();

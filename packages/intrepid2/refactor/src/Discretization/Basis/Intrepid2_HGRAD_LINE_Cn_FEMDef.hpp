@@ -290,6 +290,7 @@ namespace Intrepid2 {
         vinv(i,j) = vmat(j,i);
 
     this->vinv_ = Kokkos::create_mirror_view(typename SpT::memory_space(), vinv);
+    Kokkos::deep_copy(this->vinv_ , vinv);
 
     // initialize tags
     {

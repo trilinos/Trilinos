@@ -41,53 +41,54 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_BOUND_CONSTRAINT_SIMOPT_H
-#define ROL_BOUND_CONSTRAINT_SIMOPT_H
+#ifndef ROL_BOUND_CONSTRAINT_PARTITIONED_H
+#define ROL_BOUND_CONSTRAINT_PARTITIONED_H
 
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_Vector_SimOpt.hpp"
+#include "ROL_Vector_Partitioned.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
 /** @ingroup func_group
-    \class ROL::BoundConstraint
-    \brief Provides the interface to apply upper and lower bound constraints.
+    \class ROL::BoundConstraint_Partitioned
+    \brief A composite composite BoundConstraint formed
+           from bound constraints on subvectors of a PartitionedVector
 
-    ROL's bound constraint class is to designed to handle point wise bound 
-    constraints on optimization variables.  That is, let \f$\mathcal{X}\f$ 
-    be a Banach space of functions from \f$\Xi\f$ into \f$\mathbb{R}\f$ 
-    (for example, \f$\Xi\subset\mathbb{R}^d\f$ for some positive integer \f$d\f$
-    and \f$\mathcal{X}=L^2(\Xi)\f$ or \f$\Xi = \{1,\ldots,n\}\f$ and 
-    \f$\mathcal{X}=\mathbb{R}^n\f$).  For any \f$x\in\mathcal{X}\f$, we consider 
-    bounds of the form 
-    \f[
-        a(\xi) \le x(\xi) \le b(\xi) \quad \text{for almost every }\xi\in\Xi.
-    \f] 
-    Here, \f$a(\xi)\le b(\xi)\f$ for almost every \f$\xi\in\Xi\f$ and \f$a,b\in \mathcal{X}\f$.
 */
-
-
 namespace ROL {
 
 template <class Real>
-class BoundConstraint_SimOpt : public BoundConstraint<Real> {
+class BoundConstraint_Partitioned : public BoundConstraint<Real> {
+
+  typedef Vector<Real>                          V;
+  typedef PartitionedVector<Real>               PV;
+  typedef typename std::vector<Real>::size_type uint;
+
 private:
-  Teuchos::RCP<BoundConstraint<Real> > bnd1_;
-  Teuchos::RCP<BoundConstraint<Real> > bnd2_;
+  std::vector<Teuchos::RCP<BoundConstraint<Real> > > bnd_;
+
+  uint dim_;
 
 public:
-  ~BoundConstraint_SimOpt() {}
+  ~BoundConstraint_Partitioned() {}
 
   /** \brief Default constructor.
 
       The default constructor automatically turns the constraints on.
   */
-  BoundConstraint_SimOpt(const Teuchos::RCP<BoundConstraint<Real> > &bnd1,
-                         const Teuchos::RCP<BoundConstraint<Real> > &bnd2)
-    : bnd1_(bnd1), bnd2_(bnd2) {
-    if ( bnd1_->isActivated() || bnd2_->isActivated() ) {
+  BoundConstraint_Partitioned(std::vector<const Teuchos::RCP<BoundConstraint<Real> > > &bnd )
+    : bnd_(bnd) {
+    bool active = false;
+
+    dim_ = bnd.size();
+
+    for( uint k=0; k<dim_; ++k ) {
+      active = active || bnd_[k]->isActivated();
+    }    
+  
+    if( active ) {
       BoundConstraint<Real>::activate();
-    }
+    } 
     else {
       BoundConstraint<Real>::deactivate();
     }
@@ -101,13 +102,13 @@ public:
           @param[in]      iter   is the outer algorithm iterations count.
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      bnd1_->update(*(xs.get_1()),flag,iter);
-    }
-    if ( bnd2_->isActivated() ) {
-      bnd2_->update(*(xs.get_2()),flag,iter);
+
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivate() {
+        bnd_[k]->update(*(xpv.get(k)),flag,iter);   
+      }
     }
   }
 
@@ -120,19 +121,14 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   void project( Vector<Real> &x ) {
-    ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > x1 = xs.get_1()->clone(); x1->set(*(xs.get_1()));
-      bnd1_->project(*x1);
-      xs.set_1(*x1);
+
+    PV &xpv = Teuchos::dyn_cast<PV>(x);
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> xk = xpv.get(k)->clone(); 
+      xk->set(*(xpv.get(k)));
+      bnd_[k]->project(*xk);
+      xpv.set(k,*xs);
     }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > x2 = xs.get_2()->clone(); x2->set(*(xs.get_2()));
-      bnd2_->project(*x2);
-      xs.set_2(*x2);
-    }
-  }
 
   /** \brief Determine if a vector of Lagrange multipliers is nonnegative components.
   
@@ -141,19 +137,18 @@ public:
       to the components of \f$x\f$ that are active at the lower bound are nonnegative.
   */
   bool checkMultipliers( const Vector<Real> &l, const Vector<Real> &x ) {
-    const ROL::Vector_SimOpt<Real> &ls = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(l));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    bool nn1 = true;
-    if ( bnd1_->isActivated() ) {
-      nn1 = bnd1_->checkMultipliers(*(ls.get_1()),*(xs.get_1()));
-    }
-    bool nn2 = true;
-    if ( bnd2_->isActivated() ) {
-      nn2 = bnd2_->checkMultipliers(*(ls.get_2()),*(xs.get_2()));
-    }
-    return (nn1 && nn2);
+
+    const PV &lpv = Teuchos::dyn_cast<const PV>(l);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    bool nonneg = true;
+
+    for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivated() ) {
+        nonneg = nonneg && bnd_[k]->checkMultipliers(*(lpv.get(k)),*(xpv.get(k)));
+      }
+    } 
+    return nonneg;
   }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
@@ -168,21 +163,18 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneUpperActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
+
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivated() ) {
+        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+        bnd_[k]->pruneUpperActive(*vk,*(xpv.get(k)),eps); 
+        vpv.set(k,*vk);
+      }
     }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneUpperActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
-    }
-  }
+ }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
   
@@ -198,21 +190,15 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(g));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneUpperActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
-      vs.set_1(*v1);
-    }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneUpperActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
-      vs.set_2(*v2);
+
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &gpv = Teuchos::dyn_cast<const PV>(g);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+      bnd_[k]->pruneUpperActive(*vk,*(xpv.get(k)),eps);
+      vpv.set(k,*vk);
     }
   }
  
@@ -228,19 +214,16 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneLowerActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
-    }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneLowerActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
+     
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+ 
+   for( uint k=0; k<dim_; ++k ) {
+      if( bnd_[k]->isActivated() ) {
+        Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+        bnd_[k]->pruneLowerActive(*vk,*(xpv.get(k)),eps); 
+        vpv.set(k,*vk);
+      }
     }
   }
 
@@ -258,34 +241,42 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(g));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneLowerActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
-      vs.set_1(*v1);
-    }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneLowerActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
-      vs.set_2(*v2);
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &gpv = Teuchos::dyn_cast<const PV>(g);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> vk = vpv.get(k)->clone(); vk->set(*(vpv.get(k)));
+      bnd_[k]->pruneLowerActive(*vk,*(xpv.get(k)),eps);
+      vpv.set(k,*vk);
     }
   }
  
   const Teuchos::RCP<Vector<Real> > getLowerVectorRCP( void ) const {
 
-    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getLowerVectorRCP(),
-                                                  bnd2_->getLowerVectorRCP() ) );
+    std::vector<Teuchos::RCP<V> > vec;
+
+    for( uint k=0; k<dim_; ++k ) {
+      vec.push_back( bnd_[k]->getLowerVectorRCP() );
+    }
+    
+    Teuchos::RCP<V> lp = Teuchos::rcp( new PV( vec ) );
+    return lp;
   }
+       
+  
 
   const Teuchos::RCP<Vector<Real> > getUpperVectorRCP( void ) const {
 
-    return Teuchos::rcp( new Vector_SimOpt<Real>( bnd1_->getUpperVectorRCP(),
-                                                  bnd2_->getUpperVectorRCP() ) );
+    std::vector<Teuchos::RCP<V> > vec;
+
+    for( uint k=0; k<dim_; ++k ) {
+      vec.push_back( bnd_[k]->getUpperVectorRCP() );
+    }
+    
+    Teuchos::RCP<V> up = Teuchos::rcp( new PV( vec ) );
+    return up;
+
   }
 
 
@@ -296,14 +287,13 @@ public:
       @param[out]    u   is the vector to be set to the upper bound.
   */ 
   void setVectorToUpperBound( Vector<Real> &u ) {
-    ROL::Vector_SimOpt<Real> &us = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(u));
-    Teuchos::RCP<Vector<Real> > u1 = us.get_1()->clone();
-    Teuchos::RCP<Vector<Real> > u2 = us.get_2()->clone();
-    bnd1_->setVectorToUpperBound(*u1);
-    bnd2_->setVectorToUpperBound(*u2);
-    us.set_1(*u1);
-    us.set_2(*u2);
+    PV &upv = Teuchos::dyn_cast<PV>(u);
+
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> uk = upv.get(k)->clone();
+      bnd_[k]->setVectorToUpperBound(*uk);
+      upv.set(k,*uk);
+    }  
   }
 
   /** \brief Set the input vector to the lower bound.
@@ -312,14 +302,13 @@ public:
       @param[out]    l   is the vector to be set to the lower bound.
   */ 
   void setVectorToLowerBound( Vector<Real> &l ) {
-    ROL::Vector_SimOpt<Real> &ls = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(l));
-    Teuchos::RCP<Vector<Real> > l1 = ls.get_1()->clone();
-    Teuchos::RCP<Vector<Real> > l2 = ls.get_2()->clone();
-    bnd1_->setVectorToLowerBound(*l1);
-    bnd2_->setVectorToLowerBound(*l2);
-    ls.set_1(*l1);
-    ls.set_2(*l2);
+    PV &lpv = Teuchos::dyn_cast<PV>(l);
+
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> lk = lpv.get(k)->clone();
+      bnd_[k]->setVectorToLowerBound(*uk);
+      lpv.set(k,*lk);
+    }  
   }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
@@ -334,19 +323,14 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneActive(*v1,*(xs.get_1()),eps);
-      vs.set_1(*v1);
-    }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(xs.get_2()),eps);
-      vs.set_2(*v2);
+
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x); 
+ 
+    for( uint k=0; k<dim_; ++k ) {
+      Teuchos::RCP<V> vk = vpv.get(k)->clone();
+      bnd_[k]->pruneActive(*vk,*(xpv.get(k)),eps);
+      vpv.set(k,*vk);
     }
   }
 
@@ -363,21 +347,17 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-    ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<ROL::Vector<Real> >(v));
-    const ROL::Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(g));
-    const ROL::Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(x));
-    if ( bnd1_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v1 = vs.get_1()->clone(); v1->set(*(vs.get_1()));
-      bnd1_->pruneActive(*v1,*(gs.get_1()),*(xs.get_1()),eps);
-      vs.set_1(*v1);
-    }
-    if ( bnd2_->isActivated() ) {
-      Teuchos::RCP<Vector<Real> > v2 = vs.get_2()->clone(); v2->set(*(vs.get_2()));
-      bnd2_->pruneActive(*v2,*(gs.get_2()),*(xs.get_2()),eps);
-      vs.set_2(*v2);
+ 
+          PV &vpv = Teuchos::dyn_cast<PV>(v);
+    const PV &gpv = Teuchos::dyn_cast<const PV>(g);
+    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+
+    for( uint k=0; k<dim_; ++k ) {
+      if(bnd_[k]->isActive()) {
+        Teuchos::RCP<V> vk = vpv.get(k)->clone();
+        bnd_[k]->pruneActive(*vk,*(gpv.get(k),*(xpv.get(k))),eps;
+        vpv.set(k,*vk);
+      }
     }
   }
 
@@ -387,12 +367,15 @@ public:
       @param[in]    v   is the vector to be checked.
   */
   bool isFeasible( const Vector<Real> &v ) { 
-    const ROL::Vector_SimOpt<Real> &vs = Teuchos::dyn_cast<const ROL::Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const ROL::Vector<Real> >(v));
-    return bnd1_->isFeasible(*(vs.get_1()))*bnd2_->isFeasible(*(vs.get_2()));
+    bool feasible = true;
+    const PV &vs = Teuchos::dyn_cast<const PV>(v);
+    for( uint k=0; k<dim_; ++k ) {
+      feasible = feasible && bnd_[k]_->isFeasible(*(vs.get(k)));
+    }
+    return feasible;
   }
 
-}; // class BoundConstraint
+}; // class BoundConstraint_Partitioned
 
 } // namespace ROL
 

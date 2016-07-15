@@ -56,8 +56,14 @@ namespace Intrepid2 {
 /// Indexing type
 using Index = unsigned int;
 
+constexpr Index
+INDEX_SIZE{32};
+
 /// High count type
-using LongCount = long unsigned int;
+using LongIndex = unsigned long int;
+
+constexpr Index
+LONG_INDEX_SIZE{64};
 
 /// Floating point type
 using Real = double;
@@ -74,7 +80,7 @@ template <typename T, Index M, Index N,  typename ES> class Matrix;
 
 /// Indicator for dynamic storage
 constexpr Index
-DYNAMIC = 0;
+DYNAMIC{0};
 
 // Default execution space
 class NOKOKKOS{};

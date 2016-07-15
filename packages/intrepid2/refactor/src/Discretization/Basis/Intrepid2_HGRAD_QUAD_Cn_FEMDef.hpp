@@ -296,10 +296,10 @@ namespace Intrepid2 {
   Basis_HGRAD_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
     // this should be in host
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::HostSpace::execution_space,OT,PT> lineBasis( order, pointType );
+    Basis_HGRAD_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
     
-    this->vinv_ = Kokkos::DynRankView<PT,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
+    this->vinv_ = Kokkos::DynRankView<OT,SpT>("Hgrad::Quad::Cn::vinv", cardLine, cardLine);         
     lineBasis.getVandermondeInverse(this->vinv_);
 
     this->basisCardinality_  = cardLine*cardLine;
@@ -373,22 +373,26 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<PT,typename SpT::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension()),
+      dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
+
+    Kokkos::DynRankView<PT,SpT>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);
+    auto dofCoordsLineHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), dofCoordsLine);
+    Kokkos::deep_copy(dofCoordsLineHost, dofCoordsLine);
     {
       ordinal_type idx = 0;
       for (auto j=0;j<cardLine;++j) { // y      
         for (auto i=0;i<cardLine;++i,++idx) { // x
-          dofCoords(idx,0) = dofCoordsLine(i,0);
-          dofCoords(idx,1) = dofCoordsLine(j,0);
+          dofCoordsHost(idx,0) = dofCoordsLineHost(i,0);
+          dofCoordsHost(idx,1) = dofCoordsLineHost(j,0);
         }
       }
     }
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
-    Kokkos::deep_copy(this->dofCoords_, dofCoords);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoordsHost);
+    Kokkos::deep_copy(this->dofCoords_, dofCoordsHost);
   }
   
 }
