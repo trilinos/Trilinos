@@ -36,6 +36,9 @@ int main (int argc, char *argv[]) {
   int core_per_numa = 0;
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
+  bool verbose_blocks = false;
+  clp.setOption("enable-verbose-blocks", "disable-verbose-blocks", &verbose_blocks, "Flag for verbose printing blocks");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -105,6 +108,7 @@ int main (int argc, char *argv[]) {
        treecut, prunecut, fill_level, rows_per_team, 
        max_concurrency, max_task_dependence, team_size,
        nrhs, mb, nb,
+       verbose_blocks,
        verbose);
 #else
     r_val = -1;
