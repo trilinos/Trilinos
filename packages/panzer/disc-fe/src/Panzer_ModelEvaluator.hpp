@@ -489,7 +489,7 @@ public:
                          const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & delta_p,
                          const Teuchos::RCP<Thyra::LinearOpBase<Scalar> > & D2fDxDp) const;
 
-private:
+protected:
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
@@ -498,17 +498,17 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
 
   /** \brief . */
-  void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                      const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //@}
 
   //! Evaluate a simple model, meaning a residual and a jacobian, no fancy stochastic galerkin or multipoint
-  void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                            const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Construct a simple response dicatated by this set of out args
-  void evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_g(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                              const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdx
@@ -516,7 +516,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdx(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                 const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdp (scalar) defined as dg/dx * dx/dp + dg/dp
@@ -524,7 +524,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of responses dgdp (distributed)
@@ -532,7 +532,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dgdx_distro(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dgdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp
@@ -540,7 +540,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_scalar(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
    /** handles evaluation of dfdp (tangent) defined as df/dx * dx/dp + df/dp using finite-differences
@@ -548,7 +548,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_scalar(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_scalar_fd(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                           const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   /** handles evaluation of dfdp
@@ -556,7 +556,7 @@ private:
     * \note This method should (basically) be a no-op if <code>required_basic_dfdp_distro(outArgs)==false</code>.
     *       However, for efficiency this is not checked.
     */
-  void evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
+  virtual void evalModelImpl_basic_dfdp_distro(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
                                        const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const;
 
   //! Does this set of out args require a simple response?
