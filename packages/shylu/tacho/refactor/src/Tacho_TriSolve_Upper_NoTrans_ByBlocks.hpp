@@ -76,35 +76,36 @@ namespace Tacho {
             for (auto i=0;i<nnz;++i) {
               const auto row_at_i = a.Col(i);
               auto &aa = a.Value(i);
-
-              for (auto j=0;j<B1.NumCols();++j) {
-                auto &bb = B2.Value(row_at_i, j);
-                auto &cc = B1.Value(0, j);
-
+              
+              if (!aa.isNull()) {
+                for (auto j=0;j<B1.NumCols();++j) {
+                  auto &bb = B2.Value(row_at_i, j);
+                  auto &cc = B1.Value(0, j);
+                  
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
-                Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                  CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
-                  ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
+                  Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                    CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                    ::invoke(policy, member, -1.0, aa, bb, 1.0, cc);
 #else
-                const future_type f = factory.create<future_type>
-                  (policy,
-                   Gemm<Trans::NoTranspose,Trans::NoTranspose,
-                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
-                   ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
-
-                // dependence
-                factory.depend(policy, f, aa.Future());
-                factory.depend(policy, f, bb.Future());
-                factory.depend(policy, f, cc.Future());
-
-                // place task signature on y
-                cc.setFuture(f);
-
-                // spawn a task
-                factory.spawn(policy, f);
-                ++ntasks_spawned;
+                  const future_type f = factory.create<future_type>
+                    (policy,
+                     Gemm<Trans::NoTranspose,Trans::NoTranspose,
+                     CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Gemm)>
+                     ::createTaskFunctor(policy, -1.0, aa, bb, 1.0, cc), 3);
+                  
+                  // dependence
+                  factory.depend(policy, f, aa.Future());
+                  factory.depend(policy, f, bb.Future());
+                  factory.depend(policy, f, cc.Future());
+                  
+                  // place task signature on y
+                  cc.setFuture(f);
+                  
+                  // spawn a task
+                  factory.spawn(policy, f);
+                  ++ntasks_spawned;
 #endif
-
+                }
               }
             }
           }
@@ -114,31 +115,33 @@ namespace Tacho {
             row_view_type a(A11,0);
             auto &aa = a.Value(0);
 
-            for (auto j=0;j<B1.NumCols();++j) {
-              auto &bb = B1.Value(0, j);
-
+            if (!aa.isNull()) {
+              for (auto j=0;j<B1.NumCols();++j) {
+                auto &bb = B1.Value(0, j);
+                
 #ifdef TACHO_EXECUTE_TASKS_SERIAL
-              Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
-                CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
-                ::invoke(policy, member, diagA, 1.0, aa, bb);
+                Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                  CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                  ::invoke(policy, member, diagA, 1.0, aa, bb);
 #else
-              const future_type f = factory.create<future_type>
-                (policy,
-                 Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
-                 CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
-                 ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
-
-              // trsm dependence
-              factory.depend(policy, f, aa.Future());
-              factory.depend(policy, f, bb.Future());
-
-              // place task signature on b
-              bb.setFuture(f);
-
-              // spawn a task
-              factory.spawn(policy, f);
-              ++ntasks_spawned;
+                const future_type f = factory.create<future_type>
+                  (policy,
+                   Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,
+                   CtrlDetail(ControlType,AlgoTriSolve::ByBlocks,ArgVariant,Trsm)>
+                   ::createTaskFunctor(policy, diagA, 1.0, aa, bb), 2);
+                
+                // trsm dependence
+                factory.depend(policy, f, aa.Future());
+                factory.depend(policy, f, bb.Future());
+                
+                // place task signature on b
+                bb.setFuture(f);
+                
+                // spawn a task
+                factory.spawn(policy, f);
+                ++ntasks_spawned;
 #endif
+              }
             }
           }
 

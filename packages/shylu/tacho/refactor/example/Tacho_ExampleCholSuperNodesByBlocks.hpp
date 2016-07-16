@@ -305,7 +305,8 @@ namespace Tacho {
                                auto &block = HA_factor_host.Value(k);
                                block.setRowViewArray(Kokkos::subview(rows, range_type(ap(k), ap(k+1))));
                              } );
-        CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
+        // since symbolic factor is not accurate, filter out empty blocks is not safe either.
+        //CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
       }
       { // nblocks is changed as empty blocks are filtered out
         const size_type nblocks = HA_factor_host.NumNonZeros();
