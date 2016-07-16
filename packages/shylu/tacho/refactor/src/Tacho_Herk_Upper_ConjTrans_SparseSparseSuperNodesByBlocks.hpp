@@ -34,30 +34,9 @@ namespace Tacho {
 
 
     if (member.team_rank() == 0) {
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA; //(A.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC; //(C.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC(C.Hier());
       
-      {
-        typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-        const ordinal_type blksize = Util::max(A.Hier().Value(0,0).NumRows(),
-                                               A.Hier().Value(0,0).NumCols());
-                                               
-        ordinal_type tr, br, lc, rc;
-        
-        A.getDataRegion(tr, br, lc, rc);
-        const ordinal_type 
-          offm = tr/blksize, m = br/blksize - offm + 1, 
-          offn = lc/blksize, n = rc/blksize - offn + 1;
-
-        AA.setView(A.Hier(), 
-                   offm, m,
-                   offn, n);
-
-        CC.setView(C.Hier(),
-                   offn, n,
-                   offn, n);
-      }
-
       Herk<Uplo::Upper,Trans::ConjTranspose,
         AlgoHerk::DenseByBlocks,Variant::One>
         ::invoke(policy, member,

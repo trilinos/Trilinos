@@ -34,48 +34,10 @@ namespace Tacho {
            CrsExecViewTypeC &C) {
 
     if (member.team_rank() == 0) {
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA; //(A.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB; //(B.Hier());
-      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC; //(C.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> AA(A.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> BB(B.Hier());
+      DenseMatrixView<typename CrsExecViewTypeA::hier_mat_base_type> CC(C.Hier());
       
-      // be careful for scaling on C as we narrow computation region for factorization
-      {
-        typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
-        const ordinal_type blksize = Util::max( Util::max(A.Hier().Value(0,0).NumRows(),
-                                                          A.Hier().Value(0,0).NumCols()),
-                                                Util::max(B.Hier().Value(0,0).NumRows(),
-                                                          B.Hier().Value(0,0).NumCols()) );
-
-        ordinal_type tr, br, lc, rc;
-
-        A.getDataRegion(tr, br, lc, rc);
-        const ordinal_type 
-          offmA = tr/blksize, mA = br/blksize - offmA + 1, 
-          offnA = lc/blksize, nA = rc/blksize - offnA + 1;
-
-        B.getDataRegion(tr, br, lc, rc);
-        const ordinal_type 
-          offmB = tr/blksize, mB = br/blksize - offmB + 1, 
-          offnB = lc/blksize, nB = rc/blksize - offnB + 1;
-
-        C.getDataRegion(tr, br, lc, rc);
-        const ordinal_type 
-          offmC = tr/blksize, mC = br/blksize - offmC + 1, 
-          offnC = lc/blksize, nC = rc/blksize - offnC + 1;
-        
-        AA.setView(A.Hier(),
-                   Util::max(offmA, offmB), Util::min(mA, mB),
-                   Util::max(offnA, offmC), Util::min(nA, mC));
-
-        BB.setView(B.Hier(),
-                   Util::max(offmA, offmB), Util::min(mA, mB),
-                   Util::max(offnB, offnC), Util::min(nB, nC));
-
-        CC.setView(C.Hier(),
-                   AA.OffsetCols(), AA.NumCols(),
-                   BB.OffsetCols(), BB.NumCols());
-      }
-
       Gemm<Trans::ConjTranspose,Trans::NoTranspose,
         AlgoGemm::DenseByBlocks,Variant::One>
         ::invoke(policy, member,
