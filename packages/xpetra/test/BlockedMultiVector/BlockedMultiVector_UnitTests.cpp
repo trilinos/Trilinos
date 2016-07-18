@@ -700,8 +700,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_6_DECL( BlockedMultiVector, UpdateVector1, M, MA, Sca
   Teuchos::Array<Magnitude> bnorms1(bvv1->getNumVectors());
   Teuchos::Array<Magnitude> bnorms2(vv->getNumVectors());
   TEST_NOTHROW( bvv1->norm1(bnorms1) );
-  TEST_EQUALITY( bnorms1[0], Teuchos::ScalarTraits<Magnitude>::zero());
-  TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>::zero());
+  // TAW: CUDA produces a "dirty zero" (not exactly zero)
+  // this might be numerical effects caused by the ordering of calculations
+  TEST_COMPARE( bnorms1[0], < , 1e-12);
+  TEST_COMPARE( bnorms1[1], < , 1e-12);
+  //TEST_EQUALITY( bnorms1[0], Teuchos::ScalarTraits<Magnitude>::zero());
+  //TEST_EQUALITY( bnorms1[1], Teuchos::ScalarTraits<Magnitude>::zero());
   TEST_NOTHROW( vv->norm1(bnorms1) );
   TEST_NOTHROW( bvv2->norm1(bnorms2) );
   TEST_COMPARE_FLOATING_ARRAYS(bnorms1,bnorms2,Teuchos::ScalarTraits<Magnitude>::zero());
