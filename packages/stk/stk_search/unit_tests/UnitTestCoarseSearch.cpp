@@ -55,6 +55,43 @@ std::ostream & operator<<(std::ostream & out, std::pair<stk::search::IdentProc<I
 
 namespace {
 
+void expect_search_results(int num_procs, int proc_id, const SearchResults&  searchResults)
+{
+    if (num_procs == 1) {
+      ASSERT_EQ( searchResults.size(), 2u);
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+    }
+    else {
+      if (proc_id == 0) {
+        ASSERT_EQ( searchResults.size(), 4u);
+        EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+        EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+        EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
+        EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
+      }
+      else if (proc_id == num_procs - 1) {
+        ASSERT_EQ( searchResults.size(), 4u);
+        int prev = proc_id -1;
+        EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+        EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+        EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+        EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      }
+      else {
+        ASSERT_EQ( searchResults.size(), 6u);
+        int prev = proc_id -1;
+        int next = proc_id + 1;
+        EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+        EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+        EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+        EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+        EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
+        EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
+      }
+    }
+}
+
 void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm comm)
 {
   typedef stk::search::Point<double> Point;
@@ -90,39 +127,7 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
 
   stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
 
-  if (num_procs == 1) {
-    ASSERT_EQ( searchResults.size(), 2u);
-    EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-    EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-  }
-  else {
-    if (proc_id == 0) {
-      ASSERT_EQ( searchResults.size(), 4u);
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
-    }
-    else if (proc_id == num_procs - 1) {
-      ASSERT_EQ( searchResults.size(), 4u);
-      int prev = proc_id -1;
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-    }
-    else {
-      ASSERT_EQ( searchResults.size(), 6u);
-      int prev = proc_id -1;
-      int next = proc_id + 1;
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-      EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
-    }
-  }
+  expect_search_results(num_procs, proc_id, searchResults);
 }
 
 
@@ -240,39 +245,7 @@ void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_
 
   coarse_search_new(local_domain, local_range, algorithm, comm, searchResults);
 
-  if (num_procs == 1) {
-    ASSERT_EQ( searchResults.size(), 2u);
-    EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-    EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-  }
-  else {
-    if (proc_id == 0) {
-      ASSERT_EQ( searchResults.size(), 4u);
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
-    }
-    else if (proc_id == num_procs - 1) {
-      ASSERT_EQ( searchResults.size(), 4u);
-      int prev = proc_id -1;
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-    }
-    else {
-      ASSERT_EQ( searchResults.size(), 6u);
-      int prev = proc_id -1;
-      int next = proc_id + 1;
-      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-      EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
-      EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
-    }
-  }
+  expect_search_results(num_procs, proc_id, searchResults);
 }
 
 TEST(stk_search, coarse_search_noIdentProc_boost_rtree)
@@ -324,8 +297,8 @@ void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
     {
         GtkBox box1(0,0,0,1,1,1);
         GtkBox box2(0.5, 0.5, 0.5, 1.5, 1.5, 1.5);
-        Ident id1(1, -1);
-        Ident id2(1, -1);
+        Ident id1(1, 0);
+        Ident id2(1, 1);
 
         GtkBoxVector boxes;
         if ( procId == 0 )
@@ -368,68 +341,76 @@ void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
     }
 }
 
-//TEST(stk_search, coarse_search_boost_ident_proc_switch)
-//{
-//    stk::search::SearchMethod sm = stk::search::BOOST_RTREE;
-//    testIdentProcWithSearch(sm);
-//}
+TEST(stk_search, coarse_search_boost_ident_proc_switch)
+{
+    testIdentProcWithSearch(stk::search::BOOST_RTREE);
+}
 
 TEST(stk_search, coarse_search_octree_ident_proc_switch)
 {
-    stk::search::SearchMethod sm = stk::search::OCTREE;
-    testIdentProcWithSearch(sm);
+    testIdentProcWithSearch(stk::search::OCTREE);
 }
 
-TEST(stk_search, coarse_search_one_point)
+void testCoarseSearchOnePoint(stk::search::SearchMethod searchMethod)
 {
-  typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
-  typedef stk::search::Point<double> Point;
-  typedef stk::search::Box<double> StkBox;
-  typedef std::vector<std::pair<StkBox,Ident> > BoxVector;
-  typedef std::vector<std::pair<Ident,Ident> > SearchResults;
+    typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
+    typedef stk::search::Point<double> Point;
+    typedef stk::search::Box<double> StkBox;
+    typedef std::vector<std::pair<StkBox,Ident> > BoxVector;
+    typedef std::vector<std::pair<Ident,Ident> > SearchResults;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD;
-  //int num_procs = stk::parallel_machine_size(comm);
-  int proc_id   = stk::parallel_machine_rank(comm);
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    //int num_procs = stk::parallel_machine_size(comm);
+    int proc_id   = stk::parallel_machine_rank(comm);
 
-  Point min_corner, max_corner;
+    Point min_corner, max_corner;
 
-  BoxVector local_domain, local_range;
-  // what if identifier is NOT unique
-  // x_min <= x_max
-  // y_min <= y_max
-  // z_min <= z_max
+    BoxVector local_domain, local_range;
+    // what if identifier is NOT unique
+    // x_min <= x_max
+    // y_min <= y_max
+    // z_min <= z_max
 
-  min_corner[0] = 0.0; min_corner[1] = 0.0; min_corner[2] = 0.0;
-  max_corner[0] = 1.0; max_corner[1] = 1.0; max_corner[2] = 1.0;
+    min_corner[0] = 0.0; min_corner[1] = 0.0; min_corner[2] = 0.0;
+    max_corner[0] = 1.0; max_corner[1] = 1.0; max_corner[2] = 1.0;
 
-  // One bounding box on processor 0 with the label:  0
-  // All other processors have empty domain.
-  Ident domainBox1(0, 0);
-  if (proc_id == 0) {
-    local_domain.push_back(std::make_pair(StkBox(min_corner, max_corner), domainBox1));
-  }
+    // One bounding box on processor 0 with the label:  0
+    // All other processors have empty domain.
+    Ident domainBox1(0, 0);
+    if (proc_id == 0) {
+      local_domain.push_back(std::make_pair(StkBox(min_corner, max_corner), domainBox1));
+    }
 
-  min_corner[0] = 0.5; min_corner[1] = 0.5; min_corner[2] = 0.5;
-  max_corner[0] = 0.5; max_corner[1] = 0.5; max_corner[2] = 0.5;
+    min_corner[0] = 0.5; min_corner[1] = 0.5; min_corner[2] = 0.5;
+    max_corner[0] = 0.5; max_corner[1] = 0.5; max_corner[2] = 0.5;
 
-  // One range target on processor 0 with the label:  1
-  // All other processors have empty range.
-  Ident rangeBox1(1, 0);
-  if (proc_id == 0) {
-    local_range.push_back(std::make_pair(StkBox(min_corner, max_corner), rangeBox1));
-  }
+    // One range target on processor 0 with the label:  1
+    // All other processors have empty range.
+    Ident rangeBox1(1, 0);
+    if (proc_id == 0) {
+      local_range.push_back(std::make_pair(StkBox(min_corner, max_corner), rangeBox1));
+    }
 
-  SearchResults searchResults;
+    SearchResults searchResults;
 
-  stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
+    stk::search::coarse_search(local_domain, local_range, searchMethod, comm, searchResults);
 
-  if (proc_id == 0) {
-    ASSERT_EQ(searchResults.size(), 1u);
-    EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
-  } else {
-    ASSERT_EQ(searchResults.size(), 0u);
-  }
+    if (proc_id == 0) {
+      ASSERT_EQ(searchResults.size(), 1u);
+      EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
+    } else {
+      ASSERT_EQ(searchResults.size(), 0u);
+    }
+}
+
+TEST(stk_search, coarse_search_one_point_OCTREE)
+{
+    testCoarseSearchOnePoint(stk::search::OCTREE);
+}
+
+TEST(stk_search, coarse_search_one_point_BOOST_RTREE)
+{
+    testCoarseSearchOnePoint(stk::search::BOOST_RTREE);
 }
 
 TEST(CoarseSearch, forDeterminingSharing)
