@@ -126,18 +126,36 @@ namespace Tacho {
 
     timer.reset();
 
-    typename CrsMatrixBaseHostType::ordinal_type_array tree;
+    typename CrsMatrixBaseHostType::size_type_array ap;
+    typename CrsMatrixBaseHostType::ordinal_type_array aj, tree;
+
     CrsMatrixTools::createEliminationTree(tree, CC);
+    CrsMatrixTools::createSymbolicStructure(ap, aj, CC);
 
     double t_symbolic = timer.seconds();
 
-    /*if (verbose)*/ {
-      const auto iend = tree.dimension(0);
-      std::cout << " TREE \n";
-      for (auto i=0;i<iend;++i) 
-        std::cout << tree(i) << std::endl;
-    }
+    if (verbose) {
+      const auto w = 6;
+      const auto m = CC.NumRows();
 
+      std::cout << "  TREE\n";
+      for (auto i=0;i<m;++i) 
+        std::cout << std::setw(w) << tree(i) << "   "
+                  << std::endl;
+      std::cout << std::endl;
+      std::cout << "   ROW      COL      VAL\n";
+      for (auto i=0;i<m;++i) {
+        for (auto idx=ap(i);idx<ap(i+1);++idx) {
+          const auto j = aj(idx);
+          std::cout << std::setw(w) << i << "   "
+                    << std::setw(w) << j << "   "
+                    << std::setw(w) << 1 << "   "
+                    << std::endl;
+        
+        }
+      }
+    }
+    
     {
       const auto prec = std::cout.precision();
       std::cout.precision(4);

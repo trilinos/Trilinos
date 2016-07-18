@@ -17,8 +17,6 @@ namespace Tacho {
              typename OrdinalTypeArray>
     static void
     createEliminationTree(OrdinalTypeArray &parent,
-                          /** const OrdinalTypeArray p,
-                              const OrdinalTypeArray ip, */
                           const CrsMatBaseType A) {
       const auto m = A.NumRows();
       auto ancestor = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::ancestor", m);
@@ -39,6 +37,62 @@ namespace Tacho {
             ancestor(j) = i ;
             if (next == -1) parent(j) = i;
             j = next;
+          }
+      }
+    }
+
+    template<typename CrsMatBaseType,
+             typename OrdinalTypeArray,
+             typename SizeTypeArray>
+    static void
+    createSymbolicStructure(SizeTypeArray &ap,  // row pointer of upper triangular
+                            OrdinalTypeArray &aj, // col indices
+                            const CrsMatBaseType A) {
+      const auto m = A.NumRows();
+      auto parent = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::parent", m);
+      auto flag = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::flag", m);
+      auto upper_row_cnt = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::upper_row_cnt", m);
+
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        flag(i) = -1;
+        upper_row_cnt(i) = 1; // add diagonal entry
+
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+        
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx) ; flag(j) != i && j < i; j = parent(j) ) {
+            if (parent(j) == -1) parent(j) = i;
+            ++upper_row_cnt(j);
+            flag(j) = i ;
+          }
+      }
+
+      // prefix scan
+      ap = SizeTypeArray("CrsMatrixTools::createEliminationTree::ap", m+1);
+      for (auto i=0;i<m;++i) 
+        ap(i+1) = ap(i) + upper_row_cnt(i);
+
+      // detect aj
+      aj = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::aj", ap(m));
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        flag(i) = -1;
+
+        // diagonal entry
+        aj(ap(i)) = i; 
+        upper_row_cnt(i) = 1;
+
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+        
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx) ; flag(j) != i && j < i; j = parent(j) ) {
+            if (parent(j) == -1) parent(j) = i;
+            aj(ap(j)+upper_row_cnt(j)) = i;
+            ++upper_row_cnt(j);
+            flag(j) = i ;
           }
       }
     }
