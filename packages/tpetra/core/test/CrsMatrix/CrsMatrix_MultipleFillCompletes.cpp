@@ -168,6 +168,17 @@ namespace {
         TEST_NOTHROW( matrix.getLocalRowView(r,inds,vals) );
         TEST_COMPARE_ARRAYS( inds, tuple<LO> (r) );
         TEST_COMPARE_ARRAYS( vals, tuple<Scalar> (static_cast<Scalar> (3.0)) );
+
+        LO rawNumEnt = 0;
+        const Scalar* rawVals = NULL;
+        const LO* rawInds = NULL;
+        TEST_NOTHROW( matrix.getLocalRowView (r, rawNumEnt, rawVals, rawInds) );
+        TEST_EQUALITY( rawNumEnt, static_cast<LO> (1) );
+        TEST_ASSERT( rawVals != NULL && rawInds != NULL );
+        if (rawVals != NULL && rawInds != NULL) {
+          TEST_EQUALITY( rawInds[0], r );
+          TEST_EQUALITY( rawVals[0], static_cast<Scalar> (3.0) );
+        }
       }
     }
 

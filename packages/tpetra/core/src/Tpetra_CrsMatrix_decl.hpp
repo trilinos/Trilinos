@@ -2234,6 +2234,61 @@ namespace Tpetra {
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const;
 
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using local row and column indices, with raw
+    ///   pointers.
+    ///
+    /// The order of arguments exactly matches those of
+    /// Epetra_CrsMatrix::ExtractMyRowView.
+    ///
+    /// \param lclRow [in] Local index of the row to view.
+    /// \param numEnt [out] On output: Number of entries in the row.
+    /// \param val [out] On successful output: View of the values in
+    ///   the row.  Output value is undefined if not successful.
+    /// \param ind [out] On successful output: View of the local
+    ///   column indices in the row.  Output value is undefined if not
+    ///   successful.
+    ///
+    /// \return Zero if successful, else a nonzero error code.
+    ///
+    /// \pre <tt>isGloballyIndexed () == false</tt>
+    /// \post <tt>numEnt == this->getNumEntriesInLocalRow(lclRow)</tt>
+    ///
+    /// The output number of entries in the row \c numEnt is safe to
+    /// be \c LocalOrdinal, because as long as the row does not
+    /// contain too many duplicate entries, the number of column
+    /// indices can always fit in \c LocalOrdinal.  Otherwise, the
+    /// column Map would be incorrect.
+    LocalOrdinal
+    getLocalRowView (const LocalOrdinal lclRow,
+                     LocalOrdinal& numEnt,
+                     const impl_scalar_type*& val,
+                     const LocalOrdinal*& ind) const;
+
+    /// \brief Get a constant, nonpersisting view of a row of this
+    ///   matrix, using local row and column indices, with raw
+    ///   pointers.
+    ///
+    /// This overload exists only if Scalar differs from
+    /// impl_scalar_type.  In that case, this overload takes a Scalar
+    /// pointer.
+    template<class OutputScalarType>
+    typename std::enable_if<! std::is_same<OutputScalarType, impl_scalar_type>::value &&
+                            std::is_convertible<impl_scalar_type, OutputScalarType>::value,
+                            LocalOrdinal>::type
+    getLocalRowView (const LocalOrdinal lclRow,
+                     LocalOrdinal& numEnt,
+                     const OutputScalarType*& val,
+                     const LocalOrdinal*& ind) const
+    {
+      const impl_scalar_type* valTmp = NULL;
+      const LocalOrdinal err = this->getLocalRowView (lclRow, numEnt, valTmp, ind);
+      // Cast is legitimate because impl_scalar_type is convertible to
+      // OutputScalarType.
+      val = reinterpret_cast<const OutputScalarType*> (valTmp);
+      return err;
+    }
+
     /// \brief Get a copy of the diagonal entries of the matrix.
     ///
     /// This method returns a Vector with the same Map as this

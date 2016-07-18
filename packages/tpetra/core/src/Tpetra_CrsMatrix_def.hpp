@@ -3032,6 +3032,43 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  LocalOrdinal
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  getLocalRowView (const LocalOrdinal lclRow,
+                   LocalOrdinal& numEnt,
+                   const impl_scalar_type*& val,
+                   const LocalOrdinal*& ind) const
+  {
+    typedef LocalOrdinal LO;
+
+    // Don't call getCrsGraph(), because that modfies an RCP reference
+    // count, which is not thread safe.  Checking whether an RCP is
+    // null does NOT modify its reference count, and is therefore
+    // thread safe.  Note that isGloballyIndexed() calls
+    // getCrsGraph(), so we have to go to the graph directly.
+    if (staticGraph_.is_null () || staticGraph_->isGloballyIndexed ()) {
+      return Tpetra::Details::OrdinalTraits<LO>::invalid ();
+    }
+    else {
+      const RowInfo rowInfo = staticGraph_->getRowInfo (lclRow);
+      if (rowInfo.localRow == Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
+        numEnt = 0; // no valid entries in this row on the calling process
+        val = NULL;
+        ind = NULL;
+        // First argument (lclRow) invalid, so make 1 the error code.
+        return static_cast<LO> (1);
+      }
+      else {
+        numEnt = static_cast<LO> (rowInfo.numEntries);
+        auto lclColInds = staticGraph_->getLocalKokkosRowView (rowInfo);
+        ind = lclColInds.ptr_on_device (); // FIXME (mfh 18 Jul 2016) UVM
+        const LO err = this->getViewRawConst (val, numEnt, rowInfo);
+        return err;
+      }
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalRowView (GlobalOrdinal globalRow,
