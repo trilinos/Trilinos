@@ -53,21 +53,28 @@
 # ************************************************************************
 # @HEADER
 
-# TEMPORARY SETUP FOR TESTING
-
+# This will be modified later
 MESSAGE( "Turning CTEST_DO_UPDATES off to prevent attempt to access Sandia libraries." )
 SET(CTEST_DO_UPDATES FALSE)
 
+# This will be modified later
 MESSAGE( "Turning CTEST_DO_SUBMIT off to prevent dashboard submissions temporarily." )
 SET(CTEST_DO_SUBMIT FALSE)
 SET(CTEST_SUBMIT_CDASH_SUBPROJECTS_DEPS_FILE FALSE)
 
+# Setup binary location override - for custom setups but for normal cdash it can be unset
+IF( DEFINED ENV{OVERRIDE_BINARY_LOCATION} )
+  SET( CTEST_SOURCE_DIRECTORY ${CTEST_SCRIPT_DIRECTORY}/../../../../../Trilinos )
+  SET( CTEST_BINARY_DIRECTORY $ENV{OVERRIDE_BINARY_LOCATION} )
+  MESSAGE( "Custom build location setup set CTEST_SOURCE_DIRECTORY to $CTEST_SOURCE_DIRECTORY")
+  MESSAGE( "Custom build location setup set CTEST_BINARY_DIRECTORY to $CTEST_BINARY_DIRECTORY")
+ENDIF()
 
 #
 # Set the options specific to this build case - must be BEFORE including the jenkins file
 #
 
-SET(COMM_TYPE MPI)
+SET(COMM_TYPE $ENV{JENKINS_COMM_TYPE} )
 SET(BUILD_TYPE DEBUG)
 #SET(BUILD_DIR_NAME)
 SET(CTEST_PARALLEL_LEVEL 8)
@@ -80,11 +87,9 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.generic.jenkins
 
 SET(Trilinos_PACKAGES Zoltan2)
 
-# The Trilinos
-
 SET(EXTRA_CONFIGURE_OPTIONS
 "-DZoltan2_ENABLE_Experimental:BOOL=$ENV{JENKINS_Zoltan2_ENABLE_Experimental}"
-"-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=$ENV{JENKINS_ENABLE_EXPLICIT_INSTANTIATION}"
+"-DTeuchos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=$ENV{JENKINS_Teuchos_ENABLE_EXPLICIT_INSTANTIATION}"
 "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=$ENV{JENKINS_Teuchos_ENABLE_LONG_LONG_INT}"
 
 "-DTpetra_INST_INT_INT:BOOL=$ENV{JENKINS_Tpetra_INST_INT_INT}"
@@ -98,11 +103,12 @@ SET(EXTRA_CONFIGURE_OPTIONS
 "-DTpetra_INST_COMPLEX_DOUBLE:BOOL=$ENV{JENKINS_Tpetra_INST_COMPLEX_DOUBLE}"
 "-DTpetra_INST_COMPLEX_FLOAT:BOOL=$ENV{JENKINS_Tpetra_INST_COMPLEX_FLOAT}"
 
-"-DTPL_ENABLE_SCOTCH:BOOL=$ENV{JENKINS_ENABLE_SCOTCH}"
-
+"-DTPL_ENABLE_Scotch:BOOL=$ENV{JENKINS_TPL_ENABLE_Scotch}"
+"-DTrilinos_ENABLE_Galeri:BOOL=$ENV{JENKINS_Trilinos_ENABLE_Galeri}"
+"-DTrilinos_ENABLE_Pamgen:BOOL=$ENV{JENKINS_Trilinos_ENABLE_Pamgen}"
+"-DTPL_ENABLE_ParMETIS:BOOL=$ENV{JENKINS_TPL_ENABLE_ParMETIS}"
+"-DTrilinos_ENABLE_Epetra:BOOL=$ENV{JENKINS_Trilinos_ENABLE_Epetra}"
 )
-
-# SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Sundance CTrilinos ForTrilinos Optika Mesquite preCopyrightTrilinos TerminalApplication)
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
