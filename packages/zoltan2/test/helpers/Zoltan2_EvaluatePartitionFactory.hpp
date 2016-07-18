@@ -69,10 +69,10 @@ namespace Zoltan2_TestingFramework {
 
       if (adapter_name == "BasicIdentifier") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
-	  (new Zoltan2::EvaluatePartition<basic_vector_adapter>
-	   (reinterpret_cast<const basic_vector_adapter *>(input),
+	  (new Zoltan2::EvaluatePartition<basic_id_t>
+	   (reinterpret_cast<const basic_id_t *>(input),
 	    params, CommT, reinterpret_cast
-	    <const Zoltan2::PartitioningSolution<basic_vector_adapter> *>
+	    <const Zoltan2::PartitioningSolution<basic_id_t> *>
 	    (&problem->getSolution())));
       } else if (adapter_name == "XpetraMultiVector") {
 	return reinterpret_cast<Zoltan2::EvaluatePartition<basic_id_t> *>
