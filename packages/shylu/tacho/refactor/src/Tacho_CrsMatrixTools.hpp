@@ -11,12 +11,94 @@ namespace Tacho {
 
   class CrsMatrixTools {
   public:
+
+    // Tim Davis, Direct Methods for Sparse Linear Systems, Siam, p 42.
+    template<typename CrsMatBaseType,
+             typename OrdinalTypeArray>
+    static void
+    createEliminationTree(OrdinalTypeArray &parent,
+                          const CrsMatBaseType A) {
+      const auto m = A.NumRows();
+      auto ancestor = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::ancestor", m);
+
+      if (parent.data() == NULL || parent.dimension(0) < m)
+        parent = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::parent", m);
+
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        ancestor(i) = -1;
+        
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx);j != -1 && j < i;) {
+            const auto next = ancestor(j);
+            ancestor(j) = i ;
+            if (next == -1) parent(j) = i;
+            j = next;
+          }
+      }
+    }
+
+    template<typename CrsMatBaseType,
+             typename OrdinalTypeArray,
+             typename SizeTypeArray>
+    static void
+    createSymbolicStructure(SizeTypeArray &ap,  // row pointer of upper triangular
+                            OrdinalTypeArray &aj, // col indices
+                            const CrsMatBaseType A) {
+      const auto m = A.NumRows();
+      auto parent = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::parent", m);
+      auto flag = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::flag", m);
+      auto upper_row_cnt = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::upper_row_cnt", m);
+
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        flag(i) = -1;
+        upper_row_cnt(i) = 1; // add diagonal entry
+
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+        
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx) ; flag(j) != i && j < i; j = parent(j) ) {
+            if (parent(j) == -1) parent(j) = i;
+            ++upper_row_cnt(j);
+            flag(j) = i ;
+          }
+      }
+
+      // prefix scan
+      ap = SizeTypeArray("CrsMatrixTools::createEliminationTree::ap", m+1);
+      for (auto i=0;i<m;++i) 
+        ap(i+1) = ap(i) + upper_row_cnt(i);
+
+      // detect aj
+      aj = OrdinalTypeArray("CrsMatrixTools::createEliminationTree::aj", ap(m));
+      for (auto i=0;i<m;++i) {
+        parent(i) = -1;
+        flag(i) = -1;
+
+        // diagonal entry
+        aj(ap(i)) = i; 
+        upper_row_cnt(i) = 1;
+
+        const auto nnz_in_row = A.NumNonZerosInRow(i);
+        const auto cols_in_row = A.ColsInRow(i);        
+        
+        for (auto idx=0;idx<nnz_in_row;++idx) 
+          for (auto j=cols_in_row(idx) ; flag(j) != i && j < i; j = parent(j) ) {
+            if (parent(j) == -1) parent(j) = i;
+            aj(ap(j)+upper_row_cnt(j)) = i;
+            ++upper_row_cnt(j);
+            flag(j) = i ;
+          }
+      }
+    }
+
     /// Elementwise copy
     /// ------------------------------------------------------------------
-    /// Properties:
-    /// - Runnable on Device (o),
-    /// - Callable in KokkosFunctors (x),
-    /// - Blocking with fence (o)
 
     /// \brief sort columns
     template<typename CrsMatBaseType>
@@ -432,27 +514,61 @@ namespace Tacho {
                      const CrsMatrixFlatType flat,
                      const OrdinalType       nblks,
                      const OrdinalTypeArray  range,
-                     const OrdinalTypeArray  tree) {
-
+                     const OrdinalTypeArray  tree,
+                     const bool full = false) {
+      // this strictly requires disjoint tree of children (sometimes scotch does not return it)
       typedef typename CrsMatrixHierType::size_type size_type;
       typedef typename CrsMatrixHierType::ordinal_type ordinal_type;
 
-      // this strictly requires disjoint tree of children (sometimes scotch does not return it)
+      OrdinalTypeArray nnz_in_row("nnz_in_row", nblks);
+      for (auto i=0;i<nblks;++i)
+        for (auto j=i;j != -1;j=tree(j)) {
+          ++nnz_in_row(i);
+          if (full && i != j)
+            ++nnz_in_row(j);
+        }
+      
       size_type nnz = 0;
-      for (ordinal_type i=0;i<nblks;++i)
-        for (ordinal_type j=i;j != -1;++nnz,j=tree(j)) ;
-
+      for (auto i=0;i<nblks;++i) 
+        nnz += nnz_in_row(i);
+      
       hier.create(nblks, nblks, nnz);
 
       nnz = 0;
       for (ordinal_type i=0;i<nblks;++i) {
-        hier.RowPtrBegin(i) = nnz;
-        for (ordinal_type j=i;j != -1;++nnz,j=tree(j)) {
-          hier.Col(nnz) = j;
-          hier.Value(nnz).setView(flat, range(i), (range(i+1) - range(i)),
-                                  /**/  range(j), (range(j+1) - range(j)));
-        }
+        hier.RowPtrBegin(i) = nnz; 
+        nnz += nnz_in_row(i);
         hier.RowPtrEnd(i) = nnz;
+        nnz_in_row(i) = 0;
+      }
+
+      for (ordinal_type i=0;i<nblks;++i) {
+        for (ordinal_type j=i;j != -1;j=tree(j)) {
+          {
+            const auto idx = nnz_in_row(i);
+            
+            auto cols = hier.ColsInRow(i);
+            cols(idx) = j;
+
+            auto vals = hier.ValuesInRow(i);
+            vals(idx).setView(flat, range(i), (range(i+1) - range(i)),
+                              /**/  range(j), (range(j+1) - range(j)));
+
+            ++nnz_in_row(i);
+          }
+          if (full && i != j) {
+            const auto idx = nnz_in_row(j);
+            
+            auto cols = hier.ColsInRow(j);
+            cols(idx) = i;
+            
+            auto vals = hier.ValuesInRow(j);
+            vals(idx).setView(flat, range(j), (range(j+1) - range(j)),
+                              /**/  range(i), (range(i+1) - range(i)));
+
+            ++nnz_in_row(j);
+          }
+        }
       }
       hier.setNumNonZeros();
     }

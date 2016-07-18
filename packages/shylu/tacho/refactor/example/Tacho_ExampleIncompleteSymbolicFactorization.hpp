@@ -1,5 +1,5 @@
-#ifndef __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
-#define __TACHO_EXAMPLE_SYMBOLIC_FACTORIZATION_HPP__
+#ifndef __TACHO_EXAMPLE_INCOMPLETE_SYMBOLIC_FACTORIZATION_HPP__
+#define __TACHO_EXAMPLE_INCOMPLETE_SYMBOLIC_FACTORIZATION_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -16,17 +16,17 @@
 #include "Tacho_GraphTools_Scotch.hpp"
 #include "Tacho_GraphTools_CAMD.hpp"
 
-#include "Tacho_SymbolicFactorization.hpp"
+#include "Tacho_IncompleteSymbolicFactorization.hpp"
 
 namespace Tacho {
   
   template<typename DeviceSpaceType>
-  int exampleSymbolicFactorization(const std::string file_input,
-                                   const int treecut,
-                                   const int prunecut,
-                                   const int fill_level,
-                                   const int rows_per_team,
-                                   const bool verbose) {
+  int exampleIncompleteSymbolicFactorization(const std::string file_input,
+                                             const int treecut,
+                                             const int prunecut,
+                                             const int fill_level,
+                                             const int rows_per_team,
+                                             const bool verbose) {
     typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -40,7 +40,7 @@ namespace Tacho {
     typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
     typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
 
-    typedef SymbolicFactorization<CrsMatrixBaseHostType> SymbolicFactorizationType;
+    typedef IncompleteSymbolicFactorization<CrsMatrixBaseHostType> IncompleteSymbolicFactorizationType;
 
     int r_val = 0;
 
@@ -133,7 +133,7 @@ namespace Tacho {
     CrsMatrixBaseHostType DD("DD");    
     
     timer.reset();
-    SymbolicFactorizationType::createNonZeroPattern(DD, 
+    IncompleteSymbolicFactorizationType::createNonZeroPattern(DD, 
                                                     fill_level, 
                                                     Uplo::Upper,
                                                     CC,

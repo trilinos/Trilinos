@@ -19,7 +19,7 @@
 #include "Tacho_GraphTools_Scotch.hpp"
 #include "Tacho_GraphTools_CAMD.hpp"
 
-#include "Tacho_SymbolicFactorization.hpp"
+#include "Tacho_IncompleteSymbolicFactorization.hpp"
 
 #include "Tacho_TaskView.hpp"
 #include "Tacho_TaskFactory.hpp"
@@ -59,7 +59,7 @@ namespace Tacho {
     typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
     typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
 
-    typedef SymbolicFactorization<CrsMatrixBaseHostType> SymbolicFactorizationType;
+    typedef IncompleteSymbolicFactorization<CrsMatrixBaseHostType> IncompleteSymbolicFactorizationType;
 
     typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
 
@@ -184,7 +184,7 @@ namespace Tacho {
     CrsMatrixBaseHostType AA_factor_host("AA_factor_host");
 
     timer.reset();
-    SymbolicFactorizationType::createNonZeroPattern(AA_factor_host,
+    IncompleteSymbolicFactorizationType::createNonZeroPattern(AA_factor_host,
                                                     fill_level,
                                                     Uplo::Upper,
                                                     AA_camd_host,
