@@ -90,7 +90,7 @@ int main (int argc, char *argv[]) {
         || defined(HAVE_SHYLUTACHO_AMESOS)))
     r_val = exampleCholSuperNodesByBlocks<exec_space>
       (file_input, 
-       treecut, prunecut, fill_level, rows_per_team, 
+       treecut, prunecut, 
        max_concurrency, max_task_dependence, team_size,
        nrhs, mb, nb,
        verbose_blocks,

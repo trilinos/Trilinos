@@ -27,8 +27,6 @@
 #include "Tacho_GraphTools_Scotch.hpp"
 #include "Tacho_GraphTools_CAMD.hpp"
 
-#include "Tacho_IncompleteSymbolicFactorization.hpp"
-
 #include "Tacho_TaskView.hpp"
 #include "Tacho_TaskFactory.hpp"
 
@@ -48,8 +46,6 @@ namespace Tacho {
   int exampleCholSuperNodesByBlocks(const std::string file_input,
                                     const int treecut,
                                     const int prunecut,
-                                    const int fill_level,
-                                    const int rows_per_team,
                                     const int max_concurrency,
                                     const int max_task_dependence,
                                     const int team_size,
@@ -74,8 +70,6 @@ namespace Tacho {
 
     typedef GraphTools_Scotch<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_Scotch;
     typedef GraphTools_CAMD<ordinal_type,size_type,HostSpaceType> GraphToolsHostType_CAMD;
-
-    typedef IncompleteSymbolicFactorization<CrsMatrixBaseHostType> IncompleteSymbolicFactorizationType;
 
     typedef Kokkos::Experimental::TaskPolicy<DeviceSpaceType> PolicyType;
 
@@ -216,26 +210,7 @@ namespace Tacho {
     if (verbose)
       AA_camd_host.showMe(std::cout) << std::endl;
 
-    const auto AA_reordered_host = AA_camd_host;
-
-    ///
-    /// Symbolic factorization
-    ///
-    ///     input  -
-    ///     output - S (perm, iperm, nblks, range, tree), AA_scotch_host (permuted)
-    ///
-    CrsMatrixBaseHostType AA_factor_host("AA_factor_host");
-
-    timer.reset();
-    IncompleteSymbolicFactorizationType::createNonZeroPattern(AA_factor_host,
-                                                    fill_level,
-                                                    Uplo::Upper,
-                                                    AA_reordered_host,
-                                                    rows_per_team);
-    double t_symbolic = timer.seconds();
-
-    if (verbose)
-      AA_factor_host.showMe(std::cout) << std::endl;
+    CrsMatrixBaseHostType AA_reordered_host = AA_camd_host;
 
     ///
     /// Clean tempoerary matrices
@@ -249,6 +224,99 @@ namespace Tacho {
     C = GraphToolsHostType_CAMD();
     rptr = typename GraphToolsHostType::size_type_array();
     cidx = typename GraphToolsHostType::ordinal_type_array();
+
+    ///
+    /// Symbolic factorization
+    ///
+    ///     input  -
+    ///     output - S (perm, iperm, nblks, range, tree), AA_scotch_host (permuted)
+    ///
+    CrsHierBaseHostType HA_factor_host("HA_factor_host");
+    Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType> rows;
+
+    timer.reset();
+    {
+      typename CrsHierBaseHostType::size_type_array ap;
+      typename CrsHierBaseHostType::ordinal_type_array aj;
+      {
+        CrsHierBaseHostType HA_reordered_host("HA_reordered_host");
+        
+        // create block matrices wrapping reordred matrix
+        S.pruneTree(prunecut);
+        
+        const bool full = true;
+        CrsMatrixTools::createHierMatrix(HA_reordered_host,
+                                         AA_reordered_host,
+                                         S.NumBlocks(),
+                                         S.RangeVector(),
+                                         S.TreeVector(),
+                                         full);
+        
+        {
+          const size_type nblocks = HA_reordered_host.NumNonZeros();
+          Kokkos::View<size_type*,HostSpaceType> apblk("apblk", nblocks + 1);
+          apblk(0) = 0;
+          for (size_type k=0;k<nblocks;++k) {
+            const auto &block = HA_reordered_host.Value(k);
+            apblk(k+1) = apblk(k) + block.NumRows();
+          }
+          rows = Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType>("RowViewsInBlocks", apblk(nblocks));
+          Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
+                               [&](const ordinal_type k) {
+                                 auto &block = HA_reordered_host.Value(k);
+                                 block.setRowViewArray(Kokkos::subview(rows, range_type(apblk(k), apblk(k+1))));
+                               } );
+        }
+        CrsMatrixTools::filterEmptyBlocks(HA_reordered_host);
+        CrsMatrixTools::createSymbolicStructure(ap, aj, HA_reordered_host);
+      }
+      
+      typename CrsHierBaseHostType::value_type_array ax("ax", aj.dimension(0));
+      {
+        auto flat = AA_reordered_host;
+        auto range = S.RangeVector();
+        
+        const auto m = S.NumBlocks();
+        for (auto i=0;i<m;++i) {
+          const auto row_begin = ap(i);
+          const auto row_end = ap(i+1);
+          for (auto idx=row_begin;idx<row_end;++idx) {
+            const auto j = aj(idx);
+            ax(idx).setView(flat, range(i), (range(i+1) - range(i)),
+                            /**/  range(j), (range(j+1) - range(j)));
+          }
+        }
+      }
+      {
+        const auto m = S.NumBlocks();
+        const auto nnz = aj.dimension(0);
+        HA_factor_host = CrsHierBaseHostType("HA_factor_host",
+                                             m, m, nnz,
+                                             Kokkos::subview(ap, Kokkos::pair<ordinal_type,ordinal_type>(0,m)),
+                                             Kokkos::subview(ap, Kokkos::pair<ordinal_type,ordinal_type>(1,m+1)),
+                                             aj,
+                                             ax);
+        HA_factor_host.setNumNonZeros();
+      }
+      
+      // copy row view structure to block symbolic factors
+      {
+        const size_type nblocks = HA_factor_host.NumNonZeros();
+        Kokkos::View<size_type*,HostSpaceType> apblk("apblk", nblocks + 1);
+        apblk(0) = 0;
+        for (size_type k=0;k<nblocks;++k) {
+          const auto &block = HA_factor_host.Value(k);
+          apblk(k+1) = apblk(k) + block.NumRows();
+        }
+        rows = Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType>("RowViewsInBlocks", apblk(nblocks));
+        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
+                             [&](const ordinal_type k) {
+                               auto &block = HA_factor_host.Value(k);
+                               block.setRowViewArray(Kokkos::subview(rows, range_type(apblk(k), apblk(k+1))));
+                             } );
+      }
+    }
+    double t_symbolic = timer.seconds();
 
     ///
     /// Create task policy
@@ -271,80 +339,43 @@ namespace Tacho {
     ///    input  - AA_factor_host, rowviews
     ///    output - HA_factor_host, AA_factor_host, B_factor_host
     ///
-    double t_hier = 0, t_blocks = 0, t_chol = 0;
-    CrsHierBaseHostType HA_factor_host("HA_factor_host");
+    double t_blocks = 0, t_chol = 0;
 
-    Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType> rows;
     Kokkos::View<value_type*,HostSpaceType> mats;
     Kokkos::View<DenseTaskViewHostType*,HostSpaceType> blks;
     {
+      const size_type nblocks = HA_factor_host.NumNonZeros();
       timer.reset();
-      S.pruneTree(prunecut);
-      CrsMatrixTools::createHierMatrix(HA_factor_host,
-                                       AA_factor_host,
-                                       S.NumBlocks(),
-                                       S.RangeVector(),
-                                       S.TreeVector());
-      t_hier = timer.seconds();
-
-      timer.reset();
-      {
-        const size_type nblocks = HA_factor_host.NumNonZeros();
-
-        // scan ap
-        Kokkos::View<size_type*,HostSpaceType> ap("ap", nblocks + 1);
-        ap(0) = 0;
+      { 
+        Kokkos::View<size_type*,HostSpaceType> apblk("apblk", nblocks + 1);
+        apblk(0) = 0;
         for (size_type k=0;k<nblocks;++k) {
           const auto &block = HA_factor_host.Value(k);
-          ap(k+1) = ap(k) + block.NumRows();
+          apblk(k+1) = apblk(k) + block.NumRows()*block.NumCols();
         }
 
-        rows = Kokkos::View<typename CrsMatrixViewHostType::row_view_type*,HostSpaceType>("RowViewsInBlocks", ap(nblocks));
-        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
-                             [&](const ordinal_type k) {
-                               auto &block = HA_factor_host.Value(k);
-                               block.setRowViewArray(Kokkos::subview(rows, range_type(ap(k), ap(k+1))));
-                             } );
-        // since symbolic factor is not accurate, filter out empty blocks is not safe either.
-        //CrsMatrixTools::filterEmptyBlocks(HA_factor_host);
-      }
-      { // nblocks is changed as empty blocks are filtered out
-        const size_type nblocks = HA_factor_host.NumNonZeros();
-
-        // scan ap
-        Kokkos::View<size_type*,HostSpaceType> ap("ap", nblocks + 1);
-        ap(0) = 0;
-        for (size_type k=0;k<nblocks;++k) {
-          const auto &block = HA_factor_host.Value(k);
-          ap(k+1) = ap(k) + block.NumRows()*block.NumCols();
-        }
-
-        mats = Kokkos::View<value_type*,HostSpaceType>("MatsInBlocks", ap(nblocks));
-
+        mats = Kokkos::View<value_type*,HostSpaceType>("MatsInBlocks", apblk(nblocks));
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
                              [&](const ordinal_type k) {
                                auto &block = HA_factor_host.Value(k);
                                block.Flat().setExternalMatrix(block.NumRows(),
                                                               block.NumCols(),
                                                               -1, -1,
-                                                              Kokkos::subview(mats, range_type(ap(k), ap(k+1))));
+                                                              Kokkos::subview(mats, range_type(apblk(k), apblk(k+1))));
                                block.copyToFlat();
                              } );
       }
       if (mb) {
-        const size_type nblocks = HA_factor_host.NumNonZeros();
-
-        // scan ap
-        Kokkos::View<size_type*,HostSpaceType> ap("ap", nblocks + 1);
-        ap(0) = 0;
+        Kokkos::View<size_type*,HostSpaceType> apblk("apblk", nblocks + 1);
+        apblk(0) = 0;
         for (size_type k=0;k<nblocks;++k) {
           const auto &block = HA_factor_host.Value(k);
           ordinal_type hm, hn;
           DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
-          ap(k+1) = ap(k) + hm*hn;
+          apblk(k+1) = apblk(k) + hm*hn;
         }
 
-        blks = Kokkos::View<DenseTaskViewHostType*,HostSpaceType>("DenseBlocksInCrsBlocks", ap(nblocks));
+        blks = Kokkos::View<DenseTaskViewHostType*,HostSpaceType>("DenseBlocksInCrsBlocks", apblk(nblocks));
 
         Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
                              [&](const ordinal_type k) {
@@ -353,7 +384,7 @@ namespace Tacho {
                                DenseMatrixTools::getDimensionOfHierMatrix(hm, hn, block.Flat(), mb, mb);
                                block.Hier().setExternalMatrix(hm, hn,
                                                               -1, -1,
-                                                              Kokkos::subview(blks, range_type(ap(k), ap(k+1))));
+                                                              Kokkos::subview(blks, range_type(apblk(k), apblk(k+1))));
                                DenseMatrixTools::getHierMatrix(block.Hier(),
                                                                block.Flat(),
                                                                mb, mb);
@@ -381,8 +412,6 @@ namespace Tacho {
             max_blk_size = current_blk_size;
           }
         }
-        TACHO_TEST_FOR_ABORT( nnz_blocks != AA_factor_host.NumNonZeros(),
-                              "nnz counted in blocks is different from nnz in the base matrix.");
         std::cout << "CholSuperNodesByBlocks:: nnz in blocks = " << nnz_blocks
                   << ", size of blocks = " << size_blocks
                   << ", ratio = " << (double(nnz_blocks)/size_blocks)
@@ -424,19 +453,6 @@ namespace Tacho {
 #ifdef HAVE_SHYLUTACHO_VTUNE
       __itt_pause();
 #endif
-
-      {
-        const size_type nblocks = HA_factor_host.NumNonZeros();
-
-        Kokkos::parallel_for(Kokkos::RangePolicy<HostSpaceType>(0, nblocks),
-                             [&](const ordinal_type k) {
-                               auto &block = HA_factor_host.Value(k);
-                               block.copyToView();
-                             } );
-      }
-
-      if (verbose)
-        AA_factor_host.showMe(std::cout) << std::endl;
     }
 
     ///
@@ -548,7 +564,6 @@ namespace Tacho {
 
       std::cout << std::scientific;
       std::cout << "CholSuperNodesByBlocks:: Given    matrix = " << AA_host.NumRows() << " x " << AA_host.NumCols() << ", nnz = " << AA_host.NumNonZeros() << std::endl;
-      std::cout << "CholSuperNodesByBlocks:: Factored matrix = " << AA_factor_host.NumRows() << " x " << AA_factor_host.NumCols() << ", nnz = " << AA_factor_host.NumNonZeros() << std::endl;
       std::cout << "CholSuperNodesByBlocks:: Hier     matrix = " << HA_factor_host.NumRows() << " x " << HA_factor_host.NumCols() << ", nnz = " << HA_factor_host.NumNonZeros() << std::endl;
 
       std::cout << "CholSuperNodesByBlocks:: "
@@ -562,7 +577,7 @@ namespace Tacho {
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
                 << "policy creation = " << t_policy << " [sec] "
-                << "hier creation = " << t_hier << " [sec] "
+        //<< "hier creation = " << t_hier << " [sec] "
                 << "block specification = " << t_blocks << " [sec] "
                 << std::endl
                 << "CholSuperNodesByBlocks:: "
